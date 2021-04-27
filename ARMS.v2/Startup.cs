@@ -11,6 +11,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ArmsServices.DataServices;
+using ArmsServices;
 
 namespace ARMS.v2
 {
@@ -32,6 +34,8 @@ namespace ARMS.v2
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ARMS.v2", Version = "v1" });
             });
+            services.AddScoped<IPlaceService, PlaceService>();
+            services.AddScoped<IDbService, DbService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
