@@ -34,8 +34,10 @@ namespace ARMS.v2
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ARMS.v2", Version = "v1" });
             });
-            services.AddScoped<IPlaceService, PlaceService>();
             services.AddScoped<IDbService, DbService>();
+            services.AddScoped<IPlaceService, PlaceService>();
+            services.AddScoped<IRouteService, RouteService>();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

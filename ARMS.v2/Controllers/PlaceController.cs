@@ -28,24 +28,20 @@ namespace ARMS.v2.Controllers
             return _service.Select(null);
         }
 
-        [HttpPost("Add")]
-        public IActionResult Add([FromBody]PlaceModel place)
-        {
-            if(!ModelState.IsValid)
-            {
-                return BadRequest();
-            }
-          return   Ok(_service.Add(place));
-        }
-
-        [HttpPost("Update")]
+        [HttpPost]       
         public IActionResult Update([FromBody] PlaceModel place)
         {
-            if (!ModelState.IsValid || place.PlaceID == null)
+            if (!ModelState.IsValid )
             {
                 return BadRequest();
             }
-            return Ok(_service.Add(place));
+            return Ok(_service.Update(place));
+        }
+
+        [HttpDelete("{PlaceID}/{UserID}")]
+        public IActionResult Delete(int PlaceID,string UserID)
+        { 
+            return Ok(_service.Delete(PlaceID,UserID));
         }
     }
 }

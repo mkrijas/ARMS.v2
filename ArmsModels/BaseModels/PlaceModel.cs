@@ -8,7 +8,7 @@ namespace ArmsModels.BaseModels
 {
     public class PlaceModel
     {
-        public int? PlaceID { get; set; }
+        public int PlaceID { get; set; }
         [Required][StringLength(maximumLength:200)]
         public string PlaceName { get; set; }
         [Required]
