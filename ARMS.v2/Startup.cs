@@ -37,6 +37,7 @@ namespace ARMS.v2
             services.AddScoped<IDbService, DbService>();
             services.AddScoped<IPlaceService, PlaceService>();
             services.AddScoped<IRouteService, RouteService>();
+            services.AddScoped<IOrderService, OrderService>();
 
         }
 
