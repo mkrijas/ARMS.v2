@@ -44,7 +44,7 @@ namespace ArmsServices.DataServices
             };
 
             RouteModel rmodel = new RouteModel();
-            using (var reader = Iservice.GetDataReader("usp.Gc.RoutesUpdate", parameters))
+            using (var reader = Iservice.GetDataReader("[usp.Gc.RoutesUpdate]", parameters))
             {
                 while (reader.Read())
                 {
@@ -80,7 +80,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RouteID", RouteID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return Iservice.ExecuteNonQuery("usp.Gc.RoutesDelete", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Gc.RoutesDelete]", parameters);
         }
         public IEnumerable<RouteModel> Select(int? RouteID)
         {

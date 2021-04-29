@@ -39,7 +39,7 @@ namespace ArmsServices.DataServices
             };
 
             OrderModel rmodel = new OrderModel();
-            using (var reader = Iservice.GetDataReader("usp.Gc.OrdersUpdate", parameters))
+            using (var reader = Iservice.GetDataReader("[usp.Gc.OrdersUpdate]", parameters))
             {
                 while (reader.Read())
                 {
@@ -70,7 +70,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@OrderID", OrderID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return Iservice.ExecuteNonQuery("usp.Gc.OrdersDelete", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Gc.OrdersDelete]", parameters);
         }
         public IEnumerable<OrderModel> Select(int? OrderID)
         {
