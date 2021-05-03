@@ -8,9 +8,9 @@ namespace ArmsModels.BaseModels
     public class GcModel
     {
         public long GcID { get; set; }
-        public long TripID { get; set; }
+        public long? TripID { get; set; }
         public string GcPrefix { get; set; }
-        public int GcNo { get; set; }
+        public int? GcNo { get; set; }
         public int BranchID { get; set; }
         public int OrderID { get; set; }
         public DateTime GcDate { get; set; }

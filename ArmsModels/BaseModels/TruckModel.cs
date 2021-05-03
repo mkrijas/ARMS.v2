@@ -9,6 +9,7 @@ namespace ArmsModels.BaseModels
     public class TruckModel
     {
         public int TruckID { get; set; }
+        public string RegNumber { get; set; }
         [Required]
         public short TruckTypeID { get; set; }
         [Required][StringLength(maximumLength:50)]

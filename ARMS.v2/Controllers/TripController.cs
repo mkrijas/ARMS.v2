@@ -10,38 +10,39 @@ using System.Threading.Tasks;
 namespace ARMS.v2.Controllers
 {
     [ApiController]
-    [Route("place/[controller]")]
-    public class PlaceController : ControllerBase
+    [Route("Operation/[controller]")]
+    public class TripController : ControllerBase
     {
-        private readonly ILogger<PlaceController> _logger;
-        private IPlaceService _service;
+        private readonly ILogger<TripController> _logger;
+        private ITripService _service;
 
-        public PlaceController(ILogger<PlaceController> logger, IPlaceService service)
+        public TripController(ILogger<TripController> logger, ITripService service)
         {
             _logger = logger;
             _service = service;
         }
 
         [HttpGet]
-        public IEnumerable<PlaceModel> GetPlaces()
+        public IEnumerable<TripModel> GetTrips()
         {
             return _service.Select(null);
         }
 
-        [HttpPost]       
-        public IActionResult Update([FromBody] PlaceModel model)
+        [HttpPost]
+        public IActionResult Update([FromBody] TripModel model)
         {
-            if (!ModelState.IsValid )
+            if (!ModelState.IsValid)
             {
                 return BadRequest();
             }
             return Ok(_service.Update(model));
         }
+       
 
-        [HttpDelete("{PlaceID}/{UserID}")]
-        public IActionResult Delete(int PlaceID,string UserID)
+        [HttpDelete("{TripID}/{UserID}")]
+        public IActionResult Delete(int TripID,string UserID)
         { 
-            return Ok(_service.Delete(PlaceID,UserID));
+            return Ok(_service.Delete(TripID,UserID));
         }
     }
 }
