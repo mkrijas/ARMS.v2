@@ -37,6 +37,11 @@ namespace ARMS.v2
             services.AddScoped<IDbService, DbService>();
             services.AddScoped<IPlaceService, PlaceService>();
             services.AddScoped<IRouteService, RouteService>();
+            services.AddScoped<IDriverService, DriverService>();
+            services.AddScoped<IDriverBranchPeriodsService, DriverBranchPeriodsService>();
+            services.AddScoped<IDriverFaultService, DriverFaultService>();
+            services.AddScoped<IDriverLeaveService, DriverLeaveService>();
+            services.AddScoped<IDriverLicenceService, DriverLicenceService>();
 
         }
 
