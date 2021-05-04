@@ -22,10 +22,10 @@ namespace ARMS.v2.Controllers
             _service = service;
         }
 
-        [HttpGet]
-        public IEnumerable<GcModel> GetGcs()
+        [HttpGet("{GcID}")]
+        public IEnumerable<GcModel> GetGcs(long GcID)
         {
-            return _service.Select(null);
+            return _service.Select(GcID);
         }
 
         [HttpPost]

@@ -22,10 +22,10 @@ namespace ARMS.v2.Controllers
             _service = service;
         }
 
-        [HttpGet]
-        public IEnumerable<OrderModel> GetOrders()
+        [HttpGet("{OrderID}")]
+        public IEnumerable<OrderModel> GetOrders(int OrderID)
         {
-            return _service.Select(null);
+            return _service.Select(OrderID);
         }
 
         [HttpPost]

@@ -22,10 +22,10 @@ namespace ARMS.v2.Controllers
             _service = service;
         }
 
-        [HttpGet]
-        public IEnumerable<RouteModel> GetRoutes()
+        [HttpGet("{RouteID}")]
+        public IEnumerable<RouteModel> GetRoutes(int RouteID)
         {
-            return _service.Select(null);
+            return _service.Select(RouteID);
         }
 
         [HttpPost]

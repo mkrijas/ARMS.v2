@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
     {       
         GcModel Update(GcModel model);
         int Delete(int GcID, string UserID);
-        IEnumerable<GcModel> Select(int? GcID);
+        IEnumerable<GcModel> Select(long? GcID);
     }
 
     public class GcService : IGcService
@@ -88,7 +88,7 @@ namespace ArmsServices.DataServices
             };            
             return Iservice.ExecuteNonQuery("[usp.Gc.GcsDelete]", parameters);
         }
-        public IEnumerable<GcModel> Select(int? GcID)
+        public IEnumerable<GcModel> Select(long? GcID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
