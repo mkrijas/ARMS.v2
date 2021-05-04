@@ -11,25 +11,25 @@ namespace ARMS.v2.Controllers
 {
     [ApiController]
     [Route("place/[controller]")]
-    public class PlaceController : ControllerBase
+    public class DistrictController : ControllerBase
     {
-        private readonly ILogger<PlaceController> _logger;
-        private IPlaceService _service;
+        private readonly ILogger<DistrictController> _logger;
+        private IDistrictService _service;
 
-        public PlaceController(ILogger<PlaceController> logger, IPlaceService service)
+        public DistrictController(ILogger<DistrictController> logger, IDistrictService service)
         {
             _logger = logger;
             _service = service;
         }
 
         [HttpGet]
-        public IEnumerable<PlaceModel> GetPlaces()
+        public IEnumerable<DistrictModel> GetDistricts()
         {
             return _service.Select(null);
         }
 
         [HttpPost]       
-        public IActionResult Update([FromBody] PlaceModel model)
+        public IActionResult Update([FromBody] DistrictModel model)
         {
             if (!ModelState.IsValid )
             {
@@ -38,10 +38,10 @@ namespace ARMS.v2.Controllers
             return Ok(_service.Update(model));
         }
 
-        [HttpDelete("{PlaceID}/{UserID}")]
-        public IActionResult Delete(int PlaceID,string UserID)
+        [HttpDelete("{DistrictID}/{UserID}")]
+        public IActionResult Delete(int DistrictID,string UserID)
         { 
-            return Ok(_service.Delete(PlaceID,UserID));
+            return Ok(_service.Delete(DistrictID,UserID));
         }
     }
 }

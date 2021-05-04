@@ -39,7 +39,7 @@ namespace ArmsServices.DataServices
             };
 
             PlaceModel place = new PlaceModel();
-            using (var reader = Iservice.GetDataReader("usp.Place.PlacesUpdate", parameters))
+            using (var reader = Iservice.GetDataReader("[usp.Place.PlacesUpdate]", parameters))
             {
                 while (reader.Read())
                 {
@@ -54,7 +54,7 @@ namespace ArmsServices.DataServices
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStampField"),
+                            TimeStampField = reader.GetDateTime("TimeStamp"),
                             UserID = reader.GetString("UserID"),
                         },
                     };
@@ -69,7 +69,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PlaceID", PlaceID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return Iservice.ExecuteNonQuery("usp.Place.PlacesDelete", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Place.PlacesDelete]", parameters);
         }
         public IEnumerable<PlaceModel> Select(int? PlaceID)
         {
@@ -93,7 +93,7 @@ namespace ArmsServices.DataServices
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStampField"),
+                            TimeStampField = reader.GetDateTime("TimeStamp"),
                             UserID = reader.GetString("UserID"),
                         },
                     };

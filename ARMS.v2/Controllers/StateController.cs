@@ -11,25 +11,27 @@ namespace ARMS.v2.Controllers
 {
     [ApiController]
     [Route("place/[controller]")]
-    public class PlaceController : ControllerBase
+    public class StateController : ControllerBase
     {
-        private readonly ILogger<PlaceController> _logger;
-        private IPlaceService _service;
+        private readonly ILogger<StateController> _logger;
+        private IStateService _service;
 
-        public PlaceController(ILogger<PlaceController> logger, IPlaceService service)
+        public StateController(ILogger<StateController> logger, IStateService service)
         {
             _logger = logger;
             _service = service;
         }
 
-        [HttpGet]
-        public IEnumerable<PlaceModel> GetPlaces()
+       
+
+        [HttpGet("{StateID}")]
+        public IEnumerable<StateModel> GetStates(int StateID = 0)
         {
-            return _service.Select(null);
+            return _service.Select(StateID);
         }
 
         [HttpPost]       
-        public IActionResult Update([FromBody] PlaceModel model)
+        public IActionResult Update([FromBody] StateModel model)
         {
             if (!ModelState.IsValid )
             {
@@ -38,10 +40,10 @@ namespace ARMS.v2.Controllers
             return Ok(_service.Update(model));
         }
 
-        [HttpDelete("{PlaceID}/{UserID}")]
-        public IActionResult Delete(int PlaceID,string UserID)
+        [HttpDelete("{StateID}/{UserID}")]
+        public IActionResult Delete(int StateID,string UserID)
         { 
-            return Ok(_service.Delete(PlaceID,UserID));
+            return Ok(_service.Delete(StateID,UserID));
         }
     }
 }

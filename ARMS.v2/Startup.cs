@@ -42,6 +42,16 @@ namespace ARMS.v2
             services.AddScoped<IDriverFaultService, DriverFaultService>();
             services.AddScoped<IDriverLeaveService, DriverLeaveService>();
             services.AddScoped<IDriverLicenceService, DriverLicenceService>();
+            services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<IStateService, StateService>();
+            services.AddScoped<IDistrictService, DistrictService>();
+            services.AddScoped<IContentService, ContentService>();
+            services.AddScoped<ITariffService, TariffService>();
+            services.AddScoped<ITripService, TripService>();
+            services.AddScoped<ITruckService, TruckService>();
+            services.AddScoped<ITruckTypeService, TruckTypeService>();
+            services.AddScoped<IGcService, GcService>();
+
 
         }
 

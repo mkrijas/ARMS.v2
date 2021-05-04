@@ -10,38 +10,39 @@ using System.Threading.Tasks;
 namespace ARMS.v2.Controllers
 {
     [ApiController]
-    [Route("place/[controller]")]
-    public class PlaceController : ControllerBase
+    [Route("Gc/[controller]")]
+    public class OrderController : ControllerBase
     {
-        private readonly ILogger<PlaceController> _logger;
-        private IPlaceService _service;
+        private readonly ILogger<OrderController> _logger;
+        private IOrderService _service;
 
-        public PlaceController(ILogger<PlaceController> logger, IPlaceService service)
+        public OrderController(ILogger<OrderController> logger, IOrderService service)
         {
             _logger = logger;
             _service = service;
         }
 
         [HttpGet]
-        public IEnumerable<PlaceModel> GetPlaces()
+        public IEnumerable<OrderModel> GetOrders()
         {
             return _service.Select(null);
         }
 
-        [HttpPost]       
-        public IActionResult Update([FromBody] PlaceModel model)
+        [HttpPost]
+        public IActionResult Update([FromBody] OrderModel model)
         {
-            if (!ModelState.IsValid )
+            if (!ModelState.IsValid)
             {
                 return BadRequest();
             }
             return Ok(_service.Update(model));
         }
+       
 
-        [HttpDelete("{PlaceID}/{UserID}")]
-        public IActionResult Delete(int PlaceID,string UserID)
+        [HttpDelete("{OrderID}/{UserID}")]
+        public IActionResult Delete(int OrderID,string UserID)
         { 
-            return Ok(_service.Delete(PlaceID,UserID));
+            return Ok(_service.Delete(OrderID,UserID));
         }
     }
 }
