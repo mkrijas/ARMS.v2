@@ -55,7 +55,7 @@ namespace ArmsServices.DataServices
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStampField"),
+                            TimeStampField = reader.GetDateTime("TimeStamp"),
                             UserID = reader.GetString("UserID"),
                         },
                     };
@@ -95,7 +95,7 @@ namespace ArmsServices.DataServices
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStampField"),
+                            TimeStampField = reader.GetDateTime("TimeStamp"),
                             UserID = reader.GetString("UserID"),
                         },
                     };

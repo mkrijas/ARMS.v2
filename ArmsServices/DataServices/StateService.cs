@@ -40,12 +40,12 @@ namespace ArmsServices.DataServices
                 {
                     rmodel = new StateModel
                     {
-                        StateID = reader.GetInt16("StateID"),
+                        StateID = reader.GetInt32("StateID"),
                         StateName = reader.GetString("StateName"),
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStampField"),
+                            TimeStampField = reader.GetDateTime("TimeStamp"),
                             UserID = reader.GetString("UserID"),
                         },
                     };
@@ -75,12 +75,12 @@ namespace ArmsServices.DataServices
                 {
                     yield return new StateModel
                     {
-                        StateID = reader.GetInt16("StateID"),
+                        StateID = reader.GetInt32("StateID"),
                         StateName = reader.GetString("StateName"),
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStampField"),
+                            TimeStampField = reader.GetDateTime("TimeStamp"),
                             UserID = reader.GetString("UserID"),
                         },
                     };

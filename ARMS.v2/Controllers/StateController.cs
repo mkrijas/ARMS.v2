@@ -22,10 +22,12 @@ namespace ARMS.v2.Controllers
             _service = service;
         }
 
-        [HttpGet]
-        public IEnumerable<StateModel> GetStates()
+       
+
+        [HttpGet("{StateID}")]
+        public IEnumerable<StateModel> GetStates(int StateID = 0)
         {
-            return _service.Select(null);
+            return _service.Select(StateID);
         }
 
         [HttpPost]       
