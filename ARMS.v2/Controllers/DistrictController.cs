@@ -22,10 +22,10 @@ namespace ARMS.v2.Controllers
             _service = service;
         }
 
-        [HttpGet]
-        public IEnumerable<DistrictModel> GetDistricts()
+        [HttpGet("{DistrictID}")]
+        public IEnumerable<DistrictModel> GetDistricts(int DistrictID)
         {
-            return _service.Select(null);
+            return _service.Select(DistrictID);
         }
 
         [HttpPost]       

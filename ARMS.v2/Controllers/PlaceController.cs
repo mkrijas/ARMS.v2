@@ -22,10 +22,10 @@ namespace ARMS.v2.Controllers
             _service = service;
         }
 
-        [HttpGet]
-        public IEnumerable<PlaceModel> GetPlaces()
+        [HttpGet("{PlaceID}")]
+        public IEnumerable<PlaceModel> GetPlaces(int PlaceID)
         {
-            return _service.Select(null);
+            return _service.Select(PlaceID);
         }
 
         [HttpPost]       

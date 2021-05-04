@@ -22,10 +22,10 @@ namespace ARMS.v2.Controllers
             _service = service;
         }
 
-        [HttpGet]
-        public IEnumerable<TruckTypeModel> GetTruckTypes()
+        [HttpGet("{TruckTypeID}")]
+        public IEnumerable<TruckTypeModel> GetTruckTypes(int TruckTypeID)
         {
-            return _service.Select(null);
+            return _service.Select(TruckTypeID);
         }
 
         [HttpPost]

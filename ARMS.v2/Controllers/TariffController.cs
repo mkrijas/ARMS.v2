@@ -22,10 +22,10 @@ namespace ARMS.v2.Controllers
             _service = service;
         }
 
-        [HttpGet]
-        public IEnumerable<TariffModel> GetTariffs()
+        [HttpGet("{TariffID}")]
+        public IEnumerable<TariffModel> GetTariffs(int TariffID)
         {
-            return _service.Select(0);
+            return _service.Select(TariffID);
         }
 
         [HttpPost]
