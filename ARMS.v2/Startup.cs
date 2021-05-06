@@ -28,7 +28,6 @@ namespace ARMS.v2
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -51,8 +50,11 @@ namespace ARMS.v2
             services.AddScoped<ITruckService, TruckService>();
             services.AddScoped<ITruckTypeService, TruckTypeService>();
             services.AddScoped<IGcService, GcService>();
-
-
+            services.AddScoped<IAddressService, AddressService>();
+            services.AddScoped<IBankAccountService, BankAccountService>();
+            services.AddScoped<IGstService, GstService>();
+            services.AddScoped<IPartyService, PartyService>();
+            services.AddScoped<IPartyDirectorService, PartyDirectorService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

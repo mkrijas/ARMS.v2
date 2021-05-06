@@ -9,7 +9,8 @@ namespace ArmsModels.BaseModels
     public class OrderModel
     {
         public int OrderID { get; set; }
-        [Required][StringLength(maximumLength:200)]
+        [Required]
+        [StringLength(maximumLength: 200)]
         public string OrderName { get; set; }
         [Required]
         public int ClientID { get; set; }
@@ -24,3 +25,4 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 }
+
