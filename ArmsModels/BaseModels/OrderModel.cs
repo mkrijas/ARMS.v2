@@ -17,11 +17,14 @@ namespace ArmsModels.BaseModels
         [Required]
         public int RouteID { get; set; }
         [Required]
-        public int ContentID { get; set; }
+        public int ContentID { get; set; }     
         [Required]
-        public int ConsignorID { get; set; }
-        [Required]
+        public int ConsignorID { get; set; }        
         public int ConsigneeID { get; set; }
+        [Required]
+        public decimal OrderQuantity { get; set; }
+        [Required]
+        public int BranchID { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 }

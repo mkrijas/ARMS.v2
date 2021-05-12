@@ -32,7 +32,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TariffName", model.TariffName),
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@TariffRate", model.TariffRate),
-               new SqlParameter("@TariffTypeID", model.TariffTypeID),              
+               new SqlParameter("@TariffTypeID", model.TariffTypeID),
+               new SqlParameter("@TruckAxles", model.TruckAxles),
+               new SqlParameter("@TariffFormulaID", model.TariffFormulaID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -48,6 +50,8 @@ namespace ArmsServices.DataServices
                         OrderID = reader.GetInt32("OrderID"),
                         TariffRate = reader.GetDecimal("TariffRate"),
                         TariffTypeID = reader.GetInt16("TariffTypeID"),
+                        TariffFormulaID = reader.GetInt16("TariffFormulaID"),
+                        TruckAxles = reader.GetByte("TruckAxles"),
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
@@ -86,6 +90,8 @@ namespace ArmsServices.DataServices
                         OrderID = reader.GetInt32("OrderID"),
                         TariffRate = reader.GetDecimal("TariffRate"),
                         TariffTypeID = reader.GetInt16("TariffTypeID"),
+                        TariffFormulaID = reader.GetInt16("TariffFormulaID"),
+                        TruckAxles = reader.GetByte("TruckAxles"),
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),

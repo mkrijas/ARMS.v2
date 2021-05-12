@@ -34,7 +34,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ConsigneeID", model.ConsigneeID),
                new SqlParameter("@ConsignorID", model.ConsignorID),
                new SqlParameter("@ContentID", model.ContentID),
-               new SqlParameter("@RouteID", model.RouteID),               
+               new SqlParameter("@RouteID", model.RouteID),
+               new SqlParameter("@OrderQuantity", model.OrderQuantity),
+               new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -51,7 +53,9 @@ namespace ArmsServices.DataServices
                         ContentID = reader.GetInt32("ContentID"),
                         RouteID = reader.GetInt32("RouteID"),
                         OrderID = reader.GetInt32("OrderID"),
-                        OrderName = reader.GetString("OrderName"),                        
+                        OrderName = reader.GetString("OrderName"),  
+                        BranchID = reader.GetInt32("BranchID"),
+                        OrderQuantity = reader.GetDecimal("OrderQuantity"),
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
@@ -92,6 +96,8 @@ namespace ArmsServices.DataServices
                         RouteID = reader.GetInt32("RouteID"),
                         OrderID = reader.GetInt32("OrderID"),
                         OrderName = reader.GetString("OrderName"),
+                        BranchID = reader.GetInt32("BranchID"),
+                        OrderQuantity = reader.GetDecimal("OrderQuantity"),
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),

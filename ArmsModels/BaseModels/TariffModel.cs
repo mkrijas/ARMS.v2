@@ -17,6 +17,9 @@ namespace ArmsModels.BaseModels
         public short TariffTypeID { get; set; }
         [Required]
         public decimal TariffRate { get; set; }
+        public byte TruckAxles { get; set; }
+        [Required]
+        public short TariffFormulaID { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 }
