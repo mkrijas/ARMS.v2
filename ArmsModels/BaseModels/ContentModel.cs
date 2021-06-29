@@ -8,6 +8,11 @@ namespace ArmsModels.BaseModels
 {
     public class ContentModel
     {
+        public ContentModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+        }
+
         public short ContentID { get; set; }
         [Required][StringLength(maximumLength:100)]
         public string ContentName { get; set; }

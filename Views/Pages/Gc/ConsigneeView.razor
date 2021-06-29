@@ -1,0 +1,262 @@
+﻿@page "/consignee"
+
+@inject IConsigneeService Iservice
+@inject IPlaceService Iplace
+@inject IOrderService Iorder
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="12">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                         <MudSwitch @bind-Checked="customstr" Color="Color.Error" Converter="@(new CustomStringToBoolConverter())"> <MudText Typo="Typo.h6">Add/Edit @(customstr)</MudText></MudSwitch>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="4">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.ConsigneeName" Label="Consignee Name" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.ConsigneeName)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Mobile" Label="Mobile" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.Mobile)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudAutocomplete T="PlaceModel" Label="Place" @bind-Value="model.Place" ResetValueOnEmptyText="true"
+                                             SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="model.Order" ResetValueOnEmptyText="true"
+                                             SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.subtitle2">Address Info</MudText>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Address.Building" Label="Building" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.Address.Building)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Address.Street" Label="Street" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.Address.Street)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Address.City" Label="City" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.Address.City)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Address.PinCode" Label="PinCode" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.Address.PinCode)"></MudTextField>
+                        </MudItem>
+                    </MudGrid>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save @customstr</MudButton>
+
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" md="12">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<ConsigneeModel, bool>(search)" @bind-model="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Consignees</MudText>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchConsignee" Placeholder="Search Consignees... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.ConsigneeID)" InitialDirection="SortDirection.Ascending">ID</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.ConsigneeName)" InitialDirection="SortDirection.Ascending">Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Address.Place)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Order.OrderName)" InitialDirection="SortDirection.Ascending">Order</MudTableSortLabel></MudTh>
+
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.ConsigneeID</MudTd>
+                <MudTd DataLabel="Name">@context.ConsigneeName</MudTd>
+                <MudTd DataLabel="Place">@context.Address.Place</MudTd>
+                <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
+                <MudTd DataLabel="Order">@context.Order.OrderName</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(() => Edit(context.ConsigneeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(() => Delete(context.ConsigneeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+@code {
+
+    private ConsigneeModel model = new ConsigneeModel() { Address = new AddressModel() { AddresseeName = "temp", Place = "temp" } };
+    private List<ConsigneeModel> collection = new List<ConsigneeModel>();
+    private List<PlaceModel> places = new List<PlaceModel>();
+    private List<OrderModel> orders = new List<OrderModel>();
+
+    private int BranchID { get; set; } = 0;
+    public string customstr { get; set; } = "CONSIGNEE";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await foreach (var place in Iplace.Select(0))
+        {
+            places.Add(place);
+        }
+
+        await foreach (var item in Iorder.Select(0))
+        {
+            orders.Add(item);
+        }
+
+        await GetAll();
+    }
+
+
+    private async Task<IEnumerable<PlaceModel>> Search(string searchString)
+    {
+        return await Task.FromResult(
+            places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    {
+        var o = orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+        return await Task.FromResult(o);
+    }
+
+    private async Task GetAll()
+    {
+        await foreach (var item in Iservice.Select(0))
+        {
+            collection.Add(item);
+        }
+    }
+
+
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        if (model.Place?.PlaceID == 0)
+        {
+            snackbar.Add("Place is not selected", Severity.Error);
+            return;
+        }
+        else
+        if (!places.Select(x => x.PlaceName).Contains(model.Place.PlaceName))
+        {
+            snackbar.Add("Invalid Place", Severity.Error);
+            return;
+        }
+
+        model.PlaceID = model.Place.PlaceID;
+        model.Address.Place = model.Place.PlaceName;
+        model.OrderID = model.Order.OrderID;
+        model.Address.AddresseeName = model.ConsigneeName;
+        CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
+        model.Consignor = cs.SetFunc(customstr).Value;
+
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+        try
+        {
+            model = await Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.ConsigneeID == model.ConsigneeID))
+            {
+                collection[collection.FindIndex(x => x.ConsigneeID == model.ConsigneeID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new ConsigneeModel();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+    private void Edit(int id)
+    {
+        model = collection.FirstOrDefault(x => x.ConsigneeID == id);
+        CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
+        customstr = cs.GetFunc(model.Consignor);
+    }
+    private async void Delete(int id)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        await Iservice.Delete(id, authprov.User.Identity.Name);
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        await GetAll();
+    }
+
+    private string searchConsignee = "";
+
+    private bool search(ConsigneeModel model)
+    {
+        if (model.ConsigneeName != null && model.ConsigneeName.Contains(searchConsignee, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+    public class CustomStringToBoolConverter : BoolConverter<string>
+    {
+
+        public CustomStringToBoolConverter()
+        {
+            SetFunc = OnSet;
+            GetFunc = OnGet;
+        }
+
+        private string TrueString = "CONSIGNOR";
+        private string FalseString = "CONSIGNEE";
+        private string NullString = "SELECT";
+
+        private string OnGet(bool? value)
+        {
+            try
+            {
+                return (value == true) ? TrueString : FalseString;
+            }
+            catch (Exception e)
+            {
+                UpdateGetError("Conversion error: " + e.Message);
+                return NullString;
+            }
+        }
+
+        private bool? OnSet(string arg)
+        {
+            if (arg == null)
+                return null;
+            try
+            {
+                if (arg == TrueString)
+                    return true;
+                if (arg == FalseString)
+                    return false;
+                else
+                    return null;
+            }
+            catch (FormatException e)
+            {
+                UpdateSetError("Conversion error: " + e.Message);
+                return null;
+            }
+        }
+
+    }
+}
+
+
+
+

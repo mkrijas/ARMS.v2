@@ -1,0 +1,163 @@
+﻿@page "/partyView"
+@inject IPartyService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject NavigationManager nav
+
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="12">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit Partys</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="4">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@model.PartyName" Label="Party Name" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.PartyName)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="6" md="3">
+                            <MudCheckBox @bind-Checked="@model.IsClient" Label="Is Client?" For="@(() => model.IsClient)" />
+                        </MudItem>
+                        <MudItem xs="6" md="3">
+                            <MudCheckBox @bind-Checked="@model.IsSupplier" Label="Is Supplier?" For="@(() => model.IsSupplier)" />
+                        </MudItem>
+                        <MudItem xs="6" md="6">
+                            <MudCheckBox @bind-Checked="@model.TdsApplicable" Label="TDS Applicable?" For="@(() => model.TdsApplicable)" />
+                        </MudItem>
+                        <MudItem xs="6" md="6">
+                            <MudCheckBox @bind-Checked="@model.TcsApplicable" Label="TCS Applicable?" For="@(() => model.TcsApplicable)" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudRadioGroup @bind-SelectedOption="@model.NatureOfFirm">
+                                @foreach (var rtype in PartyTypes)
+                                {
+                                    <MudRadio Option="@rtype" Color="Color.Primary">@rtype</MudRadio>
+                                }
+                            </MudRadioGroup>
+                        </MudItem>
+                    </MudGrid>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Party</MudButton>
+
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" md="12">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<PartyModel, bool>(search)" @bind-model="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Parties</MudText>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchParty" Placeholder="Search Partys... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.PartyName)" InitialDirection="SortDirection.Ascending">Party Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.NatureOfFirm)" InitialDirection="SortDirection.Ascending">Nature</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.IsClient)" InitialDirection="SortDirection.Ascending">Client</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.IsSupplier)" InitialDirection="SortDirection.Ascending">Supplier</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.TdsApplicable)" InitialDirection="SortDirection.Ascending">Tds</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.TcsApplicable)" InitialDirection="SortDirection.Ascending">Tcs</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Party">@context.PartyName</MudTd>
+                <MudTd DataLabel="Distance">@context.NatureOfFirm</MudTd>
+                <MudTd DataLabel="SpeedLimit">@context.IsClient</MudTd>
+                <MudTd DataLabel="RunningHours">@context.IsSupplier</MudTd>
+                <MudTd DataLabel="PartyType">@context.TdsApplicable</MudTd>
+                <MudTd DataLabel="TollBooths">@context.TcsApplicable</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab Label="Gst"  OnClick="@(() => nav.NavigateTo("gst/"+context.PartyID.ToString()))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddBusiness" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Edit(context.PartyID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.PartyID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+
+
+
+</MudGrid>
+@code {
+
+    private PartyModel model = new PartyModel();
+    private List<PartyModel> collection = new List<PartyModel>();
+
+
+    private List<string> PartyTypes = new List<string>() { "Proprietorship", "Partnership", "Company" };
+
+    private string searchParty = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        await foreach (var route in Iservice.Select(0))
+        {
+            collection.Add(route);
+        }
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+
+        try
+        {
+            model = await Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.PartyID == model.PartyID))
+            {
+                collection[collection.FindIndex(x => x.PartyID == model.PartyID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new PartyModel();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void Edit(int id)
+    {
+        model = collection.FirstOrDefault(x => x.PartyID == id);
+    }
+    private async void Delete(int id)
+    {
+        await Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        await GetAll();
+    }
+
+
+    private bool search(PartyModel model)
+    {
+        if (model.PartyName != null && model.PartyName.Contains(searchParty, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+
+
+

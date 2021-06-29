@@ -11,112 +11,109 @@ namespace ArmsServices.DataServices
 {
     public interface IRouteService
     {       
-        RouteModel Update(RouteModel model);
-        int Delete(int RouteID, string UserID);
-        IEnumerable<RouteModel> Select(int? RouteID);
+        Task<RouteModel> Update(RouteModel model);
+        Task<RouteModel> SelectByID(int ID);
+        Task<int> Delete(int RouteID, string UserID);
+        IAsyncEnumerable<RouteModel> Select(int? RouteID);
     }
 
     public class RouteService : IRouteService
     {
         IDbService Iservice;
-
         public RouteService(IDbService iservice)
         {
             Iservice = iservice;
         }
-        public RouteModel Update(RouteModel model)
+        public async Task<RouteModel> Update(RouteModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@RouteID", model.RouteID),
+               new SqlParameter("@RouteID", model.RouteID),
                new SqlParameter("@RouteName", model.RouteName),
-               new SqlParameter("@Destination", model.Destination),
+               new SqlParameter("@Destination", model.Destination.PlaceID),
                new SqlParameter("@Distance", model.Distance),
                new SqlParameter("@GpsRouteID", model.GpsRouteID),
                new SqlParameter("@MieageModifier", model.MieageModifier),
-               new SqlParameter("@Origin", model.Origin),
+               new SqlParameter("@Origin", model.Origin.PlaceID),
                new SqlParameter("@RouteType", model.RouteType),
                new SqlParameter("@RunningHours", model.RunningHours),
                new SqlParameter("@SpeedLimit", model.SpeedLimit),
                new SqlParameter("@TollBooths", model.TollBooths),
-               new SqlParameter("@Via", model.Via),
+               new SqlParameter("@Via", model.Via.PlaceID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-
-            RouteModel rmodel = new RouteModel();
-            using (var reader = Iservice.GetDataReader("[usp.Gc.RoutesUpdate]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.RoutesUpdate]", parameters))
             {
-                while (reader.Read())
-                {
-                    rmodel = new RouteModel
-                    {
-                        Destination = reader.GetInt32("Destination"),
-                        Distance = reader.GetDecimal("Distance"),
-                        GpsRouteID = reader.GetInt64("GpsRouteID"),
-                        MieageModifier = reader.GetDecimal("MieageModifier"),
-                        Origin = reader.GetInt32("Origin"),
-                        RouteID = reader.GetInt32("RouteID"),
-                        RouteName = reader.GetString("RouteName"),
-                        RouteType = reader.SafeGetString("RouteType"),
-                        RunningHours = reader.GetInt16("RunningHours"),
-                        SpeedLimit = reader.GetByte("SpeedLimit"),
-                        TollBooths = reader.GetByte("TollBooths"),
-                        Via = reader.GetInt32("Via"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
+                model = await GetModel(dr);
             }
-            return rmodel;
+                return model;
         }
-        public int Delete(int RouteID,string UserID)
+        public async Task<RouteModel> SelectByID(int ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RouteID", ID),              
+            };
+            RouteModel model = new RouteModel();
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.RoutesUpdate]", parameters))
+            {
+                model = await GetModel(dr);
+            }
+            return model;
+        }
+        public async Task<int> Delete(int RouteID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@RouteID", RouteID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return Iservice.ExecuteNonQuery("[usp.Gc.RoutesDelete]", parameters);
+            return await Iservice.ExecuteNonQuery("[usp.Gc.RoutesDelete]", parameters);
         }
-        public IEnumerable<RouteModel> Select(int? RouteID)
+        public async IAsyncEnumerable<RouteModel> Select(int? RouteID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@RouteID", RouteID)               
             };
-
-            using (var reader = Iservice.GetDataReader("[usp.Gc.RoutesSelect]", parameters))
+            await foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Gc.RoutesSelect]", parameters))
             {
-                while (reader.Read())
-                {
-                    yield return new RouteModel
-                    {
-                        Destination = reader.GetInt32("Destination"),
-                        Distance = reader.GetDecimal("Distance"),
-                        GpsRouteID = reader.GetInt64("GpsRouteID"),
-                        MieageModifier = reader.GetDecimal("MieageModifier"),
-                        Origin = reader.GetInt32("Origin"),
-                        RouteID = reader.GetInt32("RouteID"),
-                        RouteName = reader.GetString("RouteName"),
-                        RouteType = reader.SafeGetString("RouteType"),
-                        RunningHours = reader.GetInt16("RunningHours"),
-                        SpeedLimit = reader.GetByte("SpeedLimit"),
-                        TollBooths = reader.GetByte("TollBooths"),
-                        Via = reader.GetInt32("Via"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
+                yield return await GetModel(dr);
             }
         }
 
+        private async Task<RouteModel> GetModel(IDataRecord dr)
+        {
+            return new RouteModel
+            {
+                Destination = new PlaceModel
+                {
+                    PlaceID = dr.GetInt32("Destination")
+                },
+                Distance = dr.GetDecimal("Distance"),
+                GpsRouteID = dr.GetInt64("GpsRouteID"),
+                MieageModifier = dr.GetDecimal("MieageModifier"),
+                Origin = new PlaceModel
+                {
+                    PlaceID = dr.GetInt32("Origin")
+                },
+                RouteID = dr.GetInt32("RouteID"),
+                RouteName = dr.GetString("RouteName"),
+                RouteType = dr.SafeGetString("RouteType"),
+                RunningHours = dr.GetInt16("RunningHours"),
+                SpeedLimit = dr.GetByte("SpeedLimit"),
+                TollBooths = dr.GetByte("TollBooths"),
+                Via = new PlaceModel
+                {
+                    PlaceID = dr.GetInt32("Via")
+                },
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
     }
 }

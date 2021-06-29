@@ -8,6 +8,11 @@ namespace ArmsModels.BaseModels
 {
     public class PlaceModel
     {
+        public PlaceModel()
+        {
+            this.District = new DistrictModel();
+            this.UserInfo = new SharedModels.UserInfoModel();
+        }
         public int PlaceID { get; set; }
         [Required][StringLength(maximumLength:200)]
         public string PlaceName { get; set; }
@@ -16,8 +21,9 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(maximumLength: 6)]
         public string PinCode { get; set; }
-        public string LatLong { get; set; }
+        public dynamic LatLong { get; set; }
         public long? GeoFenceID { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
+        public virtual DistrictModel District { get; set; }
     }
 }

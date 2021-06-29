@@ -11,9 +11,10 @@ namespace ArmsServices.DataServices
 {
     public interface IPlaceService
     {
-        PlaceModel Update(PlaceModel model);
-        int Delete(int PlaceID, string UserID);
-        IEnumerable<PlaceModel> Select(int? PlaceID);
+        Task<PlaceModel> Update(PlaceModel model);
+        Task<int> Delete(int PlaceID, string UserID);
+        IAsyncEnumerable<PlaceModel> Select(int? PlaceID);
+        Task<PlaceModel> SelectByID(int ID);
     }
 
     public class PlaceService : IPlaceService
@@ -25,81 +26,83 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
         
-        public PlaceModel Update(PlaceModel model)
+        public async Task<PlaceModel> Update(PlaceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PlaceID", model.PlaceID),
-               new SqlParameter("@PlaceName", model.PlaceName),
-               new SqlParameter("@LatLong", model.LatLong),
+               new SqlParameter("@PlaceName", model.PlaceName.ToUpper()),
+               //new SqlParameter("@LatLong", model.LatLong),
                new SqlParameter("@PinCode", model.PinCode),
                new SqlParameter("@DistrictID", model.DistrictID),
                new SqlParameter("@GeoFenceID", model.GeoFenceID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            PlaceModel place = new PlaceModel();
-            using (var reader = Iservice.GetDataReader("[usp.Place.PlacesUpdate]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.PlacesUpdate]", parameters))
             {
-                while (reader.Read())
-                {
-                    place = new PlaceModel
-                    {
-                        DistrictID = reader.GetInt32("DistrictID"),
-                        GeoFenceID = reader.SafeGetInt("GeoFenceID"),
-                        LatLong = reader.SafeGetString("LatLong"),
-                        PinCode = reader.SafeGetString("PinCode"),
-                        PlaceID = reader.GetInt32("PlaceID"),
-                        PlaceName = reader.GetString("PlaceName"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
-            }
-            return place;
+                model = await GetModel(dr);
+            }             
+            return model;
         }
-        public int Delete(int PlaceID,string UserID)
+        public async Task<int> Delete(int PlaceID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PlaceID", PlaceID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return Iservice.ExecuteNonQuery("[usp.Place.PlacesDelete]", parameters);
+            return await Iservice.ExecuteNonQuery("[usp.Place.PlacesDelete]", parameters);
         }
-        public IEnumerable<PlaceModel> Select(int? PlaceID)
+        public async IAsyncEnumerable<PlaceModel> Select(int? PlaceID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PlaceID", PlaceID)               
             };
 
-            using (var reader = Iservice.GetDataReader("[usp.Place.PlacesSelect]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.PlacesSelect]", parameters))
             {
-                while (reader.Read())
-                {
-                    yield return new PlaceModel
-                    {
-                        DistrictID = reader.GetInt32("DistrictID"),
-                        GeoFenceID = reader.SafeGetInt("GeoFenceID"),
-                        LatLong = reader.SafeGetString("LatLong"),
-                        PinCode = reader.SafeGetString("PinCode"),
-                        PlaceID = reader.GetInt32("PlaceID"),
-                        PlaceName = reader.GetString("PlaceName"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
+                yield return await GetModel(dr);            
             }
         }
+        public async Task<PlaceModel> SelectByID(int ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PlaceID", ID)
+            };
+            PlaceModel model = new PlaceModel();
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.PlacesSelect]", parameters))
+            {
+                 model = await GetModel(dr);
+            }
+            return model;
+        }
+        private async Task<PlaceModel> GetModel(IDataRecord dr)
+        {
+            return new PlaceModel
+            {
+                DistrictID = dr.GetInt32("DistrictID"),
+                GeoFenceID = dr.GetInt64("GeoFenceID"),
+                //LatLong = dr.GetLatLongString("LatLong"),
+                PinCode = dr.GetString("PinCode"),
+                PlaceID = dr.GetInt32("PlaceID"),
+                PlaceName = dr.GetString("PlaceName"),
+                District = new DistrictModel
+                {
+                    DistrictName = dr.GetString("DistrictName"),
+                    DistrictID = dr.GetInt32("DistrictID"),
+                },
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
 
+        
     }
 }

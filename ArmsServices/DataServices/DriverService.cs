@@ -17,7 +17,6 @@ namespace ArmsServices.DataServices
     public class DriverService : IDriverService
     {
         IDbService Iservice;
-
         public DriverService(IDbService iservice)
         {
             Iservice = iservice;
@@ -58,7 +57,7 @@ namespace ArmsServices.DataServices
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStampField"),
+                            TimeStampField = reader.GetDateTime("TimeStamp"),
                             UserID = reader.GetString("UserID"),
                         },
                     };
@@ -76,7 +75,6 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.DriversDelete]", parameters);
         }
-
         public IEnumerable<DriverModel> Select(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -99,7 +97,7 @@ namespace ArmsServices.DataServices
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStampField"),
+                            TimeStampField = reader.GetDateTime("TimeStamp"),
                             UserID = reader.GetString("UserID"),
                         },
                     };

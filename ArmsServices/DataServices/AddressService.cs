@@ -11,20 +11,21 @@ namespace ArmsServices.DataServices
 {
     public interface IAddressService
     {       
-        AddressModel Update(AddressModel model);
-        int Delete(int AddressID, string UserID);
-        IEnumerable<AddressModel> Select(int? AddressID);
+        Task<AddressModel> Update(AddressModel model);
+        Task<AddressModel> SelectByID(int AddressID);
+        Task<int> Delete(int AddressID, string UserID);
+        IAsyncEnumerable<AddressModel> Select(int? AddressID);
+
     }
 
     public class AddressService : IAddressService
     {
         IDbService Iservice;
-
         public AddressService(IDbService iservice)
         {
             Iservice = iservice;
         }
-        public AddressModel Update(AddressModel model)
+        public async Task<AddressModel> Update(AddressModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -37,70 +38,89 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Street", model.Street),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-
-            AddressModel rmodel = new AddressModel();
-            using (var reader = Iservice.GetDataReader("[usp.Entity.AddresssUpdate]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.AddressesUpdate]", parameters))
             {
-                while (reader.Read())
+                model = new AddressModel
                 {
-                    rmodel = new AddressModel
+                    AddressID = dr.GetInt32("AddressID"),
+                    AddresseeName = dr.GetString("AddresseeName"),
+                    Building = dr.SafeGetString("Building"),
+                    City = dr.SafeGetString("City"),
+                    PinCode = dr.SafeGetString("PinCode"),
+                    Place = dr.SafeGetString("Place"),
+                    Street = dr.SafeGetString("Street"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
-                        AddressID = reader.GetInt32("AddressID"),
-                        AddresseeName = reader.GetString("AddresseeName"),
-                        Building = reader.SafeGetString("Building"),
-                        City = reader.SafeGetString("City"),
-                        PinCode = reader.SafeGetString("PinCode"),
-                        Place = reader.SafeGetString("Place"),
-                        Street = reader.SafeGetString("Street"),                        
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
             }
-            return rmodel;
+            return model;
         }
-
-        public int Delete(int AddressID,string UserID)
+        public async Task<AddressModel> SelectByID(int AddressID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@AddressID", AddressID),               
+            };
+            AddressModel model = new AddressModel();
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.AddressesSelect]", parameters))
+            {
+                model = new AddressModel
+                {
+                    AddressID = dr.GetInt32("AddressID"),
+                    AddresseeName = dr.GetString("AddresseeName"),
+                    Building = dr.SafeGetString("Building"),
+                    City = dr.SafeGetString("City"),
+                    PinCode = dr.SafeGetString("PinCode"),
+                    Place = dr.SafeGetString("Place"),
+                    Street = dr.SafeGetString("Street"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
+            }
+            return model;
+        }
+        public async Task<int> Delete(int AddressID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AddressID", AddressID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return Iservice.ExecuteNonQuery("[usp.Entity.AddresssDelete]", parameters);
+            return await Iservice.ExecuteNonQuery("[usp.Entity.AddressesDelete]", parameters);
         }
-        public IEnumerable<AddressModel> Select(int? AddressID)
+        public async IAsyncEnumerable<AddressModel> Select(int? AddressID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AddressID", AddressID)               
             };
 
-            using (var reader = Iservice.GetDataReader("[usp.Entity.AddresssSelect]", parameters))
-            {
-                while (reader.Read())
-                {
+            await foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Entity.AddressesSelect]", parameters))
+            {               
                     yield return new AddressModel
                     {
-                        AddressID = reader.GetInt32("AddressID"),
-                        AddresseeName = reader.GetString("AddresseeName"),
-                        Building = reader.SafeGetString("Building"),
-                        City = reader.SafeGetString("City"),
-                        PinCode = reader.SafeGetString("PinCode"),
-                        Place = reader.SafeGetString("Place"),
-                        Street = reader.SafeGetString("Street"),
+                        AddressID = dr.GetInt32("AddressID"),
+                        AddresseeName = dr.GetString("AddresseeName"),
+                        Building = dr.SafeGetString("Building"),
+                        City = dr.SafeGetString("City"),
+                        PinCode = dr.SafeGetString("PinCode"),
+                        Place = dr.SafeGetString("Place"),
+                        Street = dr.SafeGetString("Street"),
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
+                            RecordStatus = dr.GetByte("RecordStatus"),
+                            TimeStampField = dr.GetDateTime("TimeStamp"),
+                            UserID = dr.GetString("UserID"),
                         },
                     };
-                }
             }
         }
 

@@ -1,0 +1,155 @@
+﻿@page "/place"
+@inject IPlaceService Iservice
+@inject IDistrictService Idistrict
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="8">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<PlaceModel, bool>(search)" @bind-place="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Places</MudText>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchPlace" Placeholder="Search Places... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.PlaceName)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.PinCode)" InitialDirection="SortDirection.Ascending">PinCode</MudTableSortLabel></MudTh></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.District.DistrictName)" InitialDirection="SortDirection.Ascending">District</MudTableSortLabel></MudTh></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Place">@context.PlaceName</MudTd>
+                <MudTd DataLabel="PinCode">@context.PinCode</MudTd>
+                <MudTd DataLabel="DistrictName">@context.District.DistrictName</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> Edit(context.PlaceID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.PlaceID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary/>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit Places</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField @bind-Value="@model.PlaceName" Label="Place" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.PlaceName)"></MudTextField>
+                    <MudTextField @bind-Value="@model.PinCode" Label="PinCode" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.PinCode)"></MudTextField>
+                    <MudAutocomplete T="DistrictModel" Label="District" @bind-Value="@model.District" ResetValueOnEmptyText="true"
+                                     SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.DistrictName}")"
+                                     Immediate="true"></MudAutocomplete>
+                    <br />
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Place</MudButton>
+
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+
+
+</MudGrid>
+@code {
+
+    private PlaceModel model = new PlaceModel();
+    private List<PlaceModel> collection = new List<PlaceModel>();
+    public List<DistrictModel> districts = new List<DistrictModel>();
+
+    private string searchPlace = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await foreach (var district in Idistrict.Select(0))
+        {
+            districts.Add(district);
+        }
+        await GetAll();
+    }
+
+    private async Task<IEnumerable<DistrictModel>> Search(string searchString)
+    {
+        return await Task.FromResult(districts.Where(x => x.DistrictName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task GetAll()
+    {
+        await foreach (var place in Iservice.Select(0))
+        {
+            collection.Add(place);
+        }
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        if (!districts.Select(x => x.DistrictName).Contains(model.District.DistrictName))
+        {
+            snackbar.Add("Invalid District", Severity.Error);
+            return;
+        }
+
+        //try
+        //{
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        model.DistrictID = model.District.DistrictID;
+
+        try {
+            model = await Iservice.Update(model);
+
+            if (collection.Exists(x => x.PlaceID == model.PlaceID))
+            {
+                collection[collection.FindIndex(x => x.PlaceID == model.PlaceID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new PlaceModel();
+            snackbar.Add("Saved Successfully", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+
+
+    private void Edit(int id)
+    {
+        model = collection.FirstOrDefault(x => x.PlaceID == id);
+    }
+    private async void Delete(int id)
+    {
+        await Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        await GetAll();
+    }
+
+
+    private bool search(PlaceModel place)
+    {
+        if (place.PlaceName != null && place.PlaceName.Contains(searchPlace, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+

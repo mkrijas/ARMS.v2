@@ -10,10 +10,11 @@ using ArmsModels.BaseModels;
 namespace ArmsServices.DataServices
 {
     public interface IContentService
-    {       
-        ContentModel Update(ContentModel model);
-        int Delete(int ContentID, string UserID);
-        IEnumerable<ContentModel> Select(int? ContentID);
+    {
+        Task<ContentModel> Update(ContentModel model);
+        Task<ContentModel> SelectByID(int ID);
+        Task<int> Delete(int ContentID, string UserID);
+        IAsyncEnumerable<ContentModel> Select(int? ContentID);
     }
 
     public class ContentService : IContentService
@@ -24,7 +25,7 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-        public ContentModel Update(ContentModel model)
+        public async Task<ContentModel> Update(ContentModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -36,66 +37,62 @@ namespace ArmsServices.DataServices
              
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-
-            ContentModel rmodel = new ContentModel();
-            using (var reader = Iservice.GetDataReader("[usp.Gc.ContentsUpdate]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Content.Update]", parameters))
             {
-                while (reader.Read())
-                {
-                    rmodel = new ContentModel
-                    {
-                        ContentID = reader.GetInt16("ContentID"),
-                        ContentName = reader.GetString("ContentName"),
-                        PrimaryUnit = reader.GetString("PrimaryUnit"),
-                        SecondaryUnit = reader.SafeGetString("SecondaryUnit"),
-                        UnitRatio = reader.IsDBNull("UnitRatio") ?null:reader.GetDecimal("UnitRatio"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
+                model = await GetModel(dr);
             }
-            return rmodel;
+            return model;
         }
-        public int Delete(int ContentID,string UserID)
+        public async Task<ContentModel> SelectByID(int ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@ContentID", ID),
+            };
+            ContentModel model = new ContentModel();
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Content.Select]", parameters))
+            {
+                model = await GetModel(dr);
+            }
+            return model;
+        }
+        public async Task<int> Delete(int ContentID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ContentID", ContentID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return Iservice.ExecuteNonQuery("[usp.Gc.ContentsDelete]", parameters);
+            return await Iservice.ExecuteNonQuery("[usp.Gc.Content.Delete]", parameters);
         }
-        public IEnumerable<ContentModel> Select(int? ContentID)
+        public async IAsyncEnumerable<ContentModel> Select(int? ContentID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ContentID", ContentID)               
             };
-
-            using (var reader = Iservice.GetDataReader("[usp.Gc.ContentsSelect]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Content.Select]", parameters))
             {
-                while (reader.Read())
-                {
-                    yield return new ContentModel
-                    {
-                        ContentID = reader.GetInt16("ContentID"),
-                        ContentName = reader.GetString("ContentName"),
-                        PrimaryUnit = reader.GetString("PrimaryUnit"),
-                        SecondaryUnit = reader.SafeGetString("SecondaryUnit"),
-                        UnitRatio = reader.IsDBNull("UnitRatio") ? null : reader.GetDecimal("UnitRatio"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
+                yield return await GetModel(dr);      
             }
+        }
+
+        private async Task<ContentModel> GetModel(IDataRecord dr)
+        {
+            return new ContentModel
+            {
+                ContentID = dr.GetInt16("ContentID"),
+                ContentName = dr.GetString("ContentName"),
+                PrimaryUnit = dr.GetString("PrimaryUnit"),
+                SecondaryUnit = dr.SafeGetString("SecondaryUnit"),
+                UnitRatio = dr.GetDecimal("UnitRatio"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
         }
 
     }

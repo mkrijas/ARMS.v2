@@ -1,0 +1,299 @@
+﻿@page "/branch"
+
+@inject IBranchService Iservice
+@inject IPlaceService Iplace
+@inject IOrderService Iorder
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+
+<MudGrid Spacing="4">
+    <MudDialog @bind-IsVisible="visible" DisableSidePadding="true" >
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add/Edit Branch
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudContainer Style="max-height: 300px; overflow-y: auto">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <EditForm id="mainForm" Model="@model" OnValidSubmit="OnValidSubmit">
+                            <ObjectGraphDataAnnotationsValidator />
+                            <MudItem>
+                                <MudTextField @bind-Value="model.BranchName" Label="Branch Name" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.BranchName)"></MudTextField>
+                            </MudItem>
+                            <MudItem>
+                                <MudAutocomplete T="PlaceModel" Label="Place" @bind-Value="model.Place" ResetValueOnEmptyText="true"
+                                                 SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"
+                                                 For="@(() => model.Place)"></MudAutocomplete>
+                            </MudItem>
+                            <MudItem>
+                                <MudCheckBox @bind-Checked="model.Operate" Label="Allow Operation" For="@(() => model.Operate)" />
+                            </MudItem>
+                            <MudItem>
+                                <MudCheckBox @bind-Checked="model.Active" Label="Is Active" For="@(() => model.Active)" />
+                            </MudItem>
+                            <MudItem>
+                                <MudAutocomplete T="BranchModel" Label="Parent Branch" @bind-Value="UpwardBranch" ResetValueOnEmptyText="true"
+                                                 SearchFunc="@SearchBranch" ToStringFunc="@(e => e == null ? null : $"{e.BranchName}")"
+                                                 Immediate="true"></MudAutocomplete>
+                            </MudItem>
+                            <MudItem>
+                                <MudTextField @bind-Value="@model.Address.Building" Label="Building" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.Address.Building)"></MudTextField>
+                            </MudItem>
+                            <MudItem>
+                                <MudTextField @bind-Value="@model.Address.Street" Label="Street" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.Address.Street)"></MudTextField>
+                            </MudItem>
+                            <MudItem>
+                                <MudTextField @bind-Value="@model.Address.City" Label="City" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.Address.City)"></MudTextField>
+                            </MudItem>
+                            <MudItem>
+                                <MudTextField @bind-Value="@model.Address.PinCode" Label="PinCode" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.Address.PinCode)"></MudTextField>
+                            </MudItem>
+
+                        </EditForm>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+        </DialogContent>
+        <DialogActions>            
+            <MudButton form="mainForm" Variant="Variant.Filled" Color="Color.Dark" ButtonType="ButtonType.Submit">Save Branch</MudButton>
+        </DialogActions>
+    </MudDialog>
+    <MudItem xs="12" md="12">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<BranchModel, bool>(search)" @bind-model="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Branches</MudText>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchBranch" Placeholder="Search Branchs... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<BranchModel, object>(x => x.BranchID)" InitialDirection="SortDirection.Ascending">ID</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<BranchModel, object>(x => x.BranchName)" InitialDirection="SortDirection.Ascending">Branch</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<BranchModel, object>(x => x.Address.Place)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<BranchModel, object>(x => x.Operate)" InitialDirection="SortDirection.Ascending">Operate</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<BranchModel, object>(x => x.Active)" InitialDirection="SortDirection.Ascending">Active</MudTableSortLabel></MudTh>
+
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Branch">@context.BranchID</MudTd>
+                <MudTd DataLabel="Tan">@context.BranchName</MudTd>
+                <MudTd DataLabel="Phone">@context.Address.Place</MudTd>
+                <MudTd DataLabel="Place">@context.Operate</MudTd>
+                <MudTd DataLabel="Pin">@context.Active</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(() => openOrders(context.BranchID))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddBox" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(() => Edit(context.BranchID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+
+                    <MudFab @onclick="@(() => Delete(context.BranchID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+
+    <MudDialog @bind-IsVisible="visibleOrders" DisableSidePadding="true">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> @collection.Find(x=> x.BranchID == ClickedBranchID).BranchName Orders
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudContainer Style="height: 300px; overflow-y: auto">
+                @if (ClickedBranchID!= 0)
+                {
+                    <MudTable Items="@AssignedOrders">
+                        <RowTemplate>
+                            <MudTd DataLabel="Order Name">
+                                <MudText Typo="Typo.h6">
+                                    @context.OrderName
+                                    <MudFab Class="float-right" @onclick="@(() => removeOrder(context.OrderID))" Color="Color.Dark" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" IconSize="Size.Small" />
+                                </MudText>
+                                
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                    <MudItem>
+                        <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="OrderAssigned" ResetValueOnEmptyText="true"
+                                         SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"
+                                         IsOpenChanged="@(e => addOrder())"></MudAutocomplete>
+                    </MudItem>
+
+                }
+            </MudContainer>
+        </DialogContent>
+    </MudDialog>
+
+</MudGrid>
+@code {    
+
+    private BranchModel model = new BranchModel() { Address = new AddressModel() { AddresseeName = "temp", Place = "temp" } };
+    private List<BranchModel> collection = new List<BranchModel>();
+    private List<PlaceModel> places = new List<PlaceModel>();
+    private List<OrderModel> AssignedOrders = new List<OrderModel>();
+    private List<OrderModel> Orders = new List<OrderModel>();
+
+    private BranchModel UpwardBranch { get; set; }
+    private OrderModel OrderAssigned { get; set; }
+
+    private string searchBranch = "";
+    private bool visible, visibleOrders;
+    private int ClickedBranchID;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await foreach (var place in Iplace.Select(0))
+        {
+            places.Add(place);
+        }
+        await GetAll();
+    }
+
+    private async Task openOrders(int BranchID)
+    {
+        ClickedBranchID = BranchID;
+        await refreshOrders();
+        visibleOrders = true;
+    }
+
+    private async Task<IEnumerable<PlaceModel>> Search(string searchString)
+    {
+        return await Task.FromResult(
+            places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    {
+        return await Task.FromResult(
+            Orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase))
+             .Where(x => AssignedOrders.All(y => y.OrderID != x.OrderID)));
+    }
+
+    private async Task<IEnumerable<BranchModel>> SearchBranch(string searchString)
+    {
+        return await Task.FromResult(collection.Where(x => x.BranchName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)).Where(x => x.BranchID != model.BranchID));
+    }
+
+    private async Task GetAll()
+    {
+        await foreach (var item in Iservice.Select())
+        {
+            collection.Add(item);
+        }
+    }
+
+
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        if (model.Place?.PlaceID == 0)
+        {
+            snackbar.Add("Place is not selected", Severity.Error);
+            return;
+        }
+        else
+        if (!places.Select(x => x.PlaceName).Contains(model.Place.PlaceName))
+        {
+            snackbar.Add("Invalid Place", Severity.Error);
+            return;
+        }
+
+        model.PlaceID = model.Place.PlaceID;
+        model.Address.Place = model.Place.PlaceName;
+        model.Address.AddresseeName = model.BranchName;
+        model.UpwardBranchID = UpwardBranch?.BranchID == null ? 0 : UpwardBranch.BranchID;
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+        try
+        {
+            model = await Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.BranchID == model.BranchID))
+            {
+                collection[collection.FindIndex(x => x.BranchID == model.BranchID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new BranchModel();
+            visible = false;
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+
+    private void Edit(int id)
+    {
+        visible = true;
+        model = collection.FirstOrDefault(x => x.BranchID == id);
+        UpwardBranch = collection.Find(x => x.BranchID == model.UpwardBranchID);
+    }
+
+    private async Task refreshOrders()
+    {
+        AssignedOrders = new List<OrderModel>();
+        Orders = new List<OrderModel>();
+        await foreach (var item in Iorder.SelectByBranch(ClickedBranchID))
+        {
+            AssignedOrders.Add(item);
+        }
+        await foreach (var item in Iorder.Select(0))
+        {
+            if (!AssignedOrders.Contains(item))
+                Orders.Add(item);
+        }
+
+    }
+
+    private async void Delete(int id)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        await Iservice.Delete(id, authprov.User.Identity.Name);
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        await GetAll();
+    }
+
+    private async Task addOrder()
+    {
+        if (OrderAssigned?.OrderID > 0)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            int result = await Iorder.BranchOrderUpdate(ClickedBranchID, OrderAssigned.OrderID, authprov.User.Identity.Name, "Update");
+            await refreshOrders();
+            OrderAssigned = new OrderModel();
+        }
+    }
+
+    private async Task removeOrder(int OrderID)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        int result = await Iorder.BranchOrderUpdate(ClickedBranchID, OrderID, authprov.User.Identity.Name, "Delete");
+        await refreshOrders();
+    }
+
+    private bool search(BranchModel model)
+    {
+        if (model.BranchName != null && model.BranchName.Contains(searchBranch, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+
+
+

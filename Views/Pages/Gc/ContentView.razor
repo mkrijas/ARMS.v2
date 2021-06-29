@@ -1,0 +1,133 @@
+﻿@page "/content"
+@inject IContentService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="8">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<ContentModel, bool>(search)" @bind-place="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Contents</MudText>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchContent" Contentholder="Search Contents... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ContentModel, object>(x=> x.ContentName)" InitialDirection="SortDirection.Ascending">Content</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ContentModel, object>(x=> x.PrimaryUnit)" InitialDirection="SortDirection.Ascending">Primary Unit</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ContentModel, object>(x=> x.SecondaryUnit)" InitialDirection="SortDirection.Ascending">Secondary Unit</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ContentModel, object>(x=> x.UnitRatio)" InitialDirection="SortDirection.Ascending">Unit Ratio</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+</HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Content">@context.ContentName</MudTd>
+                <MudTd DataLabel="Primary Unit">@context.PrimaryUnit</MudTd>
+                <MudTd DataLabel="Secondary Unit">@context.SecondaryUnit</MudTd>
+                <MudTd DataLabel="Unit Ratio">@context.UnitRatio</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> Edit(context.ContentID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.ContentID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit Contents</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField @bind-Value="model.ContentName" Label="Content" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.ContentName)"></MudTextField>
+                    <MudTextField  @bind-Value="model.PrimaryUnit" Label="Primary Unit" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.PrimaryUnit)"></MudTextField>
+                    <MudTextField @bind-Value="model.SecondaryUnit" Label="Secondary Unit" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.SecondaryUnit)"></MudTextField>
+                    <MudTextField InputType="InputType.Number" @bind-Value="model.UnitRatio" Label="Ratio" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.UnitRatio)"></MudTextField>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    private ContentModel model = new ContentModel();
+    private List<ContentModel> collection = new List<ContentModel>();
+    public List<DistrictModel> districts = new List<DistrictModel>();
+
+    private string searchContent = "";
+
+    protected override async Task OnInitializedAsync()
+    {       
+        await GetAll();
+    }   
+
+    private async Task GetAll()
+    {
+        await foreach (var place in Iservice.Select(0))
+        {
+            collection.Add(place);
+        }
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+
+        try
+        {
+            model = await Iservice.Update(model);
+
+            if (collection.Exists(x => x.ContentID == model.ContentID))
+            {
+                collection[collection.FindIndex(x => x.ContentID == model.ContentID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new ContentModel();
+            snackbar.Add("Saved Successfully", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void Edit(int id)
+    {
+        model = collection.FirstOrDefault(x => x.ContentID == id);
+    }
+    private async void Delete(int id)
+    {
+        await Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        await GetAll();
+    }
+
+    private bool search(ContentModel model)
+    {
+        if (model.ContentName != null && model.ContentName.Contains(searchContent, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+

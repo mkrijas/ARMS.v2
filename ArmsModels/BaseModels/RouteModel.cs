@@ -8,15 +8,19 @@ namespace ArmsModels.BaseModels
 {
     public class RouteModel
     {
-        public int RouteID { get; set; }
-        [Required]
-        public string RouteName { get; set; }
-        [Required]
-        public int Origin { get; set; }
-        [Required]
-        public int Via { get; set; }
-        [Required]
-        public int Destination { get; set; }
+        public RouteModel()
+        {
+            this.Origin = new PlaceModel();
+            this.Via = new PlaceModel();
+            this.Destination = new PlaceModel();
+            this.UserInfo = new SharedModels.UserInfoModel();
+        }
+
+        public int RouteID { get; set; }        
+        public string RouteName { get; set; }        
+        public PlaceModel Origin { get; set; }        
+        public PlaceModel Via { get; set; }        
+        public PlaceModel Destination { get; set; }
         
         public long? GpsRouteID { get; set; }
         [Required]

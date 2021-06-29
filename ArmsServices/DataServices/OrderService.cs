@@ -10,104 +10,130 @@ using ArmsModels.BaseModels;
 namespace ArmsServices.DataServices
 {
     public interface IOrderService
-    {       
-        OrderModel Update(OrderModel model);
-        int Delete(int OrderID, string UserID);
-        IEnumerable<OrderModel> Select(int? OrderID);
+    {
+        Task<OrderModel> Update(OrderModel model);
+        Task<OrderModel> SelectByID(int ID);
+        IAsyncEnumerable<OrderModel> SelectByBranch(int BranchID);
+        Task<int> Delete(int OrderID, string UserID);
+        IAsyncEnumerable<OrderModel> Select(int? OrderID);
+        Task<int> BranchOrderUpdate(int BranchID, int OrderID, string UserID, string operation);
+
     }
 
     public class OrderService : IOrderService
     {
         IDbService Iservice;
-
-        public OrderService(IDbService iservice)
+        IPartyService partyService;
+        IConsigneeService consigneeService;
+        IContentService contentService;
+        public OrderService(IDbService iservice, IPartyService partyService,
+            IConsigneeService consigneeService, IContentService contentService)
         {
             Iservice = iservice;
+            this.partyService = partyService;
+            this.consigneeService = consigneeService;
+            this.contentService = contentService;
         }
-        public OrderModel Update(OrderModel model)
+        public async Task<OrderModel> Update(OrderModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@OrderID", model.OrderID),
+               new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@OrderName", model.OrderName),
                new SqlParameter("@ClientID", model.ClientID),
-               new SqlParameter("@ConsigneeID", model.ConsigneeID),
                new SqlParameter("@ConsignorID", model.ConsignorID),
                new SqlParameter("@ContentID", model.ContentID),
-               new SqlParameter("@RouteID", model.RouteID),
                new SqlParameter("@OrderQuantity", model.OrderQuantity),
-               new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-
-            OrderModel rmodel = new OrderModel();
-            using (var reader = Iservice.GetDataReader("[usp.Gc.OrdersUpdate]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.gc.Order.Update]", parameters))
             {
-                while (reader.Read())
-                {
-                    rmodel = new OrderModel
-                    {
-                        ClientID = reader.GetInt32("ClientID"),
-                        ConsigneeID = reader.GetInt32("ConsigneeID"),
-                        ConsignorID = reader.GetInt32("ConsignorID"),
-                        ContentID = reader.GetInt32("ContentID"),
-                        RouteID = reader.GetInt32("RouteID"),
-                        OrderID = reader.GetInt32("OrderID"),
-                        OrderName = reader.GetString("OrderName"),  
-                        BranchID = reader.GetInt32("BranchID"),
-                        OrderQuantity = reader.GetDecimal("OrderQuantity"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
+                model = await GetModel(dr);
             }
-            return rmodel;
+            return model;
         }
-        public int Delete(int OrderID,string UserID)
+        public async Task<OrderModel> SelectByID(int ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@OrderID", OrderID),               
-               new SqlParameter("@UserID", UserID),
-            };            
-            return Iservice.ExecuteNonQuery("[usp.Gc.OrdersDelete]", parameters);
-        }
-        public IEnumerable<OrderModel> Select(int? OrderID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@OrderID", OrderID)               
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "Order"),
             };
-
-            using (var reader = Iservice.GetDataReader("[usp.Gc.OrdersSelect]", parameters))
+            OrderModel model = new OrderModel();
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.gc.Order.Update]", parameters))
             {
-                while (reader.Read())
-                {
-                    yield return new OrderModel
-                    {
-                        ClientID = reader.GetInt32("ClientID"),
-                        ConsigneeID = reader.GetInt32("ConsigneeID"),
-                        ConsignorID = reader.GetInt32("ConsignorID"),
-                        ContentID = reader.GetInt32("ContentID"),
-                        RouteID = reader.GetInt32("RouteID"),
-                        OrderID = reader.GetInt32("OrderID"),
-                        OrderName = reader.GetString("OrderName"),
-                        BranchID = reader.GetInt32("BranchID"),
-                        OrderQuantity = reader.GetDecimal("OrderQuantity"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
+                model = await GetModel(dr);
+            }
+            return model;
+        }
+        public async Task<int> Delete(int OrderID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@OrderID", OrderID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return await Iservice.ExecuteNonQuery("[usp.Gc.Order.Delete]", parameters);
+        }
+        public async IAsyncEnumerable<OrderModel> Select(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "Order"),
+            };
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Order.Select]", parameters))
+            {
+                yield return await GetModel(dr);
+            }
+        }
+        public async IAsyncEnumerable<OrderModel> SelectByBranch(int BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", BranchID),
+               new SqlParameter("@Operation", "Branch"),
+            };
+            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Order.Select]", parameters))
+            {
+                yield return await GetModel(dr);
             }
         }
 
+        public async Task<int> BranchOrderUpdate(int BranchID,int OrderID,string UserID,string operation)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@OrderID", OrderID),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Operation", operation),
+            };
+            return await Iservice.ExecuteNonQuery("[usp.Gc.Order.Branch.Update]", parameters);
+        }
+        private async Task<OrderModel> GetModel(IDataRecord dr)
+        {
+            return new OrderModel
+            {
+                ClientID = dr.GetInt32("ClientID"),
+                ConsignorID = dr.GetInt32("ConsignorID"),
+                ContentID = dr.GetInt32("ContentID"),
+                OrderID = dr.GetInt32("OrderID"),
+                OrderName = dr.GetString("OrderName"),
+                OrderQuantity = dr.GetDecimal("OrderQuantity"),
+                Party = await partyService.SelectByID(dr.GetInt32("ClientID")),
+                Content = await contentService.SelectByID(dr.GetInt32("contentID")),
+                Consignor = await consigneeService.SelectByID(dr.GetInt32("consignorID")),
+
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
     }
+
+    
 }

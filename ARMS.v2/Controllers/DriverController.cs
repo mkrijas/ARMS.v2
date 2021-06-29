@@ -41,10 +41,6 @@ namespace ARMS.v2.Controllers
         public IActionResult DeleteDriver(int DriverID, string UserID)
         {
             return Ok(_service.Delete(DriverID, UserID));
-        }
-        public IActionResult Index()
-        {
-            return View();
-        }
+        }        
     }
 }
