@@ -37,7 +37,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UpdatedBy", model.UpdatedBy??model.UserID),
                new SqlParameter("@operation", "Insert"),
             };
-            await Iservice.ExecuteNonQuery("[usp.user.UserUpdate]", parameters);
+            await Iservice.ExecuteNonQueryAsync("[usp.user.UserUpdate]", parameters);
                    
             return IdentityResult.Success;
         }
@@ -50,7 +50,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserID),
                new SqlParameter("@UpdatedBy", model.UpdatedBy),
             };
-            await Iservice.ExecuteNonQuery("[usp.user.UserDelete]", parameters);
+            await Iservice.ExecuteNonQueryAsync("[usp.user.UserDelete]", parameters);
 
             return IdentityResult.Success;
         }
@@ -65,7 +65,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@operation", "FindByID"),
             };
             
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.UserSelect]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.user.UserSelect]", parameters))
             {
                 return new UserModel
                 {
@@ -93,7 +93,7 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@operation", "FindByID"),
             };
             UserModel user = new UserModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.UserSelect]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.user.UserSelect]", parameters))
             {
                 user.UserID = dr["UserID"].ToString();
                 user.UserName = dr["UserName"].ToString();
@@ -149,7 +149,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UpdatedBy", model.UpdatedBy),
                new SqlParameter("@operation", "Update"),
             };
-            await Iservice.ExecuteNonQuery("[usp.user.UserUpdate]", parameters);
+            await Iservice.ExecuteNonQueryAsync("[usp.user.UserUpdate]", parameters);
                    
             return IdentityResult.Success;
         }
@@ -186,7 +186,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@operation", "FindByEmail"),
             };
             UserModel user = new UserModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.UserSelect]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.user.UserSelect]", parameters))
             {
                 user.UserID = dr["UserID"].ToString();
                 user.UserName = dr["UserName"].ToString();

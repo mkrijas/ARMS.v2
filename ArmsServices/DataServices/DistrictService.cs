@@ -33,7 +33,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@StateID", model.StateID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.DistrictsSelect]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.DistrictsSelect]", parameters))
                 {                    
                         model =  new DistrictModel
                         {
@@ -57,7 +57,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DistrictID", DistrictID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return await Iservice.ExecuteNonQuery("[usp.Place.DistrictsDelete]", parameters);
+            return await Iservice.ExecuteNonQueryAsync("[usp.Place.DistrictsDelete]", parameters);
         }
         public async IAsyncEnumerable<DistrictModel> Select(int? DistrictID)
         {
@@ -66,7 +66,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DistrictID", DistrictID)               
             };
 
-             await foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Place.DistrictsSelect]", parameters))
+             await foreach(IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.DistrictsSelect]", parameters))
             {
                     yield return new DistrictModel
                     {

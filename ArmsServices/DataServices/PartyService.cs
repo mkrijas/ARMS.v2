@@ -40,7 +40,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            await foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartyUpdate]", parameters))
+            await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.PartyUpdate]", parameters))
             {
                 model = await GetModel(reader);
             }
@@ -53,7 +53,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyID", ID),               
             };
             PartyModel model = new PartyModel();
-            await foreach( IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            await foreach( IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.PartySelect]", parameters))
             {
                 model = await GetModel(reader);
             }
@@ -66,7 +66,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyID", PartyID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return await Iservice.ExecuteNonQuery("[usp.Entity.PartyDelete]", parameters);
+            return await Iservice.ExecuteNonQueryAsync("[usp.Entity.PartyDelete]", parameters);
         }
         public async IAsyncEnumerable<PartyModel> Select(int? PartyID)
         {
@@ -75,7 +75,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyID", PartyID)               
             };
 
-            await foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.PartySelect]", parameters))
             {
                 yield return await GetModel(reader);
                

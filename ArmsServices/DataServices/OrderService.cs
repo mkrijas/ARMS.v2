@@ -46,7 +46,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@OrderQuantity", model.OrderQuantity),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.gc.Order.Update]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.gc.Order.Update]", parameters))
             {
                 model = await GetModel(dr);
             }
@@ -60,7 +60,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "Order"),
             };
             OrderModel model = new OrderModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.gc.Order.Update]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.gc.Order.Update]", parameters))
             {
                 model = await GetModel(dr);
             }
@@ -73,7 +73,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@OrderID", OrderID),
                new SqlParameter("@UserID", UserID),
             };
-            return await Iservice.ExecuteNonQuery("[usp.Gc.Order.Delete]", parameters);
+            return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Order.Delete]", parameters);
         }
         public async IAsyncEnumerable<OrderModel> Select(int? ID)
         {
@@ -82,7 +82,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", ID),
                new SqlParameter("@Operation", "Order"),
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Order.Select]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Order.Select]", parameters))
             {
                 yield return await GetModel(dr);
             }
@@ -94,7 +94,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", BranchID),
                new SqlParameter("@Operation", "Branch"),
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Order.Select]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Order.Select]", parameters))
             {
                 yield return await GetModel(dr);
             }
@@ -109,7 +109,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Operation", operation),
             };
-            return await Iservice.ExecuteNonQuery("[usp.Gc.Order.Branch.Update]", parameters);
+            return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Order.Branch.Update]", parameters);
         }
         private async Task<OrderModel> GetModel(IDataRecord dr)
         {

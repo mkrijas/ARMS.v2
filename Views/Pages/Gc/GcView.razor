@@ -1,0 +1,102 @@
+﻿@page "/gc"
+
+@inject IGcService Iservice
+@inject IRouteService Iroute
+@inject IOrderService Iorder
+
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="12">
+        <MudTable Items="collection" Elevation="10" Filter="new Func<GcModel, bool>(search)" >
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Gcs</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="Add" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchString" Placeholder="Search Gcs... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcModel, object>(x=> x.GcPrefix)" InitialDirection="SortDirection.Ascending">Gc Number</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcModel, object>(x=> x.GcDate)" InitialDirection="SortDirection.Ascending">GcDate</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcModel, object>(x=> x.GcTypeName)" InitialDirection="SortDirection.Ascending">GcTypeName</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcModel, object>(x=> x.RouteName)" InitialDirection="SortDirection.Ascending">RouteName</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcModel, object>(x=> x.BillQuantity)" InitialDirection="SortDirection.Ascending">BillQuantity</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcModel, object>(x=> x.UnloadedQuantity)" InitialDirection="SortDirection.Ascending">UnloadedQuantity</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcModel, object>(x=> x.ConsigneeName)" InitialDirection="SortDirection.Ascending">ConsigneeName</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Gc">@context.GcID</MudTd>
+                <MudTd DataLabel="GcDate">@context.GcDate</MudTd>
+                <MudTd DataLabel="GcTypeName">@context.GcTypeName</MudTd>
+                <MudTd DataLabel="RouteName">@context.RouteName</MudTd>
+                <MudTd DataLabel="BillQuantity">@context.BillQuantity</MudTd>
+                <MudTd DataLabel="UnloadedQuantity">@context.UnloadedQuantity</MudTd>
+                <MudTd DataLabel="Consignee">@context.ConsigneeName</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> Edit(context.GcID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.GcID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+@code {
+
+    private string searchString = "";    
+
+    private List<GcModel> collection = new List<GcModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();       
+    }
+
+    private async Task GetAll()
+    {
+        await foreach (var item in Iservice.Select(0))
+        {
+            collection.Add(item);
+        }
+    }
+
+    private void Edit(long id)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", collection.FirstOrDefault(x => x.GcID == id));
+        DialogService.Show<GcDialog>("Edit GC", parameters);
+    }
+    private void Add()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", new GcModel());
+        DialogService.Show<GcDialog>("Create New GC", parameters);
+    }
+    private async void Delete(long id)
+    {
+        await Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        await GetAll();
+    }
+
+
+    private bool search(GcModel model)
+    {
+        if (model.GcPrefix != null && model.GcPrefix.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+
+

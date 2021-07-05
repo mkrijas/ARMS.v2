@@ -1,0 +1,238 @@
+﻿
+@inject IGcService Iservice
+@inject IRouteService Iroute
+@inject IOrderService Iorder
+@inject IConsigneeService Iconsignee
+
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+
+
+<MudDialog>
+    @*<TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Create" Class="mr-3 mb-n1" />
+            Consignment
+        </MudText>
+    </TitleContent>*@
+    <DialogContent>
+                <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />                   
+                    <MudGrid Spacing="4">
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="Order" ResetValueOnEmptyText="true" IsOpenChanged="OrderSelected"
+                                             SearchFunc="SearchOrders" ToStringFunc="@(e=> e==null?null : $"{e.OrderName}")"></MudAutocomplete>
+                        </MudItem>
+                        @if (IsLoading)
+                        {
+                            <MudProgressCircular Color="Color.Primary" Style="height:70px;width:70px;" Indeterminate="true" />
+                        }
+                        else
+                        {
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete T="RouteModel" Label="Route" @bind-Value="Route" ResetValueOnEmptyText="true"
+                                             SearchFunc="SearchRoutes" ToStringFunc="@(e => e == null ? null : $"{e.RouteName}")"></MudAutocomplete>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete T="ConsigneeModel" Label="Consignor" @bind-Value="Consignor" ResetValueOnEmptyText="true"
+                                             SearchFunc="SearchConsignor" ToStringFunc="@(e => e == null ? null : $"{e.ConsigneeName}")"></MudAutocomplete>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete T="ConsigneeModel" Label="Consignee" @bind-Value="Consignee" ResetValueOnEmptyText="true"
+                                             SearchFunc="SearchConsignee" ToStringFunc="@(e => e == null ? null : $"{e.ConsigneeName}")"></MudAutocomplete>
+                        </MudItem>
+                        }
+                        <MudItem xs="12" md="4">
+                            <MudSelect Label="Select Type" @bind-Value="model.GcType" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in GcTypes)
+                                {
+                                    <MudSelectItem Value="@item.GcTypeID">@item.GcTypeName</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudDatePicker Label="Bill Date" DisableToolbar="true" Editable="true" @bind-Date="model.BillDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.BillNumber" Label="Bill Number" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.BillNumber)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.BillQuantity" Label="Bill Quantity" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.BillQuantity)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.PassNumber" Label="Pass Number" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.PassNumber)"></MudTextField>
+                        </MudItem>
+                    </MudGrid> 
+                </EditForm>           
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Gc</MudButton>
+        
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public GcModel model { get; set; }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private bool IsLoading = false;
+
+    private OrderModel Order = new OrderModel();
+    private RouteModel Route = new RouteModel();
+    private ConsigneeModel Consignor = new ConsigneeModel();
+    private ConsigneeModel Consignee = new ConsigneeModel();
+
+    private List<RouteModel> Routes = new List<RouteModel>();
+    private List<OrderModel> Orders = new List<OrderModel>();
+    private List<GcTypeModel> GcTypes = new List<GcTypeModel>();
+    private List<ConsigneeModel> Consignees = new List<ConsigneeModel>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await foreach (var item in Iservice.SelectGcTypes())
+        {
+            GcTypes.Add(item);
+        }
+        await foreach (var item in Iorder.Select(0))
+        {
+            Orders.Add(item);
+        }
+
+        if (model?.GcID > 0)
+            Order = Orders.Find(x => x.OrderID == model.OrderID);
+        else
+        if (Orders.Count == 1) Order = Orders.First();
+
+        await OrderChanged(Order);
+
+        if (model?.GcID > 0)
+        {
+            Route = Routes.Find(x=>x.RouteID == model.RouteID);
+            Consignor = Consignees.Find(x=>x.ConsigneeID == model.ConsignorID);
+            Consignee = Consignees.Find(x => x.ConsigneeID == model.ConsigneeID);
+        }
+
+    }
+
+
+    private async Task OrderChanged( OrderModel Order)
+    {
+        IsLoading = true;
+        Routes.Clear();
+        Consignees.Clear();
+        Route = null;
+        Consignor = null;
+        Consignee = null;
+
+        if (Order != null)
+        {
+            await foreach (var item in Iroute.SelectByOrder(Order?.OrderID))
+            {
+                Routes.Add(item);
+            }
+
+            await foreach (var item in Iconsignee.SelectByOrder(Order.OrderID))
+            {
+                Consignees.Add(item);
+            }
+            if (Routes.Count() == 1) Route = Routes.First();
+            if(Consignees.Where(x=> x.Consignor == true).Count() == 1)
+            {
+                Consignor = Consignees.First(x => x.Consignor == true);
+            }
+            if (Consignees.Where(x => x.Consignor == false).Count() == 1)
+            {
+                Consignee = Consignees.First(x => x.Consignor == false);
+            }
+        }
+        IsLoading = false;
+    }
+
+    private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
+    {
+        return await Task.FromResult(Consignees.Where(x => x.Consignor == false).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task<IEnumerable<ConsigneeModel>> SearchConsignor(string searchString)
+    {
+        return await Task.FromResult(Consignees.Where(x => x.Consignor == true).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    {
+        return await Task.FromResult(Orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString)
+    {
+        return await Task.FromResult(Routes.Where(x => x.RouteName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        if (!Orders.Select(x => x.OrderName).Contains(Order.OrderName))
+        {
+            snackbar.Add("Invalid Order", Severity.Error);
+            return;
+        }
+        else
+             if (!Routes.Select(x => x.RouteName).Contains(Route.RouteName))
+        {
+            snackbar.Add("Invalid Route", Severity.Error);
+            return;
+        }
+
+        model.OrderID = Order.OrderID;
+        model.RouteID = Route.RouteID;
+        model.ConsignorID = Consignor.ConsigneeID;
+        model.ConsigneeID = Consignee.ConsigneeID;
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+        try
+        {
+            model = await Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(model));
+
+            //if (collection.Exists(x => x.GcID == model.GcID))
+            //{
+            //    collection[collection.FindIndex(x => x.GcID == model.GcID)] = model;
+            //}
+            //else
+            //{
+            //    collection.Add(model);
+            //}
+            model = new GcModel();
+            Order = new OrderModel();
+            Route = new RouteModel();
+            Consignor = new ConsigneeModel();
+            Consignee = new ConsigneeModel();
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private async Task OrderSelected(bool IsOpenChanged)
+    {
+        if(!IsOpenChanged)
+        {
+            await OrderChanged(Order);
+        }
+    }
+}

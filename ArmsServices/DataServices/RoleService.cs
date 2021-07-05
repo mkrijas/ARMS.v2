@@ -28,7 +28,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RoleName", model.RoleName),
                new SqlParameter("@UpdatedBy", model.UpdatedBy),
             };
-            await Iservice.ExecuteNonQuery("[usp.user.RoleUpdate]", parameters);
+            await Iservice.ExecuteNonQueryAsync("[usp.user.RoleUpdate]", parameters);
 
             return IdentityResult.Success;
         }
@@ -42,7 +42,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RoleName", model.RoleName),
                new SqlParameter("@UpdatedBy", model.UpdatedBy),
             };
-            await Iservice.ExecuteNonQuery("[usp.user.RoleUpdate]", parameters);
+            await Iservice.ExecuteNonQueryAsync("[usp.user.RoleUpdate]", parameters);
 
             return IdentityResult.Success;
         }
@@ -55,7 +55,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RoleID", model.RoleID),
                new SqlParameter("@UpdatedBy", model.UpdatedBy),
             };
-            await Iservice.ExecuteNonQuery("[usp.user.RoleDelete]", parameters);
+            await Iservice.ExecuteNonQueryAsync("[usp.user.RoleDelete]", parameters);
             return IdentityResult.Success;
         }
 
@@ -96,7 +96,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@operation", "FindById"),
             };
             RoleModel role = new RoleModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Role.RoleSelect]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Role.RoleSelect]", parameters))
             {
                 role.RoleID = dr["RoleID"].ToString();
                 role.RoleName = dr["RoleName"].ToString();
@@ -114,7 +114,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@operation", "FindByName"),
             };
             RoleModel role = new RoleModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Role.RoleSelect]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Role.RoleSelect]", parameters))
             {
                 role.RoleID =dr["RoleID"].ToString();
                 role.RoleName = dr["RoleName"].ToString();

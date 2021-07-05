@@ -37,7 +37,7 @@ namespace ArmsServices.DataServices
              
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Content.Update]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Content.Update]", parameters))
             {
                 model = await GetModel(dr);
             }
@@ -50,7 +50,7 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@ContentID", ID),
             };
             ContentModel model = new ContentModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Content.Select]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Content.Select]", parameters))
             {
                 model = await GetModel(dr);
             }
@@ -63,7 +63,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ContentID", ContentID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return await Iservice.ExecuteNonQuery("[usp.Gc.Content.Delete]", parameters);
+            return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Content.Delete]", parameters);
         }
         public async IAsyncEnumerable<ContentModel> Select(int? ContentID)
         {
@@ -71,7 +71,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ContentID", ContentID)               
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Content.Select]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Content.Select]", parameters))
             {
                 yield return await GetModel(dr);      
             }

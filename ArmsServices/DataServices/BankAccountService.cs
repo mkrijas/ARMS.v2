@@ -36,7 +36,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             
-           await foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Entity.BankAccountsUpdate]", parameters))
+           await foreach(IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Entity.BankAccountsUpdate]", parameters))
             {                
                     model = new BankAccountModel
                     {
@@ -62,7 +62,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BankAccountID", BankAccountID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return await Iservice.ExecuteNonQuery("[usp.Entity.BankAccountsDelete]", parameters);
+            return await Iservice.ExecuteNonQueryAsync("[usp.Entity.BankAccountsDelete]", parameters);
         }
         public async IAsyncEnumerable<BankAccountModel> Select(int? BankAccountID)
         {
@@ -71,7 +71,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BankAccountID", BankAccountID)               
             };
 
-            await foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Entity.BankAccountsSelect]", parameters))
+            await foreach(IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Entity.BankAccountsSelect]", parameters))
             {              
                     yield return new BankAccountModel
                     {

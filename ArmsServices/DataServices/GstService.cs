@@ -45,7 +45,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             
-            await foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.GstUpdate]", parameters))
+            await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.GstUpdate]", parameters))
             {               
                     model = new GstModel
                     {
@@ -76,7 +76,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@GstID", GstID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return await Iservice.ExecuteNonQuery("[usp.Entity.GstDelete]", parameters);
+            return await Iservice.ExecuteNonQueryAsync("[usp.Entity.GstDelete]", parameters);
         }
         public async IAsyncEnumerable<GstModel> Select(int? GstID)
         {
@@ -86,7 +86,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "SelectByGst")
             };
 
-            await foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.GstSelect]", parameters))
+            await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.GstSelect]", parameters))
             {
                     yield return new GstModel
                     {
@@ -118,7 +118,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "SelectByParty"),
             };
 
-            await foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.GstSelect]", parameters))
+            await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.GstSelect]", parameters))
             {
                 yield return new GstModel
                 {

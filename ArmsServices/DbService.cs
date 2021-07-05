@@ -11,8 +11,11 @@ namespace ArmsServices
 {
     public interface IDbService
     {
-        IAsyncEnumerable<IDataRecord> GetDataReader(string procedureName, List<SqlParameter> parameters);
-        Task<int> ExecuteNonQuery(string procedureName, List<SqlParameter> parameters);
+
+        IAsyncEnumerable<IDataRecord> GetDataReaderAsync(string procedureName, List<SqlParameter> parameters);
+        Task<int> ExecuteNonQueryAsync(string procedureName, List<SqlParameter> parameters);
+        IEnumerable<IDataRecord> GetDataReader(string procedureName, List<SqlParameter> parameters);
+        int ExecuteNonQuery(string procedureName, List<SqlParameter> parameters);
     }
 
     public class DbService:IDbService
@@ -24,7 +27,7 @@ namespace ArmsServices
             this._logger = logger;
             this.ConnectionString = configuration.GetConnectionString("ArmsDB");
         }
-        public async IAsyncEnumerable<IDataRecord> GetDataReader(string procedureName, List<SqlParameter> parameters)
+        public async IAsyncEnumerable<IDataRecord> GetDataReaderAsync(string procedureName, List<SqlParameter> parameters)
         {
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))
             {
@@ -47,11 +50,8 @@ namespace ArmsServices
             }            
         }
 
-        public async Task<int> ExecuteNonQuery(string procedureName, List<SqlParameter> parameters)
-        {
-            int rows;
-            try
-            {
+        public async Task<int> ExecuteNonQueryAsync(string procedureName, List<SqlParameter> parameters)
+        {          
                 using (SqlConnection connection = new SqlConnection(this.ConnectionString))
                 {
                     SqlCommand cmd = connection.CreateCommand();
@@ -63,16 +63,48 @@ namespace ArmsServices
                         cmd.Parameters.AddRange(parameters.ToArray());
                     }
                     await connection.OpenAsync();
-                    rows = await cmd.ExecuteNonQueryAsync();
+                    return await cmd.ExecuteNonQueryAsync();
+                }
+            
+        }
+
+        public IEnumerable<IDataRecord> GetDataReader(string procedureName, List<SqlParameter> parameters)
+        {
+            using (SqlConnection connection = new SqlConnection(this.ConnectionString))
+            {
+                connection.Open();
+                using (SqlCommand cmd = new SqlCommand(procedureName, connection))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    if (parameters != null && parameters.Count > 0)
+                    {
+                        cmd.Parameters.AddRange(parameters.ToArray());
+                    }
+                    SqlDataReader dr = null;
+                    dr = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+                    while (dr.Read())
+                    {
+                        yield return dr;
+                    }
                 }
             }
-            catch (Exception ex)
+        }
+        public int ExecuteNonQuery(string procedureName, List<SqlParameter> parameters)
+        {
+            using (SqlConnection connection = new SqlConnection(this.ConnectionString))
             {
-                Console.WriteLine(ex.Message);
-                throw;
-            }
+                SqlCommand cmd = connection.CreateCommand();
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = procedureName;
 
-            return rows;
+                if (parameters != null && parameters.Count > 0)
+                {
+                    cmd.Parameters.AddRange(parameters.ToArray());
+                }
+                connection.Open();
+                return cmd.ExecuteNonQuery();
+            }
         }
     }
 }

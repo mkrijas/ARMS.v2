@@ -1,0 +1,239 @@
+﻿@page "/tariff"
+
+@inject ITariffService Iservice
+@inject IRouteService Iroute
+@inject IOrderService Iorder
+
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="12">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit Tariffs</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="4">
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="Order" ResetValueOnEmptyText="true"
+                                             SearchFunc="SearchOrders" ToStringFunc="@(e=> e==null?null : $"{e.OrderName}")"
+                                             ></MudAutocomplete>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete T="RouteModel" Label="Route" @bind-Value="Route" ResetValueOnEmptyText="true"
+                                             SearchFunc="SearchRoutes" ToStringFunc="@(e=> e==null?null : $"{e.RouteName}")"
+                                             ></MudAutocomplete>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudSelect Label="Select Type" @bind-Value="model.TariffTypeID" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in TariffTypes)
+                                {
+                                <MudSelectItem Value="@item.TariffTypeID">@item.TariffTypeName</MudSelectItem>                                
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudSelect Label="Select Formula" @bind-Value="model.TariffFormulaID" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in Formulas)
+                                {
+                                    <MudSelectItem Value="@item.FormulaID">@item.Formula</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.TariffRate" Label="Tariff Rate" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.TariffRate)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.TruckAxles" Label="Axles Limit(if any)" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.TruckAxles)"></MudTextField>
+                        </MudItem>
+                    </MudGrid>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Tariff</MudButton>
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" md="12">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<TariffModel, bool>(search)" @bind-model="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Tariffs</MudText>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchString" Placeholder="Search Tariffs... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffName)" InitialDirection="SortDirection.Ascending">Tariff</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffRate)" InitialDirection="SortDirection.Ascending">Rate</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffTypeName)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Formula)" InitialDirection="SortDirection.Ascending">Formula</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.RouteName)" InitialDirection="SortDirection.Ascending">Route</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.OrderName)" InitialDirection="SortDirection.Ascending">Orders</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TruckAxles)" InitialDirection="SortDirection.Ascending">Axles</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Tariff">@context.TariffID</MudTd>
+                <MudTd DataLabel="Rate">@context.TariffRate</MudTd>
+                <MudTd DataLabel="Type">@context.TariffTypeID</MudTd>
+                <MudTd DataLabel="Formula">@context.TariffFormulaID</MudTd>
+                <MudTd DataLabel="Route">@context.RouteID</MudTd>
+                <MudTd DataLabel="Order">@context.OrderID</MudTd>
+                <MudTd DataLabel="Axles">@context.TruckAxles</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> Edit(context.TariffID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.TariffID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+
+
+
+</MudGrid>
+@code {
+
+    private TariffModel model = new TariffModel() {TariffName="none" };
+
+    private string searchString = "";
+
+    private OrderModel Order = new OrderModel();
+    private RouteModel Route = new RouteModel();
+    private TariffFormulaModel Formula = new TariffFormulaModel();
+    private TariffTypeModel TariffType = new TariffTypeModel();
+
+    private List<TariffModel> collection = new List<TariffModel>();
+
+    private List<TariffFormulaModel> Formulas = new List<TariffFormulaModel>();
+    private List<TariffTypeModel> TariffTypes = new List<TariffTypeModel>();
+    private List<RouteModel> Routes = new List<RouteModel>();
+    private List<OrderModel> Orders = new List<OrderModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await foreach (var item in Iroute.Select(0))
+        {
+            Routes.Add(item);
+        }
+        await foreach (var item in Iorder.Select(0))
+        {
+            Orders.Add(item);
+        }
+        await foreach (var item in Iservice.SelectFormulas())
+        {
+            Formulas.Add(item);
+        }
+        await foreach (var item in Iservice.SelectTariffTypes())
+        {
+            TariffTypes.Add(item);
+        }
+        await GetAll();
+        StateHasChanged();
+    }
+
+    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    {
+        return await Task.FromResult(Orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString)
+    {
+        return await Task.FromResult(Routes.Where(x => x.RouteName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+    private async Task<IEnumerable<TariffTypeModel>> SearchTariffTypes(string searchString)
+    {
+        return await Task.FromResult(TariffTypes.Where(x => x.TariffTypeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task<IEnumerable<TariffFormulaModel>> SearchFormulas(string searchString)
+    {
+        return await Task.FromResult(Formulas.Where(x => x.Formula.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+
+    private async Task GetAll()
+    {
+        await foreach (var route in Iservice.Select())
+        {
+            collection.Add(route);
+        }
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        if (!Orders.Select(x => x.OrderName).Contains(Order.OrderName))
+        {
+            snackbar.Add("Invalid Order", Severity.Error);
+            return;
+        }
+        else
+             if (!Routes.Select(x => x.RouteName).Contains(Route.RouteName))
+        {
+            snackbar.Add("Invalid Route", Severity.Error);
+            return;
+        }
+
+        model.OrderID = Order.OrderID;
+        model.RouteID = Route.RouteID;
+        model.TariffName = Order.OrderName+"("+Route.RouteName+")";
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+        try
+        {
+            model = await Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.TariffID == model.TariffID))
+            {
+                collection[collection.FindIndex(x => x.TariffID == model.TariffID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new TariffModel();
+            Order = new OrderModel();
+            Route = new RouteModel();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void Edit(int id)
+    {
+        model = collection.FirstOrDefault(x => x.TariffID == id);
+        Order = Orders.FirstOrDefault(x => x.OrderID == model.OrderID);
+        Route = Routes.FirstOrDefault(x => x.RouteID == model.RouteID);
+
+    }
+    private async void Delete(int id)
+    {
+        await Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        await GetAll();
+    }
+
+
+    private bool search(TariffModel model)
+    {
+        if (model.TariffName != null && model.TariffName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+
+

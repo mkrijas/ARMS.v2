@@ -27,11 +27,11 @@
                             <MudTextField @bind-Value="model.Mobile" Label="Mobile" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.Mobile)"></MudTextField>
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudAutocomplete T="PlaceModel" Label="Place" @bind-Value="model.Place" ResetValueOnEmptyText="true"
+                            <MudAutocomplete T="PlaceModel" Label="Place" @bind-Value="Place" ResetValueOnEmptyText="true"
                                              SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="model.Order" ResetValueOnEmptyText="true"
+                            <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="Order" ResetValueOnEmptyText="true"
                                              SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
                         </MudItem>
 
@@ -71,7 +71,7 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.ConsigneeName)" InitialDirection="SortDirection.Ascending">Name</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Address.Place)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Order.OrderName)" InitialDirection="SortDirection.Ascending">Order</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Consignor)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
 
                 <MudTh>Actions</MudTh>
             </HeaderContent>
@@ -80,7 +80,7 @@
                 <MudTd DataLabel="Name">@context.ConsigneeName</MudTd>
                 <MudTd DataLabel="Place">@context.Address.Place</MudTd>
                 <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
-                <MudTd DataLabel="Order">@context.Order.OrderName</MudTd>
+                <MudTd DataLabel="Type">@(context.Consignor == true?"Consignor":"Consignee") </MudTd>
                 <MudTd DataLabel="">
                     <MudFab @onclick="@(() => Edit(context.ConsigneeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(() => Delete(context.ConsigneeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
@@ -95,6 +95,9 @@
 @code {
 
     private ConsigneeModel model = new ConsigneeModel() { Address = new AddressModel() { AddresseeName = "temp", Place = "temp" } };
+    private OrderModel Order = new OrderModel();
+    private PlaceModel Place = new PlaceModel();
+
     private List<ConsigneeModel> collection = new List<ConsigneeModel>();
     private List<PlaceModel> places = new List<PlaceModel>();
     private List<OrderModel> orders = new List<OrderModel>();
@@ -143,21 +146,21 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-        if (model.Place?.PlaceID == 0)
+        if (Place?.PlaceID == 0)
         {
             snackbar.Add("Place is not selected", Severity.Error);
             return;
         }
         else
-        if (!places.Select(x => x.PlaceName).Contains(model.Place.PlaceName))
+        if (!places.Select(x => x.PlaceName).Contains(Place.PlaceName))
         {
             snackbar.Add("Invalid Place", Severity.Error);
             return;
         }
 
-        model.PlaceID = model.Place.PlaceID;
-        model.Address.Place = model.Place.PlaceName;
-        model.OrderID = model.Order.OrderID;
+        model.PlaceID = Place.PlaceID;
+        model.Address.Place = Place.PlaceName;
+        model.OrderID = Order.OrderID;
         model.Address.AddresseeName = model.ConsigneeName;
         CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
         model.Consignor = cs.SetFunc(customstr).Value;
@@ -178,6 +181,8 @@
                 collection.Add(model);
             }
             model = new ConsigneeModel();
+            Order = new OrderModel();
+            Place = new PlaceModel();
         }
         catch (Exception ex)
         {
@@ -189,6 +194,8 @@
         model = collection.FirstOrDefault(x => x.ConsigneeID == id);
         CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
         customstr = cs.GetFunc(model.Consignor);
+        Order = orders.FirstOrDefault(x => x.OrderID == model.OrderID);
+        Place = places.FirstOrDefault(x => x.PlaceID == model.PlaceID);
     }
     private async void Delete(int id)
     {

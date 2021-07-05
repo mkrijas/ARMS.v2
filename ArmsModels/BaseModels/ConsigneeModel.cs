@@ -10,7 +10,8 @@ namespace ArmsModels.BaseModels
     {
         public ConsigneeModel()
         {
-            UserInfo = new SharedModels.UserInfoModel();
+            UserInfo = new SharedModels.UserInfoModel();            
+            Address = new AddressModel();
         }
 
         public int ConsigneeID { get; set; }
@@ -23,10 +24,9 @@ namespace ArmsModels.BaseModels
         public int OrderID { get; set; }
         public bool Consignor { get; set; }
         public int AddressID { get; set; }
-        public OrderModel Order { get; set; }
+        public string OrderName { get; set; }
         [ValidateComplexType]
         public AddressModel Address { get; set; }
-        public PlaceModel Place { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 }

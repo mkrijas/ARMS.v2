@@ -42,7 +42,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UpwardBranchID", model.UpwardBranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Branch.Update]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Entity.Branch.Update]", parameters))
             {
                 model = await GetModel(dr);
             }
@@ -55,7 +55,7 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@BranchID", ID),
             };
             BranchModel model = new BranchModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Branch.Select]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Entity.Branch.Select]", parameters))
             {
                 model = await GetModel(dr);
             }
@@ -68,11 +68,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return await Iservice.ExecuteNonQuery("[usp.Entity.Branch.Delete]", parameters);
+            return await Iservice.ExecuteNonQueryAsync("[usp.Entity.Branch.Delete]", parameters);
         }
         public async IAsyncEnumerable<BranchModel> Select()
         {
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Branch.Select]",null))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Entity.Branch.Select]",null))
             {
                 yield return await GetModel(dr);
             }

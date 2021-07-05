@@ -15,14 +15,17 @@ namespace ArmsServices.DataServices
         Task<ConsigneeModel> SelectByID(int ID);
         Task<int> Delete(int ConsigneeID, string UserID);
         IAsyncEnumerable<ConsigneeModel> Select(int? ConsigneeID);
+        IAsyncEnumerable<ConsigneeModel> SelectByOrder(int ID);
     }
     public class ConsigneeService : IConsigneeService
     {
         IDbService Iservice;
+        IAddressService Iaddress;
 
-        public ConsigneeService(IDbService iservice)
+        public ConsigneeService(IDbService iservice,IAddressService addressService)
         {
             Iservice = iservice;
+            Iaddress = addressService;
         }
         public async Task<int> Delete(int ConsigneeID, string UserID)
         {
@@ -31,17 +34,17 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ConsigneeID", ConsigneeID),
                new SqlParameter("@UserID", UserID),
             };
-            return await Iservice.ExecuteNonQuery("[usp.Gc.Consignee.Delete]", parameters);
+            return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Consignee.Delete]", parameters);
 
         }
         public async IAsyncEnumerable<ConsigneeModel> Select(int? ConsigneeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ConsigneeID", ConsigneeID)
+               new SqlParameter("@ID", ConsigneeID)
             };
 
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Consignee.Select]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Consignee.Select]", parameters))
             {
                 yield return await GetModel(dr);
             }
@@ -49,18 +52,21 @@ namespace ArmsServices.DataServices
         }
         public async Task<ConsigneeModel> Update(ConsigneeModel model)
         {
+            model.Address.UserInfo = model.UserInfo;
+            AddressModel address = await Iaddress.Update(model.Address);
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ConsigneeID", model.ConsigneeID),
-               new SqlParameter("@ConsigneeNo", model.ConsigneeName),
-               new SqlParameter("@BillDate", model.Consignor),
-               new SqlParameter("@BillNumber", model.Mobile),
-               new SqlParameter("@BillQuantity", model.OrderID),
-               new SqlParameter("@BranchID", model.PlaceID),
+               new SqlParameter("@ConsigneeName", model.ConsigneeName),
+               new SqlParameter("@Consignor", model.Consignor),
+               new SqlParameter("@Mobile", model.Mobile),
+               new SqlParameter("@OrderID", model.OrderID),
+               new SqlParameter("@PlaceID", model.PlaceID),
+               new SqlParameter("@AddressID", address.AddressID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Consignee.Update]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Consignee.Update]", parameters))
             {
                 model = await GetModel(dr);
             }
@@ -71,14 +77,29 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ConsigneeID", ID),              
+               new SqlParameter("@ID", ID),              
             };
             ConsigneeModel model = new ConsigneeModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Consignee.Select]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Consignee.Select]", parameters))
             {
                 model = await GetModel(dr);
             }
             return model;
+        }
+
+        public async IAsyncEnumerable<ConsigneeModel> SelectByOrder(int ID)
+        {                         
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "ByOrder"),
+            };
+
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Consignee.Select]", parameters))
+            {
+                yield return await GetModel(dr);
+            }
+
         }
 
         private async Task<ConsigneeModel> GetModel(IDataRecord dr)
@@ -89,6 +110,7 @@ namespace ArmsServices.DataServices
                 ConsigneeName = dr.SafeGetString("ConsigneeName"),
                 Consignor = dr.GetBoolean("Consignor"),
                 Mobile = dr.SafeGetString("Mobile"),
+                Address = await Iaddress.SelectByID(dr.GetInt32("AddressID")),
                 OrderID = dr.GetInt32("OrderID"),
                 PlaceID = dr.GetInt32("PlaceID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

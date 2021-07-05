@@ -54,11 +54,11 @@ namespace Views
             //services.AddScoped<IStateService, StateService>();
             services.AddScoped<IDistrictService, DistrictService>();
             services.AddScoped<IContentService, ContentService>();
-            //services.AddScoped<ITariffService, TariffService>();
+            services.AddScoped<ITariffService, TariffService>();
             //services.AddScoped<ITripService, TripService>();
             //services.AddScoped<ITruckService, TruckService>();
             //services.AddScoped<ITruckTypeService, TruckTypeService>();
-            //services.AddScoped<IGcService, GcService>();
+            services.AddScoped<IGcService, GcService>();
             services.AddScoped<IAddressService, AddressService>();
             //services.AddScoped<IBankAccountService, BankAccountService>();
             services.AddScoped<IGstService, GstService>();

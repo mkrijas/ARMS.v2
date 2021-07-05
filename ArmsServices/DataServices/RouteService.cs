@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         Task<RouteModel> SelectByID(int ID);
         Task<int> Delete(int RouteID, string UserID);
         IAsyncEnumerable<RouteModel> Select(int? RouteID);
+        IAsyncEnumerable<RouteModel> SelectByOrder(int? OrderID);
     }
 
     public class RouteService : IRouteService
@@ -42,7 +43,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Via", model.Via.PlaceID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.RoutesUpdate]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Update]", parameters))
             {
                 model = await GetModel(dr);
             }
@@ -52,10 +53,11 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@RouteID", ID),              
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "ByRoute"),
             };
             RouteModel model = new RouteModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.RoutesUpdate]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Update]", parameters))
             {
                 model = await GetModel(dr);
             }
@@ -68,20 +70,33 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RouteID", RouteID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return await Iservice.ExecuteNonQuery("[usp.Gc.RoutesDelete]", parameters);
+            return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Route.Delete]", parameters);
         }
         public async IAsyncEnumerable<RouteModel> Select(int? RouteID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@RouteID", RouteID)               
+               new SqlParameter("@ID", RouteID) ,
+               new SqlParameter("@Operation", "ByRoute"),
             };
-            await foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Gc.RoutesSelect]", parameters))
+            await foreach(IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Select]", parameters))
             {
                 yield return await GetModel(dr);
             }
         }
 
+        public async IAsyncEnumerable<RouteModel> SelectByOrder(int? OrderID = 0)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", OrderID),
+               new SqlParameter("@Operation", "ByOrder"),
+            };
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Select]", parameters))
+            {
+                yield return await GetModel(dr);
+            }
+        }
         private async Task<RouteModel> GetModel(IDataRecord dr)
         {
             return new RouteModel
