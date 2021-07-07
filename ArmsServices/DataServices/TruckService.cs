@@ -14,8 +14,11 @@ namespace ArmsServices.DataServices
         TruckModel Update(TruckModel model);
         int Delete(int TruckID, string UserID);
         IEnumerable<TruckModel> Select(int? TruckID);
+        TruckModel SelectByID(int ID);
+        TruckRegistrationModel GetRegistration(int TruckID);
+        TruckRegistrationModel GetRegistration(string RegNo);
         int Sold(int TruckID, DateTime SoldDate);
-        int ChangeRegistration(TruckRegistrationModel model);
+        int ChangeRegistration(TruckRegistrationModel model);        
         int AssignDriver(int TruckID, int DriverID);
         int RemoveDriver(int TruckID, int DriverID);
     }
@@ -33,6 +36,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TruckID", model.TruckID),
+               new SqlParameter("@HomeBranchID", model.HomeBranchID),
                new SqlParameter("@BodyType", model.BodyType),
                new SqlParameter("@ChassisNumber", model.ChassisNumber),
                new SqlParameter("@EngineNumber", model.EngineNumber),
@@ -46,36 +50,19 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            TruckModel rmodel = new TruckModel();
-            using (var reader = Iservice.GetDataReader("[usp.Truck.TrucksUpdate]", parameters))
+            model.CurrentRegistration.UserInfo = model.UserInfo;
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Truck.Update]", parameters))
             {
-                while (reader.Read())
+                model.CurrentRegistration.TruckID = dr.GetInt32("TruckID");                
+                int reg = ChangeRegistration(model.CurrentRegistration);
+                model = GetModel(dr);
+                if (reg > 0)
                 {
-                    rmodel = new TruckModel
-                    {
-                        BodyType = reader.GetString("BodyType"),
-                        ChassisNumber = reader.GetString("ChassisNumber"),
-                        EngineNumber = reader.GetString("EngineNumber"),
-                        FuelTankCapacity = reader.GetDecimal("FuelTankCapacity"),
-                        FuelType = reader.GetString("FuelType"),
-                        TruckID = reader.GetInt32("TruckID"),
-                        GpsDeviceID = reader.IsDBNull("GpsDeviceID") ?null: reader.GetInt64("GpsDeviceID"),
-                        ManufacturedYear = reader.GetInt16("ManufacturedYear"),
-                        PurchaseDate = reader.GetDateTime("PurchaseDate"),
-                        RegNumber = reader.GetString("RegNumber"),
-                        SoldDate = reader.GetDateTime("SoldDate"),
-                        TransmissionType = reader.GetString("TransmissionType"),
-                        TruckTypeID = reader.GetInt16("TruckTypeID"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
+                    model.RegNo = model.CurrentRegistration.RegNo;
                 }
-            }
-            return rmodel;
+            }           
+            return model;
         }
         public int Delete(int TruckID,string UserID)
         {
@@ -84,7 +71,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckID", TruckID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return Iservice.ExecuteNonQuery("[usp.Truck.TrucksDelete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Truck.Truck.Delete]", parameters);
         }
         public IEnumerable<TruckModel> Select(int? TruckID)
         {
@@ -93,33 +80,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckID", TruckID)               
             };
 
-            using (var reader = Iservice.GetDataReader("[usp.Truck.TrucksSelect]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Truck.Select]", parameters))
             {
-                while (reader.Read())
-                {
-                    yield return new TruckModel
-                    {
-                        BodyType = reader.GetString("BodyType"),
-                        ChassisNumber = reader.GetString("ChassisNumber"),
-                        EngineNumber = reader.GetString("EngineNumber"),
-                        FuelTankCapacity = reader.GetDecimal("FuelTankCapacity"),
-                        FuelType = reader.GetString("FuelType"),
-                        TruckID = reader.GetInt32("TruckID"),
-                        GpsDeviceID = reader.IsDBNull("GpsDeviceID") ? null : reader.GetInt64("GpsDeviceID"),
-                        ManufacturedYear = reader.GetInt16("ManufacturedYear"),
-                        PurchaseDate = reader.GetDateTime("PurchaseDate"),
-                        RegNumber = reader.GetString("RegNumber"),
-                        SoldDate = reader.GetDateTime("SoldDate"),
-                        TransmissionType = reader.GetString("TransmissionType"),
-                        TruckTypeID = reader.GetInt16("TruckTypeID"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
+                yield return GetModel(dr);              
             }
         }
 
@@ -130,7 +93,15 @@ namespace ArmsServices.DataServices
 
         public int ChangeRegistration(TruckRegistrationModel model)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {               
+               new SqlParameter("@TruckID", model.TruckID),
+               new SqlParameter("@RegNo", model.RegNo),
+               new SqlParameter("@EffectFrom", model.EffectFrom),
+               new SqlParameter("@EffectTo", model.EffectTo),              
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Truck.Registration.Update]", parameters);
         }
 
         public int AssignDriver(int TruckID, int DriverID)
@@ -141,6 +112,97 @@ namespace ArmsServices.DataServices
         public int RemoveDriver(int TruckID, int DriverID)
         {
             throw new NotImplementedException();
+        }
+
+        private TruckModel GetModel(IDataRecord reader)
+        {
+            return new TruckModel
+            {
+                RegNo = reader.GetString("RegNo"),
+                HomeBranchID = reader.GetInt32("HomeBranchID"),
+                BodyType = reader.GetString("BodyType"),
+                ChassisNumber = reader.GetString("ChassisNumber"),
+                EngineNumber = reader.GetString("EngineNumber"),
+                FuelTankCapacity = reader.GetDecimal("FuelTankCapacity"),
+                FuelType = reader.GetString("FuelType"),
+                TruckID = reader.GetInt32("TruckID"),
+                GpsDeviceID = reader.GetInt64("GpsDeviceID"),
+                ManufacturedYear = reader.GetInt16("ManufacturedYear"),
+                PurchaseDate = reader.GetDateTime("PurchaseDate"),               
+                SoldDate = reader.GetDateTime("SoldDate"),
+                TransmissionType = reader.GetString("TransmissionType"),
+                TruckTypeID = reader.GetInt16("TruckTypeID"),
+                TruckType = reader.GetString("TruckType"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = reader.GetByte("RecordStatus"),
+                    TimeStampField = reader.GetDateTime("TimeStamp"),
+                    UserID = reader.GetString("UserID"),
+                },
+            };
+        }
+
+        private TruckRegistrationModel GetRegModel(IDataRecord reader)
+        {
+            return new TruckRegistrationModel
+            {
+                RegID = reader.GetInt32("RegID"),
+                RegNo = reader.GetString("RegNo"),
+                EffectFrom = reader.GetDateTime("EffectFrom"),
+                EffectTo = reader.GetDateTime("EffectTo"),
+                TruckID = reader.GetInt32("TruckID"),
+                RC = reader.GetString("RC"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = reader.GetByte("RecordStatus"),
+                    TimeStampField = reader.GetDateTime("TimeStamp"),
+                    UserID = reader.GetString("UserID"),
+                },
+            };
+        }
+
+        public TruckModel SelectByID(int ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", ID)
+            };
+            TruckModel model = new TruckModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Truck.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
+        public TruckRegistrationModel GetRegistration(int RegID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@String", RegID.ToString()),
+               new SqlParameter("@Operation", "SelectByTruckID"),
+            };
+            TruckRegistrationModel model = new TruckRegistrationModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Registration.Select]", parameters))
+            {
+                model = GetRegModel(dr);
+            }
+            return model;
+        }
+
+        public TruckRegistrationModel GetRegistration(string RegNo)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@String", RegNo),
+               new SqlParameter("@Operation", "SelectByRegNo"),
+            };
+            TruckRegistrationModel model = new TruckRegistrationModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Registration.Select]", parameters))
+            {
+                model = GetRegModel(dr);
+            }
+            return model; 
         }
     }
 }

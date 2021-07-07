@@ -1,0 +1,139 @@
+﻿@page "/truckType"
+@inject ITruckTypeService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="8">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<TruckTypeModel, bool>(search)" @bind-TruckType="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">TruckTypes</MudText>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchTruckType" TruckTypeholder="Search TruckTypes... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<TruckTypeModel, object>(x=> x.TruckType)" InitialDirection="SortDirection.Ascending">TruckType</MudTableSortLabel></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckTypeModel, object>(x=> x.UnladenWeight)" InitialDirection="SortDirection.Ascending">UnladenWeight</MudTableSortLabel></MudTh></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckTypeModel, object>(x=> x.GrossWeight)" InitialDirection="SortDirection.Ascending">GrossWeight</MudTableSortLabel></MudTh></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckTypeModel, object>(x=> x.Axles)" InitialDirection="SortDirection.Ascending">Axles</MudTableSortLabel></MudTh></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckTypeModel, object>(x=> x.wheels)" InitialDirection="SortDirection.Ascending">wheels</MudTableSortLabel></MudTh></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="TruckType">@context.TruckType</MudTd>
+                <MudTd DataLabel="UnladenWeight">@context.UnladenWeight</MudTd>
+                <MudTd DataLabel="GrossWeight">@context.GrossWeight</MudTd>
+                <MudTd DataLabel="Axles">@context.Axles</MudTd>
+                <MudTd DataLabel="wheels">@context.wheels</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> Edit(context.TruckTypeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.TruckTypeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit TruckTypes</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField @bind-Value="@model.TruckType" Label="Truck Type" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.TruckType)"></MudTextField>
+                    <MudTextField @bind-Value="@model.UnladenWeight" Label="Unladen Weight" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.UnladenWeight)"></MudTextField>
+                    <MudTextField @bind-Value="@model.GrossWeight" Label="Gross Weight" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.GrossWeight)"></MudTextField>
+                    <MudTextField @bind-Value="@model.Axles" Label="Axles" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.Axles)"></MudTextField>
+                    <MudTextField @bind-Value="@model.wheels" Label="Wheels" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => model.wheels)"></MudTextField>
+                    <br />
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save TruckType</MudButton>
+
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+
+
+</MudGrid>
+@code {
+
+    private TruckTypeModel model = new TruckTypeModel();
+
+    private string searchTruckType = "";
+    private List<TruckTypeModel> collection = new List<TruckTypeModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Run(()=>  GetAll());
+    }
+
+    private void GetAll()
+    {
+        foreach (var item in Iservice.Select(0))
+        {
+            collection.Add(item);
+        }
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        //try
+        //{
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        try
+        {
+            model = Iservice.Update(model);
+
+
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.TruckTypeID == model.TruckTypeID))
+            {
+                collection[collection.FindIndex(x => x.TruckTypeID == model.TruckTypeID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new TruckTypeModel();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void Edit(short id)
+    {
+        model = Iservice.SelectByID(id);
+    }
+    private void Delete(short id)
+    {
+        Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        StateHasChanged();
+    }
+
+
+    private bool search(TruckTypeModel TruckType)
+    {
+        if (TruckType.TruckType != null && TruckType.TruckType.Contains(searchTruckType, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+

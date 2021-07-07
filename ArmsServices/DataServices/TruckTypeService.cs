@@ -13,7 +13,8 @@ namespace ArmsServices.DataServices
     {       
         TruckTypeModel Update(TruckTypeModel model);
         int Delete(int TruckTypeID, string UserID);
-        IEnumerable<TruckTypeModel> Select(int? TruckTypeID);
+        TruckTypeModel SelectByID(short TruckTypeID);
+        IEnumerable<TruckTypeModel> Select(short? TruckTypeID);
     }
 
     public class TruckTypeService : ITruckTypeService
@@ -33,33 +34,15 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Axles", model.Axles),
                new SqlParameter("@GrossWeight", model.GrossWeight),
                new SqlParameter("@UnladenWeight", model.UnladenWeight),
-               new SqlParameter("@wheels", model.wheels),              
+               new SqlParameter("@wheels", model.wheels),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            TruckTypeModel rmodel = new TruckTypeModel();
-            using (var reader = Iservice.GetDataReader("[usp.Truck.TruckTypesUpdate]", parameters))
+            foreach (IDataReader dr in Iservice.GetDataReader("[usp.Truck.Type.Update]", parameters))
             {
-                while (reader.Read())
-                {
-                    rmodel = new TruckTypeModel
-                    {
-                        TruckTypeID = reader.GetInt16("TruckTypeID"),
-                        TruckType = reader.GetString("TruckType"),
-                        Axles = reader.GetByte("Axles"),
-                        GrossWeight = reader.GetDecimal("GrossWeight"),
-                        UnladenWeight = reader.GetDecimal("UnladenWeight"),
-                        wheels = reader.GetByte("wheels"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
+                model = GetModel(dr);
             }
-            return rmodel;
+            return model;
         }
         public int Delete(int TruckTypeID,string UserID)
         {
@@ -68,36 +51,53 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckTypeID", TruckTypeID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return Iservice.ExecuteNonQuery("[usp.Gc.TruckTypesDelete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Truck.Type.Delete]", parameters);
         }
-        public IEnumerable<TruckTypeModel> Select(int? TruckTypeID)
+        public IEnumerable<TruckTypeModel> Select(short? TruckTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TruckTypeID", TruckTypeID)               
             };
 
-            using (var reader = Iservice.GetDataReader("[usp.Truck.TruckTypesSelect]", parameters))
+            foreach (IDataReader dr in Iservice.GetDataReader("[usp.Truck.Type.Select]", parameters))
             {
-                while (reader.Read())
-                {
-                    yield return new TruckTypeModel
-                    {
-                        TruckTypeID = reader.GetInt16("TruckTypeID"),
-                        TruckType = reader.GetString("TruckType"),
-                        Axles = reader.GetByte("Axles"),
-                        GrossWeight = reader.GetDecimal("GrossWeight"),
-                        UnladenWeight = reader.GetDecimal("UnladenWeight"),
-                        wheels = reader.GetByte("wheels"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };
-                }
+                yield return GetModel(dr);
+            }           
+        }
+
+        public TruckTypeModel SelectByID(short TruckTypeID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckTypeID", TruckTypeID)
+            };
+            TruckTypeModel model = new TruckTypeModel();
+            foreach (IDataReader dr in Iservice.GetDataReader("[usp.Truck.Type.Select]", parameters))
+            {
+                model = GetModel(dr);
             }
+            return model;
+        }
+
+
+        private TruckTypeModel  GetModel(IDataRecord reader)
+        {
+           return new TruckTypeModel
+            {
+                TruckTypeID = reader.GetInt16("TruckTypeID"),
+                TruckType = reader.GetString("TruckType"),
+                Axles = reader.GetByte("Axles"),
+                GrossWeight = reader.GetDecimal("GrossWeight"),
+                UnladenWeight = reader.GetDecimal("UnladenWeight"),
+                wheels = reader.GetByte("wheels"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = reader.GetByte("RecordStatus"),
+                    TimeStampField = reader.GetDateTime("TimeStamp"),
+                    UserID = reader.GetString("UserID"),
+                },
+            };
         }
 
     }

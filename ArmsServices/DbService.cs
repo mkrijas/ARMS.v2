@@ -44,7 +44,7 @@ namespace ArmsServices
             
                     while (await dr.ReadAsync())
                     {
-                        yield return (IDataRecord)dr;
+                        yield return dr;
                     }
                 }
             }            
@@ -82,11 +82,12 @@ namespace ArmsServices
                     }
                     SqlDataReader dr = null;
                     dr = cmd.ExecuteReader(CommandBehavior.CloseConnection);
-
+                    
                     while (dr.Read())
                     {
                         yield return dr;
                     }
+                    dr.Close();
                 }
             }
         }
@@ -103,7 +104,7 @@ namespace ArmsServices
                     cmd.Parameters.AddRange(parameters.ToArray());
                 }
                 connection.Open();
-                return cmd.ExecuteNonQuery();
+                return cmd.ExecuteNonQuery();               
             }
         }
     }

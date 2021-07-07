@@ -13,8 +13,8 @@ namespace ArmsModels.BaseModels
         [StringLength(maximumLength: 50)]
         public string RegNo { get; set; }
         public int TruckID { get; set; }
-        public DateTime EffectFrom { get; set; }
-        public DateTime EffectTo { get; set; }
+        public DateTime? EffectFrom { get; set; }
+        public DateTime? EffectTo { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
         public string RC { get; set; }  //Url of RC doc      

@@ -14,7 +14,7 @@ namespace ArmsServices.DataServices
         Task<BranchModel> Update(BranchModel model);
         Task<BranchModel> SelectByID(int ID);
         Task<int> Delete(int AddressID, string UserID);
-        IAsyncEnumerable<BranchModel> Select();
+        IEnumerable<BranchModel> Select();
 
     }
     public class BranchService: IBranchService
@@ -70,11 +70,11 @@ namespace ArmsServices.DataServices
             };
             return await Iservice.ExecuteNonQueryAsync("[usp.Entity.Branch.Delete]", parameters);
         }
-        public async IAsyncEnumerable<BranchModel> Select()
+        public IEnumerable<BranchModel> Select()
         {
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Entity.Branch.Select]",null))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Branch.Select]",null))
             {
-                yield return await GetModel(dr);
+                yield return Task.Run(async()=> await GetModel(dr)).Result;
             }
         }
 
@@ -88,9 +88,7 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 Operate = dr.GetBoolean("Operate"),
                 PlaceID = dr.GetInt32("PlaceID"),
-                UpwardBranchID = dr.GetInt32("UpwardBranchID"),
-                Place = await _placeService.SelectByID(dr.GetInt32("PlaceID")),
-                Address = await _addressService.SelectByID(dr.GetInt32("AddressID")),
+                UpwardBranchID = dr.GetInt32("UpwardBranchID"),                
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

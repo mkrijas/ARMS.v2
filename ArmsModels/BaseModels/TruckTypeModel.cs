@@ -8,6 +8,11 @@ namespace ArmsModels.BaseModels
 {
     public class TruckTypeModel
     {
+        public TruckTypeModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+        }
+
         public short TruckTypeID { get; set; }
         [Required][StringLength(maximumLength:50)]
         public string TruckType { get; set; }

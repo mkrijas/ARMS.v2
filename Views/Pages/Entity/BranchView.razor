@@ -3,6 +3,7 @@
 @inject IBranchService Iservice
 @inject IPlaceService Iplace
 @inject IOrderService Iorder
+@inject IAddressService Iaddress
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -65,7 +66,7 @@
     <MudItem xs="12" md="12">
         @if (isLoaded)
         {
-        <MudTable Items="@collection" Elevation="10" Filter="new Func<BranchModel, bool>(search)" @bind-model="model">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<BranchModel, bool>(search)" >
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Branches</MudText>
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(() => { visible = true; })"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
@@ -167,7 +168,7 @@
         {
             places.Add(place);
         }
-        await GetAll();
+        GetAll();
     }
 
     private async Task openOrders(int BranchID)
@@ -195,11 +196,11 @@
         return await Task.FromResult(collection.Where(x => x.BranchName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)).Where(x => x.BranchID != model.BranchID));
     }
 
-    private async Task GetAll()
+    private void GetAll()
     {
-        await foreach (var item in Iservice.Select())
+        foreach (var item in Iservice.Select())
         {
-            collection.Add(item);            
+            collection.Add(item);
         }
         isLoaded = true;
     }
@@ -253,6 +254,8 @@
     {
         visible = true;
         model = collection.FirstOrDefault(x => x.BranchID == id);
+        model.Address = Task.Run(async()=> await Iaddress.SelectByID(model.AddressID)).Result;
+        model.Place = Task.Run(async () => await Iplace.SelectByID(model.PlaceID)).Result;
         UpwardBranch = collection.Find(x => x.BranchID == model.UpwardBranchID);
     }
 
@@ -277,7 +280,7 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         await Iservice.Delete(id, authprov.User.Identity.Name);
         snackbar.Add("Deleted Successfully", Severity.Success);
-        await GetAll();
+        GetAll();
     }
 
     private async Task addOrder()

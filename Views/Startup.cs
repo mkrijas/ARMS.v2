@@ -39,8 +39,10 @@ namespace Views
             //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
             services.AddBlazoredSessionStorage();
 
+            services.AddSingleton<TruckDataArrayModel>();
 
-            services.AddScoped<IDbService, DbService>();
+
+            services.AddSingleton<IDbService, DbService>();
             services.AddScoped<IBranchService, BranchService>();
             services.AddScoped<IPlaceService, PlaceService>();
             services.AddScoped<IRouteService, RouteService>();
@@ -56,8 +58,8 @@ namespace Views
             services.AddScoped<IContentService, ContentService>();
             services.AddScoped<ITariffService, TariffService>();
             //services.AddScoped<ITripService, TripService>();
-            //services.AddScoped<ITruckService, TruckService>();
-            //services.AddScoped<ITruckTypeService, TruckTypeService>();
+            services.AddScoped<ITruckService, TruckService>();
+            services.AddScoped<ITruckTypeService, TruckTypeService>();
             services.AddScoped<IGcService, GcService>();
             services.AddScoped<IAddressService, AddressService>();
             //services.AddScoped<IBankAccountService, BankAccountService>();
