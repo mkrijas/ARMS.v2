@@ -38,6 +38,7 @@ namespace Views
             services.AddControllersWithViews();
             //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
             services.AddBlazoredSessionStorage();
+            services.AddHttpClient();            
 
             services.AddSingleton<TruckDataArrayModel>();
 
@@ -47,11 +48,10 @@ namespace Views
             services.AddScoped<IPlaceService, PlaceService>();
             services.AddScoped<IRouteService, RouteService>();
             services.AddScoped<IConsigneeService, ConsigneeService>();
-            //services.AddScoped<IDriverService, DriverService>();
-            //services.AddScoped<IDriverBranchPeriodsService, DriverBranchPeriodsService>();
-            //services.AddScoped<IDriverFaultService, DriverFaultService>();
-            //services.AddScoped<IDriverLeaveService, DriverLeaveService>();
-            //services.AddScoped<IDriverLicenceService, DriverLicenceService>();
+            services.AddScoped<IDriverService, DriverService>();            
+            services.AddScoped<IDriverFaultService, DriverFaultService>();
+            services.AddScoped<IDriverLeaveService, DriverLeaveService>();
+            services.AddScoped<IDriverLicenceService, DriverLicenceService>();
             services.AddScoped<IOrderService, OrderService>();
             //services.AddScoped<IStateService, StateService>();
             services.AddScoped<IDistrictService, DistrictService>();
@@ -62,9 +62,10 @@ namespace Views
             services.AddScoped<ITruckTypeService, TruckTypeService>();
             services.AddScoped<IGcService, GcService>();
             services.AddScoped<IAddressService, AddressService>();
-            //services.AddScoped<IBankAccountService, BankAccountService>();
+            services.AddScoped<IBankAccountService, BankAccountService>();
             services.AddScoped<IGstService, GstService>();
             services.AddScoped<IPartyService, PartyService>();
+            services.AddScoped<IUserService, UserService>();
             //services.AddScoped<IPartyDirectorService, PartyDirectorService>();
 
 

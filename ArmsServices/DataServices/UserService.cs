@@ -12,6 +12,70 @@ using Microsoft.Extensions.Configuration;
 
 namespace ArmsServices.DataServices
 {
+    public interface IUserService
+    {
+        IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID);
+        int SetBranchesNRoles(List<UserBranchRoleModel> lst,string UserID);
+        int DeleteBranchesNRoles(UserBranchRoleModel model,string UserID);
+    }
+
+    public class UserService : IUserService
+    {
+        IDbService Iservice;        
+        public UserService(IDbService iservice)
+        {
+            Iservice = iservice;            
+        }
+        public int DeleteBranchesNRoles(UserBranchRoleModel model,string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", model.User.UserID),
+               new SqlParameter("@BranchID", model.Branch.BranchID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.user.BranchRole.Delete]", parameters);
+        }
+
+        public IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", UserID),               
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.BranchRole.Select]", parameters))
+            {
+                yield return new UserBranchRoleModel
+                {
+                    User = new UserModel() {UserID = dr.GetString("UserID") },
+                    Branch = new BranchModel() { BranchID = dr.GetInt32("BranchID"),BranchName = dr.GetString("BranchName")},
+                    Role = new RoleModel() { RoleID = dr.GetString("RoleID") },   
+                };
+            }
+        }
+
+        public int SetBranchesNRoles(List<UserBranchRoleModel> lst,string UserID)
+        {
+            DataTable dt = new DataTable();
+            dt.Columns.Add("User");
+            dt.Columns.Add("Branch");
+            dt.Columns.Add("Role");
+            foreach(UserBranchRoleModel item in lst)
+            {
+                DataRow row = dt.NewRow();
+                row["User"] = item.User.UserID;
+                row["Branch"] = item.Branch.BranchID;
+                row["Role"] = item.Role.RoleID;
+            }
+            
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@BranchRoles", dt )               
+            };
+             return Iservice.ExecuteNonQuery("[usp.user.BranchRole.Update]", parameters);           
+        }
+    }
+
     public class UserStore : IUserStore<UserModel>, IUserEmailStore<UserModel>, IUserPhoneNumberStore<UserModel>,
     IUserTwoFactorStore<UserModel>, IUserPasswordStore<UserModel>,IUserRoleStore<UserModel>
     {

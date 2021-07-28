@@ -1,0 +1,284 @@
+﻿@page "/Driver"
+@inject IDriverService Iservice
+@inject IPartyService Iparty
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@using System.IO
+@using System.Security.AccessControl
+
+@using Microsoft.AspNetCore.Hosting
+@inject IWebHostEnvironment env
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@using MimeTypes
+
+@inject ISessionStorageService sessionStorage
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="12">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit Drivers</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="4">
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.DriverName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.DriverName)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="@model.Mobile" Label="Mobile" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Mobile)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <InputFile id="driverImage" OnChange="UploadDriverImage" hidden />
+                            <MudFab HtmlTag="label" Label="Photo"
+                                    Color="Color.Success"
+                                    Icon="@Icons.Filled.AttachFile"
+                                    for="driverImage" />
+                            @driverImage?.Name
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudDatePicker Label="DOB" DisableToolbar="true" Editable="true" @bind-Date="model.DateOfBirth" HelperText="Enter Date" DateFormat="dd/MM/yyyy" For="@(() => model.DateOfBirth)" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.AdhaarNo" Label="ADHAAR No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.AdhaarNo)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <InputFile id="adhaarImage" OnChange="UploadAdhaarImage" hidden />
+                            <MudFab HtmlTag="label"
+                                    Color="Color.Success"
+                                    Icon="@Icons.Filled.AttachFile"
+                                    for="adhaarImage" />
+                            @adhaarImage?.Name
+                        </MudItem>
+
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.FestivalBonus" Label="Bonus For" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.FestivalBonus)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.AlternateContactPerson" Label="Immediate Contact Person" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.AlternateContactPerson)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.AlternateContactMobile" Label="His/Her Mobile" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.AlternateContactMobile)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete T="PartyModel" Variant="Variant.Outlined" Label="Cotractor" @bind-Value="model.DriverAgent" ResetValueOnEmptyText="true"
+                                             SearchFunc="@SearchParty" ToStringFunc="@(e => e == null ? null : $"{e.PartyName}")"></MudAutocomplete>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.subtitle2">Address Info</MudText>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="@model.Address.Building" Label="Building" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Building)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="@model.Address.Street" Label="Street" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Street)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="@model.Address.Place" Label="Place" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Place)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="@model.Address.City" Label="City" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.City)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="@model.Address.PinCode" Label="PinCode" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.PinCode)"></MudTextField>
+                        </MudItem>
+                    </MudGrid>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Driver</MudButton>
+
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" md="12">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<DriverModel, bool>(search)" @bind-model="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Drivers</MudText>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchDriver" Placeholder="Search Drivers... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverName)" InitialDirection="SortDirection.Ascending">Driver</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">TAN</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverAgent.PartyName)" InitialDirection="SortDirection.Ascending">Phone</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DateOfBirth)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
+                <MudTh>Image</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Driver">@context.DriverName</MudTd>
+                <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
+                <MudTd DataLabel="PartyName">@context.DriverAgent.PartyName</MudTd>
+                <MudTd DataLabel="DOB">@context.DateOfBirth</MudTd>
+                <MudTd DataLabel="Image">@context.Address.PinCode</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(() => Edit(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(() => Delete(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+
+
+</MudGrid>
+@code
+
+{
+
+    IBrowserFile driverImage;
+    IBrowserFile adhaarImage;
+
+
+    private DriverModel model = new DriverModel();
+    private List<DriverModel> collection = new List<DriverModel>();
+    private List<PartyModel> parties = new List<PartyModel>();
+
+    private string searchDriver = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await foreach (var party in Iparty.Select(0))
+        {
+            parties.Add(party);
+        }
+        GetAll();
+    }
+
+
+    private async Task<IEnumerable<PartyModel>> SearchParty(string searchString)
+    {
+        return await Task.FromResult(parties.Where(x => x.PartyName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+
+    private void GetAll()
+    {
+        collection = new List<DriverModel>();
+        foreach (var item in Iservice.Select())
+        {
+            collection.Add(item);
+        }
+    }
+
+
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        if (!parties.Select(x => x.PartyName).Contains(model.DriverAgent.PartyName))
+        {
+            snackbar.Add("Invalid Party", Severity.Error);
+            return;
+        }
+
+        model.DriverAgentID = model.DriverAgent.PartyID;
+        model.Address.AddresseeName = model.DriverName;
+        model.HomeBranchID = await sessionStorage.GetItemAsync<int>("BranchID");
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+        try
+        {
+            string AdhaarPath = Configuration.GetSection("FilePath")["Adhaar"];
+            string PhotoPath = Configuration.GetSection("FilePath")["DriverPhoto"];
+            model.AdhaarImage = await UploadImage(adhaarImage, model.AdhaarNo, AdhaarPath);
+            model.DriverImage = await UploadImage(driverImage, model.DriverName, PhotoPath);
+
+            //$"{env.WebRootPath}\\images"
+            model = Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.DriverID == model.DriverID))
+            {
+                collection[collection.FindIndex(x => x.DriverID == model.DriverID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new DriverModel();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+    private void Edit(int id)
+    {
+        model = collection.FirstOrDefault(x => x.DriverID == id);
+    }
+    private async void Delete(int id)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        int result = Iservice.Delete(id, authprov.User.Identity.Name);
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        //GetAll(party.PartyName);
+    }
+
+    private bool search(DriverModel model)
+    {
+        if (model.DriverName != null && model.DriverName.Contains(searchDriver, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+
+
+
+    private void UploadDriverImage(InputFileChangeEventArgs e)
+    {
+        driverImage = e.File;
+    }
+
+    private void UploadAdhaarImage(InputFileChangeEventArgs e)
+    {
+        adhaarImage = e.File;
+    }
+
+
+
+    private async Task<string> UploadImage(IBrowserFile file, string filename, string dir)
+    {
+        string path = null;
+        if (file != null && file.Size > 0)
+        {
+            filename = filename + MimeTypeMap.GetExtension(file.ContentType);
+            DirectoryInfo di = new DirectoryInfo(dir);
+            if (!di.Exists)
+            {
+                System.IO.Directory.CreateDirectory(dir);
+
+                //var authorizationRules = security.GetAccessRules(true, true, typeof(NTAccount));
+                //var owner = security.GetOwner(typeof(NTAccount));
+            }
+            DirectorySecurity security = di.GetAccessControl();
+            //security.AddAccessRule(new FileSystemAccessRule(@"CHICKEN\Rijas", FileSystemRights.FullControl, AccessControlType.Allow));
+            //di.SetAccessControl(security);
+
+            path = Path.Combine(dir, filename);
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+            Stream stream = file.OpenReadStream();
+            FileStream fs = File.Create(path);
+            await stream.CopyToAsync(fs);
+            stream.Close();
+            fs.Close();
+        }
+        return path;
+    }
+}
+
+
+
+

@@ -8,6 +8,11 @@ namespace ArmsModels.BaseModels
 {
     public class PartyDirectorModel
     {
+        public PartyDirectorModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+        }
+
         public int PartyDirectorID { get; set; }
         [Required]
         public int PartyID { get; set; }
@@ -20,6 +25,6 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(maximumLength: 10)]
         public string Pan { get; set; }
-public SharedModels.UserInfoModel UserInfo { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 }
