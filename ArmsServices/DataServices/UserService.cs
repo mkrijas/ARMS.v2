@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
@@ -17,6 +18,8 @@ namespace ArmsServices.DataServices
         IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID);
         int SetBranchesNRoles(List<UserBranchRoleModel> lst,string UserID);
         int DeleteBranchesNRoles(UserBranchRoleModel model,string UserID);
+        UserBranchRoleModel GetCurrentBranchRole(string UserID);
+        int SetCurrentBranchRole(UserBranchRoleModel model);
     }
 
     public class UserService : IUserService
@@ -35,7 +38,6 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.user.BranchRole.Delete]", parameters);
         }
-
         public IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -51,7 +53,7 @@ namespace ArmsServices.DataServices
                     Role = new RoleModel() { RoleID = dr.GetString("RoleID") },   
                 };
             }
-        }
+        }        
 
         public int SetBranchesNRoles(List<UserBranchRoleModel> lst,string UserID)
         {
@@ -74,10 +76,39 @@ namespace ArmsServices.DataServices
             };
              return Iservice.ExecuteNonQuery("[usp.user.BranchRole.Update]", parameters);           
         }
+
+        public UserBranchRoleModel GetCurrentBranchRole(string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", UserID),
+            };
+            UserBranchRoleModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.BranchRole.Current.Select]", parameters))
+            {
+                model = new UserBranchRoleModel
+                {
+                    User = new UserModel() { UserID = dr.GetString("UserID") },
+                    Branch = new BranchModel() { BranchID = dr.GetInt32("BranchID"), BranchName = dr.GetString("BranchName") },
+                    Role = new RoleModel() { RoleID = dr.GetString("RoleID") },
+                };
+            }
+            return model;
+        }
+        public int SetCurrentBranchRole(UserBranchRoleModel model)
+        { 
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", model.User.UserID),
+               new SqlParameter("@BranchID", model.Branch.BranchID ),
+               new SqlParameter("@RoleID", model.Role.RoleID ),
+            };
+            return Iservice.ExecuteNonQuery("[usp.user.BranchRole.Current.Update]", parameters);
+        }
     }
 
     public class UserStore : IUserStore<UserModel>, IUserEmailStore<UserModel>, IUserPhoneNumberStore<UserModel>,
-    IUserTwoFactorStore<UserModel>, IUserPasswordStore<UserModel>,IUserRoleStore<UserModel>
+    IUserTwoFactorStore<UserModel>, IUserPasswordStore<UserModel>,IUserRoleStore<UserModel>, IUserClaimStore<UserModel>
     {
 
         IDbService Iservice;
@@ -359,6 +390,75 @@ namespace ArmsServices.DataServices
             //
             IList<UserModel> users = new List<UserModel>();
             return Task.FromResult(users);
+        }
+
+        public async Task<IList<Claim>> GetClaimsAsync(UserModel user, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", user.UserID),               
+            };
+            IList<Claim> claims = new List<Claim>();
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.user.UserClaims.Select]", parameters))
+            {
+                claims.Add(new Claim(dr.GetString("ClaimType"), dr.GetString("ClaimValue")));
+            }
+            return claims;
+        }
+
+        public Task AddClaimsAsync(UserModel user, IEnumerable<Claim> claims, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            DataTable dt = new();
+            dt.Columns.Add("ClaimType");
+            dt.Columns.Add("ClaimValue");
+            foreach(Claim claim in claims)
+            {
+                DataRow row = dt.NewRow();
+                row["ClaimType"] = claim.Type;
+                row["ClaimValue"] = claim.Value;
+                dt.Rows.Add(row);
+            }            
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", user.UserID),
+               new SqlParameter("@Claims", dt),
+            };
+            Iservice.GetDataReaderAsync("[usp.user.UserClaims.Update]", parameters);
+            return Task.FromResult(0);
+        }
+
+        public Task ReplaceClaimAsync(UserModel user, Claim claim, Claim newClaim, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            DataTable dt = new();
+            dt.Columns.Add("ClaimType");
+            dt.Columns.Add("ClaimValue");           
+                DataRow row = dt.NewRow();
+                row["ClaimType"] = newClaim.Type;
+                row["ClaimValue"] = newClaim.Value;
+                dt.Rows.Add(row);
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", user.UserID),
+               new SqlParameter("@Claims", dt),
+            };
+            Iservice.GetDataReaderAsync("[usp.user.UserClaims.Update]", parameters);
+            return Task.FromResult(0);
+        }
+
+        public Task RemoveClaimsAsync(UserModel user, IEnumerable<Claim> claims, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IList<UserModel>> GetUsersForClaimAsync(Claim claim, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -19,8 +19,8 @@ namespace ArmsServices.DataServices
         TruckRegistrationModel GetRegistration(string RegNo);
         int Sold(int TruckID, DateTime SoldDate);
         int ChangeRegistration(TruckRegistrationModel model);        
-        int AssignDriver(int TruckID, int DriverID);
-        int RemoveDriver(int TruckID, int DriverID);
+        int UpdateDriver(int TruckID, int DriverID,bool AssignedStatus,string UserID);
+        int? GetAssignedDriver(int TruckID);
     }
 
     public class TruckService : ITruckService
@@ -102,16 +102,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Truck.Registration.Update]", parameters);
-        }
-
-        public int AssignDriver(int TruckID, int DriverID)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int RemoveDriver(int TruckID, int DriverID)
-        {
-            throw new NotImplementedException();
         }
 
         private TruckModel GetModel(IDataRecord reader)
@@ -203,6 +193,33 @@ namespace ArmsServices.DataServices
                 model = GetRegModel(dr);
             }
             return model; 
+        }
+        public int UpdateDriver(int TruckID, int DriverID, bool AssignedStatus,string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@DriverID", DriverID),
+               new SqlParameter("@AssignedStatus", AssignedStatus),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Truck.Driver.Assignment.Update]", parameters);
+        }
+        int? ITruckService.GetAssignedDriver(int TruckID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),               
+            };
+            int? DriverID = null;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Driver.Assignment.Select]", parameters))
+            {
+                 if(!dr.GetBoolean("AssignedStatus"))
+                {
+                    DriverID = dr.GetInt32("DriverID");
+                }
+            }
+            return DriverID;
         }
     }
 }

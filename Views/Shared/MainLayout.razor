@@ -1,4 +1,10 @@
 ﻿
+@inject IDialogService DialogService
+@inject AuthenticationStateProvider auth
+@inject IUserService _user
+@using System.Security.Claims
+@inject NavigationManager uriHelper;
+
 @inherits LayoutComponentBase
 <CascadingValue Value="this">
     <div class="page">
@@ -12,35 +18,66 @@
 
         <div class="main">
             <div class="top-row px-4">
+                <AuthorizeView>
+                    <Authorized>
+                        <div style="text-align:center">
+                            <MudFab Icon="@Icons.Material.Filled.Navigation" Label="@context.User.Claims.FirstOrDefault(x => x.Type == "BranchName")?.Value"
+                                    DisableElevation="true" OnClick="@(async ()=> await changeBranch(@context.User.Identity.Name))" />
+                        </div>
+                    </Authorized>
+                </AuthorizeView>
 
-                <div style="text-align:center"><h5> @BranchName</h5></div>
                 <LoginDisplay />
             </div>
-
             <div class="content px-4">
                 @Body
             </div>
         </div>
     </div>
-    </CascadingValue>
-    <MudDialogProvider FullWidth="true"
-                       MaxWidth="MaxWidth.Small"
-                       CloseButton="true"
-                       DisableBackdropClick="true"
-                       NoHeader="false"
-                       Position="DialogPosition.Center" />
-    <MudThemeProvider />
-    <MudSnackbarProvider />
-    @code
+</CascadingValue>
+<MudDialogProvider FullWidth="true"
+                   MaxWidth="MaxWidth.Small"
+                   CloseButton="true"
+                   DisableBackdropClick="true"
+                   NoHeader="false"
+                   Position="DialogPosition.Center" />
+<MudThemeProvider />
+<MudSnackbarProvider />
+@code
 {
-        //[Parameter] public RenderFragment ChildContent { get; set; }
 
-        public string BranchName { get; private set; }
-
-        public void SetBranchName(string branchName)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            BranchName = branchName;
-            StateHasChanged();
-        }
+            var authprov = await auth.GetAuthenticationStateAsync();
+            if (authprov.User.Identity.IsAuthenticated)
+            {
+                if (!authprov.User.HasClaim(x => x.Type == "BranchName"))
+                {
+                    await changeBranch(authprov.User.Identity.Name);
+                }
 
+
+            }
+        }
     }
+
+    async Task changeBranch(string UserID)
+    {
+        DialogOptions options = new DialogOptions() { CloseButton = false };
+
+        DialogParameters parameters = new DialogParameters();
+        parameters.Add("UserID", UserID);
+
+        var dialog = DialogService.Show<ChooseBranch>("Select A Branch", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            UserBranchRoleModel BranchRole = (UserBranchRoleModel)result.Data;
+            _user.SetCurrentBranchRole(BranchRole);
+            uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+        }
+    }
+}
+

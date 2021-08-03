@@ -14,6 +14,7 @@ namespace ArmsModels.BaseModels
         }
 
         public long GcID { get; set; }
+        public long GcSetID { get; set; }
         public long? TripID { get; set; }
         public string GcPrefix { get; set; }
         public int? GcNo { get; set; }

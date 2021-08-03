@@ -26,6 +26,7 @@ namespace ArmsModels.BaseModels
             public bool TwoFactorEnabled { get; set; }
         public byte RecordStatus { set; get; }
         public string UpdatedBy { get; set; }
+        public int LoggedBranch { get; set; }
     }
 
     public class RoleModel

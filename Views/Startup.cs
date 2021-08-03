@@ -2,6 +2,7 @@ using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
 using Blazored.SessionStorage;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -74,6 +75,7 @@ namespace Views
             services.AddTransient<IRoleStore<RoleModel>, RoleStore>();
             services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddDefaultTokenProviders();
+            services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation > ();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

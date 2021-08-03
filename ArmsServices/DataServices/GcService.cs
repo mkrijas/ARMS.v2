@@ -43,8 +43,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@GcType", model.GcType),
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@RouteID", model.RouteID),
-               new SqlParameter("@PassNumber", model.PassNumber),
-               new SqlParameter("@TripID", model.TripID),
+               new SqlParameter("@PassNumber", model.PassNumber),               
                new SqlParameter("@UnloadedQuantity", model.UnloadedQuantity),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -106,6 +105,7 @@ namespace ArmsServices.DataServices
             return new GcModel
             {
                 GcID = dr.GetInt64("GcID"),
+                GcSetID = dr.GetInt64("GcSetID"),
                 BillDate = dr.GetDateTime("BillDate"),
                 BillNumber = dr.GetString("BillNumber"),
                 BillQuantity = dr.GetDecimal("BillQuantity"),
