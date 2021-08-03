@@ -19,6 +19,7 @@ namespace ArmsServices.DataServices
         EventModel GetCurrentEvent(int TruckID);
         EventModel GetPreviousEvent(long EventID);
         IEnumerable<EventTypeModel> GetEventTypes();
+        EventTypeModel GetEventType(int EventTypeID);
 
     }
 
@@ -88,6 +89,23 @@ namespace ArmsServices.DataServices
             };
         }
 
+
+        private EventTypeModel GetEventType(IDataRecord dr)
+        {
+            return new EventTypeModel()
+            {
+                DisplayOrder = dr.GetInt32("DisplayOrder"),
+                EventStatusText = dr.GetString("EventStatusText"),
+                EventTypeID = dr.GetInt32("EventTypeID"),
+                EventTypeName = dr.GetString("EventTypeName"),
+                IsDriverRelated = dr.GetBoolean("IsDriverRelated"),
+                IsDriverRequired = dr.GetBoolean("IsDriverRequired"),
+                IsGcRelated = dr.GetBoolean("IsGcRelated"),
+                IsStationary = dr.GetBoolean("IsStationary"),
+                IsTripRelated = dr.GetBoolean("IsTripRelated"),
+                IsBlocking = dr.GetBoolean("IsBlocking"),
+            };
+        }
         
         public EventModel SelectByID(long EventID)
         {
@@ -96,7 +114,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@EventID", EventID),
                new SqlParameter("@Operation", "SelectByID"),
             };
-            EventModel model = new();
+            EventModel model = null;
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Select]", parameters))
             {
                 model = GetModel(dr);
@@ -111,21 +129,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckID", TruckID),
                new SqlParameter("@Operation", "NextPossibleEvent"),
             };
-            EventTypeModel model = new();
+            EventTypeModel model = null;
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Select]", parameters))
             {
-               model =  new EventTypeModel()
-                {
-                    DisplayOrder = dr.GetInt32("DisplayOrder"),
-                    EventStatusText = dr.GetString("EventStatusText"),
-                    EventTypeID = dr.GetInt32("EventTypeID"),
-                    EventTypeName = dr.GetString("EventTypeName"),
-                    IsDriverRelated = dr.GetBoolean("IsDriverRelated"),
-                    IsDriverRequired = dr.GetBoolean("IsDriverRequired"),
-                    IsGcRelated = dr.GetBoolean("IsGcRelated"),
-                    IsStationary = dr.GetBoolean("IsStationary"),
-                    IsTripRelated = dr.GetBoolean("IsTripRelated"),
-                };
+                model = GetEventType(dr);
             }
             return model;
         }
@@ -151,7 +158,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckID", TruckID),
                new SqlParameter("@Operation", "CurrentEvent"),
             };
-            EventModel model = new();
+            EventModel model = null;
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Select]", parameters))
             {
                 model = GetModel(dr);
@@ -166,7 +173,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@EventID", EventID),
                new SqlParameter("@Operation", "PreviousEvent"),
             };
-            EventModel model = new();
+            EventModel model = null;
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Select]", parameters))
             {
                 model = GetModel(dr);
@@ -175,24 +182,25 @@ namespace ArmsServices.DataServices
         }
 
         IEnumerable<EventTypeModel> IEventService.GetEventTypes()
-        {           
-            
+        {      
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Type.Select]", null))
             {
-                yield return new EventTypeModel()
-                {
-                    DisplayOrder = dr.GetInt32("DisplayOrder"),
-                    EventStatusText = dr.GetString("EventStatusText"),
-                    EventTypeID = dr.GetInt32("EventTypeID"),
-                    EventTypeName = dr.GetString("EventTypeName"),
-                    IsDriverRelated = dr.GetBoolean("IsDriverRelated"),
-                    IsDriverRequired = dr.GetBoolean("IsDriverRequired"),
-                    IsGcRelated = dr.GetBoolean("IsGcRelated"),
-                    IsStationary = dr.GetBoolean("IsStationary"),
-                    IsTripRelated = dr.GetBoolean("IsTripRelated"),
-                };
+                yield return GetEventType(dr);
+            }           
+        }
+
+        EventTypeModel IEventService.GetEventType(int EventTypeID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@EventTypeID", EventTypeID),               
+            };
+            EventTypeModel model = null;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Type.Select]", parameters))
+            {
+                model = GetEventType(dr);
             }
-           
+            return model;
         }
     }
 }

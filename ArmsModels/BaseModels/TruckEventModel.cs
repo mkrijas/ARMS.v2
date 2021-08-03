@@ -36,6 +36,7 @@ namespace ArmsModels.BaseModels
         public bool IsTripRelated { get; set; }
         public bool IsDriverRelated { get; set; }
         public bool IsDriverRequired { get; set; }
+        public bool IsBlocking { get; set; }
         public int DisplayOrder { get; set; }
         public string  EventStatusText { get; set; }
     }

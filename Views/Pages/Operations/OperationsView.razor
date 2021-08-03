@@ -1,1 +1,86 @@
-﻿
+﻿@page "/operations"
+
+@inject ITruckService Itruck
+@inject ITripService Itrip
+@inject IEventService Ievent
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+
+    <MudGrid Spacing="4">
+
+        <MudItem xs="8" md="4">
+            <MudAutocomplete T="TruckModel" Label="Select Truck" @bind-Value="SelectedTruck" ResetValueOnEmptyText="true"
+                             SearchFunc="Search" ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
+        </MudItem>
+        <MudItem xs="4" md="2">
+            <MudFab Icon="@Icons.Material.Filled.LabelImportant" Label="Get" OnClick="GetTruckInfo" />
+        </MudItem>
+        <MudItem xs="12" md="12">
+            <MudFab Icon="@Icons.Material.Outlined.LibraryAdd" Label="Start New Trip" OnClick="GetTruckInfo" hidden="@HideNewButton" />
+            <MudFab Icon="@Icons.Material.Outlined.LibraryAdd" Label="Add Event" OnClick="GetTruckInfo" hidden="@HideEventButton" />
+            <MudFab Icon="@Icons.Material.Outlined.LibraryAdd" Label="Close Trip" OnClick="GetTruckInfo" hidden="@HideCloseButton" />
+        </MudItem>
+        <MudItem xs="12" md="12">
+            <MudPaper Class="pa-4 ma-2">
+                @if (CurrentEvent != null)
+                {
+                    <h5>    @EventType.EventStatusText  &" since " & CurrentEvent.EventTime</h5>
+                }
+                        else
+                        {
+
+                        }
+            </MudPaper>
+        </MudItem>
+
+    </MudGrid>
+
+
+@code{
+
+    private List<TruckModel> Trucks;
+    private TruckModel SelectedTruck = new();
+    private EventModel CurrentEvent = new();
+    private EventTypeModel EventType = new();
+
+
+    private bool HideNewButton { get; set; } = true;
+    private bool DisableNewButton { get; set; } = false;
+    private bool HideEventButton { get; set; } = true;
+    private bool DisableEventButton { get; set; } = false;
+    private bool HideCloseButton { get; set; } = true;
+    private bool DisableCloseButton { get; set; } = false;
+
+    protected override void OnInitialized()
+    {
+        Trucks = new();
+        foreach (var item in Itruck.Select(0))
+        {
+            Trucks.Add(item);
+        }
+    }
+
+    private async Task<IEnumerable<TruckModel>> Search(string searchString)
+    {
+        return await Task.FromResult(Trucks.Where(x => x.RegNo.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+
+    private void GetTruckInfo()
+    {
+        CurrentEvent = Ievent.GetCurrentEvent(SelectedTruck.TruckID);
+        EventType = Ievent.GetEventType(CurrentEvent.EventTypeID);
+        if(EventType != null && EventType.IsBlocking)
+        {
+            HideCloseButton = false;
+            HideEventButton = false;
+            HideNewButton = false;
+            DisableCloseButton = true;
+            DisableEventButton = true;
+            DisableNewButton = true;
+        }
+
+    }
+}
