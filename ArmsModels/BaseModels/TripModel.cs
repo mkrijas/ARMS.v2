@@ -8,6 +8,11 @@ namespace ArmsModels.BaseModels
 {
     public class TripModel
     {
+        public TripModel()
+        {
+            UserInfo = new();
+        }
+
         public long TripID { get; set; }
         [Required]
         public int TruckID { get; set; }

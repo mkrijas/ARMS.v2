@@ -35,6 +35,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DestinationID", model.DestinationID),
@@ -45,7 +46,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@GcSetID", model.GcSetID),
                new SqlParameter("@OriginID", model.OriginID),
                new SqlParameter("@TripID", model.TripID),
-               new SqlParameter("@TruckEventID", model.TruckEventID),               
+               new SqlParameter("@EventID", model.TruckEventID),               
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };           
 
@@ -74,11 +75,11 @@ namespace ArmsServices.DataServices
               DriverID = dr.GetInt32("DriverID"),
               EventReading = dr.GetInt64("EventReading"),
               EventTime = dr.GetDateTime("EventTime"),
-              EventTypeID = dr.GetInt32("EventTypeID"),
+              EventTypeID = dr.GetByte("EventTypeID"),
               GcSetID= dr.GetInt64("GcSetID"),
               OriginID= dr.GetInt32("OriginID"),
               TripID= dr.GetInt64("TripID"),
-              TruckEventID= dr.GetInt64("TruckEventID"),
+              TruckEventID= dr.GetInt64("EventID"),
               TruckID= dr.GetInt32("TruckID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -96,7 +97,7 @@ namespace ArmsServices.DataServices
             {
                 DisplayOrder = dr.GetInt32("DisplayOrder"),
                 EventStatusText = dr.GetString("EventStatusText"),
-                EventTypeID = dr.GetInt32("EventTypeID"),
+                EventTypeID = dr.GetByte("EventTypeID"),
                 EventTypeName = dr.GetString("EventTypeName"),
                 IsDriverRelated = dr.GetBoolean("IsDriverRelated"),
                 IsDriverRequired = dr.GetBoolean("IsDriverRequired"),

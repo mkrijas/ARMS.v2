@@ -21,6 +21,7 @@ namespace ArmsServices.DataServices
         int ChangeRegistration(TruckRegistrationModel model);        
         int UpdateDriver(int TruckID, int DriverID,bool AssignedStatus,string UserID);
         int? GetAssignedDriver(int TruckID);
+        long? GetCurrentTrip(int TruckID);
     }
 
     public class TruckService : ITruckService
@@ -220,6 +221,20 @@ namespace ArmsServices.DataServices
                 }
             }
             return DriverID;
+        }
+
+        public long? GetCurrentTrip(int TruckID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),
+            };
+            long? TripID = null;
+            foreach (var dr in Iservice.GetDataReader("[usp.Operation.Truck.CurrentTrip.Select]", parameters))
+            {
+                TripID = dr.GetInt64("TripID");
+            }
+            return TripID;
         }
     }
 }

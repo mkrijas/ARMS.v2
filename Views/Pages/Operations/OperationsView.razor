@@ -7,51 +7,50 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 
+@inject IDialogService DialogService
 
-    <MudGrid Spacing="4">
 
-        <MudItem xs="8" md="4">
-            <MudAutocomplete T="TruckModel" Label="Select Truck" @bind-Value="SelectedTruck" ResetValueOnEmptyText="true"
-                             SearchFunc="Search" ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
-        </MudItem>
-        <MudItem xs="4" md="2">
-            <MudFab Icon="@Icons.Material.Filled.LabelImportant" Label="Get" OnClick="GetTruckInfo" />
-        </MudItem>
-        <MudItem xs="12" md="12">
-            <MudFab Icon="@Icons.Material.Outlined.LibraryAdd" Label="Start New Trip" OnClick="GetTruckInfo" hidden="@HideNewButton" />
-            <MudFab Icon="@Icons.Material.Outlined.LibraryAdd" Label="Add Event" OnClick="GetTruckInfo" hidden="@HideEventButton" />
-            <MudFab Icon="@Icons.Material.Outlined.LibraryAdd" Label="Close Trip" OnClick="GetTruckInfo" hidden="@HideCloseButton" />
-        </MudItem>
-        <MudItem xs="12" md="12">
-            <MudPaper Class="pa-4 ma-2">
-                @if (CurrentEvent != null)
-                {
-                    <h5>    @EventType.EventStatusText  &" since " & CurrentEvent.EventTime</h5>
-                }
-                        else
-                        {
+<MudGrid Spacing="4">
 
-                        }
-            </MudPaper>
-        </MudItem>
+    <MudItem xs="8" md="4">
+        <MudAutocomplete T="TruckModel" Label="Select Truck" @bind-Value="SelectedTruck" ResetValueOnEmptyText="true" IsOpenChanged="IsTruckSelected" 
+                         SearchFunc="Search" ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
+    </MudItem>
+    <MudItem xs="4" md="2">
+        <MudFab Icon="@Icons.Material.Filled.LabelImportant" Label="Get" OnClick="GetTruckInfo" />
+    </MudItem>
+    <MudItem xs="12" md="12" hidden="@HideStatus">
+        <MudPaper Class="pa-4 ma-2">           
+                <h5>   @EventType?.EventStatusText   On  @CurrentEvent?.EventTime</h5>           
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="12" hidden="@HideControls">
+        <MudFab Icon="@Icons.Material.Outlined.AddTask" OnClick="UpdateEvent" IconColor="Color.Success" Label="@EventButtonLabel" />
+        <MudFab Icon="@Icons.Material.Outlined.Cancel" Label="Cancel Trip" OnClick="CancelTrip" IconColor="Color.Error" />
+        <MudFab Icon="@Icons.Material.Outlined.ReportProblem" Label="Breakdown/Accident" OnClick="ReportBreakDown" />
+    </MudItem>
 
-    </MudGrid>
+</MudGrid>
 
 
 @code{
 
     private List<TruckModel> Trucks;
-    private TruckModel SelectedTruck = new();
-    private EventModel CurrentEvent = new();
-    private EventTypeModel EventType = new();
+    private TruckModel SelectedTruck { get; set; }
+    private EventModel CurrentEvent { get; set; }
+    private EventTypeModel EventType { get; set; }
 
 
-    private bool HideNewButton { get; set; } = true;
-    private bool DisableNewButton { get; set; } = false;
-    private bool HideEventButton { get; set; } = true;
+
+
+
+
+    string EventButtonLabel;
+
+    private bool HideControls { get; set; } = true;
+    public bool HideStatus { get; set; } = true;
     private bool DisableEventButton { get; set; } = false;
-    private bool HideCloseButton { get; set; } = true;
-    private bool DisableCloseButton { get; set; } = false;
+    private bool DisableCancelButton { get; set; } = true;
 
     protected override void OnInitialized()
     {
@@ -70,17 +69,94 @@
 
     private void GetTruckInfo()
     {
-        CurrentEvent = Ievent.GetCurrentEvent(SelectedTruck.TruckID);
-        EventType = Ievent.GetEventType(CurrentEvent.EventTypeID);
-        if(EventType != null && EventType.IsBlocking)
+
+
+
+    }
+
+    private async Task UpdateEvent()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("Truck", SelectedTruck);
+
+        if (EventButtonLabel == "Start New Trip")
         {
-            HideCloseButton = false;
-            HideEventButton = false;
-            HideNewButton = false;
-            DisableCloseButton = true;
-            DisableEventButton = true;
-            DisableNewButton = true;
+            var result = DialogService.Show<NewTripView>("Start Trip", parameters);
+            var Data = await result.Result;
+            var trip = Data.Data;
+        }
+        else
+        {
+            var result = DialogService.Show<UpdateEventView>("Update Event", parameters);
+            var Data = await result.Result;
+            var ev = Data.Data;
         }
 
+        truckStatusUpdated();
+    }
+
+    private void CancelTrip()
+    {
+
+    }
+
+    private void ReportBreakDown()
+    {
+
+    }
+
+    private void AddConsignment()
+    {
+
+    }
+
+    private async Task IsTruckSelected(bool IsOpenChanged)
+    {
+        if (!IsOpenChanged)
+        {
+            truckStatusUpdated();
+        }
+    }
+
+
+    private void truckStatusUpdated()
+    {
+        if (SelectedTruck == null)
+        {
+            HideControls = true;
+            HideStatus = true;
+            CurrentEvent = null;
+            EventType = null;
+        }
+        else
+        {
+
+            CurrentEvent = Ievent.GetCurrentEvent(SelectedTruck.TruckID);
+            if (CurrentEvent != null )
+            {
+                HideStatus = false;
+                EventType = Ievent.GetEventType(CurrentEvent.EventTypeID);
+            }
+
+
+            if (EventType != null && EventType.IsBlocking)
+            {
+                HideControls = true;
+            }
+            else
+            if (EventType == null || EventType.EventStatusText == "UnAssigned")
+            {
+                HideControls = false;
+                HideStatus = true;
+                EventButtonLabel = "Start New Trip";
+
+            }
+            else
+            {
+                HideControls = false;
+                HideStatus = false;
+                EventButtonLabel = "Add Event";
+            }
+        }
     }
 }

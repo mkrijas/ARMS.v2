@@ -1,5 +1,168 @@
-﻿<h3>UpdateEventView</h3>
+﻿@inject ITripService Iservice
+@inject IPlaceService Iplace
+@inject ITruckService Itruck
+@inject IDriverService Idriver
+@inject IEventService Ievent
+@inject ITripService Itrip
+
+
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+
+
+<MudDialog>
+    <DialogContent>
+        @if (IsLoading)
+        {
+            <MudProgressCircular Color="Color.Primary" Style="height:70px;width:70px;" Indeterminate="true" />
+        }
+        else
+        {
+            <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="4">
+
+                    <MudItem xs="12" md="12">
+                        <MudText Typo="Typo.h4"><MudIcon Icon="@Icons.Filled.LocalShipping" Title="Truck" /> @Truck.RegNo</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        @if (AssignedDriver == null)
+                        {
+                            <MudText Typo="Typo.h4" Color="Color.Warning"><MudIcon Icon="@Icons.Filled.AirlineSeatReclineNormal" Title="Driver" /> UNASSAIGNED</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.h4" Color="Color.Primary"><MudIcon Icon="@Icons.Filled.AirlineSeatReclineNormal" Title="Driver" /> @AssignedDriver.DriverName</MudText>
+                        }
+                        <MudText></MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect Label="Select Action" T="EventTypeModel"  OffsetY="true" AdornmentColor="Color.Secondary" ValueChanged="EventSelected">
+                            @foreach (var item in EventTypes)
+                                {
+                                <MudSelectItem T="EventTypeModel" Value="@item" >@item.EventTypeName</MudSelectItem>
+                                }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudAutocomplete T="PlaceModel" Label="Origin" @bind-Value="Origin" ResetValueOnEmptyText="true"
+                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary" >
+                        <MudAutocomplete T="PlaceModel" Label="Destination" @bind-Value="Destination" ResetValueOnEmptyText="true"
+                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined" Margin="Margin.Normal"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Start Trip</MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
 
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public TruckModel Truck { get; set; }
+
+    private DriverModel AssignedDriver = null;
+    private EventModel model = new();
+
+    private bool IsLoading = false;
+
+
+    private TripModel CurrentTrip { get; set; }
+    private PlaceModel Origin = new();
+    private PlaceModel Destination = new();
+    private long KmReading;
+
+    private List<PlaceModel> places;
+    private List<EventTypeModel> EventTypes;
+    private EventTypeModel SelectedEvent = new();
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var driverID = Itruck.GetAssignedDriver(Truck.TruckID);
+        if (driverID != null)
+            AssignedDriver = Idriver.SelectByID(driverID.Value);
+
+        CurrentTrip = Itrip.Select(Itruck.GetCurrentTrip(Truck.TruckID));
+
+        EventTypes = new();
+        foreach(var item in Ievent.GetEventTypes())
+        {
+            if(item.EventTypeID != 1 && item.IsTripRelated)
+                EventTypes.Add(item);
+        }
+
+        places = new();
+        await foreach (var item in Iplace.Select(0))
+        {
+            places.Add(item);
+        }
+    }
+
+
+    private async Task<IEnumerable<PlaceModel>> SearchPlaces(string searchString)
+    {
+        return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        try
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            int BranchID = 0;
+            if (!int.TryParse(authprov.User.Claims.First(c => c.Type == "BranchID")?.Value, out BranchID))
+            {
+                snackbar.Add("Branch is Not Selected", Severity.Warning);
+            }
+
+
+            model.BranchID = BranchID;
+            model.DestinationID = SelectedEvent.IsStationary ? Origin.PlaceID : Destination.PlaceID;
+            model.OriginID = Origin.PlaceID;
+            model.DriverID = AssignedDriver.DriverID;
+            model.EventTime = DateTime.Now;
+            model.TripID = CurrentTrip.TripID;
+            model.TruckID = Truck.TruckID;
+            model.EventTypeID = SelectedEvent.EventTypeID;
+            model.UserInfo.UserID = authprov.User.Identity.Name;
+            model = Ievent.Update(model);
+
+
+            MudDialog.Close(DialogResult.Ok(model));
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+
+    private void EventSelected(EventTypeModel e)
+    {        
+        SelectedEvent = EventTypes.Find(x => x.EventTypeID == e.EventTypeID);
+    }
 }

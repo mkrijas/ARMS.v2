@@ -13,23 +13,23 @@ namespace ArmsModels.BaseModels
         }
 
         public long TruckEventID { get; set; }
-        public int EventTypeID { get; set; }       
+        public byte EventTypeID { get; set; }       
         public DateTime? EventTime { get; set; }
         public long EventReading { get; set; }
         public int BranchID { get; set; }
         public int OriginID { get; set; }
         public int DestinationID { get; set; }
         public int TruckID { get; set; }
-        public int DriverID { get; set; }
-        public long TripID { get; set; }
-        public long GcSetID { get; set; }
+        public int? DriverID { get; set; }
+        public long? TripID { get; set; }
+        public long? GcSetID { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
 
     public class EventTypeModel
     {
-        public int EventTypeID { get; set; }
+        public Byte EventTypeID { get; set; }
         public string EventTypeName { get; set; }
         public bool IsStationary { get; set; }
         public bool IsGcRelated { get; set; }

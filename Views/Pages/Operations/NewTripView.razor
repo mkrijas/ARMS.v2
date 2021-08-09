@@ -1,6 +1,8 @@
-﻿
-@*@inject ITripService Iservice
+﻿@inject ITripService Iservice
 @inject IPlaceService Iplace
+@inject ITruckService Itruck
+@inject IDriverService Idriver
+@inject IEventService Ievent
 
 
 @inject MudBlazor.ISnackbar snackbar
@@ -15,55 +17,50 @@
             <DataAnnotationsValidator />
             <ValidationSummary />
             <MudGrid Spacing="4">
-                <MudItem xs="12" md="4">
-                    <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="Order" ResetValueOnEmptyText="true" IsOpenChanged="OrderSelected"
-                                     SearchFunc="SearchOrders" ToStringFunc="@(e=> e==null?null : $"{e.OrderName}")"></MudAutocomplete>
-                </MudItem>
                 @if (IsLoading)
                 {
                     <MudProgressCircular Color="Color.Primary" Style="height:70px;width:70px;" Indeterminate="true" />
                 }
                 else
                 {
-                    <MudItem xs="12" md="4">
-                        <MudAutocomplete T="RouteModel" Label="Route" @bind-Value="Route" ResetValueOnEmptyText="true"
-                                         SearchFunc="SearchRoutes" ToStringFunc="@(e => e == null ? null : $"{e.RouteName}")"></MudAutocomplete>
+                    <MudItem xs="12" md="12">
+                        <MudText Typo="Typo.h4"><MudIcon Icon="@Icons.Filled.LocalShipping" Title="Truck" /> @Truck.RegNo</MudText>
                     </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudAutocomplete T="ConsigneeModel" Label="Consignor" @bind-Value="Consignor" ResetValueOnEmptyText="true"
-                                         SearchFunc="SearchConsignor" ToStringFunc="@(e => e == null ? null : $"{e.ConsigneeName}")"></MudAutocomplete>
+                    <MudItem xs="12" md="12">
+                        @if (AssignedDriver == null)
+                        {
+                            <MudText Typo="Typo.h4" Color="Color.Warning"><MudIcon Icon="@Icons.Filled.AirlineSeatReclineNormal" Title="Driver" /> UNASSAIGNED</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.h4" Color="Color.Primary"><MudIcon Icon="@Icons.Filled.AirlineSeatReclineNormal" Title="Driver" /> @AssignedDriver.DriverName</MudText>
+                        }
+                        <MudText></MudText>
                     </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudAutocomplete T="ConsigneeModel" Label="Consignee" @bind-Value="Consignee" ResetValueOnEmptyText="true"
-                                         SearchFunc="SearchConsignee" ToStringFunc="@(e => e == null ? null : $"{e.ConsigneeName}")"></MudAutocomplete>
+                    <MudItem xs="12" md="12">
+                        <MudCheckBox @bind-Checked="@startWithLoading" Label="Start with Loading"></MudCheckBox>
                     </MudItem>
                 }
-                <MudItem xs="12" md="4">
-                    <MudSelect Label="Select Type" @bind-Value="model.TripType" OffsetY="true" AdornmentColor="Color.Secondary">
-                        @foreach (var item in TripTypes)
-                        {
-                            <MudSelectItem Value="@item.TripTypeID">@item.TripTypeName</MudSelectItem>
-                        }
-                    </MudSelect>
+                <MudItem xs="12" md="6">
+                    <MudAutocomplete T="PlaceModel" Label="Origin" @bind-Value="Origin" ResetValueOnEmptyText="true"
+                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                 </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudDatePicker Label="Bill Date" DisableToolbar="true" Editable="true" @bind-Date="model.BillDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudTextField @bind-Value="model.BillNumber" Label="Bill Number" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.BillNumber)"></MudTextField>
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudTextField @bind-Value="model.BillQuantity" Label="Bill Quantity" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.BillQuantity)"></MudTextField>
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudTextField @bind-Value="model.PassNumber" Label="Pass Number" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.PassNumber)"></MudTextField>
+                @if (!startWithLoading)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudAutocomplete T="PlaceModel" Label="Destination" @bind-Value="Destination" ResetValueOnEmptyText="true"
+                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                    </MudItem>
+                }
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="KmReading" Label="Audometer Reading" Variant="Variant.Outlined" Margin="Margin.Normal"></MudTextField>
                 </MudItem>
             </MudGrid>
         </EditForm>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Trip</MudButton>
+        <MudButton form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Start Trip</MudButton>
 
     </DialogActions>
 </MudDialog>
@@ -72,123 +69,92 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    [Parameter] public TripModel model { get; set; }
+    [Parameter] public TruckModel Truck { get; set; }
+
+    private DriverModel AssignedDriver = null;
+    private TripModel model = new();
+
+    private bool IsLoading = false;
+
+    private bool startWithLoading = false;
+    private PlaceModel Origin = new();
+    private PlaceModel Destination = new();
+    private long KmReading;
+
+    private List<PlaceModel> places;    
 
     private void Cancel()
     {
         MudDialog.Cancel();
     }
 
-    private bool IsLoading = false;
 
-    private PlaceModel Origin = new();
-    private PlaceModel Destination = new();
-
-    private List<PlaceModel> Places;
 
     protected override async Task OnInitializedAsync()
     {
-        Places = new();
+        var driverID = Itruck.GetAssignedDriver(Truck.TruckID);
+        if(driverID != null)
+            AssignedDriver =  Idriver.SelectByID(driverID.Value);
+
+        places = new();
         await foreach (var item in Iplace.Select(0))
         {
-            Places.Add(item);
-        }     
-    }
-
-
-    private async Task OrderChanged(OrderModel Order)
-    {
-        IsLoading = true;
-        Routes.Clear();
-        Consignees.Clear();
-        Route = null;
-        Consignor = null;
-        Consignee = null;
-
-        if (Order != null)
-        {
-            await foreach (var item in Iroute.SelectByOrder(Order?.OrderID))
-            {
-                Routes.Add(item);
-            }
-
-            await foreach (var item in Iconsignee.SelectByOrder(Order.OrderID))
-            {
-                Consignees.Add(item);
-            }
-            if (Routes.Count() == 1) Route = Routes.First();
-            if (Consignees.Where(x => x.Consignor == true).Count() == 1)
-            {
-                Consignor = Consignees.First(x => x.Consignor == true);
-            }
-            if (Consignees.Where(x => x.Consignor == false).Count() == 1)
-            {
-                Consignee = Consignees.First(x => x.Consignor == false);
-            }
+            places.Add(item);
         }
-        IsLoading = false;
     }
 
-    private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
-    {
-        return await Task.FromResult(Consignees.Where(x => x.Consignor == false).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StrinTripomparison.InvariantCultureIgnoreCase)));
-    }
 
-    private async Task<IEnumerable<ConsigneeModel>> SearchConsignor(string searchString)
+    private async Task<IEnumerable<PlaceModel>> SearchPlaces(string searchString)
     {
-        return await Task.FromResult(Consignees.Where(x => x.Consignor == true).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StrinTripomparison.InvariantCultureIgnoreCase)));
-    }
-
-    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
-    {
-        return await Task.FromResult(Orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StrinTripomparison.InvariantCultureIgnoreCase)));
-    }
-
-    private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString)
-    {
-        return await Task.FromResult(Routes.Where(x => x.RouteName.Contains(searchString == null ? string.Empty : searchString, StrinTripomparison.InvariantCultureIgnoreCase)));
+        return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
     private async Task OnValidSubmit(EditContext context)
     {
-        if (!Orders.Select(x => x.OrderName).Contains(Order.OrderName))
-        {
-            snackbar.Add("Invalid Order", Severity.Error);
-            return;
-        }
-        else
-             if (!Routes.Select(x => x.RouteName).Contains(Route.RouteName))
-        {
-            snackbar.Add("Invalid Route", Severity.Error);
-            return;
-        }
-
-        model.OrderID = Order.OrderID;
-        model.RouteID = Route.RouteID;
-        model.ConsignorID = Consignor.ConsigneeID;
-        model.ConsigneeID = Consignee.ConsigneeID;
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        model.UserInfo.UserID = authprov.User.Identity.Name;
         try
         {
-            model = await Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(DialogResult.Ok(model));
+            var authprov = await auth.GetAuthenticationStateAsync();
+            int BranchID = 0;
+            if (!int.TryParse(authprov.User.Claims.First(c => c.Type == "BranchID")?.Value, out BranchID))
+            {
+                snackbar.Add("Branch is Not Selected", Severity.Warning);
+                return;
+            }
 
-            //if (collection.Exists(x => x.TripID == model.TripID))
-            //{
-            //    collection[collection.FindIndex(x => x.TripID == model.TripID)] = model;
-            //}
-            //else
-            //{
-            //    collection.Add(model);
-            //}
-            model = new TripModel();
-            Order = new OrderModel();
-            Route = new RouteModel();
-            Consignor = new ConsigneeModel();
-            Consignee = new ConsigneeModel();
+            if (AssignedDriver == null)
+            {
+                snackbar.Add("Driver is not assigned", Severity.Warning);
+                return;
+            }
+
+            model.TruckID = Truck.TruckID;
+            model.TripDate = DateTime.Today;
+            model.DriverID = AssignedDriver?.DriverID;
+            model.BranchID = BranchID;
+            model.UserInfo.UserID = authprov.User.Identity.Name;
+            model = Iservice.Update(model);
+
+            EventModel em = new();
+            em.BranchID = model.BranchID;
+            em.DestinationID = startWithLoading?Origin.PlaceID:Destination.PlaceID;
+            em.OriginID = Origin.PlaceID;
+            em.DriverID = model.DriverID;
+            em.EventTime = DateTime.Now;
+            em.EventReading = KmReading;
+            em.EventTypeID = 1;
+            em.TripID = model.TripID;
+            em.TruckID = model.TruckID;
+            em.UserInfo.UserID = model.UserInfo.UserID;
+            em = Ievent.Update(em);
+
+            if(startWithLoading)
+            {
+                em.TruckEventID = 0;
+                em.EventTypeID = 2;
+            }
+            em = Ievent.Update(em);
+
+            MudDialog.Close(DialogResult.Ok(model));
 
         }
         catch (Exception ex)
@@ -196,12 +162,4 @@
             snackbar.Add(ex.Message, Severity.Warning);
         }
     }
-
-    private async Task OrderSelected(bool IsOpenChanged)
-    {
-        if (!IsOpenChanged)
-        {
-            await OrderChanged(Order);
-        }
-    }
-}*@
+}

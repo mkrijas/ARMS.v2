@@ -12,11 +12,11 @@ namespace ArmsServices.DataServices
     public interface ITripService
     {       
         TripModel Update(TripModel model);
-        int Delete(int TripID, string UserID);
-        IEnumerable<TripModel> Select(int? TripID);
-        int Cancel(int TripID, string userID, string Reason);
-        int StartNew(TripModel model);
-        int CloseTrip(int TripID, string Remarks);
+        int Delete(long TripID, string UserID);
+        TripModel Select(long? TripID);
+        int Cancel(long TripID, string userID, string Reason);
+        int CloseTrip(long TripID, string Remarks);
+        
     }
 
     public class TripService : ITripService
@@ -33,6 +33,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@TripID", model.TripID),               
                new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@DriverID", model.DriverID),
                new SqlParameter("@TripDate", model.TripDate),
                new SqlParameter("@TruckID", model.TruckID),                       
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -44,7 +45,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int Delete(int TripID,string UserID)
+        public int Delete(long TripID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -53,17 +54,19 @@ namespace ArmsServices.DataServices
             };            
             return Iservice.ExecuteNonQuery("[usp.Operation.Trip.Delete]", parameters);
         }
-        public IEnumerable<TripModel> Select(int? TripID)
+        public TripModel Select(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripID", TripID)               
             };
 
+            TripModel model = null;
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
             {
-                yield return GetModel(reader);
+                model = GetModel(reader);
             }
+            return model;
         }
 
         private TripModel GetModel(IDataRecord reader)
@@ -89,19 +92,16 @@ namespace ArmsServices.DataServices
             };
         }
 
-        int ITripService.Cancel(int TripID, string userID, string Reason)
+        int ITripService.Cancel(long TripID, string userID, string Reason)
         {
             throw new NotImplementedException();
         }
 
-        int ITripService.StartNew(TripModel model)
+        int ITripService.CloseTrip(long TripID, string Remarks)
         {
             throw new NotImplementedException();
         }
 
-        int ITripService.CloseTrip(int TripID, string Remarks)
-        {
-            throw new NotImplementedException();
-        }
+        
     }
 }
