@@ -16,7 +16,9 @@ namespace ArmsServices.DataServices
         TripModel Select(long? TripID);
         int Cancel(long TripID, string userID, string Reason);
         int CloseTrip(long TripID, string Remarks);
-        
+        bool IsClosed(long TripID);
+        bool IsSettled(long TripID);
+        IEnumerable<object> GetOutstandingBills(long TripID);
     }
 
     public class TripService : ITripService
@@ -102,6 +104,19 @@ namespace ArmsServices.DataServices
             throw new NotImplementedException();
         }
 
-        
+        public bool IsClosed(long TripID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool IsSettled(long TripID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<object> GetOutstandingBills(long TripID)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
