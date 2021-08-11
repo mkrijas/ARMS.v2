@@ -215,7 +215,7 @@ namespace ArmsServices.DataServices
             int? DriverID = null;
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Driver.Assignment.Select]", parameters))
             {
-                 if(!dr.GetBoolean("AssignedStatus"))
+                 if(dr.GetBoolean("AssignedStatus"))
                 {
                     DriverID = dr.GetInt32("DriverID");
                 }

@@ -1,0 +1,108 @@
+﻿@inject ITruckService Iservice
+@inject IDriverService Idriver
+
+
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+
+
+<MudDialog>
+    <DialogContent>
+       
+            <MudGrid Spacing="4">
+                <MudItem xs="12" md="12">
+                    <MudText Typo="Typo.h4"><MudIcon Icon="@Icons.Filled.LocalShipping" /> @Truck.RegNo</MudText>
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    @if (AssignedDriver == null)
+                    {
+                        <MudText Typo="Typo.h4" Color="Color.Warning"><MudIcon Icon="@Icons.Filled.AirlineSeatReclineNormal" Title="Driver" /> NONE</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h4" Color="Color.Primary"><MudIcon Icon="@Icons.Filled.AirlineSeatReclineNormal" Title="Driver" /> @AssignedDriver.DriverName</MudText>
+                    }
+                    <MudText></MudText>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudAutocomplete T="DriverModel" Label="Select Driver" @bind-Value="SelectedDriver" ResetValueOnEmptyText="true"
+                                     SearchFunc="SearchDrivers" ToStringFunc="@(e => e == null ? null : $"{e.DriverName}")"></MudAutocomplete>
+                </MudItem>               
+            </MudGrid>
+       
+        </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit" OnClick="AssignDriver">Assign Driver</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public TruckModel Truck { get; set; }
+
+    private DriverModel AssignedDriver = null;
+    private DriverModel SelectedDriver = null;
+
+    private List<DriverModel> drivers;
+    
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var driverID = Iservice.GetAssignedDriver(Truck.TruckID);
+        if (driverID != null)
+            AssignedDriver = Idriver.SelectByID(driverID.Value);
+
+        drivers = new();
+        foreach (var item in Idriver.Select())
+        {
+            drivers.Add(item);
+        }
+    }
+
+
+    private async Task<IEnumerable<DriverModel>> SearchDrivers(string searchString)
+    {
+        return await Task.FromResult(drivers.Where(x => x.DriverName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task AssignDriver()
+    {
+        try
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            int BranchID = 0;
+            if (!int.TryParse(authprov.User.Claims.First(c => c.Type == "BranchID")?.Value, out BranchID))
+            {
+                snackbar.Add("Branch is Not Selected", Severity.Warning);
+                return;
+            }
+
+            if (SelectedDriver == null)
+            {
+                snackbar.Add("Please Select Driver", Severity.Warning);
+                return;
+            }
+            
+            int result = Iservice.UpdateDriver(Truck.TruckID,SelectedDriver.DriverID,true,authprov.User.Identity.Name);           
+
+            MudDialog.Close(DialogResult.Ok(SelectedDriver));
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+}
+
