@@ -1,0 +1,103 @@
+﻿@inject IGcService Iservice
+
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.FileCopy" />
+            Eway Bill
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+
+        <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">            
+            <ValidationSummary />
+            <MudText Typo="Typo.h6">@model.SetGcNumber</MudText>
+
+            @foreach (var wrapperitem in model.Gcs.Select((value, i) => new { i, value }))
+            {
+                var item = wrapperitem.value.EwayBill;
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.body1">@wrapperitem.value.BillNumber</MudText>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="item.EwayBillRef" Label="Eway Bill Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.EwayBillRef)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudDatePicker Label="Bill Date" Variant="Variant.Outlined" Margin="Margin.Dense" DateChanged="((e)=>EwayBillDateChanged(item,e))" DisableToolbar="true" Editable="true" Date="item.EwayBillDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MyDateTimePicker Label="Expire On" @bind-Value="item.ExpireOn" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudDivider DividerType="DividerType.Middle" Class="my-6" />
+                    </MudItem>
+                </MudGrid>
+            }
+        </EditForm>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public GcSetModel model { get; set; }
+    private void Cancel()
+    {
+        model = new();
+        MudDialog.Cancel();
+    }
+
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+
+        foreach (var item in model.Gcs)
+        {
+            item.EwayBill.GcID = item.GcID;
+            item.EwayBill.UserInfo.UserID = authprov.User.Identity.Name;
+
+            try
+            {
+                int result = Iservice.UpdateEwayBill(item.EwayBill);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+                return;
+            }
+        }
+        snackbar.Add("Saved Successfully", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(model));
+        model = new GcSetModel();
+    }
+
+
+    private void EwayBillDateChanged(EwayBillModel ewaymodel,DateTime? date)
+    {
+        ewaymodel.EwayBillDate = date;
+        if (date != null)
+        {
+            DateTime dateValue = date.Value;
+            ewaymodel.ExpireOn = dateValue.AddDays(2);
+        }
+        else
+        {
+            ewaymodel.ExpireOn = null;
+        }
+    }
+
+}

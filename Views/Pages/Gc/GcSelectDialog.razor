@@ -1,0 +1,99 @@
+﻿
+@inject IGcService Iservice
+@inject IRouteService Iroute
+@inject IOrderService Iorder
+
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Load <MudIcon Icon="@Icons.Material.Filled.DirectionsBus" /> @Truck.RegNo
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+       
+        <MudContainer Style="min-height:500px;max-height: 800px; overflow-y: scroll">
+            <MudGrid Spacing="4">
+                @foreach (var row in collection)
+                {
+                    var bgClass = row.Selected?"bgGreen":"bgWhite";
+                    var item = row.model;
+
+                    <MudItem xs="12" md="4" @onclick="@(()=> row.Selected = !row.Selected)" >
+                        <GcItemCard item="row.model" Class="@bgClass"></GcItemCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        @{SelectedCount = collection.Count(x => x.Selected == true); var disabled = SelectedCount == 0;}
+        <MudButton OnClick="Load" IconColor="Color.Default" Color="Color.Success" Disabled="@disabled">Load</MudButton>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+<style>
+    .bgGreen {
+        background-color: #90ee02;
+    }
+    .bgWhite{background-color:white}
+</style>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public TruckModel Truck { get; set; }
+    [Parameter] public long TripID { get; set; }
+
+    private int BranchID { get; set; }
+    private int SelectedCount = 0;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private List<SelectableCollection<GcSetModel>> collection = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var e = await auth.GetAuthenticationStateAsync();
+        string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
+        BranchID = int.Parse(BranchIDString);
+
+        foreach (var item in Iservice.SelectUnAssigned(BranchID))
+        {
+            collection.Add(new() { model = item });
+        }
+    }
+
+    private async Task Load()
+    {
+        var e = await auth.GetAuthenticationStateAsync();
+        var user = e.User;
+        var userID = user.Identity.Name;
+        foreach (var item in collection)
+        {
+            if (item.Selected)
+            {
+                int result =  Iservice.AppendToTrip(TripID, item.model.GcSetID, userID);
+            }
+        }
+        MudDialog.Close(DialogResult.Ok("Appended"));
+    }
+
+
+    class SelectableCollection<T>
+    {
+        public bool Selected { get; set; } = false;
+        public T model { get; set; }
+    }
+}

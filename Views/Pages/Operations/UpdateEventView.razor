@@ -1,7 +1,5 @@
 ﻿@inject ITripService Iservice
 @inject IPlaceService Iplace
-@inject ITruckService Itruck
-@inject IDriverService Idriver
 @inject IEventService Ievent
 @inject ITripService Itrip
 
@@ -64,6 +62,10 @@
                     <MudItem xs="12" md="6">
                         <MudTextField @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined" Margin="Margin.Normal"></MudTextField>
                     </MudItem>
+                    <MudItem xs="12">
+                        <MyDateTimePicker Label="Event" @bind-Value="model.EventTime" ></MyDateTimePicker>
+                    </MudItem>
+
                 </MudGrid>
             </EditForm>
         }
@@ -79,8 +81,10 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter] public TruckModel Truck { get; set; }
+    [Parameter] public DriverModel AssignedDriver { get; set; }
+    [Parameter] public TripModel CurrentTrip { get; set; }
+    [Parameter] public EventModel CurrentEvent { get; set; }
 
-    private DriverModel AssignedDriver = null;
     private EventModel model = new();
 
     private bool IsLoading = false;
@@ -88,10 +92,10 @@
     private string ButtonLabel = "Select an Event";
 
 
-    private TripModel CurrentTrip { get; set; }
+
     private PlaceModel Origin = new();
     private PlaceModel Destination = new();
-    private long KmReading;
+    private long? KmReading;
 
     private List<PlaceModel> places;
     private List<EventTypeModel> EventTypes;
@@ -103,15 +107,8 @@
     }
 
 
-
     protected override async Task OnInitializedAsync()
     {
-        var driverID = Itruck.GetAssignedDriver(Truck.TruckID);
-        if (driverID != null)
-            AssignedDriver = Idriver.SelectByID(driverID.Value);
-
-        CurrentTrip = Itrip.Select(Itruck.GetCurrentTrip(Truck.TruckID));
-
         EventTypes = new();
         foreach(var item in Ievent.GetEventTypes())
         {
@@ -124,6 +121,10 @@
         {
             places.Add(item);
         }
+
+        KmReading = CurrentEvent?.EventReading;
+        int? OriginID = CurrentEvent?.DestinationID;
+        Origin = OriginID == null ? null : await Iplace.SelectByID(OriginID.Value);
     }
 
 
@@ -141,13 +142,19 @@
             if (!int.TryParse(authprov.User.Claims.First(c => c.Type == "BranchID")?.Value, out BranchID))
             {
                 snackbar.Add("Branch is Not Selected", Severity.Warning);
+                return;
             }
 
+            if(SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
+            {
+                snackbar.Add("Cannot start this event without Driver", Severity.Warning);
+                return;
+            }
 
             model.BranchID = BranchID;
             model.DestinationID = SelectedEvent.IsStationary ? Origin.PlaceID : Destination.PlaceID;
             model.OriginID = Origin.PlaceID;
-            model.DriverID = AssignedDriver.DriverID;
+            model.DriverID = AssignedDriver?.DriverID;
             model.EventTime = DateTime.Now;
             model.TripID = CurrentTrip.TripID;
             model.TruckID = Truck.TruckID;

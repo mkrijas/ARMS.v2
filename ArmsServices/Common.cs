@@ -16,6 +16,11 @@ namespace ArmsServices
             SqlGeography geo = GetFieldValue<SqlGeography>(dr, name, null);
             return string.Empty;
         }
+        public static bool IsDBNull(this IDataRecord dr, string name)
+        {
+            return dr.IsDBNull(dr.GetOrdinal(name));            
+        }
+
         public static string GetString(this IDataRecord dr, string name)
         {
             return GetFieldValue<String>(dr, name, (string)null);
@@ -49,9 +54,9 @@ namespace ArmsServices
             return GetFieldValue<decimal>(dr, name, 0);
         }
 
-        public static DateTime GetDateTime(this IDataRecord dr, string name)
+        public static DateTime? GetDateTime(this IDataRecord dr, string name)
         {
-            return GetFieldValue(dr, name, DateTime.MinValue);
+            return GetFieldValue<DateTime?>(dr, name, null);
         }
         public static T GetFieldValue<T>(this IDataRecord dr, string fieldName, T defaultvalue = default(T))
         {

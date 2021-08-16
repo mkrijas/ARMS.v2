@@ -1,0 +1,75 @@
+﻿@inject IDialogService DialogService
+
+<MudCard Class="@Class">
+    <MudCardHeader>
+        <CardHeaderAvatar>
+            <MudAvatar Color="ewaycolor">GC</MudAvatar>
+        </CardHeaderAvatar>
+        <CardHeaderContent>
+            <MudText Typo="Typo.body1" GutterBottom="true"><b>@item.SetGcNumber</b></MudText>
+            <MudText Typo="Typo.body2">@item.SetBillNumber</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudText>@item.ConsignorName</MudText>
+        <MudText>@item.ConsigneeName</MudText>
+        <MudText Typo="Typo.body2">@item.RouteName</MudText>
+        <MudText>@item.SetBillQuantity</MudText>
+    </MudCardContent>
+    <MudCardActions>
+        <MudButton @onclick="@(() => Edit(item.GcSetID))" Color="Color.Primary">EDIT</MudButton>
+        <MudButton @onclick="@(() => EwayBill(item.GcSetID))" Variant="Variant.Text" Color="@ewaycolor">Eway Bill</MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+        [Parameter]
+        public GcSetModel item { get; set; }
+
+        [Parameter]
+        public string Class { get; set; }
+
+        private Color ewaycolor = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        setColor();
+    }
+
+    private void setColor()
+    {
+        if (item.Gcs.Exists(x => x.EwayBill.ExpireOn == null || x.EwayBill?.ExpireOn < DateTime.Now))
+        {
+            ewaycolor = Color.Error;
+        }
+        else
+        {
+            ewaycolor = Color.Primary;
+        }
+    }
+
+
+    private async Task EwayBill(long id)
+    {
+        var parameters = new DialogParameters();
+        item.Gcs.ForEach(x => { x.EwayBill.EwayBillDate = x.EwayBill.EwayBillDate ?? DateTime.Today; x.EwayBill.ExpireOn = x.EwayBill.ExpireOn ?? DateTime.Today.AddDays(2); });
+        parameters.Add("model", item);
+        var result = DialogService.Show<EwayBillDialog>("EwayBill", parameters);
+        var data = await result.Result;
+        if (data.Data != null)
+        {
+            setColor();
+        }
+    }
+
+    private async Task Edit(long id)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", item);
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+        var result = DialogService.Show<GcDialog>("Edit GC", parameters, maxWidth);
+        var data = await result.Result;
+        StateHasChanged();
+    }
+}
