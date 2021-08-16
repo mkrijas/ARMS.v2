@@ -13,6 +13,8 @@ namespace ArmsServices.DataServices
     {
         Task<BranchModel> Update(BranchModel model);
         Task<BranchModel> SelectByID(int ID);
+
+        string GetBranchName(int BranchID);
         Task<int> Delete(int AddressID, string UserID);
         IEnumerable<BranchModel> Select();
 
@@ -96,6 +98,12 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },
             };
+        }
+
+        public string GetBranchName(int BranchID)
+        {
+            var result = Task.Run(async () => await SelectByID(BranchID));
+            return result.Result.BranchName;
         }
     }
 }

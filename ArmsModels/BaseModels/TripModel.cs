@@ -22,7 +22,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int BranchID { get; set; }
         [Required]
-        public DateTime TripDate { get; set; }
+        public DateTime? TripDate { get; set; }
         public decimal? Mileage { get; set; }
         public int? RunKM { get; set; }
         public decimal? Fuel { get; set; }                

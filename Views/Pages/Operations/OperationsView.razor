@@ -1,8 +1,13 @@
 ﻿@page "/operations"
 
+
+@inject IBranchService Ibranch
 @inject ITruckService Itruck
+@inject IDriverService Idriver
 @inject ITripService Itrip
 @inject IEventService Ievent
+@inject IGcService Igc
+@inject IPlaceService Iplace
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -14,41 +19,72 @@
 
 <MudGrid Spacing="4">
 
-    <MudItem xs="8" md="4">
-        <MudAutocomplete T="TruckModel" Label="Select Truck" @bind-Value="SelectedTruck" ResetValueOnEmptyText="true" IsOpenChanged="IsTruckSelected" 
+    <MudItem xs="12" md="6">
+        <MudAutocomplete Clearable="true" T="TruckModel" Variant="Variant.Outlined" Label="Select Truck" ResetValueOnEmptyText="true" ValueChanged="IsTruckSelected"
                          SearchFunc="Search" ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
     </MudItem>
-    <MudItem xs="4" md="2">
-        <MudFab Icon="@Icons.Material.Filled.LabelImportant" Label="Get" OnClick="GetTruckInfo" />
+    <MudItem xs="12" md="6">
+        @if (CurrentTrip != null)
+        {
+            <MudText hidden="@HideStatus" Typo="Typo.h4" Style="display:inline-block"><MudIcon Icon="@Icons.Filled.Transform" Title="Trip Number" Color="Color.Primary" /> @(CurrentTrip?.TripPrefix + CurrentTrip?.TripNumber)</MudText>
+        }
+
+
+        @if (AssignedDriver == null && SelectedTruck != null)
+        {
+            <MudText Typo="Typo.h4" Style="display:inline-block"><MudIcon Icon="@Icons.Filled.AirlineSeatReclineNormal" Title="Driver" Color="Color.Warning" /> UNASSAIGNED</MudText>
+        }
+        else if (AssignedDriver != null)
+        {
+            <MudText Typo="Typo.h4" Style="display:inline-block"><MudIcon Icon="@Icons.Filled.AirlineSeatReclineNormal" Title="Driver" Color="Color.Success" /> @AssignedDriver.DriverName</MudText>
+        }
     </MudItem>
     <MudItem xs="12" md="12" hidden="@HideStatus">
-        <MudPaper Class="pa-4 ma-2">           
-                <h5>   @EventType?.EventStatusText   On  @CurrentEvent?.EventTime</h5>           
-        </MudPaper>
+        <h5> @TruckStatus    </h5>
     </MudItem>
+
+
     <MudItem xs="12" md="12" hidden="@HideControls">
-        <MudFab Icon="@Icons.Material.Filled.AddTask" OnClick="UpdateEvent" IconColor="Color.Success" Color="Color.Primary" Label="@EventButtonLabel" />
-        <MudFab Icon="@Icons.Material.Outlined.Cancel" Label="Cancel Trip" OnClick="CancelTrip" IconColor="Color.Error" Color="Color.Default" />
+        <MudFab Icon="@Icons.Material.Filled.AddTask" OnClick="UpdateEvent" IconColor="Color.Default" Color="Color.Success" Label="@EventButtonLabel" />
+        @if (CurrentTrip != null)
+        {
+            <MudFab Icon="@Icons.Material.Outlined.Cancel" Label="Cancel Trip" OnClick="CancelTrip" IconColor="Color.Error" Color="Color.Warning" />
+        }
         <MudFab Icon="@Icons.Material.Filled.ReportProblem" Label="Breakdown/Accident" OnClick="ReportBreakDown" Color="Color.Secondary" />
-        <MudFab Icon="@Icons.Material.Outlined.PersonAddAlt1" Label="@AssignDriverLabel" OnClick="AssignDriver" Color="Color.Surface" />
+        <MudFab Icon="@Icons.Material.Outlined.PersonAddAlt1" Label="@AssignDriverLabel" OnClick="AssignDriver" Color="Color.Primary" />
+        <MudFab Icon="@Icons.Material.Outlined.AddTask" Label="Load Consignment" OnClick="AddConsignment" Color="Color.Tertiary" />
     </MudItem>
 </MudGrid>
-
-
+@if (AssignedGCs != null)
+{
+    <MudGrid Spacing="4">
+        @foreach (var gc in AssignedGCs)
+        {
+            <MudItem xs="4">
+                <Views.Pages.Gc.GcItemCard item="gc"></Views.Pages.Gc.GcItemCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
 @code{
 
     private List<TruckModel> Trucks;
     private TruckModel SelectedTruck { get; set; }
+    private DriverModel AssignedDriver { get; set; }
     private EventModel CurrentEvent { get; set; }
     private EventTypeModel EventType { get; set; }
+    private TripModel CurrentTrip { get; set; }
+
+    private List<GcSetModel> AssignedGCs { get; set; }
 
 
 
 
-
-
+    string TruckStatus;
     string EventButtonLabel;
     string AssignDriverLabel;
+    string OriginName;
+    string DestnationName;
 
     private bool HideControls { get; set; } = true;
     public bool HideStatus { get; set; } = true;
@@ -62,6 +98,8 @@
         {
             Trucks.Add(item);
         }
+
+
     }
 
     private async Task<IEnumerable<TruckModel>> Search(string searchString)
@@ -72,24 +110,24 @@
 
     private void GetTruckInfo()
     {
-
-
-
     }
 
     private async Task UpdateEvent()
     {
         var parameters = new DialogParameters();
         parameters.Add("Truck", SelectedTruck);
+        parameters.Add("AssignedDriver", AssignedDriver);
+        parameters.Add("CurrentEvent", CurrentEvent);
 
         if (EventButtonLabel == "Start New Trip")
         {
             var result = DialogService.Show<NewTripView>("Start Trip", parameters);
             var Data = await result.Result;
-            var trip = Data.Data;
+            CurrentTrip = (TripModel)Data.Data;
         }
         else
         {
+            parameters.Add("CurrentTrip", CurrentTrip);
             var result = DialogService.Show<UpdateEventView>("Update Event", parameters);
             var Data = await result.Result;
             var ev = Data.Data;
@@ -112,22 +150,29 @@
     {
         var parameters = new DialogParameters();
         parameters.Add("Truck", SelectedTruck);
+        parameters.Add("AssignedDriver", AssignedDriver);
         var result = DialogService.Show<AssignDriverView>(AssignDriverLabel, parameters);
         var Data = await result.Result;
         var ev = Data.Data;
+        AssignedDriver = (DriverModel)ev;
     }
 
-    private void AddConsignment()
+    private async Task AddConsignment()
     {
-
+        var parameters = new DialogParameters();
+        parameters.Add("Truck", SelectedTruck);
+        parameters.Add("TripID", CurrentTrip.TripID);
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+        var result = DialogService.Show<Pages.Gc.GcSelectDialog>("Load Consignment", parameters, maxWidth);
+        var Data = await result.Result;
+        var ev = Data.Data;
+        AssignedGCs = Igc.SelectByTrip(CurrentTrip.TripID);
     }
 
-    private async Task IsTruckSelected(bool IsOpenChanged)
+    private async Task IsTruckSelected(TruckModel model)
     {
-        if (!IsOpenChanged)
-        {
-            truckStatusUpdated();
-        }
+        SelectedTruck = model;
+        truckStatusUpdated();
     }
 
 
@@ -143,17 +188,36 @@
         else
         {
 
-            var AssignedDriver = Itruck.GetAssignedDriver(SelectedTruck.TruckID);
+            int? DriverID = Itruck.GetAssignedDriver(SelectedTruck.TruckID);
+
+            AssignedDriver = DriverID == null ? null : Idriver.SelectByID(DriverID.Value);
             AssignDriverLabel = AssignedDriver == null ? "Assign Driver" : "Replace Driver";
-
             CurrentEvent = Ievent.GetCurrentEvent(SelectedTruck.TruckID);
+            CurrentTrip = null;
 
-            if (CurrentEvent != null )
+
+            if (CurrentEvent != null)
             {
                 HideStatus = false;
                 EventType = Ievent.GetEventType(CurrentEvent.EventTypeID);
-            }
+                CurrentTrip = Itrip.Select(CurrentEvent.TripID);
+                OriginName = Task.Run(async () => await Iplace.SelectByID(CurrentEvent.OriginID)).Result.PlaceName;
 
+                AssignedGCs = Igc.SelectByTrip(CurrentTrip.TripID);
+
+                string TruckStatusAppend;
+                if (!EventType.IsStationary)
+                {
+                    DestnationName = Task.Run(async () => await Iplace.SelectByID(CurrentEvent.DestinationID)).Result.PlaceName;
+                    TruckStatusAppend = " From " + OriginName + " To " + DestnationName;
+                }
+                else
+                {
+                    TruckStatusAppend = " At " + OriginName;
+                }
+
+                TruckStatus = EventType?.EventStatusText + " On " + @CurrentEvent?.EventTime + TruckStatusAppend + " (Reported by " + Ibranch.GetBranchName(CurrentEvent.BranchID) + ")";
+            }
 
             if (EventType != null && EventType.IsBlocking)
             {
@@ -175,4 +239,5 @@
             }
         }
     }
+
 }

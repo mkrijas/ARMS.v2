@@ -15,7 +15,7 @@ namespace ArmsModels.BaseModels
         public long TruckEventID { get; set; }
         public byte EventTypeID { get; set; }       
         public DateTime? EventTime { get; set; }
-        public long EventReading { get; set; }
+        public long? EventReading { get; set; }
         public int BranchID { get; set; }
         public int OriginID { get; set; }
         public int DestinationID { get; set; }
