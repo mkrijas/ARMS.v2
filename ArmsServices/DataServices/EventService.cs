@@ -105,6 +105,7 @@ namespace ArmsServices.DataServices
                 IsStationary = dr.GetBoolean("IsStationary"),
                 IsTripRelated = dr.GetBoolean("IsTripRelated"),
                 IsBlocking = dr.GetBoolean("IsBlocking"),
+                LimitPostEvent = dr.GetByte("LimitPostEvent"),
             };
         }
         

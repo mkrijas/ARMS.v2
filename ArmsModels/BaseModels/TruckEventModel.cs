@@ -29,7 +29,7 @@ namespace ArmsModels.BaseModels
 
     public class EventTypeModel
     {
-        public Byte EventTypeID { get; set; }
+        public byte EventTypeID { get; set; }
         public string EventTypeName { get; set; }
         public bool IsStationary { get; set; }
         public bool IsGcRelated { get; set; }
@@ -39,5 +39,6 @@ namespace ArmsModels.BaseModels
         public bool IsBlocking { get; set; }
         public int DisplayOrder { get; set; }
         public string  EventStatusText { get; set; }
+        public byte LimitPostEvent { get; set; }
     }
 }
