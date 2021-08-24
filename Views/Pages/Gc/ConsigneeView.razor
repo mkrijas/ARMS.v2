@@ -1,4 +1,5 @@
 ﻿@page "/consignee"
+@page "/consignee/{OrderID:int}"
 
 @inject IConsigneeService Iservice
 @inject IPlaceService Iplace
@@ -15,7 +16,7 @@
                 <ObjectGraphDataAnnotationsValidator />
                 <MudCardHeader>
                     <CardHeaderContent>
-                         <MudSwitch @bind-Checked="customstr" Color="Color.Error" Converter="@(new CustomStringToBoolConverter())"> <MudText Typo="Typo.h6">Add/Edit @(customstr)</MudText></MudSwitch>
+                        <MudSwitch @bind-Checked="customstr" Color="Color.Error" Converter="@(new CustomStringToBoolConverter())"> <MudText Typo="Typo.h6">Add/Edit @(customstr)</MudText></MudSwitch>
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
@@ -27,11 +28,11 @@
                             <MudTextField @bind-Value="model.Mobile" Label="Mobile" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Mobile)"></MudTextField>
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudAutocomplete T="PlaceModel" Label="Place" @bind-Value="Place" ResetValueOnEmptyText="true"
+                            <MudAutocomplete T="PlaceModel" Label="Place" @bind-Value="Place" ResetValueOnEmptyText="true" Variant="Variant.Outlined" 
                                              SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="Order" ResetValueOnEmptyText="true"
+                            <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="Order" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
                                              SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
                         </MudItem>
 
@@ -60,7 +61,7 @@
     <MudItem xs="12" md="12">
         <MudTable Items="@collection" Elevation="10" Filter="new Func<ConsigneeModel, bool>(search)" @bind-model="model">
             <ToolBarContent>
-                <MudText Typo="Typo.h6">Consignees</MudText>
+                <MudText Typo="Typo.h6">@Order?.OrderName Consignees</MudText>
                 <MudToolBarSpacer></MudToolBarSpacer>
                 <MudTextField @bind-Value="searchConsignee" Placeholder="Search Consignees... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
@@ -94,6 +95,9 @@
 </MudGrid>
 @code {
 
+    [Parameter]
+    public int? OrderID { get; set; }
+
     private ConsigneeModel model = new ConsigneeModel() { Address = new AddressModel() { AddresseeName = "temp", Place = "temp" } };
     private OrderModel Order = new OrderModel();
     private PlaceModel Place = new PlaceModel();
@@ -118,6 +122,11 @@
             orders.Add(item);
         }
 
+        if(OrderID != null)
+        {
+            Order = await Iorder.SelectByID(OrderID.Value);
+        }
+
         await GetAll();
     }
 
@@ -136,7 +145,8 @@
 
     private async Task GetAll()
     {
-        await foreach (var item in Iservice.Select(0))
+        collection = new();
+        await foreach (var item in Iservice.SelectByOrder(OrderID.GetValueOrDefault()))
         {
             collection.Add(item);
         }

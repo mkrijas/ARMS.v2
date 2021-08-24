@@ -1,0 +1,152 @@
+﻿@page "/TariffTypes"
+@inject ITariffService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="12">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit Tariff Types</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="4">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@model.TariffTypeName" Label="Title" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TariffTypeName)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudSelect Label="Nature" T="string" @bind-Value="@model.TariffGroup" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in Iservice.TariffGroups)
+                                {
+                                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudCheckBox @bind-Checked="@model.IsExpense" Label="Is Expense?" For="@(() => model.AllowMultiple)" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudCheckBox @bind-Checked="@model.IsIncome" Label="Is Income?" For="@(() => model.AllowMultiple)" />
+                        </MudItem>                        
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@model.Unit" Label="Unit (eg: Litre , Metric Ton)" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Unit)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudCheckBox @bind-Checked="@model.AllowMultiple" Label="Allow Multiple?" For="@(() => model.AllowMultiple)" />
+                        </MudItem>
+
+                    </MudGrid>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" md="12">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<TariffTypeModel, bool>(search)" @bind-model="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Parties</MudText>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchString" Placeholder="Search ... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.TariffTypeName)" InitialDirection="SortDirection.Ascending">Transaction Type</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.TariffGroup)" InitialDirection="SortDirection.Ascending">Nature</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.Unit)" InitialDirection="SortDirection.Ascending">Unit</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.IsExpense)" InitialDirection="SortDirection.Ascending">Is Expenses</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.IsIncome)" InitialDirection="SortDirection.Ascending">Is Income</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.AllowMultiple)" InitialDirection="SortDirection.Ascending">Allow Multiple</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">@context.TariffTypeName</MudTd>
+                <MudTd DataLabel="Nature">@context.TariffGroup</MudTd>
+                <MudTd DataLabel="Unit">@context.Unit</MudTd>
+                <MudTd DataLabel="Expense">@context.IsExpense</MudTd>
+                <MudTd DataLabel="Income">@context.IsIncome</MudTd>
+                <MudTd DataLabel="Allow Multiple">@context.AllowMultiple</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> Edit(context.TariffTypeID.Value))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.TariffTypeID.Value))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+
+
+
+</MudGrid>
+@code {
+
+    private TariffTypeModel model = new();
+    private List<TariffTypeModel> collection = new ();
+       
+    private string searchString = "";
+
+    protected override void OnInitialized()
+    {
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+        collection = new();
+        foreach (var item in Iservice.SelectTariffTypes())
+        {
+            collection.Add(item);
+        }
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+
+        try
+        {
+            model = Iservice.UpdateTariffType(model);
+            snackbar.Add("Saved Successfully", Severity.Success);            
+            model = new();
+            GetAll();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void Edit(int id)
+    {
+        model = collection.FirstOrDefault(x => x.TariffTypeID == id);
+    }
+    private void Delete(int id)
+    {
+        //await Iservice.Delete(id, "Rijas");
+        //snackbar.Add("Deleted Successfully", Severity.Success);
+        //await GetAll();
+    }
+
+
+    private bool search(TariffTypeModel model)
+    {
+        if (model.TariffTypeName != null && model.TariffTypeName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+
+
+

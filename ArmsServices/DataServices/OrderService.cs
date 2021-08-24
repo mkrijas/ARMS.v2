@@ -60,7 +60,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "Order"),
             };
             OrderModel model = new OrderModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.gc.Order.Update]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.gc.Order.Select]", parameters))
             {
                 model = await GetModel(dr);
             }

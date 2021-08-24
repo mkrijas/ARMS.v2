@@ -1,0 +1,187 @@
+﻿
+@inject ITransactionService Iservice
+@inject ITariffService Itariff
+
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+<MudDialog>
+    <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Create" Class="mr-3 mb-n1" />
+                INCOME AND EXPENSES  
+            </MudText>
+        </TitleContent>
+    <DialogContent>
+        <MudContainer Style="min-height:500px;max-height: 800px;" >
+            <div @ref="testRef" tabindex="0" @onkeydown="HandleKeyDown">
+                <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">
+                    <ObjectGraphDataAnnotationsValidator />
+                    <ValidationSummary />
+                    <MudGrid Spacing="4">
+                        @if (IsLoading)
+                        {
+                            <MudProgressCircular Color="Color.Primary" Style="height: 200px; width: 200px; display: block; margin: 150px auto auto auto; " Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <MudItem xs="12">
+                                @if (trip != null)
+                                {
+                                    <MudText>Trip : @(trip.TripPrefix + trip.TripNumber)  </MudText>
+                                }
+                                else if (Gc != null)
+                                {
+                                    <MudText>Gc: @Gc.SetGcNumber</MudText>
+                                }
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                @foreach (var item in model.Transactions)
+                                {
+                                    var adText = item.Sign == -1 ? "EXPENSE" : "INCOME";
+                                    var adIcon = item.Sign == -1 ? Icons.Filled.East : Icons.Filled.West;
+                                    <MudGrid Spacing="2">
+                                        <MudItem xs="3">
+                                            <MudSelect Label="Tariff Type" T="short?" Value="@item.TariffID" ValueChanged="@((e)=>TariffChanged(e,item))" Variant="Variant.Outlined" OffsetY="true" AdornmentColor="Color.Secondary">
+                                                @foreach (var tariffType in TariffTypes)
+                                                {
+                                                    <MudSelectItem Value="@tariffType.TariffTypeID">@tariffType.TariffTypeName</MudSelectItem>
+                                                }
+                                            </MudSelect>
+                                        </MudItem>
+                                        <MudItem xs="2">
+                                            <MudTextField @bind-Value="@item.Amount" Label="@adText" Variant="Variant.Outlined" InputType="InputType.Text" For="@(() => item.Amount)" Adornment="Adornment.End" AdornmentIcon="@adIcon" OnAdornmentClick="(()=> SignClick(item))" AdornmentColor="Color.Primary" />
+                                        </MudItem>
+                                        <MudItem xs="2">
+                                            <MudTextField @bind-Value="@item.Quantity" Label="Qty" Variant="Variant.Outlined" For="@(() => item.Quantity)" Adornment="Adornment.End" AdornmentText="@item.Unit" AdornmentColor="Color.Secondary"></MudTextField>
+                                        </MudItem>
+                                        <MudItem xs="2">
+                                            <MudDatePicker @bind-Date="@item.BillDate" Label="Bill Date" Variant="Variant.Outlined" For="@(() => item.BillDate)"></MudDatePicker>
+                                        </MudItem>
+                                        <MudItem xs="2">
+                                            <MudTextField @bind-Value="@item.Reference" Label="reference" Variant="Variant.Outlined" For="@(() => item.Reference)"></MudTextField>
+                                        </MudItem>
+                                        <MudItem xs="1">
+                                            <div class="pa-3">
+                                                <MudIconButton Variant="Variant.Filled" Icon="@Icons.Filled.Delete" Color="Color.Error" OnClick="(()=> RemoveItem(item))"></MudIconButton>
+                                            </div>
+                                        </MudItem>
+                                    </MudGrid>
+                                }
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </EditForm>
+            </div>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>        
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Gc</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+<link href="~/style.css" />
+@code {
+
+    private ElementReference testRef;
+
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if(e.CtrlKey&& e.Key == "q")
+        {
+            model.Transactions.Add(new OpTranSubModel());
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await testRef.FocusAsync();
+        }
+    }
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public TripModel trip { get; set; }
+    [Parameter] public GcSetModel Gc { get; set; }
+    [Parameter] public OperationTransactionModel model { get; set; }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private bool IsLoading = false;
+
+    private List<TariffTypeModel> TariffTypes = new();
+    private TariffTypeModel SelectedTariff;
+
+    protected override void OnInitialized()
+    {
+        IsLoading = true;
+        TariffTypes = Itariff.SelectTariffTypes().ToList();
+
+        if(model?.Transactions == null)
+        {
+            model = new();
+            model.Transactions = new();
+            model.Transactions.Add(new OpTranSubModel());
+        }
+
+        if(trip!= null)
+        {
+            model.RefType = "Trip";
+            model.RefID = trip.TripID;
+        }
+
+        else if(Gc != null)
+        {
+            model.RefType = "Gc";
+            model.RefID = Gc.GcSetID;
+        }
+        IsLoading = false;
+    }
+    protected override void OnParametersSet()
+    {
+    }
+
+    private void SignClick(OpTranSubModel item)
+    {
+        item.Sign = item.Sign * -1;
+    }
+
+    private void RemoveItem(OpTranSubModel item)
+    {
+        model.Transactions.Remove(item);
+    }
+
+    private void TariffChanged(short? e, OpTranSubModel item)
+    {
+        item.TariffID = e;
+        item.Unit = TariffTypes.FirstOrDefault(x => x.TariffTypeID == e.GetValueOrDefault()).Unit;
+        StateHasChanged();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+        try
+        {
+            model = Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(model));
+            model = new ();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+}
+

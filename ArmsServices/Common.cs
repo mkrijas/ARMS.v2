@@ -98,7 +98,7 @@ namespace ArmsServices
         }
 
 
-        public static DataTable GetDataTable<T>(this List<T> items)
+        public static DataTable ToDataTable<T>(this List<T> items)
         {
             DataTable dataTable = new DataTable(typeof(T).Name);
 
@@ -106,12 +106,14 @@ namespace ArmsServices
             PropertyInfo[] Props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
             foreach (PropertyInfo prop in Props)
             {
+                if(!prop.GetGetMethod().IsVirtual)
                 dataTable.Columns.Add(prop.Name, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
             }
+            int length = Props.Where(x => x.GetGetMethod().IsVirtual == false).ToArray().Length;
             foreach (T item in items)
             {
-                var values = new object[Props.Length];
-                for (int i = 0; i < Props.Length; i++)
+                var values = new object[length];
+                for (int i = 0; i < length; i++)
                 {
                     values[i] = Props[i].GetValue(item, null);
                 }

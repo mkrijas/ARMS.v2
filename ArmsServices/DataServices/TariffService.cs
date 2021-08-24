@@ -5,75 +5,94 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
-
+using Microsoft.Extensions.Configuration;
 
 namespace ArmsServices.DataServices
 {
     public interface ITariffService
     {       
-        Task<TariffModel> Update(TariffModel model);
-        Task<int> Delete(int ID, string UserID);
-        IAsyncEnumerable<TariffModel> Select();
-        Task<TariffModel> SelectByID(int ID);
-        IAsyncEnumerable<TariffFormulaModel> SelectFormulas();
-        Task<TariffFormulaModel> SelectFormulaByID(short ID);
-        IAsyncEnumerable<TariffTypeModel> SelectTariffTypes();
-        Task<TariffTypeModel> SelectTariffTypeByID(short ID);
+        TariffModel Update(TariffModel model);
+        int Delete(int ID, string UserID);
+        IEnumerable<TariffModel> Select();
+        IEnumerable<TariffModel> SelectByOrder(int OrderID);
+        TariffModel SelectByID(int ID);
+        IEnumerable<TariffFormulaModel> SelectFormulas();
+        TariffFormulaModel SelectFormulaByID(short ID);
+        IEnumerable<TariffTypeModel> SelectTariffTypes();
+        TariffTypeModel SelectTariffTypeByID(short ID);
+        TariffTypeModel UpdateTariffType(TariffTypeModel model);
+        string[] TariffGroups { get; }
 
     }
 
     public class TariffService : ITariffService
     {
         IDbService Iservice;
-        public TariffService(IDbService iservice, IRouteService routeService, IOrderService orderService)
+        IConfiguration Configuration;
+        private const string Data = "Data";
+        public TariffService(IDbService iservice, IConfiguration configuration)
         {
-            Iservice = iservice;            
+            Iservice = iservice;
+            Configuration = configuration;
         }
+        public string[] TariffGroups { get { return Configuration.GetSection(Data).GetSection("TariffGroups").Get<string[]>(); } }
 
-        public async Task<int> Delete(int ID, string UserID)
+        public int Delete(int ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TariffID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Tariff.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Operation.Tariff.Delete]", parameters);
         }
 
-        public async IAsyncEnumerable<TariffModel> Select()
+        public IEnumerable<TariffModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", 0),               
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Tariff.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        public async Task<TariffModel> SelectByID(int ID)
+        public IEnumerable<TariffModel> SelectByOrder(int OrderID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@OrderID", OrderID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public TariffModel SelectByID(int ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),              
             };
             TariffModel model = new TariffModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Tariff.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.Select]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
         }
 
-        public async Task<TariffFormulaModel> SelectFormulaByID(short ID)
+        public TariffFormulaModel SelectFormulaByID(short ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),              
             };
             TariffFormulaModel model = new TariffFormulaModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Tariff.Formula.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TariffFormula.Select]", parameters))
             {
                 model = new TariffFormulaModel
                 {
@@ -90,13 +109,13 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public async IAsyncEnumerable<TariffFormulaModel> SelectFormulas()
+        public IEnumerable<TariffFormulaModel> SelectFormulas()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", 0),               
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Tariff.Formula.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TariffFormula.Select]", parameters))
             {
                 yield return new TariffFormulaModel
                 {
@@ -112,77 +131,72 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public async Task<TariffTypeModel> SelectTariffTypeByID(short ID)
+        public TariffTypeModel SelectTariffTypeByID(short ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
             };
             TariffTypeModel model = new TariffTypeModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Tariff.Type.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TariffType.Select]", parameters))
             {
-                model = new TariffTypeModel
-                {
-                    TariffTypeID = dr.GetInt16("TariffTypeID"),
-                    TariffTypeName = dr.GetString("TariffTypeName"),
-                    IsExpense = dr.GetBoolean("IsExpense"),
-                    IsIncome = dr.GetBoolean("IsIncome"),
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                    {
-                        RecordStatus = dr.GetByte("RecordStatus"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        UserID = dr.GetString("UserID"),
-                    },
-                };
+                model = GetTariffTypeModel(dr);
             }
             return model;
         }
 
-        public async IAsyncEnumerable<TariffTypeModel> SelectTariffTypes()
+        public IEnumerable<TariffTypeModel> SelectTariffTypes()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", 0),              
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Tariff.Type.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TariffType.Select]", parameters))
             {
-                yield return new TariffTypeModel
-                {
-                    TariffTypeID = dr.GetInt16("TariffTypeID"),
-                    TariffTypeName = dr.GetString("TariffTypeName"),
-                    IsExpense = dr.GetBoolean("IsExpense"),
-                    IsIncome = dr.GetBoolean("IsIncome"),
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                    {
-                        RecordStatus = dr.GetByte("RecordStatus"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        UserID = dr.GetString("UserID"),
-                    },
-                };
+                yield return GetTariffTypeModel(dr);
             }
         }
 
-        public async Task<TariffModel> Update(TariffModel model)
+        public TariffModel Update(TariffModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@RouteID", model.RouteID),
                new SqlParameter("@TariffFormulaID", model.TariffFormulaID),
-               new SqlParameter("@TariffID", model.TariffID),
-               new SqlParameter("@TariffName", model.TariffName),
+               new SqlParameter("@TariffID", model.TariffID),              
                new SqlParameter("@TariffRate", model.TariffRate),               
                new SqlParameter("@TariffTypeID", model.TariffTypeID),
                new SqlParameter("@TruckAxles", model.TruckAxles),               
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Tariff.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.Update]", parameters))
             {
                 model =  GetModel(dr);
             }
             return model;
         }
 
+        public TariffTypeModel UpdateTariffType(TariffTypeModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AllowMultiple", model.AllowMultiple),
+               new SqlParameter("@FinancialAccountID", model.FinancialAccountID),
+               new SqlParameter("@IsExpense", model.IsExpense),
+               new SqlParameter("@IsIncome", model.IsIncome),
+               new SqlParameter("@TariffGroup", model.TariffGroup),
+               new SqlParameter("@TariffTypeID", model.TariffTypeID),
+               new SqlParameter("@TariffTypeName", model.TariffTypeName),
+               new SqlParameter("@Unit", model.Unit),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TariffType.Update]", parameters))
+            {
+                model = GetTariffTypeModel(dr);
+            }
+            return model;
+        }
         private TariffModel GetModel(IDataRecord dr)
         {
             return new TariffModel
@@ -190,8 +204,7 @@ namespace ArmsServices.DataServices
                 OrderID = dr.GetInt32("OrderID"),
                 RouteID = dr.GetInt32("RouteID"),                
                 TariffFormulaID = dr.GetInt16("TariffFormulaID"),
-                TariffID = dr.GetInt32("TariffID"),
-                TariffName = dr.GetString("TariffName"),
+                TariffID = dr.GetInt32("TariffID"),                
                 TariffRate = dr.GetDecimal("TariffRate"),
                 TariffTypeID = dr.GetInt16("TariffTypeID"),                
                 TruckAxles = dr.GetByte("TruckAxles"),
@@ -207,5 +220,26 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-    }
+
+        private TariffTypeModel GetTariffTypeModel(IDataRecord dr)
+        {
+            return new TariffTypeModel
+            {
+                TariffTypeID = dr.GetInt16("TariffTypeID"),
+                TariffTypeName = dr.GetString("TariffTypeName"),
+                TariffGroup = dr.GetString("TariffGroup"),
+                Unit = dr.GetString("Unit"),
+                AllowMultiple = dr.GetBoolean("AllowMultiple"),
+                IsExpense = dr.GetBoolean("IsExpense"),
+                IsIncome = dr.GetBoolean("IsIncome"),
+                FinancialAccountID = dr.GetInt32("FinancialAccountID"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+    }   
 }

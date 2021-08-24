@@ -21,7 +21,7 @@
 
     <MudItem xs="12" md="6">
         <MudAutocomplete Clearable="true" T="TruckModel" Variant="Variant.Outlined" Label="Select Truck" ResetValueOnEmptyText="true" ValueChanged="IsTruckSelected"
-                         SearchFunc="Search" ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
+            Value="SelectedTruck"  SearchFunc="Search" ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
     </MudItem>
     <MudItem xs="12" md="6">
         @if (CurrentTrip != null)
@@ -45,14 +45,18 @@
 
 
     <MudItem xs="12" md="12" hidden="@HideControls">
-        <MudFab Icon="@Icons.Material.Filled.AddTask" OnClick="UpdateEvent" IconColor="Color.Default" Color="Color.Success" Label="@EventButtonLabel" />
-        @if (CurrentTrip != null)
-        {
-            <MudFab Icon="@Icons.Material.Outlined.Cancel" Label="Cancel Trip" OnClick="CancelTrip" IconColor="Color.Error" Color="Color.Warning" />
-        }
-        <MudFab Icon="@Icons.Material.Filled.ReportProblem" Label="Breakdown/Accident" OnClick="ReportBreakDown" Color="Color.Secondary" />
-        <MudFab Icon="@Icons.Material.Outlined.PersonAddAlt1" Label="@AssignDriverLabel" OnClick="AssignDriver" Color="Color.Primary" />
-        <MudFab Icon="@Icons.Material.Outlined.AddTask" Label="Load Consignment" OnClick="AddConsignment" Color="Color.Tertiary" />
+        <MudButtonGroup Color="Color.Default" Variant="Variant.Filled">
+            <MudButton StartIcon="@Icons.Material.Filled.AddTask" OnClick="UpdateEvent" IconColor="Color.Default" >@EventButtonLabel</MudButton>
+            @if (CurrentTrip != null)
+            {
+                 <MudButton StartIcon="@Icons.Material.Outlined.Cancel" OnClick="CancelTrip" IconColor="Color.Error">Cancel Trip</MudButton>
+            }
+        <MudButton StartIcon="@Icons.Material.Filled.ReportProblem"  OnClick="ReportBreakDown" IconColor="Color.Secondary">Breakdown/Accident</MudButton>
+        <MudButton StartIcon="@Icons.Material.Outlined.PersonAddAlt1"  OnClick="AssignDriver" IconColor="Color.Primary">@AssignDriverLabel</MudButton>
+       @if (CurrentEvent?.EventTypeID == 2)
+       {<MudButton StartIcon="@Icons.Material.Outlined.AddTask"  OnClick="AddConsignment" IconColor="Color.Tertiary">Load Consignment</MudButton>}
+        <MudButton StartIcon="@Icons.Material.Outlined.Money"  OnClick="AddTransaction" IconColor="Color.Primary">Inc/Exp</MudButton>
+        </MudButtonGroup>
     </MudItem>
 </MudGrid>
 @if (AssignedGCs != null)
@@ -67,9 +71,11 @@
     </MudGrid>
 }
 @code{
+    [Parameter]
+    public TruckModel SelectedTruck { get; set; }
 
     private List<TruckModel> Trucks;
-    private TruckModel SelectedTruck { get; set; }
+
     private DriverModel AssignedDriver { get; set; }
     private EventModel CurrentEvent { get; set; }
     private EventTypeModel EventType { get; set; }
@@ -168,6 +174,16 @@
         var ev = Data.Data;
         AssignedGCs = Igc.SelectByTrip(CurrentTrip.TripID);
     }
+    private async Task AddTransaction()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("trip", CurrentTrip);
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+        var result = DialogService.Show<TransactionDialog>("Inc/Exp", parameters, maxWidth);
+        var Data = await result.Result;
+        var ev = Data.Data;
+    }
+
 
     private async Task IsTruckSelected(TruckModel model)
     {
@@ -184,6 +200,7 @@
             HideStatus = true;
             CurrentEvent = null;
             EventType = null;
+            AssignedGCs = null;
         }
         else
         {

@@ -68,7 +68,7 @@ namespace Views
             services.AddScoped<IGstService, GstService>();
             services.AddScoped<IPartyService, PartyService>();
             services.AddScoped<IUserService, UserService>();
-            services.AddScoped<ITripTransactionService, TripTransactionService>();
+            services.AddScoped<ITransactionService, TransactionService>();
             //services.AddScoped<IPartyDirectorService, PartyDirectorService>();
 
 
