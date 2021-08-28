@@ -13,7 +13,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
 
-        public int PartyID { get; set; }
+        public int? PartyID { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
         public string PartyName { get; set; }

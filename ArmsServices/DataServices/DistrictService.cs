@@ -12,7 +12,7 @@ namespace ArmsServices.DataServices
     public interface IDistrictService
     {       
         Task<DistrictModel> Update(DistrictModel model);
-        Task<int> Delete(int DistrictID, string UserID);
+        Task<int> Delete(int? DistrictID, string UserID);
         IAsyncEnumerable<DistrictModel> Select(int? DistrictID);
     }
 
@@ -50,7 +50,7 @@ namespace ArmsServices.DataServices
                 }
             return model;
         }
-        public async Task<int> Delete(int DistrictID,string UserID)
+        public async Task<int> Delete(int? DistrictID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

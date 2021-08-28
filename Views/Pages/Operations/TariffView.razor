@@ -79,8 +79,8 @@
                 <MudTd DataLabel="Axles">@context.TruckAxles</MudTd>
                 <MudTd DataLabel="Rate">@context.TariffRate</MudTd>
                 <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> Edit(context.TariffID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context.TariffID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Edit(context.TariffID.Value))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.TariffID.Value))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -112,18 +112,19 @@
 
     private List<TariffFormulaModel> Formulas = new ();
     private List<TariffTypeModel> TariffTypes = new ();
-    private List<RouteModel> Routes = new ();    
+    private List<RouteModel> Routes = new ();
 
     #endregion
 
 
     protected override async Task OnInitializedAsync()
     {
+        if(OrderID != 0)
         Order = await Iorder.SelectByID(OrderID);
 
         Routes.Add(new RouteModel()
         {
-            RouteID = 0,
+            RouteID = null,
             RouteName = "Any"
         });
         await foreach (var item in Iroute.Select(0))
@@ -140,7 +141,7 @@
             TariffTypes.Add(item);
         }
         GetAll();
-    }    
+    }
 
     private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString)
     {
@@ -167,15 +168,15 @@
     }
 
     private async Task OnValidSubmit(EditContext context)
-    {        
-             if (!Routes.Select(x => x.RouteName).Contains(Route.RouteName))
-        {
-            snackbar.Add("Invalid Route", Severity.Error);
-            return;
-        }
+    {
+        //     if (!Routes.Select(x => x.RouteName).Contains(Route.RouteName))
+        //{
+        //    snackbar.Add("Invalid Route", Severity.Error);
+        //    return;
+        //}
 
         model.OrderID = Order.OrderID;
-        model.RouteID = Route.RouteID;
+        model.RouteID = Route?.RouteID;
 
         var authprov = await auth.GetAuthenticationStateAsync();
         model.UserInfo.UserID = authprov.User.Identity.Name;
@@ -191,8 +192,7 @@
             {
                 collection.Add(model);
             }
-            model = new TariffModel();
-            Order = new OrderModel();
+            model = new TariffModel();            
             Route = new RouteModel();
         }
         catch (Exception ex)
@@ -201,12 +201,12 @@
         }
     }
 
-    private void Edit(int id)
+    private void Edit(int? id)
     {
-        model = collection.FirstOrDefault(x => x.TariffID == id);        
+        model = collection.FirstOrDefault(x => x.TariffID == id);
         Route = Routes.FirstOrDefault(x => x.RouteID == model.RouteID);
     }
-    private void Delete(int id)
+    private void Delete(int? id)
     {
         Iservice.Delete(id, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);

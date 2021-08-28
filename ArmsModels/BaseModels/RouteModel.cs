@@ -16,7 +16,7 @@ namespace ArmsModels.BaseModels
             this.UserInfo = new SharedModels.UserInfoModel();
         }
 
-        public int RouteID { get; set; }        
+        public int? RouteID { get; set; }        
         public string RouteName { get; set; }        
         public PlaceModel Origin { get; set; }        
         public PlaceModel Via { get; set; }        
@@ -24,15 +24,15 @@ namespace ArmsModels.BaseModels
         
         public long? GpsRouteID { get; set; }
         [Required]
-        public decimal Distance { get; set; }
+        public decimal? Distance { get; set; }
         public byte? SpeedLimit { get; set; }
         [Required]
-        public short RunningHours { get; set; }
+        public short? RunningHours { get; set; }
         public decimal? MieageModifier { get; set; }
         [Required]
         public string RouteType { get; set; }
         [Required]
-        public byte TollBooths { get; set; }        
+        public byte? TollBooths { get; set; }        
         public SharedModels.UserInfoModel UserInfo { get; set; }
 
     }

@@ -12,7 +12,7 @@ namespace ArmsServices.DataServices
     public interface ITransactionService
     {
         OperationTransactionModel Update(OperationTransactionModel model);
-        int Delete(long ID, string UserID);
+        int Delete(long? ID, string UserID);
         IEnumerable<OperationTransactionModel> SelectByTrip(long? TripID);
         OperationTransactionModel SelectByID(long? ID);
     }
@@ -45,7 +45,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int Delete(long ID, string UserID)
+        public int Delete(long? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -81,7 +81,7 @@ namespace ArmsServices.DataServices
             }           
         }
 
-        private IEnumerable<OpTranSubModel> GetChildren(long TransactionID)
+        private IEnumerable<OpTranSubModel> GetChildren(long? TransactionID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -89,14 +89,14 @@ namespace ArmsServices.DataServices
             };
             foreach (var dr in Iservice.GetDataReader("[usp.Operation.Transaction.Sub.Select]", parameters))
             {
-                decimal SignedAmount = dr.GetDecimal("Amount");
+                decimal? SignedAmount = dr.GetDecimal("Amount");
                 yield return new()
                 {
                     TariffID = dr.GetInt16("TariffID"),
                     TransactionID = dr.GetInt64("TransactionID"),
                     TransactionSubID = dr.GetInt64("TransactionSubID"),
-                    Sign = Math.Sign(SignedAmount),
-                    Amount = Math.Abs(SignedAmount),
+                    Sign = Math.Sign(SignedAmount.GetValueOrDefault()),
+                    Amount = Math.Abs(SignedAmount.GetValueOrDefault()),
                     BillDate = dr.GetDateTime("BillDate"),
                     FinanceTranID = dr.GetInt64("FinanceTranID"),
                     Quantity = dr.GetDecimal("Quantity"),

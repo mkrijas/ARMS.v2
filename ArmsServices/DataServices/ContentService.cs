@@ -12,8 +12,8 @@ namespace ArmsServices.DataServices
     public interface IContentService
     {
         Task<ContentModel> Update(ContentModel model);
-        Task<ContentModel> SelectByID(int ID);
-        Task<int> Delete(int ContentID, string UserID);
+        Task<ContentModel> SelectByID(int? ID);
+        Task<int> Delete(int? ContentID, string UserID);
         IAsyncEnumerable<ContentModel> Select(int? ContentID);
     }
 
@@ -43,7 +43,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<ContentModel> SelectByID(int ID)
+        public async Task<ContentModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -56,7 +56,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<int> Delete(int ContentID,string UserID)
+        public async Task<int> Delete(int? ContentID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -84,7 +84,7 @@ namespace ArmsServices.DataServices
                 ContentID = dr.GetInt16("ContentID"),
                 ContentName = dr.GetString("ContentName"),
                 PrimaryUnit = dr.GetString("PrimaryUnit"),
-                SecondaryUnit = dr.SafeGetString("SecondaryUnit"),
+                SecondaryUnit = dr.GetString("SecondaryUnit"),
                 UnitRatio = dr.GetDecimal("UnitRatio"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

@@ -12,7 +12,7 @@ namespace ArmsServices.DataServices
     public interface IBankAccountService
     {       
         Task<bool> Update(BankAccountModel model);
-        Task<int> Delete(int BankAccountID, string UserID);
+        Task<int> Delete(int? BankAccountID, string UserID);
         IAsyncEnumerable<BankAccountModel> Select(int? BankAccountID);
     }
 
@@ -55,7 +55,7 @@ namespace ArmsServices.DataServices
             }
             return true;
         }
-        public async Task <int> Delete(int BankAccountID,string UserID)
+        public async Task <int> Delete(int? BankAccountID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

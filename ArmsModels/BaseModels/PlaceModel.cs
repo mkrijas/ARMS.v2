@@ -13,11 +13,11 @@ namespace ArmsModels.BaseModels
             this.District = new DistrictModel();
             this.UserInfo = new SharedModels.UserInfoModel();
         }
-        public int PlaceID { get; set; }
+        public int? PlaceID { get; set; }
         [Required][StringLength(maximumLength:200)]
         public string PlaceName { get; set; }
         [Required]
-        public int DistrictID { get; set; }
+        public int? DistrictID { get; set; }
         [Required]
         [StringLength(maximumLength: 6)]
         public string PinCode { get; set; }

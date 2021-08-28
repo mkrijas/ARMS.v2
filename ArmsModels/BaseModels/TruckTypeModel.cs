@@ -13,17 +13,17 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
 
-        public short TruckTypeID { get; set; }
+        public short? TruckTypeID { get; set; }
         [Required][StringLength(maximumLength:50)]
         public string TruckType { get; set; }
         [Required]
-        public decimal UnladenWeight { get; set; }
+        public decimal? UnladenWeight { get; set; }
         [Required]
-        public decimal GrossWeight { get; set; }
+        public decimal? GrossWeight { get; set; }
         [Required]
-        public byte Axles { get; set; }
+        public byte? Axles { get; set; }
         [Required]
-        public byte wheels { get; set; }
+        public byte? wheels { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }      
     }
 }

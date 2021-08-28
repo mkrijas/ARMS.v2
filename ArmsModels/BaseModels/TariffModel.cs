@@ -14,20 +14,20 @@ namespace ArmsModels.BaseModels
         {            
             UserInfo = new UserInfoModel();
         }
-        public int TariffID { get; set; }  
-        public int OrderID { get; set; }
-        public int RouteID { get; set; }
+        public int? TariffID { get; set; }  
+        public int? OrderID { get; set; }
+        public int? RouteID { get; set; }
         [Required]
         public short? TariffTypeID { get; set; }
         [Required]
-        public short TariffFormulaID { get; set; }
+        public short? TariffFormulaID { get; set; }
         [Required]
-        public decimal TariffRate { get; set; }
-        public byte TruckAxles { get; set; }
-        public string OrderName { get; set; }
-        public string RouteName { get; set; }
-        public string Formula { get; set; }
-        public string TariffTypeName { get; set; }
+        public decimal? TariffRate { get; set; }
+        public byte? TruckAxles { get; set; }
+        public virtual string OrderName { get; set; }
+        public virtual string RouteName { get; set; }
+        public virtual string Formula { get; set; }
+        public virtual string TariffTypeName { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
 
@@ -38,7 +38,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new UserInfoModel();
         }
 
-        public short FormulaID { get; set; }
+        public short? FormulaID { get; set; }
         [Required]
         public string Formula { get; set; }
         public UserInfoModel UserInfo { get; set; }
@@ -56,8 +56,7 @@ namespace ArmsModels.BaseModels
         public string TariffGroup { get; set; }
         public string Unit { get; set; }
         public bool AllowMultiple { get; set; } = true;
-        public bool IsExpense { get; set; } = false;
-        public bool IsIncome { get; set; } = true;
+        public int? TariffSign { get; set; } = 1;        
         public int? FinancialAccountID { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
@@ -75,7 +74,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public long? RefID { get; set; }
         public DateTime? TransactionDate { get; set; }
-        public int BranchID { get; set; }
+        public int? BranchID { get; set; }
         public long? FinanceDocID { get; set; }
         [ValidateComplexType]
         public List<OpTranSubModel> Transactions { get; set; }
@@ -92,7 +91,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? BillDate { get; set; }
         public string Reference { get; set; }
-        public int Sign { get; set; } = -1;
+        public int? Sign { get; set; } = -1;
         [Required]
         [Range(1, double.MaxValue, ErrorMessage = "Please enter a value bigger than {1}")]
         public decimal? Amount { get; set; }

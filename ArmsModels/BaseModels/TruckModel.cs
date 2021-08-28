@@ -15,11 +15,11 @@ namespace ArmsModels.BaseModels
             CurrentRegistration = new TruckRegistrationModel();
         }
 
-        public int TruckID { get; set; }
+        public int? TruckID { get; set; }
         public string RegNo { get; set; }
-        public int HomeBranchID { get; set; }
+        public int? HomeBranchID { get; set; }
         [Required]
-        public short TruckTypeID { get; set; }
+        public short? TruckTypeID { get; set; }
         public string TruckType { get; set; }
         [Required][StringLength(maximumLength:50)]
         public string BodyType { get; set; }
@@ -29,7 +29,7 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(maximumLength: 50)]
         public string EngineNumber { get; set; }
-        public short ManufacturedYear { get; set; }
+        public short? ManufacturedYear { get; set; }
         public long? GpsDeviceID { get; set; }
         [Required]
         [StringLength(maximumLength: 50)]
@@ -38,7 +38,7 @@ namespace ArmsModels.BaseModels
         [StringLength(maximumLength: 50)]
         public string FuelType { get; set; }
         [Required]
-        public decimal FuelTankCapacity { get; set; }
+        public decimal? FuelTankCapacity { get; set; }
         [Required]
         public DateTime? PurchaseDate { get; set; }
         public DateTime? SoldDate { get; set; }

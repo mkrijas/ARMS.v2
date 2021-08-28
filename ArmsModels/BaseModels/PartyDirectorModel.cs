@@ -13,9 +13,9 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
 
-        public int PartyDirectorID { get; set; }
+        public int? PartyDirectorID { get; set; }
         [Required]
-        public int PartyID { get; set; }
+        public int? PartyID { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
         public string PersonName { get; set; }

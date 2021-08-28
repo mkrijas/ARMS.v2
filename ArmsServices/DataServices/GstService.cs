@@ -12,7 +12,7 @@ namespace ArmsServices.DataServices
     public interface IGstService
     {       
         Task<GstModel> Update(GstModel model);
-        Task<int> Delete(int GstID, string UserID);
+        Task<int> Delete(int? GstID, string UserID);
         IAsyncEnumerable<GstModel> Select(int? GstID);
         IAsyncEnumerable<GstModel> SelectByParty(int? PartyID = 0);
     }
@@ -52,13 +52,13 @@ namespace ArmsServices.DataServices
                         GstID = reader.GetInt32("GstID"),
                         AddressID = reader.GetInt32("AddressID"),
                         Email = reader.GetString("Email"),
-                        GstNo = reader.SafeGetString("GstNo"),
+                        GstNo = reader.GetString("GstNo"),
                         PartyID = reader.GetInt32("PartyID"),
-                        Phone = reader.SafeGetString("Phone"),
-                        RegName = reader.SafeGetString("RegName"),
-                        TanNo = reader.SafeGetString("TanNo"),
-                        TradeName = reader.SafeGetString("TradeName"),
-                        Address = await _addressService.SelectByID(reader.GetInt32("AddressID")),
+                        Phone = reader.GetString("Phone"),
+                        RegName = reader.GetString("RegName"),
+                        TanNo = reader.GetString("TanNo"),
+                        TradeName = reader.GetString("TradeName"),
+                        Address = await _addressService.SelectByID(reader.GetInt32("AddressID").GetValueOrDefault()),
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
@@ -69,7 +69,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<int> Delete(int GstID,string UserID)
+        public async Task<int> Delete(int? GstID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -93,13 +93,13 @@ namespace ArmsServices.DataServices
                         GstID = reader.GetInt32("GstID"),
                         AddressID = reader.GetInt32("AddressID"),
                         Email = reader.GetString("Email"),
-                        GstNo = reader.SafeGetString("GstNo"),
+                        GstNo = reader.GetString("GstNo"),
                         PartyID = reader.GetInt32("PartyID"),
-                        Phone = reader.SafeGetString("Phone"),
-                        RegName = reader.SafeGetString("RegName"),
-                        TanNo = reader.SafeGetString("TanNo"),
-                        TradeName = reader.SafeGetString("TradeName"),
-                        Address = await _addressService.SelectByID(reader.GetInt32("AddressID")),
+                        Phone = reader.GetString("Phone"),
+                        RegName = reader.GetString("RegName"),
+                        TanNo = reader.GetString("TanNo"),
+                        TradeName = reader.GetString("TradeName"),
+                        Address = await _addressService.SelectByID(reader.GetInt32("AddressID").GetValueOrDefault()),
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = reader.GetByte("RecordStatus"),
@@ -125,13 +125,13 @@ namespace ArmsServices.DataServices
                     GstID = reader.GetInt32("GstID"),
                     AddressID = reader.GetInt32("AddressID"),
                     Email = reader.GetString("Email"),
-                    GstNo = reader.SafeGetString("GstNo"),
+                    GstNo = reader.GetString("GstNo"),
                     PartyID = reader.GetInt32("PartyID"),
-                    Phone = reader.SafeGetString("Phone"),
-                    RegName = reader.SafeGetString("RegName"),
-                    TanNo = reader.SafeGetString("TanNo"),
-                    TradeName = reader.SafeGetString("TradeName"),
-                    Address = await _addressService.SelectByID(reader.GetInt32("AddressID")),
+                    Phone = reader.GetString("Phone"),
+                    RegName = reader.GetString("RegName"),
+                    TanNo = reader.GetString("TanNo"),
+                    TradeName = reader.GetString("TradeName"),
+                    Address = await _addressService.SelectByID(reader.GetInt32("AddressID").GetValueOrDefault()),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = reader.GetByte("RecordStatus"),

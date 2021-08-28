@@ -14,14 +14,14 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
             Place = new PlaceModel();
         }
-        public int BranchID { get; set; }
+        public int? BranchID { get; set; }
         [Required]
         [StringLength(256,MinimumLength =3)]
         public string BranchName { get; set; }
-        public int PlaceID { get; set; }
-        public int AddressID { get; set; }
+        public int? PlaceID { get; set; }
+        public int? AddressID { get; set; }
         public bool Operate { get; set; } = true;
-        public int UpwardBranchID { get; set; } = 0;
+        public int? UpwardBranchID { get; set; } = 0;
         public bool Active { get; set; } = true;
         [ValidateComplexType]
         public virtual AddressModel Address { get; set; }        

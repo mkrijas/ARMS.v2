@@ -25,33 +25,30 @@ namespace ArmsServices
         {
             return GetFieldValue<String>(dr, name, (string)null);
         }
-        public static int GetInt32(this IDataRecord dr, string name)
+        public static int? GetInt32(this IDataRecord dr, string name)
         {
-            return GetFieldValue(dr, name, 0);
+            return GetFieldValue<int?>(dr, name, null);
+        }    
+        
+        public static short? GetInt16(this IDataRecord dr, string name)
+        {
+            return GetFieldValue<short?>(dr, name, null);
         }
-        public static int? GetInt32Nullable(this IDataRecord dr, string name)
+        public static byte? GetByte(this IDataRecord dr, string name)
         {
-            return GetFieldValue(dr, name, 0);
+            return GetFieldValue<byte?>(dr, name, null);
         }
-        public static short GetInt16(this IDataRecord dr, string name)
+        public static long? GetInt64(this IDataRecord dr, string name)
         {
-            return GetFieldValue<short>(dr, name, 0);
-        }
-        public static byte GetByte(this IDataRecord dr, string name)
-        {
-            return GetFieldValue<byte>(dr, name, 0);
-        }
-        public static long GetInt64(this IDataRecord dr, string name)
-        {
-            return GetFieldValue<long>(dr, name, 0);
+            return GetFieldValue<long?>(dr, name, null);
         }
         public static bool GetBoolean(this IDataRecord dr, string name)
         {
             return GetFieldValue(dr, name, false);
         }
-        public static decimal GetDecimal(this IDataRecord dr, string name)
+        public static decimal? GetDecimal(this IDataRecord dr, string name)
         {
-            return GetFieldValue<decimal>(dr, name, 0);
+            return GetFieldValue<decimal?>(dr, name, null);
         }
 
         public static DateTime? GetDateTime(this IDataRecord dr, string name)
@@ -59,9 +56,11 @@ namespace ArmsServices
             return GetFieldValue<DateTime?>(dr, name, null);
         }
         public static T GetFieldValue<T>(this IDataRecord dr, string fieldName, T defaultvalue = default(T))
-        {
+        {            
             try
             {
+                if (!dr.HasColumn(fieldName))
+                    return defaultvalue;
                 var value = dr[fieldName];
                 if (value == DBNull.Value || value == null)
                     return defaultvalue;
@@ -72,31 +71,7 @@ namespace ArmsServices
                 Console.WriteLine(ex.Message);
                 throw;
             }
-        }
-        public static string SafeGetString(this IDataRecord reader, string colName)
-        {
-            int colIndex = reader.GetOrdinal(colName);
-            if (!reader.IsDBNull(colIndex))
-                return reader.GetString(colIndex);
-            return string.Empty;
-        }
-
-        public static int? SafeGetInt(this IDataRecord reader, string colName)
-        {
-            int colIndex = reader.GetOrdinal(colName);
-            if (!reader.IsDBNull(colIndex))
-                return reader.GetInt32(colIndex);
-            return null;
-        }
-
-        public static DateTime? SafeGetDateTime(this IDataRecord reader, string colName)
-        {
-            int colIndex = reader.GetOrdinal(colName);
-            if (!reader.IsDBNull(colIndex))
-                return reader.GetDateTime(colIndex);
-            return null;
-        }
-
+        }      
 
         public static DataTable ToDataTable<T>(this List<T> items)
         {

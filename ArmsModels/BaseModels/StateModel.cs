@@ -8,7 +8,7 @@ namespace ArmsModels.BaseModels
 {
     public class StateModel
     {        
-            public int StateID { get; set; }
+            public int? StateID { get; set; }
             [Required]
             [StringLength(maximumLength: 200)]
             public string StateName { get; set; }   

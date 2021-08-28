@@ -13,14 +13,14 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
         }
 
-        public long TripID { get; set; }
+        public long? TripID { get; set; }
         [Required]
-        public int TruckID { get; set; }
+        public int? TruckID { get; set; }
         public int? DriverID { get; set; }
         public string TripPrefix { get; set; }        
         public long? TripNumber { get; set; }
         [Required]
-        public int BranchID { get; set; }
+        public int? BranchID { get; set; }
         [Required]
         public DateTime? TripDate { get; set; }
         public decimal? Mileage { get; set; }

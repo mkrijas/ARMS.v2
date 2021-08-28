@@ -11,18 +11,18 @@ namespace ArmsServices.DataServices
     public interface IDriverService
     {
         DriverModel Update(DriverModel model);
-        int Delete(int DriverID, string UserID);
+        int Delete(int? DriverID, string UserID);
         IEnumerable<DriverModel> Select();
-        DriverModel SelectByID(int DriverID);
-        int UpdateBranch(int DriverID, int BranchID, bool availStatus, string userID);
-        IEnumerable<int> GetAssignedBranches(int DriverID);
+        DriverModel SelectByID(int? DriverID);
+        int UpdateBranch(int? DriverID, int? BranchID, bool availStatus, string userID);
+        IEnumerable<int> GetAssignedBranches(int? DriverID);
         DriverModel FindDriver(DriverModel model = null, DriverLicenceModel licence = null);
-        int AvailabilityStatus(int DriverID);
-        int Join(int DriverID, int BranchID, DateTime StartDate, string UserID);
-        int Resign(int DriverID, string Remarks, string userID);
-        DriverLeaveModel GetLastLeave(int DriverID);
+        int AvailabilityStatus(int? DriverID);
+        int Join(int? DriverID, int? BranchID, DateTime? StartDate, string UserID);
+        int Resign(int? DriverID, string Remarks, string userID);
+        DriverLeaveModel GetLastLeave(int? DriverID);
         int BeginLeave(DriverLeaveModel LeaveModel);
-        int EndLeave(int DriverID,string UserID);
+        int EndLeave(int? DriverID,string UserID);
     }
    
     public class DriverService : IDriverService
@@ -61,7 +61,7 @@ namespace ArmsServices.DataServices
             return model;
               
         }
-        public int Delete(int DriverID, string UserID)
+        public int Delete(int? DriverID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -83,7 +83,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public DriverModel SelectByID(int DriverID)
+        public DriverModel SelectByID(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -125,7 +125,7 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public int UpdateBranch(int DriverID, int BranchID, bool availStatus, string UserID)
+        public int UpdateBranch(int? DriverID, int? BranchID, bool availStatus, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -138,7 +138,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Branch.Availability]", parameters);
         }
 
-        IEnumerable<int> IDriverService.GetAssignedBranches(int DriverID)
+        IEnumerable<int> IDriverService.GetAssignedBranches(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -147,7 +147,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Branch.Availability]", parameters))
             {
-                yield return dr.GetInt32("BranchID");
+                yield return dr.GetInt32("BranchID").GetValueOrDefault();
             }
         }
 
@@ -169,12 +169,12 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public int AvailabilityStatus(int DriverID)
+        public int AvailabilityStatus(int? DriverID)
         {
             throw new NotImplementedException();
         }
 
-        public int Resign(int DriverID, string Remarks, string userID)
+        public int Resign(int? DriverID, string Remarks, string userID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -186,7 +186,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.WorkPeriods.Resign]", parameters);
         }
 
-        public DriverLeaveModel GetLastLeave(int DriverID)
+        public DriverLeaveModel GetLastLeave(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -217,7 +217,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public int Join(int DriverID, int BranchID, DateTime StartDate, string UserID)
+        public int Join(int? DriverID, int? BranchID, DateTime? StartDate, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -243,7 +243,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Leave.Begin]", parameters);
         }
 
-        public int EndLeave(int DriverID, string UserID)
+        public int EndLeave(int? DriverID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

@@ -12,16 +12,16 @@ namespace ArmsServices.DataServices
     public interface ITruckService
     {       
         TruckModel Update(TruckModel model);
-        int Delete(int TruckID, string UserID);
+        int Delete(int? TruckID, string UserID);
         IEnumerable<TruckModel> Select(int? TruckID);
-        TruckModel SelectByID(int ID);
-        TruckRegistrationModel GetRegistration(int TruckID);
+        TruckModel SelectByID(int? ID);
+        TruckRegistrationModel GetRegistration(int? TruckID);
         TruckRegistrationModel GetRegistration(string RegNo);
-        int Sold(int TruckID, DateTime SoldDate);
+        int Sold(int? TruckID, DateTime? SoldDate);
         int ChangeRegistration(TruckRegistrationModel model);        
-        int UpdateDriver(int TruckID, int DriverID,bool AssignedStatus,string UserID);
-        int? GetAssignedDriver(int TruckID);
-        long? GetCurrentTrip(int TruckID);
+        int UpdateDriver(int? TruckID, int? DriverID,bool AssignedStatus,string UserID);
+        int? GetAssignedDriver(int? TruckID);
+        long? GetCurrentTrip(int? TruckID);
     }
 
     public class TruckService : ITruckService
@@ -65,7 +65,7 @@ namespace ArmsServices.DataServices
             }           
             return model;
         }
-        public int Delete(int TruckID,string UserID)
+        public int Delete(int? TruckID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -87,7 +87,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Sold(int TruckID, DateTime SoldDate)
+        public int Sold(int? TruckID, DateTime? SoldDate)
         {
             throw new NotImplementedException();
         }
@@ -152,7 +152,7 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public TruckModel SelectByID(int ID)
+        public TruckModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -166,7 +166,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public TruckRegistrationModel GetRegistration(int RegID)
+        public TruckRegistrationModel GetRegistration(int? RegID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -195,7 +195,7 @@ namespace ArmsServices.DataServices
             }
             return model; 
         }
-        public int UpdateDriver(int TruckID, int DriverID, bool AssignedStatus,string UserID)
+        public int UpdateDriver(int? TruckID, int? DriverID, bool AssignedStatus,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -206,7 +206,7 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Truck.Driver.Assignment.Update]", parameters);
         }
-        int? ITruckService.GetAssignedDriver(int TruckID)
+        int? ITruckService.GetAssignedDriver(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -223,7 +223,7 @@ namespace ArmsServices.DataServices
             return DriverID;
         }
 
-        public long? GetCurrentTrip(int TruckID)
+        public long? GetCurrentTrip(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

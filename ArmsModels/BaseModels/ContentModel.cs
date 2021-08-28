@@ -13,7 +13,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
 
-        public short ContentID { get; set; }
+        public short? ContentID { get; set; }
         [Required][StringLength(maximumLength:100)]
         public string ContentName { get; set; }
         [Required]

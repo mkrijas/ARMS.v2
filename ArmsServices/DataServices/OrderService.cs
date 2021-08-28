@@ -12,11 +12,11 @@ namespace ArmsServices.DataServices
     public interface IOrderService
     {
         Task<OrderModel> Update(OrderModel model);
-        Task<OrderModel> SelectByID(int ID);
-        IAsyncEnumerable<OrderModel> SelectByBranch(int BranchID);
-        Task<int> Delete(int OrderID, string UserID);
+        Task<OrderModel> SelectByID(int? ID);
+        IAsyncEnumerable<OrderModel> SelectByBranch(int? BranchID);
+        Task<int> Delete(int? OrderID, string UserID);
         IAsyncEnumerable<OrderModel> Select(int? OrderID);
-        Task<int> BranchOrderUpdate(int BranchID, int OrderID, string UserID, string operation);
+        Task<int> BranchOrderUpdate(int? BranchID, int? OrderID, string UserID, string operation);
 
     }
 
@@ -52,7 +52,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<OrderModel> SelectByID(int ID)
+        public async Task<OrderModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -66,7 +66,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<int> Delete(int OrderID, string UserID)
+        public async Task<int> Delete(int? OrderID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -87,7 +87,7 @@ namespace ArmsServices.DataServices
                 yield return await GetModel(dr);
             }
         }
-        public async IAsyncEnumerable<OrderModel> SelectByBranch(int BranchID)
+        public async IAsyncEnumerable<OrderModel> SelectByBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -100,7 +100,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public async Task<int> BranchOrderUpdate(int BranchID,int OrderID,string UserID,string operation)
+        public async Task<int> BranchOrderUpdate(int? BranchID,int? OrderID,string UserID,string operation)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -121,9 +121,9 @@ namespace ArmsServices.DataServices
                 OrderID = dr.GetInt32("OrderID"),
                 OrderName = dr.GetString("OrderName"),
                 OrderQuantity = dr.GetDecimal("OrderQuantity"),
-                Party = await partyService.SelectByID(dr.GetInt32("ClientID")),
-                Content = await contentService.SelectByID(dr.GetInt32("contentID")),
-                Consignor = await consigneeService.SelectByID(dr.GetInt32("consignorID")),
+                Party = await partyService.SelectByID(dr.GetInt32("ClientID").GetValueOrDefault()),
+                Content = await contentService.SelectByID(dr.GetInt32("contentID").GetValueOrDefault()),
+                Consignor = await consigneeService.SelectByID(dr.GetInt32("consignorID").GetValueOrDefault()),
 
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

@@ -15,12 +15,12 @@ namespace ArmsModels.BaseModels
             DriverAgent = new PartyModel();
         }
 
-        public int DriverID { get; set; }
-        public int DriverAgentID { get; set; }
+        public int? DriverID { get; set; }
+        public int? DriverAgentID { get; set; }
         public PartyModel DriverAgent { get; set; }
         [Required]
         public string DriverName { get; set; }
-        public int HomeBranchID { get; set; }       
+        public int? HomeBranchID { get; set; }       
         public string DriverImage { get; set; }
         [Required]
         public DateTime? DateOfBirth { get; set; }
@@ -32,7 +32,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string AlternateContactPerson { get; set; }
         public string AlternateContactMobile { get; set; }
-        public int AddressID { get; set; }       
+        public int? AddressID { get; set; }       
         public string FestivalBonus { get; set; }
         [ValidateComplexType]
         public AddressModel Address { get; set; }
@@ -44,11 +44,11 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int FaultID { get; set; }
-        public int DriverID { get; set; }
-        public int BranchID { get; set; }
+        public int? FaultID { get; set; }
+        public int? DriverID { get; set; }
+        public int? BranchID { get; set; }
         public DateTime? FaultDate { get; set; }
-        public byte Severity { get; set; }
+        public byte? Severity { get; set; }
         public string Detail { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
@@ -58,9 +58,9 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int LeaveID { get; set; }
-        public int DriverID { get; set; }
-        public int BranchID { get; set; }
+        public int? LeaveID { get; set; }
+        public int? DriverID { get; set; }
+        public int? BranchID { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         public DateTime? ExpectedReturn { get; set; }
@@ -73,9 +73,9 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int LicenceID { get; set; }
-        public int DriverID { get; set; }
-        public int BranchID { get; set; }
+        public int? LicenceID { get; set; }
+        public int? DriverID { get; set; }
+        public int? BranchID { get; set; }
         public string LicenceNo { get; set; }
         public DateTime? DLExpiryDate { get; set; }
         public string BadgeNo { get; set; }

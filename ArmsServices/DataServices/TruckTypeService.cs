@@ -12,8 +12,8 @@ namespace ArmsServices.DataServices
     public interface ITruckTypeService
     {       
         TruckTypeModel Update(TruckTypeModel model);
-        int Delete(int TruckTypeID, string UserID);
-        TruckTypeModel SelectByID(short TruckTypeID);
+        int Delete(int? TruckTypeID, string UserID);
+        TruckTypeModel SelectByID(short? TruckTypeID);
         IEnumerable<TruckTypeModel> Select(short? TruckTypeID);
     }
 
@@ -44,7 +44,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int Delete(int TruckTypeID,string UserID)
+        public int Delete(int? TruckTypeID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -66,7 +66,7 @@ namespace ArmsServices.DataServices
             }           
         }
 
-        public TruckTypeModel SelectByID(short TruckTypeID)
+        public TruckTypeModel SelectByID(short? TruckTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

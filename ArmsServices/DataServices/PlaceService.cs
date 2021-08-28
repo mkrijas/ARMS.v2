@@ -12,9 +12,9 @@ namespace ArmsServices.DataServices
     public interface IPlaceService
     {
         Task<PlaceModel> Update(PlaceModel model);
-        Task<int> Delete(int PlaceID, string UserID);
+        Task<int> Delete(int? PlaceID, string UserID);
         IAsyncEnumerable<PlaceModel> Select(int? PlaceID);
-        Task<PlaceModel> SelectByID(int ID);
+        Task<PlaceModel> SelectByID(int? ID);
     }
 
     public class PlaceService : IPlaceService
@@ -45,7 +45,7 @@ namespace ArmsServices.DataServices
             }             
             return model;
         }
-        public async Task<int> Delete(int PlaceID,string UserID)
+        public async Task<int> Delete(int? PlaceID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -66,7 +66,7 @@ namespace ArmsServices.DataServices
                 yield return await GetModel(dr);            
             }
         }
-        public async Task<PlaceModel> SelectByID(int ID)
+        public async Task<PlaceModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

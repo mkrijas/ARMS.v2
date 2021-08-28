@@ -12,13 +12,13 @@ namespace ArmsServices.DataServices
     public interface ITripService
     {       
         TripModel Update(TripModel model);
-        int Delete(long TripID, string UserID);
+        int Delete(long? TripID, string UserID);
         TripModel Select(long? TripID);
-        int Cancel(long TripID, string userID, string Reason);
-        int CloseTrip(long TripID, string Remarks);
-        bool IsClosed(long TripID);
-        bool IsSettled(long TripID);
-        IEnumerable<object> GetOutstandingBills(long TripID);
+        int Cancel(long? TripID, string userID, string Reason);
+        int CloseTrip(long? TripID, string Remarks);
+        bool IsClosed(long? TripID);
+        bool IsSettled(long? TripID);
+        IEnumerable<object> GetOutstandingBills(long? TripID);
     }
 
     public class TripService : ITripService
@@ -47,7 +47,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int Delete(long TripID,string UserID)
+        public int Delete(long? TripID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -94,27 +94,27 @@ namespace ArmsServices.DataServices
             };
         }
 
-        int ITripService.Cancel(long TripID, string userID, string Reason)
+        int ITripService.Cancel(long? TripID, string userID, string Reason)
         {
             throw new NotImplementedException();
         }
 
-        int ITripService.CloseTrip(long TripID, string Remarks)
+        int ITripService.CloseTrip(long? TripID, string Remarks)
         {
             throw new NotImplementedException();
         }
 
-        public bool IsClosed(long TripID)
+        public bool IsClosed(long? TripID)
         {
             throw new NotImplementedException();
         }
 
-        public bool IsSettled(long TripID)
+        public bool IsSettled(long? TripID)
         {
             throw new NotImplementedException();
         }
 
-        public IEnumerable<object> GetOutstandingBills(long TripID)
+        public IEnumerable<object> GetOutstandingBills(long? TripID)
         {
             throw new NotImplementedException();
         }

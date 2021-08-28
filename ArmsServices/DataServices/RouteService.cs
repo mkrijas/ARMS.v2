@@ -12,8 +12,8 @@ namespace ArmsServices.DataServices
     public interface IRouteService
     {       
         Task<RouteModel> Update(RouteModel model);
-        Task<RouteModel> SelectByID(int ID);
-        Task<int> Delete(int RouteID, string UserID);
+        Task<RouteModel> SelectByID(int? ID);
+        Task<int> Delete(int? RouteID, string UserID);
         IAsyncEnumerable<RouteModel> Select(int? RouteID);
         IAsyncEnumerable<RouteModel> SelectByOrder(int? OrderID);
     }
@@ -49,7 +49,7 @@ namespace ArmsServices.DataServices
             }
                 return model;
         }
-        public async Task<RouteModel> SelectByID(int ID)
+        public async Task<RouteModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -63,7 +63,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<int> Delete(int RouteID,string UserID)
+        public async Task<int> Delete(int? RouteID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -114,7 +114,7 @@ namespace ArmsServices.DataServices
                 },
                 RouteID = dr.GetInt32("RouteID"),
                 RouteName = dr.GetString("RouteName"),
-                RouteType = dr.SafeGetString("RouteType"),
+                RouteType = dr.GetString("RouteType"),
                 RunningHours = dr.GetInt16("RunningHours"),
                 SpeedLimit = dr.GetByte("SpeedLimit"),
                 TollBooths = dr.GetByte("TollBooths"),

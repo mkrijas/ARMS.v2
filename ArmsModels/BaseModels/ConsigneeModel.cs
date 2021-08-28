@@ -14,16 +14,16 @@ namespace ArmsModels.BaseModels
             Address = new AddressModel();
         }
 
-        public int ConsigneeID { get; set; }
+        public int? ConsigneeID { get; set; }
         [Required]
         public string ConsigneeName { get; set; }
         public string Mobile { get; set; }
         [Required]
-        public int PlaceID { get; set; }
+        public int? PlaceID { get; set; }
         [Required]
-        public int OrderID { get; set; }
+        public int? OrderID { get; set; }
         public bool Consignor { get; set; }
-        public int AddressID { get; set; }
+        public int? AddressID { get; set; }
         public string OrderName { get; set; }
         [ValidateComplexType]
         public AddressModel Address { get; set; }

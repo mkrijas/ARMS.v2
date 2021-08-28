@@ -15,6 +15,7 @@ using Microsoft.Extensions.Hosting;
 using MudBlazor.Services;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -39,7 +40,7 @@ namespace Views
             services.AddControllersWithViews();
             //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
             services.AddBlazoredSessionStorage();
-            services.AddHttpClient();            
+            services.AddHttpClient();
 
             services.AddSingleton<TruckDataArrayModel>();
 
@@ -93,6 +94,10 @@ namespace Views
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            var cultureInfo = new CultureInfo("en-IN");            
+            CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+            CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();

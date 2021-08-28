@@ -12,10 +12,10 @@ namespace ArmsServices.DataServices
     public interface IConsigneeService
     {
         Task<ConsigneeModel> Update(ConsigneeModel model);
-        Task<ConsigneeModel> SelectByID(int ID);
-        Task<int> Delete(int ConsigneeID, string UserID);
+        Task<ConsigneeModel> SelectByID(int? ID);
+        Task<int> Delete(int? ConsigneeID, string UserID);
         IAsyncEnumerable<ConsigneeModel> Select(int? ConsigneeID);
-        IAsyncEnumerable<ConsigneeModel> SelectByOrder(int ID);
+        IAsyncEnumerable<ConsigneeModel> SelectByOrder(int? ID);
     }
     public class ConsigneeService : IConsigneeService
     {
@@ -27,7 +27,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
             Iaddress = addressService;
         }
-        public async Task<int> Delete(int ConsigneeID, string UserID)
+        public async Task<int> Delete(int? ConsigneeID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -73,7 +73,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public async Task<ConsigneeModel> SelectByID(int ID)
+        public async Task<ConsigneeModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -87,7 +87,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public async IAsyncEnumerable<ConsigneeModel> SelectByOrder(int ID)
+        public async IAsyncEnumerable<ConsigneeModel> SelectByOrder(int? ID)
         {                         
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -107,10 +107,10 @@ namespace ArmsServices.DataServices
             return new ConsigneeModel
             {
                 ConsigneeID = dr.GetInt32("ConsigneeID"),
-                ConsigneeName = dr.SafeGetString("ConsigneeName"),
+                ConsigneeName = dr.GetString("ConsigneeName"),
                 Consignor = dr.GetBoolean("Consignor"),
-                Mobile = dr.SafeGetString("Mobile"),
-                Address = await Iaddress.SelectByID(dr.GetInt32("AddressID")),
+                Mobile = dr.GetString("Mobile"),
+                Address = await Iaddress.SelectByID(dr.GetInt32("AddressID").GetValueOrDefault()),
                 OrderID = dr.GetInt32("OrderID"),
                 PlaceID = dr.GetInt32("PlaceID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

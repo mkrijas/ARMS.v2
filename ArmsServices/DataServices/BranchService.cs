@@ -12,10 +12,10 @@ namespace ArmsServices.DataServices
     public interface IBranchService
     {
         Task<BranchModel> Update(BranchModel model);
-        Task<BranchModel> SelectByID(int ID);
+        Task<BranchModel> SelectByID(int? ID);
 
-        string GetBranchName(int BranchID);
-        Task<int> Delete(int AddressID, string UserID);
+        string GetBranchName(int? BranchID);
+        Task<int> Delete(int? AddressID, string UserID);
         IEnumerable<BranchModel> Select();
 
     }
@@ -50,7 +50,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<BranchModel> SelectByID(int ID)
+        public async Task<BranchModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -63,7 +63,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<int> Delete(int ID, string UserID)
+        public async Task<int> Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -100,7 +100,7 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public string GetBranchName(int BranchID)
+        public string GetBranchName(int? BranchID)
         {
             var result = Task.Run(async () => await SelectByID(BranchID));
             return result.Result.BranchName;

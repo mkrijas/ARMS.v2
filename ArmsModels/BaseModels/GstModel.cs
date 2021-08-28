@@ -17,7 +17,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
 
-        public int GstID { get; set; }
+        public int? GstID { get; set; }
         [Required]
         [StringLength(maximumLength: 15, MinimumLength = 15)]
         public string GstNo { get; set; }
@@ -30,8 +30,8 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(maximumLength: 10, MinimumLength = 10)]
         public string TanNo { get; set; }
-        public int PartyID { get; set; }
-        public int AddressID { get; set; }
+        public int? PartyID { get; set; }
+        public int? AddressID { get; set; }
         [Required]
         [StringLength(maximumLength: 10)]
         public string Phone { get; set; }

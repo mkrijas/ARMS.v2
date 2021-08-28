@@ -8,11 +8,11 @@ namespace ArmsModels.BaseModels
 {
     public class TruckRegistrationModel
     {
-        public int RegID { get; set; }
+        public int? RegID { get; set; }
         [Required]
         [StringLength(maximumLength: 50)]
         public string RegNo { get; set; }
-        public int TruckID { get; set; }
+        public int? TruckID { get; set; }
         public DateTime? EffectFrom { get; set; }
         public DateTime? EffectTo { get; set; }
         [Required]

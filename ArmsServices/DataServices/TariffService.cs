@@ -12,17 +12,18 @@ namespace ArmsServices.DataServices
     public interface ITariffService
     {       
         TariffModel Update(TariffModel model);
-        int Delete(int ID, string UserID);
+        int Delete(int? ID, string UserID);
         IEnumerable<TariffModel> Select();
-        IEnumerable<TariffModel> SelectByOrder(int OrderID);
-        TariffModel SelectByID(int ID);
+        IEnumerable<TariffModel> SelectByOrder(int? OrderID);
+        TariffModel SelectByID(int? ID);
         IEnumerable<TariffFormulaModel> SelectFormulas();
-        TariffFormulaModel SelectFormulaByID(short ID);
+        TariffFormulaModel SelectFormulaByID(short? ID);
         IEnumerable<TariffTypeModel> SelectTariffTypes();
-        TariffTypeModel SelectTariffTypeByID(short ID);
+        TariffTypeModel SelectTariffTypeByID(short? ID);
         TariffTypeModel UpdateTariffType(TariffTypeModel model);
         string[] TariffGroups { get; }
-
+        IEnumerable<TariffModel> GetTariffs(string TariffGroup, int? OrderID, int? RouteID, int? Axles);
+        decimal? GetTariffAmount<T>(T parameter,TariffModel Tariff);        
     }
 
     public class TariffService : ITariffService
@@ -37,7 +38,7 @@ namespace ArmsServices.DataServices
         }
         public string[] TariffGroups { get { return Configuration.GetSection(Data).GetSection("TariffGroups").Get<string[]>(); } }
 
-        public int Delete(int ID, string UserID)
+        public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -59,7 +60,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<TariffModel> SelectByOrder(int OrderID)
+        public IEnumerable<TariffModel> SelectByOrder(int? OrderID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -71,7 +72,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public TariffModel SelectByID(int ID)
+        public TariffModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -85,7 +86,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public TariffFormulaModel SelectFormulaByID(short ID)
+        public TariffFormulaModel SelectFormulaByID(short? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -131,7 +132,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public TariffTypeModel SelectTariffTypeByID(short ID)
+        public TariffTypeModel SelectTariffTypeByID(short? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -183,8 +184,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@AllowMultiple", model.AllowMultiple),
                new SqlParameter("@FinancialAccountID", model.FinancialAccountID),
-               new SqlParameter("@IsExpense", model.IsExpense),
-               new SqlParameter("@IsIncome", model.IsIncome),
+               new SqlParameter("@TariffSign", model.TariffSign),               
                new SqlParameter("@TariffGroup", model.TariffGroup),
                new SqlParameter("@TariffTypeID", model.TariffTypeID),
                new SqlParameter("@TariffTypeName", model.TariffTypeName),
@@ -230,8 +230,7 @@ namespace ArmsServices.DataServices
                 TariffGroup = dr.GetString("TariffGroup"),
                 Unit = dr.GetString("Unit"),
                 AllowMultiple = dr.GetBoolean("AllowMultiple"),
-                IsExpense = dr.GetBoolean("IsExpense"),
-                IsIncome = dr.GetBoolean("IsIncome"),
+                TariffSign = dr.GetInt32("TariffSign"),                
                 FinancialAccountID = dr.GetInt32("FinancialAccountID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -240,6 +239,49 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },
             };
+        }
+
+        public IEnumerable<TariffModel> GetTariffs(string TariffGroup, int? OrderID, int? RouteID, int? Axles)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TariffGroup", TariffGroup),
+               new SqlParameter("@OrderID", OrderID),
+               new SqlParameter("@RouteID", RouteID),
+               new SqlParameter("@Axles", Axles),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.GetTariffs]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public decimal? GetTariffAmount<T>(T parameter, TariffModel Tariff)
+        {
+            decimal? tariffAmount = null;
+            if (Tariff?.TariffFormulaID == 1)
+            {
+                int? distance = Convert.ToInt32(parameter);
+                tariffAmount = distance / Tariff.TariffRate;
+            }
+            else
+           if (Tariff?.TariffFormulaID == 2)
+            {
+                int? distance = Convert.ToInt32(parameter);
+                tariffAmount =distance* Tariff.TariffRate;
+            }
+            else
+            if (Tariff?.TariffFormulaID == 3)
+            {
+                decimal? Qty = Convert.ToDecimal(parameter);
+                tariffAmount = Qty * Tariff.TariffRate;
+            }
+            else
+            if (Tariff?.TariffFormulaID == 4)
+            {                
+                tariffAmount = Tariff.TariffRate;
+            }
+            return tariffAmount;
         }
     }   
 }

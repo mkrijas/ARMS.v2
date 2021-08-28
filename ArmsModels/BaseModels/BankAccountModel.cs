@@ -8,9 +8,9 @@ namespace ArmsModels.BaseModels
 {
     public class BankAccountModel
     {
-        public int BankAccountID { get; set; }
+        public int? BankAccountID { get; set; }
         [Required]
-        public int GstID { get; set; }
+        public int? GstID { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
         public string BeneficiaryName { get; set; }

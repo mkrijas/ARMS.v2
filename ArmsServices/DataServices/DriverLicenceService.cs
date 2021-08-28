@@ -9,10 +9,10 @@ namespace ArmsServices.DataServices
 {
     public interface IDriverLicenceService
     {
-        IEnumerable<DriverLicenceModel> Select(int DriverID);        
-        DriverLicenceModel SelectByID(int LicenceID);
+        IEnumerable<DriverLicenceModel> Select(int? DriverID);        
+        DriverLicenceModel SelectByID(int? LicenceID);
         DriverLicenceModel Update(DriverLicenceModel model);
-        int Delete(int LicenceID,string UserID);
+        int Delete(int? LicenceID,string UserID);
 
     }
     public class DriverLicenceService : IDriverLicenceService
@@ -23,7 +23,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Delete(int LicenceID,string UserID)
+        public int Delete(int? LicenceID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -33,7 +33,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Licence.Delete]", parameters);
         }
 
-        public IEnumerable<DriverLicenceModel> Select(int DriverID)
+        public IEnumerable<DriverLicenceModel> Select(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -46,7 +46,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public DriverLicenceModel SelectByID(int LicenceID)
+        public DriverLicenceModel SelectByID(int? LicenceID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

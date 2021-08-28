@@ -14,27 +14,28 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
             Gcs = new();
         }        
-        public long GcSetID { get; set; }
+        public long? GcSetID { get; set; }
         public long? TripID { get; set; }        
-        public int BranchID { get; set; }
+        public int? BranchID { get; set; }
         [Required]
-        public int OrderID { get; set; }
-        public string OrderName { get; set; }
+        public int? OrderID { get; set; }
+        public virtual string OrderName { get; set; }
         [Required]
-        public int RouteID { get; set; }
-        public string RouteName { get; set; }
+        public int? RouteID { get; set; }
+        public virtual string RouteName { get; set; }
         public DateTime? GcDate { get; set; } = DateTime.Today;
         [Required]
-        public int ConsignorID { get; set; }
-        public string ConsignorName { get; set; }
+        public int? ConsignorID { get; set; }
+        public virtual string ConsignorName { get; set; }
         [Required]
-        public int ConsigneeID { get; set; }
-        public string ConsigneeName { get; set; }
+        public int? ConsigneeID { get; set; }
+        public byte? PaidBy { get; set; }
+        public virtual string ConsigneeName { get; set; }
 
-        public string SetGcNumber { get; set; }
-        public string SetBillNumber { get; set; }
-        public decimal SetBillQuantity { get; set; }
-        public decimal SetUnloadQuantity { get; set; }
+        public virtual string SetGcNumber { get; set; }
+        public virtual string SetBillNumber { get; set; }
+        public virtual decimal? SetBillQuantity { get; set; }
+        public virtual decimal? SetUnloadQuantity { get; set; }
 
         public SharedModels.UserInfoModel UserInfo { get; set; }
 
@@ -49,20 +50,22 @@ namespace ArmsModels.BaseModels
             UserInfo = new  SharedModels.UserInfoModel();
             EwayBill = new();
         }
-        public long GcID { get; set; }
-        public long GcSetID { get; set; }
+        public long? GcID { get; set; }
+        public long? GcSetID { get; set; }
         public string GcPrefix { get; set; }
-        public long GcNumber { get; set; }
+        public long? GcNumber { get; set; }
         [Required]
         public short? GcType { get; set; }
         public string GcTypeName { get; set; }
         [Required]
         public DateTime? BillDate { get; set; } = DateTime.Today;
         public string BillNumber { get; set; }
-        public decimal BillQuantity { get; set; }
-        public decimal UnloadedQuantity { get; set; }
+        [Required][Range(1,double.MaxValue)]
+        public decimal? BillQuantity { get; set; }
+        public decimal? UnloadedQuantity { get; set; }
         public string PassNumber { get; set; }
         public EwayBillModel EwayBill { get; set; }
+        public virtual decimal? Freight { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
@@ -73,7 +76,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public long GcID { get; set; }
+        public long? GcID { get; set; }
         [Required]
         public string EwayBillRef { get; set; }
         [Required]

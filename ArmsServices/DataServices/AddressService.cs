@@ -12,8 +12,8 @@ namespace ArmsServices.DataServices
     public interface IAddressService
     {       
         Task<AddressModel> Update(AddressModel model);
-        Task<AddressModel> SelectByID(int AddressID);
-        Task<int> Delete(int AddressID, string UserID);
+        Task<AddressModel> SelectByID(int? AddressID);
+        Task<int> Delete(int? AddressID, string UserID);
         IAsyncEnumerable<AddressModel> Select(int? AddressID);
 
     }
@@ -44,11 +44,11 @@ namespace ArmsServices.DataServices
                 {
                     AddressID = dr.GetInt32("AddressID"),
                     AddresseeName = dr.GetString("AddresseeName"),
-                    Building = dr.SafeGetString("Building"),
-                    City = dr.SafeGetString("City"),
-                    PinCode = dr.SafeGetString("PinCode"),
-                    Place = dr.SafeGetString("Place"),
-                    Street = dr.SafeGetString("Street"),
+                    Building = dr.GetString("Building"),
+                    City = dr.GetString("City"),
+                    PinCode = dr.GetString("PinCode"),
+                    Place = dr.GetString("Place"),
+                    Street = dr.GetString("Street"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = dr.GetByte("RecordStatus"),
@@ -59,7 +59,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<AddressModel> SelectByID(int AddressID)
+        public async Task<AddressModel> SelectByID(int? AddressID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -72,11 +72,11 @@ namespace ArmsServices.DataServices
                 {
                     AddressID = dr.GetInt32("AddressID"),
                     AddresseeName = dr.GetString("AddresseeName"),
-                    Building = dr.SafeGetString("Building"),
-                    City = dr.SafeGetString("City"),
-                    PinCode = dr.SafeGetString("PinCode"),
-                    Place = dr.SafeGetString("Place"),
-                    Street = dr.SafeGetString("Street"),
+                    Building = dr.GetString("Building"),
+                    City = dr.GetString("City"),
+                    PinCode = dr.GetString("PinCode"),
+                    Place = dr.GetString("Place"),
+                    Street = dr.GetString("Street"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = dr.GetByte("RecordStatus"),
@@ -87,7 +87,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<int> Delete(int AddressID,string UserID)
+        public async Task<int> Delete(int? AddressID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -109,11 +109,11 @@ namespace ArmsServices.DataServices
                     {
                         AddressID = dr.GetInt32("AddressID"),
                         AddresseeName = dr.GetString("AddresseeName"),
-                        Building = dr.SafeGetString("Building"),
-                        City = dr.SafeGetString("City"),
-                        PinCode = dr.SafeGetString("PinCode"),
-                        Place = dr.SafeGetString("Place"),
-                        Street = dr.SafeGetString("Street"),
+                        Building = dr.GetString("Building"),
+                        City = dr.GetString("City"),
+                        PinCode = dr.GetString("PinCode"),
+                        Place = dr.GetString("Place"),
+                        Street = dr.GetString("Street"),
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel
                         {
                             RecordStatus = dr.GetByte("RecordStatus"),

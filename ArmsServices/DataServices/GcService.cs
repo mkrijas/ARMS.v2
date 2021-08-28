@@ -12,24 +12,27 @@ namespace ArmsServices.DataServices
     public interface IGcService
     {
         GcSetModel Update(GcSetModel model);
-        int Delete(long GcID, string UserID);
-        List<GcSetModel> Select(int BranchID);
-        List<GcSetModel> SelectByTrip(long TripID);
-        List<GcSetModel> SelectUnAssigned(int BranchID);
-        GcSetModel SelectByID(long GcSetID);
+        int Delete(long? GcID, string UserID);
+        List<GcSetModel> Select(int? BranchID);
+        List<GcSetModel> SelectByTrip(long? TripID);
+        List<GcSetModel> SelectUnAssigned(int? BranchID);
+        GcSetModel SelectByID(long? GcSetID);
         IEnumerable<GcTypeModel> SelectGcTypes();
-        int AppendToTrip(long TripID, long GcSetID, string UserID);
-        int RemoveFromTrip(long GcSetID, int TripID, string UserID);
+        int AppendToTrip(long? TripID, long? GcSetID, string UserID);
+        int RemoveFromTrip(long? GcSetID, int? TripID, string UserID);
         int UpdateEwayBill(EwayBillModel model);
+        decimal? GetFreight(int? OrderID,int? RouteID,int? Axles,decimal? Qty);
     }
 
     public class GcService : IGcService
     {
         IDbService Iservice;
+        ITariffService Itariff;
 
-        public GcService(IDbService iservice)
+        public GcService(IDbService iservice,ITariffService tariff)
         {
             Iservice = iservice;
+            Itariff = tariff;
         }
         public GcSetModel Update(GcSetModel model)
         {
@@ -42,6 +45,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@GcDate", model.GcDate??DateTime.Today),
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@RouteID", model.RouteID),
+               new SqlParameter("@PaidBy", model.PaidBy),
             };
             GcSetModel InsertedModel = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.GcSet.Update]", parameters))
@@ -72,7 +76,7 @@ namespace ArmsServices.DataServices
             return InsertedModel;
         }
 
-        public int Delete(long GcID, string UserID)
+        public int Delete(long? GcID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -82,7 +86,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Gc.Gcs.Delete]", parameters);
         }
 
-        public List<GcSetModel> Select(int BranchID)
+        public List<GcSetModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -91,7 +95,7 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
-        public List<GcSetModel> SelectByTrip(long TripID)
+        public List<GcSetModel> SelectByTrip(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -101,7 +105,7 @@ namespace ArmsServices.DataServices
             return GetList(parameters);
         }
 
-        public List<GcSetModel> SelectUnAssigned(int BranchID)
+        public List<GcSetModel> SelectUnAssigned(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -122,7 +126,7 @@ namespace ArmsServices.DataServices
                 };
             }
         }
-        public GcSetModel SelectByID(long GcSetID)
+        public GcSetModel SelectByID(long? GcSetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -170,14 +174,15 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 GcDate = dr.GetDateTime("GcDate"),
                 OrderID = dr.GetInt32("OrderID"),
-                OrderName = dr.HasColumn("OrderName") ? dr.GetString("OrderName") : null,
+                OrderName = dr.GetString("OrderName"),
                 RouteID = dr.GetInt32("RouteID"),
-                RouteName = dr.HasColumn("RouteName") ? dr.GetString("RouteName") : null,
+                RouteName = dr.GetString("RouteName") ,
                 TripID = dr.GetInt64("TripID"),
                 ConsigneeID = dr.GetInt32("ConsigneeID"),
-                ConsigneeName = dr.HasColumn("ConsigneeName") ? dr.GetString("ConsigneeName") : null,
+                ConsigneeName = dr.GetString("ConsigneeName"),
                 ConsignorID = dr.GetInt32("ConsignorID"),
-                ConsignorName = dr.HasColumn("ConsignorName") ? dr.GetString("ConsignorName") : null,
+                ConsignorName = dr.GetString("ConsignorName"),
+                PaidBy = dr.GetByte("PaidBy"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -218,7 +223,7 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public int AppendToTrip(long TripID, long GcSetID, string UserID)
+        public int AppendToTrip(long? TripID, long? GcSetID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -230,7 +235,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.GcSet.AppendTrip]", parameters);
         }
 
-        public int RemoveFromTrip(long GcSetID, int TripID, string UserID)
+        public int RemoveFromTrip(long? GcSetID, int? TripID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -253,6 +258,19 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@UserID",model.UserInfo.UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Gc.EwayBill.Update]", parameters);
+        }
+        public decimal? GetFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty)
+        {
+            decimal? Freight = 0;
+            if (OrderID > 0)
+            {
+                List<TariffModel> tariffs = Itariff.GetTariffs("FREIGHT", OrderID, RouteID, Axles).ToList();
+                foreach (TariffModel item in tariffs)
+                {
+                    Freight += Itariff.GetTariffAmount(Qty, item);
+                }
+            }
+            return Freight;
         }
     }
 }

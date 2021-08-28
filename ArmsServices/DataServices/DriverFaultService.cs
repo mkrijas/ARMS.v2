@@ -9,10 +9,10 @@ namespace ArmsServices.DataServices
 {
     public interface IDriverFaultService
     {
-        IEnumerable<DriverFaultModel> Select(int DriverID);
-        DriverFaultModel SelectByID(int FaultID);
+        IEnumerable<DriverFaultModel> Select(int? DriverID);
+        DriverFaultModel SelectByID(int? FaultID);
         DriverFaultModel Update(DriverFaultModel model);
-        int Delete(int FaultID, string UserID);
+        int Delete(int? FaultID, string UserID);
 
     }
     public class DriverFaultService : IDriverFaultService
@@ -23,7 +23,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Delete(int FaultID, string UserID)
+        public int Delete(int? FaultID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -34,7 +34,7 @@ namespace ArmsServices.DataServices
         }
 
 
-        public IEnumerable<DriverFaultModel> Select(int DriverID)
+        public IEnumerable<DriverFaultModel> Select(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -47,7 +47,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public DriverFaultModel SelectByID(int FaultID)
+        public DriverFaultModel SelectByID(int? FaultID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

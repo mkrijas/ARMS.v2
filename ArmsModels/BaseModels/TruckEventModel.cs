@@ -12,14 +12,14 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
         }
 
-        public long TruckEventID { get; set; }
-        public byte EventTypeID { get; set; }       
+        public long? TruckEventID { get; set; }
+        public byte? EventTypeID { get; set; }       
         public DateTime? EventTime { get; set; }
         public long? EventReading { get; set; }
-        public int BranchID { get; set; }
-        public int OriginID { get; set; }
-        public int DestinationID { get; set; }
-        public int TruckID { get; set; }
+        public int? BranchID { get; set; }
+        public int? OriginID { get; set; }
+        public int? DestinationID { get; set; }
+        public int? TruckID { get; set; }
         public int? DriverID { get; set; }
         public long? TripID { get; set; }
         public long? GcSetID { get; set; }
@@ -29,7 +29,7 @@ namespace ArmsModels.BaseModels
 
     public class EventTypeModel
     {
-        public byte EventTypeID { get; set; }
+        public byte? EventTypeID { get; set; }
         public string EventTypeName { get; set; }
         public bool IsStationary { get; set; }
         public bool IsGcRelated { get; set; }
@@ -37,8 +37,8 @@ namespace ArmsModels.BaseModels
         public bool IsDriverRelated { get; set; }
         public bool IsDriverRequired { get; set; }
         public bool IsBlocking { get; set; }
-        public int DisplayOrder { get; set; }
+        public int? DisplayOrder { get; set; }
         public string  EventStatusText { get; set; }
-        public byte LimitPostEvent { get; set; }
+        public byte? LimitPostEvent { get; set; }
     }
 }

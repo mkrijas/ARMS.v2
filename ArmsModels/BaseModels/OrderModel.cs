@@ -13,17 +13,17 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
 
-        public int OrderID { get; set; }
+        public int? OrderID { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
         public string OrderName { get; set; }
         [Required]
-        public int ClientID { get; set; }        
+        public int? ClientID { get; set; }        
         [Required]
-        public int ContentID { get; set; } 
-        public int ConsignorID { get; set; } 
+        public int? ContentID { get; set; } 
+        public int? ConsignorID { get; set; } 
         [Required]
-        public decimal OrderQuantity { get; set; } 
+        public decimal? OrderQuantity { get; set; } 
         public ContentModel Content { get; set; }
         public PartyModel Party { get; set; }        
         public ConsigneeModel Consignor { get; set; }

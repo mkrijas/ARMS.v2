@@ -12,8 +12,8 @@ namespace ArmsServices.DataServices
     public interface IPartyService
     {       
         Task<PartyModel> Update(PartyModel model);
-        Task<PartyModel> SelectByID(int ID);
-        Task<int> Delete(int PartyID, string UserID);
+        Task<PartyModel> SelectByID(int? ID);
+        Task<int> Delete(int? PartyID, string UserID);
         IAsyncEnumerable<PartyModel> Select(int? PartyID);
     }
 
@@ -46,7 +46,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<PartyModel> SelectByID(int ID)
+        public async Task<PartyModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -59,7 +59,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<int> Delete(int PartyID,string UserID)
+        public async Task<int> Delete(int? PartyID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

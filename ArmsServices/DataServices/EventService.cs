@@ -11,15 +11,15 @@ namespace ArmsServices.DataServices
 {
     public interface IEventService
     {      
-        EventModel SelectByID(long EventID);
+        EventModel SelectByID(long? EventID);
         EventModel Update(EventModel model);
-        int Delete(long EventID, string UserID);
-        EventTypeModel GetNextPossibleEvent(int TruckID);
-        IEnumerable<EventModel> SelectByTrip(long TripID);
-        EventModel GetCurrentEvent(int TruckID);
-        EventModel GetPreviousEvent(long EventID);
+        int Delete(long? EventID, string UserID);
+        EventTypeModel GetNextPossibleEvent(int? TruckID);
+        IEnumerable<EventModel> SelectByTrip(long? TripID);
+        EventModel GetCurrentEvent(int? TruckID);
+        EventModel GetPreviousEvent(long? EventID);
         IEnumerable<EventTypeModel> GetEventTypes();
-        EventTypeModel GetEventType(int EventTypeID);
+        EventTypeModel GetEventType(int? EventTypeID);
 
     }
 
@@ -56,7 +56,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int Delete(long ID, string UserID)
+        public int Delete(long? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -109,7 +109,7 @@ namespace ArmsServices.DataServices
             };
         }
         
-        public EventModel SelectByID(long EventID)
+        public EventModel SelectByID(long? EventID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -124,7 +124,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        EventTypeModel IEventService.GetNextPossibleEvent(int TruckID)
+        EventTypeModel IEventService.GetNextPossibleEvent(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -139,7 +139,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        IEnumerable<EventModel> IEventService.SelectByTrip(long TripID)
+        IEnumerable<EventModel> IEventService.SelectByTrip(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -153,7 +153,7 @@ namespace ArmsServices.DataServices
             
         }
 
-        EventModel IEventService.GetCurrentEvent(int TruckID)
+        EventModel IEventService.GetCurrentEvent(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -168,7 +168,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        EventModel IEventService.GetPreviousEvent(long EventID)
+        EventModel IEventService.GetPreviousEvent(long? EventID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -190,8 +190,7 @@ namespace ArmsServices.DataServices
                 yield return GetEventType(dr);
             }           
         }
-
-        EventTypeModel IEventService.GetEventType(int EventTypeID)
+        EventTypeModel IEventService.GetEventType(int? EventTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
