@@ -1,6 +1,6 @@
 ﻿@inject IDialogService DialogService
 
-<MudCard Class="@Class">
+<MudCard Class="@Class" Style="@Style">
     <MudCardHeader>
         <CardHeaderAvatar>
             <MudAvatar Color="ewaycolor">GC</MudAvatar>
@@ -19,24 +19,35 @@
     <MudCardActions>
         <MudButton @onclick="@(() => Edit(item.GcSetID))" Color="Color.Primary">EDIT</MudButton>
         <MudButton @onclick="@(() => EwayBill(item.GcSetID))" Variant="Variant.Text" Color="@ewaycolor">Eway Bill</MudButton>
+        <MudButton @onclick="@(() => FillExpenses(item.GcSetID))" Variant="Variant.Text" Color="@FillExpColor">Post Inc/Exp</MudButton>
     </MudCardActions>
 </MudCard>
 
+
+
+
+
+
 @code {
-        [Parameter]
-        public GcSetModel item { get; set; }
+    [Parameter]
+    public GcSetModel item { get; set; }
 
-        [Parameter]
-        public string Class { get; set; }
+    [Parameter]
+    public string Class { get; set; }
 
-        private Color ewaycolor = new();
+    [Parameter]
+    public string Style { get; set; }
+
+
+    private Color ewaycolor = new();
+    private Color FillExpColor = new();
 
     protected override async Task OnParametersSetAsync()
     {
-        setColor();
+        setEwayBillColor();
     }
 
-    private void setColor()
+    private void setEwayBillColor()
     {
         if (item.Gcs.Exists(x => x.EwayBill.ExpireOn == null || x.EwayBill?.ExpireOn < DateTime.Now))
         {
@@ -46,6 +57,11 @@
         {
             ewaycolor = Color.Primary;
         }
+    }
+
+    private void setExpButtonColor()
+    {
+        FillExpColor = Color.Tertiary;
     }
 
 
@@ -58,7 +74,21 @@
         var data = await result.Result;
         if (data.Data != null)
         {
-            setColor();
+            setEwayBillColor();
+        }
+    }
+
+    private async Task FillExpenses(long? id)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("gc", item);
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+
+        var result = DialogService.Show<Operations.TransactionDialog>("Tariffs", parameters,maxWidth);
+        var data = await result.Result;
+        if (data.Data != null)
+        {
+            setEwayBillColor();
         }
     }
 

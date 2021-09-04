@@ -57,7 +57,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByRoute"),
             };
             RouteModel model = new RouteModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Update]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Select]", parameters))
             {
                 model = await GetModel(dr);
             }

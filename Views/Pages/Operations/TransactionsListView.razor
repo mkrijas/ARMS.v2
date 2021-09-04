@@ -1,0 +1,79 @@
+﻿@inject ITransactionService Itransaction
+@inject ITariffService Itariff
+
+@inject IDialogService DialogService
+
+@foreach (var item in Transactions)
+{
+    <div class="mt-4">
+        <MudText Typo="Typo.h5">
+            TripNumber: @{ @Trip.TripPrefix @Trip.TripNumber}
+        </MudText>
+        <div class="d-flex">
+            <MudText Typo="Typo.h5" Class="text-secondary">
+                Date of Entry:  @item.TransactionDate?.ToString("dd-MMM-yyyy")
+            </MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="(()=>EditTransaction(item))"></MudIconButton>
+        </div>
+        <MudSimpleTable Style="overflow-x: auto;">
+            <thead>
+                <tr>
+                    <th>Head</th>
+                    <th>Amount</th>
+                    <th>Qty</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var sub in item.Transactions)
+                {
+                    <tr>
+                        <td>@(TariffTypes.First(x => x.TariffTypeID == sub.TariffTypeID).TariffTypeName)</td>
+                        <td>@sub.Amount?.ToString("C2")</td>
+                        <td>@{@sub.Quantity @sub.Unit}</td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    </div>
+}
+
+@code {
+
+    public TripModel Trip { get; set; }
+    private List<OperationTransactionModel> Transactions = new();
+    private List<TariffTypeModel> TariffTypes = new();
+
+
+    protected override void OnInitialized()
+    {
+
+    }
+
+
+    public void Refresh(TripModel CurrentTrip)
+    {
+        Trip = CurrentTrip;
+        if (Trip != null)
+        {
+            Transactions = Itransaction.SelectByTrip(Trip?.TripID).ToList();
+            TariffTypes = Itariff.SelectTariffTypes().ToList();
+        }
+        else
+        {
+            Transactions = new();
+        }
+        StateHasChanged();
+    }
+
+    private async Task EditTransaction(OperationTransactionModel item)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", item);
+        parameters.Add("Trip", Trip);
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+        var result = DialogService.Show<TransactionDialog>("Inc/Exp", parameters, maxWidth);
+        var Data = await result.Result;
+        var ev = Data.Data;
+    }
+
+}

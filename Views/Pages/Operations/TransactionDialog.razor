@@ -6,15 +6,17 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 
+@using System.ComponentModel.DataAnnotations
+
 <MudDialog>
     <TitleContent>
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Create" Class="mr-3 mb-n1" />
-                INCOME AND EXPENSES  
-            </MudText>
-        </TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Create" Class="mr-3 mb-n1" />
+            INCOME AND EXPENSES
+        </MudText>
+    </TitleContent>
     <DialogContent>
-        <MudContainer Style="min-height:500px;max-height: 800px;" >
+        <MudContainer Style="min-height:500px;max-height: 800px;">
             <div @ref="testRef" tabindex="0" @onkeydown="HandleKeyDown">
                 <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">
                     <ObjectGraphDataAnnotationsValidator />
@@ -26,16 +28,18 @@
                         }
                         else
                         {
-                            <MudItem xs="12">
-                                @if (trip != null)
-                                {
-                                    <MudText>Trip : @(trip.TripPrefix + trip.TripNumber)  </MudText>
-                                }
-                                else if (Gc != null)
-                                {
-                                    <MudText>Gc: @Gc.SetGcNumber</MudText>
-                                }
-                            </MudItem>
+                    <MudItem xs="12" Class="d-flex flex-row">
+                        @if (trip != null)
+                        {
+                            <MudText>Trip : @(trip.TripPrefix + trip.TripNumber)  </MudText>
+                        }
+                        else @if (gc != null)
+                   {
+                    <MudText Class="px-3">Consignments : @gc.SetGcNumber  </MudText>
+                }
+
+                        <MudText Typo="Typo.h4">@(TotalAmount?.ToString("C2"))</MudText>
+                    </MudItem>
 
                             <MudItem xs="12">
                                 @foreach (var item in model.Transactions)
@@ -44,7 +48,7 @@
                                     var adIcon = item.Sign == -1 ? Icons.Filled.East : Icons.Filled.West;
                                     <MudGrid Spacing="2">
                                         <MudItem xs="3">
-                                            <MudSelect Label="Tariff Type" T="short?" Value="@item.TariffID" ValueChanged="@((e)=>TariffChanged(e,item))" Variant="Variant.Outlined" OffsetY="true" AdornmentColor="Color.Secondary">
+                                            <MudSelect Label="Tariff Type" T="short?" Value="@item.TariffTypeID" ValueChanged="@((e)=>TariffChanged(e,item))" Variant="Variant.Outlined" OffsetY="true" AdornmentColor="Color.Secondary">
                                                 @foreach (var tariffType in TariffTypes)
                                                 {
                                                     <MudSelectItem Value="@tariffType.TariffTypeID">@tariffType.TariffTypeName</MudSelectItem>
@@ -52,7 +56,7 @@
                                             </MudSelect>
                                         </MudItem>
                                         <MudItem xs="2">
-                                            <MudTextField @bind-Value="@item.Amount" Label="@adText" Variant="Variant.Outlined" InputType="InputType.Text" For="@(() => item.Amount)" Adornment="Adornment.End" AdornmentIcon="@adIcon" OnAdornmentClick="(()=> SignClick(item))" AdornmentColor="Color.Primary" />
+                                            <MudTextField T="decimal?" Value="@item.Amount" ValueChanged="((e)=>AmountChanged(e,item))" Label="@adText" Variant="Variant.Outlined" InputType="InputType.Text" For="@(() => item.Amount)" Adornment="Adornment.End" AdornmentIcon="@adIcon" OnAdornmentClick="(()=> SignClick(item))" AdornmentColor="Color.Primary" />
                                         </MudItem>
                                         <MudItem xs="2">
                                             <MudTextField @bind-Value="@item.Quantity" Label="Qty" Variant="Variant.Outlined" For="@(() => item.Quantity)" Adornment="Adornment.End" AdornmentText="@item.Unit" AdornmentColor="Color.Secondary"></MudTextField>
@@ -65,7 +69,7 @@
                                         </MudItem>
                                         <MudItem xs="1">
                                             <div class="pa-3">
-                                                <MudIconButton Variant="Variant.Filled" Icon="@Icons.Filled.Delete" Color="Color.Error" OnClick="(()=> RemoveItem(item))"></MudIconButton>
+                                                <MudIconButton Variant="Variant.Filled" Icon="@Icons.Filled.Close" Color="Color.Error" OnClick="(()=> RemoveItem(item))"></MudIconButton>
                                             </div>
                                         </MudItem>
                                     </MudGrid>
@@ -77,9 +81,10 @@
             </div>
         </MudContainer>
     </DialogContent>
-    <DialogActions>        
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Dark" StartIcon="@Icons.Material.Outlined.Add" OnClick="AddMoreRows">Add More Rows</MudButton>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Gc</MudButton>
+        <MudButton form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Entries</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -92,7 +97,7 @@
 
     private void HandleKeyDown(KeyboardEventArgs e)
     {
-        if(e.CtrlKey&& e.Key == "q")
+        if (e.CtrlKey && e.Key == "q")
         {
             model.Transactions.Add(new OpTranSubModel());
         }
@@ -108,7 +113,7 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter] public TripModel trip { get; set; }
-    [Parameter] public GcSetModel Gc { get; set; }
+    [Parameter] public GcSetModel gc { get; set; }
     [Parameter] public OperationTransactionModel model { get; set; }
 
     private void Cancel()
@@ -120,29 +125,32 @@
 
     private List<TariffTypeModel> TariffTypes = new();
     private TariffTypeModel SelectedTariff;
+    private Decimal? TotalAmount;
+
+
 
     protected override void OnInitialized()
     {
         IsLoading = true;
         TariffTypes = Itariff.SelectTariffTypes().ToList();
 
-        if(model?.Transactions == null)
+        if (model == null)
         {
             model = new();
-            model.Transactions = new();
             model.Transactions.Add(new OpTranSubModel());
+
         }
 
-        if(trip!= null)
+        if (gc != null)
+        {
+            model.RefType = "Gc";
+            model.RefID = gc.GcSetID;
+            GenerateEntries();
+        }
+        else if (trip != null)
         {
             model.RefType = "Trip";
             model.RefID = trip.TripID;
-        }
-
-        else if(Gc != null)
-        {
-            model.RefType = "Gc";
-            model.RefID = Gc.GcSetID;
         }
         IsLoading = false;
     }
@@ -162,7 +170,7 @@
 
     private void TariffChanged(short? e, OpTranSubModel item)
     {
-        item.TariffID = e;
+        item.TariffTypeID = e;
         item.Unit = TariffTypes.FirstOrDefault(x => x.TariffTypeID == e.GetValueOrDefault()).Unit;
         StateHasChanged();
     }
@@ -176,12 +184,69 @@
             model = Iservice.Update(model);
             snackbar.Add("Saved Successfully", Severity.Success);
             MudDialog.Close(DialogResult.Ok(model));
-            model = new ();
+            model = new();
         }
         catch (Exception ex)
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
+    }
+
+
+    private void GenerateEntries()
+    {
+        List<TariffModel> tariffs = Itariff.GeneratePendingTariffs(gc.GcSetID).ToList();
+        model.BranchID = int.Parse(Task.Run(() => auth.GetAuthenticationStateAsync()).Result.User.Claims.FirstOrDefault(c => c.Type == "BranchID").Value);
+        model.RefType = "GC";
+        model.RefID = gc.GcSetID;
+        model.TransactionDate = DateTime.Today;
+        model.UserInfo.UserID = Task.Run(() => auth.GetAuthenticationStateAsync()).Result.User.Identity.Name;
+        model.Transactions = new List<OpTranSubModel>();
+        foreach (var item in tariffs)
+        {
+            OpTranSubModel tr = new()
+            {
+                Amount = Itariff.GetTariffAmount(gc, item),
+                BillDate = DateTime.Today,
+                Quantity = item.TariffTypeID < 3 ? gc.Gcs.Sum(x => x.BillQuantity) : null,
+                Sign = item.TariffSign,
+                TariffTypeID = item.TariffTypeID,
+                Unit = item.Unit,
+            };
+            if (item.TariffTypeID == 3)
+            {
+                tr.Quantity = tr.Amount;
+                tr.Amount = null;
+            }
+            model.Transactions.Add(tr);
+        }
+        TotalAmount = model.Transactions.Sum(x => x.Amount * x.Sign);
+    }
+
+
+    private void AddMoreRows()
+    {
+        int index = model.Transactions.Count - 1;
+        if (index >= 0)
+        {
+            ValidationContext vc = new ValidationContext(model.Transactions[index]);
+            ICollection<ValidationResult> results = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(model.Transactions[index], vc, results, true);
+            if (isValid)
+                model.Transactions.Add(new());
+        }
+        else
+        {
+            model.Transactions.Add(new());
+        }
+    }
+
+
+    private void AmountChanged(decimal? Amount,OpTranSubModel item)
+    {
+        item.Amount = Amount;
+        TotalAmount = model.Transactions.Sum(x => x.Amount * x.Sign);
+
     }
 }
 

@@ -22,7 +22,9 @@ namespace ArmsModels.BaseModels
         public int? TruckID { get; set; }
         public int? DriverID { get; set; }
         public long? TripID { get; set; }
-        public long? GcSetID { get; set; }
+        public long? GcSetID { get; set; }        
+        public string OriginName { get; set; }
+        public string DestinationName { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 

@@ -28,15 +28,17 @@ namespace ArmsServices.DataServices
     public class DriverService : IDriverService
     {
         IDbService Iservice;
-        public DriverService(IDbService iservice)
+        IAddressService _addressService;
+        public DriverService(IDbService iservice,IAddressService Iaddress)
         {
             Iservice = iservice;
+            _addressService = Iaddress;
         }
         public DriverModel Update(DriverModel model)
         {
+            model.Address = Task.Run(()=> _addressService.Update(model.Address)).Result;
             List<SqlParameter> parameters = new List<SqlParameter>
-            {
-    
+            {    
                new SqlParameter("@DriverID", model.DriverID),
                new SqlParameter("@DriverName", model.DriverName),
                new SqlParameter("@HomeBranchID", model.HomeBranchID),
@@ -47,7 +49,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Mobile", model.Mobile),
                new SqlParameter("@AlternateContactPerson", model.AlternateContactPerson),
                new SqlParameter("@AlternateContactMobile", model.AlternateContactMobile),
-               new SqlParameter("@AddressID", model.AddressID),
+               new SqlParameter("@AddressID", model.Address.AddressID),
                new SqlParameter("@DriverAgentID", model.DriverAgentID),
                new SqlParameter("@FestivalBonus", model.FestivalBonus),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -58,8 +60,7 @@ namespace ArmsServices.DataServices
             {
                 model = GetModel(dr);
             }
-            return model;
-              
+            return model;              
         }
         public int Delete(int? DriverID, string UserID)
         {

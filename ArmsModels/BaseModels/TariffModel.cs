@@ -21,6 +21,7 @@ namespace ArmsModels.BaseModels
         public short? TariffTypeID { get; set; }
         [Required]
         public short? TariffFormulaID { get; set; }
+        public int? TariffSign { get; set; }
         [Required]
         public decimal? TariffRate { get; set; }
         public byte? TruckAxles { get; set; }
@@ -28,6 +29,7 @@ namespace ArmsModels.BaseModels
         public virtual string RouteName { get; set; }
         public virtual string Formula { get; set; }
         public virtual string TariffTypeName { get; set; }
+        public virtual string Unit { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
 
@@ -87,7 +89,7 @@ namespace ArmsModels.BaseModels
         public long? TransactionSubID { get; set; }
         public long? TransactionID { get; set; }
         [Required]
-        public short? TariffID { get; set; }
+        public short? TariffTypeID { get; set; }
         [Required]
         public DateTime? BillDate { get; set; }
         public string Reference { get; set; }

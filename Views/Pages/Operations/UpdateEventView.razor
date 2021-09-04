@@ -2,6 +2,7 @@
 @inject IPlaceService Iplace
 @inject IEventService Ievent
 @inject ITripService Itrip
+@inject IGcService Igc
 
 
 @inject MudBlazor.ISnackbar snackbar
@@ -41,7 +42,7 @@
                         <MudText></MudText>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudSelect Label="Select Action" T="EventTypeModel" OffsetY="true" AdornmentColor="Color.Secondary" ValueChanged="EventSelected">
+                        <MudSelect Label="Select Action" T="EventTypeModel" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" ValueChanged="EventSelected" >
                             @foreach (var item in EventTypes)
                             {
                                 <MudSelectItem T="EventTypeModel" Value="@item">@item.EventTypeName</MudSelectItem>
@@ -50,20 +51,30 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudAutocomplete T="PlaceModel" Label="Origin" @bind-Value="Origin" ResetValueOnEmptyText="true"
-                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                        <MudAutocomplete  Variant="Variant.Outlined" T="PlaceModel" Label="Origin" @bind-Value="Origin" ResetValueOnEmptyText="true" Clearable="true"
+                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true"></MudAutocomplete>
                     </MudItem>
 
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
-                        <MudAutocomplete T="PlaceModel" Label="Destination" @bind-Value="Destination" ResetValueOnEmptyText="true"
+                        <MudAutocomplete  Variant="Variant.Outlined" T="PlaceModel" Label="Destination" @bind-Value="Destination" ResetValueOnEmptyText="true" Clearable="true"
                                          SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                     </MudItem>
 
+                    <MudItem xs="12" md="6" hidden="@(SelectedEvent.EventTypeID != 4)">
+                        <MudSelect  Variant="Variant.Outlined" Label="Select GCs To Unload" MultiSelection="true" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))"
+                                   T="GcSetModel" OffsetY="true" AdornmentColor="Color.Secondary" @bind-SelectedValues="SelectedGCs">
+                            @foreach (var item in GCsToUnload)
+                            {
+                                <MudSelectItem T="GcSetModel" Value="@item">@item.SetGcNumber</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined" Margin="Margin.Normal"></MudTextField>
+                        <MudTextField @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined" ></MudTextField>
                     </MudItem>
                     <MudItem xs="12">
-                        <MyDateTimePicker Label="Event" @bind-Value="model.EventTime" ></MyDateTimePicker>
+                        <MyDateTimePicker Label="Event" @bind-Value="model.EventTime"></MyDateTimePicker>
                     </MudItem>
 
                 </MudGrid>
@@ -100,6 +111,9 @@
     private List<PlaceModel> places;
     private List<EventTypeModel> EventTypes;
     private EventTypeModel SelectedEvent = new();
+
+    private List<GcSetModel> GCsToUnload = new();
+    private HashSet<GcSetModel> SelectedGCs = new();
 
     private void Cancel()
     {
@@ -145,9 +159,14 @@
                 return;
             }
 
-            if(SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
+            if (SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
             {
                 snackbar.Add("Cannot start this event without Driver", Severity.Warning);
+                return;
+            }
+            if (CurrentEvent.EventTypeID == SelectedEvent.EventTypeID)
+            {
+                snackbar.Add("Cannot enter an event twice in a row", Severity.Warning);
                 return;
             }
 
@@ -155,7 +174,6 @@
             model.DestinationID = SelectedEvent.IsStationary ? Origin.PlaceID : Destination.PlaceID;
             model.OriginID = Origin.PlaceID;
             model.DriverID = AssignedDriver?.DriverID;
-            model.EventTime = DateTime.Now;
             model.TripID = CurrentTrip.TripID;
             model.TruckID = Truck.TruckID;
             model.EventTypeID = SelectedEvent.EventTypeID;
@@ -163,8 +181,25 @@
             model = Ievent.Update(model);
 
 
-            MudDialog.Close(DialogResult.Ok(model));
+            if (SelectedEvent.EventTypeID == 4)
+            {
+                if (SelectedGCs.Count == 0)
+                {
+                    snackbar.Add("No GCs selected to Unload!", Severity.Warning);
+                    return;
+                }
+                else
+                {
+                    foreach (GcSetModel item in SelectedGCs)
+                    {
+                        Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                    }
+                }
 
+
+            }
+            CurrentEvent = model;
+            MudDialog.Close(DialogResult.Ok(model));
         }
         catch (Exception ex)
         {
@@ -173,11 +208,24 @@
     }
 
 
+    private string GetMultiSelectionText(List<string> Gcs)
+    {
+        return $"{SelectedGCs.Count()}  Gc{(Gcs.Count > 1 ? "s" : "")} Selected ";
+    }
+
+
     private void EventSelected(EventTypeModel e)
     {
-        SelectedEvent = EventTypes.Find(x => x.EventTypeID == e.EventTypeID);
+        SelectedEvent = e;
+        model.EventTypeID = e.EventTypeID;
         if (SelectedEvent.EventTypeName != null)
+        {
             ButtonLabel = SelectedEvent.EventTypeName;
+            if(SelectedEvent.EventTypeID == 4)
+            {
+                GCsToUnload = Igc.SelectToUnload(CurrentTrip.TripID).ToList();
+            }
+        }
         else
             ButtonLabel = "Select an Event";
     }

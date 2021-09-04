@@ -81,6 +81,8 @@ namespace ArmsServices.DataServices
               TripID= dr.GetInt64("TripID"),
               TruckEventID= dr.GetInt64("EventID"),
               TruckID= dr.GetInt32("TruckID"),
+              OriginName = dr.GetString("OriginName"),
+              DestinationName = dr.GetString("DestinationName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -144,7 +146,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripID", TripID),
-               new SqlParameter("@Operation", "SelectByID"),
+               new SqlParameter("@Operation", "SelectByTrip"),
             };            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Select]", parameters))
             {

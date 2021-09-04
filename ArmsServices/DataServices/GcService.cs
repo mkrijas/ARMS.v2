@@ -16,9 +16,11 @@ namespace ArmsServices.DataServices
         List<GcSetModel> Select(int? BranchID);
         List<GcSetModel> SelectByTrip(long? TripID);
         List<GcSetModel> SelectUnAssigned(int? BranchID);
+        List<GcSetModel> SelectToUnload(long? TripID);
         GcSetModel SelectByID(long? GcSetID);
         IEnumerable<GcTypeModel> SelectGcTypes();
         int AppendToTrip(long? TripID, long? GcSetID, string UserID);
+        int BeginUnload(long? TripID, long? GcSetID);
         int RemoveFromTrip(long? GcSetID, int? TripID, string UserID);
         int UpdateEwayBill(EwayBillModel model);
         decimal? GetFreight(int? OrderID,int? RouteID,int? Axles,decimal? Qty);
@@ -104,6 +106,16 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
+        public List<GcSetModel> SelectToUnload(long? TripID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "Unloadable"),
+               new SqlParameter("@TripID", TripID)
+            };
+            return GetList(parameters);
+        }
+
 
         public List<GcSetModel> SelectUnAssigned(int? BranchID)
         {
@@ -232,7 +244,17 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Operation", "Append"),
             };
-            return Iservice.ExecuteNonQuery("[usp.GcSet.AppendTrip]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.GcSet.EventUpdate]", parameters);
+        }
+        public int BeginUnload(long? TripID, long? GcSetID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@GcSetID", GcSetID),
+               new SqlParameter("@TripID", TripID),               
+               new SqlParameter("@Operation", "BeginUnload"),
+            };
+            return Iservice.ExecuteNonQuery("[usp.GcSet.EventUpdate]", parameters);
         }
 
         public int RemoveFromTrip(long? GcSetID, int? TripID, string UserID)
@@ -244,7 +266,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Operation", "Remove"),
             };
-            return Iservice.ExecuteNonQuery("[usp.GcSet.AppendTrip]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.GcSet.EventUpdate]", parameters);
         }
 
         public int UpdateEwayBill(EwayBillModel model)
@@ -267,10 +289,12 @@ namespace ArmsServices.DataServices
                 List<TariffModel> tariffs = Itariff.GetTariffs("FREIGHT", OrderID, RouteID, Axles).ToList();
                 foreach (TariffModel item in tariffs)
                 {
-                    Freight += Itariff.GetTariffAmount(Qty, item);
+                    Freight += Qty * item.TariffRate;
                 }
             }
             return Freight;
         }
+
+        
     }
 }

@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
+using System.Diagnostics;
+
 
 namespace ArmsServices.DataServices
 {
@@ -37,9 +39,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TransactionID", model.TransactionID),
                new SqlParameter("@Transactions", model.Transactions.ToDataTable()),                  
                new SqlParameter("@UserID", model.UserInfo.UserID),
-            };
-
-            foreach (var dr in Iservice.GetDataReader("[usp.Operation.Trip.Transaction.Update]", parameters))
+            };            
+            foreach (var dr in Iservice.GetDataReader("[usp.Operation.Transaction.Update]", parameters))
             {
                 model = GetModel(dr);
             }
@@ -58,7 +59,8 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID)
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "Main"),
             };
 
             OperationTransactionModel model = null;
@@ -73,26 +75,30 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TripID", TripID)
-            };            
+               new SqlParameter("@TripID", TripID),
+               new SqlParameter("@Operation", "Main"),
+            };
+           
             foreach (var dr in Iservice.GetDataReader("[usp.Operation.Transaction.Select]", parameters))
-            {
-                yield return GetModel(dr);
-            }           
+            {                
+                yield return GetModel(dr);                
+            }            
         }
 
         private IEnumerable<OpTranSubModel> GetChildren(long? TransactionID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TransactionID", TransactionID)
+               new SqlParameter("@ID", TransactionID),
+               new SqlParameter("@Operation", "Sub"),
             };
-            foreach (var dr in Iservice.GetDataReader("[usp.Operation.Transaction.Sub.Select]", parameters))
+            foreach (var dr in Iservice.GetDataReader("[usp.Operation.Transaction.Select]", parameters))
             {
                 decimal? SignedAmount = dr.GetDecimal("Amount");
+                
                 yield return new()
                 {
-                    TariffID = dr.GetInt16("TariffID"),
+                    TariffTypeID = dr.GetInt16("TariffTypeID"),
                     TransactionID = dr.GetInt64("TransactionID"),
                     TransactionSubID = dr.GetInt64("TransactionSubID"),
                     Sign = Math.Sign(SignedAmount.GetValueOrDefault()),
@@ -101,12 +107,13 @@ namespace ArmsServices.DataServices
                     FinanceTranID = dr.GetInt64("FinanceTranID"),
                     Quantity = dr.GetDecimal("Quantity"),
                     Reference = dr.GetString("Reference"),
-                };
+                }; 
             }
         }
 
         private OperationTransactionModel GetModel(IDataRecord dr)
         {
+            
             return new OperationTransactionModel
             {               
                TransactionDate = dr.GetDateTime("TransactionDate"),
@@ -123,6 +130,6 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },
             };
-        }     
+        }       
     }
 }

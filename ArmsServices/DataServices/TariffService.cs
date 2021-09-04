@@ -23,18 +23,22 @@ namespace ArmsServices.DataServices
         TariffTypeModel UpdateTariffType(TariffTypeModel model);
         string[] TariffGroups { get; }
         IEnumerable<TariffModel> GetTariffs(string TariffGroup, int? OrderID, int? RouteID, int? Axles);
-        decimal? GetTariffAmount<T>(T parameter,TariffModel Tariff);        
+        decimal? GetTariffAmount(GcSetModel GcSet,TariffModel Tariff);
+        IEnumerable<TariffModel> GeneratePendingTariffs(long? RefID);
     }
+
 
     public class TariffService : ITariffService
     {
         IDbService Iservice;
         IConfiguration Configuration;
         private const string Data = "Data";
-        public TariffService(IDbService iservice, IConfiguration configuration)
+        private IRouteService Iroute;
+        public TariffService(IDbService iservice, IConfiguration configuration,IRouteService _IRoute)
         {
             Iservice = iservice;
             Configuration = configuration;
+            Iroute = _IRoute;
         }
         public string[] TariffGroups { get { return Configuration.GetSection(Data).GetSection("TariffGroups").Get<string[]>(); } }
 
@@ -206,12 +210,14 @@ namespace ArmsServices.DataServices
                 TariffFormulaID = dr.GetInt16("TariffFormulaID"),
                 TariffID = dr.GetInt32("TariffID"),                
                 TariffRate = dr.GetDecimal("TariffRate"),
-                TariffTypeID = dr.GetInt16("TariffTypeID"),                
+                TariffTypeID = dr.GetInt16("TariffTypeID"),    
+                TariffSign = dr.GetInt32("TariffSign"),
                 TruckAxles = dr.GetByte("TruckAxles"),
                 Formula = dr.GetString("Formula"),
                 OrderName = dr.GetString("OrderName"),
                 RouteName = dr.GetString("RouteName"),
                 TariffTypeName = dr.GetString("TariffTypeName"),
+                Unit = dr.GetString("Unit"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -256,24 +262,25 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public decimal? GetTariffAmount<T>(T parameter, TariffModel Tariff)
+        public decimal? GetTariffAmount(GcSetModel GcSet, TariffModel Tariff)
         {
+            RouteModel route = Task.Run(() => Iroute.SelectByID(GcSet.RouteID)).Result;
             decimal? tariffAmount = null;
             if (Tariff?.TariffFormulaID == 1)
             {
-                int? distance = Convert.ToInt32(parameter);
+                decimal? distance = route.Distance;
                 tariffAmount = distance / Tariff.TariffRate;
             }
             else
-           if (Tariff?.TariffFormulaID == 2)
+            if (Tariff?.TariffFormulaID == 2)
             {
-                int? distance = Convert.ToInt32(parameter);
+                decimal? distance = route.Distance;
                 tariffAmount =distance* Tariff.TariffRate;
             }
             else
             if (Tariff?.TariffFormulaID == 3)
             {
-                decimal? Qty = Convert.ToDecimal(parameter);
+                decimal? Qty = Convert.ToDecimal(GcSet.Gcs.Sum(x=> x.BillQuantity));
                 tariffAmount = Qty * Tariff.TariffRate;
             }
             else
@@ -282,6 +289,20 @@ namespace ArmsServices.DataServices
                 tariffAmount = Tariff.TariffRate;
             }
             return tariffAmount;
+        }
+
+
+        public IEnumerable<TariffModel> GeneratePendingTariffs(long? RefID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RefID", RefID),
+            };           
+
+            foreach (var dr in Iservice.GetDataReader("[usp.Operation.Transaction.Generate]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
     }   
 }
