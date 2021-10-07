@@ -9,6 +9,7 @@
 @inject IEventService Ievent
 @inject IGcService Igc
 @inject IPlaceService Iplace
+@inject ITruckDocumentService idocument
 
 
 @inject MudBlazor.ISnackbar snackbar
@@ -147,8 +148,8 @@
 
 
 @code{
-    [Parameter]
-    public TruckModel SelectedTruck { get; set; }
+        [Parameter]
+        public TruckModel SelectedTruck { get; set; }
 
     private List<TruckModel> Trucks;
 
@@ -198,6 +199,11 @@
 
     private async Task UpdateEvent()
     {
+        if(!IsFit())
+        {
+            return;
+        }
+
         var parameters = new DialogParameters();
         parameters.Add("Truck", SelectedTruck);
         parameters.Add("AssignedDriver", AssignedDriver);
@@ -238,7 +244,11 @@
         var result = DialogService.Show<AssignDriverView>(AssignDriverLabel, parameters);
         var Data = await result.Result;
         var ev = Data.Data;
-        AssignedDriver = (DriverModel)ev;
+        if (!Data.Cancelled)
+        {
+            AssignedDriver = (DriverModel)ev;
+            AssignDriverLabel = AssignedDriver == null ? "Assign Driver" : "Replace Driver";
+        }
     }
 
     private async Task AddConsignment()
@@ -274,6 +284,18 @@
         truckStatusUpdated();
     }
 
+    private bool IsFit()
+    {
+        var doc = idocument.SelectByTruck(SelectedTruck.TruckID);
+        if(doc.Any(x=> x.EndDate < DateTime.Today))
+        {
+            string[] doctTyps = doc.Where(x => x.EndDate < DateTime.Today).Select(y => y.DocumentTypeName).ToArray();
+            snackbar.Add(String.Join(",", doctTyps)+" Expired" , Severity.Error);
+            return false;
+        }
+        return true;
+    }
+
 
     private void truckStatusUpdated()
     {
@@ -290,15 +312,15 @@
         }
         else
         {
-            
-           
+
+
             int? DriverID = Itruck.GetAssignedDriver(SelectedTruck.TruckID);
-           
+
 
             AssignedDriver = DriverID == null ? null : Idriver.SelectByID(DriverID.Value);
             AssignDriverLabel = AssignedDriver == null ? "Assign Driver" : "Replace Driver";
             CurrentEvent = Ievent.GetCurrentEvent(SelectedTruck.TruckID);
-           
+
             CurrentTrip = null;
 
 
@@ -307,18 +329,18 @@
 
                 HideStatus = false;
                 EventType = Ievent.GetEventType(CurrentEvent.EventTypeID);
-              
+
                 CurrentTrip = Itrip.Select(CurrentEvent.TripID);
-                
+
                 ViewTransactions(CurrentTrip);
-                
-                TripEvents = Ievent.SelectByTrip(CurrentTrip.TripID).ToList(); 
+
+                TripEvents = Ievent.SelectByTrip(CurrentTrip.TripID).ToList();
                 AssignedGCs = Igc.SelectByTrip(CurrentTrip.TripID);
-                
+
 
                 string TruckStatusAppend;
                 if (!EventType.IsStationary)
-                {                                     
+                {
                     TruckStatusAppend = " From " + CurrentEvent.OriginName + " To " + CurrentEvent.DestinationName;
                 }
                 else

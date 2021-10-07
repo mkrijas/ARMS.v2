@@ -1,0 +1,135 @@
+﻿@page "/DocumentType"
+@inject ITruckDocumentService Iservice
+
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="8">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<TruckDocumentTypeModel, bool>(search)" @bind-DocumentTypeModel="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">DocumentTypes</MudText>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchDocumentType" Placeholder="Search DocumentTypes... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<TruckDocumentTypeModel, object>(x=> x.DocumentTypeName)" InitialDirection="SortDirection.Ascending">Document Type</MudTableSortLabel></MudTh>                
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckDocumentTypeModel, object>(x=> x.WarnBefore)" InitialDirection="SortDirection.Ascending">WarnBefore</MudTableSortLabel></MudTh></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckDocumentTypeModel, object>(x=> x.BlockAfter)" InitialDirection="SortDirection.Ascending">BlockAfter</MudTableSortLabel></MudTh></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentTypeName">@context.DocumentTypeName</MudTd>                
+                <MudTd DataLabel="WarnBefore">@context.WarnBefore</MudTd>
+                <MudTd DataLabel="BlockAfter">@context.BlockAfter</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> Edit(context.DocumentTypeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.DocumentTypeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit DocumentTypes</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField @bind-Value="@model.DocumentTypeName" Label="Document Type" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.DocumentTypeName)"></MudTextField>
+                   
+                   
+                    <MudTextField @bind-Value="@model.WarnBefore" Label="Warn Before" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.WarnBefore)" Adornment="Adornment.End" AdornmentText="Days"></MudTextField>
+                    <MudTextField @bind-Value="@model.BlockAfter" Label="Block After" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.BlockAfter)" Adornment="Adornment.End" AdornmentText="Days"></MudTextField>
+                    <br />
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+
+
+</MudGrid>
+@code {
+
+    private TruckDocumentTypeModel model = new ();
+
+    private string searchDocumentType = "";
+    private List<TruckDocumentTypeModel>
+    collection = new ();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Run(() => GetAll());
+    }
+
+    private void GetAll()
+    {
+        foreach (var item in Iservice.GetDocumentTypes())
+        {
+            collection.Add(item);
+        }
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        //try
+        //{
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        try
+        {
+            model = Iservice.UpdateDocumentType(model);
+
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.DocumentTypeID == model.DocumentTypeID))
+            {
+                collection[collection.FindIndex(x => x.DocumentTypeID == model.DocumentTypeID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new ();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void Edit(int? id)
+    {
+        model = collection.First(x=> x.DocumentTypeID == id);
+    }
+    private void Delete(int? id)
+    {
+        Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+    }
+
+
+    private bool search(TruckDocumentTypeModel DocumentType)
+    {
+        if (DocumentType.DocumentTypeName != null && DocumentType.DocumentTypeName.Contains(searchDocumentType, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+
+

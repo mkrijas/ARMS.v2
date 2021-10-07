@@ -7,7 +7,7 @@
 @using System.IO
 @using System.Security.AccessControl
 
-@using Microsoft.AspNetCore.Hosting
+@inject NavigationManager nav
 @using Microsoft.Extensions.Configuration
 @inject IConfiguration Configuration
 @using MimeTypes
@@ -32,31 +32,20 @@
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="@model.Mobile" Label="Mobile" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Mobile)"></MudTextField>
                         </MudItem>
+
                         <MudItem xs="12" md="4">
-                            <InputFile id="driverImage" OnChange="UploadDriverImage" hidden />
-                            <MudFab HtmlTag="label" Label="Photo"
-                                    Color="Color.Success"
-                                    Icon="@Icons.Filled.AttachFile"
-                                    for="driverImage" />
-                            @driverImage?.Name
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudDatePicker Label="DOB" DisableToolbar="true" Editable="true" @bind-Date="model.DateOfBirth" HelperText="Enter Date" DateFormat="dd/MM/yyyy" For="@(() => model.DateOfBirth)" />
+                            <MudDatePicker Label="DOB" Variant="Variant.Outlined" DisableToolbar="true" Margin="Margin.Normal" Editable="true" @bind-Date="model.DateOfBirth" HelperText="Enter Date" DateFormat="dd/MM/yyyy" For="@(() => model.DateOfBirth)" />
                         </MudItem>
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="model.AdhaarNo" Label="ADHAAR No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.AdhaarNo)"></MudTextField>
                         </MudItem>
-                        <MudItem xs="12" md="4">
-                            <InputFile id="adhaarImage" OnChange="UploadAdhaarImage" hidden />
-                            <MudFab HtmlTag="label" Label="Adhaar"
-                                    Color="Color.Success"
-                                    Icon="@Icons.Filled.AttachFile"
-                                    for="adhaarImage" />
-                            @adhaarImage?.Name
-                        </MudItem>
 
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="model.FestivalBonus" Label="Bonus For" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.FestivalBonus)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudAutocomplete T="PartyModel" Variant="Variant.Outlined" Margin="Margin.Normal" Label="Cotractor" @bind-Value="model.DriverAgent" ResetValueOnEmptyText="true"
+                                             SearchFunc="@SearchParty" ToStringFunc="@(e => e == null ? null : $"{e.PartyName}")"></MudAutocomplete>
                         </MudItem>
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="model.AlternateContactPerson" Label="Immediate Contact Person" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.AlternateContactPerson)"></MudTextField>
@@ -64,10 +53,7 @@
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="model.AlternateContactMobile" Label="His/Her Mobile" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.AlternateContactMobile)"></MudTextField>
                         </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudAutocomplete T="PartyModel" Variant="Variant.Outlined" Label="Cotractor" @bind-Value="model.DriverAgent" ResetValueOnEmptyText="true"
-                                             SearchFunc="@SearchParty" ToStringFunc="@(e => e == null ? null : $"{e.PartyName}")"></MudAutocomplete>
-                        </MudItem>
+
                         <MudItem xs="12">
                             <MudText Typo="Typo.subtitle2">Address Info</MudText>
                         </MudItem>
@@ -88,7 +74,19 @@
                         </MudItem>
                     </MudGrid>
                     <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Driver</MudButton>
-
+                   
+                        <InputFile id="adhaarImage" OnChange="UploadAdhaarImage" hidden />
+                        <MudIconButton HtmlTag="label"
+                                Color="Color.Success"
+                                Icon="@Icons.Filled.FileUpload"
+                                for="adhaarImage" />
+                   
+                    
+                        <InputFile id="driverImage" OnChange="UploadDriverImage" hidden />
+                        <MudIconButton HtmlTag="label" 
+                                Color="Color.Success"
+                                Icon="@Icons.Filled.Image"
+                                for="driverImage" />                   
                 </MudCardContent>
             </EditForm>
         </MudCard>
@@ -107,7 +105,7 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">TAN</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverAgent.PartyName)" InitialDirection="SortDirection.Ascending">Phone</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DateOfBirth)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
-                <MudTh>Image</MudTh>
+                <MudTh>Status</MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -115,25 +113,70 @@
                 <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
                 <MudTd DataLabel="PartyName">@context.DriverAgent.PartyName</MudTd>
                 <MudTd DataLabel="DOB">@context.DateOfBirth</MudTd>
-                <MudTd DataLabel="Image">@context.Address.PinCode</MudTd>
-                <MudTd DataLabel="">
-                    <MudFab @onclick="@(() => Edit(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(() => Delete(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                <MudTd DataLabel="Status"> @switch (context.UserInfo.RecordStatus)
+                {
+                    case 3: <p>Available</p> break;
+                    case 4: <p>On Leave</p>  break;
+                }
                 </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
 
+                <MudTd DataLabel="">
+                    @if (context.UserInfo.RecordStatus != 4)
+                    {
+                        <MudTooltip Text="Put the Driver on leave">
+                            <MudFab @onclick="@(() => BeginLeave(context))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowDown" IconSize="Size.Small"  Size="Size.Small" />
+                        </MudTooltip>
+                    }
+                    else if (context.UserInfo.RecordStatus == 4)
+                    {
+                        <MudTooltip Text="End the leave">
+                            <MudFab @onclick="@(() => EndLeave(context.DriverID))" Color="Color.Success" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowUp" IconSize="Size.Small"  Size="Size.Small" />
+                        </MudTooltip>
+                    }
+                    <MudFab Label="DL" OnClick="@(() => nav.NavigateTo("dl/" + context.DriverID.ToString()))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.FileCopy" Size="Size.Small" IconSize="Size.Small" />
 
+                    <MudFab @onclick="@(() => Edit(context.DriverID))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(() => Delete(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+
+                </MudTd>
+
+</RowTemplate>
+
+<PagerContent>
+
+<MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+
+</PagerContent>
+
+</MudTable>
+
+</MudItem>
 </MudGrid>
+
+
+
+<MudMessageBox @ref="mbox" Title="Warning" CancelText="Cancel">
+
+<MessageContent>
+
+<b>@DriverToLeave.DriverName</b> will enter leave as on <b>@DateTime.Today.ToLocalTime()</b>. Please Confirm
+<MudDatePicker Label="Expected to Return On " DisableToolbar="true" Editable="true" @bind-Date="ExpectedReturn" HelperText="Enter Date" DateFormat="dd/MM/yyyy"  />
+
+<MudTextField @bind-Value="ReasonToLeave" Label="Reason for Leave" Variant="Variant.Outlined" Margin="Margin.Normal" ></MudTextField>
+
+</MessageContent>
+
+<YesButton>
+
+<MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.KeyboardArrowDown">Enter Leave</MudButton>
+
+</YesButton>
+</MudMessageBox>
 @code
 
 {
-    IBrowserFile driverImage;
-    IBrowserFile adhaarImage;
+        IBrowserFile driverImage;
+        IBrowserFile adhaarImage;
 
 
     private DriverModel model = new DriverModel();
@@ -142,11 +185,56 @@
 
     private string searchDriver = "";
 
+    MudMessageBox mbox { get; set; }
+    private DriverModel DriverToLeave = new();
+    private DateTime? ExpectedReturn;
+    private string ReasonToLeave;
+
+
+    private async void BeginLeave(DriverModel dtl)
+    {
+        DriverToLeave = dtl;
+        bool? result = await mbox.Show();
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            DriverLeaveModel Lmodel = new();
+            Lmodel.DriverID = dtl.DriverID;
+            Lmodel.BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value);
+            Lmodel.StartTime = DateTime.Now;
+            Lmodel.ExpectedReturn = ExpectedReturn;
+            Lmodel.Reason = ReasonToLeave;
+            Lmodel.UserInfo.UserID = user.Identity.Name;
+            int qryResult = Iservice.BeginLeave(Lmodel);
+
+            if (qryResult > 0)
+            {
+                collection.Find(x => x.DriverID == dtl.DriverID).UserInfo.RecordStatus = 4;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task EndLeave(int? DriverID)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        int qryResult = Iservice.EndLeave(DriverID, user.Identity.Name);
+
+        if (qryResult > 0)
+        {
+            collection.Find(x => x.DriverID == DriverID).UserInfo.RecordStatus = 3;
+            StateHasChanged();
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await foreach (var party in Iparty.Select(0))
         {
-            parties.Add(party); 
+            parties.Add(party);
         }
         GetAll();
     }
@@ -180,9 +268,9 @@
         model.DriverAgentID = model.DriverAgent.PartyID;
         model.Address.AddresseeName = model.DriverName;
 
-        var authprov =await  auth.GetAuthenticationStateAsync();
+        var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        model.HomeBranchID =  int.Parse(user.Claims.FirstOrDefault(x=> x.Type == "BranchID")?.Value);        
+        model.HomeBranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value);
         model.UserInfo.UserID = user.Identity.Name;
 
         try

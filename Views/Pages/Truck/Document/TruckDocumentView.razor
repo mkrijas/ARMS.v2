@@ -1,0 +1,202 @@
+﻿@page "/Document"
+@inject ITruckDocumentService Iservice
+@inject ITruckService Itruck
+
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+@using System.Text.RegularExpressions
+
+
+
+
+
+
+
+<MudAutocomplete  Class="mx-5 my-5 bg-white" T="TruckModel" Label="Select Truck" Value="Truck" ValueChanged="TruckSelected" ResetValueOnEmptyText="true" Clearable="true"
+                 SearchFunc="searchTruck" ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")" Variant="Variant.Outlined"></MudAutocomplete>
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="8">
+        <MudText Typo="Typo.h6">Active Documents</MudText>
+        <MudGrid Spacing="2">
+            @foreach (var item in collection)
+            {               
+                <MudItem xs="4">
+                    <MudCard>
+                        @*<MudCardMedia Image="@item.AttachedDocument" Height="300" />*@
+                        <iframe class="mt-1 mr-1 ml-1" src="@item.AttachedDocument" height="500" alt="@item.AttachedDocument" />                        
+                        <MudCardContent>
+                            <MudText Typo="Typo.h5">@item.DocumentTypeName</MudText>
+                            <MudText Typo="Typo.body2">Period:  @string.Format("{0} - {1}", item.StartDate?.ToShortDateString(), item.EndDate?.ToShortDateString())</MudText>
+                            <MudText Typo="Typo.body2">Doc Date:  @item.ReferenceDate?.ToShortDateString()</MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>Edit(item.DocumentID))">Edit</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> Remove(item))">Remove</MudButton>
+                            <MyFileUpload FileName="@(item.DocumentTypeName + item.DocumentID)" FolderName="TruckDocuments" Label="Upload File" FileUploaded="((e)=>FileUploaded(e,item.DocumentID))"></MyFileUpload>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit DocumentEntrys</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="6">
+                            <MudSelect T="int?" Value="@model.DocumentTypeID" ValueChanged="DocumentSelected" Label="Type" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.DocumentTypeID)" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in Dtypes)
+                                {
+                                    <MudSelectItem Value="@item.DocumentTypeID">@item.DocumentTypeName</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudDatePicker @bind-Date="@model.ReferenceDate" Label="Reference Date" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.ReferenceDate)" Editable="true"></MudDatePicker>
+
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudDatePicker @bind-Date="@model.StartDate" Label="Begin On" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.StartDate)" Editable="true"></MudDatePicker>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudDatePicker @bind-Date="@model.EndDate" Label="Expire On" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.EndDate)" Editable="true"></MudDatePicker>
+                        </MudItem>
+                    </MudGrid>
+                    <br />
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+                    @if (model.DocumentTypeID != null)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(model.DocumentID))" >Delete</MudButton>
+                    }
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+
+
+</MudGrid>
+@code {
+
+
+    [Parameter] public TruckModel Truck { get; set; }
+
+    private TruckDocumentModel model = new();
+
+
+    private List<TruckDocumentModel> collection = new();
+    private List<TruckDocumentTypeModel> Dtypes = new();
+    private TruckDocumentTypeModel SelectedType = new();
+
+    private List<TruckModel> TruckList = new();
+
+    private IBrowserFile DocImage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Dtypes = Iservice.GetDocumentTypes().ToList();
+        TruckList = Itruck.Select(0).ToList();
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+        collection = Iservice.SelectByTruck(Truck?.TruckID).ToList();
+    }
+
+
+    private void DocumentSelected(int? id)
+    {
+        model.DocumentTypeID = id;
+        SelectedType = Dtypes.FirstOrDefault(x => x.DocumentTypeID == id);
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        //try
+        //{
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        model.TruckID = Truck.TruckID;
+
+        var validationOls = Iservice.ValidatePeriod(model).ToList();
+
+        if (validationOls.Any(x=> x.DocumentID != model.DocumentID))
+        {
+            snackbar.Add("Document Period cannot overlap! Please check the period ", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            model = Iservice.Update(model);
+
+            snackbar.Add("Saved Successfully", Severity.Success);
+
+            GetAll();
+            model = new();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+
+
+    private void Edit(int? id)
+    {
+        model = collection.First(x => x.DocumentID == id);
+    }
+
+
+    private void Delete(int? id)
+    {
+        Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+    private async Task Remove(TruckDocumentModel model)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        Iservice.Remove(model);
+        snackbar.Add("Removed "+model.DocumentTypeName + " From " + Truck.RegNo, Severity.Success);
+        GetAll();
+    }
+
+
+    private async Task<IEnumerable<TruckModel>> searchTruck(string truck)
+    {
+        return await Task.FromResult(TruckList.Where(x => x.RegNo.Contains(truck == null ? string.Empty : truck, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private void TruckSelected(TruckModel selectedTruck)
+    {
+        Truck = selectedTruck;
+        model = new();
+        GetAll();
+    }
+
+
+    private void FileUploaded(string filePath,int? docID)
+    {
+        int e = Iservice.SaveFilePath(filePath, docID);
+        GetAll();
+    }
+
+}
+

@@ -65,11 +65,11 @@
 
 @code {
 
-        [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-        [Parameter] public TruckModel Truck { get; set; }
-        [Parameter] public DriverModel AssignedDriver { get; set; }
-        [Parameter] public EventModel CurrentEvent { get; set; }
+    [Parameter] public TruckModel Truck { get; set; }
+    [Parameter] public DriverModel AssignedDriver { get; set; }
+    [Parameter] public EventModel CurrentEvent { get; set; }
     private TripModel model = new();
 
     private bool IsLoading = false;
@@ -99,6 +99,10 @@
         KmReading = CurrentEvent?.EventReading;
         int? OriginID = CurrentEvent?.DestinationID;
         Origin = OriginID==null?null:await Iplace.SelectByID(OriginID.Value);
+
+        model.BranchID = int.Parse(Task.Run(() => auth.GetAuthenticationStateAsync()).Result.User.Claims.FirstOrDefault(c => c.Type == "BranchID").Value);
+        model.TruckID = Truck.TruckID;
+        model.TripDate = DateTime.Today;
     }
 
 
@@ -112,12 +116,6 @@
         try
         {
             var authprov = await auth.GetAuthenticationStateAsync();
-            int BranchID = 0;
-            if (!int.TryParse(authprov.User.Claims.First(c => c.Type == "BranchID")?.Value, out BranchID))
-            {
-                snackbar.Add("Branch is Not Selected", Severity.Warning);
-                return;
-            }
 
             if (AssignedDriver == null)
             {
@@ -125,12 +123,11 @@
                 return;
             }
 
-            model.TruckID = Truck.TruckID;
-            model.TripDate = DateTime.Today;
             model.DriverID = AssignedDriver?.DriverID;
-            model.BranchID = BranchID;
             model.UserInfo.UserID = authprov.User.Identity.Name;
             model = Iservice.Update(model);
+
+            #region Add loading event
 
             EventModel em = new();
             em.BranchID = model.BranchID;
@@ -145,7 +142,9 @@
             em.UserInfo.UserID = model.UserInfo.UserID;
             em = Ievent.Update(em);
 
-            if(startWithLoading)
+            #endregion
+
+            if (startWithLoading)
             {
                 em.TruckEventID = 0;
                 em.EventTypeID = 2;

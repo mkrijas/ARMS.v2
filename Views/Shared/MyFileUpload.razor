@@ -1,0 +1,74 @@
+﻿
+@using System.IO
+@using Microsoft.AspNetCore.Hosting;
+@inject IWebHostEnvironment _env;
+
+@using System.Security.AccessControl
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@using MimeTypes
+
+<InputFile id="@FileName" OnChange="UploadImage" hidden />
+<MudButton HtmlTag="label" for="@FileName">@Label</MudButton>
+
+@code {
+
+    [Parameter] public string  FileName { get; set; }    
+    [Parameter] public string FolderName  { get; set; }
+    [Parameter] public string Label { get; set; }
+    [Parameter] public string FilePath {
+        get => _filepath;
+        set
+        {
+            if (_filepath == value) return;
+            _filepath = value;
+            FileUploaded.InvokeAsync(value);
+        }
+    }
+
+
+    [Parameter]
+    public EventCallback<string> FileUploaded { get; set; }
+
+    private string _filepath;
+
+
+
+    private async Task UploadImage(InputFileChangeEventArgs e)
+    {
+        IBrowserFile DocImage = e.File;
+
+        string PhysicalPath = Path.Combine(_env.WebRootPath, "ArmsStaticFiles", FolderName);
+        string VirtualPath = Path.Combine("ArmsStaticFiles", FolderName);
+        var result = await UploadImage(DocImage, FileName, PhysicalPath);
+        if (result != null)
+        { FilePath = Path.Combine(VirtualPath, result); }
+    }
+
+    private async Task<string> UploadImage(IBrowserFile file, string filename, string physicalPath)
+    {
+        string DerivedFileName = null;
+        if (file != null && file.Size > 0)
+        {
+            DerivedFileName = filename + MimeTypeMap.GetExtension(file.ContentType);
+            DirectoryInfo di = new DirectoryInfo(physicalPath);
+            if (!di.Exists)
+            {
+                System.IO.Directory.CreateDirectory(physicalPath);
+            } 
+            
+            string filePath = Path.Combine(physicalPath, DerivedFileName);
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+            Stream stream = file.OpenReadStream();
+            FileStream fs = File.Create(filePath);
+            await stream.CopyToAsync(fs);
+            stream.Close();
+            fs.Close();
+        }
+        return DerivedFileName;
+    }
+
+}

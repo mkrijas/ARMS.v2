@@ -13,6 +13,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
             CurrentRegistration = new TruckRegistrationModel();
+            CurrentEvent = new();
         }
 
         public int? TruckID { get; set; }
@@ -42,6 +43,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? PurchaseDate { get; set; }
         public DateTime? SoldDate { get; set; }
+        public EventModel CurrentEvent { get; set; }
         public TruckRegistrationModel CurrentRegistration { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
 

@@ -13,6 +13,7 @@ namespace ArmsServices.DataServices
         DriverLicenceModel SelectByID(int? LicenceID);
         DriverLicenceModel Update(DriverLicenceModel model);
         int Delete(int? LicenceID,string UserID);
+        int SaveFilePath(string link, int? id);
 
     }
     public class DriverLicenceService : IDriverLicenceService
@@ -31,6 +32,16 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.Licence.Delete]", parameters);
+        }
+
+        public int SaveFilePath(string link, int? id)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@LINK",link),
+               new SqlParameter("@ID", id)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Driver.Licence.FilePath]", parameters);
         }
 
         public IEnumerable<DriverLicenceModel> Select(int? DriverID)
@@ -65,7 +76,6 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-
                new SqlParameter("@DriverID", model.DriverID),
                new SqlParameter("@BadgeExpiryDate", model.BadgeExpiryDate),
                new SqlParameter("@BadgeNo", model.BadgeNo),

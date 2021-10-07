@@ -20,7 +20,6 @@ namespace ArmsServices.DataServices
         EventModel GetPreviousEvent(long? EventID);
         IEnumerable<EventTypeModel> GetEventTypes();
         EventTypeModel GetEventType(int? EventTypeID);
-
     }
 
     public class EventService : IEventService
@@ -35,7 +34,6 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DestinationID", model.DestinationID),

@@ -17,6 +17,7 @@ namespace ArmsModels.BaseModels
         public DateTime? EventTime { get; set; }
         public long? EventReading { get; set; }
         public int? BranchID { get; set; }
+        public string BranchName { get; set; }
         public int? OriginID { get; set; }
         public int? DestinationID { get; set; }
         public int? TruckID { get; set; }

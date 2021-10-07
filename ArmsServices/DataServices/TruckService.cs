@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
         TruckModel Update(TruckModel model);
         int Delete(int? TruckID, string UserID);
         IEnumerable<TruckModel> Select(int? TruckID);
+        IEnumerable<TruckModel> SelectByBranch(int? BranchID);
         TruckModel SelectByID(int? ID);
         TruckRegistrationModel GetRegistration(int? TruckID);
         TruckRegistrationModel GetRegistration(string RegNo);
@@ -235,6 +236,48 @@ namespace ArmsServices.DataServices
                 TripID = dr.GetInt64("TripID");
             }
             return TripID;
+        }
+
+        public IEnumerable<TruckModel> SelectByBranch(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Truck.Select]", parameters))
+            {
+                yield return new TruckModel()
+                {
+                    RegNo = dr.GetString("RegNo"),                   
+                    TruckID = dr.GetInt32("TruckID"),                   
+                    TruckTypeID = dr.GetInt16("TruckTypeID"),
+                    TruckType = dr.GetString("TruckType"),
+                    CurrentEvent = new EventModel()
+                    {
+                        BranchID = dr.GetInt32("BranchID"),
+                        BranchName = dr.GetString("BranchName"),
+                        DestinationID = dr.GetInt32("DestinationID"),
+                        DriverID = dr.GetInt32("DriverID"),
+                        EventReading = dr.GetInt64("EventReading"),
+                        EventTime = dr.GetDateTime("EventTime"),
+                        EventTypeID = dr.GetByte("EventTypeID"),
+                        GcSetID = dr.GetInt64("GcSetID"),
+                        OriginID = dr.GetInt32("OriginID"),
+                        TripID = dr.GetInt64("TripID"),
+                        TruckEventID = dr.GetInt64("EventID"),
+                        TruckID = dr.GetInt32("TruckID"),
+                        OriginName = dr.GetString("OriginName"),
+                        DestinationName = dr.GetString("DestinationName")
+                    },                    
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
+            }
         }
     }
 }

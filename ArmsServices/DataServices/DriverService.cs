@@ -23,6 +23,8 @@ namespace ArmsServices.DataServices
         DriverLeaveModel GetLastLeave(int? DriverID);
         int BeginLeave(DriverLeaveModel LeaveModel);
         int EndLeave(int? DriverID,string UserID);
+        public int? GetAssignedTruck(int? DriverID);
+        
     }
    
     public class DriverService : IDriverService
@@ -196,7 +198,7 @@ namespace ArmsServices.DataServices
 
             DriverLeaveModel model = null;
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Leave.SelectLast]", parameters))
             {
                 model = new DriverLeaveModel()
                 {
@@ -252,6 +254,24 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.Leave.End]", parameters);
+        }
+
+
+        public int? GetAssignedTruck(int? DriverID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DriverID", DriverID),
+            };
+            int? TruckID = null;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Driver.Assignment.Select]", parameters))
+            {
+                if (dr.GetBoolean("AssignedStatus"))
+                {
+                    TruckID = dr.GetInt32("TruckID");
+                }
+            }
+            return TruckID;
         }
     }
 }

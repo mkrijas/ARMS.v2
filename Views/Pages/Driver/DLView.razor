@@ -1,5 +1,140 @@
-﻿<h3>DLView</h3>
+﻿
+@page "/dl/{DriverID:int}"
+@inject IDriverLicenceService Iservice
+@inject IDriverService Idriver
 
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+
+<MudText Typo="Typo.h5">@Driver.DriverName</MudText>
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="8">
+        <MudText Typo="Typo.h6">Active Licences</MudText>
+        <MudGrid Spacing="2">
+            @foreach (var item in collection)
+            {
+                <MudItem xs="4">
+                    <MudCard>
+                        @*<MudCardMedia Image="@item.AttachedDocument" Height="300" />*@
+                        <iframe class="mt-1 mr-1 ml-1" src="@item.DLImage" height="500" alt="@item.DLImage" />
+                        <MudCardContent>
+                            <MudText Typo="Typo.h5">@item.LicenceNo</MudText>
+                            <MudText Typo="Typo.body2">Type:  @item.LicenceType</MudText>
+                            <MudText Typo="Typo.body2">Expire On:  @item.DLExpiryDate?.ToShortDateString())</MudText>
+                            <MudText Typo="Typo.body2">Badge No:  @item.BadgeNo + " - " @item.BadgeExpiryDate?.ToShortDateString()</MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>Edit(item.LicenceID))">Edit</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(model.LicenceID))">Delete</MudButton>
+                            <MyFileUpload FileName="@(Driver.DriverName + item.LicenceID)" FolderName="DrivingLicence" Label="Upload File" FileUploaded="((e)=>FileUploaded(e,item.LicenceID))"></MyFileUpload>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit Driving Licence</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudSelect @bind-Value="@model.LicenceType" Label="Type" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.LicenceType)" OffsetY="true" AdornmentColor="Color.Secondary">
+                        <MudSelectItem Value="@("Heavy")">Heavy</MudSelectItem>
+                        <MudSelectItem Value="@("Light")">Light</MudSelectItem>
+                        <MudSelectItem Value="@("TwoWheeler")">TwoWheeler</MudSelectItem>
+                    </MudSelect>
+                    <MudTextField @bind-Value="@model.LicenceNo" Label="DL No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.LicenceNo)"></MudTextField>
+                    <MudDatePicker @bind-Date="@model.DLExpiryDate" Label="DL Expiry Date" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.DLExpiryDate)" Editable="true"></MudDatePicker>
+                    <MudTextField @bind-Value="@model.BadgeNo" Label="Badge No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.BadgeNo)"></MudTextField>
+                    <MudDatePicker @bind-Date="@model.BadgeExpiryDate" Label="Badge Expiry Date" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.BadgeExpiryDate)" Editable="true"></MudDatePicker>
+                    <br />
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+
+
+</MudGrid>
 @code {
 
+
+    [Parameter] public int? DriverID { get; set; }
+
+    private DriverModel Driver { get; set; }
+
+    private DriverLicenceModel model = new();
+
+    private List<DriverLicenceModel> collection = new();
+
+    private IBrowserFile DLImage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Driver = Idriver.SelectByID(DriverID);
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+        collection = Iservice.Select(DriverID).ToList();
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        //try
+        //{
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        model.UserInfo.UserID = user.Identity.Name;
+        model.DriverID = Driver.DriverID;
+
+        try
+        {
+            model = Iservice.Update(model);
+
+            snackbar.Add("Saved Successfully", Severity.Success);
+
+            GetAll();
+            model = new();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+
+
+    private void Edit(int? id)
+    {
+        model = collection.First(x => x.LicenceID == id);
+    }
+
+
+    private void Delete(int? id)
+    {
+        Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+
+    private void FileUploaded(string filePath, int? ID)
+    {
+        int e = Iservice.SaveFilePath(filePath, ID);
+        GetAll();
+    }
+
 }
+
