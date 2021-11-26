@@ -16,11 +16,10 @@ namespace ArmsModels.BaseModels
         public int? OrderID { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
-        public string OrderName { get; set; }
-        [Required]
+        public string OrderName { get; set; }        
         public int? ClientID { get; set; }        
         [Required]
-        public int? ContentID { get; set; } 
+        public short? ContentID { get; set; } 
         public int? ConsignorID { get; set; } 
         [Required]
         public decimal? OrderQuantity { get; set; } 

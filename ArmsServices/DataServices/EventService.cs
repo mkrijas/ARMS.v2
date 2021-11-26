@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
         IEnumerable<EventModel> SelectByTrip(long? TripID);
         EventModel GetCurrentEvent(int? TruckID);
         EventModel GetPreviousEvent(long? EventID);
+        EventModel GetNextEvent(long? EventID);
         IEnumerable<EventTypeModel> GetEventTypes();
         EventTypeModel GetEventType(int? EventTypeID);
     }
@@ -183,6 +184,22 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+
+
+        EventModel IEventService.GetNextEvent(long? EventID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@EventID", EventID),
+               new SqlParameter("@Operation", "NextEvent"),
+            };
+            EventModel model = null;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
         IEnumerable<EventTypeModel> IEventService.GetEventTypes()
         {      
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Type.Select]", null))

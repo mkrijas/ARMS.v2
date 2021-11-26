@@ -15,8 +15,7 @@ namespace ArmsModels.BaseModels
         }
         public int? PlaceID { get; set; }
         [Required][StringLength(maximumLength:200)]
-        public string PlaceName { get; set; }
-        [Required]
+        public string PlaceName { get; set; }        
         public int? DistrictID { get; set; }
         [Required]
         [StringLength(maximumLength: 6)]

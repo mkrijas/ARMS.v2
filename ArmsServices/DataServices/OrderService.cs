@@ -117,12 +117,12 @@ namespace ArmsServices.DataServices
             {
                 ClientID = dr.GetInt32("ClientID"),
                 ConsignorID = dr.GetInt32("ConsignorID"),
-                ContentID = dr.GetInt32("ContentID"),
+                ContentID = dr.GetInt16("ContentID"),
                 OrderID = dr.GetInt32("OrderID"),
                 OrderName = dr.GetString("OrderName"),
                 OrderQuantity = dr.GetDecimal("OrderQuantity"),
                 Party = await partyService.SelectByID(dr.GetInt32("ClientID").GetValueOrDefault()),
-                Content = await contentService.SelectByID(dr.GetInt32("contentID").GetValueOrDefault()),
+                Content = await contentService.SelectByID(dr.GetInt16("contentID").GetValueOrDefault()),
                 Consignor = await consigneeService.SelectByID(dr.GetInt32("consignorID").GetValueOrDefault()),
 
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

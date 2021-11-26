@@ -1,0 +1,157 @@
+﻿
+@inject IGcService Igc
+@inject IEventService Ievent
+@inject ITruckService Itruck
+@inject ITripService Itrip
+
+@inject IDialogService DialogService
+
+@using Views.Pages.Gc
+
+
+<MudExpansionPanels MultiExpansion="true" Class="mt-4" hidden="@hidden">
+    <MudExpansionPanel>
+        <TitleContent>
+            <div class="d-flex px-3">
+                <MudBadge Content="@(TripEvents.Count)" Color="Color.Primary" Overlap="true" Class="d-flex">
+                    <MudIcon Icon="@Icons.Material.Filled.AccessTimeFilled"></MudIcon>
+                </MudBadge>
+                <MudText Class="ml-3"><strong>@Truck?.RegNo</strong> @TruckStatus </MudText>
+            </div>
+        </TitleContent>
+        <ChildContent>
+            <MudTimeline>
+                @foreach (var item in TripEvents)
+                {
+                    string timetext;
+                    DateTime today = DateTime.Today;
+                    @if (item.EventTime?.Date == today)
+                        timetext = "Today " + item.EventTime?.ToString("hh:mm tt");
+                    else if (item.EventTime?.Date.AddDays(1) == today)
+                        timetext = "YesterDay " + item.EventTime?.ToString("hh:mm tt");
+                    else timetext = item.EventTime?.ToString("ddd dd-MMM-yyyy hh:mm tt");
+
+                    EventTypeModel et = EventTypes.First(x => x.EventTypeID == item.EventTypeID);
+
+
+                    <MudTimelineItem Color="Color.Success" Elevation="10">
+                        <MudCard Elevation="25" Style="@($"background:{Colors.Brown.Lighten5};")">
+                            <MudCardContent>
+                                <MudText Typo="Typo.h6" Color="Color.Primary">@et.EventStatusText </MudText>
+                                @if (et.EventTypeID != 1)
+                                { <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Edit" OnClick="(() => UpdateEvent(item))"></MudIconButton>}
+                                <MudText Typo="Typo.button">@(et.IsStationary ? "Reached " : "Left ")  @item.OriginName </MudText>
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary">@timetext  </MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudTimelineItem>
+                }
+            </MudTimeline>
+        </ChildContent>
+    </MudExpansionPanel>
+    @if (AssignedGCs != null)
+    {
+        <MudExpansionPanel>
+            <TitleContent>
+                <div class="d-flex px-3">
+                    <MudBadge Content="@(AssignedGCs.Count)" Color="Color.Primary" Overlap="true" Class="d-flex">
+                        <MudIcon Icon="@Icons.Material.Filled.Event"></MudIcon>
+                    </MudBadge>
+                    <MudText Class="ml-3"><strong>Assigned Consignments</strong></MudText>
+                </div>
+            </TitleContent>
+            <ChildContent>
+                <MudGrid Spacing="4">
+                    @foreach (var gc in AssignedGCs)
+                    {
+                        <MudItem xs="6" lg="4">
+                            <GcItemCard item="gc" Style="@($"background:{Colors.Brown.Lighten5};")"></GcItemCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </ChildContent>
+        </MudExpansionPanel>
+    }
+    <MudExpansionPanel>
+        <TitleContent>
+            <div class="d-flex px-3">
+                <MudIcon Icon="@Icons.Material.Filled.MonetizationOn"></MudIcon>
+                <MudText Class="ml-3"><strong>Financial Entries</strong></MudText>
+            </div>
+        </TitleContent>
+        <ChildContent>
+            <TransactionsListView @ref="TransView"></TransactionsListView>
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+
+@code{
+
+
+    private bool hidden = true;
+    private TruckModel Truck;
+    private List<EventModel> TripEvents = new();
+    private List<EventTypeModel> EventTypes = new();
+    protected TransactionsListView TransView;
+
+    public List<GcSetModel> AssignedGCs { get; set; }
+    public string TruckStatus;
+
+    protected override void OnInitialized()
+    {
+        EventTypes = Ievent.GetEventTypes().ToList();
+    }
+
+
+    public void LoadAll(TripModel Trip)
+    {
+        if (Trip != null)
+        {
+            hidden = false;
+        }
+        else
+        { hidden = true; }
+        StateHasChanged();
+
+        Truck = Itruck.SelectByID(Trip?.TruckID);
+        LoadGcs(Trip?.TripID);
+        LoadEvents(Trip?.TripID);
+        LoadTransactions(Trip);
+    }
+
+
+    public void LoadGcs(long? TripID)
+    {
+        if (TripID == null)
+            AssignedGCs = null;
+        else
+            AssignedGCs = Igc.SelectByTrip(TripID);
+    }
+    public void LoadEvents(long? TripID)
+    {
+        if (TripID == null)
+            TripEvents = new();
+        else
+            TripEvents = Ievent.SelectByTrip(TripID).ToList();
+    }
+
+    public void LoadTransactions(TripModel Trip)
+    {
+        TransView.Refresh(Trip);
+    }
+
+
+    private async Task UpdateEvent(EventModel ev)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("Truck", Truck);
+        parameters.Add("CurrentTrip", Itrip.Select(ev.TripID));
+        parameters.Add("model", ev);
+
+        var result = DialogService.Show<UpdateEventView>("Edit Event", parameters);
+        var Data = await result.Result;
+        LoadEvents(ev.TripID);
+    }
+
+}

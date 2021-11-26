@@ -18,7 +18,8 @@
     <DialogContent>
         <MudContainer Style="min-height:500px;max-height: 800px;">
             <div @ref="testRef" tabindex="0" @onkeydown="HandleKeyDown">
-                <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">
+
+                <EditForm id="form_trans" Model="@model" OnValidSubmit="OnValidSubmit">
                     <ObjectGraphDataAnnotationsValidator />
                     <ValidationSummary />
                     <MudGrid Spacing="4">
@@ -28,18 +29,18 @@
                         }
                         else
                         {
-                    <MudItem xs="12" Class="d-flex flex-row">
-                        @if (trip != null)
-                        {
-                            <MudText>Trip : @(trip.TripPrefix + trip.TripNumber)  </MudText>
+                            <MudItem xs="12" Class="d-flex flex-row">
+                                @if (trip != null)
+                                {
+                                    <MudText>Trip : @(trip.TripPrefix + trip.TripNumber)  </MudText>
+                                }
+                                else @if (gc != null)
+                           {
+                            <MudText Class="px-3">Consignments : @gc.SetGcNumber  </MudText>
                         }
-                        else @if (gc != null)
-                   {
-                    <MudText Class="px-3">Consignments : @gc.SetGcNumber  </MudText>
-                }
 
-                        <MudText Typo="Typo.h4">@(TotalAmount?.ToString("C2"))</MudText>
-                    </MudItem>
+                                <MudText Typo="Typo.h4">@(TotalAmount?.ToString("C2"))</MudText>
+                            </MudItem>
 
                             <MudItem xs="12">
                                 @foreach (var item in model.Transactions)
@@ -77,6 +78,7 @@
                             </MudItem>
                         }
                     </MudGrid>
+                    
                 </EditForm>
             </div>
         </MudContainer>
@@ -84,7 +86,7 @@
     <DialogActions>
         <MudButton Variant="Variant.Filled" Color="Color.Dark" StartIcon="@Icons.Material.Outlined.Add" OnClick="AddMoreRows">Add More Rows</MudButton>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Entries</MudButton>
+        <MudButton form="form_trans" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Entries</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -138,12 +140,11 @@
         {
             model = new();
             model.Transactions.Add(new OpTranSubModel());
-
         }
 
         if (gc != null)
         {
-            model.RefType = "Gc";
+            model.RefType = "GC";
             model.RefID = gc.GcSetID;
             GenerateEntries();
         }
@@ -152,6 +153,7 @@
             model.RefType = "Trip";
             model.RefID = trip.TripID;
         }
+
         IsLoading = false;
     }
     protected override void OnParametersSet()
@@ -179,8 +181,18 @@
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         model.UserInfo.UserID = authprov.User.Identity.Name;
+        model.BranchID = int.Parse(authprov.User.Claims.FirstOrDefault(c => c.Type == "BranchID").Value);
+        model.TransactionDate = DateTime.Today;
+
         try
         {
+            foreach (var item in model.Transactions)
+            {
+                if (item.TariffTypeID == 3)
+                {
+                    item.AmountAsPerNorms = item.Amount / item.Quantity * item.AmountAsPerNorms;
+                }
+            }
             model = Iservice.Update(model);
             snackbar.Add("Saved Successfully", Severity.Success);
             MudDialog.Close(DialogResult.Ok(model));
@@ -196,21 +208,20 @@
     private void GenerateEntries()
     {
         List<TariffModel> tariffs = Itariff.GeneratePendingTariffs(gc.GcSetID).ToList();
-        model.BranchID = int.Parse(Task.Run(() => auth.GetAuthenticationStateAsync()).Result.User.Claims.FirstOrDefault(c => c.Type == "BranchID").Value);
-        model.RefType = "GC";
-        model.RefID = gc.GcSetID;
-        model.TransactionDate = DateTime.Today;
-        model.UserInfo.UserID = Task.Run(() => auth.GetAuthenticationStateAsync()).Result.User.Identity.Name;
+
         model.Transactions = new List<OpTranSubModel>();
         foreach (var item in tariffs)
         {
+            decimal? amt = Itariff.GetTariffAmount(gc, item);
             OpTranSubModel tr = new()
             {
-                Amount = Itariff.GetTariffAmount(gc, item),
+                Amount = amt,
+                AmountAsPerNorms = amt,
                 BillDate = DateTime.Today,
                 Quantity = item.TariffTypeID < 3 ? gc.Gcs.Sum(x => x.BillQuantity) : null,
                 Sign = item.TariffSign,
                 TariffTypeID = item.TariffTypeID,
+                TariffID = item.TariffID,
                 Unit = item.Unit,
             };
             if (item.TariffTypeID == 3)

@@ -98,11 +98,13 @@ namespace ArmsServices.DataServices
                 
                 yield return new()
                 {
+                    TariffID = dr.GetInt32("TariffID"),
                     TariffTypeID = dr.GetInt16("TariffTypeID"),
                     TransactionID = dr.GetInt64("TransactionID"),
                     TransactionSubID = dr.GetInt64("TransactionSubID"),
                     Sign = Math.Sign(SignedAmount.GetValueOrDefault()),
                     Amount = Math.Abs(SignedAmount.GetValueOrDefault()),
+                    AmountAsPerNorms = Math.Abs(dr.GetDecimal("AmountAsPerNorms").GetValueOrDefault()),
                     BillDate = dr.GetDateTime("BillDate"),
                     FinanceTranID = dr.GetInt64("FinanceTranID"),
                     Quantity = dr.GetDecimal("Quantity"),

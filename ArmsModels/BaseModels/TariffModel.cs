@@ -90,6 +90,7 @@ namespace ArmsModels.BaseModels
         public long? TransactionID { get; set; }
         [Required]
         public short? TariffTypeID { get; set; }
+        public int? TariffID { get; set; }
         [Required]
         public DateTime? BillDate { get; set; }
         public string Reference { get; set; }
@@ -97,6 +98,7 @@ namespace ArmsModels.BaseModels
         [Required]
         [Range(1, double.MaxValue, ErrorMessage = "Please enter a value bigger than {1}")]
         public decimal? Amount { get; set; }
+        public decimal? AmountAsPerNorms { get; set; }
         public decimal? Quantity { get; set; }
         public long? FinanceTranID { get; set; }
         public virtual string Unit { get; set; }

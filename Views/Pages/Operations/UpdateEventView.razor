@@ -3,6 +3,7 @@
 @inject IEventService Ievent
 @inject ITripService Itrip
 @inject IGcService Igc
+@inject IDriverService Idriver
 
 
 @inject MudBlazor.ISnackbar snackbar
@@ -19,7 +20,7 @@
         }
         else
         {
-            <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">
+            <EditForm id="formEvent" Model="@model" OnValidSubmit="OnValidSubmit">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid Spacing="4">
@@ -42,10 +43,10 @@
                         <MudText></MudText>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudSelect Label="Select Action" T="EventTypeModel" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" ValueChanged="EventSelected" >
+                        <MudSelect Label="Select Action" T="byte?" Value="model.EventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" ValueChanged="EventSelected" >
                             @foreach (var item in EventTypes)
                             {
-                                <MudSelectItem T="EventTypeModel" Value="@item">@item.EventTypeName</MudSelectItem>
+                                <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
                             }
                         </MudSelect>
                     </MudItem>
@@ -71,7 +72,7 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined" ></MudTextField>
+                        <MudTextField   @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined" ></MudTextField>
                     </MudItem>
                     <MudItem xs="12">
                         <MyDateTimePicker Label="Event" @bind-Value="model.EventTime"></MyDateTimePicker>
@@ -83,7 +84,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">@ButtonLabel</MudButton>
+        <MudButton form="formEvent" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">@ButtonLabel</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -96,10 +97,10 @@
     [Parameter] public TripModel CurrentTrip { get; set; }
     [Parameter] public EventModel CurrentEvent { get; set; }
 
-    private EventModel model = new();
+    [Parameter]
+    public EventModel model { get; set; }
 
     private bool IsLoading = false;
-
     private string ButtonLabel = "Select an Event";
 
 
@@ -123,6 +124,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (model == null) model = new();
+
         EventTypes = new();
         foreach(var item in Ievent.GetEventTypes())
         {
@@ -131,14 +134,30 @@
         }
 
         places = new();
-        await foreach (var item in Iplace.Select(0))
+        places = Iplace.Select(0).ToList();
+
+        int? OriginID = null, DestinationID = null;
+
+
+        if (model.TruckEventID == null)
         {
-            places.Add(item);
+            KmReading = CurrentEvent?.EventReading;
+            OriginID = CurrentEvent?.DestinationID;
+            model.DriverID = AssignedDriver?.DriverID;
+            model.TripID = CurrentTrip.TripID;
+            model.TruckID = Truck.TruckID;
+
+        }
+        else
+        {
+            OriginID = model.OriginID;
+            DestinationID = model.DestinationID;
+            SelectedEvent = Ievent.GetEventType(model.EventTypeID);
+            AssignedDriver = Idriver.SelectByID(model.DriverID);
         }
 
-        KmReading = CurrentEvent?.EventReading;
-        int? OriginID = CurrentEvent?.DestinationID;
         Origin = OriginID == null ? null : await Iplace.SelectByID(OriginID.Value);
+        Destination = DestinationID == null ? null : await Iplace.SelectByID(DestinationID.Value);
     }
 
 
@@ -159,27 +178,20 @@
                 return;
             }
 
-            if (SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
+            if (model.TruckEventID == null &&  SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
             {
                 snackbar.Add("Cannot start this event without Driver", Severity.Warning);
-                return;
-            }
-            if (CurrentEvent.EventTypeID == SelectedEvent.EventTypeID)
-            {
-                snackbar.Add("Cannot enter an event twice in a row", Severity.Warning);
                 return;
             }
 
             model.BranchID = BranchID;
             model.DestinationID = SelectedEvent.IsStationary ? Origin.PlaceID : Destination.PlaceID;
             model.OriginID = Origin.PlaceID;
-            model.DriverID = AssignedDriver?.DriverID;
-            model.TripID = CurrentTrip.TripID;
-            model.TruckID = Truck.TruckID;
             model.EventTypeID = SelectedEvent.EventTypeID;
             model.UserInfo.UserID = authprov.User.Identity.Name;
-            model = Ievent.Update(model);
 
+            ValidateEvent(model);
+            model = Ievent.Update(model);
 
             if (SelectedEvent.EventTypeID == 4)
             {
@@ -207,17 +219,51 @@
         }
     }
 
+    private void ValidateEvent(EventModel ev)
+    {
+        EventModel preEvent = new();
+        EventModel NextEvent = new();
+
+
+        if (ev.TruckEventID == null)
+        {
+            preEvent = CurrentEvent;
+            NextEvent = null;
+        }
+        else
+        {
+            preEvent = Ievent.GetPreviousEvent(ev.TruckEventID);
+            NextEvent = Ievent.GetNextEvent(ev.TruckEventID);
+
+        }
+
+        if(preEvent != null && model.EventTime < preEvent.EventTime)
+        {
+            snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
+            return;
+        }
+        else if (NextEvent != null &&  model.EventTime > NextEvent.EventTime)
+        {
+            snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
+            return;
+        }
+        else
+        if ((preEvent != null && preEvent.EventTypeID == SelectedEvent.EventTypeID) ||(NextEvent!= null && NextEvent.EventTypeID == SelectedEvent.EventTypeID))
+        {
+            snackbar.Add("Cannot enter an event twice in a row", Severity.Warning);
+            return;
+        }
+    }
 
     private string GetMultiSelectionText(List<string> Gcs)
     {
         return $"{SelectedGCs.Count()}  Gc{(Gcs.Count > 1 ? "s" : "")} Selected ";
     }
 
-
-    private void EventSelected(EventTypeModel e)
+    private void EventSelected(byte? e)
     {
-        SelectedEvent = e;
-        model.EventTypeID = e.EventTypeID;
+        SelectedEvent = Ievent.GetEventType(e);
+        model.EventTypeID = e;
         if (SelectedEvent.EventTypeName != null)
         {
             ButtonLabel = SelectedEvent.EventTypeName;

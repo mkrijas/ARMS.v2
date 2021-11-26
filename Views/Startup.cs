@@ -44,12 +44,12 @@ namespace Views
             //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
             services.AddBlazoredSessionStorage();
             services.AddHttpClient();
-            services.AddAuthorization(options =>
-            {
-                options.FallbackPolicy = new AuthorizationPolicyBuilder()
-                    .RequireAuthenticatedUser()
-                    .Build();
-            });
+            //services.AddAuthorization(options =>
+            //{
+            //    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+            //        .RequireAuthenticatedUser()
+            //        .Build();
+            //});
 
             services.AddSingleton<TruckDataArrayModel>();
 

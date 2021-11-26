@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
     {
         Task<PlaceModel> Update(PlaceModel model);
         Task<int> Delete(int? PlaceID, string UserID);
-        IAsyncEnumerable<PlaceModel> Select(int? PlaceID);
+        IEnumerable<PlaceModel> Select(int? PlaceID);
         Task<PlaceModel> SelectByID(int? ID);
     }
 
@@ -41,7 +41,7 @@ namespace ArmsServices.DataServices
 
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.PlacesUpdate]", parameters))
             {
-                model = await GetModel(dr);
+                model = GetModel(dr);
             }             
             return model;
         }
@@ -54,16 +54,16 @@ namespace ArmsServices.DataServices
             };            
             return await Iservice.ExecuteNonQueryAsync("[usp.Place.PlacesDelete]", parameters);
         }
-        public async IAsyncEnumerable<PlaceModel> Select(int? PlaceID)
+        public IEnumerable<PlaceModel> Select(int? PlaceID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PlaceID", PlaceID)               
             };
 
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.PlacesSelect]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.PlacesSelect]", parameters))
             {
-                yield return await GetModel(dr);            
+                yield return GetModel(dr);            
             }
         }
         public async Task<PlaceModel> SelectByID(int? ID)
@@ -75,11 +75,11 @@ namespace ArmsServices.DataServices
             PlaceModel model = new PlaceModel();
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.PlacesSelect]", parameters))
             {
-                 model = await GetModel(dr);
+                 model = GetModel(dr);
             }
             return model;
         }
-        private async Task<PlaceModel> GetModel(IDataRecord dr)
+        private PlaceModel GetModel(IDataRecord dr)
         {
             return new PlaceModel
             {

@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
         TripModel Update(TripModel model);
         int Delete(long? TripID, string UserID);
         TripModel Select(long? TripID);
+        TripModel SelectByTripNumber(string TripNumber);
         int Cancel(long? TripID, string userID, string Reason);
         int CloseTrip(long? TripID, string Remarks);
         bool IsClosed(long? TripID);
@@ -60,7 +61,8 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TripID", TripID)               
+               new SqlParameter("@TripID", TripID),
+                new SqlParameter("@Operation", "SelectByTripID"),
             };
 
             TripModel model = null;
@@ -117,6 +119,22 @@ namespace ArmsServices.DataServices
         public IEnumerable<object> GetOutstandingBills(long? TripID)
         {
             throw new NotImplementedException();
+        }
+
+        public TripModel SelectByTripNumber(string TripNumber)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripNumber", TripNumber),
+               new SqlParameter("@Operation", "SelectByTripNumber"),
+            };
+
+            TripModel model = null;
+            foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
+            {
+                model = GetModel(reader);
+            }
+            return model;
         }
     }
 }

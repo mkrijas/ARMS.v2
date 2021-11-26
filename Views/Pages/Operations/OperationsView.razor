@@ -63,93 +63,14 @@
     </MudItem>
 </MudGrid>
 
-
-<MudExpansionPanels MultiExpansion="true" Class="mt-4" hidden="@(SelectedTruck == null)">
-    <MudExpansionPanel>
-        <TitleContent>
-            <div class="d-flex px-3">
-                <MudBadge Content="@(TripEvents.Count)" Color="Color.Primary" Overlap="true" Class="d-flex">
-                    <MudIcon Icon="@Icons.Material.Filled.AccessTimeFilled"></MudIcon>
-                </MudBadge>
-                <MudText Class="ml-3"><strong>@SelectedTruck?.RegNo</strong> @TruckStatus </MudText>
-            </div>
-        </TitleContent>
-        <ChildContent>
-            <MudTimeline>
-                @foreach (var item in TripEvents)
-                {
-                    string timetext;
-                    DateTime today = DateTime.Today;
-                    @if (item.EventTime?.Date == today)
-                        timetext = "Today " + item.EventTime?.ToString("hh:mm tt");
-                    else if (item.EventTime?.Date.AddDays(1) == today)
-                        timetext = "YesterDay " + item.EventTime?.ToString("hh:mm tt");
-                    else timetext = item.EventTime?.ToString("ddd dd-MMM-yyyy hh:mm tt");
-
-                    EventTypeModel et = EventTypes.First(x => x.EventTypeID == item.EventTypeID);
-
-
-                    <MudTimelineItem Color="Color.Success" Elevation="10">
-                        <MudCard Elevation="25"  Style="@($"background:{Colors.Brown.Lighten5};")">
-                            <MudCardContent>
-                                <MudText Typo="Typo.h6" Color="Color.Primary">@et.EventStatusText </MudText>
-                                <MudText Typo="Typo.button">@(et.IsStationary ? "Reached " : "Left ")  @item.OriginName </MudText>
-                                <MudText Typo="Typo.body2" Class="mud-text-secondary">@timetext  </MudText>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudTimelineItem>
-                }
-            </MudTimeline>
-        </ChildContent>
-    </MudExpansionPanel>
-    @if (AssignedGCs != null)
-    {
-        <MudExpansionPanel>
-            <TitleContent>
-                <div class="d-flex px-3">
-                    <MudBadge Content="@(AssignedGCs.Count)" Color="Color.Primary" Overlap="true" Class="d-flex">
-                        <MudIcon Icon="@Icons.Material.Filled.Event"></MudIcon>
-                    </MudBadge>
-                    <MudText Class="ml-3"><strong>Assigned Consignments</strong></MudText>
-                </div>
-            </TitleContent>
-            <ChildContent>               
-                <MudGrid Spacing="4">
-                    @foreach (var gc in AssignedGCs)
-                    {
-                        <MudItem xs="6" lg="4">
-                            <Views.Pages.Gc.GcItemCard item="gc" Style="@($"background:{Colors.Brown.Lighten5};")"></Views.Pages.Gc.GcItemCard>
-                        </MudItem>
-                    }
-                </MudGrid>
-            </ChildContent>
-        </MudExpansionPanel>
-    }
-    <MudExpansionPanel>
-        <TitleContent>
-            <div class="d-flex px-3">
-                <MudIcon Icon="@Icons.Material.Filled.MonetizationOn"></MudIcon>
-                <MudText Class="ml-3"><strong>Financial Entries</strong></MudText>
-            </div>
-        </TitleContent>
-        <ChildContent>
-            <TransactionsListView @ref="TransView"></TransactionsListView>
-        </ChildContent>
-    </MudExpansionPanel>
-</MudExpansionPanels>
-
-
-
-
-
-
-
-
+<TripManagerView @ref="TripManager"></TripManagerView>
 
 
 @code{
         [Parameter]
         public TruckModel SelectedTruck { get; set; }
+
+    TripManagerView TripManager;
 
     private List<TruckModel> Trucks;
 
@@ -157,13 +78,6 @@
     private EventModel CurrentEvent { get; set; }
     private EventTypeModel EventType { get; set; }
     private TripModel CurrentTrip { get; set; }
-
-    private List<GcSetModel> AssignedGCs { get; set; }
-
-    private List<EventModel> TripEvents = new();
-    private List<EventTypeModel> EventTypes = new();
-
-
 
 
     string TruckStatus;
@@ -175,7 +89,7 @@
     private bool DisableEventButton { get; set; } = false;
     private bool DisableCancelButton { get; set; } = true;
 
-    protected TransactionsListView TransView;
+
 
     protected override void OnInitialized()
     {
@@ -184,7 +98,7 @@
         {
             Trucks.Add(item);
         }
-        EventTypes = Ievent.GetEventTypes().ToList();
+        
     }
 
     private async Task<IEnumerable<TruckModel>> Search(string searchString)
@@ -260,7 +174,7 @@
         var result = DialogService.Show<Pages.Gc.GcSelectDialog>("Load Consignment", parameters, maxWidth);
         var Data = await result.Result;
         var ev = Data.Data;
-        AssignedGCs = Igc.SelectByTrip(CurrentTrip.TripID);
+        TripManager.LoadGcs(CurrentTrip.TripID);
     }
     private async Task AddTransaction()
     {
@@ -270,11 +184,12 @@
         var result = DialogService.Show<TransactionDialog>("Inc/Exp", parameters, maxWidth);
         var Data = await result.Result;
         var ev = Data.Data;
+        TripManager.LoadTransactions(CurrentTrip);
     }
 
     private void ViewTransactions(TripModel Trip)
     {
-        TransView.Refresh(Trip);
+       TripManager.LoadTransactions(CurrentTrip);
     }
 
 
@@ -304,19 +219,12 @@
             HideControls = true;
             HideStatus = true;
             CurrentEvent = null;
-            EventType = null;
-            AssignedGCs = null;
-            TripEvents = new();
-            CurrentTrip = new();
-            ViewTransactions(null);
+            EventType = null;   
+            CurrentTrip = null;
         }
         else
         {
-
-
             int? DriverID = Itruck.GetAssignedDriver(SelectedTruck.TruckID);
-
-
             AssignedDriver = DriverID == null ? null : Idriver.SelectByID(DriverID.Value);
             AssignDriverLabel = AssignedDriver == null ? "Assign Driver" : "Replace Driver";
             CurrentEvent = Ievent.GetCurrentEvent(SelectedTruck.TruckID);
@@ -331,12 +239,6 @@
                 EventType = Ievent.GetEventType(CurrentEvent.EventTypeID);
 
                 CurrentTrip = Itrip.Select(CurrentEvent.TripID);
-
-                ViewTransactions(CurrentTrip);
-
-                TripEvents = Ievent.SelectByTrip(CurrentTrip.TripID).ToList();
-                AssignedGCs = Igc.SelectByTrip(CurrentTrip.TripID);
-
 
                 string TruckStatusAppend;
                 if (!EventType.IsStationary)
@@ -371,6 +273,8 @@
                 EventButtonLabel = "Add Event";
             }
         }
+
+        TripManager.LoadAll(CurrentTrip);
     }
 
 }

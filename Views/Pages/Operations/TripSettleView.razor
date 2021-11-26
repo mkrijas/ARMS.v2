@@ -1,0 +1,109 @@
+﻿@page "/TripReviewPage"
+
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+@inject IBranchService Ibranch
+@inject ITruckService Itruck
+@inject IDriverService Idriver
+@inject ITripService Itrip
+
+@using System.ComponentModel.DataAnnotations
+
+
+
+
+<h4>Select Trip</h4>
+<EditForm id="form" Model="@Selector" OnValidSubmit="OnValidSubmit">
+    <MudGrid>        
+        <MudItem md="3">
+            <MudPaper Class="p-2">
+                <MudSelect Variant="Variant.Outlined" Label="Branch" @bind-Value="Selector.BranchID" For="@(() => Selector.BranchID)">
+                    @foreach (var br in branches)
+                    {
+                        <MudSelectItem T="int?" Value="br.BranchID"> @br.BranchName</MudSelectItem>
+                    }
+                </MudSelect>
+             </MudPaper>
+        </MudItem>
+            <MudItem md="1">
+                <MudPaper Class="p-2">
+                    <MudSelect Variant="Variant.Outlined" Label="Year" @bind-Value="Selector.Year" For="@(() => Selector.Year)">
+                        @foreach (var yr in Years)
+                        {
+                            <MudSelectItem T="int" Value="yr"> @yr</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudPaper>
+            </MudItem>
+            <MudItem md="1">
+                <MudPaper Class="p-2">
+                    <MudSelect Variant="Variant.Outlined" Label="Month" @bind-Value="Selector.Month" For="@(() => Selector.Month)">
+                        @foreach (var mon in Months)
+                        {
+                            <MudSelectItem T="int" Value="mon"> @mon</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudPaper>
+            </MudItem>
+            <MudItem md="2">
+                <MudPaper Class="p-2">
+                    <MudNumericField T="int?" @bind-Value="Selector.TripNumber" Label="TripNumber" Variant="Variant.Outlined"  For="@(() => Selector.TripNumber)" />
+                    </MudPaper>
+</MudItem>        
+    </MudGrid>
+    
+    <MudItem md="1">
+        <MudButton Class="mt-2" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Load Trip</MudButton>
+    </MudItem>
+
+</EditForm>
+
+    <TripManagerView @ref="TripManager"></TripManagerView>
+
+    @code {
+
+        TripManagerView TripManager;
+
+        private TripModel SelectedTrip;
+        private TripSelector Selector;
+
+        private List<BranchModel> branches;
+        private int[] Years;
+        private int[] Months;
+
+
+        protected override async Task OnInitializedAsync()
+        {
+            Selector = new();
+            branches = Ibranch.Select().ToList();
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            Selector.BranchID = int.Parse(authprov.User.Claims.FirstOrDefault(c => c.Type == "BranchID").Value);
+            Selector.Year = DateTime.Today.Year;
+            Selector.Month = DateTime.Today.Month;
+
+            int range = Selector.Year - 2021;
+            Years = Enumerable.Range(2021, range + 1).ToArray();
+            Months = Enumerable.Range(1, 12).ToArray();
+        }
+
+        private async Task OnValidSubmit(EditContext context)
+        {
+            string TripNumber = "T/" + Selector.BranchID.ToString() + "/" + Selector.Year.ToString().Substring(2) + Selector.Month.ToString() + "/" + Selector.TripNumber.ToString();
+            SelectedTrip =  Itrip.SelectByTripNumber(TripNumber);
+            TripManager.LoadAll(SelectedTrip);
+        }
+
+        class TripSelector
+        {
+            [Required]
+            public int? BranchID { get; set; }
+            [Required]
+            public int Year { get; set; }
+            [Required]
+            public int Month { get; set; }
+            [Required]
+            public int? TripNumber { get; set; }
+        }
+    }
