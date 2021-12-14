@@ -37,28 +37,4 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; }
         public virtual string DocumentTypeName { get; set; }
     }
-
-
-    public class TruckNotificationModel
-    {
-        public TruckNotificationModel()
-        {
-            UserInfo = new();
-        }
-        public string NotificationText { get; set; }
-        public int? NotificationID { get; set; }
-        public UserInfoModel UserInfo { get; set; }
-    }
-
-    public class TruckServiceModel
-    {
-        public TruckServiceModel()
-        {
-            UserInfo = new();
-        }
-        public int? StartKM { get; set; }
-        public int? EndKM { get; set; }
-        public UserInfoModel UserInfo { get; set; }
-    }
-
 }

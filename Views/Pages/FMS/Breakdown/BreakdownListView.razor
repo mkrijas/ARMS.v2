@@ -1,0 +1,58 @@
+﻿@page "/Breakdowns"
+@attribute [Authorize]
+
+@inject IBreakdownService iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+
+@inject IDialogService DialogService
+
+@using FMS.Jobcard
+
+<h3>Reported Breakdowns/Accidents</h3>
+
+
+@foreach (BreakdownModel item in BreakdownList)
+{
+    <MudPaper>
+        <MudText Typo="Typo.h6"> Truck: @item.RegNo</MudText>
+        <MudText Typo="Typo.h6"> Subject: @item.BreakdownType</MudText>
+        <MudText Typo="Typo.h6"> On: @item.BreakdownTime</MudText>
+        <MudText Typo="Typo.h6"> Contact: @item.ContactNumber</MudText>
+        <MudText Typo="Typo.h6"> Additional Info: @item.Detail</MudText>
+
+        <MudButton StartIcon="@Icons.Material.Outlined.Create" OnClick="@(()=>CreateJobcard(item))" IconColor="Color.Primary">Issue Jobcard</MudButton>
+        <MudButton StartIcon="@Icons.Material.Outlined.InsertDriveFile" OnClick="BeginInsuranceClaim" IconColor="Color.Primary">Initiate Insurance Claim</MudButton>
+    </MudPaper>
+    <hr />
+}
+
+
+@code {
+
+    private List<BreakdownModel> BreakdownList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var e = await auth.GetAuthenticationStateAsync();
+        int BranchID = int.Parse(e.User.Claims.First(x => x.Type == "BranchID").Value);
+        BreakdownList = iservice.SelectPending(BranchID).ToList();
+    }
+
+
+    private async Task CreateJobcard(BreakdownModel Breakdown)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("Breakdown", Breakdown);
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<CreateJobcardView>("Create New GC", parameters, maxWidth);
+        var data = await result.Result;
+    }
+
+    private void BeginInsuranceClaim()
+    {
+
+    }
+
+}

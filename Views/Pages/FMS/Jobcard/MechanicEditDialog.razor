@@ -1,0 +1,87 @@
+﻿
+@attribute [Authorize]
+
+@inject IMechanicService Iservice
+@inject IWorkshopService Iworkshop
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+
+<MudDialog>  
+    <DialogContent>
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="formJobcard" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@model.MechanicName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.MechanicName)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect Label="Select Workshop" Value="SelectedWorkshop" T="WorkshopModel" ValueChanged="@((e)=> WorkshopChanged(e))" ToStringFunc="@((p) => p?.WorkshopName)" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in Workshops)
+                            {
+                                <MudSelectItem Value="@ditem">@ditem.WorkshopName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@model.Remarks" Lines="3" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Remarks)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>       
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="formJobcard" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+        [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+        [Parameter] public MechanicModel model { get; set; }
+    private WorkshopModel SelectedWorkshop = new();
+    private List<WorkshopModel> Workshops = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Workshops = Iworkshop.Select(null).ToList();
+        SelectedWorkshop = Workshops.FirstOrDefault(x => x.WorkshopID == model?.WorkshopID);
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void WorkshopChanged(WorkshopModel workshop)
+    {
+        SelectedWorkshop = workshop;
+        model.WorkshopID = workshop.WorkshopID;
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+
+        try
+        {
+            model = Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(model));
+
+            model = new();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+}
+
+
+
+

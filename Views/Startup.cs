@@ -82,6 +82,15 @@ namespace Views
             services.AddScoped<ITruckDocumentService, TruckDocumentService>();
             //services.AddScoped<IPartyDirectorService, PartyDirectorService>();
 
+            //------------FMS---------------
+            services.AddScoped<IBreakdownService, BreakdownService>();
+            services.AddScoped<IWorkshopService, WorkshopService>();
+            services.AddScoped<IJobcardService, JobcardService>();
+            services.AddScoped<IRepairJobService, RepairJobService>();
+            services.AddScoped<IJobcardWorkshopService, JobcardWorkshopService>();
+            services.AddScoped<IJobInProgressService, JobInProgressService>();
+            services.AddScoped<IMechanicService, MechanicService>();
+            services.AddScoped<IMechanicJobService, MechanicJobService>();
 
             //--------Identity configure--------------
             services.AddTransient<IUserStore<UserModel>, UserStore>();

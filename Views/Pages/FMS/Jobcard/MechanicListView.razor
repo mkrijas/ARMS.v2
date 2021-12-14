@@ -1,0 +1,96 @@
+﻿@page "/mechanics"
+@inject IMechanicService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+@inject IDialogService DialogService
+
+
+<MudTable Items="@collection" Elevation="10" Filter="new Func<MechanicModel, bool>(search)" @bind-model="model">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Mechanics</MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="Add" Color="Color.Dark" Size="Size.Small"></MudIconButton>       
+        <MudToolBarSpacer></MudToolBarSpacer>
+        <MudTextField @bind-Value="searchString" Placeholder="Search... "
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<MechanicModel, object>(x=> x.MechanicName)" InitialDirection="SortDirection.Ascending">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<MechanicModel, object>(x=> x.WorkshopName)" InitialDirection="SortDirection.Ascending">Workshop</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<MechanicModel, object>(x=> x.Remarks)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Mechanic">@context.MechanicName</MudTd>
+        <MudTd DataLabel="Workshop">@context.WorkshopName</MudTd>
+        <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private MechanicModel model;
+    private List<MechanicModel> collection = new();
+
+    private string searchString = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+        collection = Iservice.Select().ToList();
+    }
+
+
+    private async Task Add()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", new MechanicModel());
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<MechanicEditDialog>("Add Mechanic", parameters, maxWidth);
+        var data = await result.Result;
+
+        GetAll();
+    }
+
+    private async Task Edit(MechanicModel mechanic)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", mechanic);
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<MechanicEditDialog>("Edit Mechanic", parameters, maxWidth);
+        var data = await result.Result;
+
+        GetAll();
+    }
+    private void Delete(MechanicModel mechanic)
+    {
+        Iservice.Delete(mechanic.MechanicID, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+
+    private bool search(MechanicModel model)
+    {
+        if (model.MechanicName != null && model.MechanicName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}

@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
         List<GcSetModel> SelectByTrip(long? TripID);
         List<GcSetModel> SelectUnAssigned(int? BranchID);
         List<GcSetModel> SelectToUnload(long? TripID);
+        List<GcSetModel> SelectPending(long? TripID);
         GcSetModel SelectByID(long? GcSetID);
         IEnumerable<GcTypeModel> SelectGcTypes();
         int AppendToTrip(long? TripID, long? GcSetID, string UserID);
@@ -116,7 +117,15 @@ namespace ArmsServices.DataServices
             return GetList(parameters);
         }
 
-
+        public List<GcSetModel> SelectPending(long? TripID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "Pending"),
+               new SqlParameter("@TripID", TripID)
+            };
+            return GetList(parameters);
+        }
         public List<GcSetModel> SelectUnAssigned(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -295,6 +304,6 @@ namespace ArmsServices.DataServices
             return Freight;
         }
 
-        
+     
     }
 }

@@ -1,0 +1,107 @@
+﻿@page "/Breakdown"
+@attribute [Authorize]
+
+@inject IBreakdownService Iservice
+@inject ITripService Itrip
+
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Report Breakdown of @Truck.RegNo
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="formBreakdown" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="model.ContactNumber" Label="Contact Number" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.ContactNumber)"></MudTextField>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MyDateTimePicker Label="Breakdown" @bind-Value="model.BreakdownTime"></MyDateTimePicker>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect Label="Select Type" @bind-Value="model.BreakdownType" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in BreakdownTypes)
+                            {
+                                <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField  Lines="4" @bind-Value="model.Detail" Label="Detail" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Detail)"></MudTextField>
+                    </MudItem>
+                </MudGrid>             
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="formBreakdown" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public TruckModel Truck { get; set; }
+    [Parameter] public TripModel CurrentTrip { get; set; }
+    [Parameter] public int PendingGcs { get; set; }
+
+    private BreakdownModel model { get; set; }
+
+    private List<string> BreakdownTypes = new(){"Accident","BreakdownType1","BreakdownType2" };
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var e = await auth.GetAuthenticationStateAsync();
+        string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        model = new();
+        model.BranchID = int.Parse(BranchIDString);
+        model.TruckID = Truck.TruckID;
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+
+        try
+        {
+            if (!Itrip.IsClosed(CurrentTrip.TripID))
+            {
+                var authState = auth.GetAuthenticationStateAsync().Result;
+                if (PendingGcs > 0)
+                {
+                    Itrip.Cancel(CurrentTrip.TripID, authState.User.Identity.Name);
+                }
+                Itrip.CloseTrip(CurrentTrip.TripID, int.Parse(authState.User.Claims.First(x => x.Type == "BranchID").Value), authState.User.Identity.Name);
+            }
+
+            model = Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(model));
+
+            model = new();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+}

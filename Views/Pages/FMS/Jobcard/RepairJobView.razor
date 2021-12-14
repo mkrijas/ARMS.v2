@@ -1,0 +1,135 @@
+﻿@page "/jobs"
+@inject IRepairJobService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+
+
+
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit RepairJob</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="4">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@model.RepairJobTitle" Label="Job Title" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.RepairJobTitle)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@model.MechanicalHours" Label="Mechanical Hours" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.MechanicalHours)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="12">
+                            <MudTextField Lines="4" @bind-Value="@model.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Description)"></MudTextField>
+                        </MudItem>                       
+                    </MudGrid>
+
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" md="6">
+
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<RepairJobModel, bool>(search)" @bind-model="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Jobs</MudText>
+                <MudToolBarSpacer></MudToolBarSpacer>
+                <MudTextField @bind-Value="searchString" Placeholder="Search... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.RepairJobTitle)" InitialDirection="SortDirection.Ascending">Job Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.MechanicalHours)" InitialDirection="SortDirection.Ascending">Hours</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.Description)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="RepairJob">@context.RepairJobTitle</MudTd>
+                <MudTd DataLabel="Hours">@context.MechanicalHours</MudTd>
+                <MudTd DataLabel="Description">@context.Description</MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> Edit(context.RepairJobID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.RepairJobID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+
+    </MudItem>
+</MudGrid>
+
+
+@code {
+
+    private RepairJobModel model;
+    private List<RepairJobModel> collection = new();    
+
+    private string searchString = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+        collection = Iservice.Select(null).ToList();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+
+        try
+        {
+            model = Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            collection.Add(model);
+
+            model = new();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void Edit(int? id)
+    {
+        model = collection.FirstOrDefault(x => x.RepairJobID == id);
+    }
+    private void Delete(int? id)
+    {
+        Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+
+    private bool search(RepairJobModel model)
+    {
+        if (model.RepairJobTitle != null && model.RepairJobTitle.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+
+
+
+

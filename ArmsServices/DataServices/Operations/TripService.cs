@@ -15,8 +15,8 @@ namespace ArmsServices.DataServices
         int Delete(long? TripID, string UserID);
         TripModel Select(long? TripID);
         TripModel SelectByTripNumber(string TripNumber);
-        int Cancel(long? TripID, string userID, string Reason);
-        int CloseTrip(long? TripID, string Remarks);
+        int Cancel(long? TripID, string UserID);
+        int CloseTrip(long? TripID, int? BranchID,string UserID);
         bool IsClosed(long? TripID);
         bool IsSettled(long? TripID);
         IEnumerable<object> GetOutstandingBills(long? TripID);
@@ -96,24 +96,57 @@ namespace ArmsServices.DataServices
             };
         }
 
-        int ITripService.Cancel(long? TripID, string userID, string Reason)
+        int ITripService.Cancel(long? TripID, string UserID)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripID", TripID),
+               new SqlParameter("@UserID", UserID),
+
+            };
+            return Iservice.ExecuteNonQuery("[usp.Operation.Trip.Cancel]", parameters);
         }
 
-        int ITripService.CloseTrip(long? TripID, string Remarks)
+        int ITripService.CloseTrip(long? TripID,int? BranchID,string UserID)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripID", TripID),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@UserID", UserID),
+
+            };
+            return Iservice.ExecuteNonQuery("[usp.Operation.Trip.Close]", parameters);
         }
 
         public bool IsClosed(long? TripID)
         {
-            throw new NotImplementedException();
+            
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripID", TripID),
+               new SqlParameter("@Query", "IsClosed"),
+            };
+
+            SqlParameter result = new SqlParameter("@result", SqlDbType.Bit);
+            result.Direction = ParameterDirection.Output;
+            parameters.Add(result);
+             Iservice.ExecuteNonQuery("[usp.Operation.Trip.Query]", parameters);
+            return (bool)result.Value;
         }
 
         public bool IsSettled(long? TripID)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripID", TripID),
+               new SqlParameter("@Query", "IsSettled"),
+            };
+
+            SqlParameter result = new SqlParameter("@result", SqlDbType.Bit);
+            result.Direction = ParameterDirection.Output;
+            Iservice.ExecuteNonQuery("[usp.Operation.Trip.Query]", parameters);
+            return (bool)result.Value;
         }
 
         public IEnumerable<object> GetOutstandingBills(long? TripID)

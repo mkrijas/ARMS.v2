@@ -1,0 +1,89 @@
+﻿@page "/jobcards"
+@inject IJobcardService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+@inject IDialogService DialogService
+
+
+
+<h3>Jobcards</h3>
+
+
+
+<MudTable Items="@collection" Elevation="10" Filter="new Func<JobcardModel, bool>(search)" @bind-model="model">
+    <ToolBarContent> 
+        <MudToolBarSpacer></MudToolBarSpacer>
+        <MudTextField @bind-Value="searchString" Placeholder="Search... "
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<JobcardModel, object>(x=> x.JobcardNumber)" InitialDirection="SortDirection.Ascending">Jobcard No</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<JobcardModel, object>(x=> x.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<JobcardModel, object>(x=> x.CreatedOn)" InitialDirection="SortDirection.Ascending">Created on</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="JobcardNumber"> <MudHighlighter Style="background-color:cornflowerblue;font-weight:bold" Text="@context.JobcardNumber" HighlightedText="@searchString" /></MudTd>
+        <MudTd DataLabel="Truck">@context.RegNo</MudTd>
+        <MudTd DataLabel="Date">@context.CreatedOn</MudTd>
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private JobcardModel model;
+    private List<JobcardModel> collection = new();
+
+    private string searchString = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+        collection = Iservice.Select(null).ToList();
+    }
+
+
+
+
+    private async Task Edit(JobcardModel jobcard)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", jobcard);
+
+        //DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        //var result = DialogService.Show<jobcardEditDialog>("Edit jobcard", parameters, maxWidth);
+        //var data = await result.Result;
+
+        GetAll();
+    }
+    private void Delete(JobcardModel jobcard)
+    {
+        Iservice.Delete(jobcard.JobcardID, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+
+    private bool search(JobcardModel model)
+    {
+        if (model.JobcardNumber != null && model.JobcardNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}

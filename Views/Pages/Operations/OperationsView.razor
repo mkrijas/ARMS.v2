@@ -19,7 +19,7 @@
 @inject IDialogService DialogService
 
 @using Pages.Truck
-
+@using Pages.FMS.Breakdown
 
 
 <MudGrid Spacing="4">
@@ -43,6 +43,7 @@
         {
             <MudText Typo="Typo.h4" Style="display:inline-block"><MudIcon Icon="@Icons.Filled.AirlineSeatReclineNormal" Title="Driver" Color="Color.Success" /> @AssignedDriver.DriverName</MudText>
         }
+      
     </MudItem>
     
 
@@ -50,15 +51,17 @@
     <MudItem xs="12" md="12" hidden="@HideControls">
         <MudButtonGroup Color="Color.Surface" Variant="Variant.Filled">
             <MudButton StartIcon="@Icons.Material.Filled.AddTask" OnClick="UpdateEvent" IconColor="Color.Default">@EventButtonLabel</MudButton>
-            @if (CurrentTrip != null)
-            {
-                <MudButton StartIcon="@Icons.Material.Outlined.Cancel" OnClick="CancelTrip" IconColor="Color.Error">Cancel Trip</MudButton>
-            }
-            <MudButton StartIcon="@Icons.Material.Filled.ReportProblem" OnClick="ReportBreakDown" IconColor="Color.Secondary">Breakdown/Accident</MudButton>
-            <MudButton StartIcon="@Icons.Material.Outlined.PersonAddAlt1" OnClick="AssignDriver" IconColor="Color.Primary">@AssignDriverLabel</MudButton>
             @if (CurrentEvent?.EventTypeID == 2)
             {<MudButton StartIcon="@Icons.Material.Outlined.AddTask" OnClick="AddConsignment" IconColor="Color.Tertiary">Load Consignment</MudButton>}
-            <MudButton StartIcon="@Icons.Material.Outlined.Money" OnClick="AddTransaction" IconColor="Color.Primary">Inc/Exp</MudButton>
+            <MudButton StartIcon="@Icons.Material.Outlined.PersonAddAlt1" OnClick="AssignDriver" IconColor="Color.Primary">@AssignDriverLabel</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.ReportProblem" OnClick="ReportBreakDown" IconColor="Color.Secondary">Breakdown/Accident</MudButton>
+
+
+            @*@if (CurrentTrip != null)
+        {
+            <MudButton StartIcon="@Icons.Material.Outlined.Cancel" OnClick="CancelTrip" IconColor="Color.Error">Cancel Trip</MudButton>
+        }*@
+            @*<MudButton StartIcon="@Icons.Material.Outlined.Money" OnClick="AddTransaction" IconColor="Color.Primary">Inc/Exp</MudButton>*@
         </MudButtonGroup>
     </MudItem>
 </MudGrid>
@@ -67,8 +70,8 @@
 
 
 @code{
-        [Parameter]
-        public TruckModel SelectedTruck { get; set; }
+    [Parameter]
+    public TruckModel SelectedTruck { get; set; }
 
     TripManagerView TripManager;
 
@@ -98,7 +101,7 @@
         {
             Trucks.Add(item);
         }
-        
+
     }
 
     private async Task<IEnumerable<TruckModel>> Search(string searchString)
@@ -145,9 +148,32 @@
 
     }
 
-    private void ReportBreakDown()
+    private async Task ReportBreakDown()
     {
+        int pendingGcs = Igc.SelectPending(CurrentTrip?.TripID).Count();
+        if (pendingGcs != 0)
+        {
+            bool? yesno = await DialogService.ShowMessageBox(
+           "Warning",
+           pendingGcs+ " Unfinished GCs found.Do you want to Cancel those GCs",
+           yesText: "Proceed!", cancelText: "Cancel");
+            if(yesno==null)
+            {
+                return;
+            }
+        }
 
+        var parameters = new DialogParameters();
+        parameters.Add("Truck", SelectedTruck);
+        parameters.Add("CurrentTrip",CurrentTrip);
+        parameters.Add("PendingGcs", pendingGcs);
+        var result = DialogService.Show<BreakdownView>(null,parameters);
+        var Data = await result.Result;
+        var ev = Data.Data;
+        if (!Data.Cancelled)
+        {
+            truckStatusUpdated();
+        }
     }
 
     private async Task AssignDriver()
@@ -189,7 +215,7 @@
 
     private void ViewTransactions(TripModel Trip)
     {
-       TripManager.LoadTransactions(CurrentTrip);
+        TripManager.LoadTransactions(CurrentTrip);
     }
 
 
@@ -219,7 +245,7 @@
             HideControls = true;
             HideStatus = true;
             CurrentEvent = null;
-            EventType = null;   
+            EventType = null;
             CurrentTrip = null;
         }
         else
@@ -270,7 +296,7 @@
             {
                 HideControls = false;
                 HideStatus = false;
-                EventButtonLabel = "Add Event";
+                EventButtonLabel = "Update Status";
             }
         }
 

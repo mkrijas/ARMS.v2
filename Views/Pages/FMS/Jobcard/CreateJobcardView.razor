@@ -1,0 +1,127 @@
+﻿
+@attribute [Authorize]
+
+@inject IJobcardService Iservice
+@inject IWorkshopService Iworkshop
+@inject IJobcardWorkshopService Ijw
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Create Jobcard for @Breakdown.RegNo
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="formJobcard" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudSelect Label="Select Workshop" @bind-Value="SelectedWorkshop" T="WorkshopModel" ToStringFunc="@((p) => p?.WorkshopName)" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in Workshops)
+                            {
+                                <MudSelectItem Value="@ditem">@ditem.WorkshopName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        @foreach (var item in model.Jobs)
+                        {
+                            <JobInProgressView model="item" workshop="SelectedWorkshop" @ref="JipComp" ></JobInProgressView>
+                        }
+                        </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="DeleteJob" Hidden="@(model.Jobs.Count<2)">Delete Job</MudButton>
+        <MudButton OnClick="AddJob">Add More Jobs</MudButton>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="formJobcard" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public BreakdownModel Breakdown { get; set; }
+    private JobcardModel model = new();
+    private WorkshopModel SelectedWorkshop = new();
+
+    private JobInProgressView JipComp;
+
+
+    private List<WorkshopModel> Workshops = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var e = await auth.GetAuthenticationStateAsync();
+        string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        model.TruckID = Breakdown.TruckID;
+        model.BreakdownID = Breakdown.BreakdownID;
+        Workshops =  Iworkshop.Select(null).ToList();
+        AddJob();
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void AddJob()
+    {
+        model.Jobs.Add(new JobInProgressModel() { WorkshopID = SelectedWorkshop?.WorkshopID, JobStatus = 3});
+    }
+
+    private void DeleteJob()
+    {
+        model.Jobs.RemoveAt(model.Jobs.Count - 1);
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+
+        int BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        model.BranchID = BranchID;
+        try {
+            model.JobcardID = Iservice.Update(model).JobcardID;
+            JobcardWorkshopModel Jwm = new()
+            {
+                WorkshopID = SelectedWorkshop.WorkshopID,
+                JobCardID = model.JobcardID,
+                EnteredOn = DateTime.Now,
+                UserInfo = model.UserInfo
+            };
+            Ijw.Update(Jwm);
+
+            foreach(var item in model.Jobs)
+            {
+                item.JobCardID = model.JobcardID;
+                item.WorkshopID = SelectedWorkshop.WorkshopID;
+                item.JobStatus = 3;
+                item.UserInfo = model.UserInfo;
+                JipComp.UpdateJob(item);
+            }
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(model));
+
+            model = new();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+}
+
+
+

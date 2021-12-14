@@ -1,0 +1,92 @@
+﻿@inject IRepairJobService Ijob
+@inject IMechanicService Imechanic
+@inject IMechanicJobService Imjp 
+@inject IJobInProgressService Ijip 
+@inject MudBlazor.ISnackbar snackbar
+
+    <MudGrid Spacing="4">       
+        <MudItem xs="12" md="4" >
+            <MudAutocomplete T="RepairJobModel" Variant="Variant.Outlined" Margin="Margin.Normal"  Label="Job" Value="SelectedJob" ValueChanged="JobChanged" ResetValueOnEmptyText="true"
+                             SearchFunc="SearchJob" ToStringFunc="@(e => e == null ? null : $"{e.RepairJobTitle}")"></MudAutocomplete>
+        </MudItem>
+        <MudItem xs="12" md="8">
+            <MudSelect T="MechanicModel" MultiSelection="true" Label="Assign Mechanic/s" ToStringFunc="@(p=> p.MechanicName)" SelectedValuesChanged="mechanicChanged" SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+
+                @foreach (var item in Mechanics)
+                {
+                    <MudSelectItem T="MechanicModel" Value="@item">@item.MechanicName</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>        
+    </MudGrid>
+
+
+@code {
+
+    [Parameter] public JobInProgressModel model { get; set; }
+    [Parameter] public WorkshopModel workshop { get; set; }
+    private RepairJobModel SelectedJob = new();
+    private List<RepairJobModel> jobslist = new();
+    private List<MechanicModel> Mechanics = new();
+    private HashSet<MechanicModel> SelectedMechanics = new();
+
+
+    protected override void OnInitialized()
+    {
+        jobslist = Ijob.Select(null).ToList();
+        Mechanics = Imechanic.SelectByWorkshop(model.WorkshopID).ToList();
+    }
+
+
+    private async Task<IEnumerable<RepairJobModel>> SearchJob(string searchString)
+    {
+        return await Task.FromResult(jobslist.Where(x => x.RepairJobTitle.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+
+    private void JobChanged(RepairJobModel obj)
+    {
+        SelectedJob = obj;
+        model.RepairJobID = obj?.RepairJobID;
+    }
+
+
+    private void mechanicChanged(HashSet<MechanicModel> obj)
+    {
+        model.Mechanics.Clear();
+        SelectedMechanics = obj;
+
+        foreach(var item in obj)
+        {
+            model.Mechanics.Add(new MechanicJobModel
+            {
+                AssignedOn = DateTime.Now,
+                MechanicID = item.MechanicID,
+                UserInfo = model.UserInfo,
+                JipID = model.JipID,
+            });
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Mechanics = Imechanic.SelectByWorkshop(workshop?.WorkshopID).ToList();
+        SelectedMechanics = new();
+        await base.OnParametersSetAsync();
+    }
+
+    public void UpdateJob(JobInProgressModel job)
+    {
+        Ijip.Update(job);
+    }
+
+    public void AddMechanicToJob(JobInProgressModel job,List<MechanicModel> AssignedMechanics)
+    {
+        foreach (var item in job.Mechanics)
+        {
+            Imjp.Update(item);
+        }
+    }
+
+
+}
