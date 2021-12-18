@@ -103,7 +103,7 @@
     private bool IsLoading = false;
     private string ButtonLabel = "Select an Event";
 
-
+    bool isSubmitting;
 
     private PlaceModel Origin = new();
     private PlaceModel Destination = new();
@@ -168,6 +168,12 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
+
+        if (isSubmitting)
+            return;
+
+        isSubmitting = true;
+
         try
         {
             var authprov = await auth.GetAuthenticationStateAsync();
@@ -190,7 +196,10 @@
             model.EventTypeID = SelectedEvent.EventTypeID;
             model.UserInfo.UserID = authprov.User.Identity.Name;
 
-            ValidateEvent(model);
+            if(!ValidateEvent(model))
+            {
+                return;
+            }
             model = Ievent.Update(model);
 
             if (SelectedEvent.EventTypeID == 4)
@@ -217,9 +226,13 @@
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 
-    private void ValidateEvent(EventModel ev)
+    private bool ValidateEvent(EventModel ev)
     {
         EventModel preEvent = new();
         EventModel NextEvent = new();
@@ -240,19 +253,20 @@
         if(preEvent != null && model.EventTime < preEvent.EventTime)
         {
             snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
-            return;
+            return false;
         }
         else if (NextEvent != null &&  model.EventTime > NextEvent.EventTime)
         {
             snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
-            return;
+            return false;
         }
         else
         if ((preEvent != null && preEvent.EventTypeID == SelectedEvent.EventTypeID) ||(NextEvent!= null && NextEvent.EventTypeID == SelectedEvent.EventTypeID))
         {
             snackbar.Add("Cannot enter an event twice in a row", Severity.Warning);
-            return;
+            return false;
         }
+        return true;
     }
 
     private string GetMultiSelectionText(List<string> Gcs)
