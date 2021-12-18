@@ -88,12 +88,12 @@ namespace Views.Pages.UserAccount
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
-                UserModel user = _userManager.FindByIdAsync(Input.UserID).Result;
+                UserModel user = _userManager.FindByIdAsync(Input.UserID).Result;               
                 if ( user != null)
                 {
                     ModelState.AddModelError("exists", "User ID already exists");
                 }
-                else if (_userManager.FindByEmailAsync(Input.Email) != null)
+                else if (_userManager.FindByEmailAsync(Input.Email).Result != null)
                 {
                     ModelState.AddModelError("exists", "Email already exists");
                 }

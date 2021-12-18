@@ -292,7 +292,7 @@ namespace ArmsServices.DataServices
                 user.TwoFactorEnabled = bool.Parse(dr["UserID"].ToString());
                 user.RecordStatus = byte.Parse(dr["UserID"].ToString());
             }
-            return user;
+            return user?.UserID == null ? null : user;
         }
 
         public Task<string> GetNormalizedEmailAsync(UserModel user, CancellationToken cancellationToken)
