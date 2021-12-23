@@ -12,6 +12,7 @@ namespace ArmsServices.DataServices
     {
         MechanicJobModel Update(MechanicJobModel model);
         MechanicJobModel SelectByID(int? ID);
+        IEnumerable<MechanicJobModel> SelectByJob(int? JipID);
         int Delete(int? MjID, string UserID);
         IEnumerable<MechanicJobModel> Select(int? MjID);
     }
@@ -63,6 +64,19 @@ public class MechanicJobService:IMechanicJobService
             return model;
         }
 
+        public IEnumerable<MechanicJobModel> SelectByJob(int? JipID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@JipID", JipID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.JobInProgress.Mechanic.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public MechanicJobModel Update(MechanicJobModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -90,6 +104,7 @@ public class MechanicJobService:IMechanicJobService
                 AssignedOn = dr.GetDateTime("AssignedOn"),
                 EndedOn = dr.GetDateTime("EndedOn"),
                 MechanicID = dr.GetInt32("MechanicID"),
+                MechanicName = dr.GetString("MechanicName"),
                 JipID = dr.GetInt32("JipID"),               
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

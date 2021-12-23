@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
         JobInProgressModel SelectByID(int? ID);
         int Delete(int? JipID, string UserID);
         IEnumerable<JobInProgressModel> Select(int? JipID);
+        IEnumerable<JobInProgressModel> SelectByJobcard(int? JobcardID);
     }
 
 
@@ -63,6 +64,19 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public IEnumerable<JobInProgressModel> SelectByJobcard(int? JobcardID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@JobcardID", JobcardID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.JobInProgress.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public JobInProgressModel Update(JobInProgressModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -90,7 +104,8 @@ namespace ArmsServices.DataServices
             return new JobInProgressModel
             {
                 JipID = dr.GetInt32("JipID"),
-                RepairJobID = dr.GetInt32("BranchID"),
+                RepairJobID = dr.GetInt32("RepairJobID"),
+                RepairJobTitle = dr.GetString("RepairJobTitle"),
                 JobCardID = dr.GetInt32("JobCardID"),
                 WorkshopID = dr.GetInt32("WorkshopID"),
                 CreatedOn = dr.GetDateTime("CreatedOn"),

@@ -32,6 +32,7 @@ namespace ArmsModels.BaseModels
             Mechanics = new();
         }
         public int? JipID { get; set; }
+        public string RepairJobTitle { get; set; }
         public int? RepairJobID { get; set; }
         public DateTime? CreatedOn { get; set; }
         public DateTime? FinishedOn { get; set; }
@@ -52,6 +53,7 @@ namespace ArmsModels.BaseModels
         public int? MjID { get; set; }
         public int? JipID { get; set; }
         public int? MechanicID { get; set; }
+        public virtual string MechanicName { get; set; }
         public DateTime? AssignedOn { get; set; }
         public DateTime? EndedOn { get; set; }
         public UserInfoModel UserInfo { get; set; }

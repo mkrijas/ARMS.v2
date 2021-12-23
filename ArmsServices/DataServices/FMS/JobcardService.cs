@@ -14,7 +14,8 @@ namespace ArmsServices.DataServices
         JobcardModel SelectByID(int? ID);
         int Delete(int? JobcardID, string UserID);
         IEnumerable<JobcardModel> Select(int? ID);
-        IEnumerable<JobcardModel> SelectByBranch(int? BranchID);
+        IEnumerable<JobcardModel> SelectByBranch(int? BranchID,bool Active = false);
+        IEnumerable<JobcardModel> SelectByTruck(int? TruckID, bool Active = false);
     }
 
     public class JobcardService:IJobcardService
@@ -40,7 +41,8 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@JobcardID", JobcardID)
+               new SqlParameter("@JobcardID", JobcardID),
+               new SqlParameter("@Active",false)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.Select]", parameters))
@@ -48,11 +50,13 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-        public IEnumerable<JobcardModel> SelectByBranch(int? BranchID)
+
+        public IEnumerable<JobcardModel> SelectByBranch(int? BranchID,bool Active = false)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@BranchID", BranchID)
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Active",Active)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.Select]", parameters))
@@ -66,6 +70,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@JobcardID", ID),
+               new SqlParameter("@Active",false)
             };
             JobcardModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.Select]", parameters))
@@ -73,6 +78,20 @@ namespace ArmsServices.DataServices
                 model = GetModel(dr);
             }
             return model;
+        }
+
+        public IEnumerable<JobcardModel> SelectByTruck(int? TruckID,bool Active = false)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@Active",Active)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
 
         public JobcardModel Update(JobcardModel model)
@@ -100,6 +119,7 @@ namespace ArmsServices.DataServices
             {
                 JobcardID = dr.GetInt32("JobcardID"),
                 BranchID = dr.GetInt32("BranchID"),
+                BranchName = dr.GetString("BranchName"),
                 BreakdownID = dr.GetInt32("BreakdownID"),
                 CreatedOn = dr.GetDateTime("CreatedOn"),
                 JobcardNumber = dr.GetString("JobcardPrefix") + dr.GetInt32("JobcardNumber").ToString(),                

@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
         JobcardWorkshopModel SelectByID(int? ID);
         int Delete(int? JwID, string UserID);
         IEnumerable<JobcardWorkshopModel> Select(int? JwID);
+        IEnumerable<JobcardWorkshopModel> SelectByJobcard(int? ID);
     }
 
 
@@ -63,6 +64,19 @@ public class JobcardWorkshopService:IJobcardWorkshopService
             return model;
         }
 
+        public IEnumerable<JobcardWorkshopModel> SelectByJobcard(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@JobcardID", ID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.WorkshopEntry.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public JobcardWorkshopModel Update(JobcardWorkshopModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -90,7 +104,8 @@ public class JobcardWorkshopService:IJobcardWorkshopService
                 EnteredOn = dr.GetDateTime("EnteredOn"),
                 ExitOn = dr.GetDateTime("ExitOn"),
                 JobCardID = dr.GetInt32("JobCardID"),
-                WorkshopID = dr.GetInt32("WorkshopID"),               
+                WorkshopID = dr.GetInt32("WorkshopID"),    
+                WorkshopName = dr.GetString("WorkshopName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

@@ -21,6 +21,7 @@ namespace ArmsModels.BaseModels
         public int? TruckID { get; set; }
         public virtual string RegNo { get; set; }
         public int? BranchID { get; set; }
+        public string BranchName { get; set; }
         public int? BreakdownID { get; set; }        
         public List<JobcardWorkshopModel> Workshops { get; set; }
         public List<JobInProgressModel> Jobs { get; set; }
@@ -53,6 +54,7 @@ namespace ArmsModels.BaseModels
         public int? JwID { get; set; }
         public int? JobCardID { get; set; }
         public int? WorkshopID { get; set; }
+        public string WorkshopName { get; set; }
         public DateTime? EnteredOn { get; set; }
         public DateTime? ExitOn { get; set; }
         public UserInfoModel UserInfo { get; set; }

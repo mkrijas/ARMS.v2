@@ -22,17 +22,10 @@ namespace ArmsServices.DataServices
 
     public class OrderService : IOrderService
     {
-        IDbService Iservice;
-        IPartyService partyService;
-        IConsigneeService consigneeService;
-        IContentService contentService;
-        public OrderService(IDbService iservice, IPartyService partyService,
-            IConsigneeService consigneeService, IContentService contentService)
+        IDbService Iservice;      
+        public OrderService(IDbService iservice)
         {
-            Iservice = iservice;
-            this.partyService = partyService;
-            this.consigneeService = consigneeService;
-            this.contentService = contentService;
+            Iservice = iservice;         
         }
         public async Task<OrderModel> Update(OrderModel model)
         {
@@ -121,10 +114,21 @@ namespace ArmsServices.DataServices
                 OrderID = dr.GetInt32("OrderID"),
                 OrderName = dr.GetString("OrderName"),
                 OrderQuantity = dr.GetDecimal("OrderQuantity"),
-                Party = await partyService.SelectByID(dr.GetInt32("ClientID").GetValueOrDefault()),
-                Content = await contentService.SelectByID(dr.GetInt16("contentID").GetValueOrDefault()),
-                Consignor = await consigneeService.SelectByID(dr.GetInt32("consignorID").GetValueOrDefault()),
-
+                Party = new PartyModel
+                {
+                    PartyID = dr.GetInt32("ClientID"),
+                    PartyName = dr.GetString("PartyName"),
+                },
+                Content = new ContentModel
+                {
+                    ContentID = dr.GetInt16("contentID"),
+                    ContentName = dr.GetString("ContentName")
+                },
+                Consignor = new()
+                {
+                    ConsigneeID = dr.GetInt32("consignorID"),
+                    ConsigneeName = dr.GetString("consigneeName"),
+                },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
