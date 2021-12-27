@@ -1,11 +1,13 @@
 ﻿@page "/jobcard"
+@page "/jobcard/{TruckID:int}"
 @inject IJobcardService Iservice
-@inject ITruckService Itruck
+@inject ITruckService Itruck 
 @inject IJobcardWorkshopService Ijw
 @inject IJobInProgressService Ijp
 @inject IWorkshopService Iworkshop
 @inject IMechanicJobService ImechanicJob
 @inject IMechanicService Imechanic
+@inject IEventService Ievent 
 
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
@@ -17,9 +19,8 @@
     <div class="d-flex">
 
         <h3 class="d-inline-block mt-2 mr-2">SELECT JOBCARD OF </h3>
-        <MudAutocomplete Class="d-inline-block" T="TruckModel" Variant="Variant.Outlined" Margin="Margin.Normal" Label="Truck" Value="SelectedTruck" ValueChanged="TruckSelected" ResetValueOnEmptyText="true"
-                         SearchFunc="SearchTruck" ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
-
+        <TruckSelector Class="d-inline-block" Value="SelectedTruck" ValueChanged="TruckSelected" />
+             
     </div>
 </MudPaper>
 
@@ -203,8 +204,9 @@
     }
 </style>
 @code {
+    [Parameter]
+    public int? TruckID { get; set; }
 
-    private List<TruckModel> TruckList = new();
     private TruckModel SelectedTruck = new();
     private JobcardModel SelectedJobcard = new();
     private WorkshopModel SelectedWorkshop = new();
@@ -227,18 +229,15 @@
     private HashSet<MechanicModel> SelectedMechanics;
     private JobInProgressModel SelectedJob = new();
 
-    protected override void OnInitialized()
+    protected async override Task OnInitializedAsync()
     {
-        TruckList = Itruck.Select(null).ToList();
         Workshops = Iworkshop.Select(0).ToList();
+
+        if(TruckID != null)
+        {
+            await TruckSelected(Itruck.SelectByID(TruckID));
+        }
     }
-
-
-    private async Task<IEnumerable<TruckModel>> SearchTruck(string searchString)
-    {
-        return await Task.FromResult(TruckList.Where(x => x.RegNo.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
-
 
     private async Task TruckSelected(TruckModel obj)
     {
@@ -323,7 +322,7 @@
     }
 
 
-    void CloseJobcard()
+    async Task CloseJobcard()
     {
         if(jwList.Any(x=> x.ExitOn==null))
         {
@@ -331,8 +330,28 @@
             return;
         }
 
+        var authProvider = await auth.GetAuthenticationStateAsync();
+        int BraanchID = int.Parse(authProvider.User.Claims.First(x => x.Type == "BranchID").Value);
+
         SelectedJobcard.UserInfo.RecordStatus = 4;
         Iservice.Update(SelectedJobcard);
+        EventModel CurrentEvent = Ievent.GetCurrentEvent(SelectedTruck.TruckID);
+        Ievent.Update(new EventModel()
+        {
+            EventTypeID = 6,
+            BranchID = BraanchID,
+            DriverID = CurrentEvent.DriverID,
+            DestinationID = CurrentEvent.DestinationID,
+            OriginID = CurrentEvent.DestinationID,
+            EventReading = CurrentEvent.EventReading,
+            EventTime = DateTime.Now,
+            TripID = CurrentEvent.TripID,
+            TruckID = CurrentEvent.TruckID,
+            UserInfo =
+            {
+                UserID = authProvider.User.Identity.Name
+            }
+        });
     }
 
 
