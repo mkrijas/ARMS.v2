@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
         MechanicJobModel Update(MechanicJobModel model);
         MechanicJobModel SelectByID(int? ID);
         IEnumerable<MechanicJobModel> SelectByJob(int? JipID);
-        int Delete(int? MjID, string UserID);
+        int Remove(int? MjID, string UserID);
         IEnumerable<MechanicJobModel> Select(int? MjID);
     }
   
@@ -27,15 +27,16 @@ public class MechanicJobService:IMechanicJobService
             Iservice = iservice;
         }
 
-        public int Delete(int? MjID, string UserID)
+        public int Remove(int? MjID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@MjID", MjID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.JobInProgress.Mechanic.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.JobInProgress.Mechanic.Remove]", parameters);
         }
+
 
         public IEnumerable<MechanicJobModel> Select(int? MjID)
         {

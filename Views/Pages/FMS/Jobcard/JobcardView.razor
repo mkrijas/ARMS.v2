@@ -5,6 +5,7 @@
 @inject IJobInProgressService Ijp
 @inject IWorkshopService Iworkshop
 @inject IMechanicJobService ImechanicJob
+@inject IMechanicService Imechanic
 
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
@@ -24,8 +25,16 @@
 
 @if (SelectedJobcard?.JobcardID != null)
 {
+<MudPaper>
     <h5>@SelectedJobcard?.JobcardNumber</h5>
     <h5>@SelectedJobcard?.BranchName</h5>
+
+    @if (SelectedJobcard.UserInfo.RecordStatus == 3)
+    {
+        <MudButton Color="Color.Secondary" OnClick="CloseJobcard">Close Jobcard</MudButton>
+        <MudButton Color="Color.Primary" >Request Spareparts</MudButton>
+    }
+</MudPaper>
     <hr />
 
     <MudGrid>
@@ -67,195 +76,306 @@
                                     }
                                 </MudItem>
                             </MudGrid>
-                            </MudListItem>
-                            }
-                            @if (jwList.Where(x => x.ExitOn == null).Count() == 0)
-                            {
-                                <MudDivider></MudDivider>
-                                <MudListItem>
-                                    <MudGrid>
-                                        <MudItem xs="8">
-                                            <MudSelect T="WorkshopModel" @bind-Value="SelectedWorkshop" Label="Workshop" Strict="true" Variant="Variant.Outlined">
-                                                @foreach (var workshop in Workshops)
-                                                {
-                                                    <MudSelectItem Value="workshop">@workshop.WorkshopName</MudSelectItem>
-                                                }
-                                            </MudSelect>
-                                        </MudItem>
-                                        <MudItem xs="4">
-                                            <MudButton Color="Color.Primary" OnClick="EnterWorkshop">Enter Workshop</MudButton>
-                                        </MudItem>
-                                    </MudGrid>
-                                </MudListItem>
-                            }
-
-                    </MudList>
-                 </MudPaper>
-                </MudItem>
-        
-                    <MudItem xs="12" lg="6">
-                        <h3>Jobs</h3>
-                        @foreach (var item in JipList)
-                        {
-                            string AppliedColor = ColorInProgress;
-                            @switch (item.JobStatus)
-                            {
-                                case 0:
-                                    AppliedColor = ColorCancelled;
-                                    break;
-                                case 2:
-                                    AppliedColor = ColorFinished;
-                                    break;
-                            }
-
-                            <MudPaper Class="pa-2 ma-2" Style="@($"background:{AppliedColor};")" Elevation="0">
-                                <MudGrid>
-                                    <MudItem xs="5">
-                                        @item.RepairJobTitle
-                                    </MudItem>
-                                    <MudItem xs="4">
-                                        @item.CreatedOn?.ToString("dd/MM/yy HH:mm tt")
-                                    </MudItem>
-                                    @if (item.JobStatus == 1)
-                                    {
-                                        <MudItem xs="3">
-                                            <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
-                                                <MudTooltip Text="Finished">
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" OnClick="@(()=> UpdateJob(item,2))"></MudIconButton>
-                                                </MudTooltip>
-                                                <MudTooltip Text="Cancel">
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" OnClick="@(()=> UpdateJob(item,0))"></MudIconButton>
-                                                </MudTooltip>
-                                            </MudButtonGroup>
-                                        </MudItem>
-                                    }
-                                <MudItem xs="10">
-                                    @foreach (var mech in item.Mechanics)
-                                    {
-                                        @if (mech.EndedOn == null)
+                        </MudListItem>
+                    }
+                    @if (!jwList.Any(x => x.ExitOn == null) && SelectedJobcard?.UserInfo.RecordStatus == 3)
+                    {
+                        <MudDivider></MudDivider>
+                        <MudListItem>
+                            <MudGrid>
+                                <MudItem xs="8">
+                                    <MudSelect T="WorkshopModel" @bind-Value="SelectedWorkshop" Label="Workshop" Strict="true" Variant="Variant.Outlined">
+                                        @foreach (var workshop in Workshops)
                                         {
-                                            <MudText Color="Color.Primary" >mech.MechanicName  </MudText>
+                                            <MudSelectItem Value="workshop">@workshop.WorkshopName</MudSelectItem>
                                         }
-                                        else
-                                        {
-                                            <MudText Style="text-decoration:line-through;color:gray">mech.MechanicName  </MudText>
-                                        }
-                                    }
+                                    </MudSelect>
                                 </MudItem>
-                                </MudGrid>
-                            </MudPaper>
-                        }
-                        @if (CurrentWorkshop != null)
+                                <MudItem xs="4">
+                                    <MudButton Color="Color.Primary" OnClick="EnterWorkshop">Enter Workshop</MudButton>
+                                </MudItem>
+                            </MudGrid>
+                        </MudListItem>
+                    }
+
+                </MudList>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" lg="6">
+            <h3>Jobs</h3>
+            @foreach (var item in JipList)
+            {
+                string AppliedColor = ColorInProgress;
+                @switch (item.JobStatus)
+                {
+                    case 0:
+                        AppliedColor = ColorCancelled;
+                        break;
+                    case 2:
+                        AppliedColor = ColorFinished;
+                        break;
+                }
+
+                <MudPaper Class="pa-2 ma-2" Style="@($"background:{AppliedColor};")" Elevation="0">
+                    <MudGrid>
+                        <MudItem xs="5">
+                            @item.RepairJobTitle
+                        </MudItem>
+                        <MudItem xs="4">
+                            @item.CreatedOn?.ToString("dd/MM/yy HH:mm tt")
+                        </MudItem>
+                        @if (item.JobStatus == 1)
                         {
-                            <MudPaper Class="pa-2 ma-2" Elevation="0">
-                                <JobInProgressView workshop="CurrentWorkshop" model="NewJob"></JobInProgressView>
-                                <MudButton Color="Color.Success" OnClick="AddJob">Add Job</MudButton>
-                            </MudPaper>
+                            <MudItem xs="3">
+                                <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+                                    <MudTooltip Text="Finished">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" OnClick="@(() => UpdateJob(item, 2))"></MudIconButton>
+                                    </MudTooltip>
+                                    <MudTooltip Text="Cancel">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" OnClick="@(() => UpdateJob(item, 0))"></MudIconButton>
+                                    </MudTooltip>
+                                </MudButtonGroup>
+                            </MudItem>
                         }
-                    </MudItem>
+                        <MudItem xs="10">
+                            Assigned Mechanics
+                            @if (item.JobStatus == 1)
+                            {
+                                <MudTooltip Text="Assign Mechanic">
+                                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Sharp.Add" OnClick="(() => OpenMechanicSelector(item))" aria-label="AddMechanic"></MudIconButton>
+                                </MudTooltip>
+                            }
+                            @foreach (var mech in item.Mechanics)
+                            {
+                                string mechClass = mech.EndedOn == null ? "ActiveText" : "InActiveText";
+                                <MudText Class="@mechClass">
+                                    @mech.MechanicName
+                                    <MudButton Size="Size.Small" hidden="@(mech.EndedOn != null)" Color="Color.Default" OnClick="(() => RemoveMechanic(mech))">Remove</MudButton>
+                                </MudText>
+                            }
+                        </MudItem>
                     </MudGrid>
+                </MudPaper>
+            }
+            @if (CurrentWorkshop != null && SelectedJobcard.UserInfo.RecordStatus == 3)
+            {
+                <MudPaper Class="pa-2 ma-2" Elevation="0">
+                    <JobInProgressView workshop="CurrentWorkshop" model="NewJob" @ref="jipView"></JobInProgressView>
+                    <MudButton Color="Color.Success" OnClick="AddJob">Add Job</MudButton>
+                </MudPaper>
+            }
+        </MudItem>
+    </MudGrid>
+}
+
+
+
+<MudDialog @bind-IsVisible="visibleMechanicSelector" DisableSidePadding="true">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3" /> Assign Mechanics
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="height: 300px; overflow-y: auto">
+            <MudSelect T="MechanicModel" MultiSelection="true" Label="Assign Mechanic/s" ToStringFunc="@(p => p.MechanicName)"
+                       @bind-SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+
+                @foreach (var item in Mechanics)
+                {
+                    <MudSelectItem T="MechanicModel" Value="@item">@item.MechanicName</MudSelectItem>
+                }
+            </MudSelect>
+            <MudButton Color="Color.Success" OnClick="AddMechanic">Add</MudButton>
+        </MudContainer>
+    </DialogContent>
+</MudDialog>
+
+
+<style>
+    .InActiveText {
+        color: lightgray;
+    }
+
+    .ActiveText {
+        color: cornflowerblue;
+    }
+</style>
+@code {
+
+    private List<TruckModel> TruckList = new();
+    private TruckModel SelectedTruck = new();
+    private JobcardModel SelectedJobcard = new();
+    private WorkshopModel SelectedWorkshop = new();
+    private WorkshopModel CurrentWorkshop;
+    private List<JobcardWorkshopModel> jwList = new();
+    private List<JobInProgressModel> JipList = new();
+    private List<WorkshopModel> Workshops = new();
+
+    private JobInProgressModel NewJob = new JobInProgressModel();
+
+    string ColorInProgress = Colors.Indigo.Lighten5;
+    string ColorFinished = Colors.Green.Lighten5;
+    string ColorCancelled = Colors.Grey.Lighten5;
+
+    JobInProgressView jipView;
+
+    bool visibleMechanicSelector = false;
+
+    private List<MechanicModel> Mechanics = new();
+    private HashSet<MechanicModel> SelectedMechanics;
+    private JobInProgressModel SelectedJob = new();
+
+    protected override void OnInitialized()
+    {
+        TruckList = Itruck.Select(null).ToList();
+        Workshops = Iworkshop.Select(0).ToList();
+    }
+
+
+    private async Task<IEnumerable<TruckModel>> SearchTruck(string searchString)
+    {
+        return await Task.FromResult(TruckList.Where(x => x.RegNo.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+
+    private async Task TruckSelected(TruckModel obj)
+    {
+        SelectedTruck = obj;
+        SelectedJobcard = Iservice.SelectByTruck(SelectedTruck?.TruckID, true).FirstOrDefault();
+        jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
+        setJipList(SelectedJobcard);
+        if (jwList.Count(x => x.ExitOn == null) > 0)
+        {
+            CurrentWorkshop = Workshops.First(y => y.WorkshopID == jwList.First(x => x.ExitOn == null).WorkshopID);
+        }
+        var authProvider = await auth.GetAuthenticationStateAsync();
+        NewJob = new()
+        {
+            CreatedOn = DateTime.Now,
+            JobCardID = SelectedJobcard?.JobcardID,
+            WorkshopID = CurrentWorkshop?.WorkshopID,
+            JobStatus = 1,
+            UserInfo = new() { UserID = authProvider.User.Identity.Name }
+        };
+    }
+
+    void setJipList(JobcardModel jobcard)
+    {
+        JipList = Ijp.SelectByJobcard(jobcard?.JobcardID).ToList();
+        foreach (JobInProgressModel item in JipList)
+        {
+            item.Mechanics = ImechanicJob.SelectByJob(item.JipID).ToList();
+        }
+    }
+
+    private async Task ExitWorkshop(JobcardWorkshopModel jwModel)
+    {
+        if (JipList.Any(x => x.WorkshopID == jwModel.WorkshopID && x.FinishedOn == null))
+        {
+            snackbar.Add("Unfinished Jobs found!", Severity.Error);
+            return;
+        }
+        jwModel.ExitOn = DateTime.Now;
+
+        var authProvider = await auth.GetAuthenticationStateAsync();
+        jwModel.UserInfo.UserID = authProvider.User.Identity.Name;
+        Ijw.Update(jwModel);
+        jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
+        CurrentWorkshop = null;
+    }
+
+
+    private async Task EnterWorkshop()
+    {
+        JobcardWorkshopModel jwEnter = new();
+        jwEnter.JobCardID = SelectedJobcard.JobcardID;
+        jwEnter.WorkshopID = SelectedWorkshop.WorkshopID;
+        jwEnter.EnteredOn = DateTime.Now;
+
+        var authProvider = await auth.GetAuthenticationStateAsync();
+        jwEnter.UserInfo.UserID = authProvider.User.Identity.Name;
+        Ijw.Update(jwEnter);
+        jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
+        CurrentWorkshop = Workshops.First(y => y.WorkshopID == jwList.First(x => x.ExitOn == null).WorkshopID);
+    }
+
+    private async Task UpdateJob(JobInProgressModel Ujip, int status)
+    {
+        var authProvider = await auth.GetAuthenticationStateAsync();
+        Ujip.UserInfo.UserID = authProvider.User.Identity.Name;
+        Ujip.JobStatus = status;
+        Ujip.FinishedOn = DateTime.Now;
+        foreach (var item in Ujip.Mechanics)
+        {
+            await RemoveMechanic(item);
+        }
+        Ijp.Update(Ujip);
+        setJipList(SelectedJobcard);
+    }
+    private async Task AddJob()
+    {
+        var authProvider = await auth.GetAuthenticationStateAsync();
+        NewJob.CreatedOn = DateTime.Now;
+        jipView.UpdateJob(NewJob);
+        setJipList(SelectedJobcard);
+    }
+
+
+    void CloseJobcard()
+    {
+        if(jwList.Any(x=> x.ExitOn==null))
+        {
+            snackbar.Add("Exit from workshop before closing Jobcard!", Severity.Error);
+            return;
+        }
+
+        SelectedJobcard.UserInfo.RecordStatus = 4;
+        Iservice.Update(SelectedJobcard);
+    }
+
+
+    async Task RemoveMechanic(MechanicJobModel mj)
+    {
+        var authProvider = await auth.GetAuthenticationStateAsync();
+        string UserID = authProvider.User.Identity.Name;
+        ImechanicJob.Remove(mj.MjID, UserID);
+        mj.EndedOn = DateTime.Now;
+    }
+
+
+    void OpenMechanicSelector(JobInProgressModel jipModel)
+    {
+        SelectedMechanics = new();
+        Mechanics = Imechanic.SelectByWorkshop(CurrentWorkshop.WorkshopID).ToList()
+            .Where(x => jipModel.Mechanics.Where(z => z.EndedOn == null).All(y => y.MechanicID != x.MechanicID)).ToList();
+        SelectedJob = jipModel;
+        visibleMechanicSelector = true;
+    }
+
+    async Task AddMechanic()
+    {
+        var authProvider = await auth.GetAuthenticationStateAsync();
+
+        foreach (var item in SelectedMechanics)
+        {
+            ImechanicJob.Update(
+                new MechanicJobModel()
+                {
+                    AssignedOn = DateTime.Now,
+                    JipID = SelectedJob.JipID,
+                    MechanicID = item.MechanicID,
+                    MechanicName = item.MechanicName,
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel()
+                    {
+                        UserID = authProvider.User.Identity.Name
                     }
-                    @code {
+                });
+        }
+        setJipList(SelectedJobcard);
+        visibleMechanicSelector = false;
+    }
 
-                        private List<TruckModel> TruckList = new();
-                        private TruckModel SelectedTruck = new();
-                        private JobcardModel SelectedJobcard = new();
-                        private WorkshopModel SelectedWorkshop = new();
-                        private WorkshopModel CurrentWorkshop;
-                        private List<JobcardWorkshopModel> jwList = new();
-                        private List<JobInProgressModel> JipList = new();
-                        private List<WorkshopModel> Workshops = new();
+}
 
-                        private JobInProgressModel NewJob = new JobInProgressModel();
-
-                        string ColorInProgress = Colors.Indigo.Lighten5;
-                        string ColorFinished = Colors.Green.Lighten5;
-                        string ColorCancelled = Colors.Grey.Lighten5;
-
-                        protected override void OnInitialized()
-                        {
-                            TruckList = Itruck.Select(null).ToList();
-                            Workshops = Iworkshop.Select(0).ToList();
-                        }
-
-
-                        private async Task<IEnumerable<TruckModel>> SearchTruck(string searchString)
-                        {
-                            return await Task.FromResult(TruckList.Where(x => x.RegNo.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-                        }
-
-
-                        private async Task TruckSelected(TruckModel obj)
-                        {
-                            SelectedTruck = obj;
-                            SelectedJobcard = Iservice.SelectByTruck(SelectedTruck?.TruckID, true).FirstOrDefault();
-                            jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
-                            setJipList(SelectedJobcard);
-                            if (jwList.Count(x => x.ExitOn == null) > 0)
-                            {
-                                CurrentWorkshop = Workshops.First(y => y.WorkshopID == jwList.First(x => x.ExitOn == null).WorkshopID);
-                            }
-                            var authProvider = await auth.GetAuthenticationStateAsync();
-                            NewJob = new()
-                            {
-                                CreatedOn = DateTime.Now,
-                                JobCardID = SelectedJobcard?.JobcardID,
-                                WorkshopID = CurrentWorkshop?.WorkshopID,
-                                JobStatus = 1,
-                                UserInfo = new() { UserID = authProvider.User.Identity.Name }
-                            };
-                        }
-
-                        void setJipList(JobcardModel jobcard)
-                        {
-                            JipList = Ijp.SelectByJobcard(jobcard?.JobcardID).ToList();
-                            foreach(JobInProgressModel item in JipList)
-                            {
-                              item.Mechanics =  ImechanicJob.SelectByJob(item.JipID).ToList();
-                            }
-                        }
-
-                        private async Task ExitWorkshop(JobcardWorkshopModel jwModel)
-                        {
-                            jwModel.ExitOn = DateTime.Now;
-
-                            var authProvider = await auth.GetAuthenticationStateAsync();
-                            jwModel.UserInfo.UserID = authProvider.User.Identity.Name;
-                            Ijw.Update(jwModel);
-                            jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
-                            CurrentWorkshop = null;
-                        }
-
-
-                        private async Task EnterWorkshop()
-                        {
-                            JobcardWorkshopModel jwEnter = new();
-                            jwEnter.JobCardID = SelectedJobcard.JobcardID;
-                            jwEnter.WorkshopID = SelectedWorkshop.WorkshopID;
-                            jwEnter.EnteredOn = DateTime.Now;
-
-                            var authProvider = await auth.GetAuthenticationStateAsync();
-                            jwEnter.UserInfo.UserID = authProvider.User.Identity.Name;
-                            Ijw.Update(jwEnter);
-                            jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
-                            CurrentWorkshop = Workshops.First(y => y.WorkshopID == jwList.First(x => x.ExitOn == null).WorkshopID);
-                        }
-
-                        private async Task UpdateJob(JobInProgressModel Ujip, int status)
-                        {
-                            var authProvider = await auth.GetAuthenticationStateAsync();
-                            Ujip.UserInfo.UserID = authProvider.User.Identity.Name;
-                            Ujip.JobStatus = status;
-                            Ujip.FinishedOn = DateTime.Now;
-                            Ijp.Update(Ujip);
-                            setJipList(SelectedJobcard);
-                        }
-                        private async Task AddJob()
-                        {
-                            var authProvider = await auth.GetAuthenticationStateAsync();
-                            NewJob.CreatedOn = DateTime.Now;
-                            Ijp.Update(NewJob);
-                            setJipList(SelectedJobcard);
-                        }
-
-                    }
