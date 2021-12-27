@@ -1,0 +1,56 @@
+﻿@inject IPeriodicMaintenanceService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.AlarmAdd" Class="mr-3 mb-n1" />
+            Close Maintenance Reminder for @PmiModel.RegNo
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm id="formPmi" Model="@model" OnValidSubmit="OnValidSubmit">
+            <ObjectGraphDataAnnotationsValidator />
+            <ValidationSummary />
+            <MudTextField Value="@PmiModel.Title" Label="Title" ReadOnly="true" />
+            <MudTextField Value="@PmiModel.NDate" Label="Date for noitifiction" ReadOnly="true" />
+            <MudTextField Value="@PmiModel.NAudometer" Label="Audometer for notification" ReadOnly="true" />
+            <MudDatePicker @bind-Date="@model.Date" Label="Date of Maintenance" />
+            <MudTextField @bind-Value="@model.Audometer" Label="Audometer Reading" />
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="formPmi" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public PeriodicMaintenanceInitiateModel PmiModel { get; set; }
+
+    public PeriodicMaintenanceConcludeModel model { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        model.PMIID = PmiModel.PMIID;
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var authState = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authState.User.Identity.Name;
+        model = Iservice.Conclude(model);
+        snackbar.Add("Reminder Closed", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(model));
+    }
+
+
+}
+

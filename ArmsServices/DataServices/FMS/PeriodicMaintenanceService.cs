@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         int Delete(int? PMIID, string UserID);
         IEnumerable<PeriodicMaintenanceInitiateModel> Select(int? PMIID);
         PeriodicMaintenanceConcludeModel Conclude(PeriodicMaintenanceConcludeModel model);
+        IEnumerable<PeriodicMaintenanceInitiateModel> SelectByTruck(int? TruckID,int? RecordStatus);
     }
 
     public class PeriodicMaintenanceService : IPeriodicMaintenanceService
@@ -28,7 +29,20 @@ namespace ArmsServices.DataServices
 
         public PeriodicMaintenanceConcludeModel Conclude(PeriodicMaintenanceConcludeModel model)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PMIID", model.PMIID),
+               new SqlParameter("@PMCID", model.PMCID),
+               new SqlParameter("@Date", model.Date),
+               new SqlParameter("@Audometer", model.Audometer),               
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.PeriodicMaintenanceConclude.Update]", parameters))
+            {
+                model.PMIID = dr.GetInt32("PMIID");
+            }
+            return model;
         }
 
         public int Delete(int? PMIID, string UserID)
@@ -46,6 +60,20 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PMIID", PMIID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.PeriodicMaintenanceInitiate.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<PeriodicMaintenanceInitiateModel> SelectByTruck(int? TruckID,int? RecordStatus)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@RecordStatus", RecordStatus),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.PeriodicMaintenanceInitiate.Select]", parameters))

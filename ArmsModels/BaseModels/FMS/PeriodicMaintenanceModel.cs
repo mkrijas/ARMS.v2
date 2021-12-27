@@ -20,7 +20,8 @@ namespace ArmsModels.BaseModels
         public string Title { get; set; }
         public string Remarks { get; set; }
         [Required]
-        public int? TruckID { get; set; }        
+        public int? TruckID { get; set; }
+        public string RegNo { get; set; }
         [Required]
         public DateTime? NDate { get; set; } // Date or Audometer whichever comes first insitiate Notification
         [Required]
