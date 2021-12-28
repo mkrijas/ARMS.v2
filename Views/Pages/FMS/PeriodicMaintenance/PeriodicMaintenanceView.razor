@@ -1,0 +1,88 @@
+﻿
+@page "/Reminders"
+
+@inject IPeriodicMaintenanceService Iservice
+
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+@inject IDialogService DialogService
+
+
+
+<TruckSelector Value="SelectedTruck" ValueChanged="TruckSelected"></TruckSelector>
+@if (SelectedTruck != null)
+{
+<MudTooltip Text="Create New Maintenance Reminder">
+    <MudIconButton Icon="@Icons.Material.Filled.AddAlarm" OnClick="CreateNew" />
+</MudTooltip>
+}
+
+@foreach (var item in PmList)
+{
+    <MudText>@item.Title</MudText>
+    <MudText>@item.NDate</MudText>
+    <MudText>@item.NAudometer</MudText>
+    <MudText>@item.Remarks</MudText>
+    <MudTooltip Text="Close Reminder">
+        <MudIconButton Icon="@Icons.Material.Filled.Done" OnClick="(()=> CloseReminder(item))" />
+     </MudTooltip>
+}
+
+        @code {
+
+            private List<PeriodicMaintenanceInitiateModel> PmList = new();
+            private TruckModel SelectedTruck;
+
+            protected override void OnInitialized()
+            {
+            }
+            private void TruckSelected(TruckModel obj)
+            {
+                SelectedTruck = obj;
+                PmList = Iservice.SelectByTruck(SelectedTruck?.TruckID, 3).ToList();
+            }
+
+
+            private async Task CreateNew()
+            {
+                var authState = await auth.GetAuthenticationStateAsync();
+
+                PeriodicMaintenanceInitiateModel pmModel = new PeriodicMaintenanceInitiateModel()
+                {
+                    TruckID = SelectedTruck?.TruckID,
+                    RegNo = SelectedTruck?.RegNo,
+                    UserInfo = {
+                         UserID = authState.User.Identity.Name
+                    }
+                };
+
+                var parameters = new DialogParameters();
+                parameters.Add("model",pmModel);
+
+                var dialog = DialogService.Show<PeriodicMaintenanceInitiateDialog>("Periodic Maintenance", parameters);
+                var result = await dialog.Result;
+                if (!result.Cancelled)
+                {
+                    PeriodicMaintenanceInitiateModel item = (PeriodicMaintenanceInitiateModel)result.Data;
+                    PmList.Add(item);
+                }
+            }
+
+            private async Task CloseReminder(PeriodicMaintenanceInitiateModel pmModel)
+            { 
+                var parameters = new DialogParameters();
+                parameters.Add("PmiModel", pmModel);
+                
+                var dialog = DialogService.Show<PeriodicMaintenanceCloseDialog>("Close Maintenance Reminder", parameters);
+                var result = await dialog.Result;
+                if (!result.Cancelled)
+                {
+                    PeriodicMaintenanceConcludeModel item = (PeriodicMaintenanceConcludeModel)result.Data;
+                    PmList.Remove(pmModel);
+                }
+            }
+
+
+        }
