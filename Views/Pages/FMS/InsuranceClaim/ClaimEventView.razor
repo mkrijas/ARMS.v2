@@ -1,0 +1,141 @@
+﻿@page "/InsClaimMaster"
+
+@inject IInsuranceClaimService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+
+<MudTable Items="@ClaimEventList" Hover="true"
+          CanCancelEdit="true" Filter="new Func<InsuranceClaimEventMasterModel,bool>(FilterFunc)"
+          @bind-SelectedItem="selectedItem1" SortLabel="Sort By" CommitEditTooltip="Update" 
+          RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Insurance-Claim Events</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <ColGroup>
+        <col  />
+        <col style="width:20%;" />
+        <col  />
+        <col style="width:50%;" />       
+        <col style="width:50px;" />
+    </ColGroup>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<InsuranceClaimEventMasterModel, object>(x=>x.Order)">Order</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<InsuranceClaimEventMasterModel, object>(x=>x.Title)">Title</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<InsuranceClaimEventMasterModel, object>(x=>x.IsMandatory)">Is Mandatory</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<InsuranceClaimEventMasterModel, object>(x=>x.Description)">Description</MudTableSortLabel></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Order">@context.Order</MudTd>
+        <MudTd DataLabel="Title">@context.Title</MudTd>
+        <MudTd DataLabel="Is Mandatory">@context.IsMandatory</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>       
+    </RowTemplate>
+    <RowEditingTemplate>
+        <MudTd DataLabel="Order">@context.Order</MudTd>
+        <MudTd DataLabel="Title">
+            <MudTextField @bind-Value="@context.Title" Required />
+        </MudTd>
+        <MudTd DataLabel="Is Mandatory">
+            <MudCheckBox @bind-Checked="@context.IsMandatory" Required />
+        </MudTd>
+        <MudTd DataLabel="Description">
+            <MudTextField @bind-Value="@context.Description" />
+        </MudTd>       
+    </RowEditingTemplate>    
+    <FooterContent>
+        <MudTd DataLabel="Order">
+            <MudNumericField @bind-Value="@InsertElement.Order" Required Min="1" />
+        </MudTd>
+        <MudTd DataLabel="Title">
+            <MudTextField @bind-Value="@InsertElement.Title" Required />
+        </MudTd>
+        <MudTd DataLabel="Is Mandatory">
+            <MudCheckBox @bind-Checked="@InsertElement.IsMandatory" Required />
+        </MudTd>
+        <MudTd DataLabel="Description">
+            <MudTextField @bind-Value="@InsertElement.Description" />
+        </MudTd>
+        <MudTd DataLabel="Description">
+            <MudButton OnClick="(()=>ItemHasBeenCommitted(InsertElement))">Create</MudButton>
+        </MudTd>
+    </FooterContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<InsuranceClaimEventMasterModel> ClaimEventList = new();
+
+    private string searchString = "";
+    private InsuranceClaimEventMasterModel elementBeforeEdit;
+    private InsuranceClaimEventMasterModel InsertElement = new();
+
+
+    private InsuranceClaimEventMasterModel selectedItem1 = null;
+    private InsuranceClaimEventMasterModel selectedItem2 = null;
+    private HashSet<InsuranceClaimEventMasterModel> selectedItems1 = new();
+    private HashSet<InsuranceClaimEventMasterModel> selectedItems2 = new();
+
+    protected override void OnInitialized()
+    {
+        ClaimEventList = Iservice.GetEventList().ToList();
+    }
+
+
+
+
+
+    private void BackupItem(object element)
+    {
+        var item = (InsuranceClaimEventMasterModel)element;
+        elementBeforeEdit = new()
+        {
+            Description = item.Description,
+            IcemID = item.IcemID,
+            IsMandatory = item.IsMandatory,
+            Order = item.Order,
+            Title = item.Title
+        };
+    }
+
+    private void ItemHasBeenCommitted(object element)
+    {
+        var item = (InsuranceClaimEventMasterModel)element;
+        var authState =  auth.GetAuthenticationStateAsync().Result;
+        item.UserInfo.UserID = authState.User.Identity.Name;
+        Iservice.UpdateEventList(item);
+
+        if (item.IcemID == null)
+        {
+            InsertElement = new();
+            ClaimEventList = Iservice.GetEventList().ToList();
+        }
+    }
+
+    private void ResetItemToOriginalValues(object element)
+    {
+        var item = (InsuranceClaimEventMasterModel)element;
+        item.Description = elementBeforeEdit.Description;
+        item.IcemID = elementBeforeEdit.IcemID;
+        item.IsMandatory = elementBeforeEdit.IsMandatory;
+        item.Order = elementBeforeEdit.Order;
+        item.Title = elementBeforeEdit.Title;
+    }
+
+    private bool FilterFunc(InsuranceClaimEventMasterModel element)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.Title.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Description.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+}

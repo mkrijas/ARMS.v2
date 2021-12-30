@@ -22,6 +22,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TruckDocumentTypeModel> GetDocumentTypes();
         TruckDocumentTypeModel UpdateDocumentType(TruckDocumentTypeModel model);
         IEnumerable<TruckDocumentModel> ValidatePeriod(TruckDocumentModel model);
+        bool IsValid(TruckDocumentModel model,DateTime? DateToCheck);
 
 
     }
@@ -231,7 +232,14 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-       
+        public bool IsValid(TruckDocumentModel model, DateTime? DateToCheck)
+        {
+            if (!(model.StartDate?.Date <= DateToCheck?.Date && model.EndDate?.Date >= DateToCheck?.Date))
+            {
+                return false;
+            }
+            return true;
+        }
     }
 }
 

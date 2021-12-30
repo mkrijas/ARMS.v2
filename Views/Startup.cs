@@ -92,6 +92,7 @@ namespace Views
             services.AddScoped<IMechanicService, MechanicService>();
             services.AddScoped<IMechanicJobService, MechanicJobService>();
             services.AddScoped<IPeriodicMaintenanceService, PeriodicMaintenanceService>();
+            services.AddScoped<IInsuranceClaimService, InsuranceClaimService>();
 
             //--------Identity configure--------------
             services.AddTransient<IUserStore<UserModel>, UserStore>();

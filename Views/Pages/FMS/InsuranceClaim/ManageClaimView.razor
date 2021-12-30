@@ -1,0 +1,86 @@
+﻿@page "/ManageClaims"
+
+
+@attribute [Authorize]
+
+@inject IInsuranceClaimService Iservice
+@inject ITruckDocumentService IdocService
+@inject ITruckService Itruck
+@inject IBreakdownService Ibreakdown
+
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+
+
+<MudGrid>
+    <MudItem xs="4" lg="3">
+        <MudPaper Width="100%">
+            <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged" @bind-SelectedValue="SelectedValue">
+                @foreach (var item in listOfItems)
+                {                    
+                    string regNo = Ibreakdown.SelectByID(item.BreakdownID).RegNo;
+                   <MudListItem Value="item" >  @regNo </MudListItem> 
+                }
+            </MudList>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+
+
+@code {
+
+    [Parameter] public int? BreakdownID { get; set; }
+
+
+    private TruckModel Truck = new();
+    private TruckDocumentModel Insurance = new();
+
+    private List<InsuranceClaimModel> listOfItems = new();
+
+
+    InsuranceClaimModel SelectedModel = new();
+    private MudListItem SelectedItem;
+    private object SelectedValue = null;
+
+    MyFileUpload Mfu;
+
+    protected override async Task OnInitializedAsync()
+    {
+        listOfItems = Iservice.Select(null).ToList();
+    }
+
+    protected async Task SelectedItemChanged(object obj)
+    {
+        SelectedItem = (MudListItem)obj;        
+
+        SelectedModel = (InsuranceClaimModel)SelectedValue;
+
+        var e = await auth.GetAuthenticationStateAsync();
+
+        BreakdownModel breakdown = Ibreakdown.SelectByID(BreakdownID);
+        int TruckID = breakdown.TruckID.Value;
+        Truck = Itruck.SelectByID(TruckID);
+
+        Insurance = IdocService.SelectByTruck(TruckID).FirstOrDefault(x => x.DocumentTypeName.ToUpper().Contains("INSURANCE") && IdocService.IsValid(x, breakdown.BreakdownTime));
+        SelectedModel = Iservice.SelectByBreakdownID(BreakdownID);
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        try
+        {
+            Iservice.Update(SelectedModel);
+            snackbar.Add("Saved Successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void FileUploaded(string filePath)
+    {
+        SelectedModel.Images.Add(filePath);
+    }
+}

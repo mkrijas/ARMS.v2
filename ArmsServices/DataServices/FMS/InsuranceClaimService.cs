@@ -12,8 +12,13 @@ namespace ArmsServices.DataServices
     {
         InsuranceClaimModel Update(InsuranceClaimModel model);
         InsuranceClaimModel SelectByID(int? ID);
+        InsuranceClaimModel SelectByBreakdownID(int? ID);
         int Delete(int? InsuranceClaimID, string UserID);
-        IEnumerable<InsuranceClaimModel> Select(int? ConsigneeID);
+        IEnumerable<InsuranceClaimModel> Select(int? InsuranceClaimID);
+        IEnumerable<InsuranceClaimEventMasterModel> GetEventList();
+        InsuranceClaimEventMasterModel UpdateEventList(InsuranceClaimEventMasterModel model);
+        InsuranceClaimEventStatusModel UpdateClaimEvent(InsuranceClaimEventStatusModel model);
+        IEnumerable<InsuranceClaimEventStatusModel> GetEventList(int? InsuranceClaimID);
     }
 
     public class InsuranceClaimService : IInsuranceClaimService
@@ -34,6 +39,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Delete]", parameters);
         }
+
+      
 
         public IEnumerable<InsuranceClaimModel> Select(int? InsuranceClaimID)
         {
@@ -70,7 +77,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Images", string.Join(";",model.Images)),
                new SqlParameter("@BreakdownID", model.BreakdownID),
                new SqlParameter("@InsuranceID", model.InsuranceID),
-               new SqlParameter("@IsOpen", model.IsOpen),            
+               new SqlParameter("@IsOpen", model.IsOpen),
+               new SqlParameter("@Notes", model.Notes),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -81,6 +89,62 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public IEnumerable<InsuranceClaimEventMasterModel> GetEventList()
+        {            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.InsuranceClaim.EventMaster.Select]", null))
+            {
+                yield return GetEventMasterModel(dr);
+            }           
+        }
+        public InsuranceClaimEventMasterModel UpdateEventList(InsuranceClaimEventMasterModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Description", model.Description),
+               new SqlParameter("@IcemID",model.IcemID),
+               new SqlParameter("@IsMandatory", model.IsMandatory),
+               new SqlParameter("@Order", model.Order),
+               new SqlParameter("@Title", model.Title),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.InsuranceClaim.EventMaster.Update]", parameters))
+            {
+                model = GetEventMasterModel(dr);
+            }
+            return model;
+        }
+
+        public InsuranceClaimEventStatusModel UpdateClaimEvent(InsuranceClaimEventStatusModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@EventDate", model.EventDate),
+               new SqlParameter("@IcemID", model.IcemID),
+               new SqlParameter("@IcesID", model.IcesID),
+               new SqlParameter("@InsuranceClaimID", model.InsuranceClaimID),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.InsuranceClaim.EventStatus.Update]", parameters))
+            {
+                model = GetEventStatusModel(dr);
+            }
+            return model;
+        }
+
+        public IEnumerable<InsuranceClaimEventStatusModel> GetEventList(int? InsuranceClaimID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@InsuranceClaimID", InsuranceClaimID),              
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.InsuranceClaim.EventStatus.Select]", parameters))
+            {
+                yield return GetEventStatusModel(dr);
+            }
+        }
         private InsuranceClaimModel GetModel(IDataRecord dr)
         {
             return new InsuranceClaimModel
@@ -89,7 +153,8 @@ namespace ArmsServices.DataServices
                 Images = dr.GetString("Images").Split(";").ToList(),
                 BreakdownID = dr.GetInt32("BreakdownID"),
                 InsuranceID = dr.GetInt32("InsuranceID"),
-                IsOpen = dr.GetBoolean("IsOpen"),                
+                IsOpen = dr.GetBoolean("IsOpen"),   
+                Notes = dr.GetString("Notes"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -97,6 +162,55 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },
             };
+        }
+
+        private InsuranceClaimEventMasterModel GetEventMasterModel(IDataRecord dr)
+        {
+            return new InsuranceClaimEventMasterModel
+            {
+                Description = dr.GetString("Description"),
+                IcemID = dr.GetInt32("IcemID"),
+                IsMandatory = dr.GetBoolean("IsMandatory"),
+                Order = dr.GetInt32("Order"),
+                Title = dr.GetString("Title"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+
+        private InsuranceClaimEventStatusModel GetEventStatusModel(IDataRecord dr)
+        {
+            return new InsuranceClaimEventStatusModel
+            {
+                EventDate = dr.GetDateTime("EventDate"),
+                IcemID = dr.GetInt32("IcemID"),
+                IcesID = dr.GetInt32("IcesID"),   
+                InsuranceClaimID = dr.GetInt32("InsuranceClaimID"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+
+        public InsuranceClaimModel SelectByBreakdownID(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BreakdownID", ID),
+            };
+            InsuranceClaimModel model = null;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.InsuranceClaim.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
         }
     }
 }
