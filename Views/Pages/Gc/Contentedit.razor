@@ -1,0 +1,71 @@
+﻿@inject IContentService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+              
+                <MudCardContent>
+                    <MudTextField @bind-Value="model.ContentName" Label="Content" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.ContentName)"></MudTextField>
+                    <MudTextField  @bind-Value="model.PrimaryUnit" Label="Primary Unit" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.PrimaryUnit)"></MudTextField>
+                    <MudTextField @bind-Value="model.SecondaryUnit" Label="Secondary Unit" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.SecondaryUnit)"></MudTextField>
+                    <MudTextField InputType="InputType.Number" @bind-Value="model.UnitRatio" Label="Ratio" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.UnitRatio)"></MudTextField>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+                </MudCardContent>
+            </EditForm>
+      
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+
+    private ContentModel model = new ContentModel();
+    private List<ContentModel> collection = new List<ContentModel>();
+    public List<DistrictModel> districts = new List<DistrictModel>();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog.Cancel();
+
+     private async void OnValidSubmit(EditContext context)
+    {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+
+        try
+        {
+            model = await Iservice.Update(model);
+
+            if (collection.Exists(x => x.ContentID == model.ContentID))
+            {
+                collection[collection.FindIndex(x => x.ContentID == model.ContentID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new ContentModel();
+            snackbar.Add("Saved Successfully", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+    }
+    
+}
