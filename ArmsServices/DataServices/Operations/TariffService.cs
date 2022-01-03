@@ -18,7 +18,7 @@ namespace ArmsServices.DataServices
         TariffModel SelectByID(int? ID);
         IEnumerable<TariffFormulaModel> SelectFormulas();
         TariffFormulaModel SelectFormulaByID(short? ID);
-        IEnumerable<TariffTypeModel> SelectTariffTypes();
+        IEnumerable<TariffTypeModel> SelectTariffTypes(string Area);
         TariffTypeModel SelectTariffTypeByID(short? ID);
         TariffTypeModel UpdateTariffType(TariffTypeModel model);
         string[] TariffGroups { get; }
@@ -150,11 +150,12 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public IEnumerable<TariffTypeModel> SelectTariffTypes()
+        public IEnumerable<TariffTypeModel> SelectTariffTypes(string Area = "Operation")
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", 0),              
+               new SqlParameter("@ID", 0),  
+               new SqlParameter("@Area",Area)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TariffType.Select]", parameters))
             {
@@ -187,6 +188,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AllowMultiple", model.AllowMultiple),
+               new SqlParameter("Area",model.Area),
                new SqlParameter("@FinancialAccountID", model.FinancialAccountID),
                new SqlParameter("@TariffSign", model.TariffSign),               
                new SqlParameter("@TariffGroup", model.TariffGroup),
@@ -234,6 +236,7 @@ namespace ArmsServices.DataServices
                 TariffTypeID = dr.GetInt16("TariffTypeID"),
                 TariffTypeName = dr.GetString("TariffTypeName"),
                 TariffGroup = dr.GetString("TariffGroup"),
+                Area = dr.GetString("Area"),
                 Unit = dr.GetString("Unit"),
                 AllowMultiple = dr.GetBoolean("AllowMultiple"),
                 TariffSign = dr.GetInt32("TariffSign"),                
