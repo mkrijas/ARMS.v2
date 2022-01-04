@@ -1,6 +1,11 @@
 ﻿@page "/jobcard"
 @page "/jobcard/{TruckID:int}"
+
+@using Pages.FMS.InsuranceClaim
+@using Pages.Operations
+
 @inject IJobcardService Iservice
+@inject IBreakdownService Ibreakdown
 @inject ITruckService Itruck 
 @inject IJobcardWorkshopService Ijw
 @inject IJobInProgressService Ijp
@@ -41,6 +46,15 @@
         <MudButton StartIcon="@Icons.Filled.Close" Class="scbtn" Color="Color.Secondary" OnClick="CloseJobcard">Close Jobcard</MudButton>
         <MudButton StartIcon="@Icons.Filled.AddChart" Class="mainbtn" >Request Spareparts</MudButton>
     }
+    @if(!Breakdown.IsClaimInitiated)
+    {
+                <MudButton Style="text-transform:capitalize;padding-right:1%" StartIcon="@Icons.Filled.AppRegistration" OnClick="BeginInsuranceClaim" IconColor="Color.Primary">Initiate Insurance Claim</MudButton>
+            }
+            else
+            {
+                <MudButton Style="text-transform:capitalize;" StartIcon="@Icons.Filled.AppRegistration"  IconColor="Color.Primary">View Claim Status</MudButton>
+            }
+            <MudButton Style="text-transform:capitalize;" StartIcon="@Icons.Filled.AppRegistration" OnClick="OpenExpenses" IconColor="Color.Primary">Post Expenses</MudButton>
     <br>
     <br>
         </div>
@@ -229,6 +243,7 @@
     public int? TruckID { get; set; }
 
     private TruckModel SelectedTruck = new();
+    private BreakdownModel Breakdown = new();
     private JobcardModel SelectedJobcard = new();
     private WorkshopModel SelectedWorkshop = new();
     private WorkshopModel CurrentWorkshop;
@@ -264,6 +279,7 @@
     {
         SelectedTruck = obj;
         SelectedJobcard = Iservice.SelectByTruck(SelectedTruck?.TruckID, true).FirstOrDefault();
+        Breakdown = Ibreakdown.SelectByID(SelectedJobcard?.BreakdownID);
         jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
         setJipList(SelectedJobcard);
         if (jwList.Count(x => x.ExitOn == null) > 0)
@@ -342,7 +358,6 @@
         setJipList(SelectedJobcard);
     }
 
-
     async Task CloseJobcard()
     {
         if(jwList.Any(x=> x.ExitOn==null))
@@ -394,6 +409,7 @@
         visibleMechanicSelector = true;
     }
 
+
     async Task AddMechanic()
     {
         var authProvider = await auth.GetAuthenticationStateAsync();
@@ -417,5 +433,32 @@
         visibleMechanicSelector = false;
     }
 
+    private async Task BeginInsuranceClaim()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("BreakdownID", Breakdown.BreakdownID);
+        parameters.Add("TruckID", Breakdown.TruckID);
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = DialogService.Show<InitiateClaimDialog>("Initiate Claim", parameters, maxWidth);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            InsuranceClaimModel InsModel = (InsuranceClaimModel)result.Data;
+            Breakdown.IsClaimInitiated = true;
+        }
+    }
+
+
+
+    private async Task OpenExpenses()
+    {
+         var parameters = new DialogParameters();
+        parameters.Add("jobcard", SelectedJobcard);
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+        var result = DialogService.Show<TransactionDialog>("Maintenance Expenses", parameters, maxWidth);
+        var Data = await result.Result;
+        var ev = Data.Data;
+        
+    }
 }
 

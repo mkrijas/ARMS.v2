@@ -1,5 +1,4 @@
-﻿
-@inject ITransactionService Iservice
+﻿@inject ITransactionService Iservice
 @inject ITariffService Itariff
 
 @inject MudBlazor.ISnackbar snackbar
@@ -35,9 +34,14 @@
                                     <MudText>Trip : @(trip.TripPrefix + trip.TripNumber)  </MudText>
                                 }
                                 else @if (gc != null)
-                           {
-                            <MudText Class="px-3">Consignments : @gc.SetGcNumber  </MudText>
-                        }
+                                {
+                                    <MudText Class="px-3">Consignments : @gc.SetGcNumber  </MudText>
+                                }
+                                else @if (jobcard != null)
+                                {
+                                    <MudText Class="px-3">Jobcard : @jobcard.JobcardNumber  </MudText>
+                                }
+
 
                                 <MudText Typo="Typo.h4">@(TotalAmount?.ToString("C2"))</MudText>
                             </MudItem>
@@ -78,7 +82,7 @@
                             </MudItem>
                         }
                     </MudGrid>
-                    
+
                 </EditForm>
             </div>
         </MudContainer>
@@ -116,6 +120,7 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter] public TripModel trip { get; set; }
     [Parameter] public GcSetModel gc { get; set; }
+    [Parameter] public JobcardModel jobcard { get; set; }
     [Parameter] public OperationTransactionModel model { get; set; }
 
     private void Cancel()
@@ -129,12 +134,14 @@
     private TariffTypeModel SelectedTariff;
     private Decimal? TotalAmount;
 
+    private string Area;
+
 
 
     protected override void OnInitialized()
     {
         IsLoading = true;
-        TariffTypes = Itariff.SelectTariffTypes("Operation").ToList();
+
 
         if (model == null)
         {
@@ -147,12 +154,21 @@
             model.RefType = "GC";
             model.RefID = gc.GcSetID;
             GenerateEntries();
+            Area = "Operation";
         }
         else if (trip != null)
         {
             model.RefType = "Trip";
             model.RefID = trip.TripID;
+            Area = "Operation";
         }
+        else if (jobcard != null)
+        {
+            model.RefType = "Jobcard";
+            model.RefID = jobcard.JobcardID;
+            Area = "Maintenance";
+        }
+        TariffTypes = Itariff.SelectTariffTypes(Area).ToList();
 
         IsLoading = false;
     }
@@ -214,16 +230,16 @@
         {
             decimal? amt = Itariff.GetTariffAmount(gc, item);
             OpTranSubModel tr = new()
-            {
-                Amount = amt,
-                AmountAsPerNorms = amt,
-                BillDate = DateTime.Today,
-                Quantity = item.TariffTypeID < 3 ? gc.Gcs.Sum(x => x.BillQuantity) : null,
-                Sign = item.TariffSign,
-                TariffTypeID = item.TariffTypeID,
-                TariffID = item.TariffID,
-                Unit = item.Unit,
-            };
+                {
+                    Amount = amt,
+                    AmountAsPerNorms = amt,
+                    BillDate = DateTime.Today,
+                    Quantity = item.TariffTypeID < 3 ? gc.Gcs.Sum(x => x.BillQuantity) : null,
+                    Sign = item.TariffSign,
+                    TariffTypeID = item.TariffTypeID,
+                    TariffID = item.TariffID,
+                    Unit = item.Unit,
+                };
             if (item.TariffTypeID == 3)
             {
                 tr.Quantity = tr.Amount;
@@ -253,7 +269,7 @@
     }
 
 
-    private void AmountChanged(decimal? Amount,OpTranSubModel item)
+    private void AmountChanged(decimal? Amount, OpTranSubModel item)
     {
         item.Amount = Amount;
         TotalAmount = model.Transactions.Sum(x => x.Amount * x.Sign);
