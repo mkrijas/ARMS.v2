@@ -58,7 +58,8 @@ namespace ArmsModels.BaseModels
         public string TariffGroup { get; set; }
         public string Unit { get; set; }
         public bool AllowMultiple { get; set; } = true;
-        public int? TariffSign { get; set; } = 1;        
+        public int? TariffSign { get; set; } = 1;
+        public string Area { get; set; }
         public int? FinancialAccountID { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }

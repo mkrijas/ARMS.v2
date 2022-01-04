@@ -22,6 +22,7 @@ namespace ArmsModels.BaseModels
         public DateTime? BreakdownTime { get; set; }
         [Required]
         public int? TruckID { get; set; }
+        public bool IsClaimInitiated { get; set; }
         public virtual string RegNo { get; set; }
         [Required]
         public string Detail { get; set; }        

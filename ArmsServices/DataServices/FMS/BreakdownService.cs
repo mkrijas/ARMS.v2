@@ -112,6 +112,7 @@ namespace ArmsServices.DataServices
                 Detail = dr.GetString("Detail"),
                 TruckID = dr.GetInt32("TruckID"),
                 RegNo = dr.GetString("RegNo"),
+                IsClaimInitiated = dr.GetBoolean("IsClaimInitiated"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

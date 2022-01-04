@@ -49,6 +49,7 @@ namespace ArmsModels.BaseModels
         public int? IcesID { get; set; }
         [Required]
         public int? IcemID { get; set; }
+        public virtual string Title { get; set; }
         [Required]
         public int? InsuranceClaimID { get; set; }
         [Required]

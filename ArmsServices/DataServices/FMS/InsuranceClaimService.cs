@@ -15,10 +15,10 @@ namespace ArmsServices.DataServices
         InsuranceClaimModel SelectByBreakdownID(int? ID);
         int Delete(int? InsuranceClaimID, string UserID);
         IEnumerable<InsuranceClaimModel> Select(int? InsuranceClaimID);
-        IEnumerable<InsuranceClaimEventMasterModel> GetEventList();
+        IEnumerable<InsuranceClaimEventMasterModel> GetEventList(int? limiter);
         InsuranceClaimEventMasterModel UpdateEventList(InsuranceClaimEventMasterModel model);
         InsuranceClaimEventStatusModel UpdateClaimEvent(InsuranceClaimEventStatusModel model);
-        IEnumerable<InsuranceClaimEventStatusModel> GetEventList(int? InsuranceClaimID);
+        IEnumerable<InsuranceClaimEventStatusModel> GetEventStatusList(int? InsuranceClaimID);
     }
 
     public class InsuranceClaimService : IInsuranceClaimService
@@ -89,9 +89,13 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public IEnumerable<InsuranceClaimEventMasterModel> GetEventList()
-        {            
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.InsuranceClaim.EventMaster.Select]", null))
+        public IEnumerable<InsuranceClaimEventMasterModel> GetEventList(int? limiter)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@limiter", limiter),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.InsuranceClaim.EventMaster.Select]", parameters))
             {
                 yield return GetEventMasterModel(dr);
             }           
@@ -133,7 +137,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public IEnumerable<InsuranceClaimEventStatusModel> GetEventList(int? InsuranceClaimID)
+        public IEnumerable<InsuranceClaimEventStatusModel> GetEventStatusList(int? InsuranceClaimID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -188,7 +192,8 @@ namespace ArmsServices.DataServices
             {
                 EventDate = dr.GetDateTime("EventDate"),
                 IcemID = dr.GetInt32("IcemID"),
-                IcesID = dr.GetInt32("IcesID"),   
+                IcesID = dr.GetInt32("IcesID"),  
+                Title = dr.GetString("Title"),
                 InsuranceClaimID = dr.GetInt32("InsuranceClaimID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
