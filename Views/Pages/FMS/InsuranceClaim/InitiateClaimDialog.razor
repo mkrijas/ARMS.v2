@@ -1,0 +1,124 @@
+﻿
+@attribute [Authorize]
+
+@inject IInsuranceClaimService Iservice
+@inject ITruckDocumentService IdocService
+@inject ITruckService Itruck
+@inject IBreakdownService Ibreakdown
+
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+
+@using System.IO
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Initiate Insurance Claim for @Truck?.RegNo
+        </MudText>        
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="formInsuranceClaim" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                       <MudTextField @bind-Value="@model.Notes" Variant="Variant.Outlined" Lines="6" Label="Notes"></MudTextField>
+                    </MudItem>   
+                    <MudItem xs="12">
+                        <MudGrid>
+                            @foreach (var imagePath in ImagePaths)
+                            {
+                            <MudItem xs="6" md="4" xl="3">
+                                <iframe class="mt-1 mr-1 ml-1" src="@imagePath" height="300" alt="@imagePath" />
+                            </MudItem>
+                             }
+                        </MudGrid>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MyFileUpload @ref="Mfu" FolderName="@("InsuranceClaim/Breakdown-"+model.BreakdownID.ToString())" Label="Upload Photos" FileUploaded="FileUploaded"></MyFileUpload>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        @if (Insurance != null)
+        {
+            <MudButton form="formInsuranceClaim" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        }
+        else
+        {
+            <MudText Typo="Typo.body1" Color="Color.Error">No Active Insurance Found</MudText>
+        }
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public int? BreakdownID { get; set; }
+    [Parameter] public int? TruckID { get; set; }
+
+    private TruckModel Truck = new();
+    private TruckDocumentModel Insurance = new();
+    private InsuranceClaimModel model = new();
+
+    private List<string> ImagePaths = new();
+    MyFileUpload Mfu;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var e = await auth.GetAuthenticationStateAsync();
+        Truck = Itruck.SelectByID(TruckID);
+        DateTime? BreakdownTime = Ibreakdown.SelectByID(BreakdownID).BreakdownTime;
+        Insurance = IdocService.SelectByTruck(TruckID).FirstOrDefault(x => x.DocumentTypeName.ToUpper().Contains("INSURANCE") && IdocService.IsValid(x, BreakdownTime));
+        model.BreakdownID = BreakdownID;
+        model.IsOpen = true;
+        model.InsuranceID = Insurance?.DocumentID;
+        model.UserInfo.UserID = e.User.Identity.Name;
+    }
+
+    private void Cancel()
+    {
+        bool success = true;
+        foreach(var item in ImagePaths.ToList())
+        {
+            if (Mfu.DeleteFile(item))
+            {
+                ImagePaths.Remove(item);
+            }
+            else
+            {
+                success = false;
+            }
+        }
+        if(success)
+            MudDialog.Cancel();
+    }
+
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        try
+        {
+            model.Images.AddRange(ImagePaths);
+            Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(model));
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void FileUploaded(string filePath)
+    {
+        ImagePaths.Add(filePath);
+    }
+}
+
+
+
