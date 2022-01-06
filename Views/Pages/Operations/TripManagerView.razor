@@ -69,7 +69,7 @@
                     @foreach (var gc in AssignedGCs)
                     {
                         <MudItem xs="6" lg="4">
-                            <GcItemCard item="gc" Style="@($"background:{Colors.Brown.Lighten5};")"></GcItemCard>
+                            <GcItemCard item="gc" Style="@($"background:{Colors.Brown.Lighten5};")" TransactionUpdated="TransactionUpdated"></GcItemCard>
                         </MudItem>
                     }
                 </MudGrid>
@@ -84,7 +84,7 @@
             </div>
         </TitleContent>
         <ChildContent>
-            <TransactionsListView @ref="TransView"></TransactionsListView>
+            <TransactionsListView Trip="Trip" @ref="TransactionsListViewRef"></TransactionsListView>
         </ChildContent>
     </MudExpansionPanel>
 </MudExpansionPanels>
@@ -92,6 +92,11 @@
 
 @code{
 
+    [Parameter]
+    public TripModel Trip { get; set; }
+    private TripModel _trip;
+
+    TransactionsListView TransactionsListViewRef;
 
     private bool hidden = true;
     private TruckModel Truck;
@@ -109,8 +114,18 @@
     }
 
 
+    protected async override Task OnParametersSetAsync()
+    {
+        if (_trip?.TripID != Trip?.TripID)
+        {
+            _trip = new TripModel { TripID = Trip?.TripID }; 
+            LoadAll();
+        }
+    }
 
-    public void LoadAll(TripModel Trip)
+
+
+    private void LoadAll()
     {
         CancelledStatus = string.Empty;
         if (Trip != null)
@@ -124,35 +139,36 @@
         else
         {
             hidden = true;
-        }
-
-        StateHasChanged();
+        }        
 
         Truck = Itruck.SelectByID(Trip?.TruckID);
-        LoadGcs(Trip?.TripID);
-        LoadEvents(Trip?.TripID);
-        LoadTransactions(Trip);
+        LoadGcs();
+        LoadEvents();       
     }
 
 
-    public void LoadGcs(long? TripID)
+    public void LoadGcs()
     {
-        if (TripID == null)
+        if (Trip == null)
             AssignedGCs = null;
         else
-            AssignedGCs = Igc.SelectByTrip(TripID);
+            AssignedGCs = Igc.SelectByTrip(Trip.TripID);
     }
-    public void LoadEvents(long? TripID)
+    public void LoadEvents()
     {
-        if (TripID == null)
+        if (Trip == null)
             TripEvents = new();
         else
-            TripEvents = Ievent.SelectByTrip(TripID).ToList();
+            TripEvents = Ievent.SelectByTrip(Trip.TripID).ToList();
+    }
+     public void LoadTransactions()
+    {
+        TransactionsListViewRef.Refresh();
     }
 
-    public void LoadTransactions(TripModel Trip)
+    private void TransactionUpdated(long? TransID)
     {
-        TransView.Refresh(Trip);
+        TransactionsListViewRef.Refresh();
     }
 
 
@@ -165,7 +181,7 @@
 
         var result = DialogService.Show<UpdateEventView>("Edit Event", parameters);
         var Data = await result.Result;
-        LoadEvents(ev.TripID);
+        LoadEvents();
     }
 
 }

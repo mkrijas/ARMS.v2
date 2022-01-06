@@ -6,9 +6,23 @@
 @foreach (var item in Transactions)
 {
     <div class="mt-4">
-        <MudText Typo="Typo.h5">
-            TripNumber: @{ @Trip.TripPrefix @Trip.TripNumber}
-        </MudText>
+
+        @if (Trip != null)
+        {
+            <MudText Typo="Typo.h5">
+                TripNumber: @{
+                    @Trip.TripPrefix
+                    @Trip.TripNumber
+                }
+            </MudText>
+        }
+        else if (Jobcard != null)
+        {
+            <MudText Typo="Typo.h5">
+                Jobcard: @Jobcard.JobcardNumber
+            </MudText>
+        }
+
         <div class="d-flex">
             <MudText Typo="Typo.h5" Class="text-secondary">
                 Date of Entry:  @item.TransactionDate?.ToString("dd-MMM-yyyy")
@@ -28,13 +42,16 @@
             <tbody>
                 @foreach (var sub in item.Transactions)
                 {
-                <tr>
-                    <td>@(TariffTypes.First(x => x.TariffTypeID == sub.TariffTypeID).TariffTypeName)</td>
-                    <td>@{@sub.Quantity @sub.Unit}</td>
-                    <td>@sub.AmountAsPerNorms?.ToString("C2")</td>
-                    <td>@sub.Amount?.ToString("C2")</td>
-                    <td>@(Math.Round((sub.Amount-sub.AmountAsPerNorms).Value,2))</td>
-                </tr>
+                    <tr>
+                        <td>@(TariffTypes.First(x => x.TariffTypeID == sub.TariffTypeID).TariffTypeName)</td>
+                        <td>@{
+
+                                @sub.Quantity @sub.Unit
+                            }</td>
+                        <td>@sub.AmountAsPerNorms?.ToString("C2")</td>
+                        <td>@sub.Amount?.ToString("C2")</td>
+                        <td>@(Math.Round((sub.Amount-sub.AmountAsPerNorms).Value,2))</td>
+                    </tr>
                 }
             </tbody>
         </MudSimpleTable>
@@ -43,41 +60,67 @@
 
 @code {
 
+    [Parameter]
     public TripModel Trip { get; set; }
+    private TripModel _trip;
+
+    [Parameter]
+    public JobcardModel Jobcard { get; set; }
+    private JobcardModel _jobcard;
+
     private List<OperationTransactionModel> Transactions = new();
     private List<TariffTypeModel> TariffTypes = new();
 
 
-    protected override void OnInitialized()
+    protected async override Task OnInitializedAsync()
     {
-
+        TariffTypes = Itariff.SelectTariffTypes("All").ToList();
     }
 
 
-    public void Refresh(TripModel CurrentTrip)
+    protected async override Task OnParametersSetAsync()
     {
-        Trip = CurrentTrip;
+        if (_trip?.TripID != Trip?.TripID || _jobcard?.JobcardID!= Jobcard?.JobcardID)
+        {
+            _trip = new TripModel { TripID = Trip?.TripID };
+            _jobcard = new JobcardModel { JobcardID = Jobcard?.JobcardID };
+            Refresh();
+        }
+    }
+
+
+    public void Refresh()
+    {
         if (Trip != null)
         {
             Transactions = Itransaction.SelectByTrip(Trip?.TripID).ToList();
-            TariffTypes = Itariff.SelectTariffTypes("Operation").ToList();
+        }
+        else if (Jobcard != null)
+        {
+            Transactions = Itransaction.SelectByJobcard(Jobcard?.JobcardID).ToList();
         }
         else
         {
             Transactions = new();
         }
-        StateHasChanged();
     }
 
     private async Task EditTransaction(OperationTransactionModel item)
     {
         var parameters = new DialogParameters();
         parameters.Add("model", item);
-        parameters.Add("Trip", Trip);
+        if(Trip!= null)
+            parameters.Add("Trip", Trip);
+        if(Jobcard != null)
+            parameters.Add("Jobcard", Jobcard);
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-        var result = DialogService.Show<TransactionDialog>("Inc/Exp", parameters, maxWidth);
-        var Data = await result.Result;
-        var ev = Data.Data;
+        var dialog = DialogService.Show<TransactionDialog>("Inc/Exp", parameters, maxWidth);
+        var result = await dialog.Result;
+        var ev = result.Data;
+        if (!result.Cancelled)
+        {
+            Refresh();
+        }
     }
 
 }

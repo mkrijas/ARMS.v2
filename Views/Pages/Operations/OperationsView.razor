@@ -67,14 +67,14 @@
     </MudItem>
 </MudGrid>
 
-<TripManagerView @ref="TripManager"></TripManagerView>
+<TripManagerView Trip="CurrentTrip" @ref="TripManagerViewRef"></TripManagerView>
 
 
 @code{
     [Parameter]
     public TruckModel SelectedTruck { get; set; }
 
-    TripManagerView TripManager;
+    TripManagerView TripManagerViewRef;
 
     private DriverModel AssignedDriver { get; set; }
     private EventModel CurrentEvent { get; set; }
@@ -115,19 +115,28 @@
 
         if (EventButtonLabel == "Start New Trip")
         {
-            var result = DialogService.Show<NewTripView>("Start Trip", parameters);
-            var Data = await result.Result;
-            CurrentTrip = (TripModel)Data.Data;
+            var dialog = DialogService.Show<NewTripView>("Start Trip", parameters);
+            var result = await dialog.Result;
+            CurrentTrip = (TripModel)result.Data;
+            if (!result.Cancelled)
+            {
+                TripManagerViewRef.LoadEvents();
+                truckStatusUpdated();
+            }
         }
         else
         {
             parameters.Add("CurrentTrip", CurrentTrip);
-            var result = DialogService.Show<UpdateEventView>("Update Event", parameters);
-            var Data = await result.Result;
-            var ev = Data.Data;
+            var dialog = DialogService.Show<UpdateEventView>("Update Event", parameters);
+            var result = await dialog.Result;
+            var data = result.Data;
+            if (!result.Cancelled)
+            {
+                TripManagerViewRef.LoadEvents();
+                truckStatusUpdated();
+            }
         }
 
-        truckStatusUpdated();
     }
 
     private void CancelTrip()
@@ -159,8 +168,9 @@
         var ev = Data.Data;
         if (!Data.Cancelled)
         {
-            truckStatusUpdated();
+            truckStatusUpdated();            
         }
+
     }
 
     private async Task AssignDriver()
@@ -187,8 +197,10 @@
         var result = DialogService.Show<Pages.Gc.GcSelectDialog>("Load Consignment", parameters, maxWidth);
         var Data = await result.Result;
         var ev = Data.Data;
-        TripManager.LoadGcs(CurrentTrip.TripID);
+        TripManagerViewRef.LoadGcs();
     }
+
+   
     private async Task AddTransaction()
     {
         var parameters = new DialogParameters();
@@ -197,13 +209,10 @@
         var result = DialogService.Show<TransactionDialog>("Inc/Exp", parameters, maxWidth);
         var Data = await result.Result;
         var ev = Data.Data;
-        TripManager.LoadTransactions(CurrentTrip);
+        TripManagerViewRef.LoadTransactions();
     }
 
-    private void ViewTransactions(TripModel Trip)
-    {
-        TripManager.LoadTransactions(CurrentTrip);
-    }
+    
 
 
     private async Task IsTruckSelected(TruckModel model)
@@ -244,10 +253,9 @@
 
             CurrentTrip = null;
 
-
+            // Set text to show
             if (CurrentEvent != null)
             {
-
                 HideStatus = false;
                 EventType = Ievent.GetEventType(CurrentEvent.EventTypeID);
 
@@ -267,12 +275,12 @@
 
             }
 
+            //Hide-Show Controls
             if (EventType != null && EventType.IsBlocking)
             {
                 HideControls = true;
             }
-            else
-            if (EventType == null || EventType.EventStatusText == "UnAssigned")
+            else if (EventType == null || EventType.EventStatusText == "UnAssigned")
             {
                 HideControls = false;
                 HideStatus = true;
@@ -286,8 +294,7 @@
                 EventButtonLabel = "Update Status";
             }
         }
-
-        TripManager.LoadAll(CurrentTrip);
+        
     }
 
 }

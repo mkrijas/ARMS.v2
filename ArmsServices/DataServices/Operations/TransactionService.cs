@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
         OperationTransactionModel Update(OperationTransactionModel model);
         int Delete(long? ID, string UserID);
         IEnumerable<OperationTransactionModel> SelectByTrip(long? TripID);
+        IEnumerable<OperationTransactionModel> SelectByJobcard(int? JobcardID);
         OperationTransactionModel SelectByID(long? ID);
     }
 
@@ -83,6 +84,20 @@ namespace ArmsServices.DataServices
             {                
                 yield return GetModel(dr);                
             }            
+        }
+
+        public IEnumerable<OperationTransactionModel> SelectByJobcard(int? JobcardID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@JobcardID", JobcardID),
+               new SqlParameter("@Operation", "Main"),
+            };
+
+            foreach (var dr in Iservice.GetDataReader("[usp.Operation.Transaction.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
 
         private IEnumerable<OpTranSubModel> GetChildren(long? TransactionID)
