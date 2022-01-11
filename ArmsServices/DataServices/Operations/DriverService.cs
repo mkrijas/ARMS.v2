@@ -105,7 +105,7 @@ namespace ArmsServices.DataServices
         {
             return new DriverModel
             {
-                DriverName = reader.GetString("DriverName"),
+                DriverName = reader.GetString("DriverName"),                
                 DriverAgentID = reader.GetInt32("DriverAgentID"),
                 DriverAgent = new PartyModel() {PartyID = reader.GetInt32("DriverAgentID"), PartyName = reader.GetString("PartyName") },
                 HomeBranchID = reader.GetInt32("HomeBranchID"),
