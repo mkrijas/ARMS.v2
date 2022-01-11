@@ -1,0 +1,189 @@
+﻿@page "/truckadd"
+
+@inject TruckDataArrayModel data
+@inject ITruckService Iservice
+@inject ITruckTypeService Itrucktype
+@inject IBranchService Ibranch
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+@using System.Globalization
+<MudDialog>
+    <DialogContent>
+        Dialog Content
+    </DialogContent>
+    <DialogActions>
+
+
+    <MudItem xs="8">
+      
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit Trucks</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="2">
+                            <MudTextField @bind-Value="@model.CurrentRegistration.RegNo" Label="Registered Number" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.CurrentRegistration.RegNo)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudSelect Label="Home Branch" @bind-Value="model.HomeBranchID" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in Branches)
+                                {
+                                    <MudSelectItem Value="@item.BranchID">@item.BranchName</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudDatePicker Label="valid from" DisableToolbar="true" Editable="true" @bind-Date="@model.CurrentRegistration.EffectFrom" HelperText="Enter Date" Culture="@CultureInfo.GetCultureInfo("en-IN")" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudDatePicker Label="Valid up to" DisableToolbar="true" Editable="true" @bind-Date="@model.CurrentRegistration.EffectTo" HelperText="Enter Date" Culture="@CultureInfo.GetCultureInfo("en-IN")" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudSelect Label="Select Type" @bind-Value="model.TruckTypeID" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in TruckTypes)
+                                {
+                                    <MudSelectItem Value="@item.TruckTypeID">@item.TruckType</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudSelect Label="Select Body Type" @bind-Value="model.BodyType" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in data.BodyTypes)
+                                {
+                                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTextField @bind-Value="@model.EngineNumber" Label="Engine Number" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.EngineNumber)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTextField @bind-Value="@model.ChassisNumber" Label="Chassis Number" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.ChassisNumber)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudSelect Label="Select Fuel Type" @bind-Value="model.FuelType" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in data.FuelTypes)
+                                {
+                                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTextField @bind-Value="@model.FuelTankCapacity" Label="FuelTank Capacity" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.FuelTankCapacity)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudDatePicker Label="Purchase Date" DisableToolbar="true" Editable="true" @bind-Date="model.PurchaseDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTextField @bind-Value="@model.ManufacturedYear" Label="Manufactured Year" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.ManufacturedYear)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudSelect Label="Select Transmission Type" @bind-Value="model.TransmissionType" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in data.TransmissionTypes)
+                                {
+                                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+                    <br />
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Truck</MudButton>
+
+                </MudCardContent>
+            </EditForm>
+       
+    </MudItem>
+  
+<MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+</DialogActions>
+</MudDialog>
+
+    @code {
+
+    private TruckModel model = new TruckModel();
+
+    private string searchTruck = "";
+    private List<TruckModel> collection = new List<TruckModel>();
+    private List<TruckTypeModel> TruckTypes = new List<TruckTypeModel>();
+    private List<BranchModel> Branches = new List<BranchModel>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Run(() => GetAll());
+        TruckTypes = Itrucktype.Select(0).ToList();
+        Branches = Ibranch.Select().ToList();
+    }
+     private void GetAll()
+    {
+        collection.Clear();
+        foreach (var item in Iservice.Select(0))
+        {
+            collection.Add(item);
+        }
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+      
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        try
+        {
+            model = Iservice.Update(model);
+
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.TruckID == model.TruckID))
+            {
+                collection[collection.FindIndex(x => x.TruckID == model.TruckID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new TruckModel();           
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void Edit(int? id)
+    {
+        model = Iservice.SelectByID(id);
+        model.CurrentRegistration = Iservice.GetRegistration(model.TruckID);
+    }
+    private void Delete(int? id)
+    {
+        Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+
+    private bool search(TruckModel Truck)
+    {
+        if (Truck.RegNo != null && Truck.RegNo.Contains(searchTruck, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (Truck.RegNo == null) return true;
+        return false;
+    }
+      [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog.Cancel();
+}
+
+
