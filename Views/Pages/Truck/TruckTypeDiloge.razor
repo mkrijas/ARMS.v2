@@ -1,0 +1,92 @@
+﻿
+@page "/trucktypeadd"
+
+@inject ITruckTypeService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject ITruckTypeService Itrucktype
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+@using System.Globalization
+
+
+
+
+<MudDialog >
+ 
+    <DialogActions>
+    
+
+ <MudItem xs="12">
+     
+            <EditForm Model="@TypeModel" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />'
+                <MudItem xs="12">
+              <MudCardContent>
+                    <MudTextField @bind-Value="@TypeModel.TruckType" Label="Truck Type" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => TypeModel.TruckType)"></MudTextField>
+                    <MudTextField @bind-Value="@TypeModel.UnladenWeight" Label="Unladen Weight" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => TypeModel.UnladenWeight)"></MudTextField>
+                    <MudTextField @bind-Value="@TypeModel.GrossWeight" Label="Gross Weight" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => TypeModel.GrossWeight)"></MudTextField>
+                    <MudTextField @bind-Value="@TypeModel.Axles" Label="Axles" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => TypeModel.Axles)"></MudTextField>
+                    <MudTextField @bind-Value="@TypeModel.wheels" Label="Wheels" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => TypeModel.wheels)"></MudTextField>
+                    <br />
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save TruckType</MudButton>
+
+                </MudCardContent>
+                </MudItem>
+            </EditForm>
+     
+    </MudItem>
+  
+    </DialogActions>
+    </MudDialog>
+
+@code {
+      [Parameter]
+    public TruckTypeModel TypeModel { get; set; }
+   
+    private string searchTruck = "";
+    private List<TruckTypeModel> collection = new List<TruckTypeModel>();
+     protected override async Task OnInitializedAsync()
+    {
+        await Task.Run(()=>  GetAll());
+    }
+     private void GetAll()
+    {
+        foreach (var item in Iservice.Select(0))
+        {
+           collection.Add(item);
+        }
+    }
+   
+  
+    private async void OnValidSubmit(EditContext context)
+    {
+        //try
+        //{
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        TypeModel.UserInfo.UserID = user.Identity.Name;       
+        try
+        {
+           TypeModel = Iservice.Update(TypeModel);
+
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.TruckTypeID == TypeModel.TruckTypeID))
+            {
+                collection[collection.FindIndex(x => x.TruckTypeID == TypeModel.TruckTypeID)] = TypeModel;
+            }
+            else
+            {
+                collection.Add(TypeModel);
+            }
+            TypeModel = new TruckTypeModel();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+    }
+     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+}
