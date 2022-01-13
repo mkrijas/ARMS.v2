@@ -11,7 +11,8 @@ namespace ArmsModels.BaseModels
             public int? StateID { get; set; }
             [Required]
             [StringLength(maximumLength: 200)]
-            public string StateName { get; set; }   
+            public string StateName { get; set; }
+            public string GstString { get; set; }
             public SharedModels.UserInfoModel UserInfo { get; set; }       
     }
 }

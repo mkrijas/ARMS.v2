@@ -13,6 +13,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
             Address = new AddressModel() {  AddresseeName = "Name" };
             DriverAgent = new PartyModel();
+            Contacts = new();
         }
 
         public int? DriverID { get; set; }
@@ -27,16 +28,12 @@ namespace ArmsModels.BaseModels
         [Required]
         public string AdhaarNo { get; set; }        
         public string AdhaarImage { get; set; }
-        [Required]
-        public string Mobile { get; set; }
-        [Required]
-        public string AlternateContactPerson { get; set; }
-        public string AlternateContactMobile { get; set; }
         public int? AddressID { get; set; }       
         public string FestivalBonus { get; set; }
         [ValidateComplexType]
         public AddressModel Address { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
+        public List<ContactModel> Contacts { get; set; }
     }
     public class DriverFaultModel
     {

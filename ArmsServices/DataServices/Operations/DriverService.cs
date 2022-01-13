@@ -47,10 +47,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DriverImage", model.DriverImage),
                new SqlParameter("@DateOfBirth", model.DateOfBirth),
                new SqlParameter("@AdhaarNo", model.AdhaarNo),
-               new SqlParameter("@AdhaarImage", model.AdhaarImage),
-               new SqlParameter("@Mobile", model.Mobile),
-               new SqlParameter("@AlternateContactPerson", model.AlternateContactPerson),
-               new SqlParameter("@AlternateContactMobile", model.AlternateContactMobile),
+               new SqlParameter("@AdhaarImage", model.AdhaarImage),  
                new SqlParameter("@AddressID", model.Address.AddressID),
                new SqlParameter("@DriverAgentID", model.DriverAgentID),
                new SqlParameter("@FestivalBonus", model.FestivalBonus),
@@ -112,10 +109,7 @@ namespace ArmsServices.DataServices
                 DriverImage = reader.GetString("DriverImage"),
                 DateOfBirth = reader.GetDateTime("DateOfBirth"),
                 AdhaarNo = reader.GetString("AdhaarNo"),
-                AdhaarImage = reader.GetString("AdhaarImage"),
-                Mobile = reader.GetString("Mobile"),
-                AlternateContactMobile = reader.GetString("AlternateContactMobile"),
-                AlternateContactPerson = reader.GetString("AlternateContactPerson"),                
+                AdhaarImage = reader.GetString("AdhaarImage"),                          
                 FestivalBonus = reader.GetString("FestivalBonus"),
                 DriverID = reader.GetInt32("DriverID"),
                 AddressID = reader.GetInt32("AddressID"),
@@ -159,8 +153,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {               
                new SqlParameter("@DriverName", model?.DriverName), 
-               new SqlParameter("@AdhaarNo", model?.AdhaarNo),
-               new SqlParameter("@Mobile", model?.Mobile),
+               new SqlParameter("@AdhaarNo", model?.AdhaarNo),               
                new SqlParameter("@LicenceNo", licence?.LicenceNo),
                new SqlParameter("@BadgeNo", licence?.BadgeNo),              
             };

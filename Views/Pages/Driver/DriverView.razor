@@ -2,6 +2,7 @@
 @inject IDriverService Iservice
 @inject IPartyService Iparty
 @inject IAddressService Iaddress
+@inject IContactService Icontact
 
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
@@ -32,9 +33,6 @@
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="model.DriverName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.DriverName)"></MudTextField>
                         </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Mobile" Label="Mobile" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Mobile)"></MudTextField>
-                        </MudItem>
 
                         <MudItem xs="12" md="4">
                             <MudDatePicker Label="DOB" Variant="Variant.Outlined" DisableToolbar="true" Margin="Margin.Normal" Editable="true" @bind-Date="model.DateOfBirth" HelperText="Enter Date" DateFormat="dd/MM/yyyy" For="@(() => model.DateOfBirth)" />
@@ -50,32 +48,19 @@
                             <MudAutocomplete T="PartyModel" Variant="Variant.Outlined" Margin="Margin.Normal" Label="Cotractor" @bind-Value="model.DriverAgent" ResetValueOnEmptyText="true"
                                              SearchFunc="@SearchParty" ToStringFunc="@(e => e == null ? null : $"{e.PartyName}")"></MudAutocomplete>
                         </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="model.AlternateContactPerson" Label="Immediate Contact Person" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.AlternateContactPerson)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="model.AlternateContactMobile" Label="His/Her Mobile" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.AlternateContactMobile)"></MudTextField>
-                        </MudItem>
-
+                        
+                         @foreach (var item in model.Contacts.Select((value,i) => new {i,value }))
+                            { 
+                        <MudItem xs="12">                                                          
+                                <ContactView Index="item.i" Model="item.value"></ContactView>                          
+                        </MudItem>                        
+                          }
+                          
                         <MudItem xs="12">
-                            <MudText Typo="Typo.subtitle2">Address Info</MudText>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Address.Building" Label="Building" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Building)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Address.Street" Label="Street" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Street)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Address.Place" Label="Place" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Place)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Address.City" Label="City" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.City)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Address.PinCode" Label="PinCode" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.PinCode)"></MudTextField>
+                           <AddressView Address="model.Address" Label="Address Info" ></AddressView>
                         </MudItem>
                     </MudGrid>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddContact" >Add Contact</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Driver</MudButton>
                     <MudTooltip Text="Upload Adhaar">
                         <InputFile id="adhaarImage" OnChange="UploadAdhaarImage" hidden />
@@ -90,7 +75,7 @@
                                        Color="Color.Success"
                                        Icon="@Icons.Filled.Image"
                                        for="driverImage" />
-                        </MudTooltip>
+                    </MudTooltip>
                 </MudCardContent>
             </EditForm>
         </MudCard>
@@ -105,36 +90,39 @@
                               IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverName)" InitialDirection="SortDirection.Ascending">Driver</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverName)" InitialDirection="SortDirection.Ascending">Driver</MudTableSortLabel></MudTh>                
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverAgent.PartyName)" InitialDirection="SortDirection.Ascending">Contractor</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DateOfBirth)" InitialDirection="SortDirection.Ascending">AGE</MudTableSortLabel></MudTh>
                 <MudTh>Status</MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Driver">@context.DriverName</MudTd>
-                <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
+                <MudTd DataLabel="Driver">@context.DriverName</MudTd>                
                 <MudTd DataLabel="PartyName">@context.DriverAgent.PartyName</MudTd>
                 <MudTd DataLabel="DOB">@(DateTime.Today.Year - context.DateOfBirth.Value.Year +(DateTime.Today.DayOfYear < context.DateOfBirth.Value.DayOfYear?-1:0))</MudTd>
-                <MudTd DataLabel="Status"> @switch (context.UserInfo.RecordStatus)
-                {
-                    case 3: <p>Available</p> break;
-                    case 4: <p>On Leave</p>  break;
-                }
+                <MudTd DataLabel="Status">
+                    @switch (context.UserInfo.RecordStatus)
+                    {
+                        case 3:
+                            <p>Available</p>
+                            break;
+                        case 4:
+                            <p>On Leave</p>
+                            break;
+                    }
                 </MudTd>
 
                 <MudTd DataLabel="">
                     @if (context.UserInfo.RecordStatus != 4)
                     {
                         <MudTooltip Text="Put the Driver on leave">
-                            <MudFab @onclick="@(() => BeginLeave(context))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowDown" IconSize="Size.Small"  Size="Size.Small" />
+                            <MudFab @onclick="@(() => BeginLeave(context))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowDown" IconSize="Size.Small" Size="Size.Small" />
                         </MudTooltip>
                     }
                     else if (context.UserInfo.RecordStatus == 4)
                     {
                         <MudTooltip Text="End the leave">
-                            <MudFab @onclick="@(() => EndLeave(context.DriverID))" Color="Color.Success" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowUp" IconSize="Size.Small"  Size="Size.Small" />
+                            <MudFab @onclick="@(() => EndLeave(context.DriverID))" Color="Color.Success" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowUp" IconSize="Size.Small" Size="Size.Small" />
                         </MudTooltip>
                     }
                     <MudFab Label="DL" OnClick="@(() => nav.NavigateTo("dl/" + context.DriverID.ToString()))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.FileCopy" Size="Size.Small" IconSize="Size.Small" />
@@ -144,40 +132,37 @@
 
                 </MudTd>
 
-</RowTemplate>
+            </RowTemplate>
 
-<PagerContent>
+            <PagerContent>
 
-<MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
 
-</PagerContent>
+            </PagerContent>
 
-</MudTable>
+        </MudTable>
 
-</MudItem>
+    </MudItem>
 </MudGrid>
-
 
 
 <MudMessageBox @ref="mbox" Title="Warning" CancelText="Cancel">
 
-<MessageContent>
+    <MessageContent>
+        <b>@DriverToLeave.DriverName</b> will enter leave as on <b>@DateTime.Today.ToLocalTime()</b>. Please Confirm
+        <MudDatePicker Label="Expected to Return On " DisableToolbar="true" Editable="true" @bind-Date="ExpectedReturn" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
 
-<b>@DriverToLeave.DriverName</b> will enter leave as on <b>@DateTime.Today.ToLocalTime()</b>. Please Confirm
-<MudDatePicker Label="Expected to Return On " DisableToolbar="true" Editable="true" @bind-Date="ExpectedReturn" HelperText="Enter Date" DateFormat="dd/MM/yyyy"  />
+        <MudTextField @bind-Value="ReasonToLeave" Label="Reason for Leave" Variant="Variant.Outlined" Margin="Margin.Normal"></MudTextField>
 
-<MudTextField @bind-Value="ReasonToLeave" Label="Reason for Leave" Variant="Variant.Outlined" Margin="Margin.Normal" ></MudTextField>
+    </MessageContent>
 
-</MessageContent>
+    <YesButton>
 
-<YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.KeyboardArrowDown">Enter Leave</MudButton>
 
-<MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.KeyboardArrowDown">Enter Leave</MudButton>
-
-</YesButton>
+    </YesButton>
 </MudMessageBox>
 @code
-
 {
     IBrowserFile driverImage;
     IBrowserFile adhaarImage;
@@ -194,6 +179,14 @@
     private DateTime? ExpectedReturn;
     private string ReasonToLeave;
 
+
+    private void AddContact()
+    {
+        model.Contacts.Add(new ContactModel()
+            {
+                RefTable = "Driver"
+            });
+    }
 
     private async void BeginLeave(DriverModel dtl)
     {
@@ -285,6 +278,9 @@
             model.DriverImage = await UploadImage(driverImage, model.DriverName, PhotoPath);
 
             //$"{env.WebRootPath}\\images"
+
+            var contacts = model.Contacts;
+
             model = Iservice.Update(model);
             snackbar.Add("Saved Successfully", Severity.Success);
             if (collection.Exists(x => x.DriverID == model.DriverID))
@@ -295,6 +291,13 @@
             {
                 collection.Add(model);
             }
+            foreach(var item in contacts)
+            {
+                item.RefKey = model.DriverID;
+                item.UserInfo = model.UserInfo;
+                Icontact.Update(item);
+            }
+
             model = new DriverModel();
         }
         catch (Exception ex)
@@ -306,6 +309,7 @@
     {
         model = collection.FirstOrDefault(x => x.DriverID == id);
         model.Address = await Iaddress.SelectByID(model.AddressID);
+        model.Contacts = Icontact.Select(model.DriverID, "Driver").ToList();
     }
     private async void Delete(int? id)
     {
@@ -335,6 +339,8 @@
     {
         adhaarImage = e.File;
     }
+
+
 
 
 

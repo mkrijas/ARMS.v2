@@ -2,6 +2,7 @@
 @page "/gst/{partyID:int}"
 @inject IGstService Iservice
 @inject IPartyService Iparty
+@inject IContactService Icontact
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -36,31 +37,17 @@
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="@model.TanNo" Label="TAN No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TanNo)"></MudTextField>
                         </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Phone" Label="Phone" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Phone)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Email" Label="Email" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Email)"></MudTextField>
-                        </MudItem>
+                       @foreach (var item in model.Contacts.Select((value,i) => new {i,value }))
+                            { 
+                        <MudItem xs="12" >                                                          
+                                <ContactView Index="item.i" Model="item.value"></ContactView>                          
+                        </MudItem>                        
+                          }              
                         <MudItem xs="12">
-                            <MudText Typo="Typo.subtitle2">Address Info</MudText>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Address.Building" Label="Building" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Building)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Address.Street" Label="Street" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Street)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Address.Place" Label="Place" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Place)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Address.City" Label="City" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.City)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.Address.PinCode" Label="PinCode" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.PinCode)"></MudTextField>
-                        </MudItem>
+                           <AddressView Address="@model.Address"></AddressView>
+                        </MudItem>                        
                     </MudGrid>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddContact" >Add Contact</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Gst</MudButton>
 
                 </MudCardContent>
@@ -78,16 +65,14 @@
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<GstModel, object>(x=> x.GstNo)" InitialDirection="SortDirection.Ascending">GST</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GstModel, object>(x=> x.TanNo)" InitialDirection="SortDirection.Ascending">TAN</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GstModel, object>(x=> x.Phone)" InitialDirection="SortDirection.Ascending">Phone</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GstModel, object>(x=> x.TanNo)" InitialDirection="SortDirection.Ascending">TAN</MudTableSortLabel></MudTh>                
                 <MudTh><MudTableSortLabel SortBy="new Func<GstModel, object>(x=> x.Address.Place)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<GstModel, object>(x=> x.Address.PinCode)" InitialDirection="SortDirection.Ascending">PinCode</MudTableSortLabel></MudTh>                
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Gst">@context.GstNo</MudTd>
-                <MudTd DataLabel="Tan">@context.TanNo</MudTd>
-                <MudTd DataLabel="Phone">@context.Phone</MudTd>
+                <MudTd DataLabel="Tan">@context.TanNo</MudTd>                
                 <MudTd DataLabel="Place">@context.Address.Place</MudTd>
                 <MudTd DataLabel="Pin">@context.Address.PinCode</MudTd>
                 <MudTd DataLabel="">
@@ -129,6 +114,13 @@
         }
     }
 
+    private void AddContact()
+    {
+        model.Contacts.Add(new ContactModel()
+            {
+                RefTable = "GST"
+            });
+    }
 
     private async Task<IEnumerable<PartyModel>> Search(string searchString)
     {
@@ -165,6 +157,7 @@
         model.UserInfo.UserID = authprov.User.Identity.Name;
         try
         {
+            var contacts = model.Contacts;
             model = await Iservice.Update(model);
             snackbar.Add("Saved Successfully", Severity.Success);
             if (collection.Exists(x => x.GstID == model.GstID))
@@ -175,6 +168,13 @@
             {
                 collection.Add(model);
             }
+            foreach(var item in contacts)
+            {
+                item.RefKey = model.GstID;
+                item.UserInfo = model.UserInfo;
+                Icontact.Update(item);
+            }
+
             model = new GstModel();
         }
         catch (Exception ex)
@@ -185,6 +185,7 @@
     private void Edit(int? id)
     {
         model = collection.FirstOrDefault(x => x.GstID == id);
+        model.Contacts = Icontact.Select(model.GstID, "GST").ToList();
     }
     private async void Delete(int? id)
     {

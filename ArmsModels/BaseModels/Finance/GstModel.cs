@@ -15,6 +15,7 @@ namespace ArmsModels.BaseModels
                 };
             Party = new PartyModel();
             UserInfo = new SharedModels.UserInfoModel();
+            Contacts = new();
         }
 
         public int? GstID { get; set; }
@@ -31,16 +32,12 @@ namespace ArmsModels.BaseModels
         [StringLength(maximumLength: 10, MinimumLength = 10)]
         public string TanNo { get; set; }
         public int? PartyID { get; set; }
-        public int? AddressID { get; set; }
-        [Required]
-        [StringLength(maximumLength: 10)]
-        public string Phone { get; set; }
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; }
-        public virtual PartyModel Party { get; set; }
+        public int? AddressID { get; set; }      
+        public virtual PartyModel Party { get; set; }        
         [ValidateComplexType]
         public AddressModel Address { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
+        [ValidateComplexType]
+        public List<ContactModel> Contacts { get; set; }
     }
 }

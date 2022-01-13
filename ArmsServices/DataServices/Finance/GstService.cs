@@ -34,11 +34,9 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@GstID", model.GstID),
-               new SqlParameter("@AddressID", model.AddressID),
-               new SqlParameter("@Email", model.Email),
+               new SqlParameter("@AddressID", model.AddressID),              
                new SqlParameter("@GstNo", model.GstNo),
-               new SqlParameter("@PartyID", model.PartyID),
-               new SqlParameter("@Phone", model.Phone),
+               new SqlParameter("@PartyID", model.PartyID),               
                new SqlParameter("@RegName", model.RegName),
                new SqlParameter("@TanNo", model.TanNo),
                new SqlParameter("@TradeName", model.TradeName),
@@ -50,11 +48,9 @@ namespace ArmsServices.DataServices
                     model = new GstModel
                     {
                         GstID = reader.GetInt32("GstID"),
-                        AddressID = reader.GetInt32("AddressID"),
-                        Email = reader.GetString("Email"),
+                        AddressID = reader.GetInt32("AddressID"),                        
                         GstNo = reader.GetString("GstNo"),
-                        PartyID = reader.GetInt32("PartyID"),
-                        Phone = reader.GetString("Phone"),
+                        PartyID = reader.GetInt32("PartyID"),                        
                         RegName = reader.GetString("RegName"),
                         TanNo = reader.GetString("TanNo"),
                         TradeName = reader.GetString("TradeName"),
@@ -91,11 +87,9 @@ namespace ArmsServices.DataServices
                     yield return new GstModel
                     {
                         GstID = reader.GetInt32("GstID"),
-                        AddressID = reader.GetInt32("AddressID"),
-                        Email = reader.GetString("Email"),
+                        AddressID = reader.GetInt32("AddressID"),                        
                         GstNo = reader.GetString("GstNo"),
-                        PartyID = reader.GetInt32("PartyID"),
-                        Phone = reader.GetString("Phone"),
+                        PartyID = reader.GetInt32("PartyID"),                        
                         RegName = reader.GetString("RegName"),
                         TanNo = reader.GetString("TanNo"),
                         TradeName = reader.GetString("TradeName"),
@@ -123,11 +117,9 @@ namespace ArmsServices.DataServices
                 yield return new GstModel
                 {
                     GstID = reader.GetInt32("GstID"),
-                    AddressID = reader.GetInt32("AddressID"),
-                    Email = reader.GetString("Email"),
+                    AddressID = reader.GetInt32("AddressID"),                    
                     GstNo = reader.GetString("GstNo"),
-                    PartyID = reader.GetInt32("PartyID"),
-                    Phone = reader.GetString("Phone"),
+                    PartyID = reader.GetInt32("PartyID"),                    
                     RegName = reader.GetString("RegName"),
                     TanNo = reader.GetString("TanNo"),
                     TradeName = reader.GetString("TradeName"),

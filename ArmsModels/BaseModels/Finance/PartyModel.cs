@@ -11,6 +11,7 @@ namespace ArmsModels.BaseModels
         public PartyModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
+            Contacts = new();
         }
 
         public int? PartyID { get; set; }
@@ -25,7 +26,10 @@ namespace ArmsModels.BaseModels
         [Required]
         public bool TdsApplicable { get; set; }
         [Required]
-        public bool TcsApplicable { get; set; }        
-public SharedModels.UserInfoModel UserInfo { get; set; }
+        public bool TcsApplicable { get; set; }
+        [ValidateComplexType]
+        public List<ContactModel> Contacts { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+
     }
 }

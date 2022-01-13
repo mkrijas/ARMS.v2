@@ -13,6 +13,7 @@ namespace ArmsModels.BaseModels
             Address = new AddressModel();
             UserInfo = new SharedModels.UserInfoModel();
             Place = new PlaceModel();
+            Contacts = new();
         }
         public int? BranchID { get; set; }
         [Required]
@@ -26,6 +27,7 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         public virtual AddressModel Address { get; set; }        
         public PlaceModel Place { get; set; }
-        public virtual SharedModels.UserInfoModel UserInfo { get; set; }        
+        public virtual SharedModels.UserInfoModel UserInfo { get; set; }
+        public List<ContactModel> Contacts { get; set; }
     }
 }
