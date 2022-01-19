@@ -1,0 +1,127 @@
+﻿@inject IPartyService Iservice
+@inject IContactService Icontact
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject NavigationManager nav
+    
+
+<MudTabs Elevation="4" Rounded="true" Centered="true" Color="@Color.Primary">
+    <MudTabPanel Text="General Details">
+ 
+   
+
+<MudItem xs="12">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+            
+                <MudCardContent>
+                    <MudGrid Spacing="4">
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="@model.PartyName" Label="Party Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.PartyName)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudRadioGroup @bind-SelectedOption="@model.NatureOfFirm">
+                                @foreach (var rtype in PartyTypes)
+                                {
+                                    <MudRadio Option="@rtype" Color="Color.Primary">@rtype</MudRadio>
+                                }
+                            </MudRadioGroup>
+                        </MudItem>
+                        <MudItem Class="d-flex">
+                            <MudCheckBox @bind-Checked="@model.IsClient" Label="Is Client?" For="@(() => model.IsClient)" />
+                            <MudCheckBox @bind-Checked="@model.IsSupplier" Label="Is Supplier?" For="@(() => model.IsSupplier)" />
+                            <MudCheckBox @bind-Checked="@model.TdsApplicable" Label="TDS Applicable?" For="@(() => model.TdsApplicable)" />
+                            <MudCheckBox @bind-Checked="@model.TcsApplicable" Label="TCS Applicable?" For="@(() => model.TcsApplicable)" />
+                        </MudItem>
+                         </MudGrid>
+                   
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+    </MudTabPanel>
+       <MudTabPanel Text="Contact Details">
+             @foreach (var item in model.Contacts.Select((value, i) => new { i, value }))
+                        {
+                            <MudItem xs="12">
+                                <ContactView Index="item.i" Model="item.value"></ContactView>
+                            </MudItem>
+                        }
+                 
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddContact" >Add Contact</MudButton>
+
+       </MudTabPanel>
+    </MudTabs>
+     <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Party</MudButton>
+
+@code {
+    
+   
+      [Parameter]
+    public PartyModel model { get; set; }
+    private List<PartyModel> collection = new List<PartyModel>();
+
+
+    private List<string> PartyTypes = new List<string>() { "Proprietorship", "Partnership", "Company" };
+
+    private string searchParty = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        await foreach (var route in Iservice.Select(0))
+        {
+            collection.Add(route);
+        }
+    }
+
+    private void AddContact()
+    {
+        model.Contacts.Add(new ContactModel()
+            {
+                RefTable = "PARTY"
+            });
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+
+        try
+        {
+            var contacts = model.Contacts;
+            model = await Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.PartyID == model.PartyID))
+            {
+                collection[collection.FindIndex(x => x.PartyID == model.PartyID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            foreach (var item in contacts)
+            {
+                item.RefKey = model.PartyID;
+                item.UserInfo = model.UserInfo;
+                Icontact.Update(item);
+            }
+
+            model = new PartyModel();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+
+}

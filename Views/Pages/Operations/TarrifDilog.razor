@@ -1,0 +1,160 @@
+﻿@inject ITariffService Iservice
+@inject IRouteService Iroute
+@inject IOrderService Iorder
+
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth   
+ 
+<MudItem xs="12" md="12">
+        <MudCard Elevation="10">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Add/Edit Tariff</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="4">
+                        <MudItem xs="12" md="6">
+                            <MudAutocomplete T="RouteModel" Label="Route" @bind-Value="Route" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
+                                             SearchFunc="SearchRoutes" ToStringFunc="@(e=> e==null?null : $"{e.RouteName}")"
+                                             ></MudAutocomplete>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudSelect Label="Select Type" @bind-Value="model.TariffTypeID" OffsetY="true" AdornmentColor="Color.Secondary" Variant="Variant.Outlined">
+                                @foreach (var item in TariffTypes)
+                                {
+                                <MudSelectItem Value="@item.TariffTypeID">@item.TariffTypeName</MudSelectItem>                                
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudSelect Label="Select Formula" @bind-Value="model.TariffFormulaID" OffsetY="true" Margin="Margin.Normal" AdornmentColor="Color.Secondary" Variant="Variant.Outlined">
+                                @foreach (var item in Formulas)
+                                {
+                                    <MudSelectItem Value="@item.FormulaID">@item.Formula</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.TariffRate" Label="Tariff Rate" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TariffRate)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="model.TruckAxles" Label="Axles Limit(if any)" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TruckAxles)"></MudTextField>
+                        </MudItem>
+                    </MudGrid>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Tariff</MudButton>
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+@code {
+     [Parameter]
+    public int OrderID { get; set; }
+    #region Declared Properties
+
+          [Parameter]
+    public TariffModel model { get; set; }
+
+    private string searchString = "";
+
+    private OrderModel Order = new();
+    private RouteModel Route = new();
+    private TariffFormulaModel Formula = new();
+    private TariffTypeModel TariffType = new();
+
+    private List<TariffModel> collection = new ();
+
+    private List<TariffFormulaModel> Formulas = new ();
+    private List<TariffTypeModel> TariffTypes = new ();
+    private List<RouteModel> Routes = new ();
+
+    #endregion
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(OrderID != 0)
+            Order = await Iorder.SelectByID(OrderID);
+
+        Routes.Add(new RouteModel()
+        {
+            RouteID = null,
+            RouteName = "Any"
+        });
+        await foreach (var item in Iroute.Select(0))
+        {
+            Routes.Add(item);
+        }
+
+        foreach (var item in Iservice.SelectFormulas())
+        {
+            Formulas.Add(item);
+        }       
+            TariffTypes = Iservice.SelectTariffTypes("Operation").ToList();
+        
+        GetAll();
+    }
+
+    private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString)
+    {
+        return await Task.FromResult(Routes.Where(x => x.RouteName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+    private async Task<IEnumerable<TariffTypeModel>> SearchTariffTypes(string searchString)
+    {
+        return await Task.FromResult(TariffTypes.Where(x => x.TariffTypeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task<IEnumerable<TariffFormulaModel>> SearchFormulas(string searchString)
+    {
+        return await Task.FromResult(Formulas.Where(x => x.Formula.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+
+    private void GetAll()
+    {
+        collection = new ();
+        foreach (var route in Iservice.SelectByOrder(OrderID))
+        {
+            collection.Add(route);
+        }
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        //     if (!Routes.Select(x => x.RouteName).Contains(Route.RouteName))
+        //{
+        //    snackbar.Add("Invalid Route", Severity.Error);
+        //    return;
+        //}
+
+        model.OrderID = Order.OrderID;
+        model.RouteID = Route?.RouteID;
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+        try
+        {
+            model = Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.TariffID == model.TariffID))
+            {
+                collection[collection.FindIndex(x => x.TariffID == model.TariffID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new TariffModel();            
+            Route = new RouteModel();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+}

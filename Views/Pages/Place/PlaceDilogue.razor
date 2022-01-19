@@ -1,0 +1,100 @@
+﻿  @inject IPlaceService Iservice
+@inject IDistrictService Idistrict
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+<MudDialog >
+ 
+    <DialogActions> 
+<MudItem xs="12">
+        <MudCard Elevation="10">
+            <EditForm Model="@placemodel" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary/>
+                
+                <MudCardContent>
+                    <MudTextField @bind-Value="@placemodel.PlaceName" Label="Place" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => placemodel.PlaceName)"></MudTextField>
+                    <MudTextField @bind-Value="@placemodel.PinCode" Label="PinCode" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => placemodel.PinCode)"></MudTextField>
+                    <MudAutocomplete T="DistrictModel" Label="District" @bind-Value="@placemodel.District" ResetValueOnEmptyText="true"
+                                     SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.DistrictName}")"
+                                     Immediate="true"></MudAutocomplete>
+                    <br />
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Place</MudButton>
+
+                </MudCardContent>
+            </EditForm>
+        </MudCard>
+    </MudItem>
+    </DialogActions>
+    </MudDialog>
+@code {
+      [Parameter]
+    public PlaceModel placemodel { get; set; }
+    private List<PlaceModel> collection = new List<PlaceModel>();
+    public List<DistrictModel> districts = new List<DistrictModel>();
+
+    private string searchPlace = "";
+     private async Task<IEnumerable<DistrictModel>> Search(string searchString)
+    {
+        return await Task.FromResult(districts.Where(x => x.DistrictName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private  void GetAll()
+    {
+        foreach (var place in Iservice.Select(0))
+        {
+            collection.Add(place);
+        }
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        if (!districts.Select(x => x.DistrictName).Contains(placemodel.District.DistrictName))
+        {
+            snackbar.Add("Invalid District", Severity.Error);
+            return;
+        }
+
+        //try
+        //{
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        placemodel.UserInfo.UserID = user.Identity.Name;
+        placemodel.DistrictID = placemodel.District.DistrictID;
+
+        try {
+            placemodel = await Iservice.Update(placemodel);
+
+            if (collection.Exists(x => x.PlaceID == placemodel.PlaceID))
+            {
+                collection[collection.FindIndex(x => x.PlaceID == placemodel.PlaceID)] = placemodel;
+            }
+            else
+            {
+                collection.Add(placemodel);
+            }
+           placemodel = new PlaceModel();
+            snackbar.Add("Saved Successfully", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+
+
+    private void Edit(int? id)
+    {
+        placemodel = collection.FirstOrDefault(x => x.PlaceID == id);
+    }
+    private async void Delete(int? id)
+    {
+        await Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+}
