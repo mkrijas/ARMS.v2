@@ -30,6 +30,8 @@ namespace ArmsModels.BaseModels
         public string AdhaarImage { get; set; }
         public int? AddressID { get; set; }       
         public string FestivalBonus { get; set; }
+        [RegularExpression(@"^([0-9]{10})$", ErrorMessage = "Invalid Phone Number.")]
+        public string Mobile { get; set; }
         [ValidateComplexType]
         public AddressModel Address { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
