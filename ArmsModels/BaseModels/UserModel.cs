@@ -29,11 +29,5 @@ namespace ArmsModels.BaseModels
         public int? LoggedBranch { get; set; }
     }
 
-    public class RoleModel
-    {
-        public string RoleID { get; set; }
-        [Required]
-        public string RoleName { get; set; }
-        public string UpdatedBy { get; set; }
-    }
+  
 }

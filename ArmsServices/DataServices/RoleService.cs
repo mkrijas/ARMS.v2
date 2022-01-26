@@ -6,12 +6,19 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public class RoleStore : IRoleStore<RoleModel>
+    public interface IRoleService<T>
+    {
+        Task<IList<T>> GetAllRoles(CancellationToken cancellationToken);
+        Task<IList<Claim>> GetAllClaims(CancellationToken cancellationToken);
+    }
+
+    public class RoleStore : IRoleStore<RoleModel>,IRoleClaimStore<RoleModel>,IRoleService<RoleModel>
     {
         IDbService Iservice;
         public RoleStore(IDbService iservice)
@@ -24,11 +31,12 @@ namespace ArmsServices.DataServices
             cancellationToken.ThrowIfCancellationRequested();
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@RoleNo", model.RoleNo),
                new SqlParameter("@RoleID", model.RoleID),
-               new SqlParameter("@RoleName", model.RoleName),
-               new SqlParameter("@UpdatedBy", model.UpdatedBy),
+               new SqlParameter("@RoleDesc", model.RoleDesc),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            await Iservice.ExecuteNonQueryAsync("[usp.user.RoleUpdate]", parameters);
+            await Iservice.ExecuteNonQueryAsync("[usp.user.Roles.Update]", parameters);
 
             return IdentityResult.Success;
         }
@@ -38,11 +46,12 @@ namespace ArmsServices.DataServices
             cancellationToken.ThrowIfCancellationRequested();
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@RoleNo", model.RoleNo),
                new SqlParameter("@RoleID", model.RoleID),
-               new SqlParameter("@RoleName", model.RoleName),
-               new SqlParameter("@UpdatedBy", model.UpdatedBy),
+               new SqlParameter("@RoleDesc", model.RoleDesc),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            await Iservice.ExecuteNonQueryAsync("[usp.user.RoleUpdate]", parameters);
+            await Iservice.ExecuteNonQueryAsync("[usp.user.Roles.Update]", parameters);
 
             return IdentityResult.Success;
         }
@@ -53,9 +62,9 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@RoleID", model.RoleID),
-               new SqlParameter("@UpdatedBy", model.UpdatedBy),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            await Iservice.ExecuteNonQueryAsync("[usp.user.RoleDelete]", parameters);
+            await Iservice.ExecuteNonQueryAsync("[usp.user.Roles.Delete]", parameters);
             return IdentityResult.Success;
         }
 
@@ -66,23 +75,23 @@ namespace ArmsServices.DataServices
 
         public Task<string> GetRoleNameAsync(RoleModel model, CancellationToken cancellationToken)
         {
-            return Task.FromResult(model.RoleName);
+            return Task.FromResult(model.RoleDesc);
         }
 
         public Task SetRoleNameAsync(RoleModel model, string roleName, CancellationToken cancellationToken)
         {
-            model.RoleName = roleName;
+            model.RoleDesc = roleName;
             return Task.FromResult(0);
         }
 
         public Task<string> GetNormalizedRoleNameAsync(RoleModel role, CancellationToken cancellationToken)
         {
-            return Task.FromResult(role.RoleName);
+            return Task.FromResult(role.RoleDesc);
         }
 
         public Task SetNormalizedRoleNameAsync(RoleModel role, string normalizedName, CancellationToken cancellationToken)
         {
-            role.RoleName = normalizedName;
+            role.RoleDesc = normalizedName;
             return Task.FromResult(0);
         }
 
@@ -95,11 +104,15 @@ namespace ArmsServices.DataServices
                new SqlParameter("@roleID", roleID),
                new SqlParameter("@operation", "FindById"),
             };
-            RoleModel role = new RoleModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Role.RoleSelect]", parameters))
+            RoleModel role = null;
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Roles.Select]", parameters))
             {
-                role.RoleID = dr["RoleID"].ToString();
-                role.RoleName = dr["RoleName"].ToString();
+                role = new RoleModel()
+                {
+                    RoleNo = dr.GetInt32("RoleNo"),
+                    RoleID = dr.GetString("RoleID"),
+                    RoleDesc = dr.GetString("RoleDesc")
+                };                
             }
             return role;
         }
@@ -110,14 +123,18 @@ namespace ArmsServices.DataServices
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@RoleName", RoleName),
+               new SqlParameter("@RoleDesc", RoleName),
                new SqlParameter("@operation", "FindByName"),
             };
-            RoleModel role = new RoleModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Role.RoleSelect]", parameters))
+            RoleModel role = null;
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Roles.Select]", parameters))
             {
-                role.RoleID =dr["RoleID"].ToString();
-                role.RoleName = dr["RoleName"].ToString();
+                role = new RoleModel()
+                {
+                    RoleNo = dr.GetInt32("RoleNo"),
+                    RoleID = dr.GetString("RoleID"),
+                    RoleDesc = dr.GetString("RoleDesc")
+                };
             }
             return role;
         }
@@ -125,6 +142,81 @@ namespace ArmsServices.DataServices
         public void Dispose()
         {
             // Nothing to dispose.
+        }
+
+        public Task<IList<Claim>> GetClaimsAsync(RoleModel role, CancellationToken cancellationToken = default)
+        {            
+            cancellationToken.ThrowIfCancellationRequested();
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RoleID", role.RoleID)               
+            };
+
+            IList<Claim> Claims = new List<Claim>();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.RoleClaims.Select]", parameters))
+            {
+                Claims.Add(new Claim(dr.GetString("ClaimType"), dr.GetString("ClaimValue")));
+            };
+            return Task.FromResult(Claims);
+        }
+
+        public Task AddClaimAsync(RoleModel role, Claim claim, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RoleID", role.RoleID),
+               new SqlParameter("ClaimType",claim.Type),
+               new SqlParameter("ClaimValue",claim.Value),
+               new SqlParameter("UserID",role.UserInfo.UserID)
+            };
+
+            Iservice.ExecuteNonQuery("[usp.RoleClaims.Update]", parameters);
+            return Task.FromResult(0);
+        }
+
+        public Task RemoveClaimAsync(RoleModel role, Claim claim, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RoleID", role.RoleID),
+               new SqlParameter("ClaimType",claim.Type),
+               new SqlParameter("ClaimValue",claim.Value)
+            };
+
+            Iservice.ExecuteNonQuery("[usp.RoleClaims.Delete]", parameters);
+            return Task.FromResult(0);
+        }
+
+        public Task<IList<RoleModel>> GetAllRoles(CancellationToken cancellationToken = default)
+        {
+            IList<RoleModel> Roles = new List<RoleModel>();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Roles.Select]", null))
+            {
+                Roles.Add(new RoleModel()
+                {
+                    RoleNo = dr.GetInt32("RoleNo"),
+                    RoleID = dr.GetString("RoleID"),
+                    RoleDesc = dr.GetString("RoleDesc"),
+                });
+            };
+            return Task.FromResult(Roles);
+        }
+
+        public Task<IList<Claim>> GetAllClaims(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();           
+
+            IList<Claim> Claims = new List<Claim>();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.ClaimsMaster.Select]", null))
+            {
+                Claims.Add(new Claim(dr.GetString("ClaimType"), dr.GetString("ClaimValue")));
+            };
+            return Task.FromResult(Claims);
         }
     }
 }

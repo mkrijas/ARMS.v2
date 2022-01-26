@@ -44,6 +44,7 @@ namespace Views
             //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
             services.AddBlazoredSessionStorage();
             services.AddHttpClient();
+
             //services.AddAuthorization(options =>
             //{
             //    options.FallbackPolicy = new AuthorizationPolicyBuilder()
@@ -78,7 +79,7 @@ namespace Views
             services.AddScoped<IBankAccountService, BankAccountService>();
             services.AddScoped<IGstService, GstService>();
             services.AddScoped<IPartyService, PartyService>();
-            services.AddScoped<IUserService, UserService>();
+            
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<ITruckDocumentService, TruckDocumentService>();
             //services.AddScoped<IPartyDirectorService, PartyDirectorService>();
@@ -96,8 +97,11 @@ namespace Views
             services.AddScoped<IInsuranceClaimService, InsuranceClaimService>();
 
             //--------Identity configure--------------
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IRoleService<RoleModel>, RoleStore>();
+
             services.AddTransient<IUserStore<UserModel>, UserStore>();
-            services.AddTransient<IRoleStore<RoleModel>, RoleStore>();
+            services.AddTransient<IRoleStore<RoleModel>, RoleStore>();            
             services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddDefaultTokenProviders();
             services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation > ();
