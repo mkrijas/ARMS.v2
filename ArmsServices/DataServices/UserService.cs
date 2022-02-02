@@ -15,6 +15,8 @@ namespace ArmsServices.DataServices
 {
     public interface IUserService
     {
+        IEnumerable<UserModel> Select(int? UserID);
+        int Delete(int? UserID);
         IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID);
         int SetBranchesNRoles(List<UserBranchRoleModel> lst,string UserID);
         int DeleteBranchesNRoles(UserBranchRoleModel model,string UserID);
@@ -105,6 +107,16 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.user.BranchRole.Current.Update]", parameters);
         }
+
+        public IEnumerable<UserModel> Select(int? UserID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Delete(int? UserID)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class UserStore : IUserStore<UserModel>, IUserEmailStore<UserModel>, IUserPhoneNumberStore<UserModel>,
@@ -177,7 +189,18 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
+        public IEnumerable<UserModel> Select(int? TruckID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID)
+            };
 
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.UserSelect", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
         public async Task<UserModel> FindByNameAsync(string UserID, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -430,7 +453,18 @@ namespace ArmsServices.DataServices
             Iservice.GetDataReaderAsync("[usp.user.UserClaims.Update]", parameters);
             return Task.FromResult(0);
         }
-
+        private UserModel GetModel(IDataRecord reader)
+        {
+            return new UserModel
+            {
+                UserName = reader.GetString("UserName"),
+                UserID = reader.GetString("UserID"),
+                Email = reader.GetString("Email"),
+                PhoneNumber = reader.GetString("PhoneNumber"),
+                RecordStatus = reader.GetByte("RecordStatus"),
+             
+            };
+        }
         public Task ReplaceClaimAsync(UserModel user, Claim claim, Claim newClaim, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
