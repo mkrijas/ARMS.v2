@@ -105,7 +105,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@operation", "FindById"),
             };
             RoleModel role = null;
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Roles.Select]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[User.Roles.Select]", parameters))
             {
                 role = new RoleModel()
                 {
@@ -127,7 +127,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@operation", "FindByName"),
             };
             RoleModel role = null;
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Roles.Select]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.User.Roles.Select]", parameters))
             {
                 role = new RoleModel()
                 {
@@ -195,7 +195,7 @@ namespace ArmsServices.DataServices
         public Task<IList<RoleModel>> GetAllRoles(CancellationToken cancellationToken = default)
         {
             IList<RoleModel> Roles = new List<RoleModel>();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Roles.Select]", null))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.Roles.Select]", null))
             {
                 Roles.Add(new RoleModel()
                 {

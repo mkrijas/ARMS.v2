@@ -15,8 +15,6 @@ namespace ArmsServices.DataServices
 {
     public interface IUserService
     {
-        IEnumerable<UserModel> Select(int? UserID);
-        int Delete(int? UserID);
         IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID);
         int SetBranchesNRoles(List<UserBranchRoleModel> lst,string UserID);
         int DeleteBranchesNRoles(UserBranchRoleModel model,string UserID);
@@ -106,17 +104,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RoleID", model.Role.RoleID ),
             };
             return Iservice.ExecuteNonQuery("[usp.user.BranchRole.Current.Update]", parameters);
-        }
-
-        public IEnumerable<UserModel> Select(int? UserID)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int Delete(int? UserID)
-        {
-            throw new NotImplementedException();
-        }
+        }     
     }
 
     public class UserStore : IUserStore<UserModel>, IUserEmailStore<UserModel>, IUserPhoneNumberStore<UserModel>,
