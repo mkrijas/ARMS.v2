@@ -97,7 +97,7 @@ namespace Views
             services.AddScoped<IInsuranceClaimService, InsuranceClaimService>();
 
             //--------Identity configure--------------
-            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserService, UserStore>();
             services.AddScoped<IRoleService<RoleModel>, RoleStore>();
 
             services.AddTransient<IUserStore<UserModel>, UserStore>();
