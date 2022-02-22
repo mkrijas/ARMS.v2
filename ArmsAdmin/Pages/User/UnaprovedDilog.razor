@@ -1,0 +1,110 @@
+﻿@layout AdminMainLayout
+@inject IUserService Iservice
+@inject UserManager<UserModel> Usmg
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+@using System.Globalization
+@using Microsoft.AspNetCore.Identity
+
+
+
+ <div style="height:400px;overflow-y:scroll">
+         
+<MudDialog>
+
+    <DialogContent>
+        <h3>Approval Pending</h3>
+    <MudItem>
+
+        <MudTable Items="@collection" Filter="new Func<UserModel, bool>(search)" @bind-user="model">
+            <ToolBarContent>
+               
+              </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<UserModel, object>(x=> x.UserID)" InitialDirection="SortDirection.Ascending">UserID</MudTableSortLabel></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<UserModel, object>(x=> x.UserName)" InitialDirection="SortDirection.Ascending">UserName</MudTableSortLabel></MudTh></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="UserID">@context.UserID</MudTd>
+                <MudTd DataLabel="UserName">@context.UserName</MudTd>
+              
+                       <MudTd DataLabel="">
+                    <MudFab style="font-size:5px" @onclick="@(()=> Approve(context.UserID))" Color="Color.Primary" Icon="@Icons.Filled.AddTask" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+               
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </DialogContent>
+   
+        </MudDialog>
+        </div>
+@code {
+
+    private UserModel model = new UserModel();
+
+    private string searchTruck = "";
+
+    private List<UserModel> collection = new List<UserModel>();
+
+
+    protected override void OnInitialized()
+    {
+        GetAll();
+
+    }
+
+    private  void GetAll()
+    {
+
+        collection.Clear();
+        collection = Iservice.Select(null).ToList();
+
+    }
+
+
+    private void Edit(UserModel editModel)
+    {
+        DialogParameters parms = new();
+        parms.Add("EditModel", editModel);
+        DialogService.Show<UserDilogue>("ADD/EDIT",parms);
+        //model = Iservice.SelectByID(id);
+        //model.CurrentRegistration = Iservice.GetRegistration();
+    }
+    private async Task Approve(String id)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var usrmdl = collection.First(x => x.UserID == id);
+        usrmdl.EmailConfirmed = true;
+        usrmdl.UpdatedBy =  user.Identity.Name;
+        await Usmg.UpdateAsync(usrmdl);
+        snackbar.Add("User Approved", Severity.Success);
+    }
+    private async Task Delete(String id)
+    {
+        var usrmdl = collection.First(x => x.UserID == id);
+        await Usmg.DeleteAsync(usrmdl);
+        snackbar.Add("Disabled User", Severity.Success);
+        GetAll();
+    }
+
+
+    private bool search(UserModel users)
+    {
+        if (users.UserID != null && users.UserID.Contains(searchTruck, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (users.UserID == null) return true;
+        return false;
+    }
+   
+}
+

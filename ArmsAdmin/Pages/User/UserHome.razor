@@ -1,0 +1,124 @@
+﻿@page "/userhome"
+@layout AdminMainLayout
+@inject IUserService Iservice
+@inject UserManager<UserModel> Usmg
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+@using System.Globalization
+@using Microsoft.AspNetCore.Identity
+<br />
+<br />
+<div style="background-color:#1469c0;padding:1%;padding-top:1%;  color:#fff;"><div style="float:left;padding-top:1%"><h6>User List</h6></div><div style="float:right;"><MudIconButton Icon="@Icons.Filled.AutoAwesomeMotion" OnClick="Undilog" Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Medium" /><MudButton @onclick="OpenDialog" StartIcon="@Icons.Outlined.Add" Variant="Variant.Filled" Style="background:none;color:#fff;">
+  Manage User
+</MudButton></div>
+<br />
+<br />
+</div>
+<MudGrid Spacing="2">
+  
+    <MudItem>
+        <MudTable Items="@collection" Elevation="8" Filter="new Func<UserModel, bool>(search)" @bind-Truck="model">
+            <ToolBarContent>
+               
+                <MudTextField @bind-Value="searchUser" Placeholder="Search User... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<UserModel, object>(x=> x.UserID)" InitialDirection="SortDirection.Ascending">UserID</MudTableSortLabel></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<UserModel, object>(x=> x.UserName)" InitialDirection="SortDirection.Ascending">UserName</MudTableSortLabel></MudTh></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<UserModel, object>(x=> x.Email)" InitialDirection="SortDirection.Ascending">Email</MudTableSortLabel></MudTh></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<UserModel, object>(x=> x.PhoneNumber)" InitialDirection="SortDirection.Ascending">Phone</MudTableSortLabel></MudTh></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="UserID">@context.UserID</MudTd>
+                <MudTd DataLabel="UserName">@context.UserName</MudTd>
+                <MudTd DataLabel="Email">@context.Email</MudTd>
+                <MudTd DataLabel="PhoneNumber">@context.PhoneNumber</MudTd>
+                <MudTd DataLabel="Status">@context.RecordStatus</MudTd>
+                       <MudTd DataLabel="">
+                    <MudFab style="font-size:5px" @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" /><MudFab @onclick="@(()=> Delete(context.UserID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+               
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+
+
+
+</MudGrid>
+@code {
+
+    private UserModel model = new UserModel();
+
+    private string searchUser = "";
+
+    private List<UserModel> collection = new List<UserModel>();
+
+
+    protected override void OnInitialized()
+    {
+        GetAll();
+
+    }
+
+    private void GetAll()
+    {
+        collection.Clear();
+        collection = Iservice.Select(null).ToList();
+
+    }
+
+
+       private void Edit(UserModel editModel)
+    {
+        DialogParameters parms = new();
+        parms.Add("EditModel", editModel);
+        DialogService.Show<UserDilogue>("ADD/EDIT",parms);
+        //model = Iservice.SelectByID(id);
+        //model.CurrentRegistration = Iservice.GetRegistration();
+    }
+    private void Approve(UserModel editModel)
+    {
+
+    }
+    private async Task Delete(String id)
+    {
+        var usrmdl = collection.First(x => x.UserID == id);
+        await Usmg.DeleteAsync(usrmdl);
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+
+    private bool search(UserModel users)
+    {
+        if (users.UserID != null && users.UserID.Contains(searchUser, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (users.UserID == null) return true;
+        return false;
+    }
+    private void OpenDialog()
+    {
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("EditModel", new UserDilogue());
+
+       
+    }
+       private void Undilog()
+    {
+       DialogService.Show<UnaprovedDilog>();
+       
+    }
+}
+
+

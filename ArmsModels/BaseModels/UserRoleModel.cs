@@ -15,6 +15,11 @@ namespace ArmsModels.BaseModels
         [Required]
         public string RoleDesc { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
+
+        public RoleModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+        }
     }
 
     public class UserBranchRoleModel

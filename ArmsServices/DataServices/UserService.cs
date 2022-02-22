@@ -20,7 +20,9 @@ namespace ArmsServices.DataServices
         int DeleteBranchesNRoles(UserBranchRoleModel model,string UserID);
         UserBranchRoleModel GetCurrentBranchRole(string UserID);
         int SetCurrentBranchRole(UserBranchRoleModel model);
-        IEnumerable<UserModel> Select(int? UserID);
+        IEnumerable<UserModel> Select(string UserID);
+
+     
     }
 
    
@@ -391,14 +393,14 @@ namespace ArmsServices.DataServices
         }
 
 
-        public IEnumerable<UserModel> Select(int? UserID)
+        public IEnumerable<UserModel> Select(string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@UserID", UserID)
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.UserSelect", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.UserSelect]", parameters))
             {
                 yield return GetModel(dr);
             }

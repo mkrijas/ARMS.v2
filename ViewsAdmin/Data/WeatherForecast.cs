@@ -1,4 +1,4 @@
-namespace ArmsAdmin.Data
+namespace ViewsAdmin.Data
 {
     public class WeatherForecast
     {

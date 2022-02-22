@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
     {
         Task<IList<T>> GetAllRoles(CancellationToken cancellationToken);
         Task<IList<Claim>> GetAllClaims(CancellationToken cancellationToken);
+        IEnumerable<RoleModel> Select(string RoleID);
     }
 
     public class RoleStore : IRoleStore<RoleModel>,IRoleClaimStore<RoleModel>,IRoleService<RoleModel>
@@ -191,7 +192,29 @@ namespace ArmsServices.DataServices
             Iservice.ExecuteNonQuery("[usp.RoleClaims.Delete]", parameters);
             return Task.FromResult(0);
         }
+        private RoleModel GetModel(IDataRecord reader)
+        {
+            return new RoleModel
+            {
+                RoleID = reader.GetString("RoleID"),
+                RoleNo = reader.GetInt32("RoleNo"),
+                RoleDesc = reader.GetString("RoleDesc"),
+              
 
+            };
+        }
+        public IEnumerable<RoleModel> Select(string RoleID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RoleID",RoleID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.Roles.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
         public Task<IList<RoleModel>> GetAllRoles(CancellationToken cancellationToken = default)
         {
             IList<RoleModel> Roles = new List<RoleModel>();
