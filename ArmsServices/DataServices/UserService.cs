@@ -358,8 +358,7 @@ namespace ArmsServices.DataServices
                 UserID = reader.GetString("UserID"),
                 Email = reader.GetString("Email"),
                 PhoneNumber = reader.GetString("PhoneNumber"),
-                RecordStatus = reader.GetByte("RecordStatus"),
-             
+                RecordStatus = reader.GetByte("RecordStatus"),  
             };
         }
         public Task ReplaceClaimAsync(UserModel user, Claim claim, Claim newClaim, CancellationToken cancellationToken)
