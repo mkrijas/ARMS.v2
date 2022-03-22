@@ -155,7 +155,7 @@ namespace ArmsServices.DataServices
             };
 
             IList<Claim> Claims = new List<Claim>();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.RoleClaims.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.RoleClaims.Select]", parameters))
             {
                 Claims.Add(new Claim(dr.GetString("ClaimType"), dr.GetString("ClaimValue")));
             };
