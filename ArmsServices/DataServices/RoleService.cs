@@ -174,7 +174,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("UserID",role.UserInfo.UserID)
             };
 
-            Iservice.ExecuteNonQuery("[usp.RoleClaims.Update]", parameters);
+            Iservice.ExecuteNonQuery("[usp.user.RoleClaims.Update]", parameters);
             return Task.FromResult(0);
         }
 
@@ -189,7 +189,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("ClaimValue",claim.Value)
             };
 
-            Iservice.ExecuteNonQuery("[usp.RoleClaims.Delete]", parameters);
+            Iservice.ExecuteNonQuery("[usp.user.RoleClaims.Delete]", parameters);
             return Task.FromResult(0);
         }
         private RoleModel GetModel(IDataRecord reader)
