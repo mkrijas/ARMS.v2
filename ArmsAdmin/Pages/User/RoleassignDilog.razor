@@ -3,6 +3,8 @@
 
 @inject IUserService Iservice
 @inject IRoleService<RoleModel> Irole
+
+@inject IBranchService bsr
 @inject RoleManager<RoleModel> imgr
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -17,19 +19,56 @@
 <MudDialog >
  
     <DialogActions>
-    
+         <MudItem>
+        <MudTable Items="@collection" Elevation="8" @bind-Truck="usbr">
+            <ToolBarContent>
+               
+                <MudTextField @bind-Value="searchUser" Placeholder="Search User... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<UserBranchRoleModel,object>(x=> x.Branch)" InitialDirection="SortDirection.Ascending">UserID</MudTableSortLabel></MudTh>
+                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<UserBranchRoleModel, object>(x=> x.Role)" InitialDirection="SortDirection.Ascending">UserName</MudTableSortLabel></MudTh></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="UserID">@context.Branch</MudTd>
+                <MudTd DataLabel="UserName">@context.Role</MudTd>
+              
+                       <MudTd DataLabel="">
 
- <MudItem xs="12">
+                    </MudTd>
+               
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+
+
+    <MudItem xs="12">
      
-            <EditForm Model="@UserRModel" OnValidSubmit="OnValidSubmit">
+            <EditForm Model="@usbr" OnValidSubmit="OnValidSubmit">
                 <DataAnnotationsValidator />
                 <ValidationSummary />'
                 <MudItem xs="12">
               <MudCardContent>
-                    <MudTextField @bind-Value="@UserRModel.Branch" Label="Truck Type" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => UserRModel.Branch)"></MudTextField>
-                    <MudTextField @bind-Value="@UserRModel.Role" Label="Unladen Weight" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => UserRModel.Role)"></MudTextField>
-                   
-                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save TruckType</MudButton>
+ <MudSelect Label="Select Branch" @bind-Value="usbr.Branch" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in bcollection)
+                                {
+                                    <MudSelectItem Value="@item.BranchName">@item.BranchName</MudSelectItem>
+                                }
+                                </MudSelect>
+
+   <MudSelect Label="Select Branch" @bind-Value="Rolem.RoleID" OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in rolecollection)
+                                {
+                                    <MudSelectItem Value="@item.RoleID">@item.RoleNo</MudSelectItem>
+                                }
+                                </MudSelect>
+                      <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Apply role</MudButton>
 
                 </MudCardContent>
                 </MudItem>
@@ -43,37 +82,61 @@
 @code {
 
     [Parameter]
-    public UserBranchRoleModel UserRModel { get; set; }
+    public String UserRmodel { get; set; }
+
+    private BranchModel bmodel = new BranchModel();
+    private List<BranchModel> bcollection = new List<BranchModel>();
+    private RoleModel Rolem = new RoleModel();
+      private List<RoleModel> rolecollection = new List<RoleModel>();
 
     private string searchUser = "";
+    private UserBranchRoleModel usbr = new UserBranchRoleModel();
     private List<UserBranchRoleModel> collection = new List<UserBranchRoleModel>();
+    
+    
+    protected override async Task OnInitializedAsync()
 
+    {
+        
+        await Task.Run(() => GetAll());
+        bcollection = bsr.Select().ToList();
+    }
+        private void GetAll()
+
+     {
+
+            collection.Clear();
+            collection = Iservice.GetBranchesNRoles(UserRmodel).ToList();
+          
+     }
     private async void OnValidSubmit(EditContext context)
     {
 
         var authprov = await auth.GetAuthenticationStateAsync();
+
         var user = authprov.User;
-        UserRModel.User.UserID = user.Identity.Name;
+        usbr.User.UserID = user.Identity.Name;
+        string userid = "rijas";
+
         try
         {
-           //UserRModel = Iservice.SetBranchesNRoles(collection,user.ToString());
+            Iservice.SetBranchesNRoles(collection,userid);
 
             snackbar.Add("Saved Successfully", Severity.Success);
-            if (collection.Exists(x => x.Branch == UserRModel.Branch))
+            if (collection.Exists(x => x.Branch == usbr.Branch))
             {
-                collection[collection.FindIndex(x => x.Branch == UserRModel.Branch)] =  UserRModel;
+                collection[collection.FindIndex(x => x.Branch == usbr.Branch)] = usbr;
             }
             else
             {
-                collection.Add( UserRModel);
+                collection.Add(usbr);
             }
-             UserRModel = new UserBranchRoleModel();           
+            usbr = new UserBranchRoleModel();           
         }
         catch (Exception ex)
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
     }
-    
-
-    }
+   
+}
