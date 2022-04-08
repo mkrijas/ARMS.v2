@@ -13,8 +13,7 @@ namespace ArmsModels.BaseModels
         [Required]
             public string UserName { get; set; }           
 
-            public string Email { get; set; }            
-
+            public string Email { get; set; }     
             public bool EmailConfirmed { get; set; }
 
             public string PasswordHash { get; set; }
@@ -23,10 +22,15 @@ namespace ArmsModels.BaseModels
 
             public bool PhoneNumberConfirmed { get; set; }
 
-            public bool TwoFactorEnabled { get; set; }
+        public bool TwoFactorEnabled { get; set; }
+
+        public bool isAdmin = true; 
         public byte? RecordStatus { set; get; }
         public string UpdatedBy { get; set; }
         public int? LoggedBranch { get; set; }
+
+     
+       
     }
 
   
