@@ -22,14 +22,15 @@ namespace ArmsModels.BaseModels
 
             public bool PhoneNumberConfirmed { get; set; }
 
-        public bool TwoFactorEnabled { get; set; }
+            public bool TwoFactorEnabled { get; set; }
+            
 
-        public bool isAdmin = true; 
-        public byte? RecordStatus { set; get; }
-        public string UpdatedBy { get; set; }
-        public int? LoggedBranch { get; set; }
 
-     
+            public byte? RecordStatus { set; get; }
+            public string UpdatedBy { get; set; }
+             public int? LoggedBranch { get; set; }
+
+            public bool IsAdmin { get; set; }
        
     }
 
