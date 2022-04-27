@@ -93,6 +93,8 @@ namespace ArmsServices.DataServices
                     EmailConfirmed = bool.Parse(dr["EmailConfirmed"].ToString()),
                     TwoFactorEnabled = bool.Parse(dr["TwoFactorEnabled"].ToString()),
                     RecordStatus = byte.Parse(dr["RecordStatus"].ToString()),
+                    
+                    
                 };
             }
             return null;
@@ -119,6 +121,7 @@ namespace ArmsServices.DataServices
                 user.EmailConfirmed = bool.Parse(dr["EmailConfirmed"].ToString());
                 user.TwoFactorEnabled = bool.Parse(dr["TwoFactorEnabled"].ToString());
                 user.RecordStatus = byte.Parse(dr["RecordStatus"].ToString());
+
             }
             return user.UserID== null?null:user;
         }
@@ -359,6 +362,8 @@ namespace ArmsServices.DataServices
                 Email = reader.GetString("Email"),
                 PhoneNumber = reader.GetString("PhoneNumber"),
                 RecordStatus = reader.GetByte("RecordStatus"),  
+                EmailConfirmed=reader.GetBoolean("EmailConfirmed")
+               
             };
         }
         public Task ReplaceClaimAsync(UserModel user, Claim claim, Claim newClaim, CancellationToken cancellationToken)
