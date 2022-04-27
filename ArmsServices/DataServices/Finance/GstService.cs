@@ -112,7 +112,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "SelectByParty"),
             };
 
-            await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.GstSelect]", parameters))
+            await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.Party.Branch.Select]", parameters))
             {
                 yield return new GstModel
                 {
