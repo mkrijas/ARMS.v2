@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
         IAsyncEnumerable<ConsigneeModel> Select(int? ConsigneeID);
         IAsyncEnumerable<ConsigneeModel> SelectByOrder(int? ID);
     }
+
     public class ConsigneeService : IConsigneeService
     {
         IDbService Iservice;
