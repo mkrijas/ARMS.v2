@@ -45,12 +45,11 @@ namespace Views
             services.AddBlazoredSessionStorage();
             services.AddHttpClient();
 
-            //services.AddAuthorization(options =>
-            //{
-            //    options.FallbackPolicy = new AuthorizationPolicyBuilder()
-            //        .RequireAuthenticatedUser()
-            //        .Build();
-            //});
+            services.AddAuthorization(config =>
+            {
+                config.AddPolicy("IsAdmin", policy => policy.RequireClaim("IsAdmin", "true"));
+            });
+
 
             services.AddSingleton<TruckDataArrayModel>();
 
