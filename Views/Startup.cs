@@ -39,11 +39,18 @@ namespace Views
         {
             services.AddRazorPages();
             services.AddServerSideBlazor();            
-            services.AddMudServices();
+            
             services.AddControllersWithViews();
             //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
-            services.AddBlazoredSessionStorage();
+            
             services.AddHttpClient();
+
+
+            // 3rd party 
+            services.AddMudServices();
+            services.AddBlazorContextMenu();
+            services.AddBlazoredSessionStorage();
+
 
             services.AddAuthorization(config =>
             {
@@ -94,6 +101,9 @@ namespace Views
             services.AddScoped<IMechanicJobService, MechanicJobService>();
             services.AddScoped<IPeriodicMaintenanceService, PeriodicMaintenanceService>();
             services.AddScoped<IInsuranceClaimService, InsuranceClaimService>();
+
+            //------------FINANCE-------------------
+            services.AddScoped<IChartOfAccountService, ChartOfAccountService>();
 
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
