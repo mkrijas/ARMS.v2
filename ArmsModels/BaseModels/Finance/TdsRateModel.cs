@@ -9,6 +9,13 @@ namespace ArmsModels.BaseModels
 {
     public class TdsRateModel
     {
+        public TdsRateModel()
+        {
+         
+            this.UserInfo = new SharedModels.UserInfoModel();
+            this.AssesseeType = new();
+            this.TdsNP = new();
+        }
         public int? TdsRateID { get; set; }
         public NatureOfPaymentModel TdsNP { get; set; }        
         public AssesseeTypeModel AssesseeType { get; set; }       

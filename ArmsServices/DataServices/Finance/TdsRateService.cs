@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
         TdsRateModel Update(TdsRateModel model);
         TdsRateModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
+        IEnumerable<TdsRateModel> SelectByIDT(int? ID);
         IEnumerable<TdsRateModel> Select(int? AssesseeType,int? TdsNPID);
         IEnumerable<NatureOfPaymentModel> SelectTdsNP();
         IEnumerable<AssesseeTypeModel> SelectAssesseeTypes();
@@ -39,16 +40,30 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.TDS.Rates.Delete]", parameters);
         }
 
+        public IEnumerable<TdsRateModel> SelectByIDT(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+              new SqlParameter("@tdsRateID", ID),
+               new SqlParameter("@Operation", "ByID")
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.taxes.TDS.Rates.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public IEnumerable<TdsRateModel> Select(int? AssesseeType, int? TdsNPID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByNature"),
-               new SqlParameter("AssesseeType",AssesseeType),
-               new SqlParameter("@TdsNPID",TdsNPID),                
+               new SqlParameter("AssesseeTypeID",AssesseeType),
+               new SqlParameter("@TdsNPID",TdsNPID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.TDS.Rates.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.taxes.TDS.Rates.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -56,7 +71,7 @@ namespace ArmsServices.DataServices
 
         public IEnumerable<AssesseeTypeModel> SelectAssesseeTypes()
         {
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.TDS.AssesseeTypes.Select]", null))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.AssesseeTypes.Select]", null))
             {
                 yield return new AssesseeTypeModel {AssesseeTypeID = dr.GetInt32("AssesseeTypeID"),AssesseeTypeName = dr.GetString("AssesseeTypeName") };
             }
@@ -70,7 +85,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID")
             };
             TdsRateModel model = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.TDS.Rates.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.taxes.TDS.Rates.Select]", parameters))
             {
                 model = GetModel(dr);
             }
@@ -79,7 +94,7 @@ namespace ArmsServices.DataServices
 
         public IEnumerable<NatureOfPaymentModel> SelectTdsNP()
         {
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.TDS.NatureOfPayment.Select]", null))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.NatureOfPayment.Select]", null))
             {
                 yield return new NatureOfPaymentModel { NatureOfPayment = dr.GetString("NatureOfPayment"),TdsNPID = dr.GetInt32("TdsNPID") };
             }
@@ -98,7 +113,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.TDS.Rates.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.taxes.TDS.Rates.Update]", parameters))
             {
                 model = GetModel(dr);
             }

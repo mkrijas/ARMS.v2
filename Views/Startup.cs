@@ -82,6 +82,9 @@ namespace Views
             
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<ITruckDocumentService, TruckDocumentService>();
+            services.AddScoped<ITdsRateService, TdsRateService>();
+
+
             //services.AddScoped<IPartyDirectorService, PartyDirectorService>();
 
             //------------FMS---------------

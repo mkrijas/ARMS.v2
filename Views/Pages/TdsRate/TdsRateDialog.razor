@@ -6,7 +6,7 @@
 @inject IDialogService DialogService
 
 
-<h3>TdsRateDialog</h3>
+
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -15,21 +15,121 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-       
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudSelect Label="Select Nature of payment" @bind-Value="Selectnaturepayment" T="NatureOfPaymentModel" ToStringFunc="@((p) => p?.NatureOfPayment)" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in naturepayment)
+                            {
+                                <MudSelectItem Value="@ditem">@ditem.NatureOfPayment</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                     <MudItem xs="12">
+                        <MudSelect Label="Select Assessee Type" @bind-Value="Selectassesseetype" T="AssesseeTypeModel" ToStringFunc="@((p) => p?.AssesseeTypeName)" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in asseesse)
+                            {
+                                <MudSelectItem Value="@ditem">@ditem.AssesseeTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                     <MudItem xs="12" md="6">
+                  <MudDatePicker Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodFrom" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                 </MudItem>
+                  <MudItem xs="12" md="6">
+                  <MudDatePicker Label="Period To" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodTo" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                   </MudItem>
+                   <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.TaxRate" Label="Tax Rate%" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TaxRate)"></MudTextField>
+                   </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
     </DialogContent>
-  
+    <DialogActions>
+    @*   <MudButton OnClick="DeleteTaxRate">Delete Tax Rate</MudButton>
+        <MudButton OnClick="AddTaxRate">Add More Tax Rate</MudButton>*@
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+
+    </DialogActions>
 </MudDialog>
 
 
 
 @code {
-     private NatureOfPaymentModel naturepayment = new();
-      protected override async Task OnInitializedAsync()
+    [Parameter]
+    public TdsRateModel model { get; set; }
+    private List<TdsRateModel> collection = new List<TdsRateModel>();
+    private NatureOfPaymentModel Selectnaturepayment = new();
+    private AssesseeTypeModel Selectassesseetype = new();
+    private List<NatureOfPaymentModel> naturepayment = new();
+    private List<AssesseeTypeModel> asseesse = new();
+    private TdsRateModel tds = new();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+
+
+    protected override async Task OnInitializedAsync()
     {
         var e = await auth.GetAuthenticationStateAsync();
-        
+
         naturepayment =  Iservice.SelectTdsNP().ToList();
+        asseesse =  Iservice.SelectAssesseeTypes().ToList();
+
+    }
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+
+
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+          model.TdsNP.TdsNPID = Selectnaturepayment.TdsNPID;
+        try
+        {
+            model.TdsNP.TdsNPID =Selectnaturepayment.TdsNPID ;
+            model.AssesseeType.AssesseeTypeID = Selectassesseetype.AssesseeTypeID;
+
+
+            collection = Iservice.Select(model.TdsNP.TdsNPID,model.AssesseeType.AssesseeTypeID).ToList();
+           if (collection.Count == 0)
+           {
+
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Cancel();
+            }
+            else
+           {
+              snackbar.Add("Data is already available for the given date period", Severity.Success); 
+            }
+
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
        
     }
 
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void AddTaxRate()
+    {
+        
+    }
+
+    private void DeleteTaxRate()
+    {
+        
+    }
 }
