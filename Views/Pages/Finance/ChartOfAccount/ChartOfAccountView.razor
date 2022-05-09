@@ -9,7 +9,7 @@
 
 <MudGrid>
     <MudItem md="6">
-        <h3>ChartOfAccountView</h3>
+        <h3>CHART OF ACCOUNTS</h3>
 <MudPaper Width="350px" MaxHeight="500px" Class="overflow-y-auto" Elevation="0">
     <MudTreeView Color="Color.Primary" ServerData="LoadServerData" Items="TreeItems" T="TreeItemData"  sele="SelectedValue" SelectedValueChanged="OnSelected" >
         <ItemTemplate>
@@ -23,24 +23,33 @@
 </MudPaper>
     </MudItem>
     <MudItem>
-         <h3>Allocated branches</h3>
+        @if(AllocatedBranches.Count> 0)
+        {
+        <h3>Allocated Branches</h3>
+        <MudPaper Width="350px" MaxHeight="500px" Class="overflow-y-auto" Elevation="0">
+         
+         @foreach(var item in AllocatedBranches)
+         {
+             <MudCheckBox Checked="@item.IsSelected" Label="@item.BranchName" CheckedChanged="((bool value)=>BranchCheckedChanged(value,item))"></MudCheckBox>
+             <br />
+         }
+         </MudPaper>
+        }
     </MudItem>
 </MudGrid>
 
 
 
 
-<ContextMenu Id="myMenu">
-    <Item OnClick="@ContextMenuOnClick" OnAppearing="OnAppearing" Id="group" >Add Ledger</Item>
-    <Item OnClick="@ContextMenuOnClick" OnAppearing="OnAppearing" Id="account">Add Suledger</Item>   
-    <Seperator />
-    <Item OnClick="@ContextMenuOnClick" OnAppearing="OnAppearing" Id="edit" >Edit</Item>
+<ContextMenu Id="myMenu" OnAppearing="OnAppearing">
+    <Item OnClick="@ContextMenuOnClick"  Id="group" >Add Ledger</Item>
+    <Item OnClick="@ContextMenuOnClick"  Id="account">Add Suledger</Item>  
 </ContextMenu>
 
 
 <style>
     .subledger{
-        color:blue;
+        color:blue;    
     }
 </style>
 
@@ -55,18 +64,19 @@
         public string Title { get; set; }
         public string Icon { get; set; }
         public bool IsExpanded { get; set; } = false;
-        public bool HasChildren { get; set; }
+        public bool HasChildren { get; set; } = false;
         public int? ID { get; set; }
         public HashSet<TreeItemData> TreeItems { get; set; }     
     }
 
-    protected ChartOfAccountModel model { get; set; }
+
+    protected List<CoaBranchAvailabilityModel> AllocatedBranches = new();
 
     protected bool visible = true;  
 
     protected override void OnInitialized()
     {
-        model = new();
+
         var baseGroups = Iservice.SelectBase();
         foreach(var item in baseGroups)
         {
@@ -121,7 +131,7 @@
 
             case "account" :                
                 dialog = DialogService.Show<AddSubledgerDialog>("Add Subledger", parameters);                
-                break;
+                break;   
         }
 
         var result = await dialog.Result;
@@ -157,31 +167,33 @@
 
     void OnSelected(TreeItemData item)
     {
-        if(!item.HasChildren)
+        if(item != null && !item.HasChildren)
         {
-            
+            AllocatedBranches =  Iservice.GetAllocatedBranches(item.ID).ToList();
+        }
+        else
+        {
+            AllocatedBranches = new List<CoaBranchAvailabilityModel>();
         }
     }
 
-    void OnAppearing(ItemAppearingEventArgs e)
+    async Task BranchCheckedChanged(bool value,CoaBranchAvailabilityModel br)
+    {
+
+        var authState = await  auth.GetAuthenticationStateAsync();
+
+        br.IsSelected = value;
+        br.UserInfo.UserID = authState.User.Identity.Name;
+
+        if (value)
+            Iservice.AddBranch(br);
+        else
+            Iservice.RemoveBranch(br);
+    }
+
+    void OnAppearing(MenuAppearingEventArgs e)
     {
         TreeItemData item = (TreeItemData)e.Data;
-        switch (e.MenuItem.Id)
-        {
-            case "group":
-                e.IsEnabled = item.HasChildren;
-                break;
-            case "account" :
-                e.IsEnabled = item.HasChildren;
-                break;
-            case "edit":
-                e.IsEnabled = !item.HasChildren;
-                break;
-        }
-
-        if(!item.HasChildren)
-        {
-            e.IsEnabled = true;
-        }
+        e.PreventShow = !item.HasChildren;      
     }
 }

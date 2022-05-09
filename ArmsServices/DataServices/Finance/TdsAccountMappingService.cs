@@ -122,6 +122,8 @@ namespace ArmsServices.DataServices
                 CoaID = dr.GetInt32("CoaID"),
                 TdsNPID = dr.GetInt32("TdsNPID"),
                 TdsAccountMappedID = dr.GetInt32("TdsAccountMappedID"),
+                AccountName = dr.GetString("AccountName"),
+                NatureOfPayment = dr.GetString("NatureOfPayment"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
