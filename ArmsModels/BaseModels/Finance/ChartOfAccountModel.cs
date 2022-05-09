@@ -24,4 +24,33 @@ namespace ArmsModels.BaseModels
         public DateTime? PeriodTo { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } 
     }
+
+
+    public class CoaBranchAvailabilityModel
+    {
+        public CoaBranchAvailabilityModel()
+        {
+            UserInfo = new();
+        }
+
+        private int? _id;
+
+        public int? ID {
+            get
+            {
+                return _id;
+            }
+            set
+            {
+                _id = value;
+                IsSelected = value != null;
+            }
+        }
+        public int? CoaID { get; set; }
+        public string AccountName { get; set; }
+        public int? BranchID { get; set; }
+        public string BranchName { get; set; }
+        public bool IsSelected {get;set;} 
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+    }
 }
