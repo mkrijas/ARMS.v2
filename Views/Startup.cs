@@ -88,7 +88,7 @@ namespace Views
             
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<ITruckDocumentService, TruckDocumentService>();
-            services.AddScoped<ITdsRateService, TdsRateService>();
+         
 
 
             //services.AddScoped<IPartyDirectorService, PartyDirectorService>();
@@ -107,7 +107,8 @@ namespace Views
 
             //------------FINANCE-------------------
             services.AddScoped<IChartOfAccountService, ChartOfAccountService>();
-
+            services.AddScoped<ITdsRateService, TdsRateService>();
+            services.AddScoped<ITdsAccountMappingService, TdsAccountMappingService>();
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
             services.AddScoped<IRoleService<RoleModel>, RoleStore>();

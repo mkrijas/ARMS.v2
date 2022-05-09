@@ -47,8 +47,14 @@ namespace ArmsModels.BaseModels
 
     public class TdsAccountMappingModel
     {
+        public TdsAccountMappingModel()
+        {
+
+            this.UserInfo = new SharedModels.UserInfoModel();
+          
+        }
         public int? TdsAccountMappedID { get; set; }
-        [Required]
+        
         public int? CoaID { get; set; }
         public virtual string AccountName { get; set; }
         [Required]
