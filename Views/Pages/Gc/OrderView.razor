@@ -12,7 +12,7 @@
 @inject IDialogService DialogService
 
 
-<div style="background-color:#1469c0;padding:1%;padding-top:1%;  color:#fff;"><div style="float:left;padding-top:1%"><h6>Order</h6></div><div style="float:right;"><MudButton @onclick="OpenDialog" StartIcon="@Icons.Outlined.Add" Variant="Variant.Filled" Style="background:none;color:#fff;">
+<div style="background-color:#1469c0;padding:1%;padding-top:1%;  color:#fff;"><div style="float:left;padding-top:1%"><h6>Order</h6></div><div style="float:right;"><MudButton  @onclick="@(()=> OpenDialog(model))" StartIcon="@Icons.Outlined.Add" Variant="Variant.Filled" Style="background:none;color:#fff;">
   Add new Order 
 </MudButton></div>
 <br />
@@ -21,7 +21,8 @@
 <MudGrid Spacing="4">
 
     <MudItem xs="12" md="12">
-        <MudTable Items="@collection" Elevation="10" Filter="new Func<OrderModel, bool>(search)" @bind-model="model">
+        <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true"
+        Elevation="10" Filter="new Func<OrderModel, bool>(search)" @bind-model="model">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Orders</MudText>
                 <MudSpacer></MudSpacer>
@@ -51,7 +52,7 @@
                     <MudTooltip Text="View Tariffs">
                         <MudFab @onclick="@(() => ViewTariff(context.OrderID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Money" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
-                    <MudFab @onclick="@(() => Edit(context.OrderID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(() => Delete(context.OrderID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
@@ -120,7 +121,7 @@
             snackbar.Add("Invalid Party", Severity.Error);
             return;
         }
-        
+
 
         model.ClientID = model.Party.PartyID;       
 
@@ -177,13 +178,37 @@
         }
         return false;
     }
-          private void OpenDialog()
+    private async Task OpenDialog(OrderModel odr)
     {
 
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", new OrderModel());
+       
 
-        DialogService.Show<OrderDiloge>("ADD Order",parms);
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", odr);
+        var dialog = DialogService.Show<OrderDiloge>(odr.OrderID == null ? "ADD" : "EDIT", parms);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            OrderModel UpatedModel = (OrderModel)result.Data;
+            model.UserInfo.UserID = user.Identity.Name;
+
+            try
+            {
+                Iservice.Update(UpatedModel);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                GetAll();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+    }
+
     }
 }
 
