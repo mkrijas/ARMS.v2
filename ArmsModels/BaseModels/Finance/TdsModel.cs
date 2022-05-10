@@ -49,9 +49,7 @@ namespace ArmsModels.BaseModels
     {
         public TdsAccountMappingModel()
         {
-
-            this.UserInfo = new SharedModels.UserInfoModel();
-          
+            this.UserInfo = new SharedModels.UserInfoModel();          
         }
         public int? TdsAccountMappedID { get; set; }
         
@@ -63,5 +61,24 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
 
     }
+
+
+    public class TdsThresholdLimitModel
+    {
+        public TdsThresholdLimitModel()
+        {
+            this.UserInfo = new SharedModels.UserInfoModel();
+        }       
+        public int? TdsTLID { get; set; }
+        [ValidateComplexType]
+        public NatureOfPaymentModel NatureOfPayment { get; set; }       
+        public DateTime? PeriodFrom { get; set; }
+        public DateTime? PeriodTo { get; set; }
+        public decimal? ThresholdLimitSingle { get; set; }
+        public decimal? ThresholdLimitPeriod { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+    }
+
+
 }
 

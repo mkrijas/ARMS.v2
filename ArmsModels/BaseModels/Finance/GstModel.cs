@@ -17,7 +17,6 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
             Contacts = new();
         }
-
         public int? GstID { get; set; }
         [Required]
         [StringLength(maximumLength: 15, MinimumLength = 15)]
@@ -40,4 +39,41 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         public List<ContactModel> Contacts { get; set; }
     }
+
+
+
+    public class GstUsageIDModel
+    {
+        public GstUsageIDModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+        }
+
+        [Required]
+        [StringLength(maximumLength: 25)]
+        public string UsageID { get; set; }
+        [Required]
+        public int? AccountID { get; set; }
+        [Required]
+        public int? RID { get; set; }
+
+        [StringLength(maximumLength: 6)]
+        public string SAC { get; set; }
+        [Required]
+        public DateTime? PeriodFrom { get; set; }
+        [Required]
+        public DateTime? PeriodTo { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+        
+    }
+
+
+    public class GstRateModel
+    {
+        public int? RID { get; set; }
+        public decimal? TaxRate { get; set; }
+        public string Description { get; set; }
+    }
+
+
 }
