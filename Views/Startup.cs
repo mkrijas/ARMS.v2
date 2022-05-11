@@ -109,6 +109,7 @@ namespace Views
             services.AddScoped<IChartOfAccountService, ChartOfAccountService>();
             services.AddScoped<ITdsRateService, TdsRateService>();
             services.AddScoped<ITdsAccountMappingService, TdsAccountMappingService>();
+            services.AddScoped<ITdsThresholdLimitService, TdsThresholdLimitService>();
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
             services.AddScoped<IRoleService<RoleModel>, RoleStore>();
