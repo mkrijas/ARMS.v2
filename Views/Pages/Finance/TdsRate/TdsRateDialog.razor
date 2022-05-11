@@ -28,7 +28,7 @@
                             }
                         </MudSelect>
                     </MudItem>
-                     <MudItem xs="12">
+                    <MudItem xs="12">
                         <MudSelect Label="Select Assessee Type" @bind-Value="model.AssesseeType" T="AssesseeTypeModel" ToStringFunc="@((p) => p?.AssesseeTypeName)" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in asseesse)
                             {
@@ -36,22 +36,22 @@
                             }
                         </MudSelect>
                     </MudItem>
-                     <MudItem xs="12" md="6">
-                  <MudDatePicker Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodFrom" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
-                 </MudItem>
-                  <MudItem xs="12" md="6">
-                  <MudDatePicker Label="Period To" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodTo" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
-                   </MudItem>
-                   <MudItem xs="12" md="12">
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodFrom" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Period To" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodTo" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="model.TaxRate" Label="Tax Rate%" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TaxRate)"></MudTextField>
-                   </MudItem>
+                    </MudItem>
                 </MudGrid>
             </EditForm>
         </MudContainer>
     </DialogContent>
     <DialogActions>
-    @*   <MudButton OnClick="DeleteTaxRate">Delete Tax Rate</MudButton>
-        <MudButton OnClick="AddTaxRate">Add More Tax Rate</MudButton>*@
+        @*   <MudButton OnClick="DeleteTaxRate">Delete Tax Rate</MudButton>
+            <MudButton OnClick="AddTaxRate">Add More Tax Rate</MudButton>*@
         <MudButton OnClick="Cancel">Cancel</MudButton>
         <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
 
@@ -64,88 +64,38 @@
     [Parameter]
     public TdsRateModel model { get; set; }
     private List<TdsRateModel> collection = new List<TdsRateModel>();
-    private List<TdsRateModel> tdsList = new List<TdsRateModel>();
+
     private List<NatureOfPaymentModel> naturepayment = new();
     private List<AssesseeTypeModel> asseesse = new();
     private TdsRateModel tds = new();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
-    private List<DateRange> drList = new List<DateRange>();
-
+    
     protected override void OnInitialized()
     {
-        naturepayment =  Iservice.SelectTdsNP().ToList();
-        asseesse =  Iservice.SelectAssesseeTypes().ToList();
+        naturepayment = Iservice.SelectTdsNP().ToList();
+        asseesse = Iservice.SelectAssesseeTypes().ToList();
     }
     private void OnValidSubmit(EditContext context)
-    {    
-        Boolean bl;
-        DateRange dr = new DateRange();
-        dr.Start = model.PeriodFrom;
-        dr.End = model.PeriodTo;
-        tdsList = new List<TdsRateModel>();
-        foreach (var item in Iservice.Select(model.TdsNP.TdsNPID,model.AssesseeType.AssesseeTypeID))
+    {        
+
+        DateRange dr = new DateRange(model.PeriodFrom, model.PeriodTo);
+        List<TdsRateModel> tdsList = Iservice.Select(model.AssesseeType.AssesseeTypeID, model.TdsNP.TdsNPID).Where(x => x.TdsRateID != model.TdsRateID).ToList();
+
+        List<DateRange> drList = new List<DateRange>();
+        tdsList.ForEach(item => drList.Add(new DateRange(item.PeriodFrom, item.PeriodTo)));
+
+        if (CommonMethods.CheckPeriodOverlap(dr, drList))
         {
-            tdsList.Add(item);
-        }
-
-
-        if(model.TdsRateID==null)
-        {
-            
-            drList = new List<DateRange>();
-            foreach (var item in tdsList)
-            {
-
-                DateRange ddr = new DateRange();
-                ddr.Start=item.PeriodFrom;
-                ddr.End = item.PeriodTo;
-                drList.Add(ddr);
-            }
-            bl = CommonMethods.CheckPeriodOverlap(dr, drList);
-            if (bl == true)
-            {
-                snackbar.Add("Duplicate Date", Severity.Success);
-            }
-            else
-            {
-                MudDialog.Close(model);  
-            }
-
+            snackbar.Add("Periods cannot be overlapped", Severity.Success);
         }
         else
         {
-
-            drList = new List<DateRange>();
-            var query=tdsList.Where(c=>c.TdsRateID != model.TdsRateID);
-           
-            drList = new List<DateRange>();
-                     foreach (var item in query)
-                     {
-         
-                     DateRange ddr = new DateRange();
-                     ddr.Start=item.PeriodFrom;
-                     ddr.End = item.PeriodTo;
-                     drList.Add(ddr);
-                     }
-                    bl = CommonMethods.CheckPeriodOverlap(dr, drList);
-                    if (bl == true)
-                    {
-                    snackbar.Add("Duplicate Date", Severity.Success);
-                    }
-                    else
-                    {
-                       // snackbar.Add("Done", Severity.Success);
-                      MudDialog.Close(model);  
-                    }
-
-                }
-
-      
+            MudDialog.Close(model);
+        }
     }
 
     private void Cancel()
     {
         MudDialog.Cancel();
-    }   
+    }
 }
