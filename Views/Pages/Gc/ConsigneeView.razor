@@ -2,12 +2,187 @@
 @page "/consignee/{OrderID:int}"
 
 @inject IConsigneeService Iservice
+@inject IOrderService Iorder
+
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+@inject IDialogService DialogService
+
+
+<MudGrid Spacing="4">   
+    <MudItem xs="12" md="12">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<ConsigneeModel, bool>(search)">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">@Order?.OrderName Consignees</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(() => Edit(new ConsigneeModel()))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchConsignee" Placeholder="Search Consignees... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.ConsigneeID)" InitialDirection="SortDirection.Ascending">ID</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.ConsigneeName)" InitialDirection="SortDirection.Ascending">Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Address.Place)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Consignor)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
+
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.ConsigneeID</MudTd>
+                <MudTd DataLabel="Name"><MudHighlighter Style="background-color:cornflowerblue;font-weight:bold" Text="@context.ConsigneeName" HighlightedText="@searchConsignee" /></MudTd>
+                <MudTd DataLabel="Place">@context.Address.Place</MudTd>
+                <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
+                <MudTd DataLabel="Type">@(context.Consignor == true?"Consignor":"Consignee") </MudTd>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(() => Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(() => Delete(context.ConsigneeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+@code {
+
+    [Parameter]
+    public int? OrderID { get; set; }
+    private OrderModel Order = new OrderModel();
+
+    private List<ConsigneeModel> collection = new List<ConsigneeModel>();
+
+    private int BranchID { get; set; } = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Order = await Iorder.SelectByID(OrderID);
+        await GetAll();
+    }   
+
+    private async Task GetAll()
+    {
+        collection = new();
+        await foreach (var item in Iservice.SelectByOrder(OrderID.GetValueOrDefault()))
+        {
+            collection.Add(item);
+        }
+    }
+
+    //private async Task OnValidSubmit(EditContext context)
+    //{
+    //    try
+    //    {
+    //        model = await Iservice.Update(model);
+    //        snackbar.Add("Saved Successfully", Severity.Success);
+    //        if (collection.Exists(x => x.ConsigneeID == model.ConsigneeID))
+    //        {
+    //            collection[collection.FindIndex(x => x.ConsigneeID == model.ConsigneeID)] = model;
+    //        }
+    //        else
+    //        {
+    //            collection.Add(model);
+    //        }
+    //        model = new ConsigneeModel();
+    //        Order = new OrderModel();
+    //        Place = new PlaceModel();
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        snackbar.Add(ex.Message, Severity.Warning);
+    //    }
+    //}
+
+    private async Task Edit(ConsigneeModel model)
+    {        
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",model);
+        parms.Add("Order", Order);
+        var dialog = DialogService.Show<Consineedilog>("Add/Edit Consignee",parms);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            ConsigneeModel UpdatedModel = (ConsigneeModel)result.Data;
+            await Iservice.Update(UpdatedModel);
+            await GetAll();
+        }
+    }
+    private async void Delete(int? id)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        await Iservice.Delete(id, authprov.User.Identity.Name);
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        await GetAll();
+    }
+
+    private string searchConsignee = "";
+
+    private bool search(ConsigneeModel model)
+    {
+        if (model.ConsigneeName != null && model.ConsigneeName.Contains(searchConsignee, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@*@page "/consignee"
+@page "/consignee/{OrderID:int}"
+
+@inject IConsigneeService Iservice
 @inject IPlaceService Iplace
 @inject IOrderService Iorder
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@inject IDialogService DialogService
+
 
 
 <div style="background-color:#1469c0;padding:1%;padding-top:1%;  color:#fff;"><div style="float:left;padding-top:1%"><h6>Consignee</h6></div><div style="float:right;"><MudButton @onclick="OpenDialog" StartIcon="@Icons.Outlined.Add" Variant="Variant.Filled" Style="background:none;color:#fff;">
@@ -244,3 +419,4 @@
 
 
 
+*@

@@ -1,0 +1,111 @@
+﻿
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
+using ArmsModels.BaseModels;
+
+
+namespace ArmsServices.DataServices
+{
+    public interface IGstUsageIDService
+    {
+        GstUsageIDModel Update(GstUsageIDModel model);
+        GstUsageIDModel SelectByID(int? ID);
+        int Delete(int? ID, string UserID);
+        IEnumerable<GstUsageIDModel> Select();
+        
+
+    }
+
+    public class GstUsageIDService : IGstUsageIDService
+    {
+        IDbService Iservice;
+
+        public GstUsageIDService(IDbService iservice)
+        {
+            Iservice = iservice;
+        }
+
+        public int Delete(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TdsAccountMappedID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Taxes.TDS.ThresholdLimits.Delete]", parameters);
+        }
+
+
+
+        public IEnumerable<GstUsageIDModel> Select()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByID"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.ThresholdLimits.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+
+        public GstUsageIDModel SelectByID(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TdsTLID", ID),
+               new SqlParameter("@Operation", "ByID")
+            };
+            GstUsageIDModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.ThresholdLimits.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }       
+
+        public GstUsageIDModel Update(GstUsageIDModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UsageID", model.UsageID),
+               new SqlParameter("@AccountID", model.AccountID),
+               new SqlParameter("@PeriodFrom", model.PeriodFrom),
+               new SqlParameter("@PeriodTo", model.PeriodTo),
+               new SqlParameter("@RID", model.RID),
+               new SqlParameter("@SAC", model.SAC),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.ThresholdLimits.Update]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
+        private GstUsageIDModel GetModel(IDataRecord dr)
+        {
+            return new GstUsageIDModel
+            {
+                UsageID = dr.GetString("UsageID"),
+                PeriodFrom = dr.GetDateTime("PeriodFrom"),
+                PeriodTo = dr.GetDateTime("PeriodTo"),
+                AccountID = dr.GetInt32("AccountID"),
+                RID = dr.GetInt32("RID"),
+                SAC = dr.GetString("SAC"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+    }
+}

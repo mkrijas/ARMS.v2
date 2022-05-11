@@ -4,27 +4,61 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
+@inject IPlaceService Iplace
+@inject IOrderService Iorder
+
 <MudDialog>
-    <DialogContent>
-        
+    <TitleContent>
+
+    </TitleContent>
+    <DialogContent>       
             <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
-              
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudSwitch @bind-Checked="customstr" Color="Color.Error" Converter="@(new CustomStringToBoolConverter())"> <MudText Typo="Typo.h6">Add/Edit @(customstr)</MudText></MudSwitch>
+                    </CardHeaderContent>
+                </MudCardHeader>
                 <MudCardContent>
-                    <MudTextField @bind-Value="model.ConsigneeID" Label="Consginee Id" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.ConsigneeID)"></MudTextField>
-                    <MudTextField  @bind-Value="model.ConsigneeName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.ConsigneeName)"></MudTextField>
-                    <MudTextField @bind-Value="model.Address.Place" Label="Adress" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Place)"></MudTextField>
-                      <MudTextField @bind-Value="model.Address.City" Label="Adress" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.City)"></MudTextField>
-                    <MudTextField @bind-Value="model.Mobile" Label="Mobile" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Mobile)"></MudTextField>
-                    <MudTextField @bind-Value="model.Consignor" Label="Consignor" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Consignor)"></MudTextField>
-                    
-                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+                    <MudGrid Spacing="4">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.ConsigneeName" Label="Consignee Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.ConsigneeName)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Mobile" Label="Mobile" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Mobile)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudAutocomplete T="PlaceModel" Label="Place" @bind-Value="Place" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
+                                             SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="Order" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
+                                             SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.subtitle2">Address Info</MudText>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Address.Building" Label="Building" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Building)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Address.Street" Label="Street" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.Street)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Address.City" Label="City" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.City)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="model.Address.PinCode" Label="PinCode" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Address.PinCode)"></MudTextField>
+                        </MudItem>
+                    </MudGrid>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save @customstr</MudButton>
+
                 </MudCardContent>
             </EditForm>
-      
     </DialogContent>
-    
+
 </MudDialog>
 
 
@@ -32,49 +66,126 @@
 
     [Parameter]
     public ConsigneeModel model { get; set; }
+    [Parameter]
+    public OrderModel Order { get; set; }
 
-    private List<ConsigneeModel> collection = new List<ConsigneeModel>();
-   
-     protected override async Task OnInitializedAsync()
-    {       
-        await Task.Run(() => GetAll());
-    }   
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    private async Task GetAll()
+    private PlaceModel Place = new PlaceModel();
+    private List<PlaceModel> places = new List<PlaceModel>();
+    private List<OrderModel> orders = new List<OrderModel>();
+
+    public string customstr { get; set; } = "CONSIGNEE";
+
+    private string searchConsignee = "";
+
+    protected override async Task OnInitializedAsync()
     {
-        await foreach (var content in Iservice.Select(0))
+        places = Iplace.Select(0).ToList();
+
+        await foreach (var item in Iorder.Select(0))
         {
-            collection.Add(content);
+            orders.Add(item);
+        }   
+
+        if (model.Address == null)
+        { model.Address = new AddressModel() { AddresseeName = "temp", Place = "temp" }; }
+
+
+
+        CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
+        customstr = cs.GetFunc(model.Consignor);
+
+        Place = places.FirstOrDefault(x => x.PlaceID == model.PlaceID);
+    }
+
+
+    public class CustomStringToBoolConverter : BoolConverter<string>
+    {
+
+        public CustomStringToBoolConverter()
+        {
+            SetFunc = OnSet;
+            GetFunc = OnGet;
+        }
+
+        private string TrueString = "CONSIGNOR";
+        private string FalseString = "CONSIGNEE";
+        private string NullString = "SELECT";
+
+        private string OnGet(bool? value)
+        {
+            try
+            {
+                return (value == true) ? TrueString : FalseString;
+            }
+            catch (Exception e)
+            {
+                UpdateGetError("Conversion error: " + e.Message);
+                return NullString;
+            }
+        }
+
+        private bool? OnSet(string arg)
+        {
+            if (arg == null)
+                return null;
+            try
+            {
+                if (arg == TrueString)
+                    return true;
+                if (arg == FalseString)
+                    return false;
+                else
+                    return null;
+            }
+            catch (FormatException e)
+            {
+                UpdateSetError("Conversion error: " + e.Message);
+                return null;
+            }
         }
     }
-     private async void OnValidSubmit(EditContext context)
-    {
 
+    private async Task<IEnumerable<PlaceModel>> Search(string searchString)
+    {
+        return await Task.FromResult(
+            places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    {
+        var o = orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+        return await Task.FromResult(o);
+    }
+
+
+    private async void OnValidSubmit(EditContext context)
+    {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
 
-        try
+        if (Place?.PlaceID == 0)
         {
-            model = await Iservice.Update(model);
-
-            if (collection.Exists(x => x.ConsigneeID == model.ConsigneeID))
-            {
-                collection[collection.FindIndex(x => x.ConsigneeID == model.ConsigneeID)] = model;
-            }
-            else
-            {
-                collection.Add(model);
-            }
-            model = new ConsigneeModel();
-            snackbar.Add("Saved Successfully", Severity.Success);
-            StateHasChanged();
+            snackbar.Add("Place is not selected", Severity.Error);
+            return;
         }
-        catch (Exception ex)
+        else
+        if (!places.Select(x => x.PlaceName).Contains(Place.PlaceName))
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            snackbar.Add("Invalid Place", Severity.Error);
+            return;
         }
 
+        model.PlaceID = Place.PlaceID;
+        model.Address.Place = Place.PlaceName;
+        model.OrderID = Order.OrderID;
+        model.Address.AddresseeName = model.ConsigneeName;
+        CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
+        model.Consignor = cs.SetFunc(customstr).Value;
+
+        MudDialog.Close(model);
     }
-    
+
 }
