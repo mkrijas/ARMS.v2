@@ -63,13 +63,14 @@
 @code {
     [Parameter]
     public TdsRateModel model { get; set; }
-    private List<TdsRateModel> collection = new List<TdsRateModel>();    
+    private List<TdsRateModel> collection = new List<TdsRateModel>();
+    private List<TdsRateModel> tdsList = new List<TdsRateModel>();
     private List<NatureOfPaymentModel> naturepayment = new();
     private List<AssesseeTypeModel> asseesse = new();
     private TdsRateModel tds = new();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-
+    private List<DateRange> drList = new List<DateRange>();
 
     protected override void OnInitialized()
     {
@@ -77,8 +78,70 @@
         asseesse =  Iservice.SelectAssesseeTypes().ToList();
     }
     private void OnValidSubmit(EditContext context)
-    {             
-       MudDialog.Close(model);  
+    {    
+        Boolean bl;
+        DateRange dr = new DateRange();
+        dr.Start = model.PeriodFrom;
+        dr.End = model.PeriodTo;
+        tdsList = new List<TdsRateModel>();
+        foreach (var item in Iservice.Select(model.TdsNP.TdsNPID,model.AssesseeType.AssesseeTypeID))
+        {
+            tdsList.Add(item);
+        }
+
+
+        if(model.TdsRateID==null)
+        {
+            
+            drList = new List<DateRange>();
+            foreach (var item in tdsList)
+            {
+
+                DateRange ddr = new DateRange();
+                ddr.Start=item.PeriodFrom;
+                ddr.End = item.PeriodTo;
+                drList.Add(ddr);
+            }
+            bl = CommonMethods.CheckPeriodOverlap(dr, drList);
+            if (bl == true)
+            {
+                snackbar.Add("Duplicate Date", Severity.Success);
+            }
+            else
+            {
+                MudDialog.Close(model);  
+            }
+
+        }
+        else
+        {
+
+            drList = new List<DateRange>();
+            var query=tdsList.Where(c=>c.TdsRateID != model.TdsRateID);
+           
+            drList = new List<DateRange>();
+                     foreach (var item in query)
+                     {
+         
+                     DateRange ddr = new DateRange();
+                     ddr.Start=item.PeriodFrom;
+                     ddr.End = item.PeriodTo;
+                     drList.Add(ddr);
+                     }
+                    bl = CommonMethods.CheckPeriodOverlap(dr, drList);
+                    if (bl == true)
+                    {
+                    snackbar.Add("Duplicate Date", Severity.Success);
+                    }
+                    else
+                    {
+                       // snackbar.Add("Done", Severity.Success);
+                      MudDialog.Close(model);  
+                    }
+
+                }
+
+      
     }
 
     private void Cancel()
