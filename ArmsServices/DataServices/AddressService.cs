@@ -11,10 +11,10 @@ namespace ArmsServices.DataServices
 {
     public interface IAddressService
     {       
-        Task<AddressModel> Update(AddressModel model);
-        Task<AddressModel> SelectByID(int? AddressID);
-        Task<int> Delete(int? AddressID, string UserID);
-        IAsyncEnumerable<AddressModel> Select(int? AddressID);
+        AddressModel Update(AddressModel model);
+        AddressModel SelectByID(int? AddressID);
+        int Delete(int? AddressID, string UserID);
+        IEnumerable<AddressModel> Select(int? AddressID);
 
     }
 
@@ -25,7 +25,7 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-        public async Task<AddressModel> Update(AddressModel model)
+        public AddressModel Update(AddressModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -38,7 +38,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Street", model.Street),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Entity.AddressesUpdate]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.AddressesUpdate]", parameters))
             {
                 model = new AddressModel
                 {
@@ -59,14 +59,14 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<AddressModel> SelectByID(int? AddressID)
+        public AddressModel SelectByID(int? AddressID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@AddressID", AddressID),               
             };
             AddressModel model = new AddressModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Entity.AddressesSelect]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.AddressesSelect]", parameters))
             {
                 model = new AddressModel
                 {
@@ -87,23 +87,23 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<int> Delete(int? AddressID,string UserID)
+        public int Delete(int? AddressID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AddressID", AddressID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return await Iservice.ExecuteNonQueryAsync("[usp.Entity.AddressesDelete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Entity.AddressesDelete]", parameters);
         }
-        public async IAsyncEnumerable<AddressModel> Select(int? AddressID)
+        public IEnumerable<AddressModel> Select(int? AddressID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AddressID", AddressID)               
             };
 
-            await foreach(IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Entity.AddressesSelect]", parameters))
+            foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Entity.AddressesSelect]", parameters))
             {               
                     yield return new AddressModel
                     {

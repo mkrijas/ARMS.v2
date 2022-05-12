@@ -1,76 +1,86 @@
-﻿@inject IGstService Iservice
+﻿@inject IPartyBranchService Iservice
 @inject IPartyService Iparty
 @inject IContactService Icontact
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
- 
- 
+
+
 
 <MudItem xs="12" md="12">
-        <MudCard Elevation="10">
-            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Add/Edit Gsts</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudGrid Spacing="4">
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.GstNo" Label="GST No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.GstNo)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.RegName" Label="Registered Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.RegName)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.TradeName" Label="Trade Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TradeName)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="@model.TanNo" Label="TAN No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TanNo)"></MudTextField>
-                        </MudItem>
-                       @foreach (var item in model.Contacts.Select((value,i) => new {i,value }))
-                            { 
-                        <MudItem xs="12" >                                                          
-                                <ContactView Index="item.i" Model="item.value"></ContactView>                          
-                        </MudItem>                        
-                          }              
-                        <MudItem xs="12">
-                           <AddressView Address="@model.Address"></AddressView>
-                        </MudItem>                        
-                    </MudGrid>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddContact" >Add Contact</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Gst</MudButton>
+    <MudCard Elevation="10">
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <ObjectGraphDataAnnotationsValidator />            
+            <MudCardContent>
+                <MudContainer Style="min-height: 300px; max-height:500px; overflow-y: scroll">
+                <MudTabs Rounded="true" ApplyEffectsToContainer="true">
+                    <ChildContent>
+                        <MudTabPanel Text="Details" Tag="@model">
+                            <MudGrid Spacing="4">
+                                <MudItem xs="12" md="4">
+                                    <MudTextField @bind-Value="@model.GstNo" Label="GST No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.GstNo)"></MudTextField>
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudTextField @bind-Value="@model.RegName" Label="Registered Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.RegName)"></MudTextField>
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudTextField @bind-Value="@model.TradeName" Label="Trade Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TradeName)"></MudTextField>
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudTextField @bind-Value="@model.TanNo" Label="TAN No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TanNo)"></MudTextField>
+                                </MudItem>
+                            </MudGrid>
+                        </MudTabPanel>
+                        <MudTabPanel Text="Address" Tag="@model.Address">
+                            <AddressView Address="@model.Address" Label="@(null)"></AddressView>
+                        </MudTabPanel>
 
-                </MudCardContent>
-            </EditForm>
-        </MudCard>
-    </MudItem>
+                        @foreach (var item in model.Contacts.Select((value, i) => new { i, value }))
+                        {
+                            string head = "Contact " + (item.i + 1).ToString();
+                            <MudTabPanel Text="@head" Tag="@item">
+                                <ContactView Index="@null" Model="item.value"></ContactView>
+                            </MudTabPanel>
+                        }
+                    </ChildContent>
+                </MudTabs>
+                </MudContainer>
+                <hr />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddContact">Add Contact</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Gst</MudButton>
+
+            </MudCardContent>
+        </EditForm>
+    </MudCard>
+</MudItem>
 @code {
 
 
-   [Parameter]
-    public GstModel model { get; set; }
-    private List<GstModel> collection = new List<GstModel>();
+    [Parameter]
+    public PartyBranchModel model { get; set; }
+    private List<PartyBranchModel> collection = new List<PartyBranchModel>();
     private List<PartyModel> parties = new List<PartyModel>();
     [Parameter]
     public int partyID { get; set; }
+
     private PartyModel party = new PartyModel();
 
     private string searchGst = "";
 
     protected override async Task OnInitializedAsync()
     {
+        if (model.GstID == null)
+        {
+            model.Contacts.Add(new ContactModel());
+        }
         await foreach (var party in Iparty.Select(0))
         {
             parties.Add(party);
         }
-        if(partyID != 0)
+        if (partyID != 0)
         {
             party = parties.First(x => x.PartyID == partyID);
-            await GetAll(false);
+            GetAll(false);
         }
     }
 
@@ -88,12 +98,12 @@
     }
 
 
-    private async Task GetAll(bool p)
+    private void GetAll(bool p)
     {
-        collection = new List<GstModel>();
+        collection = new List<PartyBranchModel>();
 
         if (party?.PartyID != null && party?.PartyID != 0)
-            await foreach (var item in Iservice.SelectByParty(party.PartyID))
+            foreach (var item in Iservice.SelectByParty(party.PartyID))
             {
                 collection.Add(item);
             }
@@ -118,7 +128,7 @@
         try
         {
             var contacts = model.Contacts;
-            model = await Iservice.Update(model);
+            model = Iservice.Update(model);
             snackbar.Add("Saved Successfully", Severity.Success);
             if (collection.Exists(x => x.GstID == model.GstID))
             {
@@ -128,14 +138,14 @@
             {
                 collection.Add(model);
             }
-            foreach(var item in contacts)
+            foreach (var item in contacts)
             {
                 item.RefKey = model.GstID;
                 item.UserInfo = model.UserInfo;
                 Icontact.Update(item);
             }
 
-            model = new GstModel();
+            model = new PartyBranchModel();
         }
         catch (Exception ex)
         {

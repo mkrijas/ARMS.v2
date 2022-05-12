@@ -32,7 +32,7 @@ namespace ArmsServices.DataServices
         }
         public async Task<BranchModel> Update(BranchModel model)
         {
-            model.Address = await _addressService.Update(model.Address);
+            model.Address = _addressService.Update(model.Address);
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BranchID", model.BranchID),

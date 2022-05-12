@@ -42,7 +42,7 @@ namespace ArmsServices.DataServices
 
             await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.PartyUpdate]", parameters))
             {
-                model = await GetModel(reader);
+                model = GetModel(reader);
             }
             return model;
         }
@@ -55,7 +55,7 @@ namespace ArmsServices.DataServices
             PartyModel model = new PartyModel();
             await foreach( IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.PartySelect]", parameters))
             {
-                model = await GetModel(reader);
+                model = GetModel(reader);
             }
             return model;
         }
@@ -77,12 +77,12 @@ namespace ArmsServices.DataServices
 
             await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.PartySelect]", parameters))
             {
-                yield return await GetModel(reader);
+                yield return GetModel(reader);
                
             }
         }
 
-        private async Task<PartyModel> GetModel(IDataRecord reader)
+        private PartyModel GetModel(IDataRecord reader)
         {
             return new PartyModel
             {

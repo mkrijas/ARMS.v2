@@ -54,7 +54,7 @@ namespace ArmsServices.DataServices
         public async Task<ConsigneeModel> Update(ConsigneeModel model)
         {
             model.Address.UserInfo = model.UserInfo;
-            AddressModel address = await Iaddress.Update(model.Address);
+            AddressModel address = Iaddress.Update(model.Address);
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ConsigneeID", model.ConsigneeID),
@@ -111,7 +111,7 @@ namespace ArmsServices.DataServices
                 ConsigneeName = dr.GetString("ConsigneeName"),
                 Consignor = dr.GetBoolean("Consignor"),
                 Mobile = dr.GetString("Mobile"),
-                Address = await Iaddress.SelectByID(dr.GetInt32("AddressID").GetValueOrDefault()),
+                Address = Iaddress.SelectByID(dr.GetInt32("AddressID").GetValueOrDefault()),
                 OrderID = dr.GetInt32("OrderID"),
                 PlaceID = dr.GetInt32("PlaceID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

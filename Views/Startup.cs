@@ -83,7 +83,7 @@ namespace Views
             services.AddScoped<IAddressService, AddressService>();
             services.AddScoped<IContactService, ContactService>();
             services.AddScoped<IBankAccountService, BankAccountService>();
-            services.AddScoped<IGstService, GstService>();
+            services.AddScoped<IPartyBranchService, PartyBranchService>();
             services.AddScoped<IPartyService, PartyService>();
             
             services.AddScoped<ITransactionService, TransactionService>();
