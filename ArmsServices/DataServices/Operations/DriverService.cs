@@ -43,8 +43,7 @@ namespace ArmsServices.DataServices
             {    
                new SqlParameter("@DriverID", model.DriverID),
                new SqlParameter("@DriverName", model.DriverName),
-               new SqlParameter("@HomeBranchID", model.HomeBranchID),
-               new SqlParameter("@Mobile", model.Mobile),
+               new SqlParameter("@HomeBranchID", model.HomeBranchID),               
                new SqlParameter("@DriverImage", model.DriverImage),
                new SqlParameter("@DateOfBirth", model.DateOfBirth),
                new SqlParameter("@AdhaarNo", model.AdhaarNo),
@@ -113,7 +112,7 @@ namespace ArmsServices.DataServices
                 AdhaarImage = reader.GetString("AdhaarImage"),                          
                 FestivalBonus = reader.GetString("FestivalBonus"),
                 DriverID = reader.GetInt32("DriverID"),
-                Mobile = reader.GetString("Mobile"),
+                Mobile =  reader.GetString("Mobile"),
                 AddressID = reader.GetInt32("AddressID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

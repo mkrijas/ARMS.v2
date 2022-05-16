@@ -9,23 +9,17 @@
 @inject IDialogService DialogService
 
 
-<div style="background-color:#1469c0;padding:1%;padding-top:1%;  color:#fff;"><div style="float:left;padding-top:1%"><h6>GST</h6></div><div style="float:right;"><MudButton @onclick="OpenDialog" StartIcon="@Icons.Outlined.Add" Variant="Variant.Filled" Style="background:none;color:#fff;">
-  Add new GST
-</MudButton></div>
-<br />
-<br />
-</div>
-
 <MudGrid Spacing="4">
     <MudItem xs="6">
-        <MudAutocomplete T="PartyModel" Label="Party" ResetValueOnEmptyText="true" Value="party"  ValueChanged="PartyChanged"
-            SearchFunc="@Search" Placeholder="Select Party"  ToStringFunc="@(e=> e==null?null : $"{e.PartyName}")"></MudAutocomplete>
+        <MudAutocomplete T="PartyModel" Label="Party" ResetValueOnEmptyText="true" Value="party" ValueChanged="PartyChanged"
+                         SearchFunc="@Search" Placeholder="Select Party" ToStringFunc="@(e=> e==null?null : $"{e.PartyName}")"></MudAutocomplete>
     </MudItem>
-  
+
     <MudItem xs="12" md="12">
-        <MudTable Items="@collection" Elevation="10" Filter="new Func<GstModel, bool>(search)" @bind-model="model">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<PartyBranchModel, bool>(search)" @bind-model="model">
             <ToolBarContent>
-                <MudText Typo="Typo.h6">Gsts</MudText>
+                <MudText Typo="Typo.h6">Locations</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=>OpenDialog(new PartyBranchModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchGst" Placeholder="Search Gsts... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
@@ -33,18 +27,18 @@
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PartyBranchModel, object>(x=> x.GstNo)" InitialDirection="SortDirection.Ascending">GST</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PartyBranchModel, object>(x=> x.TanNo)" InitialDirection="SortDirection.Ascending">TAN</MudTableSortLabel></MudTh>                
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyBranchModel, object>(x=> x.TanNo)" InitialDirection="SortDirection.Ascending">TAN</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PartyBranchModel, object>(x=> x.Address.Place)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PartyBranchModel, object>(x=> x.Address.PinCode)" InitialDirection="SortDirection.Ascending">PinCode</MudTableSortLabel></MudTh>                
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyBranchModel, object>(x=> x.Address.PinCode)" InitialDirection="SortDirection.Ascending">PinCode</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Gst">@context.GstNo</MudTd>
-                <MudTd DataLabel="Tan">@context.TanNo</MudTd>                
+                <MudTd DataLabel="Tan">@context.TanNo</MudTd>
                 <MudTd DataLabel="Place">@context.Address.Place</MudTd>
                 <MudTd DataLabel="Pin">@context.Address.PinCode</MudTd>
                 <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> Edit(context.GstID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Delete(context.GstID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
@@ -75,7 +69,7 @@
         {
             parties.Add(party);
         }
-        if(partyID != 0)
+        if (partyID != 0)
         {
             party = parties.First(x => x.PartyID == partyID);
             GetAll(false);
@@ -105,12 +99,10 @@
 
 
     private void GetAll(bool p)
-    { 
+    {
         if (party?.PartyID != null && party?.PartyID != 0)
-            collection = Iservice.SelectByParty(party.PartyID).ToList();       
+            collection = Iservice.SelectByParty(party.PartyID).ToList();
     }
-
-
 
     private async Task OnValidSubmit(EditContext context)
     {
@@ -118,7 +110,7 @@
         {
             snackbar.Add("Invalid Party", Severity.Error);
             return;
-        }       
+        }
         model.Address.AddresseeName = model.TradeName;
 
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -136,7 +128,7 @@
             {
                 collection.Add(model);
             }
-            foreach(var item in contacts)
+            foreach (var item in contacts)
             {
                 item.RefKey = model.GstID;
                 item.UserInfo = model.UserInfo;
@@ -150,11 +142,7 @@
             snackbar.Add(ex.Message, Severity.Warning);
         }
     }
-    private void Edit(int? id)
-    {
-        model = collection.FirstOrDefault(x => x.GstID == id);
-        model.Contacts = Icontact.Select(model.GstID, "GST").ToList();
-    }
+
     private void Delete(int? id)
     {
         Iservice.Delete(id, "Rijas");
@@ -170,13 +158,50 @@
         }
         return false;
     }
-    private void OpenDialog()
+
+    private async Task OpenDialog(PartyBranchModel model)
     {
-        PartyBranchModel model = new PartyBranchModel() { PartyID = party.PartyID, Party = party };
-        DialogOptions options = new DialogOptions() { FullWidth = true,MaxWidth = MaxWidth.ExtraLarge };
+        if (model.GstID == null)
+        {
+            model.PartyID = party.PartyID;
+            model.Party = party;
+        }
+        else
+        {
+            model.Contacts = Icontact.Select(model.GstID, "GST").ToList();
+        }
+        DialogOptions options = new DialogOptions() { FullWidth = true, MaxWidth = MaxWidth.ExtraLarge };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model);
-        DialogService.Show<GstDiloge>(model.GstID == null?"Add Address":"Edit Address", parms,options);
+        var dialog = DialogService.Show<GstDiloge>(model.GstID == null ? "Add Address" : "Edit Address", parms, options);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            PartyBranchModel UpatedModel = (PartyBranchModel)result.Data;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            UpatedModel.UserInfo.UserID = authprov.User.Identity.Name;
+
+            try
+            {
+                var contacts = UpatedModel.Contacts;
+                UpatedModel = Iservice.Update(UpatedModel);
+                foreach (var item in contacts)
+                {
+                    item.RefKey = UpatedModel.GstID;
+                    item.UserInfo = UpatedModel.UserInfo;
+                    Icontact.Update(item);
+                }
+                snackbar.Add("Saved Successfully", Severity.Success);
+                GetAll(false);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+
+        }
+
     }
 }
 

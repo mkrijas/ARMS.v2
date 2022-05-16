@@ -14,11 +14,10 @@ namespace ArmsModels.BaseModels
         [Required]
         public string ContactName { get; set; }        
         public string AdditionalInfo { get; set; }
-        [RegularExpression(@"^([0-9]{10})$", ErrorMessage = "Invalid Phone Number.")]
+        [RegularExpression(@"^([0-9]{10})$", ErrorMessage = "Mobile must be 10 digits long")]
         public string Phone { get; set; }
         [EmailAddress]
-        public string Email { get; set; }
-        [Required]
+        public string Email { get; set; }       
         public string RefTable { get; set; }
         public int? RefKey { get; set; }
         public UserInfoModel UserInfo { get; set; }

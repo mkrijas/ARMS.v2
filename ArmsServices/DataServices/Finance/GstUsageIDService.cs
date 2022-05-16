@@ -13,9 +13,13 @@ namespace ArmsServices.DataServices
     public interface IGstUsageIDService
     {
         GstUsageIDModel Update(GstUsageIDModel model);
-        GstUsageIDModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<GstUsageIDModel> Select();
+        GstUsageIDModel SelectByID(string ID);
+        IEnumerable<GstUsageIDModel> SelectByAccount(int AccountID , DateTime? entryDate);
+        IEnumerable<GstUsageIDModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);
+        IEnumerable<GstUsageIDModel> SelectBySAC(string SAC, DateTime? entryDate);
+        IEnumerable<GstUsageIDModel> FilterByText(string FilterText, DateTime? entryDate);
+        int Delete(string ID, string UserID);
+        IEnumerable<GstUsageIDModel> Select(DateTime? entryDate);
         
 
     }
@@ -29,46 +33,103 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Delete(int? ID, string UserID)
+        public int Delete(string ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TdsAccountMappedID", ID),
+               new SqlParameter("@UsageID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Taxes.TDS.ThresholdLimits.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Taxes.Gst.UsageID.Delete]", parameters);
         }
 
-
-
-        public IEnumerable<GstUsageIDModel> Select()
+        public IEnumerable<GstUsageIDModel> FilterByText(string FilterText, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByID"),
+               new SqlParameter("@Operation", "AutoComplete"),
+               new SqlParameter("@UsageID",FilterText),
+               new SqlParameter("@EntryDate", entryDate),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.ThresholdLimits.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-
-        public GstUsageIDModel SelectByID(int? ID)
+        public IEnumerable<GstUsageIDModel> Select(DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TdsTLID", ID),
+               new SqlParameter("@Operation", "ByID"),
+               new SqlParameter("@EntryDate", entryDate),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<GstUsageIDModel> SelectByAccount(int AccountID, DateTime? entryDate)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByAccount"),
+               new SqlParameter("@EntryDate", entryDate),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public GstUsageIDModel SelectByID(string ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UsageID", ID),
                new SqlParameter("@Operation", "ByID")
             };
             GstUsageIDModel model = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.ThresholdLimits.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
-        }       
+        }
+
+        public IEnumerable<GstUsageIDModel> SelectBySAC(string SAC, DateTime? entryDate)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "BySAC"),
+               new SqlParameter("@SAC", SAC ),
+               new SqlParameter("@EntryDate", entryDate),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<GstUsageIDModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "BySAC"),
+               new SqlParameter("@Taxrate", TaxRate ),
+               new SqlParameter("@EntryDate", entryDate),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
 
         public GstUsageIDModel Update(GstUsageIDModel model)
         {
@@ -82,7 +143,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@SAC", model.SAC),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.ThresholdLimits.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Update]", parameters))
             {
                 model = GetModel(dr);
             }
