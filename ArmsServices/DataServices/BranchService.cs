@@ -37,6 +37,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@BranchName", model.BranchName),
+               new SqlParameter("@GstNo", model.GstNo),
                new SqlParameter("@AddressID", model.Address.AddressID),
                new SqlParameter("@PlaceID", model.PlaceID),
                new SqlParameter("@Operate", model.Operate),
@@ -90,6 +91,7 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 Operate = dr.GetBoolean("Operate"),
                 PlaceID = dr.GetInt32("PlaceID"),
+                GstNo = dr.GetString("GstNo"),
                 UpwardBranchID = dr.GetInt32("UpwardBranchID"),                
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
