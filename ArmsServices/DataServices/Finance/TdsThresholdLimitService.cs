@@ -15,8 +15,8 @@ namespace ArmsServices.DataServices
         TdsThresholdLimitModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<TdsThresholdLimitModel> Select();
-        IEnumerable<TdsThresholdLimitModel> SelectByNP(int TdsNPID);        
-
+        IEnumerable<TdsThresholdLimitModel> SelectByNP(int TdsNPID);
+     
     }
 
     public class TdsThresholdLimitService : ITdsThresholdLimitService

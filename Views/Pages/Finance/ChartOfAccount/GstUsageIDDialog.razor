@@ -1,0 +1,125 @@
+﻿@inject IGstUsageIDService Iservice
+@inject IChartOfAccountService accountService
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Create GstUsageID
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                     <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.UsageID" Label="Gst UsageId" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.UsageID)"></MudTextField>
+                    </MudItem>
+                     <MudItem xs="12">
+                       
+
+                           <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+                    </MudItem>
+                    <MudItem xs="12">
+
+                        <MudSelect Label="Select RID" @bind-Value="model.RID" T="int?"  Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in gstRate)
+                            {
+                                <MudSelectItem Value="@ditem">@ditem.TaxRate</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                   
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodFrom" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Period To" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodTo" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.SAC" Label="Tax Rate%" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.SAC)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        @*   <MudButton OnClick="DeleteTaxRate">Delete Tax Rate</MudButton>
+            <MudButton OnClick="AddTaxRate">Add More Tax Rate</MudButton>*@
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+
+@code {
+    [Parameter]
+    public GstUsageIDModel model { get; set; }
+    private List<GstUsageIDModel> collection = new List<GstUsageIDModel>();
+
+    private List<GstRateModel> gstRate = new(); 
+   
+    private GstUsageIDModel tds = new();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    
+    private ChartOfAccountModel SelectedAccount = null;
+
+    protected override void OnInitialized()
+    {
+
+         try
+        {
+            SelectedAccount = new();
+            SelectedAccount.CoaID = model.AccountID;
+            //SelectedAccount.AccountName = model.AccountName;
+        }
+        catch(Exception ex)
+        {}
+
+
+        gstRate = Iservice.GetGstRates().ToList();
+       // asseesse = Iservice.SelectAssesseeTypes().ToList();
+    }
+
+     private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
+    {
+
+        return await Task.FromResult(accountService.FilterSubLedgers(searchString));
+
+    }
+
+
+    private void OnValidSubmit(EditContext context)
+    {        
+        DateRange dr = new DateRange(model.PeriodFrom, model.PeriodTo);
+        List<GstUsageIDModel> tdsList = Iservice.SelectByTaxRateAccount(model.RID, model.AccountID).Where(x => x.UsageID != model.UsageID).ToList();
+
+        List<DateRange> drList = new List<DateRange>();
+        tdsList.ForEach(item => drList.Add(new DateRange(item.PeriodFrom, item.PeriodTo)));
+
+        if (CommonMethods.CheckPeriodOverlap(dr, drList))
+        {
+            snackbar.Add("Periods cannot be overlapped", Severity.Success);
+        }
+        else
+        {
+            MudDialog.Close(model);
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

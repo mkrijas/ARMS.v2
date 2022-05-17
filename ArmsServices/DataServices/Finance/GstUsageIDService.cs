@@ -21,8 +21,8 @@ namespace ArmsServices.DataServices
         int Delete(string ID, string UserID);
         IEnumerable<GstUsageIDModel> Select(DateTime? entryDate);
         IEnumerable<GstRateModel> GetGstRates();
-        
-
+        IEnumerable<GstUsageIDModel> SelectByIDT(int? ID);
+        IEnumerable<GstUsageIDModel> SelectByTaxRateAccount(int? rateId, int? acID);
     }
 
     public class GstUsageIDService : IGstUsageIDService
@@ -116,6 +116,21 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public IEnumerable<GstUsageIDModel> SelectByIDT(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+             new SqlParameter("@UsageID", ID),
+               new SqlParameter("@Operation", "ByID")
+            }; 
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+
         public IEnumerable<GstUsageIDModel> SelectBySAC(string SAC, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -139,7 +154,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Taxrate", TaxRate ),
                new SqlParameter("@EntryDate", entryDate),
             };
-
+            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -164,6 +179,22 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        public IEnumerable<GstUsageIDModel> SelectByTaxRateAccount(int? rateId, int? acId)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByID"),
+               new SqlParameter("@RateId",rateId),
+               new SqlParameter("@CoalId",acId),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
 
         private GstUsageIDModel GetModel(IDataRecord dr)
         {
