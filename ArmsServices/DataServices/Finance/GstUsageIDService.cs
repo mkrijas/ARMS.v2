@@ -20,6 +20,7 @@ namespace ArmsServices.DataServices
         IEnumerable<GstUsageIDModel> FilterByText(string FilterText, DateTime? entryDate);
         int Delete(string ID, string UserID);
         IEnumerable<GstUsageIDModel> Select(DateTime? entryDate);
+        IEnumerable<GstRateModel> GetGstRates();
         
 
     }
@@ -55,6 +56,20 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
             {
                 yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<GstRateModel> GetGstRates()
+        {           
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", null))
+            {
+                yield return new GstRateModel()
+                {
+                    RID = dr.GetInt32("RID"),
+                    TaxRate = dr.GetDecimal("TaxRate"),
+                    Description = dr.GetString("Description")
+                };
             }
         }
 
