@@ -22,8 +22,7 @@ namespace ArmsServices.DataServices
         IEnumerable<GstUsageIDModel> Select(DateTime? entryDate);
         IEnumerable<GstRateModel> GetGstRates();
         IEnumerable<GstUsageIDModel> SelectByIDT(int? ID);
-        IEnumerable<GstUsageIDModel> SelectByTaxRateAccount(int? rateId, int? acID);
-        bool UsageIDExists(string UsageID);
+        IEnumerable<GstUsageIDModel> SelectByTaxRateAccount(int? rateId, int? acID);       
     }
 
     public class GstUsageIDService : IGstUsageIDService
