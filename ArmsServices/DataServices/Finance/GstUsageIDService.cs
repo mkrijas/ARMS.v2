@@ -23,6 +23,7 @@ namespace ArmsServices.DataServices
         IEnumerable<GstRateModel> GetGstRates();
         IEnumerable<GstUsageIDModel> SelectByIDT(int? ID);
         IEnumerable<GstUsageIDModel> SelectByTaxRateAccount(int? rateId, int? acID);
+        bool UsageIDExists(string UsageID);
     }
 
     public class GstUsageIDService : IGstUsageIDService
@@ -32,7 +33,7 @@ namespace ArmsServices.DataServices
         public GstUsageIDService(IDbService iservice)
         {
             Iservice = iservice;
-        }
+        }      
 
         public int Delete(string ID, string UserID)
         {
@@ -62,7 +63,7 @@ namespace ArmsServices.DataServices
         public IEnumerable<GstRateModel> GetGstRates()
         {           
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", null))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.Rates.Select]", null))
             {
                 yield return new GstRateModel()
                 {
@@ -184,9 +185,9 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByID"),
-               new SqlParameter("@RateId",rateId),
-               new SqlParameter("@CoalId",acId),
+               new SqlParameter("@Operation", "Compare"),
+               new SqlParameter("@RID",rateId),
+               new SqlParameter("@AccountID",acId),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
