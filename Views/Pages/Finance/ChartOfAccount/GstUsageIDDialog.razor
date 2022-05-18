@@ -21,20 +21,28 @@
                 <ValidationSummary />
                 <MudGrid Spacing="2">
                      <MudItem xs="12" md="12">
+                         @if(model.UsageID != null)
+                         {
+                        <MudTextField ReadOnly="true" @bind-Value="model.UsageID" Label="Gst UsageId" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.UsageID)"></MudTextField>
+                         }
+                         else
+                         {
                         <MudTextField @bind-Value="model.UsageID" Label="Gst UsageId" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.UsageID)"></MudTextField>
+
+                         }
                     </MudItem>
-                     <MudItem xs="12">
+                     <MudItem xs="6">
                        
 
                            <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
                                      SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
                     </MudItem>
-                    <MudItem xs="12">
+                    <MudItem xs="6">
 
                         <MudSelect Label="Select RID" @bind-Value="model.RID" T="int?"  Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in gstRate)
                             {
-                                <MudSelectItem Value="@ditem">@ditem.TaxRate</MudSelectItem>
+                                <MudSelectItem Value="@ditem.RID">@ditem.TaxRate</MudSelectItem>
                             }
                         </MudSelect>
                     </MudItem>
@@ -46,7 +54,7 @@
                         <MudDatePicker Label="Period To" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodTo" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.SAC" Label="Tax Rate%" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.SAC)"></MudTextField>
+                        <MudTextField @bind-Value="model.SAC" Label="SAC" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.SAC)"></MudTextField>
                     </MudItem>
                 </MudGrid>
             </EditForm>
@@ -69,16 +77,16 @@
     private List<GstUsageIDModel> collection = new List<GstUsageIDModel>();
 
     private List<GstRateModel> gstRate = new(); 
-   
+
     private GstUsageIDModel tds = new();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    
+
     private ChartOfAccountModel SelectedAccount = null;
 
     protected override void OnInitialized()
     {
 
-         try
+        try
         {
             SelectedAccount = new();
             SelectedAccount.CoaID = model.AccountID;
@@ -86,13 +94,16 @@
         }
         catch(Exception ex)
         {}
+       
 
 
         gstRate = Iservice.GetGstRates().ToList();
-       // asseesse = Iservice.SelectAssesseeTypes().ToList();
+
+
+        // asseesse = Iservice.SelectAssesseeTypes().ToList();
     }
 
-     private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
+    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
     {
 
         return await Task.FromResult(accountService.FilterSubLedgers(searchString));
@@ -101,7 +112,8 @@
 
 
     private void OnValidSubmit(EditContext context)
-    {        
+    {  
+        
         DateRange dr = new DateRange(model.PeriodFrom, model.PeriodTo);
         List<GstUsageIDModel> tdsList = Iservice.SelectByTaxRateAccount(model.RID, model.AccountID).Where(x => x.UsageID != model.UsageID).ToList();
 
@@ -114,6 +126,12 @@
         }
         else
         {
+            model.AccountID = SelectedAccount.CoaID;
+            if (model.AccountID == null)
+            {
+                  snackbar.Add("Select Account", Severity.Success);
+            }
+           
             MudDialog.Close(model);
         }
     }

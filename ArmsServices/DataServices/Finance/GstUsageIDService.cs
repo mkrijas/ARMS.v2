@@ -21,7 +21,7 @@ namespace ArmsServices.DataServices
         int Delete(string ID, string UserID);
         IEnumerable<GstUsageIDModel> Select(DateTime? entryDate);
         IEnumerable<GstRateModel> GetGstRates();
-        IEnumerable<GstUsageIDModel> SelectByIDT(int? ID);
+      
         IEnumerable<GstUsageIDModel> SelectByTaxRateAccount(int? rateId, int? acID);       
     }
 
@@ -116,19 +116,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public IEnumerable<GstUsageIDModel> SelectByIDT(int? ID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-             new SqlParameter("@UsageID", ID),
-               new SqlParameter("@Operation", "ByID")
-            }; 
-
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
-            {
-                yield return GetModel(dr);
-            }
-        }
+       
 
 
         public IEnumerable<GstUsageIDModel> SelectBySAC(string SAC, DateTime? entryDate)

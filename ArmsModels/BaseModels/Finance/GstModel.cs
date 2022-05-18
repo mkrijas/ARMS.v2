@@ -13,7 +13,7 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(maximumLength: 25)]
         public string UsageID { get; set; }
-        [Required]
+        
         public int? AccountID { get; set; }
         [Required]
         public int? RID { get; set; }
