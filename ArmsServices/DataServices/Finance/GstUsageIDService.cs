@@ -194,7 +194,7 @@ namespace ArmsServices.DataServices
                 AccountID = dr.GetInt32("AccountID"),
                 AccountName = dr.GetString("AccountName"),
                 RID = dr.GetInt32("RID"),
-                TaxRate =   dr.GetString("Taxrate"),
+                TaxRate = dr.GetDecimal("Taxrate"),
                 SAC = dr.GetString("SAC"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

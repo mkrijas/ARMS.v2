@@ -18,7 +18,7 @@ namespace ArmsModels.BaseModels
         public virtual string AccountName { get; set; }
         [Required]
         public int? RID { get; set; }
-        public virtual string TaxRate { get; set; }
+        public virtual decimal? TaxRate { get; set; }
 
         [StringLength(maximumLength: 6)]
         public string SAC { get; set; }
