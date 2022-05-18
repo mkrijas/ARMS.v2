@@ -204,7 +204,9 @@ namespace ArmsServices.DataServices
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),
                 PeriodTo = dr.GetDateTime("PeriodTo"),
                 AccountID = dr.GetInt32("AccountID"),
+                AccountName = dr.GetString("AccountName"),
                 RID = dr.GetInt32("RID"),
+                TaxRate =   dr.GetString("Taxrate"),
                 SAC = dr.GetString("SAC"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
