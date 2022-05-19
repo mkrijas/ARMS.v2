@@ -9,6 +9,11 @@ namespace ArmsModels.BaseModels
 {
     public class InventoryItemModel
     {
+        public InventoryItemModel()
+        {
+
+            UserInfo = new SharedModels.UserInfoModel();
+        }
         public int? InventoryItemID { get; set; }
         [Required]
         public int? InventoryGroupID { get; set; }
@@ -25,14 +30,19 @@ namespace ArmsModels.BaseModels
 
     public class InventoryGroupModel
     {
+        public InventoryGroupModel()
+        {
+
+            UserInfo = new SharedModels.UserInfoModel();
+        }
         public int? InventoryGroupID { get; set; }
         [Required]
         public string InventoryGroupName { get; set; }
-        [Required]
+        
         public int? MappedPurchaseHead { get; set; }
-        [Required]
+        
         public int? MappedConsumptionHead { get; set; }
-        [Required]
+       
         public int? MappedNonInventoryPurchaseHead { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }

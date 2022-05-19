@@ -105,6 +105,9 @@ namespace Views
             services.AddScoped<IPeriodicMaintenanceService, PeriodicMaintenanceService>();
             services.AddScoped<IInsuranceClaimService, InsuranceClaimService>();
 
+            //------------INVENTORY-------------------
+            services.AddScoped<IInventoryGroupService, InventoryGroupService>();
+            services.AddScoped<IInventoryItemService, InventoryItemService>();
             //------------FINANCE-------------------
             services.AddScoped<IChartOfAccountService, ChartOfAccountService>();
             services.AddScoped<ITdsRateService, TdsRateService>();
