@@ -10,18 +10,19 @@ namespace ArmsModels.BaseModels
 {
     public class StoreModel
     {
-        public StoreModel()
+        public StoreModel(string branchName)
         {
             UserInfo = new();
+            BranchName = branchName;
         }
 
-        public int? StorID { get; set; }
+        public int? StoreID { get; set; }
         [Required]
         [StringLength(100)]
         public string StoreName { get; set; }
         [Required]
         public int? BranchID { get; set; }
-        public virtual string BranchName { get; set; }
+        public virtual string BranchName { get; internal set; }
         public UserInfoModel UserInfo { get; set; }
     }
 

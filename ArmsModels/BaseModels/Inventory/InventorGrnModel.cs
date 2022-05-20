@@ -27,8 +27,6 @@ namespace ArmsModels.BaseModels.Inventory
 
 
 
-
-
     public class InventoryBaseModel
     {
         public InventoryBaseModel()
