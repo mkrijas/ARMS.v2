@@ -1,0 +1,209 @@
+﻿@page "/InventoryGroupItem"
+@inject IInventoryGroupService GIservice
+@inject IInventoryItemService IIservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IChartOfAccountService accountService
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudGrid>
+    <MudItem xs="4" lg="4">
+        <MudPaper Width="100%" Class="p-2" >
+            <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
+                <MudText Typo="Typo.h6">Inventory Group
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
+                </MudText>
+             
+               
+               
+                @if (listOfItems?.Any() == true)
+                {
+                    @foreach (var item in listOfItems)
+                    {
+                         <ContextMenuTrigger MenuId="myMenu"  Data="@item" >
+                        
+                        <MudListItem Value="item">
+                            <MudText Typo=Typo.subtitle1> @item.InventoryGroupName.ToString() </MudText>
+                           @* <MudText Typo="Typo.overline">Since : @item.UserInfo.TimeStampField?.ToString("dd/MM/yy")</MudText>
+                            <MudText Typo="Typo.overline">Since : @item.InventoryGroupName.ToString()</MudText>*@
+                        
+                        </MudListItem>
+                        </ContextMenuTrigger>
+                    }
+                }
+            </MudList>
+        </MudPaper>
+    </MudItem>
+
+
+
+      <MudItem xs="8" lg="8">
+        @if (SelectedItem != null)
+        {
+                   <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true" Elevation="10" >
+           
+
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">Inventory Item</MudText>
+               @* <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>*@
+                
+                <MudSpacer></MudSpacer>
+               
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemModel, object>(x=> x.InventoryItemID)" InitialDirection="SortDirection.Ascending">ID</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemModel, object>(x=> x.InventoryItemCode)" InitialDirection="SortDirection.Ascending">ItemCode</MudTableSortLabel></MudTh>
+                
+                
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="UsageID">@context.InventoryItemID</MudTd>
+               
+                <MudTd DataLabel="PeriodFrom">@context.InventoryItemCode</MudTd>
+                
+                  
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+        }
+    </MudItem>
+
+
+</MudGrid>
+
+<ContextMenu Id="myMenu" OnAppearing="OnAppearing">
+    <Item OnClick="@ContextMenuOnClickadd"  Id="addItem" >Add Items</Item>
+    <Item OnClick="@ContextMenuOnClickedit"  Id="editGroup">Edit Group</Item>  
+</ContextMenu>
+@code {
+    InventoryGroupModel model = new InventoryGroupModel();
+    private MudListItem SelectedItem;
+    private List<InventoryGroupModel> listOfItems = new();
+    InventoryGroupModel SelectedModel = new();
+    private List<InventoryItemModel> collection = new List<InventoryItemModel>();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetAll();
+
+    }
+    protected async Task SelectedItemChanged(object obj)
+    {
+        SelectedItem = (MudListItem)obj;
+        SelectedModel = (InventoryGroupModel)SelectedItem.Value;
+        GetInventoryItem(SelectedModel);
+    }
+    private  void GetAll()
+    {
+        listOfItems = GIservice.SearchByName(string.Empty).ToList();
+    } 
+    private  void GetInventoryItem(InventoryGroupModel ig)
+    {
+        collection = new List<InventoryItemModel>();
+        foreach (var item in IIservice.SelectByGroup(ig.InventoryGroupID))
+        {
+            collection.Add(item);
+        }
+    } 
+
+    private async Task OpenDialog(InventoryItemModel ii)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",ii);
+        var dialog =  DialogService.Show<InventoryItemDialog>(ii.InventoryItemID == null?"ADD":"EDIT",parms);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+            InventoryItemModel UpatedModel = (InventoryItemModel)result.Data;            
+            ii.UserInfo.UserID = user.Identity.Name;
+
+            try
+            {
+
+                IIservice.Update(UpatedModel);
+                // model = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
+                InventoryGroupModel igm=new InventoryGroupModel();
+                igm.InventoryGroupID = UpatedModel.InventoryGroupID;
+                GetInventoryItem(igm);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+
+        }
+    }
+
+    private void Delete(InventoryItemModel ii)
+    {
+        IIservice.Delete(ii.InventoryItemID, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+    private async Task OpenDialogGroup(InventoryGroupModel ig)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",ig);
+        var dialog =  DialogService.Show<InventoryGroupDialog>(ig.InventoryGroupID == null?"ADD":"EDIT",parms);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+            InventoryGroupModel UpatedModel = (InventoryGroupModel)result.Data;            
+            ig.UserInfo.UserID = user.Identity.Name;
+
+            try
+            {
+
+                GIservice.Update(UpatedModel);
+                // model = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
+                GetAll();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+            
+        }
+    }
+    void OnAppearing(MenuAppearingEventArgs e)
+    {
+        //TreeItemData item = (TreeItemData)e.Data;
+        // e.PreventShow = !item.HasChildren;      
+    }
+    protected async Task ContextMenuOnClickedit(ItemClickEventArgs e)
+    {
+        InventoryGroupModel ig =(InventoryGroupModel)e.Data;
+        OpenDialogGroup(ig);
+       
+    }
+    protected async Task ContextMenuOnClickadd(ItemClickEventArgs e)
+    {
+        InventoryGroupModel ig =(InventoryGroupModel)e.Data;
+        InventoryItemModel ii = new InventoryItemModel();
+        ii.InventoryGroupID = ig.InventoryGroupID;
+        OpenDialog(ii);
+    }
+
+}

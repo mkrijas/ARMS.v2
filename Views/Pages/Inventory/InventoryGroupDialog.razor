@@ -1,0 +1,126 @@
+﻿
+@inject IInventoryGroupService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IChartOfAccountService accountService
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Inventory Group
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                     <MudItem xs="12" md="12">
+        
+                   <h4>Add Inventory Group</h4>
+        
+                    </MudItem>
+                     <MudItem xs="12" md="12">
+                         
+                        <MudTextField  @bind-Value="model.InventoryGroupName" Label="Group Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.InventoryGroupName)"></MudTextField>
+                         
+                    </MudItem>
+                     <MudItem xs="12">
+                       
+
+                           <MudAutocomplete T="ChartOfAccountModel" Label="MappedPurchaseHead" @bind-Value="MappedPurchaseHead_at" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+                    </MudItem>
+                    <MudItem xs="12">
+                       
+
+                           <MudAutocomplete T="ChartOfAccountModel" Label="MappedConsumptionHead" @bind-Value="MappedConsumptionHead_at" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+                    </MudItem>
+                    <MudItem xs="12">
+                       
+
+                           <MudAutocomplete T="ChartOfAccountModel" Label="MappedNonInventoryPurchaseHead" @bind-Value="MappedNonInventoryPurchaseHead_at" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+                    </MudItem>
+                   
+                   
+                   
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+
+
+   </DialogContent>
+    <DialogActions>
+     <MudButton OnClick="Cancel">Cancel</MudButton>
+      <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+       
+
+    </DialogActions>
+</MudDialog>
+
+
+
+
+@code {
+    [Parameter]
+    public InventoryGroupModel model { get; set; }
+    private ChartOfAccountModel MappedPurchaseHead_at = null;
+    private ChartOfAccountModel MappedConsumptionHead_at = null;
+    private ChartOfAccountModel MappedNonInventoryPurchaseHead_at = null;
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(model!=null)
+        {
+        MappedPurchaseHead_at = accountService.SelectByID(model.MappedPurchaseHead);
+        MappedConsumptionHead_at = accountService.SelectByID(model.MappedConsumptionHead);
+        MappedNonInventoryPurchaseHead_at = accountService.SelectByID(model.MappedNonInventoryPurchaseHead);
+
+        }
+    }
+
+    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
+    {
+
+        return await Task.FromResult(accountService.FilterSubLedgers(searchString));
+
+    }
+     private void OnValidSubmit(EditContext context)
+    {  
+        if(MappedConsumptionHead_at==null)
+        {
+            snackbar.Add("Select MappedConsumptionHead", Severity.Success);
+            return;
+        }
+        if(MappedPurchaseHead_at==null)
+        {
+            snackbar.Add("Select MappedPurchaseHead", Severity.Success);
+            return;
+        }
+        if(MappedNonInventoryPurchaseHead_at==null)
+        {
+            snackbar.Add("Select MappedNonInventoryPurchaseHead", Severity.Success);
+            return;
+        }
+        model.MappedConsumptionHead = MappedConsumptionHead_at.CoaID;
+        model.MappedPurchaseHead = MappedPurchaseHead_at.CoaID;
+        model.MappedNonInventoryPurchaseHead = MappedNonInventoryPurchaseHead_at.CoaID;
+
+         MudDialog.Close(model);
+    }
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}
