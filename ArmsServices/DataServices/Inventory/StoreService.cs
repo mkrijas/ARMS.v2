@@ -45,8 +45,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@StoreID", ID),
-               new SqlParameter("@Operation", "ByID")
+               new SqlParameter("@StoreID", ID)               
             };
             StoreModel model = new("branch");
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Select]", parameters))
