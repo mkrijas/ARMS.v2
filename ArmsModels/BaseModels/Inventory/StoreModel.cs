@@ -28,10 +28,12 @@ namespace ArmsModels.BaseModels
 
     public class InventoryBatchModel
     {
-        public int BatchID { get; set; }
-        public int StoreID { get; set; }
-        public int ItemID { get; set; }
-        public decimal ItemRate { get; set; }
-
+        public long? BatchID { get; set; }
+        public long? GrnItemID { get; set; }
+        public int? StoreID { get; set; }
+        public int? ItemID { get; set; }
+        public decimal? ItemRate { get; set; }
+        public decimal? PurchaseQty { get; set; }
+        public decimal? InhandQty { get; set; }
     }
 }
