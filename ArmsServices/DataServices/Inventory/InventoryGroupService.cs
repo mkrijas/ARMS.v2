@@ -43,7 +43,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InventoryGroupName",GroupName),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Item..Group.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Item.Group.Select]", parameters))
             {
                 yield return GetModel(dr);
             }

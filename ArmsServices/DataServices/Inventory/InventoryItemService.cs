@@ -115,7 +115,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@InventoryGroupID", model.InventoryGroupID),
-               new SqlParameter("@ItemDecription",model.ItemDecription),
+               new SqlParameter("@ItemDescription",model.ItemDecription),
                new SqlParameter("@InventoryItemID",model.InventoryItemID),
                new SqlParameter("@InventoryItemCode",model.InventoryItemCode),
                new SqlParameter("@HsnCode",model.HsnCode),
@@ -138,7 +138,7 @@ namespace ArmsServices.DataServices
                 InventoryGroupID = dr.GetInt32("InventoryGroupID"),
                 InventoryItemCode = dr.GetString("InventoryItemCode"),
                 InventoryItemID = dr.GetInt32("InventoryItemID"),
-                ItemDecription = dr.GetString("ItemDecription"),
+                ItemDecription = dr.GetString("ItemDescription"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
