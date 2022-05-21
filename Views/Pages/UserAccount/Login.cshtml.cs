@@ -86,7 +86,7 @@ namespace Views.Pages.UserAccount
                 var result = await _signInManager.PasswordSignInAsync(Input.UserID, Input.Password, Input.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("User logged in.");
+                    _logger.LogInformation("User logged in.");                               
                     return LocalRedirect(returnUrl);
                 }
                 if (result.IsNotAllowed)

@@ -82,20 +82,7 @@ namespace ArmsServices.DataServices
             
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.user.UserSelect]", parameters))
             {
-                return new UserModel
-                {
-                    UserID = dr["UserID"].ToString(),
-                    UserName = dr["UserName"].ToString(),
-                    PasswordHash = dr["PasswordHash"].ToString(),
-                    PhoneNumber = dr["PhoneNumber"].ToString(),
-                    PhoneNumberConfirmed = bool.Parse(dr["PhoneNumberConfirmed"].ToString()),
-                    Email = dr["Email"].ToString(),
-                    EmailConfirmed = bool.Parse(dr["EmailConfirmed"].ToString()),
-                    TwoFactorEnabled = bool.Parse(dr["TwoFactorEnabled"].ToString()),
-                    RecordStatus = byte.Parse(dr["RecordStatus"].ToString()),
-                    
-                    
-                };
+                return GetModel(dr);
             }
             return null;
         }
@@ -112,16 +99,7 @@ namespace ArmsServices.DataServices
             UserModel user = new UserModel();
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.user.UserSelect]", parameters))
             {
-                user.UserID = dr["UserID"].ToString();
-                user.UserName = dr["UserName"].ToString();
-                user.PasswordHash = dr["PasswordHash"].ToString();
-                user.PhoneNumber = dr["PhoneNumber"].ToString();
-                user.PhoneNumberConfirmed = bool.Parse(dr["PhoneNumberConfirmed"].ToString());
-                user.Email = dr["Email"].ToString();
-                user.EmailConfirmed = bool.Parse(dr["EmailConfirmed"].ToString());
-                user.TwoFactorEnabled = bool.Parse(dr["TwoFactorEnabled"].ToString());
-                user.RecordStatus = byte.Parse(dr["RecordStatus"].ToString());
-
+               user = GetModel(dr);
             }
             return user.UserID== null?null:user;
         }
@@ -206,14 +184,7 @@ namespace ArmsServices.DataServices
             UserModel user = new UserModel();
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.user.UserSelect]", parameters))
             {
-                user.UserID = dr["UserID"].ToString();
-                user.UserName = dr["UserName"].ToString();
-                user.PhoneNumber = dr["PhoneNumber"].ToString();
-                user.PhoneNumberConfirmed = bool.Parse(dr["PhoneNumberConfirmed"].ToString());
-                user.Email = dr["Email"].ToString();
-                user.EmailConfirmed = bool.Parse(dr["EmailConfirmed"].ToString());
-                user.TwoFactorEnabled = bool.Parse(dr["UserID"].ToString());
-                user.RecordStatus = byte.Parse(dr["UserID"].ToString());
+                user = GetModel(dr);
             }
             return user?.UserID == null ? null : user;
         }
@@ -353,17 +324,20 @@ namespace ArmsServices.DataServices
             Iservice.GetDataReaderAsync("[usp.user.UserClaims.Update]", parameters);
             return Task.FromResult(0);
         }
-        private UserModel GetModel(IDataRecord reader)
+        private UserModel GetModel(IDataRecord dr)
         {
             return new UserModel
             {
-                UserName = reader.GetString("UserName"),
-                UserID = reader.GetString("UserID"),
-                Email = reader.GetString("Email"),
-                PhoneNumber = reader.GetString("PhoneNumber"),
-                RecordStatus = reader.GetByte("RecordStatus"),  
-                EmailConfirmed=reader.GetBoolean("EmailConfirmed")
-               
+                UserID = dr["UserID"].ToString(),
+                UserName = dr["UserName"].ToString(),
+                PasswordHash = dr["PasswordHash"].ToString(),
+                PhoneNumber = dr["PhoneNumber"].ToString(),
+                PhoneNumberConfirmed = bool.Parse(dr["PhoneNumberConfirmed"].ToString()),
+                Email = dr["Email"].ToString(),
+                EmailConfirmed = bool.Parse(dr["EmailConfirmed"].ToString()),                
+                TwoFactorEnabled = bool.Parse(dr["TwoFactorEnabled"].ToString()),
+                RecordStatus = byte.Parse(dr["RecordStatus"].ToString()),
+
             };
         }
         public Task ReplaceClaimAsync(UserModel user, Claim claim, Claim newClaim, CancellationToken cancellationToken)
