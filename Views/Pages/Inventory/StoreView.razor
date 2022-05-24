@@ -1,0 +1,129 @@
+﻿@page "/Store"
+@inject IStoreService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+
+
+
+<MudGrid Spacing="4">
+   <MudItem xs="12">
+        <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true" Elevation="10" Filter="new Func<StoreModel, bool>(search)" @bind-place="model">
+           
+
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">GstUsageID</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchstore" Placeholder="Search TDS... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<StoreModel, object>(x=> x.StoreName)" InitialDirection="SortDirection.Ascending">StoreName</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<StoreModel, object>(x=> x.BranchName)" InitialDirection="SortDirection.Ascending">BranchName</MudTableSortLabel></MudTh>
+              
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="UsageID">@context.StoreName</MudTd>
+                <MudTd DataLabel="AccountID">@context.BranchName</MudTd>
+                
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+
+
+
+@code {
+
+
+    private StoreModel model = new StoreModel();
+    private List<StoreModel> collection = new List<StoreModel>();
+
+
+    private string searchstore = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        GetAll();
+    }
+
+    private  void GetAll()
+    {
+        collection = new List<StoreModel>();
+        foreach (var item in Iservice.Select())
+        {
+            collection.Add(item);
+        }
+
+
+    }   
+
+    private async Task OpenDialog(StoreModel st)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",st);
+        var dialog =  DialogService.Show<StoreDialog>(st.StoreID == null?"ADD":"EDIT",parms);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+            StoreModel UpatedModel = (StoreModel)result.Data;            
+            model.UserInfo.UserID = user.Identity.Name;
+
+            try
+            {
+
+                Iservice.Update(UpatedModel);
+                model = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
+                model = new StoreModel();
+                GetAll();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+
+        }
+    }
+    
+    private void Delete(StoreModel st)
+    {
+        Iservice.Delete(st.StoreID, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+    private bool search(StoreModel tds)
+    {
+     if (tds.StoreName != null && tds.StoreName.Contains(searchstore, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (tds.StoreName == null)
+        return true;
+        return false;
+    }
+
+
+
+}

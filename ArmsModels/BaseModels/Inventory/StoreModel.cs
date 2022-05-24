@@ -15,6 +15,11 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
             BranchName = branchName;
         }
+        public StoreModel()
+        {
+            UserInfo = new();
+            
+        }
 
         public int? StoreID { get; set; }
         [Required]
