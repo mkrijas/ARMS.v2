@@ -20,7 +20,6 @@ namespace ArmsModels.BaseModels
             public bool TwoFactorEnabled { get; set; }
             public byte? RecordStatus { set; get; }
             public string UpdatedBy { get; set; }
-            public int? LoggedBranch { get; set; }
-            public bool IsAdmin { get; set; } = false;       
+            public int? LoggedBranch { get; set; }               
     }  
 }

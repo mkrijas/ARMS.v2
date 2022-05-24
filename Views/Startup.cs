@@ -54,7 +54,7 @@ namespace Views
 
             services.AddAuthorization(config =>
             {
-                config.AddPolicy("IsAdmin", policy => policy.RequireClaim("IsAdmin", "true"));
+                config.AddPolicy("Admin", policy => policy.RequireClaim("Admin"));
             });
 
 
