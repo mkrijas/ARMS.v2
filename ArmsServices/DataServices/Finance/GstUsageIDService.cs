@@ -138,7 +138,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "BySAC"),
+               new SqlParameter("@Operation", "ByRate"),
                new SqlParameter("@Taxrate", TaxRate ),
                new SqlParameter("@EntryDate", entryDate),
             };
