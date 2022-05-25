@@ -17,7 +17,7 @@ namespace ArmsServices.DataServices
         IEnumerable<GstItemModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);        
         IEnumerable<GstItemModel> FilterByText(string FilterText, DateTime? entryDate);
         int Delete(int ID, string UserID);
-        IEnumerable<GstItemModel> SelectByIDP(int ItemID);
+        IEnumerable<GstItemModel> SelectByItemId(int ItemID);
         IEnumerable<GstItemModel> Select(DateTime? entryDate);
         
     }
@@ -70,11 +70,11 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<GstItemModel> SelectByIDP(int ItemID)
+        public IEnumerable<GstItemModel> SelectByItemId(int ItemID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@HsnID", ItemID),
+                new SqlParameter("@ItemID", ItemID),
                new SqlParameter("@Operation", "ByID")
             };
 
