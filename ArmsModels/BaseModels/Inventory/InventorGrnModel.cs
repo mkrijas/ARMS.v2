@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ArmsModels.BaseModels.Inventory
+namespace ArmsModels.BaseModels
 {
     public class InventoryGrnModel : InventoryBaseModel
     {    
@@ -16,8 +16,17 @@ namespace ArmsModels.BaseModels.Inventory
     }
 
 
-    public class PuchaseOrderModel : InventoryBaseModel
+    public class PurchaseOrderModel : InventoryBaseModel
     {
+        public PurchaseOrderModel()
+        {
+        }
+        public PurchaseOrderModel(bool _grnCreated,string _poNo, bool _approved, UserInfoModel _approvedInfo) :base(_approved,_approvedInfo)
+        {
+            GrnCreated = _grnCreated;
+            PONo = _poNo;            
+        }
+
         public int? POID { get; set; }
         public string PONo { get; }
         public int? PRID { get; set; }
@@ -33,8 +42,16 @@ namespace ArmsModels.BaseModels.Inventory
         {
             UserInfo = new();
             Entries = new();
-            Approved = new();
+            ApprovedInfo = new();
         }      
+
+        public InventoryBaseModel(bool _approved, UserInfoModel _approvedInfo)
+        {
+            UserInfo = new();
+            Entries = new();            
+            Approved = _approved;
+            ApprovedInfo = _approvedInfo;
+        }
         public int? StoreID { get; set; }
         [Required]
         public DateTime? EntryDate { get; set; }       
@@ -42,16 +59,16 @@ namespace ArmsModels.BaseModels.Inventory
         public int? PartyBranchID { get; set; }
         public string Reference { get; set; }
         public string Remarks { get; set; }        
-        public bool Approved { get; set; }
-        public UserInfoModel ApprovedInfo { get; set; }
+        public bool Approved { get; }
+        public UserInfoModel ApprovedInfo { get; }
         public UserInfoModel UserInfo { get; set; }
+        [ValidateComplexType]
         public List<InventoryItemEntryModel> Entries { get; set; }
     }
 
     public class InventoryItemEntryModel
     {
-        public long? ItemEntryID { get; set; }
-        public int? ParentID { get; set; }
+        public long? ItemEntryID { get; set; }        
         [Required]
         public int? ItemID { get; set; }
         [Required]
