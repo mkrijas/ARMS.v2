@@ -8,7 +8,17 @@ using System.Threading.Tasks;
 namespace ArmsModels.BaseModels
 {
     public class InventoryGrnModel : InventoryBaseModel
-    {    
+    {
+        public InventoryGrnModel(string grnNo, bool invoiced, bool _approved, UserInfoModel _approvedInfo) : base(_approved, _approvedInfo)
+        {
+            GrnNo = grnNo;
+            Invoiced = invoiced;
+        }
+
+        public InventoryGrnModel()
+        {
+        }
+
         public int? GrnID { get; set; }
         public string GrnNo { get; }        
         public int? POID { get; set; }      

@@ -9,32 +9,32 @@ using ArmsModels.BaseModels;
 namespace ArmsServices.DataServices
 {
 
-    public interface IPurchaseOrderService
+    public interface IInventoryGrnService
     {
-        PurchaseOrderModel Update(PurchaseOrderModel model);
-        PurchaseOrderModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);   
-        IEnumerable<PurchaseOrderModel> SelectPending(int BranchID);
-        IEnumerable<PurchaseOrderModel> SelectByStore(int StoreID);
-        int Approve(int POID,string UserID);
-        IEnumerable<InventoryItemEntryModel> GetItemEntries(int POID);
+        InventoryGrnModel Update(InventoryGrnModel model);
+        InventoryGrnModel SelectByID(int? ID);
+        int Delete(int? ID, string UserID);
+        IEnumerable<InventoryGrnModel> SelectPending(int BranchID);
+        IEnumerable<InventoryGrnModel> SelectByStore(int StoreID);
+        int Approve(int GrnID, string UserID);
+        IEnumerable<InventoryItemEntryModel> GetItemEntries(int GrnID);
     }
-    public class PurchaseOrderService : IPurchaseOrderService
+    public class InventoryGrnService : IInventoryGrnService
     {
         IDbService Iservice;
-        public PurchaseOrderService(IDbService iservice)
+        public InventoryGrnService(IDbService iservice)
         {
             Iservice = iservice;
         }
 
-        public int Approve(int POID,string UserID)
+        public int Approve(int GrnID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@POID", POID),
+                new SqlParameter("@GrnID", GrnID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Approve]", parameters);
         }
 
         public int Delete(int? ID, string UserID)
@@ -42,20 +42,20 @@ namespace ArmsServices.DataServices
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@POID", ID),
+               new SqlParameter("@GrnID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Delete]", parameters);
         }
 
-        public IEnumerable<InventoryItemEntryModel> GetItemEntries(int POID)
+        public IEnumerable<InventoryItemEntryModel> GetItemEntries(int GrnID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@POID", POID),
+               new SqlParameter("@GrnID", GrnID),
                new SqlParameter("@Operation", "GetEntries")
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.GoodsReceiptNote.Select]", parameters))
             {
                 yield return new InventoryItemEntryModel()
                 {
@@ -68,28 +68,28 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<PurchaseOrderModel> SelectPending(int BranchID)
+        public IEnumerable<InventoryGrnModel> SelectPending(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@Operation", "All")
-            };            
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Select]", parameters))
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.GoodsReceiptNote.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        public PurchaseOrderModel SelectByID(int? ID)
+        public InventoryGrnModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@POID", ID),
+               new SqlParameter("@GrnID", ID),
                new SqlParameter("@Operation", "ByID")
             };
-            PurchaseOrderModel model = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Select]", parameters))
+            InventoryGrnModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.GoodsReceiptNote.Select]", parameters))
             {
                 model = GetModel(dr);
             }
@@ -97,13 +97,13 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public PurchaseOrderModel Update(PurchaseOrderModel model)
-        {            
+        public InventoryGrnModel Update(InventoryGrnModel model)
+        {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@POID", model.POID),               
-               new SqlParameter("@PONo",model.PONo),
-               new SqlParameter("@QuoteID",model.QuoteID),
+               new SqlParameter("@POID", model.POID),
+               new SqlParameter("@PONo",model.GrnID),
+               new SqlParameter("@PONo",model.GrnNo),               
                new SqlParameter("@EntryDate",model.EntryDate),
                new SqlParameter("@PartyBranchID",model.PartyBranchID),
                new SqlParameter("@Reference",model.Reference),
@@ -112,7 +112,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("entries",model.Entries.ToDataTable()),
                new SqlParameter("@UserID",model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.GoodsReceiptNote.Update]", parameters))
             {
                 model = GetModel(dr);
             }
@@ -121,11 +121,11 @@ namespace ArmsServices.DataServices
 
 
 
-        private PurchaseOrderModel GetModel(IDataRecord dr)
+        private InventoryGrnModel GetModel(IDataRecord dr)
         {
-            return new PurchaseOrderModel(
-                dr.GetBoolean("GrnCreated"), 
-                dr.GetString("PoNo"), 
+            return new InventoryGrnModel(                
+                dr.GetString("GrnNo"),
+                dr.GetBoolean("Invoiced"),
                 dr.GetBoolean("Approved"),
                 new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -133,16 +133,13 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("ApprovedBy"),
                 })
             {
-                POID = dr.GetInt32("POID"),               
-                PRID = dr.GetInt32("PRID"),
-                QuoteID = dr.GetInt32("QuoteID"),
-                 
+                POID = dr.GetInt32("POID"),
+                GrnID = dr.GetInt32("GrnID"), 
                 EntryDate = dr.GetDateTime("EntryDate"),
                 PartyBranchID = dr.GetInt32("PartyBranchID"),
                 Reference = dr.GetString("Reference"),
                 Remarks = dr.GetString("Remarks"),
                 StoreID = dr.GetInt32("StoreID"),                
-                
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -152,14 +149,14 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public IEnumerable<PurchaseOrderModel> SelectByStore(int StoreID)
+        public IEnumerable<InventoryGrnModel> SelectByStore(int StoreID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@StoreID", StoreID),
                new SqlParameter("@Operation", "ByStore")
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.GoodsReceiptNote.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
