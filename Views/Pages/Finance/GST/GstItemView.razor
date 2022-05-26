@@ -1,5 +1,5 @@
-﻿@page "/Storee"
-@inject IStoreService Iservice
+﻿@page "/GstItems"
+@inject IGstItemService Iservice
 @inject MudBlazor.ISnackbar snackbar
 
 @inject AuthenticationStateProvider auth
@@ -12,28 +12,32 @@
 
 <MudGrid Spacing="4">
    <MudItem xs="12">
-        <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true" Elevation="10" Filter="new Func<StoreModel, bool>(search)" @bind-place="model">
+        <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true" Elevation="10" Filter="new Func<GstItemModel, bool>(search)" @bind-place="model">
            
 
              <ToolBarContent>
-                <MudText Typo="Typo.h6">GstUsageID</MudText>
+                <MudText Typo="Typo.h6">Gst Inventory Items</MudText>
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchstore" Placeholder="Search TDS... "
+                <MudTextField @bind-Value="searchItem" Placeholder="Search Items... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<StoreModel, object>(x=> x.StoreName)" InitialDirection="SortDirection.Ascending">StoreName</MudTableSortLabel></MudTh>
-             <MudTh><MudTableSortLabel SortBy="new Func<StoreModel, object>(x=> x.BranchName)" InitialDirection="SortDirection.Ascending">BranchName</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.ItemCode)" InitialDirection="SortDirection.Ascending">ItemCode</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.TaxRate)" InitialDirection="SortDirection.Ascending">TaxRate</MudTableSortLabel></MudTh>
+               <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.PeriodFrom)" InitialDirection="SortDirection.Ascending">PeriodFrom</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.PeriodTo)" InitialDirection="SortDirection.Ascending">PeriodTo</MudTableSortLabel></MudTh>
               
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="UsageID">@context.StoreName</MudTd>
-                <MudTd DataLabel="AccountID">@context.BranchName</MudTd>
-                
+                <MudTd DataLabel="ItemCode">@context.ItemCode</MudTd>
+                <MudTd DataLabel="TaxRate">@context.TaxRate</MudTd>
+                <MudTd DataLabel="PeriodFrom">@context.PeriodFrom</MudTd>
+                 <MudTd DataLabel="PeriodTo">@context.PeriodTo</MudTd>
+
                 <MudTd DataLabel="">
                     <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
@@ -51,11 +55,11 @@
 @code {
 
 
-    private StoreModel model = new StoreModel();
-    private List<StoreModel> collection = new List<StoreModel>();
+    private GstItemModel model = new GstItemModel();
+    private List<GstItemModel> collection = new List<GstItemModel>();
 
 
-    private string searchstore = "";
+    private string searchItem = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -65,8 +69,8 @@
 
     private  void GetAll()
     {
-        collection = new List<StoreModel>();
-        foreach (var item in Iservice.Select())
+        collection = new List<GstItemModel>();
+        foreach (var item in Iservice.Select(DateTime.Now))
         {
             collection.Add(item);
         }
@@ -74,19 +78,19 @@
 
     }   
 
-    private async Task OpenDialog(StoreModel st)
+    private async Task OpenDialog(GstItemModel tds)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
 
         DialogParameters parms = new DialogParameters();
-        parms.Add("model",st);
-        var dialog =  DialogService.Show<StoreDialog>(st.StoreID == null?"ADD":"EDIT",parms);
+        parms.Add("model",tds);
+        var dialog =  DialogService.Show<GstItemDialog>(tds.HsnID == null?"ADD":"EDIT",parms);
         var result = await dialog.Result;
 
         if(!result.Cancelled)
         {   
-            StoreModel UpatedModel = (StoreModel)result.Data;            
+            GstItemModel UpatedModel = (GstItemModel)result.Data;            
             model.UserInfo.UserID = user.Identity.Name;
 
             try
@@ -95,7 +99,7 @@
                 Iservice.Update(UpatedModel);
                 model = new();
                 snackbar.Add("Saved Successfully", Severity.Success);
-                model = new StoreModel();
+                model = new GstItemModel();
                 GetAll();
             }
             catch (Exception ex)
@@ -106,20 +110,20 @@
         }
     }
     
-    private void Delete(StoreModel st)
+    private void Delete(GstItemModel tds)
     {
-        Iservice.Delete(st.StoreID, "Rijas");
+        Iservice.Delete(tds.HsnID.Value,"Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
         GetAll();
     }
 
-    private bool search(StoreModel tds)
+    private bool search(GstItemModel tds)
     {
-     if (tds.StoreName != null && tds.StoreName.Contains(searchstore, StringComparison.OrdinalIgnoreCase))
+     if (tds.ItemCode != null && tds.ItemCode.Contains(searchItem, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
-        else if (tds.StoreName == null)
+        else if (tds.ItemCode == null)
         return true;
         return false;
     }

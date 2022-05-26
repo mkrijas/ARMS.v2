@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
         IEnumerable<GstItemModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);        
         IEnumerable<GstItemModel> FilterByText(string FilterText, DateTime? entryDate);
         int Delete(int ID, string UserID);
+        IEnumerable<GstItemModel> SelectByItemId(int ItemID);
         IEnumerable<GstItemModel> Select(DateTime? entryDate);
         
     }
@@ -61,6 +62,20 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByID"),
                new SqlParameter("@EntryDate", entryDate),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.HSN.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<GstItemModel> SelectByItemId(int ItemID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@ItemID", ItemID),
+               new SqlParameter("@Operation", "ByID")
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.HSN.Select]", parameters))
