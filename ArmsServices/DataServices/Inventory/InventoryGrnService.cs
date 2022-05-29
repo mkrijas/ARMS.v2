@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         InventoryGrnModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<InventoryGrnModel> SelectPending(int BranchID);
+        IEnumerable<InventoryGrnModel> PendingToInvoice(int BranchID);
         IEnumerable<InventoryGrnModel> SelectByStore(int StoreID);
         int Approve(int GrnID, string UserID);
         IEnumerable<InventoryItemEntryModel> GetItemEntries(int GrnID);
@@ -155,6 +156,19 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@StoreID", StoreID),
                new SqlParameter("@Operation", "ByStore")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.GoodsReceiptNote.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<InventoryGrnModel> PendingToInvoice(int BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "ForInvoice")
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.GoodsReceiptNote.Select]", parameters))
             {

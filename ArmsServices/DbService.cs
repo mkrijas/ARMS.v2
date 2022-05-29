@@ -98,7 +98,7 @@ namespace ArmsServices
             {
                 SqlCommand cmd = connection.CreateCommand();
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = procedureName;
+                cmd.CommandText = procedureName;                
 
                 if (parameters != null && parameters.Count > 0)
                 {

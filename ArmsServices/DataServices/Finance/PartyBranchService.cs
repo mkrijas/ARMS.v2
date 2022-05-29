@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         int Delete(int? GstID, string UserID);
         IEnumerable<PartyBranchModel> Select(int? GstID);
         IEnumerable<PartyBranchModel> SelectByParty(int? PartyID = 0);
+        bool IsCgst(int BranchID, int PartyBranchID);
     }
 
     public class PartyBranchService : IPartyBranchService
@@ -134,5 +135,16 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public bool IsCgst(int BranchID, int PartyBranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyBranchID", PartyBranchID),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsCgst", BranchID){Direction = ParameterDirection.Output},
+            };
+            Iservice.ExecuteNonQuery("[usp.Finance.Taxes.Gst.IsCgst]", parameters);
+            return bool.Parse(parameters[2].Value.ToString());
+        }
     }
 }

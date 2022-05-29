@@ -35,6 +35,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@IsClient", model.IsClient),
                new SqlParameter("@IsSupplier", model.IsSupplier),
                new SqlParameter("@NatureOfFirm", model.NatureOfFirm),
+               new SqlParameter("@AssesseeTypeID", model.AssesseeTypeID),
                new SqlParameter("@TcsApplicable", model.TcsApplicable),
                new SqlParameter("@TdsApplicable", model.TdsApplicable),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -84,13 +85,14 @@ namespace ArmsServices.DataServices
 
         private PartyModel GetModel(IDataRecord reader)
         {
-            return new PartyModel
+            return new PartyModel(reader.GetString("AssesseeType"))
             {
                 PartyID = reader.GetInt32("PartyID"),
                 PartyName = reader.GetString("PartyName"),
                 IsClient = reader.GetBoolean("IsClient"),
                 IsSupplier = reader.GetBoolean("IsSupplier"),
                 NatureOfFirm = reader.GetString("NatureOfFirm"),
+                AssesseeTypeID = reader.GetInt32("AssesseeTypeID"),               
                 TcsApplicable = reader.GetBoolean("TcsApplicable"),
                 TdsApplicable = reader.GetBoolean("TdsApplicable"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

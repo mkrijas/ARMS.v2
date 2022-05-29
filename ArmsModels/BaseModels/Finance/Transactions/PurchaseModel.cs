@@ -6,26 +6,26 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
-    public class TaxPurchaseModel
+    public class TaxPurchaseModel : TransactionBaseModel
     {
-        public int? PID { get; set; }
-        public int? MID { get; set; }
-        public int? GRNID { get; set; }
-        public int? BranchID { get; set; }
-        public PartyBranchModel PartyBranchInfo { get; set; }
+        public int? PID { get; set; }        
+        public int? GRNID { get; set; }        
+        public PartyBranchModel PartyBranchInfo { get; set; }        
         public bool IsCredit { get; set; }
         public string InvoiceNo { get; set; }
-        public DateTime? InvoiceDate { get; set; }
-        public decimal? TotalAmount { get; set; }
-        public decimal? TotalTDS { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }
+        public DateTime? InvoiceDate { get; set; }        
+        public decimal? AdditionalTDS { get; set; }       
+        public bool NonStoreInventory { get; set; }               
+        public List<TaxPurchaseExpensesModel> Expenses { get; set; }
+        public List<TaxPurchaseItemModel> Items { get; set; }
     }
+
+    
 
     public class TaxPurchaseExpensesModel
     {
         public long? TpeID { get; set; }
         public int? PID { get; set; }
-
         public int? BranchID { get; set; }
         public string UsageID { get; set; }
         public int? AccountID { get; set; }
@@ -51,7 +51,7 @@ namespace ArmsModels.BaseModels
         public decimal? SGST { get; set; }
         public decimal? CGST { get; set; }
         public decimal? IGST { get; set; }
-
+        public decimal? TDS { get; set; }
     }
 
 }
