@@ -109,6 +109,7 @@ namespace Views
             services.AddScoped<IInventoryGroupService, InventoryGroupService>();
             services.AddScoped<IInventoryItemService, InventoryItemService>();
             services.AddScoped<IStoreService, StoreService>();
+            services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
 
             //------------FINANCE-------------------
             services.AddScoped<IChartOfAccountService, ChartOfAccountService>();

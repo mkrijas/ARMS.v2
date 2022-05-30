@@ -1,0 +1,132 @@
+﻿@page "/PurchaseOrder"
+@inject IPurchaseOrderService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudGrid Spacing="4">
+   <MudItem xs="12">
+        <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true" Elevation="10" Filter="new Func<PurchaseOrderModel, bool>(search)" @bind-place="model">
+           
+
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">Purchase Order</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchPurchase" Placeholder="Search Purchase order... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PONo)" InitialDirection="SortDirection.Ascending">PONo</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Ascending">EntryDate</MudTableSortLabel></MudTh>
+               <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PartyBranchID)" InitialDirection="SortDirection.Ascending">PartyBranchID</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.StoreID)" InitialDirection="SortDirection.Ascending">StoreID</MudTableSortLabel></MudTh>
+                
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="PONo">@context.PONo</MudTd>
+                <MudTd DataLabel="EntryDate">@context.EntryDate</MudTd>
+                <MudTd DataLabel="PartyBranchID">@context.PartyBranchID</MudTd>
+                 <MudTd DataLabel="StoreID">@context.StoreID</MudTd>
+                 
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+              
+                    </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+
+
+
+@code {
+
+
+    private PurchaseOrderModel model = new PurchaseOrderModel();
+    private List<PurchaseOrderModel> collection = new List<PurchaseOrderModel>();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+
+    private string searchPurchase = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        GetAll();
+    }
+
+    private  void GetAll()
+    {
+        collection = new List<PurchaseOrderModel>();
+        foreach (var item in Iservice.SelectPending(1))
+        {
+            collection.Add(item);
+        }
+
+
+    }   
+
+    private async Task OpenDialog(PurchaseOrderModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        var dialog =  DialogService.Show<PurchaseOrderDialog>(tds.POID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+            PurchaseOrderModel UpatedModel = (PurchaseOrderModel)result.Data;            
+            model.UserInfo.UserID = user.Identity.Name;
+
+            try
+            {
+
+                Iservice.Update(UpatedModel);
+                model = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
+                model = new PurchaseOrderModel();
+                GetAll();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+
+        }
+    }
+    
+    private void Delete(PurchaseOrderModel tds)
+    {
+        Iservice.Delete(tds.POID, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+    private bool search(PurchaseOrderModel tds)
+    {
+     if (tds.PONo != null && tds.PONo.Contains(searchPurchase, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (tds.PONo == null)
+        return true;
+        return false;
+    }
+
+
+
+}
