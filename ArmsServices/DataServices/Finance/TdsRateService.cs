@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TdsRateModel> Select(int? AssesseeType,int? TdsNPID);
         IEnumerable<NatureOfPaymentModel> SelectTdsNP();
         IEnumerable<AssesseeTypeModel> SelectAssesseeTypes();
+        decimal? GetTdsRate(int PartyID, int AccountID);
 
     }
 
@@ -137,6 +138,24 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },
             };
+        }
+
+        public decimal? GetTdsRate(int PartyID, int AccountID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "GetTaxRate"),
+               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@AccountID", AccountID),    
+               
+            };
+
+            decimal? result = null;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.taxes.TDS.Rates.Select]", parameters))
+            {
+                result = dr.GetDecimal("TaxRate");
+            }
+            return result;
         }
     }
 }

@@ -34,8 +34,7 @@ namespace ArmsModels.BaseModels
 
     public class InventoryBatchModel
     {
-        public long? BatchID { get; set; }
-        public long? GrnItemID { get; set; }
+        public long? BatchID { get; set; }        
         public int? StoreID { get; set; }
         public int? ItemID { get; set; }
         public decimal? ItemRate { get; set; }

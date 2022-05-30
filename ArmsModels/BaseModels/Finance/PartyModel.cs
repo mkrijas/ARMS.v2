@@ -14,12 +14,22 @@ namespace ArmsModels.BaseModels
             Contacts = new();
         }
 
+        public PartyModel(string _asseseeType)
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+            Contacts = new();
+            AssesseeType = _asseseeType;
+        }
+
         public int? PartyID { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
         public string PartyName { get; set; }
         public bool IsClient { get; set; }
         public bool IsSupplier { get; set; }
+        [Required]
+        public int? AssesseeTypeID { get; set; }
+        public string AssesseeType { get; }
         [Required]
         [StringLength(maximumLength: 50)]
         public string NatureOfFirm { get; set; }//Proprietor, Partnership or Company

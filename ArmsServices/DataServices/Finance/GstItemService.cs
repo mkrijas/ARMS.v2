@@ -17,7 +17,7 @@ namespace ArmsServices.DataServices
         IEnumerable<GstItemModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);        
         IEnumerable<GstItemModel> FilterByText(string FilterText, DateTime? entryDate);
         int Delete(int ID, string UserID);
-        IEnumerable<GstItemModel> SelectByItemId(int ItemID);
+        IEnumerable<GstItemModel> SelectByItem(int ItemID);
         IEnumerable<GstItemModel> Select(DateTime? entryDate);
         
     }
@@ -70,12 +70,12 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<GstItemModel> SelectByItemId(int ItemID)
+        public IEnumerable<GstItemModel> SelectByItem(int ItemID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@ItemID", ItemID),
-               new SqlParameter("@Operation", "ByID")
+               new SqlParameter("@Operation", "ByItem")
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.HSN.Select]", parameters))

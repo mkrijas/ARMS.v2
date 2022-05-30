@@ -20,9 +20,9 @@ namespace ArmsServices.DataServices
         IEnumerable<GstUsageIDModel> FilterByText(string FilterText, DateTime? entryDate);
         int Delete(string ID, string UserID);
         IEnumerable<GstUsageIDModel> Select(DateTime? entryDate);
-        IEnumerable<GstRateModel> GetGstRates();
-      
-        IEnumerable<GstUsageIDModel> SelectByTaxRateAccount(int? rateId, int? acID);       
+        IEnumerable<GstRateModel> GetGstRates();      
+        IEnumerable<GstUsageIDModel> SelectByTaxRateAccount(int? rateId, int? acID);
+        decimal? GetGstRate(string UsageID,DateTime? EntryDate);
     }
 
     public class GstUsageIDService : IGstUsageIDService
@@ -203,6 +203,23 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },
             };
+        }
+
+        public decimal? GetGstRate(string UsageID, DateTime? EntryDate)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetTaxRate"),
+               new SqlParameter("@EntryDate", EntryDate),
+               new SqlParameter("@UsageID", UsageID),
+            };
+
+            decimal? result = null;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
+            {
+                result = dr.GetDecimal("TaxRate");
+            }
+            return result;
         }
     }
 }
