@@ -44,11 +44,12 @@
                             }
                         </MudSelect>    
                     </MudItem>
+
                      <MudItem xs="12" md="4">
                      <MudSelect Label="Select Branch" @bind-Value="model.PartyBranchID" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in partybranch)
                             {
-                                <MudSelectItem Value="@ditem">@ditem.Party</MudSelectItem>
+                                <MudSelectItem Value="@ditem.GstID">@ditem.Address.Place</MudSelectItem>
                             }
                         </MudSelect>    
                     </MudItem>
@@ -91,8 +92,10 @@
                 <MudTd DataLabel="Quantity">@entryContext.ItemQty</MudTd>
                 <MudTd DataLabel="Rate">@entryContext.ItemRate</MudTd>
                  <MudTd DataLabel="GST">@entryContext.ItemGstVal</MudTd>
-                 <MudTd><MudFab @onclick="@(()=> Delete(entryContext))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" /></MudTd>
-                 
+                 @if (model.Approved == false)
+                    {
+                      <MudTd><MudFab @onclick="@(()=> Delete(entryContext))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" /></MudTd>
+                    }
                
             </RowTemplate>
             <PagerContent>
@@ -102,29 +105,32 @@
 
 
                         </MudItem>
-                         <MudItem xs="12" md="3">
-                           <MudSelect Label="Select Items" @bind-Value="Entrymodel.ItemID" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in itm)
+                         @if (model.Approved == false)
                             {
-                                <MudSelectItem Value="@ditem.InventoryItemID">@ditem.InventoryItemCode</MudSelectItem>
-                            }
-                        </MudSelect>
-                          </MudItem>
-                          <MudItem xs="12" md="3">
-                         <MudTextField @bind-Value="Entrymodel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField>
-
-                              </MudItem>
-                          <MudItem xs="12" md="3">
-                         <MudTextField @bind-Value="Entrymodel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemRate)"></MudTextField>
-
-                              </MudItem>
-
-                            <MudItem xs="12" md="2">
-                         <MudTextField @bind-Value="Entrymodel.ItemGstVal" Label="GST" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemGstVal)"></MudTextField>
+                        <MudItem xs="12" md="3">
+                            <MudSelect Label="Select Items" @bind-Value="Entrymodel.ItemID" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                @foreach (var ditem in itm)
+                                {
+                                    <MudSelectItem Value="@ditem.InventoryItemID">@ditem.InventoryItemCode</MudSelectItem>
+                                }
+                            </MudSelect>
                         </MudItem>
-                         <MudItem xs="12" md="1">
-                         <MudButton OnClick="AddItems" Variant="Variant.Filled" Color="Color.Primary">Add</MudButton>
-                              </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudTextField @bind-Value="Entrymodel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField>
+
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudTextField @bind-Value="Entrymodel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemRate)"></MudTextField>
+
+                        </MudItem>
+
+                        <MudItem xs="12" md="2">
+                            <MudTextField @bind-Value="Entrymodel.ItemGstVal" Label="GST" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemGstVal)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="1">
+                            <MudButton OnClick="AddItems" Variant="Variant.Filled" Color="Color.Primary">Add</MudButton>
+                        </MudItem>
+                    }
 
                 </MudGrid>
             </EditForm>
@@ -133,10 +139,13 @@
     <DialogActions>
         @*   <MudButton OnClick="DeleteTaxRate">Delete Tax Rate</MudButton>
             <MudButton OnClick="AddTaxRate">Add More Tax Rate</MudButton>*@
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton OnClick="ItemEntry">Item Entry</MudButton>
-        <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-
+       
+        @if (model.Approved == false)
+        {
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton OnClick="ItemEntry">Item Entry</MudButton>
+            <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
@@ -164,6 +173,13 @@
 
     protected override async void OnInitialized()
     {
+        gstRate = testIservice.GetGstRates().ToList();
+        store = storeIservice.Select().ToList();
+        itm = itemIservice.SearchByDescription(string.Empty).ToList();
+        if(model.POID!=null)
+        {
+            items = Iservice.GetItemEntries(model.POID.Value).ToList();          
+        }
 
 
         await foreach (var party in partyIservice.Select(0))
@@ -172,9 +188,7 @@
         }
 
 
-        gstRate = testIservice.GetGstRates().ToList();
-        store = storeIservice.Select().ToList();
-        itm = itemIservice.SearchByDescription(string.Empty).ToList();
+       
 
         // asseesse = Iservice.SelectAssesseeTypes().ToList();
     }

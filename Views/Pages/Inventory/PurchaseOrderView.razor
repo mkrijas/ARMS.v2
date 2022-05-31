@@ -36,8 +36,13 @@
                  
                 <MudTd DataLabel="">
                     <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                  
+                    @if(@context.Approved==false)
+                    {
+                      <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Approval" Size="Size.Small" IconSize="Size.Small" />
+                        
+                    }
               
                     </MudTd>
             </RowTemplate>
@@ -66,10 +71,13 @@
         GetAll();
     }
 
-    private  void GetAll()
+    private  async Task GetAll()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
         collection = new List<PurchaseOrderModel>();
-        foreach (var item in Iservice.SelectPending(1))
+        foreach (var item in Iservice.SelectPending(brancID))
         {
             collection.Add(item);
         }
@@ -108,12 +116,48 @@
 
         }
     }
-    
+
     private void Delete(PurchaseOrderModel tds)
     {
         Iservice.Delete(tds.POID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
         GetAll();
+    }
+    private async Task Approve(PurchaseOrderModel tds)
+    {
+
+        var parameters = new DialogParameters();
+        parameters.Add("ContentText", "Are you sure you want to Approve this Purchase Order,Order No:"+tds.PONo+"?");
+        parameters.Add("ButtonText", "Confirm");
+        parameters.Add("Color", Color.Success);
+        var dialog=DialogService.Show<PurchaseOrderConfirmDialog>("Confirm", parameters);
+        var result = await dialog.Result;
+
+
+        if (!result.Cancelled)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            tds.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+
+                Iservice.Approve(tds.POID.Value,tds.UserInfo.UserID);
+               
+                snackbar.Add("Approved", Severity.Success);
+                
+                GetAll();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+
+
+       
+      
+     
     }
 
     private bool search(PurchaseOrderModel tds)
