@@ -37,7 +37,7 @@
                     </MudItem>
                    
                     <MudItem xs="12" md="4">
-                     <MudSelect Label="Select Vendor"   T="int?"  ValueChanged="getBranch"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                     <MudSelect Label="Select Vendor"   T="PartyModel" Value="SelectedParty"  ValueChanged="getBranch"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in partyList)
                             {
                                 <MudSelectItem Value="@ditem.PartyID">@ditem.PartyName</MudSelectItem>
@@ -46,7 +46,7 @@
                     </MudItem>
 
                      <MudItem xs="12" md="4">
-                     <MudSelect Label="Select Branch" @bind-Value="model.PartyBranchID" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                     <MudSelect Label="Select Branch" @bind-Value="model.PartyBranchID" T="int?" ToStringFunc="@(e=>partybranch.FirstOrDefault(x=>x.GstID==e)?.Address?.Place)"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in partybranch)
                             {
                                 <MudSelectItem Value="@ditem.GstID">@ditem.Address.Place</MudSelectItem>
@@ -103,8 +103,12 @@
             </PagerContent>
         </MudTable>
 
-
+          @*<MudItem xs=12 md=12>
+                            <MudAutocomplete T="PartyModel" Variant="Variant.Outlined" Margin="Margin.Normal" Label="Cotractor" @bind-Value="model.DriverAgent" ResetValueOnEmptyText="true"
+                                                 SearchFunc="@SearchParty" ToStringFunc="@(e => e == null ? null : $"{e.PartyName}")"></MudAutocomplete>
+                        </MudItem>*@
                         </MudItem>
+                      
                          @if (model.Approved == false)
                             {
                         <MudItem xs="12" md="3">
@@ -170,6 +174,8 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
 
+    private PartyModel SelectedParty = new();
+
 
     protected override async void OnInitialized()
     {
@@ -178,7 +184,7 @@
         itm = itemIservice.SearchByDescription(string.Empty).ToList();
         if(model.POID!=null)
         {
-            items = Iservice.GetItemEntries(model.POID.Value).ToList();          
+            items = Iservice.GetItemEntries(model.POID.Value).ToList();
         }
 
 
@@ -186,9 +192,10 @@
         {
             partyList.Add(party);
         }
+        PartyBranchModel selectedPBranch = partyBranchIservice.Select(model.PartyBranchID).FirstOrDefault();
+        SelectedParty = await partyIservice.SelectByID(selectedPBranch.PartyID);
+        partybranch = partyBranchIservice.SelectByParty(SelectedParty.PartyID).ToList();
 
-
-       
 
         // asseesse = Iservice.SelectAssesseeTypes().ToList();
     }
@@ -197,12 +204,12 @@
 
     private void OnValidSubmit(EditContext context)
     {  
-        
+
 
         model.Entries=items;  
 
         MudDialog.Close(model);
-        
+
     }
 
     private void Cancel()
@@ -225,17 +232,18 @@
         Entrymodel = new();
 
     }
-     private void ItemEntry()
+    private void ItemEntry()
     {
-       
 
-      // DialogService.Show<PurchaseOrderItems>("options",maxWidth);
-      
+
+        // DialogService.Show<PurchaseOrderItems>("options",maxWidth);
+
     }
-    private void getBranch(int? id)
+    private void getBranch(PartyModel party)
     {
-       // int values = int.Parse(e.Value.ToString());
-        partybranch = partyBranchIservice.SelectByParty(id).ToList();
+        // int values = int.Parse(e.Value.ToString());
+        SelectedParty = party;
+        partybranch = partyBranchIservice.SelectByParty(party.PartyID).ToList();
         // snackbar.Add("Saved Successfully", Severity.Success); 
     }
 
