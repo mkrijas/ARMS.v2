@@ -31,6 +31,9 @@ namespace ArmsModels.BaseModels
         public int? AssesseeTypeID { get; set; }
         public string AssesseeType { get; }
         [Required]
+        [StringLength(10,MinimumLength =10,ErrorMessage = "PAN must be 10 digits!")]
+        public string PAN { get; set; }
+        [Required]
         [StringLength(maximumLength: 50)]
         public string NatureOfFirm { get; set; }//Proprietor, Partnership or Company
         [Required]

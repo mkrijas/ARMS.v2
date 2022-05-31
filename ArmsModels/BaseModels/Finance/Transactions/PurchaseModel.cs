@@ -13,7 +13,8 @@ namespace ArmsModels.BaseModels
         public PartyBranchModel PartyBranchInfo { get; set; }        
         public bool IsCredit { get; set; }
         public string InvoiceNo { get; set; }
-        public DateTime? InvoiceDate { get; set; }        
+        public DateTime? InvoiceDate { get; set; }
+        public string PaymentStatus { get; set; }
         public decimal? AdditionalTDS { get; set; }       
         public bool NonStoreInventory { get; set; }               
         public List<TaxPurchaseExpensesModel> Expenses { get; set; }
