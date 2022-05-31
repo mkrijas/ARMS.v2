@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         StoreModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<StoreModel> Select();
+        IEnumerable<StoreModel> SelectByBranch(int BranchID);
     }
     public class StoreService : IStoreService
     {
@@ -41,6 +42,20 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        public IEnumerable<StoreModel> SelectByBranch(int BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "ByBranch"),
+            };            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }            
+        }
+
         public StoreModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
