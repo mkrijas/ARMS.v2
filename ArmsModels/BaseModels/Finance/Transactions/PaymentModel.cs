@@ -1,11 +1,16 @@
-﻿namespace ArmsModels.BaseModels.Finance.Transactions
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+
+namespace ArmsModels.BaseModels.Finance.Transactions
 {
-    public class PartyPaymentModel :TransactionBaseModel
+    public class PartyPaymentMemoModel :TransactionBaseModel
     {
-        public int? PaymentID { get; set; }
-        public int? ChequeID { get; set; }
-        public string PaymentMode { get; set; }
-        public int? PartyID { get; set; }
+        public int? PaymentMemoID { get; set; }
         public int? PartyBranchID { get; set; }
+        public DateTime? DueOn { get; set; }
+
     }
 }

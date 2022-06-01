@@ -13,15 +13,12 @@ namespace ArmsModels.BaseModels
         public PartyBranchModel PartyBranchInfo { get; set; }        
         public bool IsCredit { get; set; }
         public string InvoiceNo { get; set; }
-        public DateTime? InvoiceDate { get; set; }
-        public string PaymentStatus { get; set; }
+        public DateTime? InvoiceDate { get; set; }        
         public decimal? AdditionalTDS { get; set; }       
         public bool NonStoreInventory { get; set; }               
         public List<TaxPurchaseExpensesModel> Expenses { get; set; }
         public List<TaxPurchaseItemModel> Items { get; set; }
-    }
-
-    
+    }    
 
     public class TaxPurchaseExpensesModel
     {
@@ -55,4 +52,12 @@ namespace ArmsModels.BaseModels
         public decimal? TDS { get; set; }
     }
 
+    public class BillPaymentModel
+    {
+        public int? PsID { get; set; }
+        public string BillTransactionType { get; set; }
+        public int? BillTransactionID { get; set; }
+        public decimal? PayAmount { get; set; }
+        public string PaymentStatus { get; set; }
+    }
 }
