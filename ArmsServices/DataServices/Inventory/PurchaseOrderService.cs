@@ -60,7 +60,7 @@ namespace ArmsServices.DataServices
             {
                 yield return new InventoryItemEntryModel()
                 {
-                    ItemEntryID = dr.GetInt64("ItemEntryID"),
+                    ItemEntryID = dr.GetInt64("POItemID"),
                     ItemID = dr.GetInt32("ItemID"),
                     ItemRate = dr.GetDecimal("ItemRate"),
                     ItemQty = dr.GetDecimal("ItemQty"),
