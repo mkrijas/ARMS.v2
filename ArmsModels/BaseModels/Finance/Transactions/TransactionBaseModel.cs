@@ -16,6 +16,7 @@ namespace ArmsModels.BaseModels
         }
         public int? MID { get; set; }
         public DateTime? DocumentDate { get; set; }
+        public string DocumentNumber { get; set; }
         public int? BranchID { get; set; }
         public decimal? TotalAmount { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }

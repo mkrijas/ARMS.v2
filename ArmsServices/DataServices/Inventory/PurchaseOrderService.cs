@@ -107,6 +107,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@QuoteID",model.QuoteID),
                new SqlParameter("@EntryDate",model.EntryDate),
                new SqlParameter("@PartyBranchID",model.PartyBranchID),
+               new SqlParameter("@TotalValue",model.TotalValue),
                new SqlParameter("@Reference",model.Reference),
                new SqlParameter("@Remarks",model.Remarks),
                new SqlParameter("@StoreID",model.StoreID),
@@ -140,6 +141,7 @@ namespace ArmsServices.DataServices
                  
                 EntryDate = dr.GetDateTime("EntryDate"),
                 PartyBranchID = dr.GetInt32("PartyBranchID"),
+                TotalValue = dr.GetDecimal("TotalValue"),
                 Reference = dr.GetString("Reference"),
                 Remarks = dr.GetString("Remarks"),
                 StoreID = dr.GetInt32("StoreID"),                
