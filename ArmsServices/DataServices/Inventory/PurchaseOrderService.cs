@@ -141,6 +141,7 @@ namespace ArmsServices.DataServices
                  
                 EntryDate = dr.GetDateTime("EntryDate"),
                 PartyBranchID = dr.GetInt32("PartyBranchID"),
+                PartyName = dr.GetString("PartyName"),
                 TotalValue = dr.GetDecimal("TotalValue"),
                 Reference = dr.GetString("Reference"),
                 Remarks = dr.GetString("Remarks"),
