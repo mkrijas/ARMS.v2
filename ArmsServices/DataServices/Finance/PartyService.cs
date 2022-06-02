@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         Task<PartyModel> SelectByID(int? ID);
         Task<int> Delete(int? PartyID, string UserID);
         IAsyncEnumerable<PartyModel> Select(int? PartyID);
+        PartyModel GetPartyFromBranch(int? PartyBranchID);
     }
 
     public class PartyService : IPartyService
@@ -52,7 +53,8 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PartyID", ID),               
+               new SqlParameter("@PartyID", ID),
+               new SqlParameter("@Operation", "ByID"),
             };
             PartyModel model = new PartyModel();
             await foreach( IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.PartySelect]", parameters))
@@ -76,7 +78,8 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PartyID", PartyID)               
+               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@Operation", "ByID"),
             };
 
             await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.PartySelect]", parameters))
@@ -108,5 +111,19 @@ namespace ArmsServices.DataServices
             };
         }
 
+        public PartyModel GetPartyFromBranch(int? PartyBranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyBranchID", PartyBranchID),
+               new SqlParameter("@Operation", "ByPartyBranch"),
+            };
+            PartyModel party = null;
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            {
+                party = GetModel(reader);
+            }
+            return party;
+        }
     }
 }
