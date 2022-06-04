@@ -1,5 +1,7 @@
-﻿@page "/PurchaseOrder"
-@inject IPurchaseOrderService Iservice
+﻿@page "/InventoryGrn"
+
+
+@inject IInventoryGrnService Iservice
 @inject MudBlazor.ISnackbar snackbar
 
 @inject AuthenticationStateProvider auth
@@ -8,30 +10,30 @@
 
 <MudGrid Spacing="4">
    <MudItem xs="12">
-        <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true" Elevation="10" Filter="new Func<PurchaseOrderModel, bool>(search)" @bind-place="model">
+        <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true" Elevation="10" Filter="new Func<InventoryGrnModel, bool>(search)" @bind-place="model">
            
 
              <ToolBarContent>
-                <MudText Typo="Typo.h6">Purchase Order</MudText>
+                <MudText Typo="Typo.h6">GRN</MudText>
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                 <MudButton @onclick="h"  Variant="Variant.Filled" Color="Color.Primary" >Purchase Order</MudButton>
                 
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchPurchase" Placeholder="Search Purchase order... "
+                <MudTextField @bind-Value="searchGrn" Placeholder="Search Grn... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PONo)" InitialDirection="SortDirection.Ascending">PONo</MudTableSortLabel></MudTh>
-             <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Ascending">EntryDate</MudTableSortLabel></MudTh>
-               <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PartyBranchID)" InitialDirection="SortDirection.Ascending">PartyBranchID</MudTableSortLabel></MudTh>
-               
+                <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.GrnNo)" InitialDirection="SortDirection.Ascending">GrnNo</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Ascending">EntryDate</MudTableSortLabel></MudTh>
+               <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.PartyBranchID)" InitialDirection="SortDirection.Ascending">PartyBranchID</MudTableSortLabel></MudTh>
+                
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="PONo">@context.PONo</MudTd>
+                <MudTd DataLabel="GrnNO">@context.GrnNo</MudTd>
                 <MudTd DataLabel="EntryDate">@context.EntryDate</MudTd>
                 <MudTd DataLabel="PartyBranchID">@context.PartyBranchID</MudTd>
-              
                  
                 <MudTd DataLabel="">
                     <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
@@ -57,12 +59,12 @@
 @code {
 
 
-    private PurchaseOrderModel model = new PurchaseOrderModel();
-    private List<PurchaseOrderModel> collection = new List<PurchaseOrderModel>();
+    private InventoryGrnModel model = new InventoryGrnModel();
+    private List<InventoryGrnModel> collection = new List<InventoryGrnModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
 
-    private string searchPurchase = "";
+    private string searchGrn = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -75,7 +77,7 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        collection = new List<PurchaseOrderModel>();
+        collection = new List<InventoryGrnModel>();
         foreach (var item in Iservice.SelectPending(brancID))
         {
             collection.Add(item);
@@ -84,49 +86,36 @@
 
     }   
 
-    private async Task OpenDialog(PurchaseOrderModel tds)
+    private async Task OpenDialog(InventoryGrnModel tds)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model",tds);
-        var dialog =  DialogService.Show<PurchaseOrderDialog>(tds.POID == null?"ADD":"EDIT",parms,maxWidth);
+        var dialog =  DialogService.Show<InventoryGrnDialog>(tds.GrnID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
         if(!result.Cancelled)
         {   
-            PurchaseOrderModel UpatedModel = (PurchaseOrderModel)result.Data;            
-            model.UserInfo.UserID = user.Identity.Name;
-
-            try
-            {
-
-                Iservice.Update(UpatedModel);
-                model = new();
-                snackbar.Add("Saved Successfully", Severity.Success);
-                model = new PurchaseOrderModel();
+           
                 GetAll();
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+            
 
         }
     }
 
-    private void Delete(PurchaseOrderModel tds)
+    private void Delete(InventoryGrnModel tds)
     {
-        Iservice.Delete(tds.POID, "Rijas");
+        Iservice.Delete(tds.GrnID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
         GetAll();
     }
-    private async Task Approve(PurchaseOrderModel tds)
+    private async Task Approve(InventoryGrnModel tds)
     {
 
         var parameters = new DialogParameters();
-        parameters.Add("ContentText", "Are you sure you want to Approve this Purchase Order,Order No:"+tds.PONo+"?");
+        parameters.Add("ContentText", "Are you sure you want to Approve this Goods Reciept Note,GRN No:"+tds.GrnNo+"?");
         parameters.Add("ButtonText", "Confirm");
         parameters.Add("Color", Color.Success);
         var dialog=DialogService.Show<ConfirmDialog>("Confirm", parameters);
@@ -141,10 +130,10 @@
             try
             {
 
-                Iservice.Approve(tds.POID.Value,tds.UserInfo.UserID);
-               
+                Iservice.Approve(tds.GrnID.Value,tds.UserInfo.UserID);
+
                 snackbar.Add("Approved", Severity.Success);
-                
+
                 GetAll();
             }
             catch (Exception ex)
@@ -154,18 +143,36 @@
         }
 
 
+
+
+
+    }
+    public async Task  h()
+    {
+        PurchaseOrderModel tds = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
        
-      
-     
+        var dialog =  DialogService.Show<PurchaseOrderViewDialog>("Purchase Order",parms,maxWidth);
+        var result = await dialog.Result;
+           if(!result.Cancelled)
+        {   
+           
+                GetAll();
+            
+
+        }
     }
 
-    private bool search(PurchaseOrderModel tds)
+    private bool search(InventoryGrnModel tds)
     {
-     if (tds.PONo != null && tds.PONo.Contains(searchPurchase, StringComparison.OrdinalIgnoreCase))
+     if (tds.GrnNo != null && tds.GrnNo.Contains(searchGrn, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
-        else if (tds.PONo == null)
+        else if (tds.GrnNo == null)
         return true;
         return false;
     }

@@ -1,5 +1,4 @@
-﻿@inject IPurchaseOrderService Iservice
-@inject IGstUsageIDService testIservice
+﻿@inject IInventoryGrnService Iservice
 @inject IPartyService partyIservice
 @inject IInventoryItemService itemIservice
 @inject IPartyBranchService partyBranchIservice
@@ -16,7 +15,7 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
-            Create Purchase Order
+            Create Goods Reciept Note
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -161,8 +160,8 @@
 
 @code {
     [Parameter]
-    public PurchaseOrderModel model { get; set; }
-    private List<PurchaseOrderModel> collection = new List<PurchaseOrderModel>();
+    public InventoryGrnModel model { get; set; }
+    private List<InventoryGrnModel> collection = new List<InventoryGrnModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
     private List<GstRateModel> gstRate = new();
@@ -194,9 +193,13 @@
 
         store = storeIservice.Select().ToList();
         itm = itemIservice.SearchByDescription(string.Empty).ToList();
-        if(model.POID!=null)
+        if(model.GrnID!=null)
         {
-            items = Iservice.GetItemEntries(model.POID.Value).ToList();
+            items = Iservice.GetItemEntries(model.GrnID.Value).ToList();
+        }
+        else if(model.POID!=null)
+        {
+            items = model.Entries;
         }
         else
         {
@@ -219,12 +222,27 @@
 
 
 
-    private void OnValidSubmit(EditContext context)
+    private async Task OnValidSubmit(EditContext context)
     {  
 
 
         model.Entries=items;  
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;        
+        model.UserInfo.UserID = user.Identity.Name;
+        try
+            {
 
+                Iservice.Update(model);
+                model = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
+                model = new InventoryGrnModel();
+               
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         MudDialog.Close(model);
 
     }

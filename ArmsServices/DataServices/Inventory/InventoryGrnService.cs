@@ -103,8 +103,8 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@POID", model.POID),
-               new SqlParameter("@PONo",model.GrnID),
-               new SqlParameter("@PONo",model.GrnNo),               
+               new SqlParameter("@GrnID",model.GrnID),
+               new SqlParameter("@GrnNo",model.GrnNo),               
                new SqlParameter("@EntryDate",model.EntryDate),
                new SqlParameter("@PartyBranchID",model.PartyBranchID),
                new SqlParameter("@TotalValue",model.TotalValue),
