@@ -8,7 +8,6 @@ namespace ArmsModels.BaseModels
 {
     public class TransactionBaseModel
     {
-
         public TransactionBaseModel()
         {
             UserInfo = new();

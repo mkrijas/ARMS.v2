@@ -15,7 +15,8 @@ namespace ArmsModels.BaseModels
         public string InvoiceNo { get; set; }
         public DateTime? InvoiceDate { get; set; }        
         public decimal? AdditionalTDS { get; set; }       
-        public bool NonStoreInventory { get; set; }               
+        public bool NonStoreInventory { get; set; }
+        public int? TruckID { get; set; }
         public List<TaxPurchaseExpensesModel> Expenses { get; set; }
         public List<TaxPurchaseItemModel> Items { get; set; }
     }    
