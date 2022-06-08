@@ -18,7 +18,9 @@ namespace ArmsServices.DataServices
         IEnumerable<InventoryGrnModel> PendingToInvoice(int BranchID);
         IEnumerable<InventoryGrnModel> SelectByStore(int StoreID);
         int Approve(int GrnID, string UserID);
+        int Reverse(int GrnID, string UserID);
         IEnumerable<InventoryItemEntryModel> GetItemEntries(int GrnID);
+
     }
     public class InventoryGrnService : IInventoryGrnService
     {
@@ -32,8 +34,9 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@GrnID", GrnID),
+               new SqlParameter("@GrnID", GrnID),
                new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Operation","Approve")
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Approve]", parameters);
         }
@@ -127,10 +130,10 @@ namespace ArmsServices.DataServices
         {
             return new InventoryGrnModel(                
                 dr.GetString("GrnNo"),
-                dr.GetBoolean("Invoiced"),
-                dr.GetBoolean("Approved"),
+                dr.GetBoolean("Invoiced"),               
                 new ArmsModels.SharedModels.UserInfoModel
                 {
+                    RecordStatus = dr.GetByte("ApprovedStatus"),
                     TimeStampField = dr.GetDateTime("ApprovedOn"),
                     UserID = dr.GetString("ApprovedBy"),
                 })
@@ -177,6 +180,17 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
+        }
+
+        public int Reverse(int GrnID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@GrnID", GrnID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Operation","Reverse")
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Approve]", parameters);
         }
     }
 }
