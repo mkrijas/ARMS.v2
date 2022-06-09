@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
         IEnumerable<PurchaseOrderModel> PendingForGrn(int BranchID);
         IEnumerable<PurchaseOrderModel> SelectByStore(int StoreID);
         int Approve(int POID,string UserID);
+        int Reverse(int POID, string UserID);
         IEnumerable<InventoryItemEntryModel> GetItemEntries(int POID);
     }
     public class PurchaseOrderService : IPurchaseOrderService
@@ -32,8 +33,9 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@POID", POID),
+               new SqlParameter("@POID", POID),
                new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Operation", "Approve"),
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
         }
@@ -127,26 +129,24 @@ namespace ArmsServices.DataServices
         {
             return new PurchaseOrderModel(
                 dr.GetBoolean("GrnCreated"), 
-                dr.GetString("PoNo"), 
-                dr.GetBoolean("Approved"),
+                dr.GetString("PoNo"),         
                 new ArmsModels.SharedModels.UserInfoModel
                 {
+                    RecordStatus = dr.GetByte("ApprovedStatus"),
                     TimeStampField = dr.GetDateTime("ApprovedOn"),
                     UserID = dr.GetString("ApprovedBy"),
                 })
             {
                 POID = dr.GetInt32("POID"),               
                 PRID = dr.GetInt32("PRID"),
-                QuoteID = dr.GetInt32("QuoteID"),
-                 
+                QuoteID = dr.GetInt32("QuoteID"),                 
                 EntryDate = dr.GetDateTime("EntryDate"),
                 PartyBranchID = dr.GetInt32("PartyBranchID"),
                 PartyName = dr.GetString("PartyName"),
                 TotalValue = dr.GetDecimal("TotalValue"),
                 Reference = dr.GetString("Reference"),
                 Remarks = dr.GetString("Remarks"),
-                StoreID = dr.GetInt32("StoreID"),                
-                
+                StoreID = dr.GetInt32("StoreID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -180,6 +180,17 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
+        }
+
+        public int Reverse(int POID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@POID", POID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Operation","Reverse")
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
         }
     }
 }

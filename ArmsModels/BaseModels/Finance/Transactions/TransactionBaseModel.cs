@@ -19,6 +19,6 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         public decimal? TotalAmount { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
-        public SharedModels.ApprovedInfoModel ApprovedInfo { get; set; }
+        public SharedModels.UserInfoModel ApprovedInfo { get; set; }
     }
 }

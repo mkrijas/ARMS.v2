@@ -9,7 +9,7 @@ namespace ArmsModels.BaseModels
 {
     public class InventoryGrnModel : InventoryBaseModel
     {
-        public InventoryGrnModel(string grnNo, bool invoiced, bool _approved, UserInfoModel _approvedInfo) : base(_approved, _approvedInfo)
+        public InventoryGrnModel(string grnNo, bool invoiced, UserInfoModel _approvedInfo) : base( _approvedInfo)
         {
             GrnNo = grnNo;
             Invoiced = invoiced;
@@ -31,12 +31,11 @@ namespace ArmsModels.BaseModels
         public PurchaseOrderModel()
         {
         }
-        public PurchaseOrderModel(bool _grnCreated,string _poNo, bool _approved, UserInfoModel _approvedInfo) :base(_approved,_approvedInfo)
+        public PurchaseOrderModel(bool _grnCreated,string _poNo, UserInfoModel _approvedInfo) :base(_approvedInfo)
         {
             GrnCreated = _grnCreated;
             PONo = _poNo;            
         }
-
         public int? POID { get; set; }
         public string PONo { get; }
         public int? PRID { get; set; }
@@ -55,11 +54,10 @@ namespace ArmsModels.BaseModels
             ApprovedInfo = new();
         }      
 
-        public InventoryBaseModel(bool _approved, UserInfoModel _approvedInfo)
+        public InventoryBaseModel(UserInfoModel _approvedInfo)
         {
             UserInfo = new();
-            Entries = new();            
-            Approved = _approved;
+            Entries = new();
             ApprovedInfo = _approvedInfo;
         }
         public int? StoreID { get; set; }
@@ -70,8 +68,7 @@ namespace ArmsModels.BaseModels
         public virtual string PartyName { get; set; }
         public decimal? TotalValue { get; set; }
         public string Reference { get; set; }
-        public string Remarks { get; set; }        
-        public bool Approved { get; }
+        public string Remarks { get; set; }
         public UserInfoModel ApprovedInfo { get; }
         public UserInfoModel UserInfo { get; set; }
         [ValidateComplexType]
