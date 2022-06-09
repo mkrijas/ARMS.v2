@@ -10,14 +10,19 @@ namespace ArmsModels.BaseModels
     {
         public int? PID { get; set; }        
         public int? GRNID { get; set; }        
-        public PartyBranchModel PartyBranchInfo { get; set; }        
+        public PartyBranchModel PartyBranchInfo { get; set; }  
+        [Required]
         public bool IsCredit { get; set; }
+        [Required]
         public string InvoiceNo { get; set; }
+        [Required]
         public DateTime? InvoiceDate { get; set; }        
-        public decimal? AdditionalTDS { get; set; }       
-        public bool NonStoreInventory { get; set; }
-        public int? TruckID { get; set; }
+        public decimal? AdditionalTDS { get; set; }  
+        [Required]
+        public bool NonStoreInventory { get; set; } 
+        [ValidateComplexType]
         public List<TaxPurchaseExpensesModel> Expenses { get; set; }
+        [ValidateComplexType]
         public List<TaxPurchaseItemModel> Items { get; set; }
     }    
 
@@ -25,15 +30,18 @@ namespace ArmsModels.BaseModels
     {
         public long? TpeID { get; set; }
         public int? PID { get; set; }
+        [Required]
         public int? BranchID { get; set; }
+        [Required]
         public string UsageID { get; set; }
-        public int? AccountID { get; set; }
+        public int? CoaID { get; set; }
+        [Required]
         public decimal? Amount { get; set; }
         public decimal? SGST { get; set; }
         public decimal? CGST { get; set; }
         public decimal? IGST { get; set; }
         public decimal? TDS { get; set; }
-        public string Reference { get; set; }
+        public string BillReference { get; set; }
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
     }
@@ -45,7 +53,7 @@ namespace ArmsModels.BaseModels
         public int? ItemID { get; set; }
         public decimal? ItemRate { get; set; }
         public decimal? ItemQty { get; set; }
-        public int? AccountID { get; set; }
+        public int? CoaID { get; set; }
         public decimal? Amount { get; set; }
         public decimal? SGST { get; set; }
         public decimal? CGST { get; set; }
