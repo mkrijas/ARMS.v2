@@ -119,6 +119,8 @@ namespace Views
             services.AddScoped<ITdsThresholdLimitService, TdsThresholdLimitService>();
             services.AddScoped<IGstUsageIDService, GstUsageIDService>();
             services.AddScoped<IGstItemService, GstItemService>();
+            services.AddScoped<ICostCenterService, CostCenterService>();
+            services.AddScoped<IDimensionService, DimensionService>();
 
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
