@@ -140,6 +140,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@NonStoreInventory", model.NonStoreInventory),
                new SqlParameter("@PartyBranchID", model.PartyBranchInfo.GstID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Update]", parameters))
@@ -171,6 +172,7 @@ namespace ArmsServices.DataServices
                 MID = dr.GetInt32("MID"),
                 NonStoreInventory = dr.GetBoolean("NonStoreInventory"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
+                Narration = dr.GetString("Narration"),
                 PartyBranchInfo = new PartyBranchModel() { GstID = dr.GetInt32("PartyBranchID")},                
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
