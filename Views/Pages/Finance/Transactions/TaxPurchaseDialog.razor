@@ -1,0 +1,140 @@
+﻿@inject ITaxPurchaseService Iservice
+@inject IPartyService partyIservice
+@inject IInventoryItemService itemIservice
+@inject IPartyBranchService partyBranchIservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+           Tax Purchase
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" md="5">
+                        <MudAutocomplete T="PartyModel" Value="SelectedParty" ValueChanged="getBranch"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" Label="Vendor" ResetValueOnEmptyText="true"
+                                         SearchFunc="@SearchParty" ToStringFunc="@(e => e?.PartyName)">
+                        </MudAutocomplete>
+                    </MudItem>
+
+                    <MudItem xs="12" md="5">
+                        <MudSelect Label="Select Party Branch" @bind-Value="model.PartyBranchInfo" T="PartyBranchModel" ToStringFunc="@((p) => p?.Address.Place)" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in partybranch)
+                            {
+                                <MudSelectItem Value="@ditem">@ditem.Address.Place</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                      <MudItem xs="12" md="2">
+                       <MudCheckBox @bind-Checked="model.IsCredit" Color="Color.Primary">Credit</MudCheckBox>
+                    </MudItem>
+
+                    <MudItem xs="12" md="3">
+                        <MudDatePicker Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.InvoiceDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudTextField @bind-Value="model.InvoiceNo" Label="InvoiceNo" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceNo)"></MudTextField>
+
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudTextField @bind-Value="model.AdditionalTDS" Label="Additional TDS" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdditionalTDS)"></MudTextField>
+
+                    </MudItem>
+                     <MudItem xs="12" md="3">
+                      <MudCheckBox @bind-Checked="model.NonStoreInventory" ReadOnly=true Color="Color.Primary">NonStoreInventory</MudCheckBox>
+
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                       
+                    </MudItem>
+                  
+
+
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        @*   <MudButton OnClick="DeleteTaxRate">Delete Tax Rate</MudButton>
+        <MudButton OnClick="AddTaxRate">Add More Tax Rate</MudButton>*@
+
+        @*@if (model.ApprovedInfo.RecordStatus != 3)
+        {
+             @if ( model.POID != null) { 
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Reverse">Reverse</MudButton>
+           }
+            
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        }*@
+    </DialogActions>
+</MudDialog>
+
+
+
+@code {
+    [Parameter]
+    public TaxPurchaseModel model { get; set; }
+    private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private PartyModel SelectedParty = new();
+    private List<PartyBranchModel> partybranch = new();
+    private List<PartyModel> partyList = new();
+
+    private async Task<IEnumerable<PartyModel>> SearchParty(string searchString)
+    {
+        return await Task.FromResult(partyList.Where(x => x.PartyName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+    protected override async void OnInitialized()
+    {
+        if(model.GRNID==null)
+        {
+            model.NonStoreInventory = false;
+        }
+
+         await foreach (var party in partyIservice.Select(0))
+        {
+            partyList.Add(party);
+        }
+
+        // SelectedParty = partyIservice.GetPartyFromBranch(model.PartyBranchInfo);
+       // SelectedParty = null;
+       // if (SelectedParty != null)
+       //     partybranch = partyBranchIservice.SelectByParty(SelectedParty.PartyID).ToList();
+       //// StateHasChanged();
+    }
+
+
+    private void getBranch(PartyModel party)
+    {
+        // int values = int.Parse(e.Value.ToString());
+        //SelectedParty = party;
+        if (party != null)
+        {
+            partybranch = partyBranchIservice.SelectByParty(party.PartyID).ToList();
+        }
+        else
+        {
+            partybranch = new();
+        }
+        // snackbar.Add("Saved Successfully", Severity.Success);
+    }
+
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+    }
+}

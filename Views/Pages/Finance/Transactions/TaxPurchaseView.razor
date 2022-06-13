@@ -1,0 +1,151 @@
+﻿@page "/TaxPurchase"
+@inject ITaxPurchaseService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudGrid Spacing="4">
+   <MudItem xs="12">
+        <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10" Filter="new Func<TaxPurchaseModel, bool>(search)" @bind-place="model">
+           
+
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">Tax Purchase</MudText>
+                <MudTooltip Text="New TaxPurchase">
+                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+                 <MudTooltip Text="Add from GRN">
+                <MudIconButton  Icon="@Icons.Material.Filled.AddLink"  @onclick="openGrn"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+               @* <MudButton @onclick="openpurchaseorder"  Variant="Variant.Filled" Color="Color.Primary" >Purchase Order</MudButton>
+               *@ 
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchTax" Placeholder="Search Tax... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.InvoiceDate)" InitialDirection="SortDirection.Ascending">Invoice No</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.InvoiceNo)" InitialDirection="SortDirection.Ascending">Invoice Date</MudTableSortLabel></MudTh>
+              
+                
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="GrnNO">@context.InvoiceNo</MudTd>
+                <MudTd DataLabel="EntryDate">@context.InvoiceDate</MudTd>
+             
+                 
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                  
+                   @* @if(@context.ApprovedInfo.RecordStatus!=3)
+                    {
+                      <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" title="Approve" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                        
+                    }*@
+              
+                    </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+
+
+
+@code {
+
+
+    private TaxPurchaseModel model = new TaxPurchaseModel();
+    private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+
+    private string searchTax = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        GetAll();
+    }
+
+    private  async Task GetAll()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = new List<TaxPurchaseModel>();
+        foreach (var item in Iservice.Select())
+        {
+            collection.Add(item);
+        }
+
+
+    }   
+
+    private async Task OpenDialog(TaxPurchaseModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        var dialog =  DialogService.Show<TaxPurchaseDialog>(tds.PID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+           
+                GetAll();
+            
+
+        }
+    }
+
+    private void Delete(TaxPurchaseModel tx)
+    {
+        Iservice.Delete(tx.PID, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+    
+    public async Task  openGrn()
+    {
+        PurchaseOrderModel tds = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+       
+        //var dialog =  DialogService.Show<PurchaseOrderViewDialog>("Purchase Order",parms,maxWidth);
+        //var result = await dialog.Result;
+        //   if(!result.Cancelled)
+        //{   
+           
+        //        GetAll();
+            
+
+        //}
+    }
+
+    private bool search(TaxPurchaseModel tx)
+    {
+     if (tx.InvoiceNo != null && tx.InvoiceNo.Contains(searchTax, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (tx.InvoiceNo == null)
+        return true;
+        return false;
+    }
+
+    
+
+}

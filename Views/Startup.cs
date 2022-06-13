@@ -122,6 +122,10 @@ namespace Views
             services.AddScoped<ICostCenterService, CostCenterService>();
             services.AddScoped<IDimensionService, DimensionService>();
 
+            //------------FINANCE TRANSACTIONS-------------------
+            services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();
+
+
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
             services.AddScoped<IRoleService<RoleModel>, RoleStore>();
