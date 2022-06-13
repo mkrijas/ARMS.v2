@@ -14,8 +14,10 @@ namespace ArmsModels.BaseModels
             ApprovedInfo = new();
         }
         public int? MID { get; set; }
+        [Required]
         public DateTime? DocumentDate { get; set; }
         public string DocumentNumber { get; set; }
+        [Required]
         public int? BranchID { get; set; }
         public decimal? TotalAmount { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
