@@ -20,6 +20,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? BranchID { get; set; }
         public decimal? TotalAmount { get; set; }
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
         public string Narration { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
         public SharedModels.UserInfoModel ApprovedInfo { get; set; }
