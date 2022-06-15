@@ -13,12 +13,13 @@ namespace ArmsServices.DataServices
     {
         GstItemModel Update(GstItemModel model);
         GstItemModel SelectByID(int ID);
-        IEnumerable<GstItemModel> SelectByItem(int ItemID, DateTime? entryDate);
+        GstItemModel SelectByItem(int ItemID, DateTime? entryDate);
         IEnumerable<GstItemModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);        
         IEnumerable<GstItemModel> FilterByText(string FilterText, DateTime? entryDate);
         int Delete(int ID, string UserID);
         IEnumerable<GstItemModel> SelectByItem(int ItemID);
         IEnumerable<GstItemModel> Select(DateTime? entryDate);
+
         
     }
 
@@ -84,18 +85,20 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<GstItemModel> SelectByItem(int ItemID, DateTime? entryDate)
+        public GstItemModel SelectByItem(int ItemID, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByItem"),
+               new SqlParameter("@ItemID", ItemID),
                new SqlParameter("@EntryDate", entryDate),
             };
-
+            GstItemModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.HSN.Select]", parameters))
             {
-                yield return GetModel(dr);
+                model = GetModel(dr);
             }
+            return model;
         }
 
         public GstItemModel SelectByID(int ID)
