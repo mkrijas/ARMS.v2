@@ -2,9 +2,13 @@
 @inject IPartyService partyIservice
 @inject IInventoryItemService itemIservice
 @inject ICostCenterService costIservice
+@inject IInventoryGroupService inventoryGroupIservice
 @inject IDimensionService dimensionIservice
+@inject IGstUsageIDService usageIservice
+@inject IBranchService branchIservice
 @inject IPartyBranchService partyBranchIservice
 @inject MudBlazor.ISnackbar snackbar
+@inject ITdsRateService tdsIService
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
@@ -20,7 +24,7 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudContainer Style="min-height:300px;max-height: 800px overflow-y: scroll;">
+        <MudContainer Style="max-height: 500px; overflow-y: scroll">
             <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
@@ -107,7 +111,7 @@
                                 </tr>*@
                                 <tr>
 
-                                    <th>Branch</th>
+                                  @*  <th>Branch</th>*@
                                     <th>UsageID</th>
                                     <th>CoaID</th>
                                     <th>Amount</th>
@@ -126,7 +130,7 @@
                                 {
                                     <tr>
                                        
-                                        <td>@item.BranchID</td>
+                                      @*  <td>@item.BranchID</td>*@
                                         <td>@item.UsageID</td>
                                         <td>@item.CoaID</td>
                                         <td>@item.Amount</td>
@@ -141,29 +145,29 @@
                                 }
                                 
                                   <tr>
-                                        <td>
+                                      @*  <td>
 
-                                         @* <MudSelect Label="Select UsageID" @bind-Value="Expmodel.UsageID" T="st?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                          <MudSelect Label="Select UsageID" @bind-Value="Expmodel.UsageID" T="st?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                                             @foreach (var ditem in dimension)
                                             {
                                                 <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
                                             }
-                                        </MudSelect>*@
-                                        </td>
+                                        </MudSelect>
+                                        </td>*@
                                         <td>
-                                          @*   <MudSelect Label="Select UsageID" @bind-Value="Expmodel.BranchID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                                            @foreach (var ditem in dimension)
+                                             <MudSelect  Value="SelectedItems" T="GstUsageIDModel" ValueChanged="UsageChanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" ToStringFunc="@(e => e?.UsageID)" >
+                                            @foreach (var ditem in usageID)
                                             {
-                                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                                                <MudSelectItem Value="@ditem">@ditem.UsageID</MudSelectItem>
                                             }
-                                        </MudSelect>*@
+                                        </MudSelect>
                                         </td>
                                          <td>
                                             <MudTextField @bind-Value="Expmodel.CoaID"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Expmodel.CoaID)"></MudTextField>
 
                                         </td>
                                         <td>
-                                            <MudTextField @bind-Value="Expmodel.Amount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Expmodel.Amount)"></MudTextField>
+                                            <MudTextField @bind-Value="Expmodel.Amount" TextChanged="taxRates" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Expmodel.Amount)"></MudTextField>
 
                                         </td>
                                         <td>
@@ -185,6 +189,118 @@
                                             <MudTextField @bind-Value="Expmodel.BillReference" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Expmodel.BillReference)"></MudTextField>
 
                                         </td>
+                                        <td>
+                                           
+                                            <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+
+                                        </td>
+                                    </tr>
+                               
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+
+                    <MudItem xs="12" md="12">
+                       <h6>TaxPurchaseItems</h6>
+                    </MudItem>
+                       <MudItem xs="12" md="12">
+                           <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+
+
+                            <thead>
+                               @* <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th>Total</th>
+                                    <th>@model.TotalValue</th>
+                                </tr>*@
+                                <tr>
+
+                                  @*  <th>Branch</th>*@
+                                    <th>ItemID</th>
+                                    <th>ItemRate</th>
+                                    <th>ItemQty</th>
+                                    <th>CoaID</th>
+                                    <th>Amount</th>
+                                     <th>SGST</th>
+                                      <th>CGST</th>
+                                    <th>IGST</th>
+                                     <th>TDS</th>
+                                    
+                                      <th></th>
+                                       
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in TxItitems)
+                                {
+                                    <tr>
+                                       
+                                      @*  <td>@item.BranchID</td>*@
+                                        <td>@item.ItemID</td>
+                                        <td>@item.ItemRate</td>
+                                        <td>@item.ItemQty</td>
+                                        <td>@item.CoaID</td>
+                                        <td>@item.Amount</td>
+                                        <td>@item.SGST</td>
+                                        <td>@item.CGST</td>
+                                        <td>@item.IGST</td>
+                                        <td>@item.TDS</td>
+                                       
+                                        <td></td>
+                                        
+                                    </tr>
+                                }
+                                
+                                  <tr>
+                                      @*  <td>
+
+                                          <MudSelect Label="Select UsageID" @bind-Value="Expmodel.UsageID" T="st?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                            @foreach (var ditem in dimension)
+                                            {
+                                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                        </td>*@
+                                        <td>
+                                             <MudAutocomplete T="InventoryItemModel" ValueChanged="getitemCode" Value="SelectedPurchaseItems" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Items" ResetValueOnEmptyText="true"
+                                                         SearchFunc="@SearchItems" ToStringFunc="@(e => e==null?string.Empty:e?.InventoryItemCode)"></MudAutocomplete>
+
+                                        </td>
+                                         <td>
+                                            <MudTextField @bind-Value="TaxItemModel.ItemRate" TextChanged="calcAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.ItemRate)"></MudTextField>
+
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="TaxItemModel.ItemQty" TextChanged="calcAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.ItemQty)"></MudTextField>
+
+                                        </td>
+                                         <td>
+                                            <MudTextField @bind-Value="TaxItemModel.CoaID"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.CoaID)"></MudTextField>
+
+                                        </td>
+                                         <td>
+                                            <MudTextField @bind-Value="TaxItemModel.Amount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.Amount)"></MudTextField>
+
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="TaxItemModel.SGST"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.SGST)"></MudTextField>
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="TaxItemModel.CGST" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.CGST)"></MudTextField>
+
+                                        </td>
+                                          <td>
+                                            <MudTextField @bind-Value="TaxItemModel.IGST" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.IGST)"></MudTextField>
+
+                                        </td>
+                                          <td>
+                                            <MudTextField @bind-Value="TaxItemModel.TDS" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.TDS)"></MudTextField>
+
+                                        </td>
+                                          
                                         <td>
                                            
                                             <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
@@ -226,12 +342,17 @@
     private PartyModel SelectedParty = new();
     private List<PartyBranchModel> partybranch = new();
     private List<PartyModel> partyList = new();
-
+    private List<GstUsageIDModel> usageID = new();
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
+    public GstUsageIDModel SelectedItems = new();
+    public InventoryItemModel SelectedPurchaseItems = new();
     private List<TaxPurchaseExpensesModel> exitems = new List<TaxPurchaseExpensesModel>();
+    private List<TaxPurchaseItemModel> TxItitems = new List<TaxPurchaseItemModel>();
+    private List<InventoryItemModel> itm = new();
 
     private TaxPurchaseExpensesModel Expmodel = new TaxPurchaseExpensesModel();
+    private TaxPurchaseItemModel TaxItemModel = new TaxPurchaseItemModel();
 
     private async Task<IEnumerable<PartyModel>> SearchParty(string searchString)
     {
@@ -250,14 +371,37 @@
         }
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
+        usageID = usageIservice.Select(DateTime.Now).ToList();
+        itm = itemIservice.SearchByDescription(string.Empty).ToList();
         // SelectedParty = partyIservice.GetPartyFromBranch(model.PartyBranchInfo);
         // SelectedParty = null;
         // if (SelectedParty != null)
         //     partybranch = partyBranchIservice.SelectByParty(SelectedParty.PartyID).ToList();
         //// StateHasChanged();
     }
+
+    private async Task<IEnumerable<InventoryItemModel>> SearchItems(string searchString)
+    {
+        return await Task.FromResult(itm.Where(x => x.InventoryItemCode.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
     public void AddItems()
-    { }
+    {
+        TaxPurchaseExpensesModel ientry = new();
+        ientry.UsageID = Expmodel.UsageID;
+        ientry.CoaID = Expmodel.CoaID;
+        ientry.Amount = Expmodel.Amount;
+        ientry.SGST = Expmodel.SGST;
+        ientry.CGST = Expmodel.CGST;
+        ientry.IGST = Expmodel.IGST;
+        ientry.TDS = Expmodel.TDS;
+        ientry.BillReference = Expmodel.BillReference;
+
+
+
+        exitems.Add(ientry);
+        Expmodel = new();
+        SelectedItems = new();
+    }
 
     private void getBranch(PartyModel party)
     {
@@ -273,7 +417,128 @@
         }
         // snackbar.Add("Saved Successfully", Severity.Success);
     }
+    private void UsageChanged(GstUsageIDModel igm)
+    {
+        Expmodel = new();
+        Expmodel.UsageID=igm.UsageID;
+        Expmodel.CoaID = igm.AccountID;
+        SelectedItems.UsageID = igm.UsageID;
 
+    }
+
+    private async void taxRates()
+    {
+        if(SelectedItems.UsageID!=null)
+        {
+            
+            decimal? taxRate =(decimal)usageIservice.GetGstRate(Expmodel.UsageID,DateTime.Now);
+            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyBranchInfo.PartyID.Value,Expmodel.CoaID.Value);
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            int brancID = int.Parse(brancIDString);
+            BranchModel br = await branchIservice.SelectByID(brancID);
+
+            string partyGstNo = (model.PartyBranchInfo.GstNo).Substring(0,2);
+            string branchGstNo = (br.GstNo).Substring(0,2);
+            if(partyGstNo==branchGstNo)
+            {
+
+                Expmodel.IGST = (Expmodel.Amount * taxRate)/100;
+            }
+            else
+            {
+                taxRate = taxRate / 2;
+                Expmodel.SGST =  (Expmodel.Amount * taxRate)/100;
+                Expmodel.CGST =  (Expmodel.Amount * taxRate)/100;
+            }
+
+            Expmodel.TDS=(Expmodel.Amount * tdsRate)/100;
+
+        }
+
+    }
+    private void getitemCode(InventoryItemModel item)
+    {
+        SelectedPurchaseItems = item;
+
+
+        if (item != null)
+        {
+            TaxItemModel.ItemID = item.InventoryItemID;
+            InventoryGroupModel igm = inventoryGroupIservice.SelectByID(item.InventoryGroupID);
+            if (model.NonStoreInventory == true)
+            {
+                TaxItemModel.CoaID = igm.MappedNonInventoryPurchaseHead;
+            }
+            else
+            {
+                TaxItemModel.CoaID = igm.MappedPurchaseHead;
+            }
+
+            TaxItemModel.CoaID = igm.MappedPurchaseHead;
+            //decimal gstrate = 0;
+            //try
+            //{
+            //    gstrate = getgstrate(item.InventoryItemID.Value);
+            //}
+            //catch (Exception e)
+            //{
+            //    gstrate = 0;
+            //}
+            //Entrymodel.ItemGstVal = gstrate;
+        }
+        else
+        {
+            TaxItemModel.ItemID = null;
+        }
+
+    }
+
+    private async Task calcAmount()
+    {
+        
+
+        if(TaxItemModel.ItemQty==null)
+        {
+            TaxItemModel.ItemQty = 0;
+        }
+        if(TaxItemModel.ItemRate==null)
+        {
+            TaxItemModel.ItemRate = 0;
+        }
+        TaxItemModel.Amount = TaxItemModel.ItemQty * TaxItemModel.ItemRate;
+        if( TaxItemModel.Amount!=0)
+        {
+            
+            //decimal? taxRate =(decimal);
+            //decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyBranchInfo.PartyID.Value,Expmodel.CoaID.Value);
+
+            //var authprov = await auth.GetAuthenticationStateAsync();
+            //var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            //int brancID = int.Parse(brancIDString);
+            //BranchModel br = await branchIservice.SelectByID(brancID);
+
+            //string partyGstNo = (model.PartyBranchInfo.GstNo).Substring(0,2);
+            //string branchGstNo = (br.GstNo).Substring(0,2);
+            //if(partyGstNo==branchGstNo)
+            //{
+
+            //    Expmodel.IGST = (Expmodel.Amount * taxRate)/100;
+            //}
+            //else
+            //{
+            //    taxRate = taxRate / 2;
+            //    Expmodel.SGST =  (Expmodel.Amount * taxRate)/100;
+            //    Expmodel.CGST =  (Expmodel.Amount * taxRate)/100;
+            //}
+
+            //Expmodel.TDS=(Expmodel.Amount * tdsRate)/100;
+            
+        }
+
+    
+    }
 
     private async Task OnValidSubmit(EditContext context)
     {
