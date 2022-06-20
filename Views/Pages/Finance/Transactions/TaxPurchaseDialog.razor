@@ -1,6 +1,7 @@
 ﻿@inject ITaxPurchaseService Iservice
 @inject IPartyService partyIservice
 @inject IInventoryItemService itemIservice
+@inject IGstItemService gstitemIservice
 @inject ICostCenterService costIservice
 @inject IInventoryGroupService inventoryGroupIservice
 @inject IDimensionService dimensionIservice
@@ -45,7 +46,7 @@
                         </MudSelect>
                     </MudItem>
                       <MudItem xs="12" md="2">
-                       <MudCheckBox @bind-Checked="model.IsCredit" Color="Color.Primary">Credit</MudCheckBox>
+                       <MudCheckBox @bind-Checked="model.IsCredit" Color="Color.Primary" For="@(() => model.IsCredit)">Credit</MudCheckBox>
                     </MudItem>
 
                     <MudItem xs="12" md="3">
@@ -60,14 +61,14 @@
 
                     </MudItem>
                      <MudItem xs="12" md="3">
-                      <MudCheckBox @bind-Checked="model.NonStoreInventory" ReadOnly=true Color="Color.Primary">NonStoreInventory</MudCheckBox>
+                      <MudCheckBox @bind-Checked="model.NonStoreInventory" For="@(() => model.NonStoreInventory)" ReadOnly=true Color="Color.Primary">NonStoreInventory</MudCheckBox>
 
                     </MudItem>
                    <MudItem xs="12" md="4">
-                        <MudDatePicker Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                        <MudDatePicker Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="model.DocumentNumber" Label="DocumentNo" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentNumber)"></MudTextField>
+                        <MudTextField @bind-Value="model.DocumentNumber" Label="DocumentNo" Variant="Variant.Outlined"  Margin="Margin.Dense" For="@(() => model.DocumentNumber)"></MudTextField>
 
                     </MudItem>
                      <MudItem xs="12" md="4">
@@ -303,7 +304,7 @@
                                           
                                         <td>
                                            
-                                            <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+                                            <MudFab OnClick="AddTaxItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
 
                                         </td>
                                     </tr>
@@ -317,18 +318,10 @@
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        @*   <MudButton OnClick="DeleteTaxRate">Delete Tax Rate</MudButton>
-        <MudButton OnClick="AddTaxRate">Add More Tax Rate</MudButton>*@
-
-        @*@if (model.ApprovedInfo.RecordStatus != 3)
-        {
-             @if ( model.POID != null) { 
-            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Reverse">Reverse</MudButton>
-           }
-            
-            <MudButton OnClick="Cancel">Cancel</MudButton>
+      
+             <MudButton OnClick="Cancel">Cancel</MudButton>
             <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-        }*@
+   
     </DialogActions>
 </MudDialog>
 
@@ -350,9 +343,13 @@
     private List<TaxPurchaseExpensesModel> exitems = new List<TaxPurchaseExpensesModel>();
     private List<TaxPurchaseItemModel> TxItitems = new List<TaxPurchaseItemModel>();
     private List<InventoryItemModel> itm = new();
-
+    private static int brancID;
     private TaxPurchaseExpensesModel Expmodel = new TaxPurchaseExpensesModel();
     private TaxPurchaseItemModel TaxItemModel = new TaxPurchaseItemModel();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+
+
 
     private async Task<IEnumerable<PartyModel>> SearchParty(string searchString)
     {
@@ -360,11 +357,20 @@
     }
     protected override async void OnInitialized()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        brancID = int.Parse(brancIDString);
+        model.BranchID = brancID;
         if(model.GRNID==null)
         {
             model.NonStoreInventory = false;
-        }
 
+        }
+        if(model.PID !=null)
+        {
+            
+        }
+        model.TotalAmount=0;
         await foreach (var party in partyIservice.Select(0))
         {
             partyList.Add(party);
@@ -387,6 +393,7 @@
     public void AddItems()
     {
         TaxPurchaseExpensesModel ientry = new();
+        ientry.BranchID = brancID;
         ientry.UsageID = Expmodel.UsageID;
         ientry.CoaID = Expmodel.CoaID;
         ientry.Amount = Expmodel.Amount;
@@ -399,8 +406,53 @@
 
 
         exitems.Add(ientry);
+
+        decimal tvalue = 0;
+        if (Expmodel.IGST == null)
+        {
+            tvalue = Expmodel.SGST.Value + Expmodel.CGST.Value;
+        }
+        else
+        {
+            tvalue = Expmodel.IGST.Value;
+        }
+        model.TotalAmount = model.TotalAmount + Expmodel.Amount +
+                               tvalue;
+
         Expmodel = new();
         SelectedItems = new();
+    }
+
+    public void AddTaxItems()
+    {
+
+        TaxPurchaseItemModel ientry = new();
+        ientry.ItemID = TaxItemModel.ItemID;
+        ientry.ItemRate = TaxItemModel.ItemRate;
+        ientry.ItemQty = TaxItemModel.ItemQty;
+        ientry.CoaID = TaxItemModel.CoaID;
+        ientry.SGST = TaxItemModel.SGST;
+        ientry.CGST = TaxItemModel.CGST;
+        ientry.IGST = TaxItemModel.IGST;
+        ientry.TDS = TaxItemModel.TDS;
+        ientry.Amount = TaxItemModel.Amount;
+
+
+
+        TxItitems.Add(ientry);
+        decimal tvalue = 0;
+        if (TaxItemModel.IGST == null)
+        {
+            tvalue = TaxItemModel.SGST.Value + TaxItemModel.CGST.Value;
+        }
+        else
+        {
+            tvalue = TaxItemModel.IGST.Value;
+        }
+        model.TotalAmount = model.TotalAmount + TaxItemModel.Amount +
+                               tvalue;
+        TaxItemModel = new();
+        // itm = new();
     }
 
     private void getBranch(PartyModel party)
@@ -430,28 +482,32 @@
     {
         if(SelectedItems.UsageID!=null)
         {
-            
+
             decimal? taxRate =(decimal)usageIservice.GetGstRate(Expmodel.UsageID,DateTime.Now);
             decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyBranchInfo.PartyID.Value,Expmodel.CoaID.Value);
 
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-            int brancID = int.Parse(brancIDString);
+
             BranchModel br = await branchIservice.SelectByID(brancID);
 
             string partyGstNo = (model.PartyBranchInfo.GstNo).Substring(0,2);
             string branchGstNo = (br.GstNo).Substring(0,2);
+            
             if(partyGstNo==branchGstNo)
             {
 
                 Expmodel.IGST = (Expmodel.Amount * taxRate)/100;
+             
             }
             else
             {
                 taxRate = taxRate / 2;
                 Expmodel.SGST =  (Expmodel.Amount * taxRate)/100;
                 Expmodel.CGST =  (Expmodel.Amount * taxRate)/100;
+              
+
             }
+
+
 
             Expmodel.TDS=(Expmodel.Amount * tdsRate)/100;
 
@@ -497,7 +553,7 @@
 
     private async Task calcAmount()
     {
-        
+
 
         if(TaxItemModel.ItemQty==null)
         {
@@ -510,37 +566,61 @@
         TaxItemModel.Amount = TaxItemModel.ItemQty * TaxItemModel.ItemRate;
         if( TaxItemModel.Amount!=0)
         {
-            
-            //decimal? taxRate =(decimal);
-            //decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyBranchInfo.PartyID.Value,Expmodel.CoaID.Value);
 
-            //var authprov = await auth.GetAuthenticationStateAsync();
-            //var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-            //int brancID = int.Parse(brancIDString);
-            //BranchModel br = await branchIservice.SelectByID(brancID);
+            GstItemModel gstItem =gstitemIservice.SelectByItem(TaxItemModel.ItemID.Value,DateTime.Now);
+            decimal? taxRate = gstItem.TaxRate;
+            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyBranchInfo.PartyID.Value,TaxItemModel.CoaID.Value);
 
-            //string partyGstNo = (model.PartyBranchInfo.GstNo).Substring(0,2);
-            //string branchGstNo = (br.GstNo).Substring(0,2);
-            //if(partyGstNo==branchGstNo)
-            //{
 
-            //    Expmodel.IGST = (Expmodel.Amount * taxRate)/100;
-            //}
-            //else
-            //{
-            //    taxRate = taxRate / 2;
-            //    Expmodel.SGST =  (Expmodel.Amount * taxRate)/100;
-            //    Expmodel.CGST =  (Expmodel.Amount * taxRate)/100;
-            //}
+            BranchModel br = await branchIservice.SelectByID(brancID);
 
-            //Expmodel.TDS=(Expmodel.Amount * tdsRate)/100;
+            string partyGstNo = (model.PartyBranchInfo.GstNo).Substring(0,2);
+            string branchGstNo = (br.GstNo).Substring(0,2);
+          
+            if(partyGstNo==branchGstNo)
+            {
+
+                TaxItemModel.IGST = (TaxItemModel.Amount * taxRate)/100;
+               
+            }
+            else
+            {
+                taxRate = taxRate / 2;
+                TaxItemModel.SGST =  (TaxItemModel.Amount * taxRate)/100;
+                TaxItemModel.CGST =  (TaxItemModel.Amount * taxRate)/100;
+                
+            }
+           
+            TaxItemModel.TDS=(TaxItemModel.Amount * tdsRate)/100;
             
         }
 
     
     }
-
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
     private async Task OnValidSubmit(EditContext context)
     {
+        model.Expenses=exitems;  
+        model.Items=TxItitems;  
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        try
+        {
+
+            Iservice.Update(model);
+            model = new();
+            snackbar.Add("Saved Successfully", Severity.Success);
+            model = new TaxPurchaseModel();
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+
     }
 }

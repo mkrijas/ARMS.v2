@@ -1,0 +1,112 @@
+﻿@inject IInventoryGrnService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+
+<MudDialog>
+     <DialogContent>
+         <MudGrid Spacing="4">
+   <MudItem xs="12">
+        <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
+           
+
+            
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.GrnNo)" InitialDirection="SortDirection.Ascending">GrnNo</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Ascending">EntryDate</MudTableSortLabel></MudTh>
+               <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.PartyName)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>
+                
+                
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="PONo">@context.GrnNo</MudTd>
+                <MudTd DataLabel="EntryDate">@context.EntryDate</MudTd>
+                <MudTd DataLabel="Party">@context.PartyName</MudTd>
+                
+                 
+                <MudTd DataLabel="">
+                    <MudTooltip Text="View">
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Preview" Size="Size.Small" IconSize="Size.Small" />
+                   </MudTooltip><MudTooltip Text="Add to Grn">
+                    <MudFab @onclick="@(()=> Add(context))" Color="Color.Success" Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" IconSize="Size.Small" />
+                 </MudTooltip>
+                    
+              
+                    </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+         </DialogContent>
+    </MudDialog>
+@code {
+
+    private InventoryGrnModel model = new InventoryGrnModel();
+    private List<InventoryGrnModel> collection = new List<InventoryGrnModel>();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private string searchPurchase = "";
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        GetAll();
+    }
+
+    private  async Task GetAll()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = new List<InventoryGrnModel>();
+        foreach (var item in Iservice.SelectPending(brancID))
+        {
+            collection.Add(item);
+        }
+
+
+    }   
+    private async Task OpenDialog(InventoryGrnModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        DialogService.Show<InventoryGrnDialog>("GRN",parms,maxWidth);
+
+
+    }
+
+    private async Task Add(InventoryGrnModel tds)
+    {
+       //  tds.Entries = Iservice.GetItemEntries(tds.POID.Value).ToList();
+
+       // var authprov = await auth.GetAuthenticationStateAsync();
+       // var user = authprov.User;
+       // InventoryGrnModel grn = new();
+       // grn.POID = tds.POID;
+       // grn.EntryDate=tds.EntryDate;
+       // grn.PartyBranchID=tds.PartyBranchID;
+       // grn.TotalValue = tds.TotalValue;
+       // grn.Reference = tds.Reference;
+       // grn.Remarks = tds.Remarks;
+       // grn.StoreID = tds.StoreID;
+       // grn.Entries = tds.Entries;
+
+       // DialogParameters parms = new DialogParameters();
+       // parms.Add("model",grn);
+      
+       //DialogService.Show<InventoryGrnDialog>(grn.GrnID == null?"ADD":"EDIT",parms,maxWidth);
+       
+
+        
+    }
+}
