@@ -22,22 +22,28 @@ namespace ArmsServices.DataServices
     {
         IDbService Iservice;
         IAddressService _addressService;
+        IBankAccountService _bankAccountService;
 
-        public PartyBranchService(IDbService iservice,IAddressService addressService)
+        public PartyBranchService(IDbService iservice,IAddressService addressService,IBankAccountService bankAccountService)
         {
             Iservice = iservice;
             _addressService = addressService;
+            _bankAccountService = bankAccountService;
         }
         public PartyBranchModel Update(PartyBranchModel model)
         {
             AddressModel addressModel = _addressService.Update(model.Address);
+            model.BankAccount = _bankAccountService.Update(model.BankAccount);
             model.AddressID = addressModel.AddressID;
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PartyBranchID", model.GstID),
                new SqlParameter("@AddressID", model.AddressID),              
                new SqlParameter("@GstNo", model.GstNo),
-               new SqlParameter("@PartyID", model.PartyID),               
+               new SqlParameter("@PartyID", model.PartyID),
+               new SqlParameter("@AccountID", model.Coa.CoaID),
+               new SqlParameter("@BankAccountID", model.BankAccount.BankAccountID),
                new SqlParameter("@RegName", model.RegName),
                new SqlParameter("@TanNo", model.TanNo),
                new SqlParameter("@TradeName", model.TradeName),
@@ -46,23 +52,7 @@ namespace ArmsServices.DataServices
             
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Branch.Update]", parameters))
             {               
-                    model = new PartyBranchModel
-                    {
-                        GstID = reader.GetInt32("PartyBranchID"),
-                        AddressID = reader.GetInt32("AddressID"),                        
-                        GstNo = reader.GetString("GstNo"),
-                        PartyID = reader.GetInt32("PartyID"),                        
-                        RegName = reader.GetString("RegName"),
-                        TanNo = reader.GetString("TanNo"),
-                        TradeName = reader.GetString("TradeName"),
-                        Address = _addressService.SelectByID(reader.GetInt32("AddressID").GetValueOrDefault()),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };                
+                    model = GetModel(reader);
             }
             return model;
         }
@@ -80,28 +70,12 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", GstID),
-               new SqlParameter("@Operation", "SelectByGst")
+               new SqlParameter("@Operation", "ByID")
             };
 
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Branch.Select]", parameters))
             {
-                    yield return new PartyBranchModel
-                    {
-                        GstID = reader.GetInt32("PartyBranchID"),
-                        AddressID = reader.GetInt32("AddressID"),                        
-                        GstNo = reader.GetString("GstNo"),
-                        PartyID = reader.GetInt32("PartyID"),                        
-                        RegName = reader.GetString("RegName"),
-                        TanNo = reader.GetString("TanNo"),
-                        TradeName = reader.GetString("TradeName"),
-                        Address = _addressService.SelectByID(reader.GetInt32("AddressID").GetValueOrDefault()),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = reader.GetByte("RecordStatus"),
-                            TimeStampField = reader.GetDateTime("TimeStamp"),
-                            UserID = reader.GetString("UserID"),
-                        },
-                    };               
+                yield return GetModel(reader);
             }
         }
 
@@ -115,23 +89,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Branch.Select]", parameters))
             {
-                yield return new PartyBranchModel
-                {
-                    GstID = reader.GetInt32("PartyBranchID"),
-                    AddressID = reader.GetInt32("AddressID"),                    
-                    GstNo = reader.GetString("GstNo"),
-                    PartyID = reader.GetInt32("PartyID"),                    
-                    RegName = reader.GetString("RegName"),
-                    TanNo = reader.GetString("TanNo"),
-                    TradeName = reader.GetString("TradeName"),
-                    Address = _addressService.SelectByID(reader.GetInt32("AddressID").GetValueOrDefault()),
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                    {
-                        RecordStatus = reader.GetByte("RecordStatus"),
-                        TimeStampField = reader.GetDateTime("TimeStamp"),
-                        UserID = reader.GetString("UserID"),
-                    },
-                };
+                yield return GetModel(reader);
             }
         }
 
@@ -146,5 +104,30 @@ namespace ArmsServices.DataServices
             Iservice.ExecuteNonQuery("[usp.Finance.Taxes.Gst.IsCgst]", parameters);
             return bool.Parse(parameters[2].Value.ToString());
         }
+
+        private PartyBranchModel GetModel(IDataRecord reader)
+        {
+            return new PartyBranchModel()
+            {
+                GstID = reader.GetInt32("PartyBranchID"),
+                AddressID = reader.GetInt32("AddressID"),
+                GstNo = reader.GetString("GstNo"),
+                PartyID = reader.GetInt32("PartyID"),
+                Coa = new ChartOfAccountModel() { CoaID = reader.GetInt32("CoaID")},
+                BankAccount = new BankAccountModel() { BankAccountID = reader.GetInt32("BankAccountID")},
+                RegName = reader.GetString("RegName"),
+                TanNo = reader.GetString("TanNo"),
+                TradeName = reader.GetString("TradeName"),
+                Address = _addressService.SelectByID(reader.GetInt32("AddressID").GetValueOrDefault()),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = reader.GetByte("RecordStatus"),
+                    TimeStampField = reader.GetDateTime("TimeStamp"),
+                    UserID = reader.GetString("UserID"),
+                },
+            };
+        }
+
+
     }
 }

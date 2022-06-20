@@ -8,9 +8,7 @@ namespace ArmsModels.BaseModels
 {
     public class BankAccountModel
     {
-        public int? BankAccountID { get; set; }
-        [Required]
-        public int? GstID { get; set; }
+        public int? BankAccountID { get; set; }        
         [Required]
         [StringLength(maximumLength: 200)]
         public string BeneficiaryName { get; set; }
@@ -20,6 +18,6 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(maximumLength: 11)]
         public string IfscCode { get; set; }      
-public SharedModels.UserInfoModel UserInfo { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 }

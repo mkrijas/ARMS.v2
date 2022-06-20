@@ -1,5 +1,4 @@
 ﻿@inject IWorkshopService Iservice
-@inject IPartyService Iparty;
 @inject IPartyBranchService Igst;
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
@@ -16,7 +15,7 @@
                 <MudCardContent>
                     <MudGrid Spacing="4">
                         <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="@model.WorkshopName" Label="Workshop Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.WorkshopName)"></MudTextField>
+                            <MudTextField @bind-Value="@model.WorkshopName" Label="Workshop Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.WorkshopName)"></MudTextField>
                         </MudItem>
                         <MudItem xs="12" md="6">
                             <MudSelect Label="Select Type" @bind-Value="model.WorkshopType" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
@@ -25,7 +24,10 @@
                                 <MudSelectItem Value="@("Outside")">Outside</MudSelectItem>
                             </MudSelect>
                         </MudItem>
-                        <MudItem xs="12" md="6">
+                        <MudItem xs="12">
+                            <PartyBranchSelect @bind-Value="selectedPartyBranch"></PartyBranchSelect>
+                        </MudItem>
+                       @* <MudItem xs="12" md="6">
                             <MudAutocomplete T="PartyModel" Variant="Variant.Outlined" Label="Party" Value="SelectedParty" ValueChanged="PartyChanged" ResetValueOnEmptyText="true"
                                              SearchFunc="SearchParty" ToStringFunc="@(e => e == null ? null : $"{e.PartyName}")"></MudAutocomplete>
                         </MudItem>
@@ -37,7 +39,7 @@
                                     <MudSelectItem Value="@item.GstID">@item.GstID</MudSelectItem>
                                 }
                             </MudSelect>
-                        </MudItem>
+                        </MudItem>*@
                         <MudItem xs="12" md="6">
                             <MudTextField @bind-Value="@model.ContactNumber" Label="Contact" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.ContactNumber)"></MudTextField>
                         </MudItem>
@@ -54,18 +56,17 @@
     [Parameter]
     public WorkshopModel model { get; set;}
     private List<WorkshopModel> collection = new();
-    private PartyModel SelectedParty = new();
-    private List<PartyModel> Parties = new();
-    private List<PartyBranchModel> Gsts = new();
     private string searchString = string.Empty;
+
+    private PartyBranchModel selectedPartyBranch;
 
     protected override async Task OnInitializedAsync()
     {
-
         GetAll();
-
-        await foreach (var item in Iparty.Select(null))
-        { Parties.Add(item); }
+        if(model.GstID != null)
+        {
+            selectedPartyBranch = Igst.Select(model.GstID).FirstOrDefault();
+        }
     }
 
     private void GetAll()
@@ -77,7 +78,8 @@
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         model.UserInfo.UserID = authprov.User.Identity.Name;
-
+        model.PartyID = selectedPartyBranch.PartyID;
+        model.GstID = selectedPartyBranch.GstID;
         try
         {
             model = Iservice.Update(model);
@@ -90,21 +92,7 @@
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
-    }
-    private void PartyChanged(PartyModel obj)
-    {
-        SelectedParty = obj;
-        model.PartyID = obj?.PartyID;
-
-        model.GstID = null;
-        Gsts = Igst.SelectByParty(model.PartyID).ToList();       
-
-        if (Gsts.Count() == 1)
-        {
-            model.GstID = Gsts.First().GstID;            
-        }
-    }
-
+    }  
 
     private bool search(WorkshopModel model)
     {
@@ -114,11 +102,5 @@
         }
         return false;
     }
-    
-    private async Task<IEnumerable<PartyModel>> SearchParty(string searchString)
-    {
-        return await Task.FromResult(Parties.Where(x => x.PartyName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
-
 
 }

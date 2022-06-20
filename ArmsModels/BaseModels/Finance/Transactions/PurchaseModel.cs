@@ -60,12 +60,5 @@ namespace ArmsModels.BaseModels
         public decimal? TDS { get; set; }
     }
 
-    public class BillPaymentModel
-    {
-        public int? PsID { get; set; }
-        public string BillTransactionType { get; set; }
-        public int? BillTransactionID { get; set; }
-        public decimal? PayAmount { get; set; }
-        public string PaymentStatus { get; set; }
-    }
+   
 }

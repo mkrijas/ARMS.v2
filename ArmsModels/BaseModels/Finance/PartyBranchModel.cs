@@ -13,6 +13,7 @@ namespace ArmsModels.BaseModels
             Address = new AddressModel(){ 
                 AddresseeName = "Name",
                 };
+            BankAccount = new BankAccountModel();
             Party = new PartyModel();
             UserInfo = new SharedModels.UserInfoModel();
             Contacts = new();
@@ -39,12 +40,15 @@ namespace ArmsModels.BaseModels
         [StringLength(10, MinimumLength = 10,ErrorMessage ="Must have 10 characters")]
         public string TanNo { get; set; }
 
-        public int? PartyID { get; set; }
+        public int? PartyID { get; set; }        
         public int? AddressID { get; set; }      
-        public virtual PartyModel Party { get; set; }        
+        public virtual PartyModel Party { get; set; }
+        public ChartOfAccountModel Coa { get; set; }
         [ValidateComplexType]
         public AddressModel Address { get; set; }
-        
+        [ValidateComplexType]
+        public BankAccountModel BankAccount { get; set; }
+
         [ValidateComplexType]
         public List<ContactModel> Contacts { get; set; }
 
