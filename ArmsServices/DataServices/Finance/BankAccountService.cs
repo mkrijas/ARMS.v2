@@ -11,9 +11,11 @@ namespace ArmsServices.DataServices
 {
     public interface IBankAccountService
     {       
-        Task<bool> Update(BankAccountModel model);
-        Task<int> Delete(int? BankAccountID, string UserID);
-        IAsyncEnumerable<BankAccountModel> Select(int? BankAccountID);
+        BankAccountModel Update(BankAccountModel model);
+        int Delete(int? BankAccountID, string UserID);
+        IEnumerable<BankAccountModel> Select();
+        BankAccountModel SelectByID(int ID);
+        BankAccountModel SelectByPartyBranch(int PartyBranchID);
     }
 
     public class BankAccountService : IBankAccountService
@@ -24,71 +26,92 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-        public async Task<bool> Update(BankAccountModel model)
+        public BankAccountModel Update(BankAccountModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@BankAccountID", model.BankAccountID),
+               new SqlParameter("@BankAccountID", model.BankAccountID),
                new SqlParameter("@AccountNumber", model.AccountNumber),
-               new SqlParameter("@BeneficiaryName", model.BeneficiaryName),
-               new SqlParameter("@GstID", model.GstID),
+               new SqlParameter("@BeneficiaryName", model.BeneficiaryName),               
                new SqlParameter("@IfscCode", model.IfscCode),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             
-           await foreach(IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Entity.BankAccountsUpdate]", parameters))
-            {                
-                    model = new BankAccountModel
-                    {
-                        BankAccountID = dr.GetInt32("BankAccountID"),
-                        AccountNumber = dr.GetString("AccountNumber"),
-                        BeneficiaryName = dr.GetString("BeneficiaryName"),
-                        GstID = dr.GetInt32("GstID"),
-                        IfscCode = dr.GetString("IfscCode"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = dr.GetByte("RecordStatus"),
-                            TimeStampField = dr.GetDateTime("TimeStamp"),
-                            UserID = dr.GetString("UserID"),
-                        },
-                    };              
+            foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.Update]", parameters))
+            {
+                model = GetModel(dr); 
             }
-            return true;
+            return model;
         }
-        public async Task <int> Delete(int? BankAccountID,string UserID)
+        public int Delete(int? BankAccountID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BankAccountID", BankAccountID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return await Iservice.ExecuteNonQueryAsync("[usp.Entity.BankAccountsDelete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.BankAccount.Delete]", parameters);
         }
-        public async IAsyncEnumerable<BankAccountModel> Select(int? BankAccountID)
+        public IEnumerable<BankAccountModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@BankAccountID", BankAccountID)               
+            {               
+               new SqlParameter("@Operation", "ByID"),
             };
 
-            await foreach(IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Entity.BankAccountsSelect]", parameters))
+            foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.Select]", parameters))
             {              
-                    yield return new BankAccountModel
-                    {
-                        BankAccountID = dr.GetInt32("BankAccountID"),
-                        AccountNumber = dr.GetString("AccountNumber"),
-                        BeneficiaryName = dr.GetString("BeneficiaryName"),
-                        GstID = dr.GetInt32("GstID"),
-                        IfscCode = dr.GetString("IfscCode"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = dr.GetByte("RecordStatus"),
-                            TimeStampField = dr.GetDateTime("TimeStamp"),
-                            UserID = dr.GetString("UserID"),
-                        },
-                    };               
+                    yield return GetModel(dr);
             }
         }
 
+
+        private BankAccountModel GetModel(IDataRecord dr)
+        {
+            return new BankAccountModel()
+            {
+                BankAccountID = dr.GetInt32("BankAccountID"),
+                AccountNumber = dr.GetString("AccountNumber"),
+                BeneficiaryName = dr.GetString("BeneficiaryName"),
+                IfscCode = dr.GetString("IfscCode"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+
+        public BankAccountModel SelectByPartyBranch(int PartyBranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyBranchID", PartyBranchID),
+               new SqlParameter("@Operation", "ByParty"),
+            };
+
+            BankAccountModel model = new BankAccountModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
+        public BankAccountModel SelectByID(int ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BankAccountID", ID),
+               new SqlParameter("@Operation", "ByID"),
+            };
+            BankAccountModel model = new BankAccountModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
     }
 }

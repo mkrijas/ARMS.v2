@@ -18,6 +18,8 @@ namespace ArmsServices.DataServices
         IEnumerable<TaxPurchaseModel> Select();
         IEnumerable<TaxPurchaseModel> SelectByParty(int? PartyID,int? PartyBranchID);
         IEnumerable<TaxPurchaseModel> SelectByPeriod(DateTime? begin,DateTime? end);
+        IEnumerable<TaxPurchaseExpensesModel> GetExpenses(int? PID);
+        IEnumerable<TaxPurchaseItemModel> GetItems(int? PID);
         int Approve(int? PID, string UserID);
         int Reverse(int? PID, string UserID);
     }
@@ -51,6 +53,60 @@ namespace ArmsServices.DataServices
               
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Delete]", parameters);
+        }
+
+        public IEnumerable<TaxPurchaseExpensesModel> GetExpenses(int? PID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetExp"),
+               new SqlParameter("@PID", PID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Select]", parameters))
+            {
+                yield return new TaxPurchaseExpensesModel()
+                {
+                    Amount = dr.GetDecimal("Amount"),
+                    CGST = dr.GetDecimal("CGST"),
+                    IGST = dr.GetDecimal("IGST"),
+                    SGST = dr.GetDecimal("SGST"),                   
+                    CoaID = dr.GetInt32("CoaID"),                 
+                    PID = dr.GetInt32("PID"),
+                    TDS = dr.GetDecimal("TDS"),
+                    BillReference = dr.GetString("BillReference"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    UsageID = dr.GetString("UsageID"),
+                    TpeID = dr.GetInt64("TpeID"),
+                };
+            }
+        }
+
+        public IEnumerable<TaxPurchaseItemModel> GetItems(int? PID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetItems"),
+               new SqlParameter("@PID", PID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Select]", parameters))
+            {
+                yield return new TaxPurchaseItemModel()
+                {
+                    Amount = dr.GetDecimal("Amount"),
+                    CGST = dr.GetDecimal("CGST"),
+                    IGST = dr.GetDecimal("IGST"),
+                    SGST = dr.GetDecimal("SGST"),
+                    ItemID = dr.GetInt32("ItemID"),
+                    CoaID = dr.GetInt32("CoaID"),
+                    ItemQty = dr.GetDecimal("ItemQty"),
+                    ItemRate = dr.GetDecimal("ItemRate"),
+                    PID = dr.GetInt32("PID"),
+                    TDS = dr.GetDecimal("TDS"),
+                    TpiID = dr.GetInt64("TpiID"),
+                };
+            }
         }
 
         public int Reverse(int? PID, string UserID)
