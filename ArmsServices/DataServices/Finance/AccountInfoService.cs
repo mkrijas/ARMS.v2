@@ -38,7 +38,6 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
         public IEnumerable<AccountInfoViewSubModel> Entries(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
