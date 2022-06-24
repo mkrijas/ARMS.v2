@@ -33,6 +33,7 @@ namespace ArmsServices.DataServices
         public PartyBranchModel Update(PartyBranchModel model)
         {
             AddressModel addressModel = _addressService.Update(model.Address);
+            model.BankAccount.UserInfo = model.UserInfo;
             model.BankAccount = _bankAccountService.Update(model.BankAccount);
             model.AddressID = addressModel.AddressID;
 
