@@ -26,4 +26,34 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
         public SharedModels.UserInfoModel ApprovedInfo { get; set; }
     }
-}
+
+
+
+    public class AccountInfoViewModel
+    {
+        public DateTime? DocumentDate { get; set; }
+        public string DocumentNumber { get; set; }      
+        public string CostCenter { get; set; }
+        public string Dimension { get; set; }
+        public string Narration { get; set; }
+        public List<AccountInfoViewSubModel> Entries { get; set; }  = new List<AccountInfoViewSubModel>();
+    }
+    public class AccountInfoViewSubModel
+    {
+        private decimal? _amount;
+        public string AccountName { get; set; }
+        public string BranchName { get; set; }
+        public decimal? Amount {
+            get { return _amount; }
+            set
+            {
+                _amount = Math.Abs(value??0);
+               drcr = value < 0 ? "cr" : "dr";
+            }
+        }
+        public string drcr { get; set; }
+        public string Reference { get; set; }
+    }
+
+
+    }

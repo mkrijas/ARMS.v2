@@ -233,7 +233,15 @@ namespace ArmsServices.DataServices
                 NonStoreInventory = dr.GetBoolean("NonStoreInventory"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
-                PartyBranchInfo = new PartyBranchModel() { GstID = dr.GetInt32("PartyBranchID")},                
+                PartyBranchInfo = new PartyBranchModel()
+                {
+                    GstID = dr.GetInt32("PartyBranchID"),
+                    Party = new PartyModel()
+                    {
+                        PartyID = dr.GetInt32("PartyID"),
+                        PartyName = dr.GetString("PartyName")
+                    },
+                },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
