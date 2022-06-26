@@ -10,7 +10,7 @@ namespace ArmsModels.BaseModels
     {
         public int? PaymentMemoID { get; set; }
         public PartyBranchModel PartyBranchInfo { get; set; }
-        public byte PaymentStatus { get; set; } = 0; // 0 - generated; 1 - initiated; 2 - completed;
+        public byte? PaymentStatus { get; set; } = 0; // 0 - generated; 1 - initiated; 2 - completed;
         public List<BillsPaidModel> Bills { get; set; }
     }
 
@@ -33,7 +33,7 @@ namespace ArmsModels.BaseModels
     public class BillsPaidModel
     {
         public int? BpID { get; set; }
-        public int? BoID { get; set; }
+        public int? BoID { get; set; }       
         public decimal? PayAmount { get; set; }
     }
 
@@ -41,6 +41,7 @@ namespace ArmsModels.BaseModels
     {
         public int? PiID { get; set; }
         public DateTime? DueOn { get; set; }
+        public int? BranchID { get; set; }
         public List<PartyPaymentMemoModel>  PaymentMemos { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
@@ -49,7 +50,7 @@ namespace ArmsModels.BaseModels
     public class PaymentCompletedModel : TransactionBaseModel
     {
         public int? PcID { get; set; }
-        public int? PiID { get; set; }        
+        public int? PiID { get; set; }       
         public string PaymentMode { get; set; }
         public int? CoaID { get; set; }
         public List<PaymentSubModel> Payments { get; set; }
@@ -63,7 +64,6 @@ namespace ArmsModels.BaseModels
         public string Reference { get; set; }
         public DateTime? EffectiveDate { get; set; }
         public decimal? Amount { get; set; }
-
     }
 
 }

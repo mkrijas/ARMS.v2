@@ -1,0 +1,278 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
+using ArmsModels.BaseModels;
+
+namespace ArmsServices.DataServices
+{
+    public interface IPaymentService
+    {
+        PartyPaymentMemoModel Update(PartyPaymentMemoModel model);
+        PartyPaymentMemoModel SelectByID(int? ID);
+        int Delete(int? ID, string UserID);
+        IEnumerable<PartyPaymentMemoModel> Select();
+        IEnumerable<PartyPaymentMemoModel> SelectByParty(int? PartyID, int? PartyBranchID);
+        IEnumerable<PartyPaymentMemoModel> SelectByPeriod(DateTime? begin, DateTime? end);
+        IEnumerable<BillsPaidModel> GetBills(int? PID);
+        int Approve(int? PID, string UserID);
+        int Reverse(int? PID, string UserID);
+        int? InitiatePayment(PaymentInitiatedModel model);
+        int? CompletePayment(PaymentCompletedModel model);
+        IEnumerable<PaymentInitiatedModel> PendingForCompletion();
+    }
+
+    public class PaymentService : IPaymentService
+    {
+        IDbService Iservice;
+
+        public PaymentService(IDbService iservice)
+        {
+            Iservice = iservice;
+        }
+
+        public int Approve(int? PID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PaymentMemoID", PID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Status", 1)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Approve]", parameters);
+        }
+
+        public int? CompletePayment(PaymentCompletedModel model)
+        {
+            
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@DocumentDate", model.DocumentDate),
+               new SqlParameter("@DocumentNumber", model.DocumentNumber),               
+               new SqlParameter("@CostCenter", model.CostCenter),
+               new SqlParameter("@Dimension", model.Dimension),               
+               new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@PiID", model.PiID),
+               new SqlParameter("@PcID", model.PcID),                         
+               new SqlParameter("@Payments", model.Payments.ToDataTable()),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Complete]", parameters))
+            {
+                model.PcID = dr.GetInt32("PcID");
+            }
+            return model.PcID;
+        }
+
+        public int Delete(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PaymentMemoID", ID),
+               new SqlParameter("@UserID", UserID),
+
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Delete]", parameters);
+        }
+
+        public IEnumerable<BillsPaidModel> GetBills(int? PID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetBills"),
+               new SqlParameter("@PaymentMemoID", PID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+            {
+                yield return new BillsPaidModel()
+                {
+                    BoID = dr.GetInt32("BoID"),
+                    BpID = dr.GetInt32("BpID"),
+                    PayAmount = dr.GetDecimal("PayAmount"),
+                };
+            }
+        }
+
+        public int? InitiatePayment(PaymentInitiatedModel model)
+        {
+            List<int?> memos = new();
+            foreach(var item in model.PaymentMemos)
+            {
+                memos.Add(item.PaymentMemoID);
+            }
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PiID", model.PiID),
+               new SqlParameter("@DueOn", model.DueOn),
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@memos", memos.ToDataTable()),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Initiate]", parameters))
+            {
+                model.PiID = dr.GetInt32("PiID");
+            }
+            return model.PiID;
+        }
+
+        public IEnumerable<PaymentInitiatedModel> PendingForCompletion()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ToComplete"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+            {
+                yield return new PaymentInitiatedModel()
+                {
+                     BranchID = dr.GetInt32("BranchID"),
+                     DueOn = dr.GetDateTime("DueOn"),
+                     PiID = dr.GetInt32("PiID"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
+            }
+        }
+
+        public int Reverse(int? PID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PaymentMemoID", PID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Status", 2)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Approve]", parameters);
+        }
+
+        public IEnumerable<PartyPaymentMemoModel> Select()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByID"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public PartyPaymentMemoModel SelectByID(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PaymentMemoID", ID),
+               new SqlParameter("@Operation", "ByID")
+            };
+            PartyPaymentMemoModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
+        public IEnumerable<PartyPaymentMemoModel> SelectByParty(int? PartyID, int? PartyBranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByParty"),
+               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@PartyBranchID", PartyBranchID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<PartyPaymentMemoModel> SelectByPeriod(DateTime? begin, DateTime? end)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByPeriod"),
+               new SqlParameter("@begin", begin),
+               new SqlParameter("@end", end),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public PartyPaymentMemoModel Update(PartyPaymentMemoModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PaymentMemoID", model.PaymentMemoID),
+               new SqlParameter("@PaymentStatus", model.PaymentStatus),
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@DocumentDate", model.DocumentDate),
+               new SqlParameter("@DocumentNumber", model.DocumentNumber),
+               new SqlParameter("@Expenses", model.Bills.ToDataTable()),
+               new SqlParameter("@CostCenter", model.CostCenter),
+                new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@PartyBranchID", model.PartyBranchInfo.GstID),
+               new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Update]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
+        private PartyPaymentMemoModel GetModel(IDataRecord dr)
+        {
+            return new PartyPaymentMemoModel
+            {
+                PaymentMemoID = dr.GetInt32("PaymentMemoID"),
+                PaymentStatus = dr.GetByte("PaymentStatus"),
+                BranchID = dr.GetInt32("BranchID"),
+                ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
+                {
+                    RecordStatus = dr.GetByte("ApprovedStatus"),
+                    TimeStampField = dr.GetDateTime("ApprovedOn"),
+                    UserID = dr.GetString("ApprovedBy"),
+                },
+                DocumentDate = dr.GetDateTime("DocumentDate"),
+                DocumentNumber = dr.GetString("DocumentNumber"),
+                MID = dr.GetInt32("MID"),
+                CostCenter = dr.GetInt32("CostCenter"),
+                Dimension = dr.GetInt32("Dimension"),
+                TotalAmount = dr.GetDecimal("TotalAmount"),
+                Narration = dr.GetString("Narration"),
+                PartyBranchInfo = new PartyBranchModel()
+                {
+                    GstID = dr.GetInt32("PartyBranchID"),
+                    Party = new PartyModel()
+                    {
+                        PartyID = dr.GetInt32("PartyID"),
+                        PartyName = dr.GetString("PartyName")
+                    },
+                },
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+    }
+}
