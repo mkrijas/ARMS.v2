@@ -5,6 +5,7 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+@using Inventory
 
 
 <MudGrid Spacing="4">
@@ -43,12 +44,17 @@
                     <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                   
-                   @* @if(@context.ApprovedInfo.RecordStatus!=3)
+                    @if(@context.ApprovedInfo.RecordStatus!=3 && @context.ApprovedInfo.RecordStatus!=1)
                     {
                       <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" title="Approve" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
                         
-                    }*@
-              
+                    }
+                    @if(@context.ApprovedInfo.RecordStatus==3 || @context.ApprovedInfo.RecordStatus==1)
+                    {
+               <MudFab @onclick="@(()=> GetAccountDetails(context))" Color="Color.Info" Icon="@Icons.Material.Filled.CurrencyExchange" title="Accounts" Size="Size.Small" IconSize="Size.Small" />
+                    }
+                    
+                  
                     </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -94,7 +100,7 @@
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-
+        
         DialogParameters parms = new DialogParameters();
         parms.Add("model",tds);
         var dialog =  DialogService.Show<TaxPurchaseDialog>(tds.PID == null?"ADD":"EDIT",parms,maxWidth);
@@ -102,9 +108,9 @@
 
         if(!result.Cancelled)
         {   
-           
-                GetAll();
-            
+
+            GetAll();
+
 
         }
     }
@@ -115,7 +121,44 @@
         snackbar.Add("Deleted Successfully", Severity.Success);
         GetAll();
     }
-    
+    private async Task Approve(TaxPurchaseModel tpm)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("ContentText", "Are you sure you want to Approve this TaxPurchase,Purchase ID:"+tpm.PID+"?");
+        parameters.Add("ButtonText", "Confirm");
+        parameters.Add("Color", Color.Success);
+        var dialog=DialogService.Show<ConfirmDialog>("Confirm", parameters);
+        var result = await dialog.Result;
+
+
+        if (!result.Cancelled)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            tpm.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+
+                Iservice.Approve(tpm.PID.Value,tpm.UserInfo.UserID);
+
+                snackbar.Add("Approved", Severity.Success);
+
+                GetAll();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+
+    }
+    private void GetAccountDetails(TaxPurchaseModel tpm)
+    {
+        int MID = tpm.MID.Value;
+        DialogParameters parms = new DialogParameters();
+        parms.Add("MID", MID);
+        DialogService.Show<AccountInfoDialog>("MID", parms,maxWidth);
+    }
     public async Task  openGrn()
     {
         PurchaseOrderModel tds = new();
@@ -124,15 +167,15 @@
 
         DialogParameters parms = new DialogParameters();
        
-        //var dialog =  DialogService.Show<PurchaseOrderViewDialog>("Purchase Order",parms,maxWidth);
-        //var result = await dialog.Result;
-        //   if(!result.Cancelled)
-        //{   
+        var dialog =  DialogService.Show<InventoryGrnViewDialog>("GRN",parms,maxWidth);
+        var result = await dialog.Result;
+           if(!result.Cancelled)
+        {   
            
-        //        GetAll();
+                GetAll();
             
 
-        //}
+        }
     }
 
     private bool search(TaxPurchaseModel tx)

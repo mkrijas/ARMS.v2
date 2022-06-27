@@ -8,6 +8,12 @@ namespace ArmsModels.BaseModels
 {
     public class BankAccountModel
     {
+        public BankAccountModel()
+        {
+            
+            UserInfo = new SharedModels.UserInfoModel();
+            
+        }
         public int? BankAccountID { get; set; }        
         [Required]
         [StringLength(maximumLength: 200)]

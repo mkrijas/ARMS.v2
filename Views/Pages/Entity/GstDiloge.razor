@@ -1,6 +1,7 @@
 ﻿@inject IPartyBranchService Iservice
 @inject IPartyService Iparty
 @inject IContactService Icontact
+@inject IChartOfAccountService accountService
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -30,6 +31,13 @@
                                 <MudItem xs="12" md="4">
                                     <MudTextField @bind-Value="@model.TanNo" Label="TAN No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TanNo)" MaxLength="10"></MudTextField>
                                 </MudItem>
+                                 <MudItem xs="12" md="4">
+                                   
+                                 <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+                   
+
+                                </MudItem>
                             </MudGrid>
                         </MudTabPanel>
                         <MudTabPanel Text="Address" Tag="@model.Address">
@@ -43,6 +51,11 @@
                                 <ContactView Index="@null" Model="item.value"></ContactView>
                             </MudTabPanel>
                         }
+                         <MudTabPanel Text="Bank Account Details" Tag="@model.BankAccount">
+                            <AccountView Account="@model.BankAccount" Label="@(null)"></AccountView>
+                        </MudTabPanel>
+
+                        
                     </ChildContent>
                 </MudTabs>
                 </MudContainer>
@@ -61,13 +74,28 @@
     public PartyBranchModel model { get; set; }    
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private ChartOfAccountModel SelectedAccount = null;
 
+    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
+    {
+
+        return await Task.FromResult(accountService.FilterSubLedgers(searchString));
+
+    }
     protected override void OnInitialized()
     {
         if (model.GstID == null && model.Contacts.Count == 0)
         {
             AddContact();
-        }       
+        }  
+        try
+        {
+            SelectedAccount = new();
+            SelectedAccount.CoaID = model.Coa.CoaID;
+            SelectedAccount.AccountName = model.Coa.AccountName;
+        }
+        catch(Exception ex)
+        {}
     }
 
     private void AddContact()
@@ -80,7 +108,18 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-        MudDialog.Close(model);
+        
+        model.Coa.CoaID = SelectedAccount.CoaID;
+        model.Coa.AccountName = SelectedAccount.AccountName;
+       
+        if (model.Coa.CoaID == null)
+        {
+            snackbar.Add("Select Account", Severity.Success);
+        }
+        else
+        {
+            MudDialog.Close(model);
+        }
     }
 
 }
