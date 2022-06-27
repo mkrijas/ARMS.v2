@@ -9,6 +9,7 @@ namespace ArmsModels.BaseModels
     public class PartyPaymentMemoModel :TransactionBaseModel
     {
         public int? PaymentMemoID { get; set; }
+        public int? PaymentInitiatedID { get; set; }
         public PartyBranchModel PartyBranchInfo { get; set; }
         public byte? PaymentStatus { get; set; } = 0; // 0 - generated; 1 - initiated; 2 - completed;
         public List<BillsPaidModel> Bills { get; set; }

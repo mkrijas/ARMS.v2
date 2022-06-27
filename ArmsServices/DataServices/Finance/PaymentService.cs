@@ -218,13 +218,14 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PaymentMemoID", model.PaymentMemoID),
+               new SqlParameter("@PaymentInitiatedID", model.PaymentInitiatedID),
                new SqlParameter("@PaymentStatus", model.PaymentStatus),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@Expenses", model.Bills.ToDataTable()),
                new SqlParameter("@CostCenter", model.CostCenter),
-                new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@PartyBranchID", model.PartyBranchInfo.GstID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
@@ -242,6 +243,7 @@ namespace ArmsServices.DataServices
             return new PartyPaymentMemoModel
             {
                 PaymentMemoID = dr.GetInt32("PaymentMemoID"),
+                PaymentInitiatedID = dr.GetInt32("PaymentInitiatedID"),
                 PaymentStatus = dr.GetByte("PaymentStatus"),
                 BranchID = dr.GetInt32("BranchID"),
                 ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()

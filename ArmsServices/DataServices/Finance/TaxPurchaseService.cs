@@ -222,7 +222,7 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("ApprovedBy"),
                 },
                 DocumentDate = dr.GetDateTime("DocumentDate"),
-                DocumentNumber = dr.GetString("DocumentNumber"),
+                DocumentNumber = dr.GetString("DocumentNumber"),                
                 GRNID = dr.GetInt32("GRNID"),
                 InvoiceDate =   dr.GetDateTime("InvoiceDate"),
                 IsCredit = dr.GetBoolean("IsCredit"),
