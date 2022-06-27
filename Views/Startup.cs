@@ -125,6 +125,7 @@ namespace Views
             //------------FINANCE TRANSACTIONS-------------------
             services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();
 
+            services.AddScoped<IAccountInfoService, AccountInfoService>();
 
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();

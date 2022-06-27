@@ -213,18 +213,18 @@ namespace ArmsServices.DataServices
             return new TaxPurchaseModel
             {
                 PID = dr.GetInt32("PID"),
-                AdditionalTDS =  dr.GetDecimal("AdditionalTDS"),
-                BranchID =  dr.GetInt32("BranchID"),
-                ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel() 
+                AdditionalTDS = dr.GetDecimal("AdditionalTDS"),
+                BranchID = dr.GetInt32("BranchID"),
+                ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
                 {
                     RecordStatus = dr.GetByte("ApprovedStatus"),
                     TimeStampField = dr.GetDateTime("ApprovedOn"),
                     UserID = dr.GetString("ApprovedBy"),
                 },
-                DocumentDate = dr.GetDateTime("DocumentDate"),
-                DocumentNumber = dr.GetString("DocumentNumber"),
+                DocumentDate = dr.GetDateTime("DocDate"),
+                DocumentNumber = dr.GetString("DocNumber"),
                 GRNID = dr.GetInt32("GRNID"),
-                InvoiceDate =   dr.GetDateTime("InvoiceDate"),
+                InvoiceDate = dr.GetDateTime("InvoiceDate"),
                 IsCredit = dr.GetBoolean("IsCredit"),
                 InvoiceNo = dr.GetString("InvoiceNo"),
                 MID = dr.GetInt32("MID"),
@@ -236,6 +236,7 @@ namespace ArmsServices.DataServices
                 PartyBranchInfo = new PartyBranchModel()
                 {
                     GstID = dr.GetInt32("PartyBranchID"),
+                    PartyID = dr.GetInt32("PartyID"),
                     Party = new PartyModel()
                     {
                         PartyID = dr.GetInt32("PartyID"),

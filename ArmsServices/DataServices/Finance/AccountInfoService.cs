@@ -31,7 +31,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "Main"),
             };
             AccountInfoViewModel model = new AccountInfoViewModel();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transaction.Main.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.finance.Transactions.Main.Select]", parameters))
             {
                 model = GetModel(dr,ID);
             }
@@ -45,7 +45,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "Sub"),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transaction.Main.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.finance.Transactions.Main.Select]", parameters))
             {
                 yield return new AccountInfoViewSubModel()
                 {

@@ -6,6 +6,7 @@
 @inject IInventoryGroupService inventoryGroupIservice
 @inject IDimensionService dimensionIservice
 @inject IGstUsageIDService usageIservice
+@inject IInventoryGrnService grnIservice
 @inject IBranchService branchIservice
 @inject IPartyBranchService partyBranchIservice
 @inject MudBlazor.ISnackbar snackbar
@@ -25,13 +26,13 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudContainer Style="max-height: 500px; overflow-y: scroll">
+        <MudContainer Style="max-height: 450px; overflow-y: scroll">
             <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" md="5">
-                        <MudAutocomplete T="PartyModel" Value="SelectedParty" ValueChanged="getBranch"
+                   @* <MudItem xs="12" md="5">
+                        <MudAutocomplete T="PartyModel" Value="model.PartyBranchInfo.Party" ValueChanged="getBranch"
                                          Variant="Variant.Outlined" Margin="Margin.Dense" Label="Vendor" ResetValueOnEmptyText="true"
                                          SearchFunc="@SearchParty" ToStringFunc="@(e => e?.PartyName)">
                         </MudAutocomplete>
@@ -44,7 +45,10 @@
                                 <MudSelectItem Value="@ditem">@ditem.Address.Place</MudSelectItem>
                             }
                         </MudSelect>
-                    </MudItem>
+                    </MudItem>*@
+                     <MudItem xs="12" md="10">
+                         <PartyBranchSelect @bind-Value="model.PartyBranchInfo"></PartyBranchSelect>
+                         </MudItem>
                       <MudItem xs="12" md="2">
                        <MudCheckBox @bind-Checked="model.IsCredit" Color="Color.Primary" For="@(() => model.IsCredit)">Credit</MudCheckBox>
                     </MudItem>
@@ -113,7 +117,7 @@
                                 <tr>
 
                                   @*  <th>Branch</th>*@
-                                    <th>UsageID</th>
+                                    <th width="200px">UsageID</th>
                                     <th>CoaID</th>
                                     <th>Amount</th>
                                     <th>SGST</th>
@@ -140,7 +144,12 @@
                                         <td>@item.IGST</td>
                                         <td>@item.TDS</td>
                                         <td>@item.BillReference</td>
-                                        <td></td>
+                                        <td>
+                                             @if (model.ApprovedInfo.RecordStatus != 3)
+                                            {
+                                                <MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                            }
+                                        </td>
                                         
                                     </tr>
                                 }
@@ -219,7 +228,7 @@
                                 <tr>
 
                                   @*  <th>Branch</th>*@
-                                    <th>ItemID</th>
+                                    <th width="200px">ItemID</th>
                                     <th>ItemRate</th>
                                     <th>ItemQty</th>
                                     <th>CoaID</th>
@@ -239,8 +248,9 @@
                                 {
                                     <tr>
                                        
-                                      @*  <td>@item.BranchID</td>*@
-                                        <td>@item.ItemID</td>
+                                      @*  <td>@item.BranchID</td>
+                                        <td>@item.ItemID</td>*@
+                                       <td style="width:200px">@(itm.First(x=> x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
                                         <td>@item.ItemRate</td>
                                         <td>@item.ItemQty</td>
                                         <td>@item.CoaID</td>
@@ -250,7 +260,13 @@
                                         <td>@item.IGST</td>
                                         <td>@item.TDS</td>
                                        
-                                        <td></td>
+                                        <td>
+
+                                             @if (model.ApprovedInfo.RecordStatus != 3)
+                                            {
+                                                <MudFab Color="Color.Error" @onclick="@(()=> DeleteItem(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                            }
+                                        </td>
                                         
                                     </tr>
                                 }
@@ -344,6 +360,7 @@
     private List<TaxPurchaseExpensesModel> exitems = new List<TaxPurchaseExpensesModel>();
     private List<TaxPurchaseItemModel> TxItitems = new List<TaxPurchaseItemModel>();
     private List<InventoryItemModel> itm = new();
+    private List<InventoryItemEntryModel> iitem = new();
     private static int brancID;
     private TaxPurchaseExpensesModel Expmodel = new TaxPurchaseExpensesModel();
     private TaxPurchaseItemModel TaxItemModel = new TaxPurchaseItemModel();
@@ -362,14 +379,69 @@
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         brancID = int.Parse(brancIDString);
         model.BranchID = brancID;
-       
+
         if(model.GRNID==null)
         {
             model.NonStoreInventory = false;
+            if (model.TotalAmount == null)
+            {
+                model.TotalAmount = 0;
+            }
+        }
+        else
+        {
+            model.NonStoreInventory = true;
+            iitem = grnIservice.GetItemEntries(model.GRNID.Value).ToList();
+            foreach (var item in iitem)
+            {
+                TaxPurchaseItemModel tpi = new();
+                tpi.ItemID = item.ItemID;
+                tpi.ItemQty = item.ItemQty;
+                tpi.ItemRate = item.ItemRate;
+                tpi.Amount=item.ItemQty*item.ItemRate;
+
+
+
+                InventoryItemModel iim = itemIservice.SelectByID(item.ItemID);
+                InventoryGroupModel igm = inventoryGroupIservice.SelectByID(iim.InventoryGroupID);
+
+                tpi.CoaID = igm.MappedNonInventoryPurchaseHead;
+                GstItemModel gstItem =gstitemIservice.SelectByItem(item.ItemID.Value,DateTime.Now);
+                decimal? taxRate = gstItem.TaxRate;
+                decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyBranchInfo.PartyID.Value,tpi.CoaID.Value);
+
+
+                BranchModel br = await branchIservice.SelectByID(brancID);
+
+                string partyGstNo = (model.PartyBranchInfo.GstNo).Substring(0,2);
+                string branchGstNo = (br.GstNo).Substring(0,2);
+
+                if(partyGstNo==branchGstNo)
+                {
+
+                    tpi.IGST = (tpi.Amount * taxRate)/100;
+
+                }
+                else
+                {
+                    taxRate = taxRate / 2;
+                    tpi.SGST =  (tpi.Amount * taxRate)/100;
+                    tpi.CGST =  (tpi.Amount * taxRate)/100;
+
+                }
+
+                tpi.TDS=(tpi.Amount * tdsRate)/100;
+
+
+
+                TxItitems.Add(tpi);
+            }
+
+
 
         }
-       
-        model.TotalAmount=0;
+
+
         await foreach (var party in partyIservice.Select(0))
         {
             partyList.Add(party);
@@ -383,15 +455,15 @@
         // if (SelectedParty != null)
         //     partybranch = partyBranchIservice.SelectByParty(SelectedParty.PartyID).ToList();
         //// StateHasChanged();
-         if(model.PID !=null)
+        if(model.PID !=null)
         {
-        
-            
-           exitems=Iservice.GetExpenses(model.PID).ToList();
-           TxItitems=Iservice.GetItems(model.PID).ToList();
-           
-           
-        
+
+
+            exitems=Iservice.GetExpenses(model.PID).ToList();
+            TxItitems=Iservice.GetItems(model.PID).ToList();
+
+
+
         }
     }
 
@@ -500,19 +572,19 @@
 
             string partyGstNo = (model.PartyBranchInfo.GstNo).Substring(0,2);
             string branchGstNo = (br.GstNo).Substring(0,2);
-            
+
             if(partyGstNo==branchGstNo)
             {
 
                 Expmodel.IGST = (Expmodel.Amount * taxRate)/100;
-             
+
             }
             else
             {
                 taxRate = taxRate / 2;
                 Expmodel.SGST =  (Expmodel.Amount * taxRate)/100;
                 Expmodel.CGST =  (Expmodel.Amount * taxRate)/100;
-              
+
 
             }
 
@@ -541,7 +613,7 @@
                 TaxItemModel.CoaID = igm.MappedPurchaseHead;
             }
 
-          //  TaxItemModel.CoaID = igm.MappedPurchaseHead;
+            //  TaxItemModel.CoaID = igm.MappedPurchaseHead;
             //decimal gstrate = 0;
             //try
             //{
@@ -585,26 +657,26 @@
 
             string partyGstNo = (model.PartyBranchInfo.GstNo).Substring(0,2);
             string branchGstNo = (br.GstNo).Substring(0,2);
-          
+
             if(partyGstNo==branchGstNo)
             {
 
                 TaxItemModel.IGST = (TaxItemModel.Amount * taxRate)/100;
-               
+
             }
             else
             {
                 taxRate = taxRate / 2;
                 TaxItemModel.SGST =  (TaxItemModel.Amount * taxRate)/100;
                 TaxItemModel.CGST =  (TaxItemModel.Amount * taxRate)/100;
-                
+
             }
-           
+
             TaxItemModel.TDS=(TaxItemModel.Amount * tdsRate)/100;
-            
+
         }
 
-    
+
     }
     private void Cancel()
     {
@@ -631,5 +703,56 @@
             snackbar.Add(ex.Message, Severity.Warning);
         }
 
+    }
+
+    private void DeleteExpenses(TaxPurchaseExpensesModel i)
+    {
+         decimal gstrate = 0;
+        if(i.IGST==null)
+        {
+            i.IGST = 0;
+        }
+         if(i.SGST==null)
+        {
+            i.SGST = 0;
+        }
+         if(i.CGST==null)
+        {
+            i.CGST = 0;
+        }
+       
+        gstrate = (i.CGST.Value)+(i.SGST.Value)+(i.IGST.Value);
+        decimal total = i.Amount.Value+gstrate;
+
+        model.TotalAmount = model.TotalAmount - total;
+        int rowIndex = exitems.IndexOf(i);
+        exitems.RemoveAt(rowIndex);
+    }
+
+    private void DeleteItem(TaxPurchaseItemModel i)
+    {
+        decimal gstrate = 0;
+        if(i.IGST==null)
+        {
+            i.IGST = 0;
+        }
+         if(i.SGST==null)
+        {
+            i.SGST = 0;
+        }
+         if(i.CGST==null)
+        {
+            i.CGST = 0;
+        }
+       
+        gstrate = (i.CGST.Value)+(i.SGST.Value)+(i.IGST.Value);
+    
+
+    decimal total = i.Amount.Value+gstrate;
+
+    model.TotalAmount = model.TotalAmount - total;
+    
+    int rowIndex = TxItitems.IndexOf(i);
+    TxItitems.RemoveAt(rowIndex);
     }
 }
