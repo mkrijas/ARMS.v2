@@ -41,7 +41,7 @@ namespace ArmsModels.BaseModels
 
     public class PaymentInitiatedModel  
     {
-        public int? PiID { get; set; }
+        public int? PiID { get; set; }        
         public DateTime? DueOn { get; set; }
         public int? BranchID { get; set; }
         public List<PartyPaymentMemoModel>  PaymentMemos { get; set; }
@@ -49,20 +49,27 @@ namespace ArmsModels.BaseModels
     }
 
 
-    public class PaymentCompletedModel : TransactionBaseModel
+    public class PaymentFinishModel 
     {
-        public int? PcID { get; set; }
+        public int? PfID { get; set; }
         public int? PiID { get; set; }       
         public string PaymentMode { get; set; }
         public int? CoaID { get; set; }
-        public List<PaymentSubModel> Payments { get; set; }
+        public DateTime? DocumentDate { get; set; }        
+        [Required]
+        public int? BranchID { get; set; }
+        public decimal? TotalAmount { get; set; }        
+        public string Narration { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+        public SharedModels.UserInfoModel ApprovedInfo { get; set; }
+        public List<PaymentEntryModel> Payments { get; set; }
     }
 
 
-    public class PaymentSubModel
+    public class PaymentEntryModel
     {
-        public int? PsID { get; set; }
-        public int? PaymentMemoID { get; set; }
+        public int? PeID { get; set; }
+        public int? PaymentMemoID { get; set; }        
         public string Reference { get; set; }
         public DateTime? EffectiveDate { get; set; }
         public decimal? Amount { get; set; }
