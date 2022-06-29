@@ -19,11 +19,11 @@ namespace ArmsModels.BaseModels
         public DateTime? InvoiceDate { get; set; }        
         public decimal? AdditionalTDS { get; set; }  
         [Required]
-        public bool NonStoreInventory { get; set; } 
+        public bool NonStoreInventory { get; set; }
         [ValidateComplexType]
-        public List<TaxPurchaseExpensesModel> Expenses { get; set; }
+        public List<TaxPurchaseExpensesModel> Expenses { get; set; } = new();
         [ValidateComplexType]
-        public List<TaxPurchaseItemModel> Items { get; set; }
+        public List<TaxPurchaseItemModel> Items { get; set; } = new();
     }    
 
     public class TaxPurchaseExpensesModel

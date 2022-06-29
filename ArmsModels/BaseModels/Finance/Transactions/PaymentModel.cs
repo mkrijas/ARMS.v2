@@ -25,6 +25,7 @@ namespace ArmsModels.BaseModels
         public decimal? InitialAmount { get; set; }
         public decimal? OutstandingAmount { get; set; }
         public string DocNumber { get; set; }
+        public virtual string BranchName { get; set; }
         public DateTime? DocDate { get; set; }
         public string InvoiceNumber { get; set; }
         public DateTime? InvoiceDate { get; set; }

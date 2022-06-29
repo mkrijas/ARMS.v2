@@ -246,6 +246,7 @@ namespace ArmsServices.DataServices
                 PaymentInitiatedID = dr.GetInt32("PaymentInitiatedID"),
                 PaymentStatus = dr.GetByte("PaymentStatus"),
                 BranchID = dr.GetInt32("BranchID"),
+               // BranchName = dr.GetString("BranchName"),
                 ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
                 {
                     RecordStatus = dr.GetByte("ApprovedStatus"),
@@ -256,6 +257,7 @@ namespace ArmsServices.DataServices
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),
                 CostCenter = dr.GetInt32("CostCenter"),
+               
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),

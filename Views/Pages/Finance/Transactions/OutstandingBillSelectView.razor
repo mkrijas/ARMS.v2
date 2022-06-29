@@ -1,0 +1,110 @@
+﻿@inject IOutstandingBillsService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+
+
+<MudDialog>
+     <DialogContent>
+         <MudGrid Spacing="4">
+   <MudItem xs="12">
+        <MudTable Items="@collection" MultiSelection="true" @bind-SelectedItems="selectedItems1" Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
+           
+
+            
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.BoID)" InitialDirection="SortDirection.Ascending">BoID</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.DocDate)" InitialDirection="SortDirection.Ascending">DocDate</MudTableSortLabel></MudTh>
+               <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.DocNumber)" InitialDirection="SortDirection.Ascending">DocNumber</MudTableSortLabel></MudTh>
+                
+                
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="GrnNo">@context.BoID</MudTd>
+                <MudTd DataLabel="EntryDate">@context.DocDate</MudTd>
+                <MudTd DataLabel="Party">@context.DocNumber</MudTd>
+                
+                 
+                <MudTd DataLabel="">
+                  
+              
+                    </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+         </DialogContent>
+         <DialogActions>
+     
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        
+    </DialogActions>
+    </MudDialog>
+
+@code {
+    [Parameter]
+    public int PartyID { get; set; }
+    [Parameter]
+    public int GstID { get; set; }
+
+    private OutstandingBillsModel model = new OutstandingBillsModel();
+    private List<OutstandingBillsModel> collection = new List<OutstandingBillsModel>();
+    private List<OutstandingBillsModel> selecteditem = new List<OutstandingBillsModel>();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private HashSet<OutstandingBillsModel> selectedItems1= new HashSet<OutstandingBillsModel>();
+    protected override async Task OnInitializedAsync()
+    {
+
+        GetAll();
+        model = new();
+    }
+    private  async Task GetAll()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = new List<OutstandingBillsModel>();
+        foreach (var item in Iservice.SelectByParty(PartyID,GstID,brancID))
+        {
+            collection.Add(item);
+        }
+
+
+    }   
+    private void GetSelectedItem()
+    {
+        if (selectedItems1 != null)
+        {
+            string k = "0";
+        }
+
+        //string itm = string.Join(", ", selectedItems1.Select(x=>x.BoID))
+    //
+    }
+    private async Task OnValidSubmit(EditContext context)
+    {
+        //context = selectedItems1.FirstOrDefault();
+        MudDialog.Close();
+    }
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    private void selected()
+    {
+        selecteditem = selectedItems1.ToList();
+        MudDialog.Close(selecteditem);
+    
+    }
+
+
+}

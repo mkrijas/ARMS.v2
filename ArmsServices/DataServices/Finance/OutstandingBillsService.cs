@@ -96,7 +96,9 @@ namespace ArmsServices.DataServices
                 InitialAmount = dr.GetDecimal("InitialAmount"),
                 OutstandingAmount = dr.GetDecimal("OutstandingAmount"),
                 DocDate = dr.GetDateTime("DocumentDate"),
-                DocNumber = dr.GetString("DocumentNumber"),                
+                DocNumber = dr.GetString("DocumentNumber"),
+                BranchName = dr.GetString("BranchName"),
+                 
                 InvoiceDate = dr.GetDateTime("InvoiceDate"),                
                 InvoiceNumber = dr.GetString("InvoiceNo"),               
                 PartyBranchInfo = new PartyBranchModel()
