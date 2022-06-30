@@ -37,6 +37,13 @@ namespace ArmsModels.BaseModels
         public int? BpID { get; set; }
         public int? BoID { get; set; }       
         public decimal? PayAmount { get; set; }
+
+        public virtual string DocNumber { get; set; }
+        public virtual string BranchName { get; set; }
+        public virtual DateTime? DocDate { get; set; }
+        public virtual int? BranchID { get; set; }
+        public virtual string InvoiceNumber { get; set; }
+        public virtual DateTime? InvoiceDate { get; set; }
     }
 
     public class PaymentInitiatedModel  

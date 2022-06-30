@@ -100,7 +100,7 @@ namespace ArmsServices.DataServices
                 BranchName = dr.GetString("BranchName"),
                  
                 InvoiceDate = dr.GetDateTime("InvoiceDate"),                
-                InvoiceNumber = dr.GetString("InvoiceNo"),               
+                InvoiceNumber = dr.GetString("InvoiceNumber"),               
                 PartyBranchInfo = new PartyBranchModel()
                 {
                     GstID = dr.GetInt32("PartyBranchID"),
