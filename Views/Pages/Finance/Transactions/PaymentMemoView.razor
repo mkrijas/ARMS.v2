@@ -1,231 +1,179 @@
-﻿@page "/PaymentMemo"
+﻿@page "/PaymentMemoView"
 @inject IPaymentService Iservice
 @inject IOutstandingBillsService OBIservice
 @inject ICostCenterService costIservice
 @inject IDimensionService dimensionIservice
+@inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
 
 
-<MudPaper>
-    <MudContainer>
+
+
+
 <MudGrid Spacing="4">
-    
- 
-
-      
+   <MudItem xs="12">
+        <MudTable Items="@collection" @bind-SelectedItems="selectedItems1" MultiSelection="true"  Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
            
-            <MudItem  xs="12" md="10">
-                <PartyBranchSelect @bind-Value="model.PartyBranchInfo"></PartyBranchSelect>
 
-               </MudItem>
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">Paymet Memos</MudText>
+                <MudTooltip Text="New Payment Memos">
+                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="openPaymentMemos"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
                
-                 <MudItem  xs="12" md="2">
-                        <MudButton @onclick="OpenOtstandingBills" Variant="Variant.Filled" Color="Color.Primary" >Search</MudButton>
-                 </MudItem>
+               @* <MudButton @onclick="openpurchaseorder" @onclick="@(()=> OpenDialog(model))"  Variant="Variant.Filled" Color="Color.Primary" >Purchase Order</MudButton>
+               *@ 
+                <MudSpacer></MudSpacer>
+               @* <MudTextField @bind-Value="searchMemos" Placeholder="Search Tax... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>*@
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyPaymentMemoModel, object>(x=> x.PaymentMemoID)" InitialDirection="SortDirection.Ascending">PaymentMemoID</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<PartyPaymentMemoModel, object>(x=> x.PaymentStatus)" InitialDirection="SortDirection.Ascending">PaymentStatus</MudTableSortLabel></MudTh>
+              
                 
+               
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="PaymentMemoID">@context.PaymentMemoID</MudTd>
+                <MudTd DataLabel="PaymentStatus">@context.PaymentStatus</MudTd>
+             
+              
+            </RowTemplate>
+          
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                 <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+           
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
 
-   
-   
-  
-
-    </MudGrid> 
-    </MudContainer>
-    </MudPaper>
-    
     <MudPaper Class="@value" >
     <MudContainer>
     <MudGrid   >
-        <MudItem xs="12"   >
-          <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
-
-
-                            <thead>
-                                <tr>
-
-                              
-                                  
-                                   
-                                     <th>Invoice info</th>
-                                      <th>Accounting Info</th>
-                                       <th>Branch</th>
-                                    <th>PayAmount</th>
-                                  
-                                    
-                                     
-
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in billsPayed)
-                                {
-                                    <tr>
-                                       
-                                   
-                                     
-                                        <td>@item.InvoiceNumber - @item.InvoiceDate?.ToShortDateString()</td>
-                                        <td>@item.DocNumber - @item.DocDate?.ToShortDateString()</td>
-                                       <td>@item.BranchName</td>
-                                        <td> <MudTextField T="decimal?" @bind-Value="item.PayAmount" TextChanged="calcTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
-                                       
-                                       
-                                        
-                                        
-                                    </tr>
-                                }
-                                <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td >Total:@model.TotalAmount</td>
-                                </tr>
-                                 
-                               
-                            </tbody>
-                        </MudSimpleTable>
-    </MudItem>
-   
-        
-    <MudItem xs="12"md="4">
-   
-      <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
-
-
-    </MudItem>
-    <MudItem xs="12"md="4">
-   
-       <MudSelect Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in costCenter)
-                            {
-                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
-                            }
-                        </MudSelect>
-
-    </MudItem>
-    <MudItem xs="12"md="4">
-   
-     <MudSelect Label="Select Dimension" @bind-Value="model.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
-                            @foreach (var ditem in dimension)
-                            {
-                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
-                            }
-                        </MudSelect>
-
-    </MudItem>
      <MudItem xs="12"md="12">
-           <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+   
+      <MudDatePicker Label="Due On" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="pim.DueOn" DateFormat="dd/MM/yyyy" />
 
-     </MudItem>
-     
-     <MudButton @onclick="CreatePaymentMemo" Variant="Variant.Filled" Color="Color.Primary" >Submit</MudButton>
 
-    </MudGrid>
-    </MudContainer>
-    </MudPaper>
-   @* <MudText Inline="true">Selected items: @(selectedItems1==null ? "" : string.Join(", ", selectedItems1.Select(x=>x.BoID)))</MudText>*@
+    </MudItem>
+    
+     <MudButton @onclick="CreatePaymentInitialMemo" Variant="Variant.Filled" Color="Color.Primary" >Submit</MudButton>
+
+
+  </MudGrid></MudContainer></MudPaper>
+
+
 @code {
 
-
     private PartyPaymentMemoModel model = new PartyPaymentMemoModel();
-    private List<OutstandingBillsModel> collection = new List<OutstandingBillsModel>();
-    private List<BillsPaidModel> billsPayed = new List<BillsPaidModel>();
-    //private HashSet<Element> selectedItems1 = new HashSet<Element>();
-    //private HashSet<OutstandingBillsModel> selectedItems1= new HashSet<OutstandingBillsModel>();
-    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-    private List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
+
+    private List<PartyPaymentMemoModel> collection = new List<PartyPaymentMemoModel>();
+    private List<BillsPaidModel> pmnList = new List<BillsPaidModel>();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+    PaymentInitiatedModel pim = new PaymentInitiatedModel();
+    private HashSet<PartyPaymentMemoModel> selectedItems1= new HashSet<PartyPaymentMemoModel>();
     public string value="invisible";
-    private List<CostCenterModel> costCenter = new();
-    private List<DimensionModel> dimension = new();
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        // GetAll();
-        costCenter = costIservice.Select().ToList();
-        dimension = dimensionIservice.Select().ToList();
+        GetAll();
     }
+
     private  async Task GetAll()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        collection = new List<OutstandingBillsModel>();
-        foreach (var item in OBIservice.SelectByParty(model.PartyBranchInfo.PartyID,model.PartyBranchInfo.GstID,brancID))
+        collection = new List<PartyPaymentMemoModel>();
+        foreach (var item in Iservice.Select(brancID))
         {
             collection.Add(item);
         }
 
 
     }   
-
-    private void GetTaxPurchase()
+    public void openPaymentMemos()
     {
-        GetAll();
-
+        uriHelper.NavigateTo("/PaymentMemo");  
     }
-    private async Task CreatePaymentMemo()
-    {   var authprov = await auth.GetAuthenticationStateAsync();
+
+    public async Task CreatePaymentInitialMemo()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        model.BranchID = brancID;
-        model.PaymentStatus = 0;
-        model.Bills = billsPayed;
-        Iservice.Update(model);
+        var user = authprov.User;
+        pim.UserInfo.UserID = user.Identity.Name;
+        pim.BranchID = brancID;
+        Iservice.InitiatePayment(pim);
+        GetAll();
     }
-    private void calcTotalAmt()
+    private async Task OpenDialog(PartyPaymentMemoModel tds)
     {
-        model.TotalAmount = 0;
-        foreach (var item in billsPayed)
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+
+        pmnList = new List<BillsPaidModel>();
+        foreach (var item in Iservice.GetBills(tds.PaymentMemoID))
         {
-            model.TotalAmount = model.TotalAmount + item.PayAmount;
+            pmnList.Add(item);
         }
-    }
-    private async Task OpenOtstandingBills()
-    {
+        tds.Bills = pmnList;
+
+
+        // pim.PaymentMemos.Add(tds);
         DialogParameters parms = new DialogParameters();
-        parms.Add("PartyID",model.PartyBranchInfo.PartyID);
-        parms.Add("GstID",model.PartyBranchInfo.GstID);
-        var dialog =  DialogService.Show<OutstandingBillView>("Outstanding Bill",parms,maxWidth);
+        parms.Add("model",pim);
+        var dialog =  DialogService.Show<PaymentInitiatedDialog>(tds.PaymentMemoID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
         if(!result.Cancelled)
-        {
+        {   
 
-            SelectedItems = (List<OutstandingBillsModel>)result.Data;         
-            //  List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
-            //SelectedItems=result.Data;     
-            // GetAll();
-            if(SelectedItems!=null)
-            {
-                value = "visible";
-                foreach (var item in SelectedItems)
-                {
-                    BillsPaidModel bpm = new BillsPaidModel();
-                    bpm.BoID = item.BoID;
-                    bpm.BranchName = item.BranchName;
-                    bpm.DocDate = item.DocDate;
-                    bpm.DocNumber = item.DocNumber;
-                    bpm.InvoiceDate = item.InvoiceDate;
-                    bpm.InvoiceNumber = item.InvoiceNumber;
-                    bpm.PayAmount = 0;
-                    billsPayed.Add(bpm);
-                }
-
-            }
+            GetAll();
 
 
         }
-    
     }
-    private void GetSelectedItem()
+
+    private void Delete(PartyPaymentMemoModel tx)
     {
-        //if (selectedItems != null)
-        //{
-        //    string k = "0";
-        //}
+        Iservice.Delete(tx.PaymentMemoID, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+    private void selected()
+    {
+
+        if(selectedItems1!=null)
+        {
+            value = "visible";
+            pim.PaymentMemos = selectedItems1.ToList();
+            foreach (var item in pim.PaymentMemos)
+            {
+                foreach (var item1 in Iservice.GetBills(item.PaymentMemoID))
+                {
+                    pmnList.Add(item1);
+                }
+
+                item.Bills = pmnList;
+                item.PaymentStatus = 1;
+            }
+         
+
+            }
+
         
-        //string itm = string.Join(", ", selectedItems1.Select(x=>x.BoID))
-        //
+        //MudDialog.Close(selecteditem);
+    
     }
 }

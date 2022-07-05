@@ -78,7 +78,7 @@ namespace ArmsServices
             DataTable dataTable = new DataTable(typeof(T).Name);
 
             //Get all the properties
-            PropertyInfo[] Props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            PropertyInfo[] Props = (typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)).Where(x => x.GetGetMethod().IsVirtual == false).ToArray();
             foreach (PropertyInfo prop in Props)
             {
                 if(!prop.GetGetMethod().IsVirtual)

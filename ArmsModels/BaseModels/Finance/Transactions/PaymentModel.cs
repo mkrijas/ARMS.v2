@@ -48,6 +48,10 @@ namespace ArmsModels.BaseModels
 
     public class PaymentInitiatedModel  
     {
+        public  PaymentInitiatedModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+        }
         public int? PiID { get; set; }        
         public DateTime? DueOn { get; set; }
         public int? BranchID { get; set; }
