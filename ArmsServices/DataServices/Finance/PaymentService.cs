@@ -132,17 +132,21 @@ namespace ArmsServices.DataServices
 
         public int? InitiatePayment(PaymentInitiatedModel model)
         {
-            List<int?> memos = new();
-            foreach(var item in model.PaymentMemos)
+            DataTable dt = new DataTable();
+            dt.Columns.Add("memo");
+
+            foreach (var item in model.PaymentMemos)
             {
-                memos.Add(item.PaymentMemoID);
+                DataRow row = dt.NewRow();
+                row["memo"] = item.PaymentMemoID;
+                 dt.Rows.Add(row);
             }
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PiID", model.PiID),
                new SqlParameter("@DueOn", model.DueOn),
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@memos", memos.ToDataTable()),
+               new SqlParameter("@memos", dt),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Initiate]", parameters))
