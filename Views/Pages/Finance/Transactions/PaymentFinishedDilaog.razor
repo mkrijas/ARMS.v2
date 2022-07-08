@@ -1,0 +1,197 @@
+﻿@inject IPaymentService Iservice
+@inject IOutstandingBillsService OBIservice
+@inject ICostCenterService costIservice
+@inject IDimensionService dimensionIservice
+@inject IChartOfAccountService accountService
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+
+<MudPaper>
+    <MudContainer>
+<MudGrid Spacing="4">
+  
+            <MudItem  xs="12" md="4">
+                <MudSwitch @bind-Checked="customstr" Color="Color.Primary" Converter="@(new CustomStringToBoolConverter())" > @(customstr)</MudSwitch>
+                   
+               </MudItem>
+               
+                 <MudItem  xs="12" md="4">
+                       <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+                 </MudItem>
+                  <MudItem  xs="12" md="4">
+                 <MudDatePicker @bind-Value="model.DocumentDate"  Label="DocumentDate" Variant="Variant.Outlined"  Margin="Margin.Dense" For="@(() => model.DocumentDate)"></MudDatePicker>
+    
+               </MudItem>
+              
+
+              <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+
+                    </MudItem>
+   
+  
+
+    </MudGrid> 
+    </MudContainer>
+    </MudPaper>
+    
+    <MudPaper>
+    <MudContainer>
+    <MudGrid   >
+        <MudItem xs="12">
+         <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+
+
+                            <thead>
+                             
+                                <tr>
+
+                                 
+                                    <th>PaymentMemoID</th>
+                                    <th>Reference</th>
+                                    <th>EffectiveDate</th>
+                                    <th>Amount</th>
+                                   
+                                      <th></th>
+                                       
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in model.Payments)
+                                {
+                                    <tr>
+                                       
+                                    
+                                        <td>@item.PaymentMemoID</td>
+                                        <td> <MudTextField  @bind-Value="item.Reference"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
+                                        <td> <MudDatePicker @bind-Value="item.EffectiveDate"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudDatePicker></td>
+                                        <td> <MudTextField T="decimal?" @bind-Value="item.Amount"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
+                                    
+                                      
+                                      
+                                        
+                                    </tr>
+                                }
+                                <tr>
+                                    <td></td
+                                    <td></td>
+                                    <td></td>
+                                    <td>Total:@model.TotalAmount</td>
+                                </tr>
+                                 
+                               
+                            </tbody>
+                        </MudSimpleTable>
+    </MudItem>
+   
+     <MudButton OnClick="Submit" Variant="Variant.Filled" Color="Color.Primary" >Submit</MudButton>
+
+    </MudGrid>
+    </MudContainer>
+    </MudPaper>
+
+
+
+
+
+@code {
+    [Parameter]
+    public PaymentFinishModel model { get; set; }
+    public string customstr { get; set; } = "Cash";
+    private ChartOfAccountModel SelectedAccount = null;
+    private List<PaymentEntryModel> paymentEntry = new List<PaymentEntryModel>();
+
+
+    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
+    {
+
+        return await Task.FromResult(accountService.FilterSubLedgers(searchString));
+
+    }
+
+    public class CustomStringToBoolConverter : BoolConverter<string>
+    {
+
+        public CustomStringToBoolConverter()
+        {
+            SetFunc = OnSet;
+            GetFunc = OnGet;
+        }
+
+        private string TrueString = "Cash";
+        private string FalseString = "Credit";
+        private string NullString = "Error";
+
+        private string OnGet(bool? value)
+        {
+            try
+            {
+                return (value == true) ? TrueString : FalseString;
+            }
+            catch (Exception e)
+            {
+                UpdateGetError("Conversion error: " + e.Message);
+                return NullString;
+            }
+        }
+
+        private bool? OnSet(string arg)
+        {
+            if (arg == null)
+                return null;
+            try
+            {
+                if (arg == TrueString)
+                    return true;
+                if (arg == FalseString)
+                    return false;
+                else
+                    return null;
+            }
+            catch (FormatException e)
+            {
+                UpdateSetError("Conversion error: " + e.Message);
+                return null;
+            }
+        }
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetPaymentEntryDetails();
+    }
+    public async Task GetPaymentEntryDetails()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        List<PartyPaymentMemoModel> ppmm = new List<PartyPaymentMemoModel>();
+
+        ppmm =Iservice.Select(model.PiID.Value, brancID).ToList();
+        model.Payments = new();
+        foreach (var item in ppmm)
+        {
+            PaymentEntryModel p = new PaymentEntryModel();
+            p.PaymentMemoID = item.PaymentMemoID;
+            p.Amount = null;
+            p.EffectiveDate = null;
+            p.Reference = null;
+            p.PeID = null;
+            model.Payments.Add(p);
+
+        }
+
+    }
+    public void Submit()
+    {
+        Iservice.CompletePayment(model);
+    }
+}

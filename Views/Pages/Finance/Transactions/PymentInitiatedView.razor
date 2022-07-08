@@ -1,0 +1,102 @@
+﻿@page "/PaymentFinishMemoView"
+@inject IPaymentService Iservice
+@inject IOutstandingBillsService OBIservice
+@inject ICostCenterService costIservice
+@inject IDimensionService dimensionIservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudGrid Spacing="4">
+   <MudItem xs="12">
+        <MudTable Items="@collection"    Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
+           
+
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">Initiated Memos</MudText>
+                <MudTooltip Text="New Payment Memos">
+              @*  <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="openPaymentMemos"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+              *@  </MudTooltip>
+               
+               @* <MudButton @onclick="openpurchaseorder" @onclick="@(()=> OpenDialog(model))"  Variant="Variant.Filled" Color="Color.Primary" >Purchase Order</MudButton>
+               *@ 
+                <MudSpacer></MudSpacer>
+               @* <MudTextField @bind-Value="searchMemos" Placeholder="Search Tax... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>*@
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<PaymentInitiatedModel, object>(x=> x.PiID)" InitialDirection="SortDirection.Ascending">PiID</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<PaymentInitiatedModel, object>(x=> x.DueOn)" InitialDirection="SortDirection.Ascending">DueOn</MudTableSortLabel></MudTh>
+               <MudTh>Actions</MudTh>
+                
+               
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="PaymentMemoID">@context.PiID</MudTd>
+                <MudTd DataLabel="PaymentStatus">@context.DueOn</MudTd>
+             <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" title="Finish" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                 
+                  </MudTd>
+              
+            </RowTemplate>
+          
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                
+           
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+
+
+
+@code {
+    private PaymentFinishModel model = new PaymentFinishModel();
+    private List<PaymentInitiatedModel> collection = new List<PaymentInitiatedModel>();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+    protected override async Task OnInitializedAsync()
+
+    {
+        model = new();
+        GetAll();
+    }
+
+    private  async Task GetAll()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = new List<PaymentInitiatedModel>();
+        foreach (var item in Iservice.SelectInitiated(brancID))
+        {
+            collection.Add(item);
+        }
+
+
+    } 
+    private async Task OpenDialog(PaymentInitiatedModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        PaymentFinishModel pfm = new PaymentFinishModel();
+        pfm.PiID = tds.PiID;
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",pfm);
+        var dialog =  DialogService.Show<PaymentFinishedDilaog>(tds.PiID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetAll();
+
+
+        }
+    }
+}
