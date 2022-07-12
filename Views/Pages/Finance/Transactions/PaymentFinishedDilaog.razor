@@ -10,22 +10,24 @@
 @inject IDialogService DialogService
 
 
-
+<MudDialog>
+    <DialogContent>
+         <EditForm id="formtfinishmemo" Model="@model" OnValidSubmit="OnValidSubmit">
 <MudPaper>
     <MudContainer>
 <MudGrid Spacing="4">
   
-            <MudItem  xs="12" md="4">
+            <MudItem  xs="12" md="2">
                 <MudSwitch @bind-Checked="customstr" Color="Color.Primary" Converter="@(new CustomStringToBoolConverter())" > @(customstr)</MudSwitch>
                    
                </MudItem>
                
-                 <MudItem  xs="12" md="4">
-                       <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                 <MudItem  xs="12" md="5">
+                       <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
                                      SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
                  </MudItem>
-                  <MudItem  xs="12" md="4">
-                 <MudDatePicker @bind-Value="model.DocumentDate"  Label="DocumentDate" Variant="Variant.Outlined"  Margin="Margin.Dense" For="@(() => model.DocumentDate)"></MudDatePicker>
+                  <MudItem  xs="12" md="5">
+                 <MudDatePicker @bind-Date="model.DocumentDate" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Label="DocumentDate" Variant="Variant.Outlined"  Margin="Margin.Dense" For="@(() => model.DocumentDate)"></MudDatePicker>
     
                </MudItem>
               
@@ -71,8 +73,8 @@
                                     
                                         <td>@item.PaymentMemoID</td>
                                         <td> <MudTextField  @bind-Value="item.Reference"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
-                                        <td> <MudDatePicker @bind-Value="item.EffectiveDate"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudDatePicker></td>
-                                        <td> <MudTextField T="decimal?" @bind-Value="item.Amount"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
+                                        <td> <MudDatePicker DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="item.EffectiveDate"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudDatePicker></td>
+                                        <td> <MudTextField T="decimal?" @bind-Value="item.Amount" TextChanged="calcAmount" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
                                     
                                       
                                       
@@ -83,7 +85,7 @@
                                     <td></td
                                     <td></td>
                                     <td></td>
-                                    <td>Total:@model.TotalAmount</td>
+                                    <td>Total:<b>@model.TotalAmount</b></td>
                                 </tr>
                                  
                                
@@ -91,13 +93,20 @@
                         </MudSimpleTable>
     </MudItem>
    
-     <MudButton OnClick="Submit" Variant="Variant.Filled" Color="Color.Primary" >Submit</MudButton>
+    
 
     </MudGrid>
     </MudContainer>
     </MudPaper>
-
-
+    </EditForm>
+    </DialogContent>
+     <DialogActions>
+     
+             <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton form="formtfinishmemo"  Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+                    
+    </DialogActions>
+</MudDialog>
 
 
 
@@ -190,8 +199,29 @@
         }
 
     }
-    public void Submit()
+    private async Task OnValidSubmit(EditContext context)
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        model.PaymentMode = customstr;
+        model.CoaID = SelectedAccount.CoaID;
+        model.BranchID = brancID;
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
         Iservice.CompletePayment(model);
+    }
+    public void Cancel()
+    {}
+    public void calcAmount()
+    {
+        model.TotalAmount = 0;
+        foreach(var item in model.Payments)
+        {
+            if(item.Amount!=null)
+            {
+                model.TotalAmount = model.TotalAmount + item.Amount;
+            }
+        }
     }
 }

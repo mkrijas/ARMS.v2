@@ -58,13 +58,15 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),              
                new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@CoaID", model.CoaID),
+               new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@PiID", model.PiID),
                new SqlParameter("@PfID", model.PfID),                         
-               new SqlParameter("@Payments", model.Payments.ToDataTable()),
+               new SqlParameter("@Entries", model.Payments.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Complete]", parameters))
+            }; 
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Finish]", parameters))
             {
                 model.PfID = dr.GetInt32("PcID");
             }

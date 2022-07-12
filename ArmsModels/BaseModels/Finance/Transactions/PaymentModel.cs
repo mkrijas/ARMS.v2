@@ -62,6 +62,11 @@ namespace ArmsModels.BaseModels
 
     public class PaymentFinishModel 
     {
+        public PaymentFinishModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+            
+        }
         public int? PfID { get; set; }
         public int? PiID { get; set; }       
         public string PaymentMode { get; set; }
