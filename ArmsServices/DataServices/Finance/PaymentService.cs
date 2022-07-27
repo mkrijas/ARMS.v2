@@ -423,7 +423,7 @@ namespace ArmsServices.DataServices
                     TimeStampField = dr.GetDateTime("ApprovedOn"),
                     UserID = dr.GetString("ApprovedBy"),
                 },
-                DocumentDate = dr.GetDateTime("DocumentDate"),
+                DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),
                 CostCenter = dr.GetInt32("CostCenter"),

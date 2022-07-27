@@ -1,0 +1,113 @@
+﻿@page "/SundryPaymentView"
+@using ArmsModels.BaseModels.Finance.Transactions
+@inject ISundryPaymentService Iservice
+@inject ICostCenterService costIservice
+@inject IDimensionService dimensionIservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+
+
+<MudGrid Spacing="4">
+   <MudItem xs="12">
+        <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
+           
+
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">Sundry Paymet </MudText>
+                <MudTooltip Text="New Payment Memos">
+                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+               
+             
+                <MudSpacer></MudSpacer>
+             
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
+              <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
+                
+               <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
+                
+               <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
+               <MudTd DataLabel="">
+                     <MudTooltip Text="Edit">
+                   <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip> 
+                    @if(@context.ApprovedInfo.RecordStatus!=1)
+                    {
+                     <MudTooltip Text="Approve">
+                   <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    }
+               </MudTd>
+            </RowTemplate>
+          
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+               @*  <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>*@
+           
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+
+@code {
+
+    private SundryPaymentModel model = new SundryPaymentModel();
+
+    private List<SundryPaymentModel> collection = new List<SundryPaymentModel>();
+    DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        GetAll();
+    }
+
+    private  async Task GetAll()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = new List<SundryPaymentModel>();
+        foreach (var item in Iservice.Select())
+        {
+            collection.Add(item);
+        }
+
+
+    }
+    private async Task Approve(SundryPaymentModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        Iservice.Approve(tds.SundryPaymentID, model.UserInfo.UserID);
+    }
+    private async Task OpenDialog(SundryPaymentModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        var dialog =  DialogService.Show<SundryPaymentDialog>(tds.SundryPaymentID == null?"ADD":"EDIT",parms,mediumWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetAll();
+
+
+        }
+        GetAll();
+    }
+}

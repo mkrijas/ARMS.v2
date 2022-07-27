@@ -25,7 +25,7 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public int? ParentID { get; set; }
         public int? BranchID { get; set; }
         [Required]
-        public int? CoaID { get;}
+        public int? CoaID { get; set; }
         public virtual string AccountName { get; set; }
         [Required]
         public decimal? Amount { get; set; }

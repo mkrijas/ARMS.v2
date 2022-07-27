@@ -9,6 +9,9 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
+        [Required]
+        public int? Id { get; set; }
+
 
         [Required]
         [StringLength(maximumLength: 25)]

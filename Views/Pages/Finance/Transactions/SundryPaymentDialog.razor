@@ -1,0 +1,274 @@
+﻿@inject ISundryPaymentService Iservice
+@using ArmsModels.BaseModels.Finance.Transactions
+@inject IOutstandingBillsService OBIservice
+@inject ICostCenterService costIservice
+@inject IChartOfAccountService accountService
+@inject IDimensionService dimensionIservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudDialog>
+    <TitleContent><h3>Sundry Payment</h3></TitleContent>
+     <DialogContent>
+    
+
+   <MudPaper>
+    <MudContainer>
+    <MudGrid>
+        <MudItem xs="12" md="2">
+             <MudSwitch @bind-Checked="customstr" Color="Color.Primary" Converter="@(new CustomStringToBoolConverter())" > @(customstr)</MudSwitch>
+                 
+        </MudItem>
+         <MudItem xs="12" md="5">
+             <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+              
+        </MudItem>
+         <MudItem xs="12" md="5">
+           <MudTextField @bind-Value="model.Reference" Label="Reference"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+
+        </MudItem>
+
+
+        <MudItem xs="12"   >
+          <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+
+
+                            <thead>
+                                <tr>
+
+                              
+                                  
+                                   
+                                     <th>AccountName</th>
+                                      <th>Amount</th>
+                                       <th>Reference</th>
+                                  
+                                  
+                                    
+                                     
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Entrys)
+                                {
+                                    <tr>
+                                       
+                                   
+                                     
+                                        <td>@item.AccountName</td>
+                                        <td>@item.Amount</td>
+                                       <td>@item.Rederence</td>
+                                      <td></td>
+                                       
+                                        
+                                        
+                                    </tr>
+                                }
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                   
+
+                                    <td >Total:
+                                        </td><td>@model.TotalAmount</td>
+                                </tr>
+                                 <tr>
+                                      <td>
+                                             <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccounts" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+              
+       
+                                        </td>
+                                         <td>
+                                            <MudTextField @bind-Value="spe.Amount" Label="Amount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Amount)"></MudTextField>
+
+                                        </td>
+                                         <td>
+                                            <MudTextField @bind-Value="spe.Rederence" Label="Reference"   Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Rederence)"></MudTextField>
+
+                                        </td>
+                                        <td>
+                                            <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+
+                                        </td>
+                                 </tr>
+                               
+                            </tbody>
+                        </MudSimpleTable>
+    </MudItem>
+   
+        
+    <MudItem xs="12"md="4">
+   
+      <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+
+
+    </MudItem>
+    <MudItem xs="12"md="4">
+   
+       <MudSelect Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in costCenter)
+                            {
+                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
+                            }
+                        </MudSelect>
+
+    </MudItem>
+    <MudItem xs="12"md="4">
+   
+     <MudSelect Label="Select Dimension" @bind-Value="model.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
+                            @foreach (var ditem in dimension)
+                            {
+                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                            }
+                        </MudSelect>
+
+    </MudItem>
+     <MudItem xs="12"md="12">
+           <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+
+     </MudItem>
+     
+   
+    </MudGrid>
+    </MudContainer>
+    </MudPaper>
+    </DialogContent>
+     <DialogActions>
+         @if(@model.ApprovedInfo.RecordStatus!=1)
+         {
+           <MudButton @onclick="CreatePaymentMemo" Variant="Variant.Filled" Color="Color.Success" >Submit</MudButton>
+         }
+         <MudButton @onclick="Cancel" Variant="Variant.Filled" Color="Color.Primary" >Cancel</MudButton>
+
+     </DialogActions>
+    </MudDialog>
+
+@code {
+    [Parameter]
+    public SundryPaymentModel model { get; set; }  
+    private List<SundryPaymentEntryModel> Entrys = new List<SundryPaymentEntryModel>();
+    private SundryPaymentEntryModel spe = new SundryPaymentEntryModel();
+    private List<CostCenterModel> costCenter = new();
+    private List<DimensionModel> dimension = new();
+    public string customstr { get; set; } = "Cash";
+    private ChartOfAccountModel SelectedAccount = null;
+    private ChartOfAccountModel SelectedAccounts = null;
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
+    {
+
+        return await Task.FromResult(accountService.FilterSubLedgers(searchString));
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (model.SundryPaymentID == null)
+        {
+            model.TotalAmount = 0;
+        }
+        else
+        {
+            SelectedAccount = new();
+            SelectedAccount.CoaID = model.CoaID;
+            SelectedAccount.AccountName = model.AccountName;
+            Entrys = Iservice.GetEntries(model.SundryPaymentID).ToList();
+        }
+
+        costCenter = costIservice.Select().ToList();
+        dimension = dimensionIservice.Select().ToList();
+    }
+    public async Task AddItems()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        SundryPaymentEntryModel sp=new SundryPaymentEntryModel();
+        sp.AccountName = SelectedAccounts.AccountName;
+        sp.CoaID=SelectedAccounts.CoaID;
+        sp.Amount = spe.Amount;
+        sp.Rederence = spe.Rederence;
+        sp.BranchID =brancID;
+
+        model.TotalAmount = model.TotalAmount + sp.Amount;
+        Entrys.Add(sp);
+
+        spe = new();
+
+    }
+    public void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public async Task CreatePaymentMemo()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        model.CoaID = SelectedAccount.CoaID;
+        model.Entries = Entrys;
+        model.BranchID = brancID;
+        model.PaymentMode = customstr;
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        Iservice.Update(model);
+        MudDialog.Close();
+
+    }
+
+       public class CustomStringToBoolConverter : BoolConverter<string>
+    {
+
+        public CustomStringToBoolConverter()
+        {
+            SetFunc = OnSet;
+            GetFunc = OnGet;
+        }
+
+        private string TrueString = "Cash";
+        private string FalseString = "Credit";
+        private string NullString = "Error";
+
+        private string OnGet(bool? value)
+        {
+            try
+            {
+                return (value == true) ? TrueString : FalseString;
+            }
+            catch (Exception e)
+            {
+                UpdateGetError("Conversion error: " + e.Message);
+                return NullString;
+            }
+        }
+
+        private bool? OnSet(string arg)
+        {
+            if (arg == null)
+                return null;
+            try
+            {
+                if (arg == TrueString)
+                    return true;
+                if (arg == FalseString)
+                    return false;
+                else
+                    return null;
+            }
+            catch (FormatException e)
+            {
+                UpdateSetError("Conversion error: " + e.Message);
+                return null;
+            }
+        }
+
+    }
+}

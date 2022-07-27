@@ -153,6 +153,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@ID", model.Id),
                new SqlParameter("@UsageID", model.UsageID),
                new SqlParameter("@AccountID", model.AccountID),
                new SqlParameter("@PeriodFrom", model.PeriodFrom),
@@ -188,6 +189,7 @@ namespace ArmsServices.DataServices
         {
             return new GstUsageIDModel
             {
+                Id= dr.GetInt32("ID"),
                 UsageID = dr.GetString("UsageID"),
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),
                 PeriodTo = dr.GetDateTime("PeriodTo"),
