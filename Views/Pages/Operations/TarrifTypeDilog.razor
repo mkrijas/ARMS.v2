@@ -2,6 +2,7 @@
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
+@inject IGstUsageIDService Igst
 
  <MudItem xs="12" md="12">
         <MudCard Elevation="10">
@@ -46,7 +47,11 @@
                         <MudItem xs="12" md="6">
                             <MudCheckBox @bind-Checked="@model.AllowMultiple" Label="Allow Multiple?" For="@(() => model.AllowMultiple)" />
                         </MudItem>
-
+                        <MudItem xs="12" md="6">
+                        <MudAutocomplete T="string" Label="Usage ID" @bind-Value="@model.UsageID" SearchFunc="@SearchUsageIDs"
+                         ResetValueOnEmptyText=true
+                         CoerceText=true CoerceValue=true />
+                         </MudItem>
                     </MudGrid>
                     <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
 
@@ -55,11 +60,13 @@
         </MudCard>
     </MudItem>
 @code {
-    
-      [Parameter]
+
+    [Parameter]
     public TariffTypeModel model { get; set; }
     private List<TariffTypeModel> collection = new ();
-       
+
+    private List<string> UsageIds = new();
+
     private string searchString = "";
 
     protected override void OnInitialized()
@@ -69,8 +76,21 @@
 
     private void GetAll()
     {
+        UsageIds = Igst.Select(DateTime.Today).Select(x=> x.UsageID).ToList();
         collection = Iservice.SelectTariffTypes("All").ToList();       
     }
+
+    private async Task<IEnumerable<string>> SearchUsageIDs(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5);
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return UsageIds;
+        return UsageIds.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+    
 
     private async Task OnValidSubmit(EditContext context)
     {

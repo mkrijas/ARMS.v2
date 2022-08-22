@@ -189,7 +189,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@AllowMultiple", model.AllowMultiple),
                new SqlParameter("Area",model.Area),
-               new SqlParameter("@FinancialAccountID", model.FinancialAccountID),
+               new SqlParameter("@UsageID", model.UsageID),
                new SqlParameter("@TariffSign", model.TariffSign),               
                new SqlParameter("@TariffGroup", model.TariffGroup),
                new SqlParameter("@TariffTypeID", model.TariffTypeID),
@@ -240,7 +240,7 @@ namespace ArmsServices.DataServices
                 Unit = dr.GetString("Unit"),
                 AllowMultiple = dr.GetBoolean("AllowMultiple"),
                 TariffSign = dr.GetInt32("TariffSign"),                
-                FinancialAccountID = dr.GetInt32("FinancialAccountID"),
+                UsageID = dr.GetString("UsageID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
