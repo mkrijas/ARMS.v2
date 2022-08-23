@@ -36,6 +36,10 @@ namespace ArmsModels.BaseModels
     {
         public int? ProformaInvoiceID { get; set; }        
         public int? DraftBillID { get; set; }
+        public int? OrderID { get; set; }
+        public int? PartyBranchCoa { get; set; }
+        public int? TariffTypeID { get; set; }
+        public int? TariffTypeCoa { get; set; }
         public string Reference { get; set; }
         public virtual decimal? GstRate { get; set; }
         public decimal? Cgst { get; set; }
@@ -52,7 +56,7 @@ namespace ArmsModels.BaseModels
     public class GcTariffModel
     {
         public long? GcTariffID { get;}
-        public int? BillingID { get; set; }
+        public int? ConsolidatedDraftBillID { get; set; }
         public long? GcID { get; set; }
         public int? TariffID { get; set; }
         public decimal? Amount { get; set; }

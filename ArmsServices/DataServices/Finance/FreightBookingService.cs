@@ -23,7 +23,7 @@ namespace ArmsServices.DataServices
         int DeleteConsolidatedDraftBill(int? ID, string UserID);        
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID);
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateOnly? begin, DateOnly? end);
-        IEnumerable<GcTariffModel> GetBilled(int? BillingID);        
+        IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID);        
     }
     public class FreightBillingService: IFreightBillingService
     { 
@@ -60,7 +60,7 @@ namespace ArmsServices.DataServices
             {
                 yield return new GcTariffModel()
                 {
-                    BillingID = dr.GetInt32("BillingID"),
+                    ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
                     GcID = dr.GetInt32("GcID"),
                     TariffID = dr.GetInt32("TariffID"),                   
                     Amount = dr.GetDecimal("Amount"),
@@ -69,19 +69,19 @@ namespace ArmsServices.DataServices
         }
 
 
-        public IEnumerable<GcTariffModel> GetBilled(int? BillingID)
+        public IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "Billed"),
-               new SqlParameter("@BillingID", BillingID),               
+               new SqlParameter("@ConsolidatedDraftBillID", ConsolidatedDraftBillID),               
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
             {
                 yield return new GcTariffModel()
                 {
-                    BillingID = dr.GetInt32("BillingID"),
+                    ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
                     GcID = dr.GetInt32("GcID"),
                     TariffID = dr.GetInt32("TariffID"),
                     Amount = dr.GetDecimal("Amount"),
@@ -120,6 +120,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BillingID", model.BillingID),               
                new SqlParameter("@ProformaInvoiceID", model.ProformaInvoiceID),
                new SqlParameter("@DraftBillID", model.DraftBillID),
+               new SqlParameter("@OrderID", model.OrderID),
+               new SqlParameter("@PartyBranchCoa", model.PartyBranchCoa),
+               new SqlParameter("@TariffTypeID", model.TariffTypeID),
+               new SqlParameter("@TariffTypeCoa", model.TariffTypeCoa),
                new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
@@ -148,6 +152,10 @@ namespace ArmsServices.DataServices
                 BillingID = dr.GetInt32("BillingID"),
                 ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
                 DraftBillID = dr.GetInt32("DraftBillID"),
+                OrderID =  dr.GetInt32("PartyBranchID"),
+                PartyBranchCoa = dr.GetInt32("PartyBranchCoa"),
+                TariffTypeID =  dr.GetInt32("TariffTypeID"),
+                TariffTypeCoa = dr.GetInt32("TariffTypeCoa"),
                 Reference = dr.GetString("Reference"),
                 BranchID = dr.GetInt32("BranchID"),
                 // BranchName = dr.GetString("BranchName"),
@@ -183,6 +191,10 @@ namespace ArmsServices.DataServices
             {                
                 ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
                 DraftBillID = dr.GetInt32("DraftBillID"),
+                OrderID = dr.GetInt32("PartyBranchID"),
+                PartyBranchCoa = dr.GetInt32("PartyBranchCoa"),
+                TariffTypeID = dr.GetInt32("TariffTypeID"),
+                TariffTypeCoa = dr.GetInt32("TariffTypeCoa"),
                 Reference = dr.GetString("Reference"),
                 BranchID = dr.GetInt32("BranchID"),
                 // BranchName = dr.GetString("BranchName"),
@@ -239,6 +251,10 @@ namespace ArmsServices.DataServices
             {               
                new SqlParameter("@ProformaInvoiceID", model.ProformaInvoiceID),
                new SqlParameter("@DraftBillID", model.DraftBillID),
+               new SqlParameter("@OrderID", model.OrderID),
+               new SqlParameter("@PartyBranchCoa", model.PartyBranchCoa),
+               new SqlParameter("@TariffTypeID", model.TariffTypeID),
+               new SqlParameter("@TariffTypeCoa", model.TariffTypeCoa),
                new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
