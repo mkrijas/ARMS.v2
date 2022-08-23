@@ -173,7 +173,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TariffID", model.TariffID),              
                new SqlParameter("@TariffRate", model.TariffRate),               
                new SqlParameter("@TariffTypeID", model.TariffTypeID),
-               new SqlParameter("@TruckAxles", model.TruckAxles),               
+               new SqlParameter("@TruckAxles", model.TruckAxles),
+               new SqlParameter("@UsageID", model.UsageId),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.Update]", parameters))
@@ -212,7 +213,8 @@ namespace ArmsServices.DataServices
                 TariffFormulaID = dr.GetInt16("TariffFormulaID"),
                 TariffID = dr.GetInt32("TariffID"),                
                 TariffRate = dr.GetDecimal("TariffRate"),
-                TariffTypeID = dr.GetInt16("TariffTypeID"),    
+                TariffTypeID = dr.GetInt16("TariffTypeID"), 
+                UsageId= dr.GetString("UsageID"),
                 TariffSign = dr.GetInt32("TariffSign"),
                 TruckAxles = dr.GetByte("TruckAxles"),
                 Formula = dr.GetString("Formula"),

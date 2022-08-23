@@ -34,7 +34,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
 
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPayment.Delete]", parameters);
 
         }
 

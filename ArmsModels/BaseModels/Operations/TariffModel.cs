@@ -30,6 +30,7 @@ namespace ArmsModels.BaseModels
         public virtual string Formula { get; set; }
         public virtual string TariffTypeName { get; set; }
         public virtual string Unit { get; set; }
+        public string UsageId { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
 

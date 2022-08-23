@@ -129,6 +129,7 @@ namespace Views
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<IOutstandingBillsService, OutstandingBillsService>();
             services.AddScoped<ISundryPaymentService, SundryPaymentService>();
+            services.AddScoped<IContraService, ContraService>();
 
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
