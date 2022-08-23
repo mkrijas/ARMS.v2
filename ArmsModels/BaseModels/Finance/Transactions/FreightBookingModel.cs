@@ -55,10 +55,10 @@ namespace ArmsModels.BaseModels
 
     public class GcTariffModel
     {
-        public long? GcTariffID { get;}
-        public int? ConsolidatedDraftBillID { get; set; }
+        public long? GcTariffID { get;}        
         public long? GcID { get; set; }
         public int? TariffID { get; set; }
         public decimal? Amount { get; set; }
+        public int? ConsolidatedDraftBillID { get; set; }
     }
 }

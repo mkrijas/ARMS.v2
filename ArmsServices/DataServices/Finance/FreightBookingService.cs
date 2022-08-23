@@ -286,7 +286,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),              
                new SqlParameter("@TotalAmount", model.TotalAmount),
-               new SqlParameter("@Narration", model.Narration),             
+               new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@BookedGcs", model.BookedGCs.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             int? ID = null;
@@ -351,7 +352,7 @@ namespace ArmsServices.DataServices
             {
                 yield return new GcTariffModel()
                 {
-                    BillingID = dr.GetInt32("BillingID"),
+                    ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
                     GcID = dr.GetInt32("GcID"),
                     TariffID = dr.GetInt32("TariffID"),
                     Amount = dr.GetDecimal("Amount"),
