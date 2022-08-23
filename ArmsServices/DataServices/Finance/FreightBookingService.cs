@@ -16,12 +16,13 @@ namespace ArmsServices.DataServices
         int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID);
         int? UpdateConsolidatedDraftBill(ConsolidatedDraftBillModel model);
         BillingModel SelectFinalInvoice(int? ID);
-        ProformaInvoiceModel SelectProforma(int? ID);
+        ProformaInvoiceModel SelectProformaInvoice(int? ID);
         ConsolidatedDraftBillModel SelectConsolidatedDraftBill(int? ID);
         int DeleteFinalInvoice(int? ID, string UserID);
         int DeleteProformaInvoice(int? ID,string UserID);
         int DeleteConsolidatedDraftBill(int? ID, string UserID);        
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID);
+        IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateOnly? begin, DateOnly? end);
         IEnumerable<GcTariffModel> GetBilled(int? BillingID);        
     }
     public class FreightBillingService: IFreightBillingService
@@ -280,7 +281,7 @@ namespace ArmsServices.DataServices
             return ID;
         }
 
-        public ProformaInvoiceModel SelectProforma(int? ID)
+        public ProformaInvoiceModel SelectProformaInvoice(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -316,6 +317,30 @@ namespace ArmsServices.DataServices
         public int DeleteConsolidatedDraftBill(int? ID, string UserID)
         {
             throw new NotImplementedException();
+        }
+
+        public IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateOnly? begin, DateOnly? end)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "Pending"),
+               new SqlParameter("Begin",begin),
+               new SqlParameter("End",end),
+               new SqlParameter("@OrderID", OrderID),
+               new SqlParameter("@TariffTypeID", TariffTypeID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
+            {
+                yield return new GcTariffModel()
+                {
+                    BillingID = dr.GetInt32("BillingID"),
+                    GcID = dr.GetInt32("GcID"),
+                    TariffID = dr.GetInt32("TariffID"),
+                    Amount = dr.GetDecimal("Amount"),
+                };
+            }
         }
     }
 
