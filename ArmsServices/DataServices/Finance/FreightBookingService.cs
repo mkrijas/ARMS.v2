@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
         int? UpdateFinalInvoice(BillingModel model);
         int? UpdateProformaInvoice(ProformaInvoiceModel model);
         int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID);
+        int? ReverseProformaInvoice(int? ProformaInvoiceID, string userID);
         int? UpdateConsolidatedDraftBill(ConsolidatedDraftBillModel model);
         BillingModel SelectFinalInvoice(int? ID);
         ProformaInvoiceModel SelectProformaInvoice(int? ID);
@@ -102,16 +103,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@ProformaInvoiceID", ProformaInvoiceID),
-               new SqlParameter("@UserID", userID),
-               new SqlParameter("@Status", 1)
-            };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Approve]", parameters);
-        }
+       
 
         public int? UpdateFinalInvoice(BillingModel model)
         {
@@ -284,7 +276,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DraftBillID", model.DraftBillID),              
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
-               new SqlParameter("@DocumentNumber", model.DocumentNumber),              
+               new SqlParameter("@DocumentNumber", model.DocumentNumber),
+               new SqlParameter("@OrderID", model.Order.OrderID),
+               new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@BookedGcs", model.BookedGCs.ToDataTable()),
@@ -358,6 +352,26 @@ namespace ArmsServices.DataServices
                     Amount = dr.GetDecimal("Amount"),
                 };
             }
+        }
+        public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ProformaInvoiceID", ProformaInvoiceID),
+               new SqlParameter("@UserID", userID),
+               new SqlParameter("@Status", 1)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Approve]", parameters);
+        }
+        public int? ReverseProformaInvoice(int? ProformaInvoiceID, string userID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ProformaInvoiceID", ProformaInvoiceID),
+               new SqlParameter("@UserID", userID),
+               new SqlParameter("@Status", 0)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Approve]", parameters);
         }
     }
 
