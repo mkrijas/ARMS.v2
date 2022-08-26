@@ -61,14 +61,14 @@ namespace ArmsServices.DataServices
             {
                 yield return new GcTariffModel()
                 {
+                    GcTariffID = dr.GetInt64("GcTariffID"),
                     ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
-                    GcID = dr.GetInt32("GcID"),
-                    TariffID = dr.GetInt32("TariffID"),                   
+                    GcID = dr.GetInt64("GcID"),
+                    TariffID = dr.GetInt32("TariffID"),
                     Amount = dr.GetDecimal("Amount"),
                 };
             }
         }
-
 
         public IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID)
         {
