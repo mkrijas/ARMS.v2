@@ -130,6 +130,7 @@ namespace Views
             services.AddScoped<IOutstandingBillsService, OutstandingBillsService>();
             services.AddScoped<ISundryPaymentService, SundryPaymentService>();
             services.AddScoped<IContraService, ContraService>();
+            services.AddScoped<IFreightBillingService, FreightBillingService>();
 
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();

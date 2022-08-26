@@ -81,6 +81,7 @@ namespace ArmsServices.DataServices
             {
                 yield return new GcTariffModel()
                 {
+                   
                     ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
                     GcID = dr.GetInt32("GcID"),
                     TariffID = dr.GetInt32("TariffID"),
@@ -351,7 +352,7 @@ namespace ArmsServices.DataServices
             {
                 yield return new GcTariffModel()
                 {
-                    BillingID = dr.GetInt32("BillingID"),
+                    ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
                     GcID = dr.GetInt32("GcID"),
                     TariffID = dr.GetInt32("TariffID"),
                     Amount = dr.GetDecimal("Amount"),
