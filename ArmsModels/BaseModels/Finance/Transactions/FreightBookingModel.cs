@@ -20,8 +20,7 @@ namespace ArmsModels.BaseModels
         public TariffTypeModel TariffType { get; set; }        
 
         [ValidateComplexType]
-        public List<GcTariffModel> BookedGCs { get; set; }
-               
+        public List<GcTariffModel> BookedGCs { get; set; }               
         [Required]
         public DateTime? DocumentDate { get; set; }
         public string DocumentNumber { get; set; }
@@ -55,10 +54,10 @@ namespace ArmsModels.BaseModels
 
     public class GcTariffModel
     {
-        public long? GcTariffID { get;}
-        public int? ConsolidatedDraftBillID { get; set; }
+        public long? GcTariffID { get;}        
         public long? GcID { get; set; }
         public int? TariffID { get; set; }
         public decimal? Amount { get; set; }
+        public int? ConsolidatedDraftBillID { get; set; }
     }
 }
