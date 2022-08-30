@@ -55,5 +55,13 @@ namespace ArmsModels.BaseModels
         public string Reference { get; set; }
     }
 
+    public class GstModel
+    {
+        public virtual decimal? GstRate { get; set; }
+        public decimal? Cgst { get; set; }
+        public decimal? Sgst { get; set; }
+        public decimal? Igst { get; set; }
+    }
+
 
     }
