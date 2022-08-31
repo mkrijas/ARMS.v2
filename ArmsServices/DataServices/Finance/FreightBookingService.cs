@@ -25,7 +25,8 @@ namespace ArmsServices.DataServices
         IEnumerable<ConsolidatedDraftBillModel> SelectConsolidatedDraftBillList(int? ID);
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID);
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateOnly? begin, DateOnly? end);
-        IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID);        
+        IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID);
+        GstModel GetGstRate(int? DraftBillID);
     }
     public class FreightBillingService: IFreightBillingService
     { 
@@ -155,10 +156,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
-               new SqlParameter("@GstRate", model.GstRate),
-               new SqlParameter("@Cgst", model.Cgst),
-               new SqlParameter("@Sgst", model.Sgst),
-               new SqlParameter("@Igst", model.Igst),
+               new SqlParameter("@GstRate", model.Gst.GstRate),
+               new SqlParameter("@Cgst", model.Gst.Cgst),
+               new SqlParameter("@Sgst", model.Gst.Sgst),
+               new SqlParameter("@Igst", model.Gst.Igst),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             int? ID = null;
@@ -195,10 +196,13 @@ namespace ArmsServices.DataServices
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
-                GstRate = dr.GetDecimal("GstRate"),
-                Cgst = dr.GetDecimal("Cgst"),
-                Sgst = dr.GetDecimal("Sgst"),
-                Igst = dr.GetDecimal("Igst"),
+                Gst = new GstModel()
+                {
+                    GstRate = dr.GetDecimal("GstRate"),
+                    Cgst = dr.GetDecimal("Cgst"),
+                    Sgst = dr.GetDecimal("Sgst"),
+                    Igst = dr.GetDecimal("Igst"),
+                },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -234,10 +238,13 @@ namespace ArmsServices.DataServices
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
-                GstRate = dr.GetDecimal("GstRate"),
-                Cgst = dr.GetDecimal("Cgst"),
-                Sgst = dr.GetDecimal("Sgst"),
-                Igst = dr.GetDecimal("Igst"),
+                Gst = new()
+                {
+                    GstRate = dr.GetDecimal("GstRate"),
+                    Cgst = dr.GetDecimal("Cgst"),
+                    Sgst = dr.GetDecimal("Sgst"),
+                    Igst = dr.GetDecimal("Igst"),
+                },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -286,10 +293,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
-               new SqlParameter("@GstRate", model.GstRate),
-               new SqlParameter("@Cgst", model.Cgst),
-               new SqlParameter("@Sgst", model.Sgst),
-               new SqlParameter("@Igst", model.Igst),
+               new SqlParameter("@GstRate", model.Gst.GstRate),
+               new SqlParameter("@Cgst", model.Gst.Cgst),
+               new SqlParameter("@Sgst", model.Gst.Sgst),
+               new SqlParameter("@Igst", model.Gst.Igst),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             int? ID = null;
@@ -403,6 +410,24 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Status", 0)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Approve]", parameters);
+        }
+
+        public GstModel GetGstRate(int? DraftBillID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetGst"),
+               new SqlParameter("@DraftBillID",DraftBillID),               
+            };
+            IDataRecord dr = Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Select]", parameters).FirstOrDefault();
+
+            return new GstModel()
+            {
+                GstRate = dr.GetDecimal("GstRate"),
+                Cgst = dr.GetDecimal("Cgst"),
+                Sgst = dr.GetDecimal("Cgst"),
+                Igst = dr.GetDecimal("Igst"),
+            };            
         }
     }
 

@@ -27,6 +27,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+
         public async Task<PartyModel> Update(PartyModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -49,6 +50,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
         public async Task<PartyModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -64,6 +66,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+
         public async Task<int> Delete(int? PartyID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -73,6 +76,7 @@ namespace ArmsServices.DataServices
             };            
             return await Iservice.ExecuteNonQueryAsync("[usp.Entity.PartyDelete]", parameters);
         }
+
 
         public async IAsyncEnumerable<PartyModel> Select(int? PartyID)
         {

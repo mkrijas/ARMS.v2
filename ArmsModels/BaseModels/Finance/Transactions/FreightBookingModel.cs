@@ -40,10 +40,7 @@ namespace ArmsModels.BaseModels
         public int? TariffTypeID { get; set; }
         public int? TariffTypeCoa { get; set; }
         public string Reference { get; set; }
-        public virtual decimal? GstRate { get; set; }
-        public decimal? Cgst { get; set; }
-        public decimal? Sgst { get; set; }
-        public decimal? Igst { get; set; }
+        public GstModel Gst { get; set; } = new();
     }
 
     public class BillingModel : ProformaInvoiceModel
