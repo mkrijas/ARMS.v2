@@ -419,15 +419,17 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "GetGst"),
                new SqlParameter("@DraftBillID",DraftBillID),               
             };
-            IDataRecord dr = Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Select]", parameters).FirstOrDefault();
-
-            return new GstModel()
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Select]", parameters))
             {
-                GstRate = dr.GetDecimal("GstRate"),
-                Cgst = dr.GetDecimal("Cgst"),
-                Sgst = dr.GetDecimal("Cgst"),
-                Igst = dr.GetDecimal("Igst"),
-            };            
+                return new GstModel()
+                {
+                    GstRate = dr.GetDecimal("GstRate"),
+                    Cgst = dr.GetDecimal("Cgst"),
+                    Sgst = dr.GetDecimal("Cgst"),
+                    Igst = dr.GetDecimal("Igst"),
+                };
+            }
+            return new GstModel();
         }
     }
 
