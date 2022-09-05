@@ -23,6 +23,8 @@ namespace ArmsServices.DataServices
         int DeleteProformaInvoice(int? ID,string UserID);
         int DeleteConsolidatedDraftBill(int? ID, string UserID);
         IEnumerable<ConsolidatedDraftBillModel> SelectConsolidatedDraftBillList(int? ID);
+        IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? ID);
+
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID);
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateOnly? begin, DateOnly? end);
         IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID);
@@ -70,14 +72,66 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+        public IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ProformaInvoiceID", ID)
+            };
+            
+                    
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
+            {
+                yield return new ProformaInvoiceModel()
+                {
+                    ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
+                    DraftBillID = dr.GetInt32("DraftBillID"),
+                    OrderID = dr.GetInt32("PartyBranchID"),
+                    PartyBranchCoa = dr.GetInt32("PartyBranchCoa"),
+                    TariffTypeID = dr.GetInt32("TariffTypeID"),
+                    TariffTypeCoa = dr.GetInt32("TariffTypeCoa"),
+                    Reference = dr.GetString("Reference"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    // BranchName = dr.GetString("BranchName"),
+                    ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
+                    {
+                        RecordStatus = dr.GetByte("ApprovedStatus"),
+                        TimeStampField = dr.GetDateTime("ApprovedOn"),
+                        UserID = dr.GetString("ApprovedBy"),
+                    },
+                    DocumentDate = dr.GetDateTime("DocDate"),
+                    DocumentNumber = dr.GetString("DocumentNumber"),
+                    MID = dr.GetInt32("MID"),
+                    CostCenter = dr.GetInt32("CostCenter"),
+                    Dimension = dr.GetInt32("Dimension"),
+                    TotalAmount = dr.GetDecimal("TotalAmount"),
+                    Narration = dr.GetString("Narration"),
+                    Gst = new()
+                    {
+                        GstRate = dr.GetDecimal("GstRate"),
+                        Cgst = dr.GetDecimal("Cgst"),
+                        Sgst = dr.GetDecimal("Sgst"),
+                        Igst = dr.GetDecimal("Igst"),
+                    },
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
+            }
+        }
+
         public IEnumerable<ConsolidatedDraftBillModel> SelectConsolidatedDraftBillList(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@DraftBillID", ID)
             };
-            
-                    
+
+
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Select]", parameters))
             {
@@ -85,8 +139,15 @@ namespace ArmsServices.DataServices
                 {
                     DraftBillID = dr.GetInt32("DraftBillID"),
                     BranchID = dr.GetInt32("BranchID"),
-                    // BranchName = dr.GetString("BranchName"),
-
+                    // BranchName = dr.GetString("BranchName"), Order=new OrderModel
+                    Order = new OrderModel()
+                    {
+                        OrderID = dr.GetInt32("OrderID")
+                    },
+                    TariffType = new TariffTypeModel()
+                    {
+                        TariffTypeID = dr.GetInt16("TariffTypeID"),
+                    },
                     DocumentDate = dr.GetDateTime("DocumentDate"),
                     DocumentNumber = dr.GetString("DocumentNumber"),
                     TotalAmount = dr.GetDecimal("TotalAmount"),
@@ -100,6 +161,7 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+
 
         public IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID)
         {
@@ -257,11 +319,18 @@ namespace ArmsServices.DataServices
         private ConsolidatedDraftBillModel GetConsolidatedDraftBillModel(IDataRecord dr)
         {
             return new ConsolidatedDraftBillModel
-            {                
-                DraftBillID = dr.GetInt32("DraftBillID"),               
+            {
+                DraftBillID = dr.GetInt32("DraftBillID"),
                 BranchID = dr.GetInt32("BranchID"),
                 // BranchName = dr.GetString("BranchName"),
-               
+                Order = new OrderModel()
+                {
+                    OrderID = dr.GetInt32("OrderID")
+                },
+                TariffType = new TariffTypeModel()
+                {
+                    TariffTypeID = dr.GetInt16("TariffTypeID"),
+                },
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),               
                 TotalAmount = dr.GetDecimal("TotalAmount"),
