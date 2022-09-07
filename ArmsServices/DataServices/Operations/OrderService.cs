@@ -112,6 +112,7 @@ namespace ArmsServices.DataServices
                 ConsignorID = dr.GetInt32("ConsignorID"),
                 ContentID = dr.GetInt16("ContentID"),
                 OrderID = dr.GetInt32("OrderID"),
+                GstNo= dr.GetString("GstNo"),
                 OrderName = dr.GetString("OrderName"),
                 OrderQuantity = dr.GetDecimal("OrderQuantity"),
                 Party = new PartyModel

@@ -22,8 +22,8 @@ namespace ArmsServices.DataServices
         int DeleteFinalInvoice(int? ID, string UserID);
         int DeleteProformaInvoice(int? ID,string UserID);
         int DeleteConsolidatedDraftBill(int? ID, string UserID);
-        IEnumerable<ConsolidatedDraftBillModel> SelectConsolidatedDraftBillList(int? ID);
-        IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? ID);
+        IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID);
+        IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? ID);
 
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID);
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateOnly? begin, DateOnly? end);
@@ -72,10 +72,11 @@ namespace ArmsServices.DataServices
                 };
             }
         }
-        public IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? ID)
+        public IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "PENDING"),
                new SqlParameter("@ProformaInvoiceID", ID)
             };
             
@@ -124,10 +125,11 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<ConsolidatedDraftBillModel> SelectConsolidatedDraftBillList(int? ID)
+        public IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "PENDING"),
                new SqlParameter("@DraftBillID", ID)
             };
 
@@ -351,9 +353,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ProformaInvoiceID", model.ProformaInvoiceID),
                new SqlParameter("@DraftBillID", model.DraftBillID),
                new SqlParameter("@OrderID", model.OrderID),
-               new SqlParameter("@PartyBranchCoa", model.PartyBranchCoa),
+               new SqlParameter("@PartyBranchCoaID", model.PartyBranchCoa),
                new SqlParameter("@TariffTypeID", model.TariffTypeID),
-               new SqlParameter("@TariffTypeCoa", model.TariffTypeCoa),
+               new SqlParameter("@TariffTypeCoaID", model.TariffTypeCoa),
                new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),

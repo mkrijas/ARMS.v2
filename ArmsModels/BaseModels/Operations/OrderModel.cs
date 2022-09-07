@@ -20,6 +20,7 @@ namespace ArmsModels.BaseModels
         public int? ClientID { get; set; }        
         [Required]
         public short? ContentID { get; set; } 
+        public string? GstNo { get; set; }
         public int? ConsignorID { get; set; } 
         [Required]
         public decimal? OrderQuantity { get; set; } 
