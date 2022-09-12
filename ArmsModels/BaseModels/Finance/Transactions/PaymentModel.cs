@@ -23,7 +23,19 @@ namespace ArmsModels.BaseModels
         public int? BillTransactionID { get; set; }
         public PartyBranchModel PartyBranchInfo { get; set; }
         public decimal? InitialAmount { get; set; }
-        public decimal? OutstandingAmount { get; set; }
+        private decimal? _amount;
+        public decimal? OutstandingAmount {
+            get { return _amount; }
+            set
+            {
+                _amount = value;
+                if (value > 0)
+                    DrCr = "Dr";
+                else
+                    DrCr = "Cr";
+            } 
+        }
+        public string DrCr { get; private set; }
         public string DocNumber { get; set; }
         public virtual string BranchName { get; set; }
         public DateTime? DocDate { get; set; }
