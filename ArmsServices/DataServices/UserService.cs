@@ -389,7 +389,8 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@UserID", model.User.UserID),
                new SqlParameter("@BranchID", model.Branch.BranchID),
-            };
+                new SqlParameter("@DeletedBy", UserID),
+            }; 
             return Iservice.ExecuteNonQuery("[usp.user.BranchRole.Delete]", parameters);
         }
         public IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID)
