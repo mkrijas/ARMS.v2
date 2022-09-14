@@ -15,10 +15,10 @@ namespace ArmsServices.DataServices
         int Delete(int? ID, string UserID);
         IEnumerable<ReceiptModel> Select(int? BranchID);
         IEnumerable<ReceiptModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID);
-        IEnumerable<ReceiptModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);        
+        IEnumerable<ReceiptModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);
         IEnumerable<BillsReceiptModel> GetBills(int? ReceiptID);
         int Approve(int? PID, string UserID);
-        int Reverse(int? PID, string UserID);        
+        int Reverse(int? PID, string UserID);
         //IEnumerable<PaymentEntryModel> GetPaymentEntries(int? PfID);
     }
 
@@ -38,7 +38,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Status", 1)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Receipt.Approve]", parameters);
-        }      
+        }
 
         public int Delete(int? ID, string UserID)
         {
@@ -73,7 +73,7 @@ namespace ArmsServices.DataServices
                     ReceiptAmount = dr.GetDecimal("PayAmount"),
                 };
             }
-        }      
+        }
 
         public int Reverse(int? PID, string UserID)
         {
@@ -99,7 +99,7 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-              
+
         public ReceiptModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -151,10 +151,20 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ReceiptID", model.ReceiptID),               
+               new SqlParameter("@ReceiptID", model.ReceiptID),
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@DocDate", model.DocumentDate),
+               new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),
+               new SqlParameter("@PartyBranchCoa", model.PartyBranchCoa),
+               new SqlParameter("@ReceiptType", model.ReceiptType),
+               new SqlParameter("@ReceiptMode", model.ReceiptMode),
+               new SqlParameter("@ReceiptTool", model.ReceiptTool),
+               new SqlParameter("@ReceiptCoa", model.ReceiptCoa),
+               new SqlParameter("@Referece", model.Reference),
+               new SqlParameter("@IsRealized", model.IsRealized),
+               new SqlParameter("@EffectiveDate", model.EffectiveDate),
+               new SqlParameter("@RecordStatus", model.UserInfo.RecordStatus),
+               new SqlParameter("@TimeStamp", model.UserInfo.TimeStampField),
                new SqlParameter("@Bills", model.Bills.ToDataTable()),
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
@@ -173,9 +183,9 @@ namespace ArmsServices.DataServices
         {
             return new ReceiptModel
             {
-                ReceiptID = dr.GetInt32("ReceiptID"),                 
+                ReceiptID = dr.GetInt32("ReceiptID"),
                 ReceiptType = dr.GetString("ReceiptType"),
-                BranchID = dr.GetInt32("BranchID"),                
+                BranchID = dr.GetInt32("BranchID"),
                 ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
                 {
                     RecordStatus = dr.GetByte("ApprovedStatus"),
@@ -202,7 +212,7 @@ namespace ArmsServices.DataServices
                     {
                         PartyID = dr.GetInt32("PartyID"),
                         PartyName = dr.GetString("PartyName")
-                    },                    
+                    },
                 },
                 PartyBranchCoa = dr.GetInt32("PartyBranchCoa"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
