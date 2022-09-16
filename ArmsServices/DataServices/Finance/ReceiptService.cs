@@ -153,7 +153,8 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ReceiptID", model.ReceiptID),               
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@DocDate", model.DocumentDate),
+               new SqlParameter("@ReceiptTyp", model.ReceiptType),
+               new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),
                new SqlParameter("@Bills", model.Bills.ToDataTable()),
                new SqlParameter("@CostCenter", model.CostCenter),

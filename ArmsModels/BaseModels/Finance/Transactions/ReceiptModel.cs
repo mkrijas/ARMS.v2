@@ -15,15 +15,16 @@ namespace ArmsModels.BaseModels
         public string ReceiptType { get; set; } // Advance/Deposit/Settlement        
         public string ReceiptMode { get; set; } // Cash/Bank
         public string ReceiptTool { get; set; } // (Cheque/NEFT)
-        public int? ReceiptCoa { get; set; }
+        public int? ReceiptCoa { get; set; }//ac cash ac
         public string Reference { get; set; }
         public DateTime? EffectiveDate { get; set; }        
-        public bool IsRealized { get; set; }
+        public bool IsRealized { get; set; }//if check default false 
         public List<BillsReceiptModel> Bills { get; set; }
     }
 
     public class BillsReceiptModel
     {
+        //outstading bills tick 
         public int? BrID { get; set; }
         public int? BoID { get; set; }
         public decimal? ReceiptAmount { get; set; }
