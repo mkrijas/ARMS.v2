@@ -38,8 +38,9 @@ namespace Views
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
-            services.AddServerSideBlazor();            
-            
+            services.AddServerSideBlazor();
+            services.AddControllers().AddNewtonsoftJson();
+
             services.AddControllersWithViews();
             //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
             
@@ -50,6 +51,7 @@ namespace Views
             services.AddMudServices();
             services.AddBlazorContextMenu();
             services.AddBlazoredSessionStorage();
+
 
 
             services.AddAuthorization(config =>
@@ -147,6 +149,8 @@ namespace Views
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+
+            Bold.Licensing.BoldLicenseProvider.RegisterLicense("3dCp7+oJtX7zsgfLjIsYA5SWO7YOnWSUifyS6cJrKcw=");
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -185,6 +189,7 @@ namespace Views
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapControllers();
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
             });

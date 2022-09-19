@@ -9,7 +9,7 @@ namespace ArmsModels.BaseModels
 {
     public class ReceiptModel : TransactionBaseModel
     {
-        public int? ReceiptID { get; set; }        
+        public int? ReceiptID { get; set; }
         public PartyBranchModel PartyBranchInfo { get; set; }
         public int? PartyBranchCoa { get; set; }
         public string ReceiptType { get; set; } // Advance/Deposit/Settlement        
@@ -17,9 +17,10 @@ namespace ArmsModels.BaseModels
         public string ReceiptTool { get; set; } // (Cheque/NEFT)
         public int? ReceiptCoa { get; set; }//ac cash ac
         public string Reference { get; set; }
-        public DateTime? EffectiveDate { get; set; }        
-        public bool IsRealized { get; set; }//if check default false 
+        public DateTime? EffectiveDate { get; set; }
+        public bool IsRealized { get; set; }
         public List<BillsReceiptModel> Bills { get; set; }
+
     }
 
     public class BillsReceiptModel
