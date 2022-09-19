@@ -38,6 +38,7 @@ namespace ArmsModels.BaseModels
         public string DrCr { get; private set; }
         public string DocNumber { get; set; }
         public virtual string BranchName { get; set; }
+        public virtual int? BranchID { get; set; }
         public DateTime? DocDate { get; set; }
         public string InvoiceNumber { get; set; }
         public DateTime? InvoiceDate { get; set; }

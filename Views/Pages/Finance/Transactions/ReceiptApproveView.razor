@@ -1,0 +1,327 @@
+﻿@page "/ReceiptApproveView"
+@inject IReceiptService Iservice
+@inject IOutstandingBillsService OutstandingIservice
+@inject ICostCenterService costIservice
+@inject IDimensionService dimensionIservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+ <MudGrid Spacing="4">
+   <MudItem xs="12">
+       
+        <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
+           
+
+            
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
+               <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
+                
+                
+                <MudTh>Actions</MudTh> 
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
+                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
+                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
+                
+                   <MudTd DataLabel="">
+
+                    <MudFab @onclick="@(()=> View(context))" Color="Color.Primary" title="View" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                  
+                    @if(@context.ApprovedInfo.RecordStatus!=3 && @context.ApprovedInfo.RecordStatus!=1)
+                    {
+                      <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" title="Approve" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                     <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Reverse(context))" Color="Color.Error" title="Reverse" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />
+                        
+                    }
+              
+                    </MudTd>
+                 
+           
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+           <MudItem xs="12"md="9"> </MudItem><MudItem xs="12"md="3">
+               
+        </MudItem>
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+
+
+
+     <br />
+     <MudPaper Class="@value" >
+    <MudContainer>
+    <MudGrid   >
+    
+        
+            <MudItem  xs="12" md="12">
+                <PartyBranchSelect @bind-Value="pmodel.PartyBranchInfo"></PartyBranchSelect>
+
+               </MudItem>
+               
+                
+                
+
+   
+   
+  
+
+    </MudGrid> 
+    </MudContainer>
+    </MudPaper>
+ <br />
+
+  <MudPaper >
+    <MudContainer>
+    <MudGrid   >
+        <MudItem xs="12"   >
+          <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+
+
+                            <thead>
+                                <tr>
+
+                              
+                                  
+                                   
+                                     <th>Invoice info</th>
+                                      <th>Accounting Info</th>
+                                       <th>Branch</th>
+                                    <th>ReceiptAmount</th>
+                                  
+                                    
+                                     
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in pmodel.Bills)
+                                {
+                                    <tr>
+                                       
+                                   
+                                     
+                                        <td>@item.InvoiceNumber - @item.InvoiceDate?.ToShortDateString()</td>
+                                        <td>@item.DocNumber - @item.DocDate?.ToShortDateString()</td>
+                                       <td>@item.BranchName</td>
+                                        <td> <MudTextField T="decimal?" @bind-Value="item.ReceiptAmount"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
+                                       
+                                       
+                                        
+                                        
+                                    </tr>
+                                }
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td >Total:@pmodel.TotalAmount</td>
+                                </tr>
+                                 
+                               
+                            </tbody>
+                        </MudSimpleTable>
+    </MudItem>
+   
+         <MudItem xs="12"md="3">
+               <MudSelect Label="Select ReceiptType" @bind-Value="pmodel.ReceiptType" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                             <MudSelectItem Value="@("Advance")" />
+                             <MudSelectItem Value="@("Deposit")" />
+                              <MudSelectItem Value="@("Settlement")" />
+                        </MudSelect>
+         </MudItem>
+          <MudItem xs="12"md="3">
+               <MudSelect Label="Select ReceiptMode" @bind-Value="pmodel.ReceiptMode" TextChanged="ReceiptModeChange" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                             <MudSelectItem Value="@("Cash")" />
+                             <MudSelectItem Value="@("Bank")" />
+                            
+                        </MudSelect>
+         </MudItem>
+           <MudItem xs="12"md="3">
+               <MudSelect Label="Select ReceiptTool" ReadOnly="@readvalue" TextChanged="ReceiptToolChange" @bind-Valu="pmodel.ReceiptTool"  T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                             <MudSelectItem Value="@("Cheque")" />
+                             <MudSelectItem Value="@("NEFT")" />
+                            
+                        </MudSelect>
+         </MudItem>
+       <MudItem xs="12"md="3">
+   
+      <MudDatePicker Label="Effective Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="pmodel.EffectiveDate" DateFormat="dd/MM/yyyy" />
+
+
+    </MudItem>
+      <MudItem xs="12"md="12">
+
+           <MudTextField @bind-Value="pmodel.Reference"  Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => pmodel.Reference)"></MudTextField>
+
+      </MudItem>
+    <MudItem xs="12"md="3">
+   
+      <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="pmodel.DocumentDate" DateFormat="dd/MM/yyyy" />
+
+
+    </MudItem>
+    <MudItem xs="12"md="3">
+   
+       <MudSelect Label="Select CostCenter" @bind-Value="pmodel.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in costCenter)
+                            {
+                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
+                            }
+                        </MudSelect>
+
+    </MudItem>
+    <MudItem xs="12"md="3">
+   
+     <MudSelect Label="Select Dimension" @bind-Value="pmodel.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
+                            @foreach (var ditem in dimension)
+                            {
+                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                            }
+                        </MudSelect>
+
+    </MudItem>
+     <MudItem xs="12"md="3">
+         <MudCheckBox @bind-Checked="pmodel.IsRealized" ReadOnly="@checkread" Label="IsRealized" @bind-Value="model.IsRealized" Color="Color.Primary"></MudCheckBox>
+     </MudItem>
+     <MudItem xs="12"md="12">
+           <MudTextField @bind-Value="pmodel.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => pmodel.Narration)"></MudTextField>
+
+     </MudItem>
+
+
+    <MudItem xs="12"md="10"> </MudItem><MudItem xs="12"md="2">
+        @if(@status=="Edit")
+        {
+     <MudButton @onclick="Update" Variant="Variant.Filled"  Color="Color.Primary" >Submit</MudButton>
+        }
+        </MudItem>
+
+  </MudGrid></MudContainer></MudPaper>
+@code {
+
+    private ReceiptModel model = new ReceiptModel();
+    private List<ReceiptModel> collection = new List<ReceiptModel>();
+    public string value="invisible";
+    public string status=null;
+    ReceiptModel pmodel=new();
+    public bool readvalue = true;
+    public bool checkread = false;
+    private List<CostCenterModel> costCenter = new();
+    private List<DimensionModel> dimension = new();
+   
+
+    protected override async Task OnInitializedAsync()
+    {
+        costCenter = costIservice.Select().ToList();
+        dimension = dimensionIservice.Select().ToList();
+        GetReceiptBill();
+    }
+
+
+    public async Task GetReceiptBill()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = Iservice.Select(brancID).ToList();
+    }
+    public void Edit(ReceiptModel pim)
+    {
+        value = "visible";
+        status = "Edit";
+        pmodel = pim;
+        pmodel.Bills = Iservice.GetBills(pim.ReceiptID).ToList();
+         if(pmodel.ReceiptMode=="Cash")
+        {
+            readvalue = false;
+        }
+        else
+        {
+            readvalue = true;
+        }
+    }
+    public void View(ReceiptModel pim)
+    {
+        value = "visible";
+        status = "View";
+        pmodel = pim;
+        pmodel.Bills = Iservice.GetBills(pim.ReceiptID).ToList();
+         if(pmodel.ReceiptMode=="Cash")
+        {
+            readvalue = false;
+        }
+        else
+        {
+            readvalue = true;
+        }
+    }
+    public  void Reverse(ReceiptModel pim)
+    {   
+        value = "invisible";
+        status = "Reverse";
+        pmodel = pim;
+        if(pmodel.ReceiptMode=="Cash")
+        {
+            readvalue = false;
+        }
+        else
+        {
+            readvalue = true;
+        }
+        pmodel.Bills = Iservice.GetBills(pim.ReceiptID).ToList();
+        Iservice.Reverse(pim.ReceiptID, "Rijas");
+        snackbar.Add("Update Successfully", Severity.Success);
+        GetReceiptBill();
+    }
+    public void ReceiptModeChange()
+    {
+        if(pmodel.ReceiptMode=="Cash")
+        {
+            readvalue = false;
+        }
+        else
+        {
+            readvalue = true;
+        }
+    }
+    public  void Approve(ReceiptModel pim)
+    {   
+        value = "invisible";
+        status = "Approve";
+        pmodel = pim;
+        pmodel.Bills = Iservice.GetBills(pim.ReceiptID).ToList();
+        Iservice.Approve(pim.ReceiptID, "Rijas");
+        snackbar.Add("Update Successfully", Severity.Success);
+        GetReceiptBill();
+    }
+    public async Task Update()
+    {   
+        Iservice.Update(pmodel);
+        snackbar.Add("Saved Successfully", Severity.Success);
+       
+
+    }
+    public void ReceiptToolChange()
+    {
+        if (pmodel.ReceiptTool == "Cheque")
+        {
+            checkread = true;
+        }
+        else
+        {
+
+            pmodel.IsRealized = false;
+            checkread = false;
+        }
+    }
+}
