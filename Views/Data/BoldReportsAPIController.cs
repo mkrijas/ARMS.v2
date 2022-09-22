@@ -35,10 +35,17 @@ namespace BlazorReportingTools.Data
         [NonAction]
         public void OnInitReportOptions(ReportViewerOptions reportOption)
         {
-            reportOption.ReportModel.ReportServerUrl = @"http://192.168.10.25:4456/Reports_SSRS";            
+            reportOption.ReportModel.ReportServerUrl = @"http://10.200.50.39:80/ReportServer";            
             reportOption.ReportModel.ProcessingMode = ProcessingMode.Remote;
-            reportOption.ReportModel.ReportServerCredential = new System.Net.NetworkCredential("MSSQLSERVER/Administrator", "A2teamthai");
+            reportOption.ReportModel.ReportServerCredential = new System.Net.NetworkCredential("TEAMTHAI\\RIJASMK", "Ri*tt012");
             
+            //BoldReports.Web.DataSourceCredentials dc1 = new BoldReports.Web.DataSourceCredentials("MyDB", "TEAMTHAI\\RIJASMK", "Ri*tt012");
+
+            //reportOption.ReportModel.DataSourceCredentials = new List<BoldReports.Web.DataSourceCredentials>()
+            //{
+            //    dc1
+            //};
+
             string basePath = _hostingEnvironment.WebRootPath;
             // Here, we have loaded the sales-order-detail.rdl report from the application folder wwwroot\Resources. sales-order-detail.rdl should be in the wwwroot\Resources application folder.
             //System.IO.FileStream inputStream = new System.IO.FileStream(basePath + @"\resources\" + reportOption.ReportModel.ReportPath + ".rdl", System.IO.FileMode.Open, System.IO.FileAccess.Read);
