@@ -1,0 +1,275 @@
+﻿@page "/Receipt"
+@inject IReceiptService Iservice
+@inject IOutstandingBillsService OutstandingIservice
+@inject ICostCenterService costIservice
+@inject IDimensionService dimensionIservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+
+
+<MudLink Href="ReceiptApproveView" Underline="Underline.Always">Receipt Approve</MudLink>
+
+<hr />
+<MudPaper>
+    <MudContainer>
+<MudGrid Spacing="4">
+  
+            <MudItem  xs="12" md="10">
+                <PartyBranchSelect @bind-Value="model.PartyBranchInfo"></PartyBranchSelect>
+
+               </MudItem>
+               
+                 <MudItem  xs="12" md="2">
+                        <MudButton @onclick="OpenOtstandingBills" Variant="Variant.Filled" Color="Color.Primary" >Search</MudButton>
+                 </MudItem>
+                
+
+   
+   
+  
+
+    </MudGrid> 
+    </MudContainer>
+    </MudPaper>
+ <br />
+
+  <MudPaper Class="@value" >
+    <MudContainer>
+    <MudGrid   >
+        <MudItem xs="12"   >
+          <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+
+
+                            <thead>
+                                <tr>
+
+                              
+                                  
+                                   
+                                     <th>Invoice info</th>
+                                      <th>Accounting Info</th>
+                                       <th>Branch</th>
+                                    <th>ReceiptAmount</th>
+                                  
+                                    
+                                     
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in billsReceipt)
+                                {
+                                    <tr>
+                                       
+                                   
+                                     
+                                        <td>@item.InvoiceNumber - @item.InvoiceDate?.ToShortDateString()</td>
+                                        <td>@item.DocNumber - @item.DocDate?.ToShortDateString()</td>
+                                       <td>@item.BranchName</td>
+                                        <td> <MudTextField T="decimal?" @bind-Value="item.ReceiptAmount" TextChanged="calcTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
+                                       
+                                       
+                                        
+                                        
+                                    </tr>
+                                }
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td >Total:@model.TotalAmount</td>
+                                </tr>
+                                 
+                               
+                            </tbody>
+                        </MudSimpleTable>
+    </MudItem>
+   
+         <MudItem xs="12"md="3">
+               <MudSelect Label="Select ReceiptType" @bind-Value="model.ReceiptType" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                             <MudSelectItem Value="@("Advance")" />
+                             <MudSelectItem Value="@("Deposit")" />
+                              <MudSelectItem Value="@("Settlement")" />
+                        </MudSelect>
+         </MudItem>
+          <MudItem xs="12"md="3">
+               <MudSelect Label="Select ReceiptMode" @bind-Value="model.ReceiptMode" TextChanged="ReceiptModeChange" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                             <MudSelectItem Value="@("Cash")" />
+                             <MudSelectItem Value="@("Bank")" />
+                            
+                        </MudSelect>
+         </MudItem>
+           <MudItem xs="12"md="3">
+               <MudSelect Label="Select ReceiptTool" ReadOnly="@readvalue" TextChanged="ReceiptToolChange" @bind-Valu="model.ReceiptTool"  T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                             <MudSelectItem Value="@("Cheque")" />
+                             <MudSelectItem Value="@("NEFT")" />
+                            
+                        </MudSelect>
+         </MudItem>
+       <MudItem xs="12"md="3">
+   
+      <MudDatePicker Label="Effective Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EffectiveDate" DateFormat="dd/MM/yyyy" />
+
+
+    </MudItem>
+      <MudItem xs="12"md="12">
+
+           <MudTextField @bind-Value="model.Reference"  Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+
+      </MudItem>
+    <MudItem xs="12"md="3">
+   
+      <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+
+
+    </MudItem>
+    <MudItem xs="12"md="3">
+   
+       <MudSelect Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in costCenter)
+                            {
+                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
+                            }
+                        </MudSelect>
+
+    </MudItem>
+    <MudItem xs="12"md="3">
+   
+     <MudSelect Label="Select Dimension" @bind-Value="model.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
+                            @foreach (var ditem in dimension)
+                            {
+                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                            }
+                        </MudSelect>
+
+    </MudItem>
+     <MudItem xs="12"md="3">
+         <MudCheckBox @bind-Checked="@Basic_CheckBox2" ReadOnly="@checkread" Label="IsRealized" @bind-Value="model.IsRealized" Color="Color.Primary"></MudCheckBox>
+     </MudItem>
+     <MudItem xs="12"md="12">
+           <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+
+     </MudItem>
+     
+     <MudButton @onclick="CreateReceipt" Variant="Variant.Filled" Color="Color.Primary" >Submit</MudButton>
+
+    </MudGrid>
+    </MudContainer>
+    </MudPaper>
+
+@code {
+    private ReceiptModel model = new ReceiptModel();
+    private List<OutstandingPaymentModel> collection = new List<OutstandingPaymentModel>();
+    public string value="invisible";
+    public bool readvalue = true;
+    public bool checkread = false;
+    public string status=null;
+    ProformaInvoiceModel pmodel=new();
+    public bool Basic_CheckBox2 { get; set; } = false;
+    private HashSet<OutstandingPaymentModel> selectedItems1= new HashSet<OutstandingPaymentModel>();
+    private List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
+    private List<BillsReceiptModel> billsReceipt = new List<BillsReceiptModel>();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private List<CostCenterModel> costCenter = new();
+    private List<DimensionModel> dimension = new();
+    protected override async Task OnInitializedAsync()
+    {
+        costCenter = costIservice.Select().ToList();
+        dimension = dimensionIservice.Select().ToList();
+        // GetOutstandingBill();
+    }
+    public void ReceiptToolChange()
+    {
+        if (model.ReceiptTool == "Cheque")
+        {
+            checkread = true;
+        }
+        else
+        {
+
+            Basic_CheckBox2 = false;
+            checkread = false;
+        }
+    }
+    private void calcTotalAmt()
+    {
+        model.TotalAmount = 0;
+        foreach (var item in billsReceipt)
+        {
+            model.TotalAmount = model.TotalAmount + item.ReceiptAmount;
+        }
+    }
+    public void ReceiptModeChange()
+    {
+        if(model.ReceiptMode=="Cash")
+        {
+            readvalue = false;
+        }
+        else
+        {
+            readvalue = true;
+        }
+    }
+
+    private async Task OpenOtstandingBills()
+    {
+        DialogParameters parms = new DialogParameters();
+        parms.Add("PartyID",model.PartyBranchInfo.PartyID);
+        parms.Add("GstID",model.PartyBranchInfo.GstID);
+        var dialog =  DialogService.Show<OutstandingBillView>("Outstanding Bill",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {
+
+            SelectedItems = (List<OutstandingBillsModel>)result.Data;         
+            //  List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
+            //SelectedItems=result.Data;     
+            // GetAll();
+            if(SelectedItems!=null)
+            {
+                value = "visible";
+                foreach (var item in SelectedItems)
+                {
+                    BillsReceiptModel bpm = new BillsReceiptModel();
+                    bpm.BoID = item.BoID;
+                    bpm.BranchName = item.BranchName;
+                    bpm.DocDate = item.DocDate;
+                    bpm.BranchID = item.BranchID;
+                    bpm.DocNumber = item.DocNumber;
+                    bpm.InvoiceDate = item.InvoiceDate;
+                    bpm.InvoiceNumber = item.InvoiceNumber;
+                    bpm.ReceiptAmount = 0;
+                    billsReceipt.Add(bpm);
+                }
+
+            }
+
+
+        }
+
+    }
+
+
+    public async Task CreateReceipt()
+    {
+        model.ReceiptCoa = 1;//define pending
+        
+        model.Bills = billsReceipt;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        model.BranchID = brancID;
+        Iservice.Update(model);
+        snackbar.Add("Saved Successfully", Severity.Success);
+
+    }
+
+}

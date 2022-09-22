@@ -103,6 +103,7 @@ namespace ArmsServices.DataServices
                      DocDate = dr.GetDateTime("DocumentDate"),
                      DocNumber = dr.GetString("DocumentNumber"),
                      InitialAmount = dr.GetDecimal("InitialAmount"),
+                     
                      OutstandingAmount = dr.GetDecimal ("OutstandingAmount"),
                      BranchName = dr.GetString("BramnchName"),
                      PartyBranchInfo = new PartyBranchModel()
@@ -142,7 +143,7 @@ namespace ArmsServices.DataServices
                 DocDate = dr.GetDateTime("DocumentDate"),
                 DocNumber = dr.GetString("DocumentNumber"),
                 BranchName = dr.GetString("BranchName"),
-                 
+                BranchID= dr.GetInt32("BranchID"),
                 InvoiceDate = dr.GetDateTime("InvoiceDate"),                
                 InvoiceNumber = dr.GetString("InvoiceNumber"),               
                 PartyBranchInfo = new PartyBranchModel()
