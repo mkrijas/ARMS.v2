@@ -66,45 +66,6 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; }
     }
 
-    public class OperationTransactionModel
-    {
-        public OperationTransactionModel()
-        {
-            UserInfo = new();
-            Transactions = new();
-        }
-        public long? TransactionID { get; set; } 
-        [Required]
-        public string RefType { get; set; }
-        [Required]
-        public long? RefID { get; set; }
-        public DateTime? TransactionDate { get; set; }
-        public int? BranchID { get; set; }
-        public long? FinanceDocID { get; set; }
-        [ValidateComplexType]
-        public List<OpTranSubModel> Transactions { get; set; }
-        public UserInfoModel UserInfo { get; set; }
-    }
-
-
-    public class OpTranSubModel
-    {
-        public long? TransactionSubID { get; set; }
-        public long? TransactionID { get; set; }
-        [Required]
-        public short? TariffTypeID { get; set; }
-        public int? TariffID { get; set; }
-        [Required]
-        public DateTime? BillDate { get; set; }
-        public string Reference { get; set; }
-        public int? Sign { get; set; } = -1;
-        [Required]
-        [Range(1, double.MaxValue, ErrorMessage = "Please enter a value bigger than {1}")]
-        public decimal? Amount { get; set; }
-        public decimal? AmountAsPerNorms { get; set; }
-        public decimal? Quantity { get; set; }
-        public long? FinanceTranID { get; set; }
-        public virtual string Unit { get; set; }
-    }
+    
 
 }

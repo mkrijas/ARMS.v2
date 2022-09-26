@@ -17,7 +17,7 @@ namespace ArmsServices.DataServices
         IEnumerable<DrCrNoteModel> Select();
         IEnumerable<DrCrNoteModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<DrCrNoteModel> SelectByPeriod(DateTime? begin, DateTime? end);
-        IEnumerable<TaxPurchaseExpensesModel> GetExpenses(int? ID);
+        IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? ID);
         IEnumerable<TaxPurchaseItemModel> GetItems(int? ID);
         int Approve(int? ID, string UserID);
         int Reverse(int? ID, string UserID);
@@ -54,7 +54,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Delete]", parameters);
         }
 
-        public IEnumerable<TaxPurchaseExpensesModel> GetExpenses(int? ID)
+        public IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -64,7 +64,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.DrCrNote.Select]", parameters))
             {
-                yield return new TaxPurchaseExpensesModel()
+                yield return new TaxPurchaseExpenseModel()
                 {
                     Amount = dr.GetDecimal("Amount"),
                     CGST = dr.GetDecimal("CGST"),

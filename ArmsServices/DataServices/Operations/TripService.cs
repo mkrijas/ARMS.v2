@@ -19,6 +19,7 @@ namespace ArmsServices.DataServices
         int CloseTrip(long? TripID, int? BranchID,string UserID);
         bool IsClosed(long? TripID);
         bool IsSettled(long? TripID);
+        TripInfoModel GetTripInfo(long? TripID);
         IEnumerable<object> GetOutstandingBills(long? TripID);
     }
 
@@ -168,6 +169,11 @@ namespace ArmsServices.DataServices
                 model = GetModel(reader);
             }
             return model;
+        }
+
+        public TripInfoModel GetTripInfo(long? TripID)
+        {
+            throw new NotImplementedException();
         }
     }
 }
