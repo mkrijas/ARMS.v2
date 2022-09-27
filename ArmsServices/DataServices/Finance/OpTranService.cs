@@ -17,6 +17,9 @@ namespace ArmsServices.DataServices
         int Delete(long? ID, string UserID);
         IEnumerable<OpTranModel> SelectByTrip(long? TripID);        
         OpTranModel SelectByID(long? ID);
+        int Approve(int? ID, string UserID);
+        int Reverse(int? ID, string UserID);
+
     }
 
     public class OpTranService : IOpTranService
@@ -111,6 +114,27 @@ namespace ArmsServices.DataServices
                     Unit = dr.GetString("Unit")
                 }; 
             }
+        }
+
+        public int Approve(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Status", 1)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Approve]", parameters);
+        }
+        public int Reverse(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Status", 2)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Approve]", parameters);
         }
 
         private OpTranModel GetModel(IDataRecord dr)

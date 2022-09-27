@@ -34,6 +34,6 @@ namespace ArmsModels.BaseModels
         [Range(1, double.MaxValue, ErrorMessage = "Must have Non-Zero Value {1}")]
         public decimal? Amount { get; set; }        
         public decimal? Quantity { get; set; }        
-        public virtual string Unit { get; set; }
+        public string Unit { get; set; }
     }
 }
