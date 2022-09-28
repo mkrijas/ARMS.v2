@@ -96,12 +96,12 @@ namespace ArmsServices.DataServices
                     IGST = dr.GetDecimal("IGST"),
                     SGST = dr.GetDecimal("SGST"),
                     CoaID = dr.GetInt32("CoaID"),
-                    PID = dr.GetInt32("DrCrNoteID"),
+                    PID = dr.GetInt32("PID"),
                     TDS = dr.GetDecimal("TDS"),
                     BillReference = dr.GetString("BillReference"),
                     BranchID = dr.GetInt32("BranchID"),
                     UsageID = dr.GetString("UsageID"),
-                    TpeID = dr.GetInt64("DceID"),
+                    TpeID = dr.GetInt64("TpeID"),
                 };
             }
         }
@@ -126,9 +126,9 @@ namespace ArmsServices.DataServices
                     CoaID = dr.GetInt32("CoaID"),
                     ItemQty = dr.GetDecimal("ItemQty"),
                     ItemRate = dr.GetDecimal("ItemRate"),
-                    PID = dr.GetInt32("DrCrNoteID"),
+                    PID = dr.GetInt32("PID"),
                     TDS = dr.GetDecimal("TDS"),
-                    TpiID = dr.GetInt64("DciID"),
+                    TpiID = dr.GetInt64("TpiID"),
                 };
             }
         }
