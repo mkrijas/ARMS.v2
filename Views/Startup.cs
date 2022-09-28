@@ -88,7 +88,7 @@ namespace Views
             services.AddScoped<IPartyBranchService, PartyBranchService>();
             services.AddScoped<IPartyService, PartyService>();
             
-            services.AddScoped<ITransactionService, TransactionService>();
+            services.AddScoped<IOpTranService, OpTranService>();
             services.AddScoped<ITruckDocumentService, TruckDocumentService>();
          
 
