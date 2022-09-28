@@ -19,8 +19,10 @@ namespace ArmsServices.DataServices
         IEnumerable<DrCrNoteModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? ID);
         IEnumerable<TaxPurchaseItemModel> GetItems(int? ID);
+        IEnumerable<BillInfoModel> GetBillInfo(int? BranchID,string DrCrType,int? PartyBranchID,string  DocumentNumberSearchKey);
         int Approve(int? ID, string UserID);
         int Reverse(int? ID, string UserID);
+
     }
 
     public class DrCrNoteService : IDrCrNoteService
@@ -52,6 +54,29 @@ namespace ArmsServices.DataServices
 
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Delete]", parameters);
+        }
+
+        public IEnumerable<BillInfoModel> GetBillInfo(int? BranchID,string DrCrType, int? PartyBranchID, string DocumentNumberSearchKey)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "GetBillInfo"),
+               new SqlParameter("@PartyBranchID", PartyBranchID),
+               new SqlParameter("@DrCrType", DrCrType),
+               new SqlParameter("@DocumentNumberSearchKey", DocumentNumberSearchKey),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BillInfo.Select]", parameters))
+            {
+                yield return new BillInfoModel()
+                {
+                    TotalAmount = dr.GetDecimal("TotalAmount"),                 
+                    BillID = dr.GetInt32("ID"),                  
+                    DocumentNumber = dr.GetString("DocumentNumber"),
+                    DocumentDate = dr.GetDateTime("DocumentDate")
+                };
+            }
         }
 
         public IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? ID)
