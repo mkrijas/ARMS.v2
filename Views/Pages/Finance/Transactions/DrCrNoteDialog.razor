@@ -29,7 +29,7 @@
                 <PartyBranchSelect @bind-Value="model.PartyBranch"></PartyBranchSelect>
 
                </MudItem>
-               <MudItem  xs="12" md="8">
+               <MudItem  xs="12" md="2">
        <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Fetch</MudButton>
 
                </MudItem>
@@ -263,13 +263,13 @@
                         </MudSimpleTable>
                     </MudItem>
                          
-    <MudItem xs="12"md="4">
+    <MudItem xs="12"md="3">
    
       <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
 
 
     </MudItem>
-    <MudItem xs="12"md="4">
+    <MudItem xs="12"md="3">
    
        <MudSelect Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in costCenter)
@@ -279,7 +279,7 @@
                         </MudSelect>
 
     </MudItem>
-    <MudItem xs="12"md="4">
+    <MudItem xs="12"md="3">
    
      <MudSelect Label="Select Dimension" @bind-Value="model.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
                             @foreach (var ditem in dimension)
@@ -287,6 +287,10 @@
                                 <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
                             }
                         </MudSelect>
+
+    </MudItem>
+    <MudItem xs="12"md="3">
+     <MudTextField @bind-Value="model.TotalAmount" ReadOnly="true" Label="TotalAmount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
 
     </MudItem>
      <MudItem xs="12"md="12">
@@ -298,7 +302,7 @@
            
      </MudItem>
      <MudItem xs="12"md="2">
-          <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+          <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" OnClick="Submit">Submit</MudButton>
            
      </MudItem>
 
@@ -314,42 +318,32 @@
     private DrCrNoteModel model = new DrCrNoteModel();
     public string drCrType { get; set; } = "Credit";
     private List<InventoryItemModel> itm = new();
-    private List<TaxPurchaseExpensesModel> txexpenses = new();
-    private List<TaxPurchaseExpensesModel> txexpensesList = new();
+    private List<TaxPurchaseExpenseModel> txexpenses = new();
+    private List<TaxPurchaseExpenseModel> txexpensesList = new();
     public InventoryItemModel SelectedPurchaseItems = new();
     private List<TaxPurchaseItemModel> txitemlist = new();
-    private TaxPurchaseExpensesModel txexpense=new TaxPurchaseExpensesModel();
+    private TaxPurchaseExpenseModel txexpense=new TaxPurchaseExpenseModel();
     private TaxPurchaseItemModel TaxItemModel = new TaxPurchaseItemModel();
     public GstUsageIDModel SelectedItems = new();
     private List<TaxPurchaseItemModel> txitems = new();
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
     private List<GstUsageIDModel> usageID = new();
+    private List<BillInfoModel> Bill = new List<BillInfoModel>();
+
     int brancID;
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+
     protected override async Task OnInitializedAsync()
     {
-        model.OriginalTransactionID = 3;
-        //model.OriginalTranDocDate = "2022 - 07 - 15";
-        model.OriginalTranDocNumber = "PUR/4/2206/1";
+
         //  model.Particulars=TaxIservice.GetExpenses(model.OriginalTransactionID).ToList();
-        txitems=TaxIservice.GetItems(model.OriginalTransactionID).ToList();
-
-
-        txexpensesList=TaxIservice.GetExpenses(model.OriginalTransactionID).ToList();
-        foreach (var item in txexpensesList)
-        {
-
-            GstUsageIDModel gstUsage=new GstUsageIDModel();
-            gstUsage.UsageID = item.UsageID;
-            gstUsage.AccountID = item.CoaID;
-
-            usageID.Add(gstUsage);
-
-        }
+        model.TotalAmount = 0;
 
         //model.Items=TaxIservice.GetItems(model.OriginalTransactionID).ToList();
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
+        usageID = usageIservice.Select(DateTime.Now).ToList();
         itm = itemIservice.SearchByDescription(string.Empty).ToList();
     }
 
@@ -462,7 +456,7 @@
 
     public void AddItems()
     {
-        TaxPurchaseExpensesModel ientry = new();
+        TaxPurchaseExpenseModel ientry = new();
         ientry.BranchID = brancID;
         ientry.UsageID = txexpense.UsageID;
         ientry.CoaID = txexpense.CoaID;
@@ -617,13 +611,16 @@
         TaxItemModel = new();
         // itm = new();
     }
-    private async Task OnValidSubmit(EditContext context)
+    private async Task Submit()
     {
         model.Particulars=txexpenses;  
-        model.Items=txitemlist;  
+        model.Items=txitemlist;
+        model.DrCrType = drCrType;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
+
         model.UserInfo.UserID = user.Identity.Name;
+        model.BranchID = brancID;
         try
         {
 
@@ -639,39 +636,33 @@
         }
 
     }
-    public void fetch()
+    public async Task fetch()
     {
         DialogParameters parms = new DialogParameters();
-        parms.Add("PartyID",model.PartyBranchInfo.PartyID);
-        parms.Add("GstID",model.PartyBranchInfo.GstID);
-        var dialog =  DialogService.Show<OutstandingBillView>("Outstanding Bill",parms,maxWidth);
+        parms.Add("PartyID",model.PartyBranch.GstID);
+        parms.Add("CrDrType",drCrType);
+        var dialog =  DialogService.Show<DrCrBillInfo>("BillInfo",parms,maxWidth);
         var result = await dialog.Result;
 
         if(!result.Cancelled)
         {
 
-            //SelectedItems = (List<OutstandingBillsModel>)result.Data;         
-            ////  List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
-            ////SelectedItems=result.Data;     
+            Bill = (List<BillInfoModel>)result.Data;
+            int m = 0;
+            //  List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
+            //SelectedItems=result.Data;     
             //// GetAll();
-            //if(SelectedItems!=null)
-            //{
-            //    value = "visible";
-            //    foreach (var item in SelectedItems)
-            //    {
-            //        BillsReceiptModel bpm = new BillsReceiptModel();
-            //        bpm.BoID = item.BoID;
-            //        bpm.BranchName = item.BranchName;
-            //        bpm.DocDate = item.DocDate;
-            //        bpm.BranchID = item.BranchID;
-            //        bpm.DocNumber = item.DocNumber;
-            //        bpm.InvoiceDate = item.InvoiceDate;
-            //        bpm.InvoiceNumber = item.InvoiceNumber;
-            //        bpm.ReceiptAmount = 0;
-            //        billsReceipt.Add(bpm);
-            //    }
+            if(SelectedItems!=null)
+            {
+                // value = "visible";
+                foreach (var item in Bill)
+                {
+                    model.OriginalTranDocDate=item.DocumentDate;
+                    model.OriginalTransactionID=item.BillID;
+                    model.OriginalTranDocNumber = item.DocumentNumber;
+                }
 
-            //}
+            }
 
 
         }

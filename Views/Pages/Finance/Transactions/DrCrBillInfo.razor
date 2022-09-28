@@ -1,0 +1,109 @@
+﻿@inject IDrCrNoteService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudDialog>
+     <DialogContent>
+         <MudGrid Spacing="4">
+   <MudItem xs="12">
+        <MudTable Items="@collection" MultiSelection="true" @bind-SelectedItems="selectedItems1" Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
+           
+
+            
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<BillInfoModel, object>(x=> x.BillID)" InitialDirection="SortDirection.Ascending">BillID</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<BillInfoModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
+               <MudTh><MudTableSortLabel SortBy="new Func<BillInfoModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
+                 <MudTh><MudTableSortLabel SortBy="new Func<BillInfoModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
+              
+                
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="GrnNo">@context.BillID</MudTd>
+                <MudTd DataLabel="EntryDate">@context.DocumentNumber</MudTd>
+                <MudTd DataLabel="Party">@context.DocumentDate</MudTd>
+                  <MudTd DataLabel="Party">@context.TotalAmount</MudTd>
+                 
+                <MudTd DataLabel="">
+                  
+              
+                    </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+         </DialogContent>
+         <DialogActions>
+     
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        
+    </DialogActions>
+    </MudDialog>
+
+
+
+@code {
+    [Parameter]
+    public int PartyID { get; set; }
+    [Parameter]
+    public string CrDrType { get; set; }
+
+    private BillInfoModel model = new BillInfoModel();
+    private List<BillInfoModel> collection = new List<BillInfoModel>();
+    private List<BillInfoModel> selecteditem = new List<BillInfoModel>();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private HashSet<BillInfoModel> selectedItems1= new HashSet<BillInfoModel>();
+    protected override async Task OnInitializedAsync()
+    {
+
+        GetAll();
+        model = new();
+    }
+    private  async Task GetAll()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = new List<BillInfoModel>();
+        foreach (var item in Iservice.GetBillInfo(brancID,CrDrType,PartyID,string.Empty))
+        {
+            collection.Add(item);
+        }
+
+
+    }   
+    private void GetSelectedItem()
+    {
+        if (selectedItems1 != null)
+        {
+            string k = "0";
+        }
+
+        //string itm = string.Join(", ", selectedItems1.Select(x=>x.BoID))
+    //
+    }
+    private async Task OnValidSubmit(EditContext context)
+    {
+        //context = selectedItems1.FirstOrDefault();
+        MudDialog.Close();
+    }
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    private void selected()
+    {
+        selecteditem = selectedItems1.ToList();
+        MudDialog.Close(selecteditem);
+    
+    }
+}
