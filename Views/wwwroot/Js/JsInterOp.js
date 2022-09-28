@@ -1,9 +1,9 @@
 ﻿window.BoldReports = {
     RenderViewer: function (elementID, reportViewerOptions) {
         $("#" + elementID).boldReportViewer({
-            reportPath: reportViewerOptions.reportName,
-            reportServiceUrl: reportViewerOptions.serviceURL,
-            Parameters: reportViewerOptions.Parameters
+            reportPath: reportViewerOptions.reportPath,
+            reportServiceUrl: reportViewerOptions.serviceURL, 
+            parameters: reportViewerOptions.parameters
         });
     }
 }

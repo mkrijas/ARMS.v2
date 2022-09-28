@@ -21,12 +21,12 @@ namespace ArmsModels.BaseModels
         [Required]
         public bool NonStoreInventory { get; set; }
         [ValidateComplexType]
-        public List<TaxPurchaseExpensesModel> Expenses { get; set; } = new();
+        public List<TaxPurchaseExpenseModel> Expenses { get; set; } = new();
         [ValidateComplexType]
         public List<TaxPurchaseItemModel> Items { get; set; } = new();
     }    
 
-    public class TaxPurchaseExpensesModel
+    public class TaxPurchaseExpenseModel
     {
         public long? TpeID { get; set; }
         public int? PID { get; set; }

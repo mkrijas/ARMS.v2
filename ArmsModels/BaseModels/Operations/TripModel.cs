@@ -28,4 +28,16 @@ namespace ArmsModels.BaseModels
         public decimal? Fuel { get; set; }                
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
+
+
+    public class TripInfoModel
+    {
+        public long? TripID { get; set; }
+        public string TripNumber { get; set; }
+        public string Truck { get; set; }
+        public string Driver { get; set; }
+        public int? RunKM { get; set; }
+        public decimal? Fuel { get; set; }
+        public string Gcs { get; set; }
+    }
 }
