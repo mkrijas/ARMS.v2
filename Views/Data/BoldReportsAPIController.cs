@@ -35,7 +35,8 @@ namespace BlazorReportingTools.Data
         [NonAction]
         public void OnInitReportOptions(ReportViewerOptions reportOption)
         {
-
+            reportOption.ReportModel.EnableVirtualEvaluation = true;
+            reportOption.ReportModel.DisablePageSplitting = true;
             //reportOption.ReportModel.ReportServerUrl = "http://192.168.10.25:4456/Reports_SSRS"; 
             //reportOption.ReportModel.ReportServerCredential = new System.Net.NetworkCredential("MSSQLSERVER\\Administrator", "A2teamthai");
             //reportOption.ReportModel.ProcessingMode = ProcessingMode.Remote;
