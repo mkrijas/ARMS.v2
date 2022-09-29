@@ -20,7 +20,9 @@ namespace ArmsServices.DataServices
         bool IsClosed(long? TripID);
         bool IsSettled(long? TripID);
         TripInfoModel GetTripInfo(long? TripID);
+        IEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString);
         IEnumerable<object> GetOutstandingBills(long? TripID);
+
     }
 
     public class TripService : ITripService
@@ -171,9 +173,45 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+
         public TripInfoModel GetTripInfo(long? TripID)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripID", TripID),
+               new SqlParameter("@Operation", "GetTripInfo"),
+            };
+
+            TripInfoModel model = null;
+            foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
+            {
+                model = new TripInfoModel()
+                {
+                    Driver = reader.GetString("Driver"),
+                    Fuel = reader.GetDecimal("Fuel"),
+                    RunKM = reader.GetInt32("RunKm"),
+                    TripID = TripID,
+                    TripNumber = reader.GetString("TripNumber"),
+                    Truck = reader.GetString("Truck"),
+                    Gcs = reader.GetString("Gcs"),
+                };
+            }
+            return model;
+        }
+
+        public IEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripNumber", TripNumberSearchString),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@Operation", "SearchTrip"),
+            };           
+            foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
+            {
+                yield return GetModel(reader);
+            }            
         }
     }
 }
