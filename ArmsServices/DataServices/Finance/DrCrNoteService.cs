@@ -19,8 +19,10 @@ namespace ArmsServices.DataServices
         IEnumerable<DrCrNoteModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? ID);
         IEnumerable<TaxPurchaseItemModel> GetItems(int? ID);
+        IEnumerable<BillInfoModel> GetBillInfo(int? BranchID,string DrCrType,int? PartyBranchID,string  DocumentNumberSearchKey);
         int Approve(int? ID, string UserID);
         int Reverse(int? ID, string UserID);
+
     }
 
     public class DrCrNoteService : IDrCrNoteService
@@ -54,6 +56,29 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Delete]", parameters);
         }
 
+        public IEnumerable<BillInfoModel> GetBillInfo(int? BranchID,string DrCrType, int? PartyBranchID, string DocumentNumberSearchKey)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "GetBillInfo"),
+               new SqlParameter("@PartyBranchID", PartyBranchID),
+               new SqlParameter("@DrCrType", DrCrType),
+               new SqlParameter("@DocumentNumberSearchKey", DocumentNumberSearchKey),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BillInfo.Select]", parameters))
+            {
+                yield return new BillInfoModel()
+                {
+                    TotalAmount = dr.GetDecimal("TotalAmount"),                 
+                    BillID = dr.GetInt32("ID"),                  
+                    DocumentNumber = dr.GetString("DocumentNumber"),
+                    DocumentDate = dr.GetDateTime("DocumentDate")
+                };
+            }
+        }
+
         public IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -71,12 +96,12 @@ namespace ArmsServices.DataServices
                     IGST = dr.GetDecimal("IGST"),
                     SGST = dr.GetDecimal("SGST"),
                     CoaID = dr.GetInt32("CoaID"),
-                    PID = dr.GetInt32("DrCrNoteID"),
+                    PID = dr.GetInt32("PID"),
                     TDS = dr.GetDecimal("TDS"),
                     BillReference = dr.GetString("BillReference"),
                     BranchID = dr.GetInt32("BranchID"),
                     UsageID = dr.GetString("UsageID"),
-                    TpeID = dr.GetInt64("DceID"),
+                    TpeID = dr.GetInt64("TpeID"),
                 };
             }
         }
@@ -101,9 +126,9 @@ namespace ArmsServices.DataServices
                     CoaID = dr.GetInt32("CoaID"),
                     ItemQty = dr.GetDecimal("ItemQty"),
                     ItemRate = dr.GetDecimal("ItemRate"),
-                    PID = dr.GetInt32("DrCrNoteID"),
+                    PID = dr.GetInt32("PID"),
                     TDS = dr.GetDecimal("TDS"),
-                    TpiID = dr.GetInt64("DciID"),
+                    TpiID = dr.GetInt64("TpiID"),
                 };
             }
         }

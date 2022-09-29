@@ -134,7 +134,8 @@ namespace Views
             services.AddScoped<IContraService, ContraService>();
             services.AddScoped<IFreightBillingService, FreightBillingService>();
             services.AddScoped<IReceiptService, ReceiptService>();
-
+            services.AddScoped<IDrCrNoteService, DrCrNoteService>();
+            
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
             services.AddScoped<IRoleService<RoleModel>, RoleStore>();

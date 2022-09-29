@@ -37,7 +37,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 1)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Receipt.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Reciept.Approve]", parameters);
         }
 
         public int Delete(int? ID, string UserID)
@@ -83,7 +83,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 2)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Receipt.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Reciept.Approve]", parameters);
         }
 
         public IEnumerable<ReceiptModel> Select(int? BranchID)

@@ -22,4 +22,13 @@ namespace ArmsModels.BaseModels
         public List<TaxPurchaseItemModel> Items { get; set; }
     }
 
+
+    public class BillInfoModel
+    {
+        public int? BillID { get; set; }
+        public string DocumentNumber { get; set; }
+        public DateTime? DocumentDate { get; set; }
+        public decimal? TotalAmount { get; set; }
+    }
+
 }
