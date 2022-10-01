@@ -1,29 +1,246 @@
 ﻿@page "/OprationNew"
 @inject IOpTranService Iservice
-
+@inject ITripService tripIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject ITdsRateService tdsIService
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
 
+<style>
+    .selected {
+        background-color: #1E88E5 !important;
+    }
+
+        .selected > td {
+            color: white !important;
+        }
+
+            .selected > td .mud-input {
+                color: white !important;
+            }
+</style>
+
 <MudPaper>
     <MudContainer>
 <MudGrid Spacing="4">
-    <MudItem  xs="12" md="8">
-                <PartyBranchSelect @bind-Value="model.PartyBranch"></PartyBranchSelect>
+    <MudItem  xs="12" md="5">
+              <TruckSelector   @bind-Value="SelectedTruck"  />
+  
+               </MudItem>
+                <MudItem  xs="12" md="5">
+                <MudTextField @bind-Value="tripnumber"  Label="Trip Number" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
 
                </MudItem>
                <MudItem  xs="12" md="2">
        <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Fetch</MudButton>
 
                </MudItem>
+
+               
+
    </MudGrid>
    </MudContainer>
    </MudPaper>
 
+    <MudPaper Class="@value" >
+    <MudContainer>
+    <MudGrid>
+          <MudItem  xs="12" md="12">
+
+
+                <MudTable Items="@collection" @ref="mudTable" RowClassFunc="@SelectedRowClassFunc" OnRowClick="@RowClickEvent" @bind-SelectedItem="selectedItem1" Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="tripModel" T="TripModel" >
+           
+
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">Trips</MudText>
+                
+               
+                <MudSpacer></MudSpacer>
+                 </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<TripModel, object>(x=> x.TripDate)" InitialDirection="SortDirection.Ascending">TripDate</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<TripModel, object>(x=> x.TripNumber)" InitialDirection="SortDirection.Ascending">TripNumber</MudTableSortLabel></MudTh>
+              
+                
+               
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="TripDate">@context.TripDate</MudTd>
+                <MudTd DataLabel="TripNumber">@context.TripNumber</MudTd>
+             
+                 
+                
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+
+
+              </MudItem>
+
+
+        </MudGrid>
+        </MudContainer>
+        </MudPaper>
+         <MudPaper Class="@valueTran" >
+    <MudContainer>
+    <MudGrid>
+         <MudItem  xs="12" md="12">
+             <h6>Transaction</h6>
+         </MudItem>
+         <MudItem  xs="12" md="12">
+             
+              <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+
+
+                            <thead>
+                              
+                                <tr>
+
+                                  @*  <th>Branch</th>*@
+                                    
+                                    <th>ExpenseID</th>
+                                    <th>Reference</th>
+                                    <th>Amount</th>
+                                    <th>Quantity</th>
+                                    <th>Unit</th>
+                                    
+                                      <th></th>
+                                       
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in subModels)
+                                {
+                                    <tr>
+                                       
+                                      
+                                        <td>@item.ExpenseID</td>
+                                        <td>@item.Reference</td>
+                                        <td>@item.Amount</td>
+                                        <td>@item.Quantity</td>
+                                        <td>@item.Unit</td>
+                                       
+                                        
+                                        <td>
+                                             @if (model.ApprovedInfo.RecordStatus != 3)
+                                            {
+                                                <MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                            }
+                                        </td>
+                                        
+                                    </tr>
+                                }
+                                
+                                  <tr>
+                                    
+                                        <td>
+                                            <MudAutocomplete T="InventoryItemModel" ValueChanged="getitemCode" Value="SelectedPurchaseItems" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Items" ResetValueOnEmptyText="true"
+                                                         SearchFunc="@SearchItems" ToStringFunc="@(e => e==null?string.Empty:e?.InventoryItemCode)"></MudAutocomplete>
+
+                                       
+                                        </td>
+                                         <td>
+                                            <MudTextField @bind-Value="opTranSubModel.Reference"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Reference)"></MudTextField>
+
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="opTranSubModel.Amount" TextChanged="taxRates" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Amount)"></MudTextField>
+
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="opTranSubModel.Quantity"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Quantity)"></MudTextField>
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="opTranSubModel.Unit" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Unit)"></MudTextField>
+
+                                        </td>
+                                         
+                                        <td>
+                                           
+                                            <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+
+                                        </td>
+                                    </tr>
+                               
+                            </tbody>
+                        </MudSimpleTable>
+
+
+             </MudItem>
+        </MudGrid>
+        </MudContainer>
+        </MudPaper>
 
 
 @code {
+    public TruckModel SelectedTruck { get; set; }
+    public OpTranModel model = new OpTranModel();
+    public string tripnumber;
+    private List<TripModel> collection = new List<TripModel>();
+    public string value="invisible";
+    public string valueTran="invisible";
+    private TripModel tripModel = new TripModel();
+    private TripModel selectedItem1 = null;
+    private int selectedRowNumber = -1;
+    private MudTable<TripModel> mudTable;
+    private List<OpTranSubModel> subModels = new List<OpTranSubModel>();
+    private OpTranSubModel opTranSubModel = new();
 
+    public async Task fetch()
+    {
+        if(tripnumber==null)
+        {
+            tripnumber = string.Empty;
+        }
+        int? tr = SelectedTruck.TruckID;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = new List<TripModel>();
+        foreach (var item in tripIservice.SearchTrips(SelectedTruck.TruckID,brancID,tripnumber))
+        {
+
+            collection.Add(item);
+        }
+        value = "visible";
+    }
+
+    private void RowClickEvent(TableRowClickEventArgs<TripModel> tableRowClickEventArgs)
+    {
+        // public long? TripID { get; set; }
+        //public string TripNumber { get; set; }
+        //public string Truck { get; set; }
+        //public string Driver { get; set; }
+        //public int? RunKM { get; set; }
+        //public decimal? Fuel { get; set; }
+        //public string Gcs { get; set; }
+        
+        model.TripInfo =tripIservice.GetTripInfo(selectedItem1.TripID);
+       
+        valueTran = "visibel";
+    }
+    private string SelectedRowClassFunc(TripModel tripModel, int rowNumber)
+    {
+        if (selectedRowNumber == rowNumber)
+        {
+            selectedRowNumber = -1;
+           
+            return string.Empty;
+        }
+        else if (mudTable.SelectedItem != null && mudTable.SelectedItem.Equals(tripModel))
+        {
+            selectedRowNumber = rowNumber;
+            
+            return "selected";
+        }
+        else
+        {
+            return string.Empty;
+        }
+         
+    }
 }
