@@ -36,4 +36,12 @@ namespace ArmsModels.BaseModels
         public decimal? Quantity { get; set; }        
         public string Unit { get; set; }
     }
+
+    public class OpExpenseModel
+    {
+        public int? ExpenseID { get; set; }
+        public string ExpenseTitle { get; set; }
+        public int? CoaID { get; set; }
+        public UserInfoModel UserInfo { get; set; }
+    }
 }
