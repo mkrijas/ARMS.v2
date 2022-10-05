@@ -26,4 +26,16 @@ namespace ArmsModels.BaseModels
         public string IfscCode { get; set; }      
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
+
+
+    public class OwnBankModel
+    {
+        public ChartOfAccountModel Coa { get; set; } = new ChartOfAccountModel();
+        public BankAccountModel BankAccountInfo { get; set; } = new BankAccountModel();
+        public AddressModel AddressInfo { get; set; } = new AddressModel();
+        public ContactModel ContactInfo { get; set; } = new ContactModel();
+        public int? BranchID { get; set; }
+    }
+
+
 }
