@@ -19,7 +19,9 @@ namespace ArmsServices.DataServices
         OpTranModel SelectByID(long? ID);
         int Approve(int? ID, string UserID);
         int Reverse(int? ID, string UserID);
-
+        IEnumerable<OpTranSubModel> GetExpenses(long? TransactionID);
+        IEnumerable<OpExpenseModel> GetOpExpenseHeads();
+        int UpdateExpenseHead(OpExpenseModel model);
     }
 
     public class OpTranService : IOpTranService
@@ -92,9 +94,30 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);                
             }            
         }
-       
 
-        private IEnumerable<OpTranSubModel> GetExpenses(long? TransactionID)
+        public IEnumerable<OpExpenseModel> GetOpExpenseHeads()
+        {
+           
+            foreach (var dr in Iservice.GetDataReader("[usp.Operation.ExpenseMapping.Select]", null))
+            {
+                yield return new OpExpenseModel()
+                {
+                   ExpenseID = dr.GetInt32("ExpenseID"),
+                   ExpenseTitle = dr.GetString("ExpenseTitle"),
+                   CoaID = dr.GetInt32("MappedCoaID"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+
+                };
+            }
+        }
+
+
+        public IEnumerable<OpTranSubModel> GetExpenses(long? TransactionID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -165,6 +188,18 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("ApprovedBy"),
                 }
             };
-        }       
+        }
+
+        public int UpdateExpenseHead(OpExpenseModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@CoaID", model.CoaID),
+               new SqlParameter("@ExpenseID", model.ExpenseID),
+               new SqlParameter("@ExpenseTitle", model.ExpenseTitle),             
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Operation.ExpenseMapping.Update]", parameters);
+        }
     }
 }
