@@ -1,6 +1,8 @@
 ﻿@page "/OprationNew"
 @inject IOpTranService Iservice
 @inject ITripService tripIservice
+@inject ICostCenterService costIservice
+@inject IDimensionService dimensionIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject ITdsRateService tdsIService
 @inject AuthenticationStateProvider auth
@@ -20,7 +22,9 @@
                 color: white !important;
             }
 </style>
+ <MudLink Href="OptranView" Underline="Underline.Always">DrCrNote Approve</MudLink>
 
+<br />
 <MudPaper>
     <MudContainer>
 <MudGrid Spacing="4">
@@ -138,8 +142,8 @@
                                   <tr>
                                     
                                         <td>
-                                            <MudAutocomplete T="InventoryItemModel" ValueChanged="getitemCode" Value="SelectedPurchaseItems" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Items" ResetValueOnEmptyText="true"
-                                                         SearchFunc="@SearchItems" ToStringFunc="@(e => e==null?string.Empty:e?.InventoryItemCode)"></MudAutocomplete>
+                                            <MudAutocomplete T="OpExpenseModel" @bind-Value="SelectedExpenses" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Expenses" ResetValueOnEmptyText="true"
+                                                         SearchFunc="@SearchExpenses" ToStringFunc="@(e => e==null?string.Empty:e?.ExpenseTitle)"></MudAutocomplete>
 
                                        
                                         </td>
@@ -148,14 +152,14 @@
 
                                         </td>
                                         <td>
-                                            <MudTextField @bind-Value="opTranSubModel.Amount" TextChanged="taxRates" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Amount)"></MudTextField>
+                                            <MudTextField @bind-Value="opTranSubModel.Amount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Amount)"></MudTextField>
 
                                         </td>
                                         <td>
                                             <MudTextField @bind-Value="opTranSubModel.Quantity"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Quantity)"></MudTextField>
                                         </td>
                                         <td>
-                                            <MudTextField @bind-Value="opTranSubModel.Unit" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Unit)"></MudTextField>
+                                            <MudTextField @bind-Value="opTranSubModel.Unit"   Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Unit)"></MudTextField>
 
                                         </td>
                                          
@@ -171,6 +175,48 @@
 
 
              </MudItem>
+              <MudItem xs="12"md="3">
+   
+      <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+
+
+    </MudItem>
+    <MudItem xs="12"md="3">
+   
+       <MudSelect Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in costCenter)
+                            {
+                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
+                            }
+                        </MudSelect>
+
+    </MudItem>
+    <MudItem xs="12"md="3">
+   
+     <MudSelect Label="Select Dimension" @bind-Value="model.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
+                            @foreach (var ditem in dimension)
+                            {
+                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                            }
+                        </MudSelect>
+
+    </MudItem>
+    <MudItem xs="12"md="3">
+     <MudTextField @bind-Value="model.TotalAmount" ReadOnly="true" Label="TotalAmount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
+
+    </MudItem>
+     <MudItem xs="12"md="12">
+           <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+
+     </MudItem>
+              <MudItem xs="12"md="10">
+        
+           
+     </MudItem>
+     <MudItem xs="12"md="2">
+          <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" OnClick="Submit">Submit</MudButton>
+           
+     </MudItem>
         </MudGrid>
         </MudContainer>
         </MudPaper>
@@ -189,6 +235,9 @@
     private MudTable<TripModel> mudTable;
     private List<OpTranSubModel> subModels = new List<OpTranSubModel>();
     private OpTranSubModel opTranSubModel = new();
+    private OpExpenseModel SelectedExpenses = null;
+    private List<CostCenterModel> costCenter = new();
+    private List<DimensionModel> dimension = new();
 
     public async Task fetch()
     {
@@ -209,38 +258,86 @@
         value = "visible";
     }
 
+    private async Task<IEnumerable<OpExpenseModel>> SearchExpenses(string searchString)
+    {
+
+        return await Task.FromResult(Iservice.GetOpExpenseHeads());
+
+    }
+
+    public void AddItems()
+    {
+
+        //opTranSubModel.ExpenseID=SelectedExpenses.ExpenseID;
+        opTranSubModel.ExpenseID=1;
+        subModels.Add(opTranSubModel);
+
+        model.TotalAmount = model.TotalAmount + opTranSubModel.Amount;
+        opTranSubModel = new();
+        SelectedExpenses = new();
+
+
+
+    }
+    public void DeleteExpenses(OpTranSubModel i)
+    {
+        int rowIndex = subModels.IndexOf(i);
+        model.TotalAmount = model.TotalAmount - i.Amount;
+        subModels.RemoveAt(rowIndex);
+    }
     private void RowClickEvent(TableRowClickEventArgs<TripModel> tableRowClickEventArgs)
     {
-        // public long? TripID { get; set; }
-        //public string TripNumber { get; set; }
-        //public string Truck { get; set; }
-        //public string Driver { get; set; }
-        //public int? RunKM { get; set; }
-        //public decimal? Fuel { get; set; }
-        //public string Gcs { get; set; }
-        
+
+        model.TripID = selectedItem1.TripID;
         model.TripInfo =tripIservice.GetTripInfo(selectedItem1.TripID);
-       
-        valueTran = "visibel";
+        costCenter = costIservice.Select().ToList();
+        dimension = dimensionIservice.Select().ToList();
+        model.TotalAmount = 0;
+        valueTran = "visible";
     }
     private string SelectedRowClassFunc(TripModel tripModel, int rowNumber)
     {
         if (selectedRowNumber == rowNumber)
         {
             selectedRowNumber = -1;
-           
+
             return string.Empty;
         }
         else if (mudTable.SelectedItem != null && mudTable.SelectedItem.Equals(tripModel))
         {
             selectedRowNumber = rowNumber;
-            
+
             return "selected";
         }
         else
         {
             return string.Empty;
         }
-         
+
+    }
+    private async Task Submit()
+    {
+        model.Transactions=subModels;  
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        model.UserInfo.UserID = user.Identity.Name;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        model.BranchID = int.Parse(brancIDString);
+        model.CreditCoaID = 1;//Cash set on json
+        try
+        {
+
+            Iservice.Update(model);
+           
+            snackbar.Add("Saved Successfully", Severity.Success);
+            model = new OpTranModel();
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+
     }
 }
