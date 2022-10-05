@@ -39,7 +39,7 @@ namespace Views
         {
             services.AddRazorPages();
             services.AddServerSideBlazor();
-            services.AddControllers().AddNewtonsoftJson();
+            services.AddControllers();
 
             services.AddControllersWithViews();
             //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
@@ -151,7 +151,7 @@ namespace Views
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
 
-            Bold.Licensing.BoldLicenseProvider.RegisterLicense("3dCp7+oJtX7zsgfLjIsYA5SWO7YOnWSUifyS6cJrKcw=");
+            
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
