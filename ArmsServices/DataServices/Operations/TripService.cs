@@ -191,7 +191,7 @@ namespace ArmsServices.DataServices
                     Fuel = reader.GetDecimal("Fuel"),
                     RunKM = reader.GetInt32("RunKm"),
                     TripID = TripID,
-                    TripNumber = reader.GetString("TripNumber"),
+                    TripNumber = (reader.GetInt64("TripNumber")).ToString(),
                     Truck = reader.GetString("Truck"),
                     Gcs = reader.GetString("Gcs"),
                 };

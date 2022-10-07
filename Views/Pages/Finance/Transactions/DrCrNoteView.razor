@@ -1,0 +1,181 @@
+﻿@page "/DrCrNoteView"
+@inject IDrCrNoteService Iservice
+@inject IDimensionService dimensionIservice
+@inject ICostCenterService costIservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+ <MudGrid Spacing="4">
+   <MudItem xs="12">
+       
+        <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
+           
+
+            
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<DrCrNoteModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<DrCrNoteModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
+               <MudTh><MudTableSortLabel SortBy="new Func<DrCrNoteModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
+                
+                
+                <MudTh>Actions</MudTh> 
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
+                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
+                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
+                
+                   <MudTd DataLabel="">
+
+                    <MudFab @onclick="@(()=> View(context))" Color="Color.Primary" title="View" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                  
+                    @if(@context.ApprovedInfo.RecordStatus!=3 && @context.ApprovedInfo.RecordStatus!=1)
+                    {
+                      <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" title="Approve" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                     <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Reverse(context))" Color="Color.Error" title="Reverse" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />
+                        
+                    }
+              
+                    </MudTd>
+                 
+           
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+           <MudItem xs="12"md="9"> </MudItem><MudItem xs="12"md="3">
+               
+        </MudItem>
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+
+
+    <br />
+     <MudPaper Class="@value" >
+    <MudContainer>
+    <MudGrid   >
+      <MudItem xs="12"md="4">
+   
+      <MudTextField @bind-Value="pmodel.Reference"  Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" ></MudTextField>
+
+
+    </MudItem>
+     <MudItem xs="12"md="4">
+   
+      <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="pmodel.DocumentDate" DateFormat="dd/MM/yyyy" />
+
+
+    </MudItem>
+   
+     <MudItem xs="12"md="4">
+   
+      <MudTextField @bind-Value="pmodel.TotalAmount" ReadOnly="true" Label="TotalAmount" Variant="Variant.Outlined" Margin="Margin.Dense" ></MudTextField>
+
+
+    </MudItem>
+      <MudItem xs="12" md="6">
+                         <MudSelect Label="Select CostCenter" @bind-Value="pmodel.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in costCenter)
+                            {
+                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
+                            }
+                        </MudSelect>
+                  </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect Label="Select Dimension" @bind-Value="pmodel.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
+                            @foreach (var ditem in dimension)
+                            {
+                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+        
+         
+
+
+                     <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="pmodel.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => pmodel.Narration)"></MudTextField>
+
+                    </MudItem>
+    <MudItem xs="12"md="10"> </MudItem><MudItem xs="12"md="2">
+        @if(@status=="Edit")
+        {
+     <MudButton @onclick="Update" Variant="Variant.Filled"  Color="Color.Primary" >Submit</MudButton>
+        }
+        </MudItem>
+
+  </MudGrid></MudContainer></MudPaper>
+
+
+@code {
+    private DrCrNoteModel model = new DrCrNoteModel();
+    private List<DrCrNoteModel> collection = new List<DrCrNoteModel>();
+    public string value="invisible";
+    public string status=null;
+    DrCrNoteModel pmodel=new();
+    private List<CostCenterModel> costCenter = new();
+    private List<DimensionModel> dimension = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        costCenter = costIservice.Select().ToList();
+        dimension = dimensionIservice.Select().ToList();
+        GetPerfomaInvoice();
+    }
+
+
+    public void GetPerfomaInvoice()
+    {
+
+
+        collection = Iservice.Select().ToList();
+        int s = 0;
+
+    }
+    public void Edit(DrCrNoteModel pim)
+    {
+        value = "visible";
+        status = "Edit";
+        pmodel = pim;
+
+    }
+    public void View(DrCrNoteModel pim)
+    {
+        value = "visible";
+        status = "View";
+        pmodel = pim;
+
+    }
+    public  void Reverse(DrCrNoteModel pim)
+    {   
+        value = "invisible";
+        status = "Reverse";
+        pmodel = pim;
+        Iservice.Reverse(pim.DrCrNoteID, "Rijas");
+        snackbar.Add("Update Successfully", Severity.Success);
+        GetPerfomaInvoice();
+    }
+     public  void Approve(DrCrNoteModel pim)
+    {   
+        value = "invisible";
+        status = "Approve";
+        pmodel = pim;
+        Iservice.Approve(pim.DrCrNoteID, "Rijas");
+        snackbar.Add("Update Successfully", Severity.Success);
+        GetPerfomaInvoice();
+    }
+    public async Task Update()
+    {   
+       // Iservice.UpdateProformaInvoice(pmodel);
+        snackbar.Add("Saved Successfully", Severity.Success);
+       
+
+    }
+}
