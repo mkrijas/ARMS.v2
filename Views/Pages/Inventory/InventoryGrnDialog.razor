@@ -25,21 +25,10 @@
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" md="6">
-                        <MudAutocomplete T="PartyModel" Value="SelectedParty" ValueChanged="getBranch"
-                                         Variant="Variant.Outlined" Margin="Margin.Dense" Label="Vendor" ResetValueOnEmptyText="true"
-                                         SearchFunc="@SearchParty" ToStringFunc="@(e => e?.PartyName)">
-                        </MudAutocomplete>
-                    </MudItem>
-
-                    <MudItem xs="12" md="6">
-                        <MudSelect Label="Select Branch" @bind-Value="model.PartyBranchID" T="int?" ToStringFunc="@(e=>partybranch.FirstOrDefault(x=>x.GstID==e)?.Address?.Place)" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in partybranch)
-                            {
-                                <MudSelectItem Value="@ditem.GstID">@ditem.Address.Place</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
+                     <MudItem xs="12" md="12"> 
+                          <PartyBranchSelect @bind-Value="partyBranchinfo"></PartyBranchSelect>
+                       
+                        </MudItem>
 
                     <MudItem xs="12" md="4">
                         <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EntryDate" DateFormat="dd/MM/yyyy" />
@@ -49,16 +38,16 @@
 
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
-
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudSelect Label="Select Store" @bind-Value="model.StoreID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                         <MudSelect Label="Select Store" @bind-Value="model.StoreID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in store)
                             {
                                 <MudSelectItem Value="@ditem.StoreID">@ditem.StoreName</MudSelectItem>
                             }
                         </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                       
                     </MudItem>
                     <MudItem xs="12" md="12">
 
@@ -105,9 +94,9 @@
                                     <tr>
                                         <td>
 
-                                            <MudAutocomplete T="InventoryItemModel" ValueChanged="getitemCode" Value="SelectedItems" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Items" ResetValueOnEmptyText="true"
-                                                         SearchFunc="@SearchItems" ToStringFunc="@(e => e==null?string.Empty:e?.InventoryItemCode)"></MudAutocomplete>
-
+                                           <MudAutocomplete T="InventoryItemModel"  @bind-Value="SelectedItems"  Variant="Variant.Outlined"  Margin="Margin.Dense" Label="Items"  ResetValueOnEmptyText="true"
+                                                 SearchFunc="@SearchItems" ToStringFunc="@(e => e==null?string.Empty:e?.InventoryItemCode)" ></MudAutocomplete>
+                       
                                         </td>
                                         <td>
                                             <MudTextField @bind-Value="Entrymodel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField>
@@ -117,8 +106,7 @@
                                             <MudTextField @bind-Value="Entrymodel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemRate)"></MudTextField>
                                         </td>
                                         <td>
-                                            <MudTextField @bind-Value="Entrymodel.ItemGstVal" ReadOnly="true" Label="GST" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemGstVal)"></MudTextField>
-
+                                         
                                         </td>
                                         <td>
                                             @*       <MudButton OnClick="AddItems" Variant="Variant.Filled" Color="Color.Primary">Add</MudButton>*@
@@ -166,7 +154,7 @@
     private List<PartyModel> partyList = new();
     private List<StoreModel> store = new();
     private List<InventoryItemModel> itm = new();
-
+    public PartyBranchModel partyBranchinfo = new();
     private List<PartyBranchModel> partybranch = new();
     private List<GstItemModel> gstitem = new();
     private PurchaseOrderModel tds = new();
@@ -194,16 +182,32 @@
         if (model.GrnID != null)
         {
             items = Iservice.GetItemEntries(model.GrnID.Value).ToList();
+            PartyModel pmm = partyIservice.GetPartyFromBranch(model.PartyBranchID);
+
+
+            foreach (var item in partyBranchIservice.SelectByParty(pmm.PartyID))
+            {
+                partyBranchinfo=item;
+            }           
+           
+
         }
         else if (model.POID != null)
         {
             items = model.Entries;
+            PartyModel pmm = partyIservice.GetPartyFromBranch(model.PartyBranchID);
+
+
+            foreach (var item in partyBranchIservice.SelectByParty(pmm.PartyID))
+            {
+                partyBranchinfo=item;
+            }
         }
         else
         {
             model.TotalValue = 0;
         }
-
+         
 
         await foreach (var party in partyIservice.Select(0))
         {
@@ -231,7 +235,7 @@
         try
         {
 
-            Iservice.Update(model);
+            //Iservice.Update(model);
             model = new();
             snackbar.Add("Saved Successfully", Severity.Success);
             model = new InventoryGrnModel();
@@ -261,17 +265,11 @@
    
     private void Delete(InventoryItemEntryModel i)
     {
-    decimal gstrate = 0;
-    if (i.ItemGstVal != 0)
-    {
-        gstrate = ((i.ItemRate.Value) * (i.ItemGstVal.Value)) / 100;
-    }
+      decimal total=(((i.ItemQty.Value)*(i.ItemRate.Value))+(i.ItemGstVal.Value));
 
-    decimal total = ((i.ItemQty.Value) * ((i.ItemRate.Value) + gstrate));
-
-    model.TotalValue = model.TotalValue - total;
-    int rowIndex = items.IndexOf(i);
-    items.RemoveAt(rowIndex);
+        model.TotalValue = model.TotalValue - total;
+        int rowIndex=items.IndexOf(i);
+        items.RemoveAt(rowIndex);
     }
     public decimal getgstrate(int itemID)
     {
@@ -282,65 +280,90 @@
     }
     private void AddItems()
     {
-
-    InventoryItemEntryModel ientry = new();
-    ientry.ItemID = Entrymodel.ItemID;
+     model.PartyBranchID = partyBranchinfo.GstID;
+     InventoryItemEntryModel ientry = new();
+     ientry.ItemID = SelectedItems.InventoryItemID;
+   
+    
     ientry.ItemQty = Entrymodel.ItemQty;
     ientry.ItemRate = Entrymodel.ItemRate;
-    ientry.ItemGstVal = Entrymodel.ItemGstVal;
-    items.Add(ientry);
-    decimal gstrate = 0;
-    if (Entrymodel.ItemGstVal != 0)
-    {
-        gstrate = ((Entrymodel.ItemRate.Value) * gstrate) / 100;
-    }
+      if (ientry.ItemID== null||ientry.ItemRate==null||ientry.ItemQty==null)
+            {
+                snackbar.Add("Please fill in all Fields", Severity.Success);
+                return;
+            }
+            decimal gstrt = 0;
+            decimal gstrate = 0;
+            try
+            {
+                gstrt = getgstrate(ientry.ItemID.Value);
+
+            }
+            catch(Exception ex)
+            {
+                gstrt = 0;
+            }
+            if (gstrt != 0)
+            {
+                gstrate = (((Entrymodel.ItemRate.Value) * (Entrymodel.ItemQty.Value)) * gstrt) / 100;
+            }
+            ientry.ItemGstVal = gstrate;
+            items.Add(ientry);
+            
+            
 
 
 
-    decimal total = ((Entrymodel.ItemQty.Value) * ((Entrymodel.ItemRate.Value) + gstrate));
-    model.TotalValue = model.TotalValue + total;
-    Entrymodel = new();
-    SelectedItems = null;
+            decimal total = ((Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value) + (ientry.ItemGstVal.Value));
+            model.TotalValue = model.TotalValue + total;
+            Entrymodel = new();
+           
+        SelectedItems = null;
+        SelectedItems = new();
+
+
+   
+  
 
 
     }
 
-    private void getBranch(PartyModel party)
-    {
-    // int values = int.Parse(e.Value.ToString());
-    //SelectedParty = party;
-    if (party != null)
-    {
-        partybranch = partyBranchIservice.SelectByParty(party.PartyID).ToList();
-    }
-    else
-    {
-        partybranch = new();
-    }
-    // snackbar.Add("Saved Successfully", Severity.Success);
-    }
-    private void getitemCode(InventoryItemModel item)
-    {
-    SelectedItems = item;
+    //private void getBranch(PartyModel party)
+    //{
+    //// int values = int.Parse(e.Value.ToString());
+    ////SelectedParty = party;
+    //if (party != null)
+    //{
+    //    partybranch = partyBranchIservice.SelectByParty(party.PartyID).ToList();
+    //}
+    //else
+    //{
+    //    partybranch = new();
+    //}
+    //// snackbar.Add("Saved Successfully", Severity.Success);
+    //}
+    //private void getitemCode(InventoryItemModel item)
+    //{
+    //SelectedItems = item;
 
-    if (item != null)
-    {
-        Entrymodel.ItemID = item.InventoryItemID;
-        decimal gstrate = 0;
-        try
-        {
-            gstrate = getgstrate(item.InventoryItemID.Value);
-        }
-        catch (Exception e)
-        {
-            gstrate = 0;
-        }
-        Entrymodel.ItemGstVal = gstrate;
-    }
-    else
-    {
-        Entrymodel.ItemID = null;
-    }
+    //if (item != null)
+    //{
+    //    Entrymodel.ItemID = item.InventoryItemID;
+    //    decimal gstrate = 0;
+    //    try
+    //    {
+    //        gstrate = getgstrate(item.InventoryItemID.Value);
+    //    }
+    //    catch (Exception e)
+    //    {
+    //        gstrate = 0;
+    //    }
+    //    Entrymodel.ItemGstVal = gstrate;
+    //}
+    //else
+    //{
+    //    Entrymodel.ItemID = null;
+    //}
 
     }
 
