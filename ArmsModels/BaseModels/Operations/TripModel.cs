@@ -40,4 +40,32 @@ namespace ArmsModels.BaseModels
         public decimal? Fuel { get; set; }
         public string Gcs { get; set; }
     }
+    public class TripFuelModel
+    {
+        public TripFuelModel()
+        {
+            UserInfo = new();
+        }
+        public int? TripFuelID { get; set; }
+        [Required]
+        public DateTime? EntryDate { get; set; }
+        [Required]
+        public long? TripID { get; set; }
+        [Required]
+        public int? BranchID { get; set; }
+        [Required]
+        public int? FuelItemID { get; set; }
+        [Required]
+        public decimal? RatePerLitre { get; set; }
+        [Required]
+        public decimal? TotalAmount { get; set; }
+        [Required]
+        public decimal? Quantity { get; set; }
+        public bool IsPurchase { get; set; }
+        public int? PurchaseID { get; set; }
+        public int? InvTranID { get; set; }
+        public virtual TaxPurchaseExpenseModel PurchaseEntry { get; set; }
+        public virtual InventoryBaseModel IssueEntry { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+    }
 }
