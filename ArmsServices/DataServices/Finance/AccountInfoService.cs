@@ -11,7 +11,8 @@ namespace ArmsServices.DataServices
 {
     public interface IAccountInfoService
     {  
-        AccountInfoViewModel SelectByID(int? MID);        
+        AccountInfoViewModel SelectByID(int? MID);
+        IEnumerable<AccountInfoViewSubModel> Entries(int? MID);
     }
 
     public class AccountInfoService : IAccountInfoService
@@ -63,8 +64,8 @@ namespace ArmsServices.DataServices
             {
                CostCenter = dr.GetString("CostCenter"),
                Dimension = dr.GetString("Dimension"),
-               DocumentDate = dr.GetDateTime("DocumentDate"),
-               DocumentNumber = dr.GetString("DocumentNumber"),
+               DocumentDate = dr.GetDateTime("DocDate"),
+               DocumentNumber = dr.GetString("DocNumber"),
                Narration = dr.GetString("Narration"),
                Entries = Entries(MID).ToList()
             };

@@ -51,14 +51,16 @@
           
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                 <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-           
+                
             </PagerContent>
         </MudTable>
+    </MudItem> <MudItem xs="12"md="9"></MudItem><MudItem xs="12"md="3">
+         <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Initiated PaymentMemo</MudButton>
+           
     </MudItem>
     </MudGrid>
 
-    <MudPaper Class="@value" >
+   @* <MudPaper Class="@value" >
     <MudContainer>
     <MudGrid   >
      <MudItem xs="12"md="12">
@@ -71,7 +73,7 @@
      <MudButton @onclick="CreatePaymentInitialMemo" Variant="Variant.Filled" Color="Color.Primary" >Submit</MudButton>
 
 
-  </MudGrid></MudContainer></MudPaper>
+  </MudGrid></MudContainer></MudPaper>*@
 
 
 @code {
@@ -82,7 +84,7 @@
     private List<BillsPaidModel> pmnList = new List<BillsPaidModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
     DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-   
+
     PaymentInitiatedModel pim = new PaymentInitiatedModel();
     private HashSet<PartyPaymentMemoModel> selectedItems1= new HashSet<PartyPaymentMemoModel>();
     public string value="invisible";
@@ -93,10 +95,10 @@
     }
     public void View(PartyPaymentMemoModel ppmm)
     {
-       DialogParameters parms = new DialogParameters();
+        DialogParameters parms = new DialogParameters();
         parms.Add("model",ppmm);
         var dialog =  DialogService.Show<PaymentMemoViewDialog>(ppmm.PaymentMemoID == null?"Payment Memo":"Payment Memo",parms,mediumWidth);
-       
+
     }
     private  async Task GetAll()
     {
@@ -116,17 +118,17 @@
         uriHelper.NavigateTo("/PaymentMemo");  
     }
 
-    public async Task CreatePaymentInitialMemo()
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        var user = authprov.User;
-        pim.UserInfo.UserID = user.Identity.Name;
-        pim.BranchID = brancID;
-        Iservice.InitiatePayment(pim);
-        GetAll();
-    }
+    //public async Task CreatePaymentInitialMemo()
+    //{
+    //    var authprov = await auth.GetAuthenticationStateAsync();
+    //    var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+    //    int brancID = int.Parse(brancIDString);
+    //    var user = authprov.User;
+    //    pim.UserInfo.UserID = user.Identity.Name;
+    //    pim.BranchID = brancID;
+    //    Iservice.InitiatePayment(pim);
+    //    GetAll();
+    //}
     private async Task OpenDialog(PartyPaymentMemoModel tds)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -163,12 +165,12 @@
         GetAll();
     }
 
-    private void selected()
+    private async Task selected()
     {
 
-        if(selectedItems1!=null)
+        if(selectedItems1.Count>0)
         {
-            value = "visible";
+            // value = "visible";
             pim.PaymentMemos = selectedItems1.ToList();
             foreach (var item in pim.PaymentMemos)
             {
@@ -180,9 +182,36 @@
                 item.Bills = pmnList;
                 item.PaymentStatus = 1;
             }
-         
+            pim.DueOn = null;
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model",pim);
+            var dialog =  DialogService.Show<PaymentInitialMemo>("Payment",parms);
+            var result = await dialog.Result;
+
+            if(!result.Cancelled)
+            {   
+                PaymentInitiatedModel UpatedModel = (PaymentInitiatedModel)result.Data; 
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+                int brancID = int.Parse(brancIDString);
+                var user = authprov.User;
+                UpatedModel.UserInfo.UserID = user.Identity.Name;
+                UpatedModel.BranchID = brancID;
+                Iservice.InitiatePayment(UpatedModel);
+
+
+                GetAll();
+
 
             }
+
+
+        }
+        else
+        {
+            snackbar.Add("Please Select Memo", Severity.Success);
+            return;
+        }
 
         
         //MudDialog.Close(selecteditem);
