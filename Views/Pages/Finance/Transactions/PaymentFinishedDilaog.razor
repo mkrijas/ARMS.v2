@@ -1,8 +1,10 @@
-﻿@inject IPaymentService Iservice
+﻿@using Microsoft.Extensions.Configuration
+@inject IPaymentService Iservice
 @inject IOutstandingBillsService OBIservice
 @inject ICostCenterService costIservice
 @inject IDimensionService dimensionIservice
 @inject IChartOfAccountService accountService
+@inject IConfiguration configuration
 @inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -22,18 +24,38 @@
                    
                </MudItem>
                
-                 <MudItem  xs="12" md="5">
+                 <MudItem  xs="12" md="4">
                        <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
                                      SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
                  </MudItem>
-                  <MudItem  xs="12" md="5">
+                  <MudItem  xs="12" md="3">
                  <MudDatePicker @bind-Date="model.DocumentDate" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Label="DocumentDate" Variant="Variant.Outlined"  Margin="Margin.Dense" For="@(() => model.DocumentDate)"></MudDatePicker>
     
                </MudItem>
-              
+                <MudItem xs="12"md="3">
+                     @if (@customstr == "Cash")
+                            {
 
-              <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                                
+                                <MudSelect Label="Select ReceiptTool" ReadOnly="true" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                    <MudSelectItem Value="@("Cheque")" />
+                             <MudSelectItem Value="@("NEFT")" />
+                        
+                        </MudSelect>
+                        }
+                            @if (@customstr != "Cash")
+                            {
+                                <MudSelect Label="Select Tool" ReadOnly="false" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                    <MudSelectItem Value="@("Cheque")" />
+                             <MudSelectItem Value="@("NEFT")" />
+                        
+                        </MudSelect>}
+         </MudItem>
+          <MudItem xs="12" md="12">
+        
+                     
+                       
+                       <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
 
                     </MudItem>
    
@@ -116,12 +138,14 @@
     public string customstr { get; set; } = "Cash";
     private ChartOfAccountModel SelectedAccount = null;
     private List<PaymentEntryModel> paymentEntry = new List<PaymentEntryModel>();
-
-
+   
+     //@bind-Value="model.ReceiptMode"
     private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
     {
 
-        return await Task.FromResult(accountService.FilterSubLedgers(searchString));
+
+        int coID =Convert.ToInt32(configuration.GetSection("Data")[customstr]);
+        return await Task.FromResult(accountService.SelectChildren(coID));
 
     }
 
@@ -135,7 +159,7 @@
         }
 
         private string TrueString = "Cash";
-        private string FalseString = "Credit";
+        private string FalseString = "Bank";
         private string NullString = "Error";
 
         private string OnGet(bool? value)
@@ -170,6 +194,7 @@
                 return null;
             }
         }
+       
 
     }
 
