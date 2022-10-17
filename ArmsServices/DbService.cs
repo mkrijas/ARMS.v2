@@ -25,7 +25,7 @@ namespace ArmsServices
         public DbService(IConfiguration configuration,ILogger<DbService> logger)
         {
             this._logger = logger;
-            this.ConnectionString = configuration.GetConnectionString("ArmsDB");
+            this.ConnectionString = configuration.GetConnectionString("ArmsDB");            
         }
         public async IAsyncEnumerable<IDataRecord> GetDataReaderAsync(string procedureName, List<SqlParameter> parameters)
         {

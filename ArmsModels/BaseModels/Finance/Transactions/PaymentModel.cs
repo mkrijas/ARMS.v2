@@ -68,6 +68,9 @@ namespace ArmsModels.BaseModels
         public int? PiID { get; set; }        
         public DateTime? DueOn { get; set; }
         public int? BranchID { get; set; }
+        public DateTime? DocDate { get; set; }
+        public string DocNumber { get; set; }
+        public decimal? TotalAmount { get; set; }
         public List<PartyPaymentMemoModel>  PaymentMemos { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
@@ -83,6 +86,7 @@ namespace ArmsModels.BaseModels
         public int? PfID { get; set; }
         public int? PiID { get; set; }       
         public string PaymentMode { get; set; }
+        public string PaymentTool { get; set; }
         public int? CoaID { get; set; }
         public DateTime? DocumentDate { get; set; }        
         [Required]

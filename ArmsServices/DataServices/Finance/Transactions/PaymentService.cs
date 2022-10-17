@@ -60,6 +60,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@CoaID", model.CoaID),
                new SqlParameter("@PaymentMode", model.PaymentMode),
+               new SqlParameter("@PaymentTool", model.PaymentTool),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@PiID", model.PiID),
                new SqlParameter("@PfID", model.PfID),                         
@@ -172,6 +173,9 @@ namespace ArmsServices.DataServices
                 {
                      BranchID = dr.GetInt32("BranchID"),
                      DueOn = dr.GetDateTime("DueOn"),
+                     DocNumber = dr.GetString("DocNumber"),
+                    DocDate = dr.GetDateTime("DocDate"),
+                    TotalAmount = dr.GetDecimal("TotalAmount"),
                      PiID = dr.GetInt32("PiID"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
@@ -289,6 +293,7 @@ namespace ArmsServices.DataServices
                     DocumentDate = dr.GetDateTime("DocumentDate"),
                     Narration = dr.GetString("Narration"),
                     PaymentMode = dr.GetString("PaymentMode"),
+                    PaymentTool = dr.GetString("PaymentTool"),
                     TotalAmount = dr.GetDecimal("TotalAmount"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
@@ -320,6 +325,7 @@ namespace ArmsServices.DataServices
                     DocumentDate = dr.GetDateTime("DocumentDate"),
                     Narration = dr.GetString("Narration"),
                     PaymentMode = dr.GetString("PaymentMode"),
+                    PaymentTool = dr.GetString("PaymentTool"),
                     TotalAmount = dr.GetDecimal("TotalAmount"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
@@ -339,6 +345,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", BranchID),
             };
 
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Initiate.Select]", parameters))
             {
                 yield return new PaymentInitiatedModel()
@@ -346,6 +353,9 @@ namespace ArmsServices.DataServices
                     BranchID = dr.GetInt32("BranchID"),
                     DueOn = dr.GetDateTime("DueOn"),
                     PiID = dr.GetInt32("PiID"),
+                    DocNumber = dr.GetString("DocNumber"),
+                    DocDate = dr.GetDateTime("DocDate"),
+                    TotalAmount = dr.GetDecimal("TotalAmount"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = dr.GetByte("RecordStatus"),
@@ -373,6 +383,9 @@ namespace ArmsServices.DataServices
                     BranchID = dr.GetInt32("BranchID"),
                     DueOn = dr.GetDateTime("DueOn"),
                     PiID = dr.GetInt32("PiID"),
+                    DocNumber = dr.GetString("DocNumber"),
+                    DocDate = dr.GetDateTime("DocDate"),
+                    TotalAmount = dr.GetDecimal("TotalAmount"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = dr.GetByte("RecordStatus"),
