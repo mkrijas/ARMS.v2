@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Configuration;
 
 namespace ArmsModels.BaseModels
 {
@@ -112,10 +113,12 @@ namespace ArmsModels.BaseModels
     public class PaymentEntryModel
     {
         public int? PeID { get; set; }
-        public int? PaymentMemoID { get; set; }        
+        public int? PaymentMemoID { get; set; }
+        public virtual string DocumentNumber { get; set; }
         public string Reference { get; set; }
         public DateTime? EffectiveDate { get; set; }
         public decimal? Amount { get; set; }
     }
+   
 
 }
