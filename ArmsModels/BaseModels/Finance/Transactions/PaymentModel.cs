@@ -47,12 +47,19 @@ namespace ArmsModels.BaseModels
 
     public class BillsPaidModel
     {
+        decimal? _PayAmount;
         public int? BpID { get; set; }
         public int? BoID { get; set; }
         public virtual decimal? OutstandingAmount { get; set; }
         
-        public decimal? PayAmount { get; set; }
-
+        public decimal? PayAmount
+        {
+            get { return _PayAmount; } 
+            set
+            {
+                _PayAmount = (value>(OutstandingAmount??0)?OutstandingAmount:value);
+            }
+        }
         public virtual string DocNumber { get; set; }
         public virtual string BranchName { get; set; }
         
