@@ -111,6 +111,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@SundryPaymentID", model.SundryPaymentID),
                new SqlParameter("@PaymentMode", model.PaymentMode),
+               new SqlParameter("@PaymentTool", model.PaymentTool),
                new SqlParameter("@CoaID", model.CoaID),
                new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@BranchID", model.BranchID),
@@ -135,6 +136,7 @@ namespace ArmsServices.DataServices
             {
                 SundryPaymentID = dr.GetInt32("SundryPaymentID"),
                 PaymentMode = dr.GetString("PaymentMode"),
+                PaymentTool = dr.GetString("PaymentTool"),
                 CoaID = dr.GetInt32("CoaID"),
                 AccountName=dr.GetString("AccountName"),
                 Reference=dr.GetString("Reference"),
