@@ -19,7 +19,6 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public string PayeeName { get; set; }
         public string PayeeContactNo { get; set; }        
         public List<SundryPaymentEntryModel> Entries { get; set; }
-
     }
 
     public class SundryPaymentEntryModel
