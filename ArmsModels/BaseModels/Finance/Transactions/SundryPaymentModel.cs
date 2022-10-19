@@ -15,6 +15,9 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public int? CoaID { get; set; }
         public virtual string AccountName { get; set; }
         public string Reference { get; set; }
+        public string PayeeName { get; set; }
+        public string PayeeContactNo { get; set; }
+        public string PaymentTool { get; set; }
         public List<SundryPaymentEntryModel> Entries { get; set; }
 
     }
