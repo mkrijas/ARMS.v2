@@ -63,5 +63,12 @@ namespace ArmsModels.BaseModels
         public decimal? Igst { get; set; }
     }
 
+    public class ChequeModel
+    {
+        public int? ID { get; set; }
+        public string ChequeNumber { get; set; }
+        public DateTime? ChequeDate { get; set; }
+        public int? BankID { get; set; }
+    }
 
     }

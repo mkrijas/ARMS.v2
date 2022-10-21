@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Configuration;
 
 namespace ArmsModels.BaseModels
 {
@@ -47,12 +48,22 @@ namespace ArmsModels.BaseModels
 
     public class BillsPaidModel
     {
+        decimal? _PayAmount;
         public int? BpID { get; set; }
-        public int? BoID { get; set; }       
-        public decimal? PayAmount { get; set; }
-
+        public int? BoID { get; set; }
+        public virtual decimal? OutstandingAmount { get; set; }
+        
+        public decimal? PayAmount
+        {
+            get { return _PayAmount; } 
+            set
+            {
+                _PayAmount = (value>(OutstandingAmount??0)?OutstandingAmount:value);
+            }
+        }
         public virtual string DocNumber { get; set; }
         public virtual string BranchName { get; set; }
+        
         public virtual DateTime? DocDate { get; set; }
         public virtual int? BranchID { get; set; }
         public virtual string InvoiceNumber { get; set; }
@@ -68,6 +79,9 @@ namespace ArmsModels.BaseModels
         public int? PiID { get; set; }        
         public DateTime? DueOn { get; set; }
         public int? BranchID { get; set; }
+        public DateTime? DocDate { get; set; }
+        public string DocNumber { get; set; }
+        public decimal? TotalAmount { get; set; }
         public List<PartyPaymentMemoModel>  PaymentMemos { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
@@ -83,6 +97,7 @@ namespace ArmsModels.BaseModels
         public int? PfID { get; set; }
         public int? PiID { get; set; }       
         public string PaymentMode { get; set; }
+        public string PaymentTool { get; set; }
         public int? CoaID { get; set; }
         public DateTime? DocumentDate { get; set; }        
         [Required]
@@ -98,10 +113,12 @@ namespace ArmsModels.BaseModels
     public class PaymentEntryModel
     {
         public int? PeID { get; set; }
-        public int? PaymentMemoID { get; set; }        
+        public int? PaymentMemoID { get; set; }
+        public virtual string DocumentNumber { get; set; }
         public string Reference { get; set; }
         public DateTime? EffectiveDate { get; set; }
         public decimal? Amount { get; set; }
     }
+   
 
 }

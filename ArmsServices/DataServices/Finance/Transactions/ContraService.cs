@@ -80,6 +80,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),
+               new SqlParameter("@PaymentTool", model.PaymentTool),
+               new SqlParameter("@IsPayment", model.IsPayment),              
+               new SqlParameter("@ChequeNumber", model.ChequeInfo.ChequeNumber),
+               new SqlParameter("@ChequeDate", model.ChequeInfo.ChequeDate),
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@TotalAmount", model.TotalAmount),
@@ -95,8 +99,7 @@ namespace ArmsServices.DataServices
         private ContraModel GetModel(IDataRecord dr)
         {
             return new ContraModel
-            {
-              
+            {              
                 ContraID = dr.GetInt32("ContraID"),
                 ContraModeHome = dr.GetString("ContraModeHome"),
                 CoaIDHome = dr.GetInt32("CoaIDHome"),
@@ -105,6 +108,13 @@ namespace ArmsServices.DataServices
                 CoaIDOther = dr.GetInt32("CoaIDOther"),
                 EntryReference = dr.GetString("EntryReference"),
                 BranchID = dr.GetInt32("BranchID"),
+                IsPayment = dr.GetBoolean("IsPayment"),
+                PaymentTool = dr.GetString("PaymentTool"),
+                ChequeInfo = new ChequeModel()
+                {
+                    ChequeDate = dr.GetDateTime("ChequeDate"),
+                    ChequeNumber = dr.GetString("ChequeNumber"),
+                },
                 // BranchName = dr.GetString("BranchName"),
                 ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
                 {

@@ -1,9 +1,12 @@
 ﻿@inject ISundryPaymentService Iservice
+@using Microsoft.Extensions.Configuration
 @using ArmsModels.BaseModels.Finance.Transactions
 @inject IOutstandingBillsService OBIservice
 @inject ICostCenterService costIservice
+@inject TruckDataArrayModel data
 @inject IChartOfAccountService accountService
 @inject IDimensionService dimensionIservice
+@inject IConfiguration configuration
 @inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -17,22 +20,81 @@
     
 
    <MudPaper>
-    <MudContainer>
+    <MudContainer Style="max-height: 450px; overflow-y: scroll">
     <MudGrid>
         <MudItem xs="12" md="2">
-             <MudSwitch @bind-Checked="customstr" Color="Color.Primary" Converter="@(new CustomStringToBoolConverter())" > @(customstr)</MudSwitch>
+             <MudSwitch @bind-Checked="customstr" @onchange="statechange" Color="Color.Primary" Converter="@(new CustomStringToBoolConverter())" > @(customstr)</MudSwitch>
                  
         </MudItem>
          <MudItem xs="12" md="5">
              <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
-                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+                                     SearchFunc="SearchAccountsCash" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
               
         </MudItem>
          <MudItem xs="12" md="5">
            <MudTextField @bind-Value="model.Reference" Label="Reference"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
 
         </MudItem>
+         <MudItem xs="12" md="4">
+           @if (@customstr == "Cash")
+                            {
 
+                              <MudSelect ReadOnly="true" Label="Select Payment Mode" @bind-Value="model.PaymentTool" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                @foreach (var item in data.BankTools)
+                                {
+                                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                                }
+                            </MudSelect>
+                        }
+                            @if (@customstr != "Cash")
+                            {
+                               <MudSelect ReadOnly="false" Label="Select Payment Mode" @bind-Value="model.PaymentTool" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                @foreach (var item in data.BankTools)
+                                {
+                                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                                }
+                            </MudSelect>
+                            }
+        </MudItem>
+          <MudItem xs="12"md="4">
+           <MudTextField @bind-Value="model.PayeeName"  Label="PayeeName" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayeeName)"></MudTextField>
+
+     </MudItem>
+      <MudItem xs="12"md="4">
+           <MudTextField @bind-Value="model.PayeeContactNo"  Label="PayeeContactNo" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayeeContactNo)"></MudTextField>
+
+     </MudItem>
+
+         <MudItem xs="12"md="4">
+   
+      <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+
+
+    </MudItem>
+    <MudItem xs="12"md="4">
+   
+       <MudSelect Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in costCenter)
+                            {
+                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
+                            }
+                        </MudSelect>
+
+    </MudItem>
+    <MudItem xs="12"md="4">
+   
+     <MudSelect Label="Select Dimension" @bind-Value="model.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
+                            @foreach (var ditem in dimension)
+                            {
+                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                            }
+                        </MudSelect>
+
+    </MudItem>
+     <MudItem xs="12"md="12">
+           <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+
+     </MudItem>
 
         <MudItem xs="12"   >
           <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
@@ -70,14 +132,7 @@
                                         
                                     </tr>
                                 }
-                                <tr>
-                                    <td></td>
-                                    <td></td>
-                                   
-
-                                    <td >Total:
-                                        </td><td>@model.TotalAmount</td>
-                                </tr>
+                               
                                  <tr>
                                       <td>
                                              <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccounts" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
@@ -104,36 +159,7 @@
     </MudItem>
    
         
-    <MudItem xs="12"md="4">
    
-      <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
-
-
-    </MudItem>
-    <MudItem xs="12"md="4">
-   
-       <MudSelect Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in costCenter)
-                            {
-                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
-                            }
-                        </MudSelect>
-
-    </MudItem>
-    <MudItem xs="12"md="4">
-   
-     <MudSelect Label="Select Dimension" @bind-Value="model.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
-                            @foreach (var ditem in dimension)
-                            {
-                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
-                            }
-                        </MudSelect>
-
-    </MudItem>
-     <MudItem xs="12"md="12">
-           <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-
-     </MudItem>
      
    
     </MudGrid>
@@ -141,6 +167,7 @@
     </MudPaper>
     </DialogContent>
      <DialogActions>
+         <h6>Total:@model.TotalAmount</h6>
          @if(@model.ApprovedInfo.RecordStatus!=1)
          {
            <MudButton @onclick="CreatePaymentMemo" Variant="Variant.Filled" Color="Color.Success" >Submit</MudButton>
@@ -157,18 +184,27 @@
     private SundryPaymentEntryModel spe = new SundryPaymentEntryModel();
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
-    public string customstr { get; set; } = "Cash";
+    public string customstr { get; set; } = "Bank";
     private ChartOfAccountModel SelectedAccount = null;
     private ChartOfAccountModel SelectedAccounts = null;
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
+    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccountsCash(string searchString)
+    {
+        int coID =Convert.ToInt32(configuration.GetSection("Data")[customstr]);
+        return await Task.FromResult(accountService.SelectChildren(coID));
+
+    }
     private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
     {
-
+       
         return await Task.FromResult(accountService.FilterSubLedgers(searchString));
 
     }
-
+    public void statechange()
+    {
+        StateHasChanged();
+    }
     protected override async Task OnInitializedAsync()
     {
         if (model.SundryPaymentID == null)
@@ -234,7 +270,7 @@
         }
 
         private string TrueString = "Cash";
-        private string FalseString = "Credit";
+        private string FalseString = "Bank";
         private string NullString = "Error";
 
         private string OnGet(bool? value)

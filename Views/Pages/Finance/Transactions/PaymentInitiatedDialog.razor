@@ -9,16 +9,123 @@
 @inject IDialogService DialogService
 
 
-    <MudGrid>
-        <MudItem xs="12"   >
-         
+   <MudDialog>
+    <TitleContent>
+    
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 450px; overflow-y: scroll">
+          
+            <MudGrid Spacing="4">
+   <MudItem xs="12">
+        <MudTable Items="@collection"    Dense="true" Hover="true"  Striped="true"   @bind-place="model1">
+           
+
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">Paymet Memos</MudText>
+               
+               
+               @* <MudButton @onclick="openpurchaseorder" @onclick="@(()=> OpenDialog(model))"  Variant="Variant.Filled" Color="Color.Primary" >Purchase Order</MudButton>
+               *@ 
+                <MudSpacer></MudSpacer>
+               @* <MudTextField @bind-Value="searchMemos" Placeholder="Search Tax... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>*@
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyPaymentMemoModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<PartyPaymentMemoModel, object>(x=> x.PartyBranchInfo.Party.PartyName)" InitialDirection="SortDirection.Ascending">Party Name</MudTableSortLabel></MudTh>
+               <MudTh><MudTableSortLabel SortBy="new Func<PartyPaymentMemoModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
+                
+               <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
+                <MudTd DataLabel="PartyName">@context.PartyBranchInfo.Party.PartyName</MudTd>
+               <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
+               <MudTd DataLabel="">
+                     <MudTooltip Text="View">
+                    <MudFab @onclick="@(()=> View(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>  
+               </MudTd>
+            </RowTemplate>
+          
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                
+            </PagerContent>
+        </MudTable>
+       
     </MudItem>
+    <MudItem xs="12"md="6">
    
+      <MudDatePicker ReadOnly="true" Label="Due Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DueOn" DateFormat="dd/MM/yyyy" />
+
+
+    </MudItem>
+     <MudItem xs="12"md="6">
    
-     
+      <MudDatePicker ReadOnly="true" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocDate" DateFormat="dd/MM/yyyy" />
+
+
+    </MudItem>
     </MudGrid>
+
+   @* <MudPaper >
+    <MudContainer>
+    <MudGrid   >
+     
+    
+     
+
+  </MudGrid></MudContainer></MudPaper>*@
+
+
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+      
+           
+    </DialogActions>
+</MudDialog>
     
 @code {
     [Parameter]
-     public PaymentInitiatedModel model { get; set; }
+    public PaymentInitiatedModel model { get; set; }
+    private PartyPaymentMemoModel model1 = new PartyPaymentMemoModel();
+    private List<PartyPaymentMemoModel> collection = new List<PartyPaymentMemoModel>();
+    DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    
+    
+    
+    
+    
+    
+    
+    protected override async Task OnInitializedAsync()
+    {
+        
+        GetAll();
+    }
+    private  async Task GetAll()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = new List<PartyPaymentMemoModel>();
+        foreach (var item in Iservice.Select(model.PiID.Value,brancID))
+        {
+            collection.Add(item);
+        }
+
+
+    }   
+
+    public void View(PartyPaymentMemoModel ppmm)
+    {
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",ppmm);
+        var dialog =  DialogService.Show<PaymentMemoViewDialog>(ppmm.PaymentMemoID == null?"Payment Memo":"Payment Memo",parms,mediumWidth);
+
+    }
 }

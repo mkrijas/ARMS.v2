@@ -1,20 +1,23 @@
-﻿@inject IPaymentService Iservice
+﻿@using Microsoft.Extensions.Configuration
+@inject IPaymentService Iservice
 @inject IOutstandingBillsService OBIservice
 @inject ICostCenterService costIservice
+@inject TruckDataArrayModel data
 @inject IDimensionService dimensionIservice
 @inject IChartOfAccountService accountService
+@inject IConfiguration configuration
 @inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-
+@using System.Globalization
 <MudDialog>
     <DialogContent>
          <EditForm id="formtfinishmemo" Model="@model" OnValidSubmit="OnValidSubmit">
 <MudPaper>
-    <MudContainer>
+    <MudContainer Style="max-height: 450px; overflow-y: scroll">
 <MudGrid Spacing="4">
   
             <MudItem  xs="12" md="2">
@@ -22,30 +25,52 @@
                    
                </MudItem>
                
-                 <MudItem  xs="12" md="5">
-                       <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                 <MudItem  xs="12" md="4">
+                       <MudAutocomplete  T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
                                      SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
                  </MudItem>
-                  <MudItem  xs="12" md="5">
+                  <MudItem  xs="12" md="3">
                  <MudDatePicker @bind-Date="model.DocumentDate" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Label="DocumentDate" Variant="Variant.Outlined"  Margin="Margin.Dense" For="@(() => model.DocumentDate)"></MudDatePicker>
     
                </MudItem>
-              
+                <MudItem xs="12"md="3">
+                     @if (@customstr == "Cash")
+                            {
 
-              <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                              <MudSelect ReadOnly="true" Label="Select Payment Tool" @bind-Value="model.PaymentTool" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                @foreach (var item in data.BankTools)
+                                {
+                                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                                }
+                            </MudSelect>
+                        }
+                            @if (@customstr != "Cash")
+                            {
+                               <MudSelect ReadOnly="false" Label="Select Payment Tool" @bind-Value="model.PaymentTool" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                @foreach (var item in data.BankTools)
+                                {
+                                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                                }
+                            </MudSelect>
+                            }
+         </MudItem>
+          <MudItem xs="12" md="12">
+        
+                     
+                       
+                       <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
 
                     </MudItem>
    
   
 
-    </MudGrid> 
+    @*</MudGrid> 
     </MudContainer>
     </MudPaper>
     
     <MudPaper>
     <MudContainer>
-    <MudGrid   >
+    <MudGrid   >*@
         <MudItem xs="12">
          <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
 
@@ -55,7 +80,7 @@
                                 <tr>
 
                                  
-                                    <th>PaymentMemoID</th>
+                                    <th>Document No</th>
                                     <th>Reference</th>
                                     <th>EffectiveDate</th>
                                     <th>Amount</th>
@@ -71,7 +96,7 @@
                                     <tr>
                                        
                                     
-                                        <td>@item.PaymentMemoID</td>
+                                        <td>@item.DocumentNumber</td>
                                         <td> <MudTextField  @bind-Value="item.Reference"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
                                         <td> <MudDatePicker DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="item.EffectiveDate"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudDatePicker></td>
                                         <td> <MudTextField T="decimal?" @bind-Value="item.Amount" TextChanged="calcAmount" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
@@ -113,15 +138,16 @@
 @code {
     [Parameter]
     public PaymentFinishModel model { get; set; }
-    public string customstr { get; set; } = "Cash";
+    public string customstr { get; set; } = "Bank";
     private ChartOfAccountModel SelectedAccount = null;
     private List<PaymentEntryModel> paymentEntry = new List<PaymentEntryModel>();
-
-
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    //@bind-Value="model.ReceiptMode"
     private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
     {
 
-        return await Task.FromResult(accountService.FilterSubLedgers(searchString));
+        int coID =Convert.ToInt32(configuration.GetSection("Data")[customstr]);
+        return await Task.FromResult(accountService.SelectChildren(coID));
 
     }
 
@@ -135,7 +161,7 @@
         }
 
         private string TrueString = "Cash";
-        private string FalseString = "Credit";
+        private string FalseString = "Bank";
         private string NullString = "Error";
 
         private string OnGet(bool? value)
@@ -171,6 +197,7 @@
             }
         }
 
+
     }
 
     protected override async Task OnInitializedAsync()
@@ -190,6 +217,7 @@
         {
             PaymentEntryModel p = new PaymentEntryModel();
             p.PaymentMemoID = item.PaymentMemoID;
+            p.DocumentNumber = item.DocumentNumber;
             p.Amount = null;
             p.EffectiveDate = null;
             p.Reference = null;
@@ -210,6 +238,8 @@
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
         Iservice.CompletePayment(model);
+        snackbar.Add("Saved Successfully", Severity.Success);
+        MudDialog.Close();
     }
     public void Cancel()
     {}

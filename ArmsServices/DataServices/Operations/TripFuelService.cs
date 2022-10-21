@@ -67,7 +67,6 @@ namespace ArmsServices.DataServices.Operations
             {
                 yield return GetModel(reader);
             }
-
         }
 
         public TripFuelModel Update(TripFuelModel model)

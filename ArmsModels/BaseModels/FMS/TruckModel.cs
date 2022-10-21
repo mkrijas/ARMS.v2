@@ -68,6 +68,7 @@ namespace ArmsModels.BaseModels
         public string[] BodyTypes { get { return Configuration.GetSection(Data).GetSection("BodyTypes").Get<string[]>(); } }
         public string[] FuelTypes { get { return Configuration.GetSection(Data).GetSection("FuelTypes").Get<string[]>(); } }
         public string[] TransmissionTypes { get { return Configuration.GetSection(Data).GetSection("TransmissionTypes").Get<string[]>(); } }
+        public string[] BankTools { get { return Configuration.GetSection(Data).GetSection("BankTools").Get<string[]>(); } }
 
     }
 }
