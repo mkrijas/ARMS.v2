@@ -123,6 +123,7 @@ namespace Views
             services.AddScoped<IGstItemService, GstItemService>();
             services.AddScoped<ICostCenterService, CostCenterService>();
             services.AddScoped<IDimensionService, DimensionService>();
+            services.AddScoped<IInterBranchMappingService, InterBranchMappingService>();
 
             //------------FINANCE TRANSACTIONS-------------------
             services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();

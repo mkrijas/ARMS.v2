@@ -13,15 +13,15 @@ namespace ArmsServices.DataServices.Operations
     {
         TripFuelModel Update(TripFuelModel model);
         int Delete(int? TripFuelID, string UserID);
-        TripFuelModel Select(int? TripFuelID);        
-        IEnumerable<TripFuelModel> SelectByTrip(long? TripID);       
-      
+        TripFuelModel Select(int? TripFuelID);
+        IEnumerable<TripFuelModel> SelectByTrip(long? TripID);
+
     }
 
-    public class TripFuelService: ITripFuelService
+    public class TripFuelService : ITripFuelService
     {
-        IDbService Iservice; 
-      
+        IDbService Iservice;
+
         public TripFuelService(IDbService iservice)
         {
             Iservice = iservice;
@@ -35,9 +35,9 @@ namespace ArmsServices.DataServices.Operations
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Operation.Trips.Fuel.Delete]", parameters);
-        }      
+        }
 
-       
+
 
         public TripFuelModel Select(int? TripFuelID)
         {
@@ -62,12 +62,12 @@ namespace ArmsServices.DataServices.Operations
                new SqlParameter("@TripID", TripID),
                 new SqlParameter("@Operation", "SelectByTrip"),
             };
-                        
+
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Fuel.Select]", parameters))
             {
                 yield return GetModel(reader);
             }
-          
+
         }
 
         public TripFuelModel Update(TripFuelModel model)
@@ -84,7 +84,7 @@ namespace ArmsServices.DataServices.Operations
                new SqlParameter("@Quantity", model.Quantity),
                new SqlParameter("@RatePerLitre", model.RatePerLitre),
                new SqlParameter("@TotalAmount", model.TotalAmount),
-               new SqlParameter("@TripFuelID", model.TripFuelID),               
+               new SqlParameter("@TripFuelID", model.TripFuelID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -107,9 +107,9 @@ namespace ArmsServices.DataServices.Operations
                 PurchaseID = reader.GetInt32("PurchaseID"),
                 Quantity = reader.GetDecimal("Quantity"),
                 RatePerLitre = reader.GetDecimal("RatePerLitre"),
-                TotalAmount = reader.GetDecimal("TotalAmount"),                
-                BranchID = reader.GetInt32("BranchID"),                
-                TripID = reader.GetInt64("TripID"),               
+                TotalAmount = reader.GetDecimal("TotalAmount"),
+                BranchID = reader.GetInt32("BranchID"),
+                TripID = reader.GetInt64("TripID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = reader.GetByte("RecordStatus"),
@@ -118,4 +118,5 @@ namespace ArmsServices.DataServices.Operations
                 },
             };
         }
+    }
 }
