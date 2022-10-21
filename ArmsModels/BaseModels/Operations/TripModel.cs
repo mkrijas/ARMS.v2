@@ -64,7 +64,7 @@ namespace ArmsModels.BaseModels
         public bool IsPurchase { get; set; }
         public int? PurchaseID { get; set; }
         public int? InvTranID { get; set; }
-        public virtual TaxPurchaseExpenseModel PurchaseEntry { get; set; }
+        public virtual TaxPurchaseModel PurchaseEntry { get; set; }
         public virtual InventoryBaseModel IssueEntry { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
