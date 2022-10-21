@@ -106,7 +106,7 @@ namespace ArmsServices.DataServices
                 BranchIDOther = dr.GetInt32("BranchIDOther"),
                 ContraModeOther = dr.GetString("ContraModeOther"),
                 CoaIDOther = dr.GetInt32("CoaIDOther"),
-                EntryReference = dr.GetString("EntryReference"),
+                EntryReference = dr.GetString("Reference"),
                 BranchID = dr.GetInt32("BranchID"),
                 IsPayment = dr.GetBoolean("IsPayment"),
                 PaymentTool = dr.GetString("PaymentTool"),
@@ -123,7 +123,7 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("ApprovedBy"),
                 },
                 DocumentDate = dr.GetDateTime("DocDate"),
-                DocumentNumber = dr.GetString("DocumentNumber"),
+                DocumentNumber = dr.GetString("DocNumber"),
                 MID = dr.GetInt32("MID"),
                 CostCenter = dr.GetInt32("CostCenter"),
 
