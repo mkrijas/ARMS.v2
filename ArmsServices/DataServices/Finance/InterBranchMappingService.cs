@@ -8,14 +8,14 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IinterBranchMappingService
+    public interface IInterBranchMappingService
     {
         InterBranchMappingModel Update(InterBranchMappingModel model);
         int Delete(int? ID, string UserID);
         IEnumerable<InterBranchMappingModel> Select();
         InterBranchMappingModel SelectByID(int ID);
     }
-    public class InterBranchMappingService : IinterBranchMappingService
+    public class InterBranchMappingService : IInterBranchMappingService
     {
         IDbService Iservice;
 

@@ -5,9 +5,11 @@
 @inject IDimensionService dimensionIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject ITdsRateService tdsIService
+@inject IBranchService brIservice
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+
 
 <style>
     .selected {
@@ -53,7 +55,7 @@
           <MudItem  xs="12" md="12">
 
 
-                <MudTable Items="@collection" @ref="mudTable" RowClassFunc="@SelectedRowClassFunc" OnRowClick="@RowClickEvent" @bind-SelectedItem="selectedItem1" Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="tripModel" T="TripModel" >
+                <MudTable Items="@collection" MultiSelection="true" @ref="mudTable" RowClassFunc="@SelectedRowClassFunc" OnRowClick="@RowClickEvent" @bind-SelectedItem="selectedItem1" Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="tripModel" T="TripModel" >
            
 
              <ToolBarContent>
@@ -83,13 +85,78 @@
 
 
               </MudItem>
+              <MudItem xs="12" md="10">
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton @onclick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Fueling</MudButton>
 
+            </MudItem>
 
         </MudGrid>
         </MudContainer>
         </MudPaper>
-         <MudPaper Class="@valueTran" >
+        <MudPaper Class="@FuelVal">
     <MudContainer>
+        <MudGrid>
+            <MudItem xs="12" md="12">
+                <h6>Trip Fueling</h6>
+            </MudItem>
+            <MudItem xs="12" md="3">
+
+                <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+
+            </MudItem>
+            <MudItem xs="12" md="3">
+
+                <MudSelect Label="Select branch" @bind-Value="TModel.BranchID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    @foreach (var ditem in branch)
+                    {
+                        <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
+                    }
+                </MudSelect>
+
+            </MudItem>
+            <MudItem xs="12" md="3">
+
+                <MudSelect Label="Select FuelItem" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    @foreach (var ditem in costCenter)
+                    {
+                        <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
+                    }
+                </MudSelect>
+
+            </MudItem>
+        <MudItem xs="12"md="3">
+            </MudItem>
+      <MudItem xs="12"md="3">
+           <MudTextField @bind-Value="TModel.Quantity" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TModel.Quantity)"></MudTextField>
+
+     </MudItem>
+              <MudItem xs="12"md="3">
+         <MudTextField @bind-Value="TModel.RatePerLitre"  Label="Rate PerLiter" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TModel.RatePerLitre)"></MudTextField>
+           
+     </MudItem>
+            <MudItem xs="12"md="3">
+         <MudTextField @bind-Value="TModel.TotalAmount"  Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TModel.TotalAmount)"></MudTextField>
+           
+     </MudItem>
+      <MudItem xs="12"md="3">
+                 <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Is Purchase" @onclick="@(()=> OpenDialog(Taxmodel))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+     </MudItem>
+
+             <MudItem xs="12" md="10">
+<MudRadioGroup @bind-SelectedOption="isInv">
+    <MudRadio Option="true" Color="Color.Primary"   Dense="true" onclick="RadioNodeList">Is Purchase</MudRadio>
+    <MudRadio Option="false" Color="Color.Secondary"  Dense="false">IS inventory</MudRadio>
+</MudRadioGroup>
+
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+
+</MudPaper>
+         <MudPaper Class="@valueTran" >
+    <MudContainer>-
     <MudGrid>
          <MudItem  xs="12" md="12">
              <h6>Transaction</h6>
@@ -205,14 +272,7 @@
      <MudTextField @bind-Value="model.TotalAmount" ReadOnly="true" Label="TotalAmount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
 
     </MudItem>
-     <MudItem xs="12"md="12">
-           <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-
-     </MudItem>
-              <MudItem xs="12"md="10">
-        
-           
-     </MudItem>
+    
      <MudItem xs="12"md="2">
           <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" OnClick="Submit">Submit</MudButton>
            
@@ -238,6 +298,34 @@
     private OpExpenseModel SelectedExpenses = null;
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
+
+    //jishmina 
+      private TaxPurchaseModel Taxmodel = new TaxPurchaseModel();
+    public string FuelVal="invisible";
+    public bool isInv { get; set; }
+    private List<BranchModel> branch = new();
+    public TripFuelModel TModel = new TripFuelModel();
+     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    private void selected()
+    {
+        FuelVal = "visible";
+        branch = brIservice.Select().ToList();
+        //selecteditem = selectedItems1.ToList();
+        //MudDialog.Close(selecteditem);
+
+    }
+    private async Task OpenDialog(TaxPurchaseModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        var dialog =  DialogService.Show<TaxPurchaseDialog>(tds.PID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+    }
+//
 
     public async Task fetch()
     {
