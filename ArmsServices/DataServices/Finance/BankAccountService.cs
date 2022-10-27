@@ -34,6 +34,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AccountNumber", model.AccountNumber),
                new SqlParameter("@BeneficiaryName", model.BeneficiaryName),               
                new SqlParameter("@IfscCode", model.IfscCode),
+               new SqlParameter("@BankTitle", model.BankTitle),
+               new SqlParameter("@BankBranch", model.BankBranch),
+               new SqlParameter("@MicrCode", model.MicrCode),
+               new SqlParameter("@SwiftCode", model.SwiftCode),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             
@@ -74,6 +78,10 @@ namespace ArmsServices.DataServices
                 AccountNumber = dr.GetString("AccountNumber"),
                 BeneficiaryName = dr.GetString("BeneficiaryName"),
                 IfscCode = dr.GetString("IfscCode"),
+                BankBranch = dr.GetString("BankBranch"),
+                BankTitle = dr.GetString("BankTitle"),
+                MicrCode = dr.GetString("MicrCode"),
+                SwiftCode = dr.GetString("SwiftCode"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

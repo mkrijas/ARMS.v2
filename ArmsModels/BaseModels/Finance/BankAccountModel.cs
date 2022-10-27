@@ -34,6 +34,8 @@ namespace ArmsModels.BaseModels
 
     public class OwnBankModel
     {
+        SharedModels.UserInfoModel _userInfo;
+        public int? ID { get; set; }
         public BankPostingGroupModel PostingGroup { get; set; } = new BankPostingGroupModel();
         public BankAccountModel BankAccountInfo { get; set; } = new BankAccountModel();
         public AddressModel AddressInfo { get; set; } = new AddressModel();
@@ -44,6 +46,20 @@ namespace ArmsModels.BaseModels
         
         [StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
         public string GstNo { get; set; }
+        public SharedModels.UserInfoModel UserInfo
+        {
+            get
+            {
+                return _userInfo;
+            }
+            set
+            {
+                _userInfo = value;
+                BankAccountInfo.UserInfo = _userInfo;
+                AddressInfo.UserInfo = _userInfo;
+                ContactInfo.UserInfo = _userInfo;
+            }
+        } 
     }
 
     public class BankPostingGroupModel
@@ -53,6 +69,7 @@ namespace ArmsModels.BaseModels
         public ChartOfAccountModel BankAccount { get; set; }
         public ChartOfAccountModel BankCharges { get; set; }
         public ChartOfAccountModel ProcessingFee { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
 
