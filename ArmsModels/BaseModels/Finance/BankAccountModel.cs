@@ -22,7 +22,11 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(maximumLength: 11)]
         public string IfscCode { get; set; }
-        public string Bank { get; set; }
+        [StringLength(9, MinimumLength = 9)]
+        public string MicrCode { get; set; }
+        [StringLength(8, MinimumLength = 11)]
+        public string SwiftCode { get; set; }
+        public string BankTitle { get; set; }
         public string BankBranch { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
@@ -44,6 +48,7 @@ namespace ArmsModels.BaseModels
     public class BankPostingGroupModel
     {
         public int? ID { get; set; }
+        public string Title { get; set; }
         public int? BankAccount { get; set; }
         public int? BankCharges { get; set; }
         public int? ProcessingFee { get; set; }
