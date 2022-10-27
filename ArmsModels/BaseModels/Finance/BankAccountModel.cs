@@ -39,6 +39,7 @@ namespace ArmsModels.BaseModels
         public AddressModel AddressInfo { get; set; } = new AddressModel();
         public ContactModel ContactInfo { get; set; } = new ContactModel();
         public int? BranchID { get; set; }
+        public string BankCode { get; set; }
         public bool IsGstRegistered { get; set; } = false;
         
         [StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
@@ -49,9 +50,9 @@ namespace ArmsModels.BaseModels
     {
         public int? ID { get; set; }
         public string Title { get; set; }
-        public int? BankAccount { get; set; }
-        public int? BankCharges { get; set; }
-        public int? ProcessingFee { get; set; }
+        public ChartOfAccountModel BankAccount { get; set; }
+        public ChartOfAccountModel BankCharges { get; set; }
+        public ChartOfAccountModel ProcessingFee { get; set; }
     }
 
 
