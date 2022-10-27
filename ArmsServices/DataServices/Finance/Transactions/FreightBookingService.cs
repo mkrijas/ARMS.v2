@@ -26,7 +26,7 @@ namespace ArmsServices.DataServices
         IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? ID);
 
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID);
-        IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateOnly? begin, DateOnly? end);
+        IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateTime? begin, DateTime? end);
         IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID);
         GstModel GetGstRate(int? DraftBillID);
     }
@@ -69,6 +69,13 @@ namespace ArmsServices.DataServices
                     GcID = dr.GetInt64("GcID"),
                     TariffID = dr.GetInt32("TariffID"),
                     Amount = dr.GetDecimal("Amount"),
+                    BillDate=dr.GetDateTime("BillDate"),
+                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
+                    BillNumber = dr.GetString("BillNumber"),
+                    BillQuantity = dr.GetDecimal("BillQuantity"),
+                    ConsigneeName= dr.GetString("ConsigneeName"),
+
+
                 };
             }
         }
@@ -439,7 +446,7 @@ namespace ArmsServices.DataServices
             throw new NotImplementedException();
         }
 
-        public IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateOnly? begin, DateOnly? end)
+        public IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateTime? begin, DateTime? end)
         {
 
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -449,16 +456,23 @@ namespace ArmsServices.DataServices
                new SqlParameter("End",end),
                new SqlParameter("@OrderID", OrderID),
                new SqlParameter("@TariffTypeID", TariffTypeID),
+               
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
             {
                 yield return new GcTariffModel()
                 {
+                    GcTariffID = dr.GetInt64("GcTariffID"),
                     ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
-                    GcID = dr.GetInt32("GcID"),
+                    GcID = dr.GetInt64("GcID"),
                     TariffID = dr.GetInt32("TariffID"),
                     Amount = dr.GetDecimal("Amount"),
+                    BillDate = dr.GetDateTime("BillDate"),
+                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
+                    BillNumber = dr.GetString("BillNumber"),
+                    BillQuantity = dr.GetDecimal("BillQuantity"),
+                    ConsigneeName = dr.GetString("ConsigneeName"),
                 };
             }
         }

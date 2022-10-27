@@ -7,17 +7,32 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
-<h3>ProformaInvoiceDialog</h3>
+
+<style>
+    .selected {
+        background-color: #1E88E5 !important;
+    }
+
+        .selected > td {
+            color: white !important;
+        }
+
+            .selected > td .mud-input {
+                color: white !important;
+            }
+</style>
+
+<h3>Consolidate Draft Bill</h3>
 
 
 
- <MudLink Href="ProformaInvoiceView" Underline="Underline.Always">PerfomaInvoice Approve</MudLink>
+@* <MudLink Href="ProformaInvoiceView" Underline="Underline.Always">PerfomaInvoice Approve</MudLink>
 
-<hr />
+<hr />*@
  <MudGrid Spacing="4">
    <MudItem xs="12">
        
-        <MudTable Items="@collection" @bind-SelectedItems="selectedItems1" MultiSelection="true"  Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
+        <MudTable Items="@collection" @ref="mudTable" RowClassFunc="@SelectedRowClassFunc" OnRowClick="@RowClickEvent" @bind-SelectedItem="selectedItem1"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model" T="ConsolidatedDraftBillModel">
            
 
             
@@ -40,16 +55,17 @@
             </RowTemplate>
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-           <MudItem xs="12"md="9"> </MudItem><MudItem xs="12"md="3">
-                <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Get Details</MudButton>
-        </MudItem>
+        
             </PagerContent>
         </MudTable>
     </MudItem>
+       <MudItem xs="12"md="8"> </MudItem><MudItem xs="12"md="4">
+                <MudButton OnClick="selected" Class="@value" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Create Proforma Invoice</MudButton>
+        </MudItem>
     </MudGrid>
 <br />
 <br />
-     <MudPaper Class="@value" >
+    @* <MudPaper Class="@value" >
     <MudContainer>
     <MudGrid   >
       <MudItem xs="12"md="4">
@@ -111,19 +127,24 @@
      <MudButton @onclick="Createbill" Variant="Variant.Filled"  Color="Color.Primary" >Submit</MudButton>
     </MudItem>
 
-  </MudGrid></MudContainer></MudPaper>
+  </MudGrid></MudContainer></MudPaper>*@
 
 
 @code {
 
     private ConsolidatedDraftBillModel model = new ConsolidatedDraftBillModel();
     private List<ConsolidatedDraftBillModel> collection = new List<ConsolidatedDraftBillModel>();
-    private HashSet<ConsolidatedDraftBillModel> selectedItems1= new HashSet<ConsolidatedDraftBillModel>();
+    // private HashSet<ConsolidatedDraftBillModel> selectedItems1= new HashSet<ConsolidatedDraftBillModel>();
     public string value="invisible";
+    private MudTable<ConsolidatedDraftBillModel> mudTable;
     ProformaInvoiceModel pmodel=new();
+    private ConsolidatedDraftBillModel selectedItem1 = null;
+    private int selectedRowNumber = -1;
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
     GstModel gs = new();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
     protected override async Task OnInitializedAsync()
     {
         costCenter = costIservice.Select().ToList();
@@ -140,37 +161,72 @@
 
 
     }
-    public void selected()
+    private string SelectedRowClassFunc(ConsolidatedDraftBillModel consolidatedDraftBillModel, int rowNumber)
     {
-        if(selectedItems1!=null && selectedItems1.Count==1)
+        if (selectedRowNumber == rowNumber)
         {
-            value = "visible";
-            foreach (var item in selectedItems1)
-            {
-                pmodel.TotalAmount = item.TotalAmount;
-                pmodel.DraftBillID = item.DraftBillID;
-                pmodel.OrderID = item.Order.OrderID;
-                pmodel.TariffTypeID = item.TariffType.TariffTypeID;
-            }
-            gs = Iservice.GetGstRate(pmodel.DraftBillID);
+            selectedRowNumber = -1;
+
+            return string.Empty;
+        }
+        else if (mudTable.SelectedItem != null && mudTable.SelectedItem.Equals(consolidatedDraftBillModel))
+        {
+            selectedRowNumber = rowNumber;
+
+            return "selected";
         }
         else
         {
-            snackbar.Add("Please select one cosoilidate bill", Severity.Warning);
+            return string.Empty;
         }
-    }
-    public async Task Createbill()
-    {   var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        var user = authprov.User;
-        pmodel.BranchID = brancID;
-        pmodel.Gst = gs;
-        pmodel.UserInfo.UserID = user.Identity.Name;
-        int m = 0;
-        Iservice.UpdateProformaInvoice(pmodel);
-        snackbar.Add("Saved Successfully", Severity.Success);
-        uriHelper.NavigateTo("/ProformaInvoiceDialog");  
 
     }
+    private void RowClickEvent(TableRowClickEventArgs<ConsolidatedDraftBillModel> tableRowClickEventArgs)
+    {
+        value = "visible";
+        //model.TripID = selectedItem1.TripID;
+        pmodel.TotalAmount = selectedItem1.TotalAmount;
+        pmodel.DraftBillID = selectedItem1.DraftBillID;
+        pmodel.OrderID = selectedItem1.Order.OrderID;
+        pmodel.TariffTypeID = selectedItem1.TariffType.TariffTypeID;
+        gs = Iservice.GetGstRate(pmodel.DraftBillID);
+        pmodel.Gst = gs;
+    }
+    public async Task selected()
+    {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            int brancID = int.Parse(brancIDString);
+            var user = authprov.User;
+            pmodel.BranchID = brancID;
+            pmodel.UserInfo.UserID = user.Identity.Name;  
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model",pmodel);
+            var dialog =  DialogService.Show<ProformaInvoceDialog>("ProformaInvoce",parms,maxWidth);
+            var result = await dialog.Result;
+
+            if(!result.Cancelled)
+            { 
+             ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;   
+            
+             Iservice.UpdateProformaInvoice(UpatedModel);
+             snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
+            }
+        GetConsolidatedDraftBill();
+       
+    }
+    //public async Task Createbill()
+    //{   var authprov = await auth.GetAuthenticationStateAsync();
+    //    var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+    //    int brancID = int.Parse(brancIDString);
+    //    var user = authprov.User;
+    //    pmodel.BranchID = brancID;
+    //    pmodel.Gst = gs;
+    //    pmodel.UserInfo.UserID = user.Identity.Name;
+    //    int m = 0;
+    //    Iservice.UpdateProformaInvoice(pmodel);
+    //    snackbar.Add("Saved Successfully", Severity.Success);
+    //    uriHelper.NavigateTo("/ProformaInvoiceDialog");  
+
+    //}
 }

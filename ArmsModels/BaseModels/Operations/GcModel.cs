@@ -36,7 +36,8 @@ namespace ArmsModels.BaseModels
         public virtual string SetBillNumber { get; set; }
         public virtual decimal? SetBillQuantity { get; set; }
         public virtual decimal? SetUnloadQuantity { get; set; }
-
+        public virtual decimal? TotalFreight { get; set; }
+        public decimal? TotalBillQuantity { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
 
         [ValidateComplexType]

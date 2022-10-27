@@ -195,6 +195,8 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 GcDate = dr.GetDateTime("GcDate"),
                 OrderID = dr.GetInt32("OrderID"),
+                TotalBillQuantity= dr.GetDecimal("BillQuantity"),
+                TotalFreight = dr.GetDecimal("Freight"),
                 OrderName = dr.GetString("OrderName"),
                 RouteID = dr.GetInt32("RouteID"),
                 RouteName = dr.GetString("RouteName") ,
