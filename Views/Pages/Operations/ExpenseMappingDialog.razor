@@ -1,0 +1,84 @@
+﻿@inject IExpenseMappingServices Iservice
+@inject IChartOfAccountService accountService
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Create Expense Mapping
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                     <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.ExpenseTitle" Label="Expense tittle" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.ExpenseTitle)"></MudTextField>
+                    </MudItem>
+                     <MudItem xs="6" md="12">
+                       
+
+                           <MudAutocomplete T="ChartOfAccountModel" Label="Mapped Coa ID" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+                    </MudItem>
+               
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        @*   <MudButton OnClick="DeleteTaxRate">Delete Tax Rate</MudButton>
+            <MudButton OnClick="AddTaxRate">Add More Tax Rate</MudButton>*@
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public ExpenseMapping model { get; set; }
+    private List<ExpenseMapping> collection = new List<ExpenseMapping>();
+    public static int edit = 0;
+    private ExpenseMapping tds = new();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private ChartOfAccountModel SelectedAccount = null;
+
+    protected override void OnInitialized()
+    {
+        if(model.ExpenseID!=null)
+        { edit = 1; }
+        try
+        {
+            SelectedAccount = new();
+            SelectedAccount.CoaID = model.MappedCoaID;
+            //SelectedAccount.AccountName = model.AccountName;
+        }
+        catch(Exception ex)
+        {}
+
+
+        // asseesse = Iservice.SelectAssesseeTypes().ToList();
+    }
+    private void OnValidSubmit(EditContext context)
+    {
+        model.MappedCoaID = SelectedAccount.CoaID;
+         MudDialog.Close(model);
+    }
+    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
+    {
+
+        return await Task.FromResult(accountService.FilterSubLedgers(searchString));
+
+    }
+      private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

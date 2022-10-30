@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace ArmsModels.BaseModels
+{
+    public class ExpenseMapping
+    {
+        public int? ExpenseID { get; set; }
+        public string ExpenseTitle { get; set; }
+        public int? MappedCoaID { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+
+    }
+}

@@ -90,7 +90,7 @@ namespace Views
             
             services.AddScoped<IOpTranService, OpTranService>();
             services.AddScoped<ITruckDocumentService, TruckDocumentService>();
-         
+            services.AddScoped<IExpenseMappingServices, ExpenseMappingServices>();
 
 
             //services.AddScoped<IPartyDirectorService, PartyDirectorService>();
