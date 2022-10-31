@@ -1,0 +1,201 @@
+﻿@page "/BankPostingGroup"
+@inject IBankPostingGroupService Iservice
+@inject IChartOfAccountService accountService
+@inject MudBlazor.ISnackbar snackbar
+@inject IChartOfAccountService accountService
+@inject IConfiguration configuration
+@using Microsoft.Extensions.Configuration
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudGrid>
+    <MudItem xs="4" lg="4">
+        <MudPaper Width="100%" Class="p-2" >
+            <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
+                <MudText Typo="Typo.h6">Bank Posting Group
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
+                </MudText>
+             
+               
+               
+                @if (listOfItems?.Any() == true)
+                {
+                    @foreach (var item in listOfItems)
+                    {
+                         <ContextMenuTrigger MenuId="myMenu"  Data="@item" >
+                        
+                        <MudListItem Value="item">
+                            <MudText Typo=Typo.subtitle1> @item.Title.ToString() </MudText>
+                           @* <MudText Typo="Typo.overline">Since : @item.UserInfo.TimeStampField?.ToString("dd/MM/yy")</MudText>
+                            <MudText Typo="Typo.overline">Since : @item.InventoryGroupName.ToString()</MudText>*@
+                        
+                        </MudListItem>
+                        </ContextMenuTrigger>
+                    }
+                }
+            </MudList>
+        </MudPaper>
+    </MudItem>
+
+
+    @if (@value==true)
+    {
+        <MudItem xs="8" lg="8">
+            
+           <MudPaper >
+              <MudContainer>
+                    <h4>@titleValue</h4>
+                    <br/>
+               <MudGrid Spacing="4">
+                   
+                   <MudItem xs="12" lg="12">
+                        <MudTextField @bind-Value="model.Title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)"></MudTextField>
+                       
+                   </MudItem>
+                    <MudItem xs="12"md="12">
+                      <MudAutocomplete T="ChartOfAccountModel" Label="Select Bank Accounts" @bind-Value="SelectedAccountBankAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccountsBankAccount" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+              
+                      </MudItem>
+                       <MudItem xs="12"md="12">
+                      <MudAutocomplete T="ChartOfAccountModel" Label="Select Bank Charges" @bind-Value="SelectedAccountBankCharges" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccountsBankAccount" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+              
+                      </MudItem>
+                       <MudItem xs="12"md="12">
+                      <MudAutocomplete T="ChartOfAccountModel" Label="Select Processing Fee" @bind-Value="SelectedAccountBankProcessingFee" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccountsBankAccount" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+              
+                      </MudItem>
+                       <MudItem xs="12"md="6">
+                       </MudItem> <MudItem xs="12"md="6">
+                        <MudButton @onclick="CancelBankPostingGroup" Variant="Variant.Filled" Color="Color.Warning" >Cancel</MudButton>
+
+                        <MudButton @onclick="CreateBankPostingGroup" Variant="Variant.Filled" Color="Color.Success" >Submit</MudButton>
+
+                       </MudItem>
+                </MudGrid>
+                </MudContainer>
+               
+           </MudPaper>
+      </MudItem>
+    }
+      
+
+
+</MudGrid>
+
+<ContextMenu Id="myMenu" OnAppearing="OnAppearing">
+ @*   <Item OnClick="@ContextMenuOnClickadd"  Id="addItem" >Add Items</Item>*@
+    <Item OnClick="@ContextMenuOnClickedit"  Id="editGroup">Edit Group</Item>  
+</ContextMenu>
+
+
+@code {
+    BankPostingGroupModel model = new BankPostingGroupModel();
+    private MudListItem SelectedItem;
+    private List<BankPostingGroupModel> listOfItems = new();
+    BankPostingGroupModel SelectedModel = new();
+    public bool value = false;
+    public string titleValue = null;
+    private List<BankPostingGroupModel> collection = new List<BankPostingGroupModel>();
+    private ChartOfAccountModel SelectedAccountBankAccount = null;
+    private ChartOfAccountModel SelectedAccountBankCharges = null;
+    private ChartOfAccountModel SelectedAccountBankProcessingFee = null;
+    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccountsBankAccount(string searchString)
+    {
+        await Task.Delay(5);
+        int coID =Convert.ToInt32(configuration.GetSection("Data")["Bank"]);
+        return await Task.FromResult(accountService.SelectChildren(coID));
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetAll();
+
+    }
+    protected async Task SelectedItemChanged(object obj)
+    {
+        SelectedItem = (MudListItem)obj;
+        SelectedModel = (BankPostingGroupModel)SelectedItem.Value;
+        // GetBankPostingGroup(SelectedModel);
+    }
+    private  void GetAll()
+    {
+        listOfItems = Iservice.Select().ToList();
+    } 
+    private  void GetBankPostingGroup()
+    {
+        collection = new List<BankPostingGroupModel>();
+        foreach (var item in Iservice.Select())
+        {
+            collection.Add(item);
+        }
+    }
+    public async Task CancelBankPostingGroup()
+    {
+        value = false;
+        model = new();
+        SelectedAccountBankAccount = new();
+        SelectedAccountBankCharges=new();
+        SelectedAccountBankProcessingFee = new();
+      
+    }
+    public async Task CreateBankPostingGroup()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        model.BankAccount = SelectedAccountBankAccount;
+        model.BankCharges = SelectedAccountBankCharges;
+        model.ProcessingFee = SelectedAccountBankProcessingFee;
+        Iservice.Update(model);
+        snackbar.Add("Successfully Submitted", Severity.Success);
+        GetAll();
+        value = false;
+    }
+    private async Task OpenDialog(BankPostingGroupModel ii)
+    {
+
+
+
+
+
+    }
+
+    private void Delete(InventoryItemModel ii)
+    {
+        //IIservice.Delete(ii.InventoryItemID, "Rijas");
+        //snackbar.Add("Deleted Successfully", Severity.Success);
+        //GetAll();
+    }
+    private void OpenDialogGroup(BankPostingGroupModel ig)
+    {
+        value = true;
+        model = new();
+        SelectedAccountBankAccount = new();
+        SelectedAccountBankCharges=new();
+        SelectedAccountBankProcessingFee = new();
+        titleValue = "Add Bank Posting Group";
+    }
+    void OnAppearing(MenuAppearingEventArgs e)
+    {
+        //TreeItemData item = (TreeItemData)e.Data;
+        // e.PreventShow = !item.HasChildren;      
+    }
+    protected void ContextMenuOnClickedit(ItemClickEventArgs e)
+    {
+        model = (BankPostingGroupModel)e.Data;
+        SelectedAccountBankAccount = model.BankAccount;
+        SelectedAccountBankCharges=model.BankCharges;
+        SelectedAccountBankProcessingFee = model.ProcessingFee;
+        value = true;
+        titleValue = "Edit Bank Posting Group";
+        //await OpenDialogGroup(ig);
+       
+    }
+   
+}

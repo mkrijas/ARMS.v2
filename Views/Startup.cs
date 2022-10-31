@@ -136,7 +136,11 @@ namespace Views
             services.AddScoped<IFreightBillingService, FreightBillingService>();
             services.AddScoped<IReceiptService, ReceiptService>();
             services.AddScoped<IDrCrNoteService, DrCrNoteService>();
-            
+
+            //------------FINANCE POSTING GROUP-------------------
+            services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();
+            services.AddScoped<IBankAccountOwnService, BankAccountOwnService>();
+
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
             services.AddScoped<IRoleService<RoleModel>, RoleStore>();
