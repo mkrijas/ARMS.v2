@@ -8,7 +8,7 @@ namespace ArmsModels.BaseModels
 {
     public class CashAccountModel
     {
-        public int? ID { get; set; }
+        public int? CashAccountID { get; set; }
         [Required]
         public string Title { get; set; }
         [Required]
@@ -20,6 +20,6 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         public decimal? MinBalance { get; set; }
         public decimal? MaxBalance { get; set; }
-        SharedModels.UserInfoModel UserInfo { get; set; } = new();
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }
