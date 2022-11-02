@@ -34,6 +34,11 @@ namespace ArmsModels.BaseModels
 
     public class OwnBankModel
     {
+        public OwnBankModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+            _userInfo= new SharedModels.UserInfoModel();
+        }
         SharedModels.UserInfoModel _userInfo;
         public int? ID { get; set; }
         public BankPostingGroupModel PostingGroup { get; set; } = new BankPostingGroupModel();
@@ -66,6 +71,10 @@ namespace ArmsModels.BaseModels
 
     public class BankPostingGroupModel
     {
+        public BankPostingGroupModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+        }
         public int? ID { get; set; }
         public string Title { get; set; }
         public ChartOfAccountModel BankAccount { get; set; }
