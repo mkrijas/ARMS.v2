@@ -8,41 +8,67 @@ namespace ArmsModels.BaseModels
 {
     public class PartyModel
     {
+        private string _tradeName;
         public PartyModel()
-        {
-            UserInfo = new SharedModels.UserInfoModel();
-            Contacts = new();
+        {                   
         }
-
-        public PartyModel(string _asseseeType)
-        {
-            UserInfo = new SharedModels.UserInfoModel();
-            Contacts = new();
-            AssesseeType = _asseseeType;
-        }
-
         public int? PartyID { get; set; }
         [Required]
-        [StringLength(maximumLength: 200)]
-        public string PartyName { get; set; }
-        public bool IsClient { get; set; }
-        public bool IsSupplier { get; set; }
-        [Required]
-        public int? AssesseeTypeID { get; set; }
-        public string AssesseeType { get; }
-        [Required]
-        [StringLength(10,MinimumLength =10,ErrorMessage = "PAN must be 10 digits!")]
-        public string PAN { get; set; }
-        [Required]
-        [StringLength(maximumLength: 50)]
-        public string NatureOfFirm { get; set; }//Proprietor, Partnership or Company
-        [Required]
-        public bool TdsApplicable { get; set; }
-        [Required]
-        public bool TcsApplicable { get; set; }
-        [ValidateComplexType]
-        public List<ContactModel> Contacts { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }
+        [StringLength(maximumLength: 8)]
+        public string PartyCode { get; set; }        
 
+        [Required]
+        [StringLength(maximumLength: 200)]
+        public string TradeName
+        {
+            get
+            { return _tradeName; }
+            set { _tradeName = value; Address.AddresseeName = value; }
+        }
+        [Required]
+        [StringLength(200)]
+        public string RegName { get; set; }
+        public string NatureOfBusiness { get; set; } //Supplier/Customer/Renter 
+        public virtual string AssesseeType { get; set; }
+        [Required]
+        public bool PanAvailable { get; set; }        
+        [StringLength(10,MinimumLength =10,ErrorMessage = "PAN must be 10 digits!")]
+        public string PAN { get; set; }        
+        [Required]
+        public bool TdsApplicable { get; set; }       
+        [ValidateComplexType]
+        public string GstType { get; set; }// Registered,UnRegistered,Export,Deemed Export,Exempted,SEZ
+        public string GstRegType { get; set; }  // GSTIN,UID,GID
+        
+        [StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
+        public string GstNo { get; set; }
+        [Required]
+        [StringLength(10, MinimumLength = 10, ErrorMessage = "Must have 10 characters")]
+        public string TanNo { get; set; }
+        public int? CreditPeriod { get; set; } // Days
+        public decimal? CreditLimit { get; set; }
+        public string PaymentMode { get; set; } // Bank/Cash
+        public VendorPostingGroup PostingGroup { get; set; } = new();
+        [Required]
+        public bool InterCompany { get; set; }
+        public string IcPartnerCode { get; set; }
+
+        [ValidateComplexType]
+        public AddressModel Address { get; set; } = new();
+        [ValidateComplexType]
+        public BankAccountModel BankAccount { get; set; } = new();
+
+        [ValidateComplexType]
+        public List<ContactModel> Contacts { get; set; } = new();
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+    } 
+
+    public class VendorPostingGroup
+    {
+        public int? VendorPostingGroupID { get; set; }
+        public string Title { get; set; }
+        public int? BillingAccountID { get; set; }
+        public int? PrePaymentID { get; set; }
+        public int? DepositID { get; set; } 
     }
 }

@@ -18,8 +18,11 @@ namespace ArmsModels.BaseModels
         public DateTime? DocumentDate { get; set; }
         public string DocumentNumber { get; set; }
         [Required]
+        public string DocumentType { get; set; }
+        [Required]
         public int? BranchID { get; set; }
         public decimal? TotalAmount { get; set; }
+        
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
         public string Narration { get; set; }
