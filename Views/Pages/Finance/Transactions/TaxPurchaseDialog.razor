@@ -8,15 +8,11 @@
 @inject IGstUsageIDService usageIservice
 @inject IInventoryGrnService grnIservice
 @inject IBranchService branchIservice
-@inject IPartyBranchService partyBranchIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject ITdsRateService tdsIService
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
-
-
-
 
 <MudDialog >
     <TitleContent>
@@ -30,24 +26,9 @@
             <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
-                <MudGrid Spacing="2">
-                   @* <MudItem xs="12" md="5">
-                        <MudAutocomplete T="PartyModel" Value="model.PartyBranchInfo.Party" ValueChanged="getBranch"
-                                         Variant="Variant.Outlined" Margin="Margin.Dense" Label="Vendor" ResetValueOnEmptyText="true"
-                                         SearchFunc="@SearchParty" ToStringFunc="@(e => e?.PartyName)">
-                        </MudAutocomplete>
-                    </MudItem>
-
-                    <MudItem xs="12" md="5">
-                        <MudSelect Label="Select Party Branch" @bind-Value="model.PartyBranchInfo" T="PartyBranchModel" ToStringFunc="@((p) => p?.Address.Place)"  For="@(() => model.PartyBranchInfo)" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in partybranch)
-                            {
-                                <MudSelectItem Value="@ditem">@ditem.Address.Place</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>*@
+                <MudGrid Spacing="2">                
                      <MudItem xs="12" md="6">
-                         <PartyBranchSelect @bind-Value="model.PartyBranchInfo"></PartyBranchSelect>
+                         <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Supplier"></PartySelector>
                          </MudItem>
                     <MudItem xs="12" md="4">
                         <MudDatePicker Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
@@ -351,9 +332,6 @@
     private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
     private PartyModel SelectedParty = new();
-    private List<PartyBranchModel> pmlist = new();
-    private List<PartyBranchModel> partybranch = new();
-    private PartyBranchModel pmmodel = new();
     private List<PartyModel> partyList = new();
     private List<GstUsageIDModel> usageID = new();
     private List<CostCenterModel> costCenter = new();
@@ -370,12 +348,6 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     public string customstr { get; set; } = "Cash";
 
-
-
-    private async Task<IEnumerable<PartyModel>> SearchParty(string searchString)
-    {
-        return await Task.FromResult(partyList.Where(x => x.PartyName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -395,7 +367,6 @@
                 {
                     customstr = "Credit";
                 }
-
             }
         }
         else
@@ -409,28 +380,18 @@
                 tpi.ItemQty = item.ItemQty;
                 tpi.ItemRate = item.ItemRate;
                 tpi.Amount=item.ItemQty*item.ItemRate;
-
-
-
                 InventoryItemModel iim = itemIservice.SelectByID(item.ItemID);
                 InventoryGroupModel igm = inventoryGroupIservice.SelectByID(iim.InventoryGroupID);
 
                 tpi.CoaID = igm.MappedNonInventoryPurchaseHead;
                 GstItemModel gstItem =gstitemIservice.SelectByItem(item.ItemID.Value,DateTime.Now);
                 decimal? taxRate = gstItem.TaxRate;
-                decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyBranchInfo.PartyID.Value,tpi.CoaID.Value);
+                decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyInfo.PartyID.Value,tpi.CoaID.Value);
 
 
                 BranchModel br = await branchIservice.SelectByID(brancID);
-
-                pmlist = partyBranchIservice.Select(model.PartyBranchInfo.GstID).ToList();
-                foreach (var i in pmlist)
-                {
-                    pmmodel = i;
-                }
-                
-                
-                string partyGstNo = (pmmodel.GstNo).Substring(0,2);
+                                
+                string partyGstNo = (model.PartyInfo.GstNo).Substring(0,2);
                 string branchGstNo = (br.GstNo).Substring(0,2);
 
                 if(partyGstNo==branchGstNo)
@@ -466,21 +427,13 @@
             }
             model.Items = TxItitems;
            
-        }
-        
-        await foreach (var party in partyIservice.Select(0))
-        {
-            partyList.Add(party);
-        }
+        }       
+      
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
         usageID = usageIservice.Select(DateTime.Now).ToList();
         itm = itemIservice.SearchByDescription(string.Empty).ToList();
-        // SelectedParty = partyIservice.GetPartyFromBranch(model.PartyBranchInfo);
-        // SelectedParty = null;
-        // if (SelectedParty != null)
-        //     partybranch = partyBranchIservice.SelectByParty(SelectedParty.PartyID).ToList();
-        //// StateHasChanged();
+       
         if(model.PID !=null)
         {
             model.Expenses=Iservice.GetExpenses(model.PID).ToList();
@@ -559,22 +512,7 @@
                                tvalue;
         TaxItemModel = new();
         // itm = new();
-    }
-
-    private void getBranch(PartyModel party)
-    {
-        // int values = int.Parse(e.Value.ToString());
-        //SelectedParty = party;
-        if (party != null)
-        {
-            partybranch = partyBranchIservice.SelectByParty(party.PartyID).ToList();
-        }
-        else
-        {
-            partybranch = new();
-        }
-        // snackbar.Add("Saved Successfully", Severity.Success);
-    }
+    }   
     private void UsageChanged(GstUsageIDModel igm)
     {
         Expmodel = new();
@@ -588,19 +526,19 @@
     {
         if(SelectedItems.UsageID!=null)
         {
-            if(model.PartyBranchInfo==null)
+            if(model.PartyInfo==null)
             {
-                snackbar.Add("select party Branch", Severity.Success);
+                snackbar.Add("select party", Severity.Success);
                 return;
             }
 
             decimal? taxRate =(decimal)usageIservice.GetGstRate(Expmodel.UsageID,DateTime.Now);
-            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyBranchInfo.PartyID.Value,Expmodel.CoaID.Value);
+            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyInfo.PartyID.Value,Expmodel.CoaID.Value);
 
 
             BranchModel br = await branchIservice.SelectByID(brancID);
 
-            string partyGstNo = (model.PartyBranchInfo.GstNo).Substring(0,2);
+            string partyGstNo = (model.PartyInfo.GstNo).Substring(0,2);
             string branchGstNo = (br.GstNo).Substring(0,2);
 
             if(partyGstNo==branchGstNo)
@@ -663,9 +601,9 @@
     private async Task calcAmount()
     {
 
-        if(model.PartyBranchInfo==null)
+        if(model.PartyInfo==null)
         {
-            snackbar.Add("select party Branch", Severity.Success);
+            snackbar.Add("select party", Severity.Success);
             return;
         }
         if(TaxItemModel.ItemQty==null)
@@ -682,12 +620,12 @@
 
             GstItemModel gstItem =gstitemIservice.SelectByItem(TaxItemModel.ItemID.Value,DateTime.Now);
             decimal? taxRate = gstItem.TaxRate;
-            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyBranchInfo.PartyID.Value,TaxItemModel.CoaID.Value);
+            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyInfo.PartyID.Value,TaxItemModel.CoaID.Value);
 
 
             BranchModel br = await branchIservice.SelectByID(brancID);
 
-            string partyGstNo = (model.PartyBranchInfo.GstNo).Substring(0,2);
+            string partyGstNo = (model.PartyInfo.GstNo).Substring(0,2);
             string branchGstNo = (br.GstNo).Substring(0,2);
 
             if(partyGstNo==branchGstNo)

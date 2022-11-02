@@ -118,7 +118,7 @@ namespace ArmsServices.DataServices
                 Party = new PartyModel
                 {
                     PartyID = dr.GetInt32("ClientID"),
-                    PartyName = dr.GetString("PartyName"),
+                    TradeName = dr.GetString("TradeName"),
                 },
                 Content = new ContentModel
                 {

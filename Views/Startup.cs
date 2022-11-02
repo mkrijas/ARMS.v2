@@ -84,10 +84,8 @@ namespace Views
             services.AddScoped<IGcService, GcService>();
             services.AddScoped<IAddressService, AddressService>();
             services.AddScoped<IContactService, ContactService>();
-            services.AddScoped<IBankAccountService, BankAccountService>();
-            services.AddScoped<IPartyBranchService, PartyBranchService>();
-            services.AddScoped<IPartyService, PartyService>();
-            
+            services.AddScoped<IBankAccountService, BankAccountService>();            
+            services.AddScoped<IPartyService, PartyService>();            
             services.AddScoped<IOpTranService, OpTranService>();
             services.AddScoped<ITruckDocumentService, TruckDocumentService>();
          

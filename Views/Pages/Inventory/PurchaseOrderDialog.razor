@@ -1,8 +1,6 @@
 ﻿@inject IPurchaseOrderService Iservice
 @inject IGstUsageIDService testIservice
-@inject IPartyService partyIservice
 @inject IInventoryItemService itemIservice
-@inject IPartyBranchService partyBranchIservice
 @inject IStoreService storeIservice
 @inject IGstItemService gstIservice
 @inject MudBlazor.ISnackbar snackbar
@@ -26,8 +24,7 @@
                 <ValidationSummary />
                 <MudGrid Spacing="2">                   
                     <MudItem xs="12" md="12"> 
-                          <PartyBranchSelect @bind-Value="partyBranchinfo"></PartyBranchSelect>
-                       
+                           <PartySelector @bind-Value="partyinfo" NatureOfBusiness="Supplier"></PartySelector>                       
                         </MudItem>
                        
                     <MudItem xs="12" md="4">
@@ -155,11 +152,9 @@
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
     private List<GstRateModel> gstRate = new();
-    private List<PartyModel> partyList = new();
     private List<StoreModel> store = new();
     private List<InventoryItemModel> itm = new();
-    public PartyBranchModel partyBranchinfo = new();
-    private List<PartyBranchModel> partybranch = new();
+    public PartyModel partyinfo = new();
     private List<GstItemModel> gstitem = new();
     private PurchaseOrderModel tds = new();
     public InventoryItemModel SelectedItems = new();
@@ -168,49 +163,23 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private PartyModel SelectedParty = new();
-
-    private async Task<IEnumerable<PartyModel>> SearchParty(string searchString)
-    {
-        return await Task.FromResult(partyList.Where(x => x.PartyName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
+   
     private async Task<IEnumerable<InventoryItemModel>> SearchItems(string searchString)
     {
         return await Task.FromResult(itm.Where(x => x.InventoryItemCode.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
-    protected override async void OnInitialized()
+    protected override void OnInitialized()
     {
         store = storeIservice.Select().ToList();
         itm = itemIservice.SearchByDescription(string.Empty).ToList();
         if(model.POID!=null)
         {
-            items = Iservice.GetItemEntries(model.POID.Value).ToList();                
-            PartyModel pmm = partyIservice.GetPartyFromBranch(model.PartyBranchID);
-
-
-            foreach (var item in partyBranchIservice.SelectByParty(pmm.PartyID))
-            {
-                partyBranchinfo=item;
-            }
-
-
-
+            items = Iservice.GetItemEntries(model.POID.Value).ToList(); 
         }
         else
         {
             model.TotalValue = 0;
-        }
-
-
-        //await foreach (var party in partyIservice.Select(0))
-        //{
-        //    partyList.Add(party);
-        //}
-
-        SelectedParty =  partyIservice.GetPartyFromBranch(partyBranchinfo.GstID);
-        if(SelectedParty != null)
-            partybranch = partyBranchIservice.SelectByParty(SelectedParty.PartyID).ToList();
-        StateHasChanged();
-        // asseesse = Iservice.SelectAssesseeTypes().ToList();
+        }    
     }
 
 
@@ -253,7 +222,7 @@
     private void AddItems()
     {
 
-        model.PartyBranchID = partyBranchinfo.GstID;
+        model.PartyBranchID = partyinfo.PartyID;
         InventoryItemEntryModel ientry = new();
         ientry.ItemID = SelectedItems.InventoryItemID;
         

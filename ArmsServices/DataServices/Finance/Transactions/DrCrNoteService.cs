@@ -222,8 +222,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@CostCenter", model.CostCenter),
                 new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@Items", model.Items.ToDataTable()),
-               new SqlParameter("@PartyBranchCoaID", model.PartyBranchCoaID),
-               new SqlParameter("@PartyBranchID", model.PartyBranch.GstID),
+               new SqlParameter("@PartyCoaID", model.PartyCoaID),
+               new SqlParameter("@PartyID", model.Party.PartyID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -260,17 +260,12 @@ namespace ArmsServices.DataServices
                 Dimension = dr.GetInt32("Dimension"),                
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
-                PartyBranch = new PartyBranchModel()
-                {
-                    GstID = dr.GetInt32("PartyBranchID"),
+                Party = new PartyModel()
+                {                
                     PartyID = dr.GetInt32("PartyID"),
-                    Party = new PartyModel()
-                    {
-                        PartyID = dr.GetInt32("PartyID"),
-                        PartyName = dr.GetString("PartyName")
-                    },
+                    TradeName = dr.GetString("TradeName")
                 },
-                PartyBranchCoaID = dr.GetInt32("PartyBranchCoaID"),
+                PartyCoaID = dr.GetInt32("PartyCoaID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

@@ -10,7 +10,7 @@ namespace ArmsModels.BaseModels
     public class ReceiptModel : TransactionBaseModel
     {
         public int? ReceiptID { get; set; }
-        public PartyBranchModel PartyBranchInfo { get; set; }
+        public PartyModel PartyInfo { get; set; }
         public int? PartyBranchCoa { get; set; }
         public string ReceiptType { get; set; } // Advance/Deposit/Settlement        
         public string ReceiptMode { get; set; } // Cash/Bank
@@ -42,7 +42,7 @@ namespace ArmsModels.BaseModels
         public int? OpID { get; set; }
         public string PaymentTransactionType { get; set; }
         public int? PaymentTransactionID { get; set; }
-        public PartyBranchModel PartyBranchInfo { get; set; }
+        public PartyModel PartyInfo { get; set; }
         public decimal? InitialAmount { get; set; }
         public decimal? OutstandingAmount { get; set; }
         public string DocNumber { get; set; }
