@@ -16,7 +16,8 @@ namespace ArmsModels.BaseModels
 
         public int? CoaID { get; set; }
         public int? ParentID { get; set; }
-        public string AccountName { get; set; }
+        public string AccountCode { get; set; }
+        public string AccountName { get; set; }        
         public string AccountDescription { get; set; }
         public string AccountType { get; set; }
         public bool SummaryAccount { get; set; }
@@ -32,9 +33,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
         }
-
         private int? _id;
-
         public int? ID {
             get
             {

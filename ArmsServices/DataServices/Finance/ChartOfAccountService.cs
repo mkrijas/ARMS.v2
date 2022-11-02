@@ -87,9 +87,10 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@AccountName", model.AccountName),
+               new SqlParameter("@AccountName", model.AccountName),
                new SqlParameter("@AccountDescription", model.AccountDescription),
                new SqlParameter("@CoaID", model.CoaID),
+               new SqlParameter("@AccountCode", model.AccountCode),
                new SqlParameter("@ParentID", model.ParentID),
                new SqlParameter("@SummaryAccount", model.SummaryAccount),
                new SqlParameter("@AccountType", model.AccountType),
@@ -111,6 +112,7 @@ namespace ArmsServices.DataServices
             {
                 AccountDescription = dr.GetString("AccountDescription"),
                 AccountName = dr.GetString("AccountName"),
+                AccountCode = dr.GetString("AccountCode"),
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),
                 PeriodTo = dr.GetDateTime("PeriodTo"),
                 AccountType = dr.GetString("AccountType"),
