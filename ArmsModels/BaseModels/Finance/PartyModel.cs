@@ -47,9 +47,9 @@ namespace ArmsModels.BaseModels
         public int? CreditPeriod { get; set; } // Days
         public decimal? CreditLimit { get; set; }
         public string PaymentMode { get; set; } // Bank/Cash
-        public VendorPostingGroup VendorPostingGroup { get; set; } = new();
-        public CustomerPostingGroup CustomerPostingGroup { get; set; } = new();
-        public RenterPostingGroup RenterPostingGroup { get; set; } = new();
+        public VendorPostingGroupModel VendorPostingGroup { get; set; } = new();
+        public CustomerPostingGroupModel CustomerPostingGroup { get; set; } = new();
+        public RenterPostingGroupModel RenterPostingGroup { get; set; } = new();
         [Required]
         public bool InterCompany { get; set; }
         public string IcPartnerCode { get; set; }
@@ -64,30 +64,33 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     } 
 
-    public class VendorPostingGroup
+    public class VendorPostingGroupModel
     {
         public int? VendorPostingGroupID { get; set; }
         public string Title { get; set; }
         public ChartOfAccountModel Payable { get; set; }
         public ChartOfAccountModel PrePayment { get; set; }
-        public ChartOfAccountModel Deposit { get; set; } 
+        public ChartOfAccountModel Deposit { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
-    public class CustomerPostingGroup
+    public class CustomerPostingGroupModel
     {
         public int? CustomerPostingGroupID { get; set; }
         public string Title { get; set; }
         public ChartOfAccountModel Receivable { get; set; }
         public ChartOfAccountModel PrePayment { get; set; }
         public ChartOfAccountModel Deposit { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
-    public class RenterPostingGroup
+    public class RenterPostingGroupModel
     {
         public int? RenterPostingGroupID { get; set; }
         public string Title { get; set; }
         public ChartOfAccountModel Rent { get; set; }
         public ChartOfAccountModel Deposit { get; set; }
         public ChartOfAccountModel Other { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }
