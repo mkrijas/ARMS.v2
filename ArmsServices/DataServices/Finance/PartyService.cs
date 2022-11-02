@@ -11,31 +11,65 @@ namespace ArmsServices.DataServices
 {
     public interface IPartyService
     {       
-        Task<PartyModel> Update(PartyModel model);
-        Task<PartyModel> SelectByID(int? ID);
-        Task<int> Delete(int? PartyID, string UserID);
-        IAsyncEnumerable<PartyModel> Select(int? PartyID);
-        PartyModel GetPartyFromBranch(int? PartyBranchID);
+        PartyModel Update(PartyModel model);
+        PartyModel SelectByID(int? ID);
+        int Delete(int? PartyID, string UserID);
+        IEnumerable<PartyModel> Select(int? PartyID);
+        PartyModel SelectByCode(string PartyCode);
+        bool IsCgst(int BranchID, int PartyID);
+        IEnumerable<ContactModel> GetContacts(int? PartyID);
     }
 
     public class PartyService : IPartyService
     {
         IDbService Iservice;
+        IAddressService _addressService;
+        IBankAccountService _bankAccountService;
 
-        public PartyService(IDbService iservice)
+        public PartyService(IDbService iservice, IAddressService addressService, IBankAccountService bankAccountService)
         {
             Iservice = iservice;
+            _addressService = addressService;
+            _bankAccountService = bankAccountService;
         }
 
 
         public async Task<PartyModel> Update(PartyModel model)
         {
+            AddressModel addressModel = _addressService.Update(model.Address);
+            model.BankAccount.UserInfo = model.UserInfo;
+            model.BankAccount = _bankAccountService.Update(model.BankAccount);
+            model.Address = addressModel;
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PartyID", model.PartyID),
-               new SqlParameter("@PartyName", model.PartyName),
-               new SqlParameter("@IsClient", model.IsClient),
-               new SqlParameter("@IsSupplier", model.IsSupplier),
+
+              /*  PartyID = reader.GetInt32("PartyID"),
+                TradeName = reader.GetString("TradeName"),
+                Address = new AddressModel() { AddressID = reader.GetInt32("AddressID") },
+                AssesseeType = reader.GetString("AssesseeType"),
+                BankAccount = new BankAccountModel() { BankAccountID = reader.GetInt32("BankAccountID") },
+                CreditLimit = reader.GetInt32("CreditLimit"),
+                CreditPeriod = reader.GetInt32("CreditPeriod"),
+                GstNo = reader.GetString("GstNo"),
+                GstRegType = reader.GetString("GstRegType"),
+                GstType = reader.GetString("GstType"),
+                IcPartnerCode = reader.GetString("IcPartnerCode"),
+                InterCompany = reader.GetBoolean("InterCompany"),
+                NatureOfBusiness = reader.GetString("NatureOfBusiness"),
+                PanAvailable = reader.GetBoolean("PanAvailable"),
+                PartyCode = reader.GetString("PartyCode"),
+                PaymentMode = reader.GetString("PaymentMode"),
+                PostingGroup = new VendorPostingGroup() { VendorPostingGroupID = reader.GetInt32("VendorPostingGroupID") },
+                PAN = reader.GetString("PAN"),
+                RegName = reader.GetString("RegName"),
+                TanNo = reader.GetString("TanNo"),
+                TdsApplicable = reader.GetBoolean("TdsApplicable"), */
+
+                new SqlParameter("@PartyID", model.PartyID),
+               new SqlParameter("@TradeName", model.TradeName),
+               new SqlParameter("@NatureOfBusiness", model.NatureOfBusiness),
+               new SqlParameter("@IsSupplier", model.),
                new SqlParameter("@NatureOfFirm", model.NatureOfFirm),
                new SqlParameter("@AssesseeTypeID", model.AssesseeTypeID),
                new SqlParameter("@PAN", model.PAN),
@@ -93,18 +127,42 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public bool IsCgst(int BranchID, int PartyID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsCgst", BranchID){Direction = ParameterDirection.Output},
+            };
+            Iservice.ExecuteNonQuery("[usp.Finance.Taxes.Gst.IsCgst]", parameters);
+            return bool.Parse(parameters[2].Value.ToString());
+        }
+
         private PartyModel GetModel(IDataRecord reader)
         {
-            return new PartyModel(reader.GetString("AssesseeType"))
+            return new PartyModel()
             {
                 PartyID = reader.GetInt32("PartyID"),
-                PartyName = reader.GetString("PartyName"),
-                IsClient = reader.GetBoolean("IsClient"),
-                IsSupplier = reader.GetBoolean("IsSupplier"),
-                NatureOfFirm = reader.GetString("NatureOfFirm"),
-                AssesseeTypeID = reader.GetInt32("AssesseeTypeID"), 
+                TradeName = reader.GetString("TradeName"),
+                Address = new AddressModel() { AddressID = reader.GetInt32("AddressID") },
+                AssesseeType = reader.GetString("AssesseeType"),
+                BankAccount = new BankAccountModel() { BankAccountID = reader.GetInt32("BankAccountID") },
+                CreditLimit = reader.GetInt32("CreditLimit"),
+                CreditPeriod = reader.GetInt32("CreditPeriod"),
+                GstNo=reader.GetString("GstNo"),
+                GstRegType = reader.GetString("GstRegType"),
+                GstType = reader.GetString("GstType"),
+                IcPartnerCode = reader.GetString("IcPartnerCode"),
+                InterCompany = reader.GetBoolean("InterCompany"),
+                NatureOfBusiness = reader.GetString("NatureOfBusiness"),
+                PanAvailable = reader.GetBoolean("PanAvailable"),
+                PartyCode = reader.GetString("PartyCode"),
+                PaymentMode = reader.GetString("PaymentMode"),
+                PostingGroup = new VendorPostingGroup() { VendorPostingGroupID = reader.GetInt32("VendorPostingGroupID") },
                 PAN = reader.GetString("PAN"),
-                TcsApplicable = reader.GetBoolean("TcsApplicable"),
+                RegName = reader.GetString("RegName"),
+                TanNo = reader.GetString("TanNo"),
                 TdsApplicable = reader.GetBoolean("TdsApplicable"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -115,12 +173,12 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public PartyModel GetPartyFromBranch(int? PartyBranchID)
+        public PartyModel SelectByCode(String PartyCode)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PartyBranchID", PartyBranchID),
-               new SqlParameter("@Operation", "ByPartyBranch"),
+               new SqlParameter("@PartyCode", PartyCode),
+               new SqlParameter("@Operation", "ByPartyCode"),
             };
             PartyModel party = null;
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))

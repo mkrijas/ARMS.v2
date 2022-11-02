@@ -35,8 +35,7 @@ namespace ArmsModels.BaseModels
         [StringLength(10,MinimumLength =10,ErrorMessage = "PAN must be 10 digits!")]
         public string PAN { get; set; }        
         [Required]
-        public bool TdsApplicable { get; set; }       
-        [ValidateComplexType]
+        public bool TdsApplicable { get; set; } 
         public string GstType { get; set; }// Registered,UnRegistered,Export,Deemed Export,Exempted,SEZ
         public string GstRegType { get; set; }  // GSTIN,UID,GID
         
@@ -48,7 +47,9 @@ namespace ArmsModels.BaseModels
         public int? CreditPeriod { get; set; } // Days
         public decimal? CreditLimit { get; set; }
         public string PaymentMode { get; set; } // Bank/Cash
-        public VendorPostingGroup PostingGroup { get; set; } = new();
+        public VendorPostingGroup VendorPostingGroup { get; set; } = new();
+        public CustomerPostingGroup CustomerPostingGroup { get; set; } = new();
+        public RenterPostingGroup RenterPostingGroup { get; set; } = new();
         [Required]
         public bool InterCompany { get; set; }
         public string IcPartnerCode { get; set; }
@@ -67,8 +68,26 @@ namespace ArmsModels.BaseModels
     {
         public int? VendorPostingGroupID { get; set; }
         public string Title { get; set; }
-        public int? BillingAccountID { get; set; }
-        public int? PrePaymentID { get; set; }
-        public int? DepositID { get; set; } 
+        public int? Payable { get; set; }
+        public int? PrePayment { get; set; }
+        public int? Deposit { get; set; } 
+    }
+
+    public class CustomerPostingGroup
+    {
+        public int? CustomerPostingGroupID { get; set; }
+        public string Title { get; set; }
+        public int? Receivable { get; set; }
+        public int? PrePayment { get; set; }
+        public int? Deposit { get; set; }
+    }
+
+    public class RenterPostingGroup
+    {
+        public int? RenterPostingGroupID { get; set; }
+        public string Title { get; set; }
+        public int? Rent { get; set; }
+        public int? Deposit { get; set; }
+        public int? Other { get; set; }
     }
 }
