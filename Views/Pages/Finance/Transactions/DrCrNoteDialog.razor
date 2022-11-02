@@ -27,7 +27,7 @@
             
    </MudItem>
             <MudItem  xs="12" md="8">
-                <PartyBranchSelect @bind-Value="model.PartyBranch"></PartyBranchSelect>
+                <PartySelector @bind-Value="model.Party" NatureOfBusiness="@NatureOfBusiness"></PartySelector>
 
                </MudItem>
                <MudItem  xs="12" md="2">
@@ -318,6 +318,7 @@
 @code {
     private DrCrNoteModel model = new DrCrNoteModel();
     public string drCrType { get; set; } = "Credit";
+    private string NatureOfBusiness = "Customer";
     private List<InventoryItemModel> itm = new();
     private List<TaxPurchaseExpenseModel> txexpenses = new();
     private List<TaxPurchaseExpenseModel> txexpensesList = new();
@@ -335,13 +336,9 @@
     int brancID;
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
 
-    protected override async Task OnInitializedAsync()
-    {
-
-        //  model.Particulars=TaxIservice.GetExpenses(model.OriginalTransactionID).ToList();
+    protected override void OnInitialized()
+    {       
         model.TotalAmount = 0;
-
-        //model.Items=TaxIservice.GetItems(model.OriginalTransactionID).ToList();
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
         usageID = usageIservice.Select(DateTime.Now).ToList();
@@ -417,40 +414,32 @@
         brancID = int.Parse(brancIDString);
         if(SelectedItems.UsageID!=null)
         {
-            if(model.PartyBranch==null)
+            if(model.Party == null)
             {
-                snackbar.Add("select party Branch", Severity.Success);
+                snackbar.Add("select party", Severity.Success);
                 return;
             }
 
             decimal? taxRate =(decimal)usageIservice.GetGstRate(txexpense.UsageID,DateTime.Now);
-            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyBranch.PartyID.Value,txexpense.CoaID.Value);
+            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.Party.PartyID.Value,txexpense.CoaID.Value);
 
 
             BranchModel br = await branchIservice.SelectByID(brancID);
 
-            string partyGstNo = (model.PartyBranch.GstNo).Substring(0,2);
+            string partyGstNo = (model.Party.GstNo).Substring(0,2);
             string branchGstNo = (br.GstNo).Substring(0,2);
 
             if(partyGstNo==branchGstNo)
             {
-
                 txexpense.IGST = (txexpense.Amount * taxRate)/100;
-
             }
             else
             {
                 taxRate = taxRate / 2;
                 txexpense.SGST =  (txexpense.Amount * taxRate)/100;
                 txexpense.CGST =  (txexpense.Amount * taxRate)/100;
-
-
             }
-
-
-
             txexpense.TDS=(txexpense.Amount * tdsRate)/100;
-
         }
 
     }
@@ -509,12 +498,12 @@
 
             GstItemModel gstItem =gstitemIservice.SelectByItem(TaxItemModel.ItemID.Value,DateTime.Now);
             decimal? taxRate = gstItem.TaxRate;
-            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyBranch.PartyID.Value,TaxItemModel.CoaID.Value);
+            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.Party.PartyID.Value,TaxItemModel.CoaID.Value);
 
 
             BranchModel br = await branchIservice.SelectByID(brancID);
 
-            string partyGstNo = (model.PartyBranch.GstNo).Substring(0,2);
+            string partyGstNo = (model.Party.GstNo).Substring(0,2);
             string branchGstNo = (br.GstNo).Substring(0,2);
 
             if(partyGstNo==branchGstNo)
@@ -640,7 +629,7 @@
     public async Task fetch()
     {
         DialogParameters parms = new DialogParameters();
-        parms.Add("PartyID",model.PartyBranch.GstID);
+        parms.Add("PartyID",model.Party.PartyID);
         parms.Add("CrDrType",drCrType);
         var dialog =  DialogService.Show<DrCrBillInfo>("BillInfo",parms,maxWidth);
         var result = await dialog.Result;

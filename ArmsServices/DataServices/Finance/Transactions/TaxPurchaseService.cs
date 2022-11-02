@@ -196,7 +196,7 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@Items", model.Items.ToDataTable()),
                new SqlParameter("@NonStoreInventory", model.NonStoreInventory),
-               new SqlParameter("@PartyBranchID", model.PartyBranchInfo.GstID),
+               new SqlParameter("@PartyID", model.PartyInfo.PartyID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -233,15 +233,10 @@ namespace ArmsServices.DataServices
                 NonStoreInventory = dr.GetBoolean("NonStoreInventory"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
-                PartyBranchInfo = new PartyBranchModel()
-                {
-                    GstID = dr.GetInt32("PartyBranchID"),
+                PartyInfo = new PartyModel()
+                {                    
                     PartyID = dr.GetInt32("PartyID"),
-                    Party = new PartyModel()
-                    {
-                        PartyID = dr.GetInt32("PartyID"),
-                        PartyName = dr.GetString("PartyName")
-                    },
+                    TradeName = dr.GetString("TradeName")                  
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

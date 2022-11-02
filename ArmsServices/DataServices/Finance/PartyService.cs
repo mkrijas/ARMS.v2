@@ -15,7 +15,7 @@ namespace ArmsServices.DataServices
         PartyModel SelectByID(int? ID);
         int Delete(int? PartyID, string UserID);
         IEnumerable<PartyModel> Select(int? PartyID);
-        PartyModel SelectByCode(string PartyCode,string NatureOfBusiness);
+        IEnumerable<PartyModel> SelectByCode(string PartyCode,string NatureOfBusiness);
         bool IsCgst(int BranchID, int PartyID);
         IEnumerable<ContactModel> GetContacts(int? PartyID);
         IEnumerable<PartyModel> GetCustomers(string Code);
@@ -173,20 +173,18 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public PartyModel SelectByCode(String PartyCode,string NatureOfBusiness)
+        public IEnumerable<PartyModel> SelectByCode(String PartyCode,string NatureOfBusiness)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PartyCode", PartyCode),
                new SqlParameter("@Operation", "ByPartyCode"),
                new SqlParameter("@NatureOfBusiness","NatureOfBusiness")
-            };
-            PartyModel party = null;
+            };            
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
             {
-                party = GetModel(reader);
-            }
-            return party;
+               yield return GetModel(reader);
+            }            
         }
 
         public IEnumerable<ContactModel> GetContacts(int? PartyID)

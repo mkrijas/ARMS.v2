@@ -11,8 +11,8 @@ namespace ArmsModels.BaseModels
         public int? DrCrNoteID { get; set; }
         public string DrCrType { get; set; } // DebitNote Or CreditNote
         [Required]
-        public PartyBranchModel PartyBranch { get; set; }
-        public int? PartyBranchCoaID { get; set; }        
+        public PartyModel Party { get; set; }
+        public int? PartyCoaID { get; set; }        
         public string Reference { get; set; }
         public string ReasonCode { get; set; } // dropdownlist
         public int? OriginalTransactionID { get; set; } // Transaction against which this issuing
