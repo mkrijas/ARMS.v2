@@ -68,26 +68,26 @@ namespace ArmsModels.BaseModels
     {
         public int? VendorPostingGroupID { get; set; }
         public string Title { get; set; }
-        public int? Payable { get; set; }
-        public int? PrePayment { get; set; }
-        public int? Deposit { get; set; } 
+        public ChartOfAccountModel Payable { get; set; }
+        public ChartOfAccountModel PrePayment { get; set; }
+        public ChartOfAccountModel Deposit { get; set; } 
     }
 
     public class CustomerPostingGroup
     {
         public int? CustomerPostingGroupID { get; set; }
         public string Title { get; set; }
-        public int? Receivable { get; set; }
-        public int? PrePayment { get; set; }
-        public int? Deposit { get; set; }
+        public ChartOfAccountModel Receivable { get; set; }
+        public ChartOfAccountModel PrePayment { get; set; }
+        public ChartOfAccountModel Deposit { get; set; }
     }
 
     public class RenterPostingGroup
     {
         public int? RenterPostingGroupID { get; set; }
         public string Title { get; set; }
-        public int? Rent { get; set; }
-        public int? Deposit { get; set; }
-        public int? Other { get; set; }
+        public ChartOfAccountModel Rent { get; set; }
+        public ChartOfAccountModel Deposit { get; set; }
+        public ChartOfAccountModel Other { get; set; }
     }
 }
