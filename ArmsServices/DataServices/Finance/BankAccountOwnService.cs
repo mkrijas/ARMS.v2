@@ -40,13 +40,13 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@BankAccountID", model.BankAccountInfo.BankAccountID),
+               new SqlParameter("@BankAccountID", bankAccount.BankAccountID),
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@AddressID", model.AddressInfo.AddressID),               
-               new SqlParameter("@ContactID", model.ContactInfo.ContactID),
+               new SqlParameter("@AddressID", addressObj.AddressID),               
+               new SqlParameter("@ContactID", contactObj.ContactID),
                new SqlParameter("@BankCode", model.BankCode),
                new SqlParameter("@PostingGroupID", model.PostingGroup.ID),
-               new SqlParameter("@IsGstRegistered", model.IsGstRegistered),
+               new SqlParameter("@IsRegistered", model.IsGstRegistered),
                new SqlParameter("@GstNo", model.GstNo),               
             };
             

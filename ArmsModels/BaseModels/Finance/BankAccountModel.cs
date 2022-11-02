@@ -34,6 +34,11 @@ namespace ArmsModels.BaseModels
 
     public class OwnBankModel
     {
+        public OwnBankModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+            _userInfo= new SharedModels.UserInfoModel();
+        }
         SharedModels.UserInfoModel _userInfo;
         public int? ID { get; set; }
         public BankPostingGroupModel PostingGroup { get; set; } = new BankPostingGroupModel();
@@ -41,6 +46,8 @@ namespace ArmsModels.BaseModels
         public AddressModel AddressInfo { get; set; } = new AddressModel();
         public ContactModel ContactInfo { get; set; } = new ContactModel();
         public int? BranchID { get; set; }
+        [Required]
+        [StringLength(8, MinimumLength = 8, ErrorMessage = "Must have 8 characters")]
         public string BankCode { get; set; }
         public bool IsGstRegistered { get; set; } = false;
         
@@ -64,6 +71,10 @@ namespace ArmsModels.BaseModels
 
     public class BankPostingGroupModel
     {
+        public BankPostingGroupModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+        }
         public int? ID { get; set; }
         public string Title { get; set; }
         public ChartOfAccountModel BankAccount { get; set; }
