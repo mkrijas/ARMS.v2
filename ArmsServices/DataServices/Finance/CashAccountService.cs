@@ -15,7 +15,7 @@ namespace ArmsServices.DataServices
         int Delete(int? CashAccountID, string UserID);
         IEnumerable<CashAccountModel> Select();
         CashAccountModel SelectByID(int ID);
-        CashAccountModel SelectByBranch(int BranchID);
+        IEnumerable<CashAccountModel> SelectByBranch(int BranchID);
     }
 
     public class CashAccountService : ICashAccountService
@@ -89,7 +89,7 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public CashAccountModel SelectByBranch(int BranchID)
+        public IEnumerable<CashAccountModel> SelectByBranch(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -97,12 +97,12 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByBranch"),
             };
 
-            CashAccountModel model = new CashAccountModel();
+            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.CashAccount.Select]", parameters))
             {
-                model = GetModel(dr);
+                yield return GetModel(dr);
             }
-            return model;
+            
         }
 
         public CashAccountModel SelectByID(int ID)
