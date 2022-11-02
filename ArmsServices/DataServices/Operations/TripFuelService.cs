@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
 
-namespace ArmsServices.DataServices.Operations
+namespace ArmsServices.DataServices
 {
     public interface ITripFuelService
     {
@@ -79,12 +79,27 @@ namespace ArmsServices.DataServices.Operations
                new SqlParameter("@FuelItemID", model.FuelItemID),
                new SqlParameter("@InvTranID", model.InvTranID),
                new SqlParameter("@IsPurchase", model.IsPurchase),
-               new SqlParameter("@PurchaseID", model.PurchaseID),
+               new SqlParameter("@PartyBranchID", model.PartyBranch.GstID),
                new SqlParameter("@Quantity", model.Quantity),
                new SqlParameter("@RatePerLitre", model.RatePerLitre),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@TripFuelID", model.TripFuelID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               // Tax Purcahse
+               // new SqlParameter("@PID", model.PurchaseEntry.PID),
+               //new SqlParameter("@AdditionalTDS", model.PurchaseEntry.AdditionalTDS),
+               new SqlParameter("@DocumentDate", model.EntryDate),
+               //new SqlParameter("@DocumentNumber", model.PurchaseEntry.DocumentNumber),
+               //new SqlParameter("@GRNID", model.PurchaseEntry.GRNID),
+               new SqlParameter("@InvoiceDate", model.EntryDate),
+               new SqlParameter("@InvoiceNo", model.invoiceNo),
+               //new SqlParameter("@IsCredit", model.PurchaseEntry.IsCredit),
+               new SqlParameter("@CostCenter", model.Costcenter),
+                new SqlParameter("@Dimension", model.Diomension),
+               //new SqlParameter("@NonStoreInventory", model.PurchaseEntry.NonStoreInventory),
+               //new SqlParameter("@PartyBranchID", model.PurchaseEntry.PartyBranchInfo.GstID),
+               //new SqlParameter("@TotalAmount", model.TotalAmount),
+               //new SqlParameter("@Narration", model.PurchaseEntry.Narration),
             };
 
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Fuel.Update]", parameters))

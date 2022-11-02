@@ -91,6 +91,8 @@ namespace Views
             services.AddScoped<IOpTranService, OpTranService>();
             services.AddScoped<ITruckDocumentService, TruckDocumentService>();
             services.AddScoped<IExpenseMappingServices, ExpenseMappingServices>();
+            
+                 services.AddScoped<ITripFuelService, TripFuelService>();
 
 
             //services.AddScoped<IPartyDirectorService, PartyDirectorService>();
