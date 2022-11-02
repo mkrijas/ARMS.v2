@@ -178,7 +178,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PartyCode", PartyCode),
-               new SqlParameter("@Operation", "ByPartyCode"),
+               new SqlParameter("@Operation", "ByCode"),
                new SqlParameter("@NatureOfBusiness","NatureOfBusiness")
             };            
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
@@ -248,8 +248,13 @@ namespace ArmsServices.DataServices
 
         public int AddContact(int? PartyID, ContactModel contact)
         {
-            contact = _contactService.Update(contact);
-            return contact?.ContactID??0;
+            contact = _contactService.Update(contact);            
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@contactID", contact?.ContactID??0)               
+            };
+            return Iservice.ExecuteNonQuery("[usp.Entity.Party.Contacts.Update]", parameters);            
         }
     }
 }
