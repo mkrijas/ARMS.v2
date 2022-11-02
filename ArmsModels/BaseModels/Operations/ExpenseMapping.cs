@@ -11,6 +11,7 @@ namespace ArmsModels.BaseModels
         public int? ExpenseID { get; set; }
         public string ExpenseTitle { get; set; }
         public int? MappedCoaID { get; set; }
+        public  virtual string AccountName { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
 
     }
