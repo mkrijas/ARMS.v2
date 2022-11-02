@@ -29,11 +29,11 @@ namespace ArmsModels.BaseModels
         [StringLength(200)]
         public string RegName { get; set; }
         public string NatureOfBusiness { get; set; } //Supplier/Customer/Renter 
-        public virtual string AssesseeType { get; set; }
+        public virtual string AssesseeType { get; set; } //char1
         [Required]
         public bool PanAvailable { get; set; }        
         [StringLength(10,MinimumLength =10,ErrorMessage = "PAN must be 10 digits!")]
-        public string PAN { get; set; }        
+        public string PAN { get; set; }     // char 10, 4 th caracter input   
         [Required]
         public bool TdsApplicable { get; set; }       
         [ValidateComplexType]
@@ -44,22 +44,22 @@ namespace ArmsModels.BaseModels
         public string GstNo { get; set; }
         [Required]
         [StringLength(10, MinimumLength = 10, ErrorMessage = "Must have 10 characters")]
-        public string TanNo { get; set; }
+        public string TanNo { get; set; } 
         public int? CreditPeriod { get; set; } // Days
         public decimal? CreditLimit { get; set; }
         public string PaymentMode { get; set; } // Bank/Cash
-        public VendorPostingGroup PostingGroup { get; set; } = new();
+        public VendorPostingGroup PostingGroup { get; set; } = new(); // pid need to be insert
         [Required]
         public bool InterCompany { get; set; }
         public string IcPartnerCode { get; set; }
 
         [ValidateComplexType]
-        public AddressModel Address { get; set; } = new();
+        public AddressModel Address { get; set; } = new(); // address if fo
         [ValidateComplexType]
-        public BankAccountModel BankAccount { get; set; } = new();
+        public BankAccountModel BankAccount { get; set; } = new(); // bank id for
 
         [ValidateComplexType]
-        public List<ContactModel> Contacts { get; set; } = new();
+        public List<ContactModel> Contacts { get; set; } = new(); // part contact tables
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     } 
 
