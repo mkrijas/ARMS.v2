@@ -68,9 +68,9 @@ namespace ArmsModels.BaseModels
     {
         public int? VendorPostingGroupID { get; set; }
         public string Title { get; set; }
-        public ChartOfAccountModel Payable { get; set; }
-        public ChartOfAccountModel PrePayment { get; set; }
-        public ChartOfAccountModel Deposit { get; set; }
+        public ChartOfAccountModel Payable { get; set; } = new();
+        public ChartOfAccountModel PrePayment { get; set; } = new();
+        public ChartOfAccountModel Deposit { get; set; } = new();
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
@@ -78,9 +78,9 @@ namespace ArmsModels.BaseModels
     {
         public int? CustomerPostingGroupID { get; set; }
         public string Title { get; set; }
-        public ChartOfAccountModel Receivable { get; set; }
-        public ChartOfAccountModel PrePayment { get; set; }
-        public ChartOfAccountModel Deposit { get; set; }
+        public ChartOfAccountModel Receivable { get; set; } = new();
+        public ChartOfAccountModel PrePayment { get; set; } = new();
+        public ChartOfAccountModel Deposit { get; set; } = new();
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
@@ -88,9 +88,9 @@ namespace ArmsModels.BaseModels
     {
         public int? RenterPostingGroupID { get; set; }
         public string Title { get; set; }
-        public ChartOfAccountModel Rent { get; set; }
-        public ChartOfAccountModel Deposit { get; set; }
-        public ChartOfAccountModel Other { get; set; }
+        public ChartOfAccountModel Rent { get; set; } = new();
+        public ChartOfAccountModel Deposit { get; set; } = new();
+        public ChartOfAccountModel Other { get; set; } = new();
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }

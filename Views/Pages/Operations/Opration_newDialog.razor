@@ -1,6 +1,7 @@
 ﻿@page "/OprationNew"
 @inject IOpTranService Iservice
 @inject ITripService tripIservice
+@inject ITripFuelService tripFuelIservice
 @inject ICostCenterService costIservice
 @inject IDimensionService dimensionIservice
 @inject MudBlazor.ISnackbar snackbar
@@ -9,7 +10,7 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
-
+@inject IInventoryItemService itemIservice
 
 <style>
     .selected {
@@ -103,22 +104,41 @@
             </MudItem>
             <MudItem xs="12" md="3">
 
-                <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="TModel.EntryDate" DateFormat="dd/MM/yyyy" />
 
             </MudItem>
+        
             <MudItem xs="12" md="3">
 
-                <MudSelect Label="Select branch" @bind-Value="TModel.BranchID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                    @foreach (var ditem in branch)
+                <MudSelect Label="Select FuelItem" @bind-Value="TModel.FuelItemID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    @foreach (var ditem in items)
                     {
-                        <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
+                        <MudSelectItem Value="@ditem.InventoryItemID">@ditem.ItemDecription</MudSelectItem>
                     }
                 </MudSelect>
 
             </MudItem>
-            <MudItem xs="12" md="3">
+      <MudItem xs="12"md="3">
+           <MudTextField @bind-Value="TModel.Quantity" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TModel.Quantity)"></MudTextField>
 
-                <MudSelect Label="Select FuelItem" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+     </MudItem>
+           <MudItem xs="12"md="3">
+         <MudCheckBox @Checked="@isInv" Color="Color.Primary" T="bool" Label="Is Purchase" CheckedChanged="@isPurChanged">
+              isInv: @(isInv == null ? "false" : isInv.ToString())
+         </MudCheckBox>
+     </MudItem> 
+        </MudGrid>
+    
+    </MudContainer>
+
+</MudPaper>
+       <MudPaper Class="@IsPur" >
+           <MudContainer>
+        <MudGrid>
+         
+                    <MudItem xs="12" md="3">
+
+                <MudSelect Label="CostCenter " @bind-Value="TModel.Costcenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                     @foreach (var ditem in costCenter)
                     {
                         <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
@@ -126,37 +146,38 @@
                 </MudSelect>
 
             </MudItem>
-        <MudItem xs="12"md="3">
-            </MudItem>
-      <MudItem xs="12"md="3">
-           <MudTextField @bind-Value="TModel.Quantity" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TModel.Quantity)"></MudTextField>
+          
+                <MudItem xs="12"md="3">
+   
+     <MudSelect Label="Select Dimension" @bind-Value="TModel.Diomension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
+                            @foreach (var ditem in dimension)
+                            {
+                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                            }
+                        </MudSelect>
 
-     </MudItem>
+    </MudItem>
+       <MudItem xs="12"md="6">
+           <PartyBranchSelect @bind-Value="TModel.PartyBranch"></PartyBranchSelect>
+           </MudItem>
+
               <MudItem xs="12"md="3">
-         <MudTextField @bind-Value="TModel.RatePerLitre"  Label="Rate PerLiter" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TModel.RatePerLitre)"></MudTextField>
-           
-     </MudItem>
-            <MudItem xs="12"md="3">
-         <MudTextField @bind-Value="TModel.TotalAmount"  Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TModel.TotalAmount)"></MudTextField>
-           
-     </MudItem>
-      <MudItem xs="12"md="3">
-                 <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Is Purchase" @onclick="@(()=> OpenDialog(Taxmodel))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
-     </MudItem>
-
-             <MudItem xs="12" md="10">
-<MudRadioGroup @bind-SelectedOption="isInv">
-    <MudRadio Option="true" Color="Color.Primary"   Dense="true" onclick="RadioNodeList">Is Purchase</MudRadio>
-    <MudRadio Option="false" Color="Color.Secondary"  Dense="false">IS inventory</MudRadio>
-</MudRadioGroup>
-
-            </MudItem>
+                         <MudTextField @bind-Value="TModel.invoiceNo"  Label="Invoice Number"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TModel.invoiceNo)"></MudTextField>
+                 </MudItem>
+                   <MudItem xs="12"md="3">
+                         <MudTextField @bind-Value="TModel.RatePerLitre" Label="Rate Per Litre"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TModel.RatePerLitre)"></MudTextField>
+                 </MudItem>
+                   <MudItem xs="12"md="3">
+                         <MudTextField @bind-Value="TModel.TotalAmount" ReadOnly="true" Label="TotalAmount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TModel.TotalAmount)"></MudTextField>
+                 </MudItem>
+                   <MudItem xs="12"md="3">
+ <MudButton @onclick="TripFuelSubmitt" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+ </MudItem>
         </MudGrid>
-    </MudContainer>
-
-</MudPaper>
+        </MudContainer>
+         </MudPaper>
          <MudPaper Class="@valueTran" >
-    <MudContainer>-
+    <MudContainer>
     <MudGrid>
          <MudItem  xs="12" md="12">
              <h6>Transaction</h6>
@@ -300,31 +321,78 @@
     private List<DimensionModel> dimension = new();
 
     //jishmina 
-      private TaxPurchaseModel Taxmodel = new TaxPurchaseModel();
+    private TaxPurchaseModel Taxmodel = new TaxPurchaseModel();
+    //public PartyBranchModel selectedpartybr{ get; set; }
     public string FuelVal="invisible";
-    public bool isInv { get; set; }
+    public string IsPur = "invisible";
+    public bool? isInv { get; set; } = null;
     private List<BranchModel> branch = new();
     public TripFuelModel TModel = new TripFuelModel();
-     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-
+    private List<InventoryItemModel> items = new();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private List<TaxPurchaseExpenseModel> exitems = new List<TaxPurchaseExpenseModel>();
+    private List<TaxPurchaseItemModel> TxItitems = new List<TaxPurchaseItemModel>();
+    private List<TaxPurchaseModel> Taxmodellist = new List<TaxPurchaseModel>();
     private void selected()
     {
         FuelVal = "visible";
         branch = brIservice.Select().ToList();
+        costCenter = costIservice.Select().ToList();
+        dimension = dimensionIservice.Select().ToList();
+        items = itemIservice.SearchByDescription(string.Empty).ToList();
+        TModel.TotalAmount = 0;
+        TModel.TripID = selectedItem1.TripID;
         //selecteditem = selectedItems1.ToList();
         //MudDialog.Close(selecteditem);
 
     }
-    private async Task OpenDialog(TaxPurchaseModel tds)
+    private void isPurChanged()
     {
-        //var authprov = await auth.GetAuthenticationStateAsync();
-        //var user = authprov.User;
-        
-        //DialogParameters parms = new DialogParameters();
-        //parms.Add("model",tds);
-        //var dialog =  DialogService.Show<TaxPurchaseDialog>(tds.PID == null?"ADD":"EDIT",parms,maxWidth);
-        //var result = await dialog.Result;
+        //if ( isInv == true)
+        //{
+        IsPur = "visible";
+        TModel.IsPurchase = true;
+
+        //}
+        //else
+        //{
+        //    IsPur="invisible";
+        //}
+
     }
+    private void addPurchaseEntry()
+    {
+        TaxPurchaseModel tpm = new();
+        tpm.InvoiceNo = Taxmodel.InvoiceNo;
+        Taxmodellist.Add(tpm);
+        //TModel.PurchaseEntry= Taxmodel.InvoiceNo;
+    }
+    private async Task TripFuelSubmitt()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        TModel.UserInfo.UserID = user.Identity.Name;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        TModel.BranchID = int.Parse(brancIDString);
+        TModel.UsageID = "16";
+        TModel.TotalAmount = (TModel.RatePerLitre * TModel.Quantity);
+        addPurchaseEntry();
+        try
+        {
+
+            tripFuelIservice.Update(TModel);
+           
+            snackbar.Add("Saved Successfully", Severity.Success);
+            TModel = new TripFuelModel();
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+    
 //
 
     public async Task fetch()
