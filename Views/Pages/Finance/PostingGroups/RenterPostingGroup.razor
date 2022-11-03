@@ -1,0 +1,196 @@
+﻿@page "/RenterPostingGroup"
+@inject IRenterPostingGroupService Iservice
+@inject IChartOfAccountService accountService
+@inject MudBlazor.ISnackbar snackbar
+@inject IChartOfAccountService accountService
+@inject IConfiguration configuration
+@using Microsoft.Extensions.Configuration
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudGrid>
+    <MudItem xs="4" lg="4">
+        <MudPaper Width="100%" Class="p-2" >
+            <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
+                <MudText Typo="Typo.h6">Renter Posting Group
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
+                </MudText>
+             
+               
+               
+                @if (listOfItems?.Any() == true)
+                {
+                    @foreach (var item in listOfItems)
+                    {
+                         <ContextMenuTrigger MenuId="myMenu"  Data="@item" >
+                        
+                        <MudListItem Value="item">
+                            <MudText Typo=Typo.subtitle1> @item.Title.ToString() </MudText>
+                           @* <MudText Typo="Typo.overline">Since : @item.UserInfo.TimeStampField?.ToString("dd/MM/yy")</MudText>
+                            <MudText Typo="Typo.overline">Since : @item.InventoryGroupName.ToString()</MudText>*@
+                        
+                        </MudListItem>
+                        </ContextMenuTrigger>
+                    }
+                }
+            </MudList>
+        </MudPaper>
+    </MudItem>
+
+
+    @if (@value==true)
+    {
+        <MudItem xs="8" lg="8">
+            
+           <MudPaper >
+              <MudContainer>
+                    <h4>@titleValue</h4>
+                    <br/>
+               <MudGrid Spacing="4">
+                   
+                   <MudItem xs="12" lg="12">
+                        <MudTextField @bind-Value="model.Title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)"></MudTextField>
+                       
+                   </MudItem>
+                    <MudItem xs="12"md="12">
+                         <CoalDSelect   @bind-Value="SelectedAccountRentAccount"  />
+                      </MudItem>
+                       <MudItem xs="12"md="12">
+                        <CoalDSelect   @bind-Value="SelectedAccountDeposit"  />
+                      </MudItem>
+                       <MudItem xs="12"md="12">
+                      <CoalDSelect   @bind-Value="SelectedAccountOther"  />
+                      </MudItem>
+                       <MudItem xs="12"md="6">
+                       </MudItem> <MudItem xs="12"md="6">
+                        <MudButton @onclick="CancelRenterPostingGroup" Variant="Variant.Filled" Color="Color.Warning" >Cancel</MudButton>
+
+                        <MudButton @onclick="CreateRenterPostingGroup" Variant="Variant.Filled" Color="Color.Success" >Submit</MudButton>
+
+                       </MudItem>
+                </MudGrid>
+                </MudContainer>
+               
+           </MudPaper>
+      </MudItem>
+    }
+      
+
+
+</MudGrid>
+
+<ContextMenu Id="myMenu" OnAppearing="OnAppearing">
+ @*   <Item OnClick="@ContextMenuOnClickadd"  Id="addItem" >Add Items</Item>*@
+    <Item OnClick="@ContextMenuOnClickedit"  Id="editGroup">Edit Group</Item>  
+</ContextMenu>
+
+
+@code {
+
+    RenterPostingGroupModel model = new RenterPostingGroupModel();
+    private MudListItem SelectedItem;
+    private List<RenterPostingGroupModel> listOfItems = new();
+    RenterPostingGroupModel SelectedModel = new();
+    public bool value = false;
+    public string titleValue = null;
+    private List<RenterPostingGroupModel> collection = new List<RenterPostingGroupModel>();
+    private ChartOfAccountModel SelectedAccountRentAccount = null;
+    private ChartOfAccountModel SelectedAccountDeposit = null;
+    private ChartOfAccountModel SelectedAccountOther = null;
+    //private async Task<IEnumerable<ChartOfAccountModel>> SearchAccountsBankAccount(string searchString)
+    //{
+    //    await Task.Delay(5);
+    //    int coID =Convert.ToInt32(configuration.GetSection("Data")["Bank"]);
+    //    return await Task.FromResult(accountService.SelectChildren(coID));
+    //}
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetAll();
+
+    }
+    protected async Task SelectedItemChanged(object obj)
+    {
+        SelectedItem = (MudListItem)obj;
+        SelectedModel = (RenterPostingGroupModel)SelectedItem.Value;
+        // GetBankPostingGroup(SelectedModel);
+    }
+    private  void GetAll()
+    {
+        listOfItems = Iservice.Select().ToList();
+    } 
+    //private  void GetBankPostingGroup()
+    //{
+    //    collection = new List<RenterPostingGroupModel>();
+    //    foreach (var item in Iservice.Select())
+    //    {
+    //        collection.Add(item);
+    //    }
+    //}
+    public async Task CancelRenterPostingGroup()
+    {
+        value = false;
+        model = new();
+        SelectedAccountRentAccount = new();
+        SelectedAccountDeposit=new();
+        SelectedAccountOther = new();
+      
+    }
+    public async Task CreateRenterPostingGroup()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        model.Rent = SelectedAccountRentAccount;
+        model.Deposit = SelectedAccountDeposit;
+        model.Other = SelectedAccountOther;
+        Iservice.Update(model);
+        snackbar.Add("Successfully Submitted", Severity.Success);
+        GetAll();
+        value = false;
+    }
+    private async Task OpenDialog(RenterPostingGroupModel ii)
+    {
+
+
+
+
+
+    }
+
+    private void Delete(InventoryItemModel ii)
+    {
+        //IIservice.Delete(ii.InventoryItemID, "Rijas");
+        //snackbar.Add("Deleted Successfully", Severity.Success);
+        //GetAll();
+    }
+    private void OpenDialogGroup(RenterPostingGroupModel ig)
+    {
+        value = true;
+        model = new();
+        SelectedAccountRentAccount = new();
+        SelectedAccountDeposit=new();
+        SelectedAccountOther = new();
+        titleValue = "Add Renter Posting Group";
+    }
+    void OnAppearing(MenuAppearingEventArgs e)
+    {
+        //TreeItemData item = (TreeItemData)e.Data;
+        // e.PreventShow = !item.HasChildren;      
+    }
+    protected void ContextMenuOnClickedit(ItemClickEventArgs e)
+    {
+        model = (RenterPostingGroupModel)e.Data;
+        SelectedAccountRentAccount = model.Rent;
+        SelectedAccountDeposit=model.Deposit;
+        SelectedAccountOther = model.Other;
+        value = true;
+        titleValue = "Edit Renter Posting Group";
+        //await OpenDialogGroup(ig);
+       
+    }
+
+}

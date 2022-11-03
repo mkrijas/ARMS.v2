@@ -138,6 +138,9 @@ namespace Views
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();
             services.AddScoped<IBankAccountOwnService, BankAccountOwnService>();
+            services.AddScoped<ICustomerPostingGroupService, CustomerPostingGroupService>();
+            services.AddScoped<IRenterPostingGroupService, RenterPostingGroupService>();
+            services.AddScoped<IVendorPostingGroupService, VendorPostingGroupService>();
 
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
