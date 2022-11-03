@@ -11,7 +11,7 @@ namespace ArmsModels.BaseModels
     {
         public int? PaymentMemoID { get; set; }
         public int? PaymentInitiatedID { get; set; }
-        public PartyBranchModel PartyBranchInfo { get; set; }
+        public PartyModel PartyInfo { get; set; }
         public byte? PaymentStatus { get; set; } = 0; // 0 - generated; 1 - initiated; 2 - completed;
         public List<BillsPaidModel> Bills { get; set; }
     }
@@ -22,7 +22,7 @@ namespace ArmsModels.BaseModels
         public int? BoID { get; set; }
         public string BillTransactionType { get; set; }
         public int? BillTransactionID { get; set; }
-        public PartyBranchModel PartyBranchInfo { get; set; }
+        public PartyModel PartyInfo { get; set; }
         public decimal? InitialAmount { get; set; }
         private decimal? _amount;
         public decimal? OutstandingAmount {

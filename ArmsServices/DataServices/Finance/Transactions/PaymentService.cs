@@ -409,7 +409,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Bills", model.Bills.ToDataTable()),
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
-               new SqlParameter("@PartyBranchID", model.PartyBranchInfo.GstID),
+               new SqlParameter("@PartyID", model.PartyInfo.PartyID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -444,14 +444,10 @@ namespace ArmsServices.DataServices
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
-                PartyBranchInfo = new PartyBranchModel()
+                PartyInfo = new PartyModel()
                 {
-                    GstID = dr.GetInt32("PartyBranchID"),
-                    Party = new PartyModel()
-                    {
-                        PartyID = dr.GetInt32("PartyID"),
-                        PartyName = dr.GetString("PartyName")
-                    },
+                    PartyID = dr.GetInt32("PartyID"),
+                    TradeName = dr.GetString("TradeName")
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

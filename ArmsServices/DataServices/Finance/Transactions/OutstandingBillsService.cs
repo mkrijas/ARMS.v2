@@ -106,9 +106,9 @@ namespace ArmsServices.DataServices
                      
                      OutstandingAmount = dr.GetDecimal ("OutstandingAmount"),
                      BranchName = dr.GetString("BramnchName"),
-                     PartyBranchInfo = new PartyBranchModel()
+                     PartyInfo = new PartyModel()
                      {
-                         GstID = dr.GetInt32("PartyBranchID"),
+                         PartyID = dr.GetInt32("PartyID"),
                      },
                      OpID = dr.GetInt32("OpID"),
                      PaymentTransactionID = dr.GetInt32("PaymentTransactionID"),
@@ -146,15 +146,12 @@ namespace ArmsServices.DataServices
                 BranchID= dr.GetInt32("BranchID"),
                 InvoiceDate = dr.GetDateTime("InvoiceDate"),                
                 InvoiceNumber = dr.GetString("InvoiceNumber"),               
-                PartyBranchInfo = new PartyBranchModel()
+                PartyInfo = new PartyModel()
                 {
-                    GstID = dr.GetInt32("PartyBranchID"),
+                    PartyID = dr.GetInt32("PartyID"),
                     GstNo = dr.GetString("GstNo"),
-                    Party = new PartyModel()
-                    {
-                        PartyID = dr.GetInt32("PartyID"),
-                        PartyName = dr.GetString("PartyName")
-                    },
+                    TradeName= dr.GetString("TradeName")
+                  
                 }
             };
         }

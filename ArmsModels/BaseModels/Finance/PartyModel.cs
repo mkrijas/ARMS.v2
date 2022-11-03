@@ -29,14 +29,13 @@ namespace ArmsModels.BaseModels
         [StringLength(200)]
         public string RegName { get; set; }
         public string NatureOfBusiness { get; set; } //Supplier/Customer/Renter 
-        public virtual string AssesseeType { get; set; } //char1
+        public virtual string AssesseeType { get; set; }
         [Required]
         public bool PanAvailable { get; set; }        
         [StringLength(10,MinimumLength =10,ErrorMessage = "PAN must be 10 digits!")]
-        public string PAN { get; set; }     // char 10, 4 th caracter input   
+        public string PAN { get; set; }        
         [Required]
-        public bool TdsApplicable { get; set; }       
-        [ValidateComplexType]
+        public bool TdsApplicable { get; set; } 
         public string GstType { get; set; }// Registered,UnRegistered,Export,Deemed Export,Exempted,SEZ
         public string GstRegType { get; set; }  // GSTIN,UID,GID
         
@@ -44,31 +43,54 @@ namespace ArmsModels.BaseModels
         public string GstNo { get; set; }
         [Required]
         [StringLength(10, MinimumLength = 10, ErrorMessage = "Must have 10 characters")]
-        public string TanNo { get; set; } 
+        public string TanNo { get; set; }
         public int? CreditPeriod { get; set; } // Days
         public decimal? CreditLimit { get; set; }
         public string PaymentMode { get; set; } // Bank/Cash
-        public VendorPostingGroup PostingGroup { get; set; } = new(); // pid need to be insert
+        public VendorPostingGroupModel VendorPostingGroup { get; set; } = new();
+        public CustomerPostingGroupModel CustomerPostingGroup { get; set; } = new();
+        public RenterPostingGroupModel RenterPostingGroup { get; set; } = new();
         [Required]
         public bool InterCompany { get; set; }
         public string IcPartnerCode { get; set; }
 
         [ValidateComplexType]
-        public AddressModel Address { get; set; } = new(); // address if fo
+        public AddressModel Address { get; set; } = new();
         [ValidateComplexType]
-        public BankAccountModel BankAccount { get; set; } = new(); // bank id for
+        public BankAccountModel BankAccount { get; set; } = new();
 
         [ValidateComplexType]
-        public List<ContactModel> Contacts { get; set; } = new(); // part contact tables
+        public List<ContactModel> Contacts { get; set; } = new();
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     } 
 
-    public class VendorPostingGroup
+    public class VendorPostingGroupModel
     {
         public int? VendorPostingGroupID { get; set; }
         public string Title { get; set; }
-        public int? BillingAccountID { get; set; }
-        public int? PrePaymentID { get; set; }
-        public int? DepositID { get; set; } 
+        public ChartOfAccountModel Payable { get; set; } = new();
+        public ChartOfAccountModel PrePayment { get; set; } = new();
+        public ChartOfAccountModel Deposit { get; set; } = new();
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+    }
+
+    public class CustomerPostingGroupModel
+    {
+        public int? CustomerPostingGroupID { get; set; }
+        public string Title { get; set; }
+        public ChartOfAccountModel Receivable { get; set; } = new();
+        public ChartOfAccountModel PrePayment { get; set; } = new();
+        public ChartOfAccountModel Deposit { get; set; } = new();
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+    }
+
+    public class RenterPostingGroupModel
+    {
+        public int? RenterPostingGroupID { get; set; }
+        public string Title { get; set; }
+        public ChartOfAccountModel Rent { get; set; } = new();
+        public ChartOfAccountModel Deposit { get; set; } = new();
+        public ChartOfAccountModel Other { get; set; } = new();
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }

@@ -11,47 +11,79 @@ namespace ArmsServices.DataServices
 {
     public interface IPartyService
     {       
-        Task<PartyModel> Update(PartyModel model);
-        Task<PartyModel> SelectByID(int? ID);
-        Task<int> Delete(int? PartyID, string UserID);
-        IAsyncEnumerable<PartyModel> Select(int? PartyID);
-        PartyModel GetPartyFromBranch(int? PartyBranchID);
+        PartyModel Update(PartyModel model);
+        PartyModel SelectByID(int? ID);
+        int Delete(int? PartyID, string UserID);
+        IEnumerable<PartyModel> Select(int? PartyID);
+        IEnumerable<PartyModel> SelectByCode(string PartyCode,string NatureOfBusiness);
+        bool IsCgst(int BranchID, int PartyID);
+        IEnumerable<ContactModel> GetContacts(int? PartyID);
+        IEnumerable<PartyModel> GetCustomers(string Code);
+        IEnumerable<PartyModel> GetVendors(string Code);
+        IEnumerable<PartyModel> GetRenters(string Code);
+        int AddContact(int? PartyID, ContactModel contact);
     }
 
     public class PartyService : IPartyService
     {
         IDbService Iservice;
+        IAddressService _addressService;
+        IBankAccountService _bankAccountService;
+        IContactService _contactService;
 
-        public PartyService(IDbService iservice)
+        public PartyService(IDbService iservice, IAddressService addressService, 
+            IBankAccountService bankAccountService,IContactService contactService)
         {
             Iservice = iservice;
+            _addressService = addressService;
+            _bankAccountService = bankAccountService;
+            _contactService = contactService;
         }
 
 
-        public async Task<PartyModel> Update(PartyModel model)
+        public PartyModel Update(PartyModel model)
         {
+            AddressModel addressModel = _addressService.Update(model.Address);
+            model.BankAccount.UserInfo = model.UserInfo;
+            model.BankAccount = _bankAccountService.Update(model.BankAccount);
+            model.Address = addressModel;
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PartyID", model.PartyID),
-               new SqlParameter("@PartyName", model.PartyName),
-               new SqlParameter("@IsClient", model.IsClient),
-               new SqlParameter("@IsSupplier", model.IsSupplier),
-               new SqlParameter("@NatureOfFirm", model.NatureOfFirm),
-               new SqlParameter("@AssesseeTypeID", model.AssesseeTypeID),
+               new SqlParameter("@TradeName", model.TradeName),
+               new SqlParameter("@NatureOfBusiness", model.NatureOfBusiness),
+               new SqlParameter("@AddressID", model.Address.AddressID),
+               new SqlParameter("@AssesseeType", model.AssesseeType),
+               new SqlParameter("@BankAccountID", model.BankAccount.BankAccountID),
                new SqlParameter("@PAN", model.PAN),
-               new SqlParameter("@TcsApplicable", model.TcsApplicable),
+               new SqlParameter("@CreditLimit", model.CreditLimit),
+               new SqlParameter("@CreditPeriod", model.CreditPeriod),
+               new SqlParameter("@GstNo", model.GstNo),
+               new SqlParameter("@GstRegType", model.GstRegType),
+               new SqlParameter("@GstType", model.GstType),
+               new SqlParameter("@IcPartnerCode", model.IcPartnerCode),
+               new SqlParameter("@InterCompany", model.InterCompany),
+               new SqlParameter("@PanAvailable", model.PanAvailable),
+               new SqlParameter("@PartyCode", model.PartyCode),
+               new SqlParameter("@PaymentMode", model.PaymentMode),
+               new SqlParameter("@VendorPostingGroup", model.VendorPostingGroup.VendorPostingGroupID),
+               new SqlParameter("@CustomerPostingGroup", model.CustomerPostingGroup.CustomerPostingGroupID),
+               new SqlParameter("@RenterPostingGroup", model.RenterPostingGroup.RenterPostingGroupID),
+               new SqlParameter("@RegName", model.RegName),
+               new SqlParameter("@TanNo", model.TanNo),
                new SqlParameter("@TdsApplicable", model.TdsApplicable),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.PartyUpdate]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartyUpdate]", parameters))
             {
                 model = GetModel(reader);
             }
             return model;
         }
 
-        public async Task<PartyModel> SelectByID(int? ID)
+        public PartyModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -59,7 +91,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
             };
             PartyModel model = new PartyModel();
-            await foreach( IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.PartySelect]", parameters))
+            foreach( IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
             {
                 model = GetModel(reader);
             }
@@ -67,18 +99,18 @@ namespace ArmsServices.DataServices
         }
 
 
-        public async Task<int> Delete(int? PartyID,string UserID)
+        public int Delete(int? PartyID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PartyID", PartyID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return await Iservice.ExecuteNonQueryAsync("[usp.Entity.PartyDelete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Entity.PartyDelete]", parameters);
         }
 
 
-        public async IAsyncEnumerable<PartyModel> Select(int? PartyID)
+        public IEnumerable<PartyModel> Select(int? PartyID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -86,25 +118,51 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
             };
 
-            await foreach (IDataRecord reader in Iservice.GetDataReaderAsync("[usp.Entity.PartySelect]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
             {
                 yield return GetModel(reader);
                
             }
         }
 
+        public bool IsCgst(int BranchID, int PartyID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsCgst", BranchID){Direction = ParameterDirection.Output},
+            };
+            Iservice.ExecuteNonQuery("[usp.Finance.Taxes.Gst.IsCgst]", parameters);
+            return bool.Parse(parameters[2].Value.ToString());
+        }
+
         private PartyModel GetModel(IDataRecord reader)
         {
-            return new PartyModel(reader.GetString("AssesseeType"))
+            return new PartyModel()
             {
                 PartyID = reader.GetInt32("PartyID"),
-                PartyName = reader.GetString("PartyName"),
-                IsClient = reader.GetBoolean("IsClient"),
-                IsSupplier = reader.GetBoolean("IsSupplier"),
-                NatureOfFirm = reader.GetString("NatureOfFirm"),
-                AssesseeTypeID = reader.GetInt32("AssesseeTypeID"), 
+                TradeName = reader.GetString("TradeName"),
+                Address = new AddressModel() { AddressID = reader.GetInt32("AddressID") },
+                AssesseeType = reader.GetString("AssesseeType"),
+                BankAccount = new BankAccountModel() { BankAccountID = reader.GetInt32("BankAccountID") },
+                CreditLimit = reader.GetInt32("CreditLimit"),
+                CreditPeriod = reader.GetInt32("CreditPeriod"),
+                GstNo=reader.GetString("GstNo"),
+                GstRegType = reader.GetString("GstRegType"),
+                GstType = reader.GetString("GstType"),
+                IcPartnerCode = reader.GetString("IcPartnerCode"),
+                InterCompany = reader.GetBoolean("InterCompany"),
+                NatureOfBusiness = reader.GetString("NatureOfBusiness"),
+                PanAvailable = reader.GetBoolean("PanAvailable"),
+                PartyCode = reader.GetString("PartyCode"),
+                PaymentMode = reader.GetString("PaymentMode"),
+                VendorPostingGroup = new VendorPostingGroupModel() { VendorPostingGroupID = reader.GetInt32("VendorPostingGroupID") },
+                CustomerPostingGroup = new CustomerPostingGroupModel() { CustomerPostingGroupID = reader.GetInt32("CustomerPostingGroupID") },
+                RenterPostingGroup = new RenterPostingGroupModel() { RenterPostingGroupID = reader.GetInt32("RenterPostingGroupID") },
                 PAN = reader.GetString("PAN"),
-                TcsApplicable = reader.GetBoolean("TcsApplicable"),
+                RegName = reader.GetString("RegName"),
+                TanNo = reader.GetString("TanNo"),
                 TdsApplicable = reader.GetBoolean("TdsApplicable"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -115,19 +173,88 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public PartyModel GetPartyFromBranch(int? PartyBranchID)
+        public IEnumerable<PartyModel> SelectByCode(String PartyCode,string NatureOfBusiness)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PartyBranchID", PartyBranchID),
-               new SqlParameter("@Operation", "ByPartyBranch"),
-            };
-            PartyModel party = null;
+               new SqlParameter("@PartyCode", PartyCode),
+               new SqlParameter("@Operation", "ByCode"),
+               new SqlParameter("@NatureOfBusiness","NatureOfBusiness")
+            };            
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
             {
-                party = GetModel(reader);
+               yield return GetModel(reader);
+            }            
+        }
+
+        public IEnumerable<ContactModel> GetContacts(int? PartyID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@Operation", "GetContacts"),
+            };
+
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            {
+                yield return _contactService.SelectByID(reader.GetInt32("ContactID"));
             }
-            return party;
+        }
+
+        public IEnumerable<PartyModel> GetCustomers(string Code)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyCode", Code),
+               new SqlParameter("@NatureOfBusiness", "Customer"),
+               new SqlParameter("@Operation", "ByCode"),
+            };
+
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            {
+                yield return GetModel(reader);
+            }
+        }
+
+        public IEnumerable<PartyModel> GetVendors(string Code)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyCode", Code),
+               new SqlParameter("@NatureOfBusiness", "Supplier"),
+               new SqlParameter("@Operation", "ByCode"),
+            };
+
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            {
+                yield return GetModel(reader);
+            }
+        }
+
+        public IEnumerable<PartyModel> GetRenters(string Code)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyCode", Code),
+               new SqlParameter("@NatureOfBusiness", "Renter"),
+               new SqlParameter("@Operation", "ByCode"),
+            };
+
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            {
+                yield return GetModel(reader);
+            }
+        }
+
+        public int AddContact(int? PartyID, ContactModel contact)
+        {
+            contact = _contactService.Update(contact);            
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@contactID", contact?.ContactID??0)               
+            };
+            return Iservice.ExecuteNonQuery("[usp.Entity.Party.Contacts.Update]", parameters);            
         }
     }
 }

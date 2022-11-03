@@ -10,7 +10,7 @@ namespace ArmsModels.BaseModels
     {
         public int? PID { get; set; }        
         public int? GRNID { get; set; }        
-        public PartyBranchModel PartyBranchInfo { get; set; }  
+        public PartyModel PartyInfo { get; set; }  
         [Required]
         public bool IsCredit { get; set; }
         [Required]
