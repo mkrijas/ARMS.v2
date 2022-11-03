@@ -70,7 +70,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@CustomerPostingGroupID", model.CustomerPostingGroupID),
-               new SqlParameter("@Receivable", model.Receivable.CoaID),
+               new SqlParameter("@Recievable", model.Receivable.CoaID),
                new SqlParameter("@PrePayment", model.PrePayment.CoaID),
                new SqlParameter("@Deposit", model.Deposit.CoaID),
                new SqlParameter("@Title", model.Title),
