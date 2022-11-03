@@ -67,7 +67,7 @@ namespace ArmsModels.BaseModels
         public  TaxPurchaseModel PurchaseEntry { get; set; }
         public virtual InventoryBaseModel IssueEntry { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
-        public PartyBranchModel PartyBranch { get; set; }
+        public PartyModel PartyBranch { get; set; }
         public int? Diomension { get; set; }
         public int? Costcenter { get; set; }
         public string UsageID { get; set; }
