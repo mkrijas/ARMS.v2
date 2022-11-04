@@ -34,7 +34,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@CashCode", model.CashCode),
                new SqlParameter("@Title", model.Title),
-               new SqlParameter("@CoaID", model.CoaID),
+               new SqlParameter("@CoaID", model.CoaID.CoaID),
                new SqlParameter("@MinBalance", model.MinBalance),
                new SqlParameter("@MaxBalance", model.MaxBalance),               
                new SqlParameter("@UserID", model.UserInfo.UserID),
