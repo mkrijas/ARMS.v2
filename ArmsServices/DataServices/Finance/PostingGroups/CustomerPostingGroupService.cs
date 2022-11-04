@@ -91,8 +91,8 @@ namespace ArmsServices.DataServices
                 Title = dr.GetString("Title"),
                 Receivable = new ChartOfAccountModel()
                 {
-                    CoaID  = dr.GetInt32("Receivable"),
-                    AccountName = dr.GetString("ReceivableCoa"),
+                    CoaID  = dr.GetInt32("Recievable"),
+                    AccountName = dr.GetString("RecievableCoa"),
                 },
                 PrePayment = new ChartOfAccountModel()
                 {
