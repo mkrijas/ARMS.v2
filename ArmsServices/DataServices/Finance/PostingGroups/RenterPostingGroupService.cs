@@ -30,7 +30,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@RenterPostingGroupID", ID),
+               new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Renter.Delete]", parameters);
@@ -44,7 +44,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Renter.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Rent.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -54,7 +54,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@RenterPostingGroupID", ID),
+               new SqlParameter("@ID", ID),
                new SqlParameter("@Operation", "ByID"),
             };
             RenterPostingGroupModel model = new();
@@ -69,14 +69,14 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@RenterPostingGroupID", model.RenterPostingGroupID),
+               new SqlParameter("@ID", model.RenterPostingGroupID),
                new SqlParameter("@Rent", model.Rent.CoaID),
                new SqlParameter("@Other", model.Other.CoaID),
                new SqlParameter("@Deposit", model.Deposit.CoaID),
                new SqlParameter("@Title", model.Title),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Renter.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Rent.Update]", parameters))
             {
                 model = GetModel(dr);
             }
@@ -87,7 +87,7 @@ namespace ArmsServices.DataServices
         {
             return new RenterPostingGroupModel
             {
-                RenterPostingGroupID = dr.GetInt32("RenterPostingGroupID"),
+                RenterPostingGroupID = dr.GetInt32("ID"),
                 Title = dr.GetString("Title"),
                 Rent = new ChartOfAccountModel()
                 {
