@@ -1,0 +1,90 @@
+﻿@page "/AssetSubClass"
+@inject IAssetClassService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudGrid Spacing="4">
+   <MudItem xs="12">  
+        <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">Manage Asset SubClasses </MudText>
+                <MudTooltip Text="New Asset Class">
+                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+               
+             
+                <MudSpacer></MudSpacer>
+             
+            </ToolBarContent>
+            <HeaderContent>
+                
+                 <MudTh><MudTableSortLabel SortBy="new Func<AssetClassModel, object>(x=> x.AssetClassName)" InitialDirection="SortDirection.Ascending">Asset SubClass Name</MudTableSortLabel></MudTh>
+                 <MudTh><MudTableSortLabel SortBy="new Func<AssetClassModel, object>(x=> x.ParentID)" InitialDirection="SortDirection.Ascending">Asset Class Name</MudTableSortLabel></MudTh>
+
+
+             
+              <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                                <MudTd DataLabel="Class Name">@context.AssetClassName</MudTd>
+                                <MudTd DataLabel="Class Name">@context.ParentID</MudTd>
+               <MudTd DataLabel="">
+                    <MudTooltip Text="Edit">
+                   <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip> 
+                     @*
+                    @if(@context.ApprovedInfo.RecordStatus!=1)
+                    {
+                     <MudTooltip Text="Approve">
+                   <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    }*@
+               </MudTd>
+            </RowTemplate>
+          
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+               @*  <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>*@
+           
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+@code {
+     private AssetClassModel model = new AssetClassModel();
+
+    private List<AssetClassModel> collection = new List<AssetClassModel>();
+    DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        GetAll();
+    }
+    private  void GetAll()
+    {
+        collection = new List<AssetClassModel>();
+        foreach (var item in Iservice.SelectSubClasses(0))
+        {
+            collection.Add(item);
+        }
+
+
+    }
+    public async Task OpenDialog(AssetClassModel acm)
+    {
+         DialogParameters parms = new DialogParameters();
+        parms.Add("model",acm);
+        var dialog =  DialogService.Show<AssetSubClassDialog>(acm.AssetClassID == null?"ADD":"EDIT",parms);
+        var result = await dialog.Result;
+        if(!result.Cancelled)
+        {   
+            AssetClassModel UpatedModel = (AssetClassModel)result.Data;   
+            Iservice.UpdateClass(UpatedModel);
+            GetAll();
+
+        }
+        GetAll();
+    }
+}
