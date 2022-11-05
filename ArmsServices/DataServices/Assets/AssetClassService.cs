@@ -94,9 +94,9 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", model.AssetClassID),
-               new SqlParameter("@AsstSubClassName", model.AssetClassName),
-               new SqlParameter("@AssetClassID", model.ParentID),
+               new SqlParameter("@ID", model.AssetSubClassID),
+               new SqlParameter("@AsstSubClassName", model.AssetSubclass),
+               new SqlParameter("@AssetClassID", model.AssetClassID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -113,7 +113,7 @@ namespace ArmsServices.DataServices
             {
                 AssetClassID = dr.GetInt32("AssetClassID"),
                 AssetClassName = dr.GetString("AssetClasssName"),
-                ParentID = dr.GetInt32("AssetClassID"),
+                AssetSubClassID = dr.GetInt32("AssetClassID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -127,9 +127,9 @@ namespace ArmsServices.DataServices
         {
             return new AssetClassModel
             {
-                AssetClassID = dr.GetInt32("AssetSubClassID"),
-                AssetClassName = dr.GetString("AssetSubClassName"),
-                ParentID = dr.GetInt32("AssetClassID"),
+                AssetClassID = dr.GetInt32("AssetClassID"),
+                AssetClassName = dr.GetString("AssetSubclass"),
+                AssetSubClassID = dr.GetInt32("ID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

@@ -10,7 +10,7 @@ namespace ArmsModels.BaseModels
 {
     public class AssetHolderModel
     {
-        public int? AssetHolderID { get; set; } 
+        public int? AssetHolderID { get; set; }
         [Required]
         public string Description { get; set; }
         [Required]
@@ -37,12 +37,12 @@ namespace ArmsModels.BaseModels
         [Required]
         public AssetClassModel SubClass { get; set; } // Printers,Chair,Engine etc
         [Required]
-        public int? BranchID { get; set; }    
+        public int? BranchID { get; set; }
         [Required]
         public int? GstRateID { get; set; }
         [Required]
         [StringLength(8)]
-        public string HsnCode { get; set; }        
+        public string HsnCode { get; set; }
         public DateTime? WarrentyDate { get; set; }
         [Required]
         public PartyModel VendorInfo { get; set; }
@@ -80,24 +80,25 @@ namespace ArmsModels.BaseModels
     public class AssetClassModel
     {
         public int? AssetClassID { get; set; }
-        [Required]
+        
         public string AssetClassName { get; set; }
-        public int? ParentID { get; set; }
-        public UserInfoModel UserInfo { get; set; } = new();
-    }
+        public int? AssetSubClassID { get; set; }
+        public virtual string AssetSubclass  { get; set; }
+    public UserInfoModel UserInfo { get; set; } = new();
+}
 
-    public class AssetStatusUpdateModel
-    {
-        public int? StatusUpdateID { get; set; }
-        [Required]
-        public int? AssetID { get; set; }
-        [Required]
-        public string Status { get; set; }
-        [Required]
-        public DateTime? StatusDate { get; set; }
-        [Required]
-        public decimal? Amount { get; set; }
-        public UserInfoModel UserInfo { get; set; } = new();
-    }
+public class AssetStatusUpdateModel
+{
+    public int? StatusUpdateID { get; set; }
+    [Required]
+    public int? AssetID { get; set; }
+    [Required]
+    public string Status { get; set; }
+    [Required]
+    public DateTime? StatusDate { get; set; }
+    [Required]
+    public decimal? Amount { get; set; }
+    public UserInfoModel UserInfo { get; set; } = new();
+}
    
 }
