@@ -10,12 +10,12 @@ namespace ArmsServices.DataServices
 {
     public interface IAssetService
     {
-        AssetHolderModel UpdateSimpleAsset(AssetModel model,AssetHolderModel Holder);
-        AssetHolderModel UpdateComplexAsset(AssetHolderModel model);
-        int MoveAsset(int? AssetID,int? AssetHolderID,string Mode, string UserID);
-        AssetHolderModel SelectByID(int? ID);
-        IEnumerable<AssetHolderModel> SelectByBranch(int BranchID);
-        IEnumerable<AssetModel> GetAssets(int? AssetHolderID);
+        AssetModel UpdateAsset(AssetModel model);        
+        int MoveAsset(int? AssetID,int? ParentAssetID,string Mode, string UserID);
+        AssetModel SelectByID(int? ID);
+        int? Scrap(int? AssetID, string UserID);
+        IEnumerable<AssetModel> SelectByBranch(int BranchID);
+        IEnumerable<AssetModel> GetAttachedAssets(int? ParentAssetID);
         int? UpdateStatus(AssetStatusUpdateModel model); 
         AssetStatusUpdateModel GetCurrentStatus(int? AssetID);
         IEnumerable<AssetStatusUpdateModel> GetStatusHistory(int? AssetID);
@@ -30,24 +30,24 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }       
 
-        public IEnumerable<AssetHolderModel> Select()
+        public IEnumerable<AssetModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID")
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Holder.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset..Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }      
        
 
-        private AssetHolderModel GetModel(IDataRecord dr)
+        private AssetModel GetModel(IDataRecord dr)
         {
-            return new AssetHolderModel
+            return new AssetModel
             {
-                AssetHolderID = dr.GetInt32("AssetHolderID"),
+                AssetID = dr.GetInt32("AssetID"),
                 Description = dr.GetString("Description"),
                 BranchID = dr.GetInt32("BranchID"),
                 //UserInfo = new ArmsModels.SharedModels.UserInfoModel
@@ -82,11 +82,12 @@ namespace ArmsServices.DataServices
                 DepreciationStartingDate =  dr.GetDateTime("DepreciationStartingDate"),
                 DepreciationMethod = dr.GetString("DepreciationMethod"),
                 Description = dr.GetString("Description"),
+                CurrentValue = dr.GetDecimal("CurrentValue"),
                 GstRateID = dr.GetInt32("GstRateID"),
                 HsnCode = dr.GetString("HsnCode"),
                 NatureOfAsset = dr.GetString("NatureOfAsset"),
                 ProjectedDisposalDate = dr.GetDateTime("ProjectedDisposalDate"),
-                RateOfDepreciation = dr.GetByte("RateOfDepreciation"),
+                RateOfDepreciation = dr.GetByte("RateOfDepreciation"),                
                 SalvageValue = dr.GetByte("SalvageValue"),
                 SerialNumber = dr.GetString("SerialNumber"),
                 SpanOfYear = dr.GetInt32("SpanOfYear"),
@@ -109,16 +110,16 @@ namespace ArmsServices.DataServices
 
 
 
-        public AssetHolderModel UpdateSimpleAsset(AssetModel model, AssetHolderModel Holder)
+        public AssetModel UpdateSimpleAsset(AssetModel model, AssetModel )
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@AssetHolderID", Holder.AssetHolderID),
-                new SqlParameter("@Description", Holder.Description),
-                new SqlParameter("@BranchID", Holder.BranchID),
+                new SqlParameter("@AssetID", .AssetID),
+                new SqlParameter("@Description", .Description),
+                new SqlParameter("@BranchID", .BranchID),
                new SqlParameter("@AssetID", model.AssetID),
                new SqlParameter("@BranchID", model.BranchID),
-             //  new SqlParameter("@AccountTransactionID", model.AccountTransactionID),
+               new SqlParameter("@AccountTransactionID", model.CurrentValue),
                new SqlParameter("@AssetClassID", model.AssetClass.AssetClassID),
                new SqlParameter("@SubClassID", model.SubClass.AssetClassID),
                new SqlParameter("@AssetCode", model.AssetCode),
@@ -145,16 +146,16 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Simple.Update]", parameters))
             {
-                Holder = GetModel(dr);
+               return GetModel(dr);
             }
-            return Holder;
+            return null;
         }
 
-        public AssetHolderModel UpdateComplexAsset(AssetHolderModel model)
+        public AssetModel UpdateComplexAsset(AssetModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@AssetHolderID", model.AssetHolderID),
+               new SqlParameter("@AssetID", model.AssetID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@AssetTime", model.Description),               
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -166,12 +167,12 @@ namespace ArmsServices.DataServices
             return null;
         }
 
-        public int MoveAsset(int? AssetID, int? AssetHolderID,string Mode,string UserID)
+        public int MoveAsset(int? AssetID, int? ParentAssetID,string Mode,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AssetID", AssetID),
-               new SqlParameter("@AssetHolderID", AssetHolderID),
+               new SqlParameter("@ParentAssetID", ParentAssetID),
                new SqlParameter("@Mode", Mode),// Attach,Detach
                new SqlParameter("@UserID", UserID),
             };
@@ -179,22 +180,22 @@ namespace ArmsServices.DataServices
         }
 
 
-        AssetHolderModel IAssetService.SelectByID(int? ID)
+        AssetModel IAssetService.SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@AssetHolderID", ID),
+               new SqlParameter("@AssetID", ID),
                new SqlParameter("@Operation", "ByID")
             };
             
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Holder.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset..Select]", parameters))
             {
                 return GetModel(dr);
             }
             return null;
         }
 
-        public IEnumerable<AssetHolderModel> SelectByBranch(int BranchID)
+        public IEnumerable<AssetModel> SelectByBranch(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -202,18 +203,18 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", BranchID)
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Holder.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset..Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        public IEnumerable<AssetModel> GetAssets(int? AssetHolderID)
+        public IEnumerable<AssetModel> GetAssets(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByHolder"),
-               new SqlParameter("@AssetHolderID", AssetHolderID)
+               new SqlParameter("@Operation", "By"),
+               new SqlParameter("@AssetID", AssetID)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Tag.Select]", parameters))
@@ -231,7 +232,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AssetID", model.AssetID),
                new SqlParameter("@Status", model.Status),
                new SqlParameter("@StatusDate", model.StatusDate),
-               new SqlParameter("@AssetHolderID", model.UserInfo.UserID),
+               new SqlParameter("@AssetID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetStatus.Update]", parameters))
             {
@@ -293,6 +294,31 @@ namespace ArmsServices.DataServices
                     },
                 };
             }
+        }
+
+        public AssetModel UpdateAsset(AssetModel model)
+        {
+            throw new NotImplementedException();
+        }
+
+        public AssetModel SelectByID(int? ID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int? Scrap(int? AssetID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerable<AssetModel> IAssetService.SelectByBranch(int BranchID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<AssetModel> GetAttachedAssets(int? ParentAssetID)
+        {
+            throw new NotImplementedException();
         }
     }
 }
