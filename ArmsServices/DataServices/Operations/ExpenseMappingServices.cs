@@ -32,7 +32,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ExpenseID", model.ExpenseID),
                new SqlParameter("@ExpenseTitle", model.ExpenseTitle),
                new SqlParameter("@Area", model.Area),
-               new SqlParameter("@MappedCoaID", model.MappedCoaID),
+               new SqlParameter("@MappedCoaID", model.MappedCoaID.CoaID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -84,7 +84,7 @@ namespace ArmsServices.DataServices
                 ExpenseTitle = dr.GetString("ExpenseTitle"),
                 ExpenseCode = dr.GetString("ExpenseCode"),
                 Area =  dr.GetString("Area"),
-                MappedCoaID = dr.GetInt32("MappedCoaID"),
+                //MappedCoaID = dr.GetInt32("MappedCoaID"),
                 AccountName = dr.GetString("AccountName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel()
                 {

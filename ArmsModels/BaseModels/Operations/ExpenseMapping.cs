@@ -14,7 +14,7 @@ namespace ArmsModels.BaseModels
         public virtual string ExpenseCode { get; set; }
         public string Area { get; set; }// Operation,Maintenance 
         [Required]
-        public int? MappedCoaID { get; set; }
+        public ChartOfAccountModel MappedCoaID { get; set; } = new();
         public  virtual string AccountName { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
 
