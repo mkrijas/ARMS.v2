@@ -38,7 +38,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RefTable", model.RefTable),
                new SqlParameter("@RefKey", model.RefKey),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-            };
+            }; 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Contacts.Update]", parameters))
             {
                 model = GetModel(dr);
