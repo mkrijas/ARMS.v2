@@ -90,7 +90,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
             };
             PartyModel model = new PartyModel();
-            foreach( IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            foreach( IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                 model = GetModel(reader);
             }
@@ -105,7 +105,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyID", PartyID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return Iservice.ExecuteNonQuery("[usp.Entity.PartyDelete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Entity.Party.Delete]", parameters);
         }
 
 
@@ -178,9 +178,9 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@PartyCode", PartyCode),
                new SqlParameter("@Operation", "ByCode"),
-               new SqlParameter("@NatureOfBusiness","NatureOfBusiness")
+               new SqlParameter("@NatureOfBusiness",NatureOfBusiness)
             };            
-            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                yield return GetModel(reader);
             }            
@@ -194,7 +194,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "GetContacts"),
             };
 
-            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                 yield return _contactService.SelectByID(reader.GetInt32("ContactID"));
             }
@@ -209,7 +209,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByCode"),
             };
 
-            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                 yield return GetModel(reader);
             }
@@ -224,7 +224,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByCode"),
             };
 
-            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                 yield return GetModel(reader);
             }
@@ -239,7 +239,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByCode"),
             };
 
-            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                 yield return GetModel(reader);
             }
