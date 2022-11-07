@@ -79,7 +79,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@FuelItemID", model.FuelItemID),
                new SqlParameter("@InvTranID", model.InvTranID),
                new SqlParameter("@IsPurchase", model.IsPurchase),
-               //new SqlParameter("@PartyBranchID", model.PartyBranch.GstID),
+               new SqlParameter("@PartyBranchID", model.PartyBranch.PartyID),
                new SqlParameter("@Quantity", model.Quantity),
                new SqlParameter("@RatePerLitre", model.RatePerLitre),
                new SqlParameter("@TotalAmount", model.TotalAmount),

@@ -67,6 +67,7 @@ namespace ArmsServices.DataServices
                 ExpenseID = dr.GetInt32("ExpenseID"),
                 ExpenseTitle = dr.GetString("ExpenseTitle"),
                 MappedCoaID = dr.GetInt32("MappedCoaID"),
+                AccountName = dr.GetString("AccountName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel()
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

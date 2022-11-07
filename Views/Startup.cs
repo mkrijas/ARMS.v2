@@ -143,6 +143,7 @@ namespace Views
             services.AddScoped<ICustomerPostingGroupService, CustomerPostingGroupService>();
             services.AddScoped<IRenterPostingGroupService, RenterPostingGroupService>();
             services.AddScoped<IVendorPostingGroupService, VendorPostingGroupService>();
+            services.AddScoped<ICashAccountService, CashAccountService>();
 
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
