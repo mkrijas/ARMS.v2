@@ -30,7 +30,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@VendorPostingGroupID", ID),
+               new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Vendor.Delete]", parameters);
@@ -54,7 +54,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@VendorPostingGroupID", ID),
+               new SqlParameter("@ID", ID),
                new SqlParameter("@Operation", "ByID"),
             };
             VendorPostingGroupModel model = new();
@@ -69,7 +69,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@VendorPostingGroupID", model.VendorPostingGroupID),
+               new SqlParameter("@ID", model.VendorPostingGroupID),
                new SqlParameter("@Payable", model.Payable.CoaID),
                new SqlParameter("@PrePayment", model.PrePayment.CoaID),
                new SqlParameter("@Deposit", model.Deposit.CoaID),
@@ -87,7 +87,7 @@ namespace ArmsServices.DataServices
         {
             return new VendorPostingGroupModel
             {
-                VendorPostingGroupID = dr.GetInt32("VendorPostingGroupID"),
+                VendorPostingGroupID = dr.GetInt32("ID"),
                 Title = dr.GetString("Title"),
                 Payable = new ChartOfAccountModel()
                 {
