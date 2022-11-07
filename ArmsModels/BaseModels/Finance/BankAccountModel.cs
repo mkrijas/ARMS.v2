@@ -24,7 +24,7 @@ namespace ArmsModels.BaseModels
         public string IfscCode { get; set; }
         [StringLength(9, MinimumLength = 9)]
         public string MicrCode { get; set; }
-        [StringLength(8, MinimumLength = 11)]
+        [StringLength(8, MinimumLength = 8)]
         public string SwiftCode { get; set; }
         public string BankTitle { get; set; }
         public string BankBranch { get; set; }

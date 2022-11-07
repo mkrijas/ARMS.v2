@@ -52,7 +52,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@PartyID", model.PartyID),
                new SqlParameter("@TradeName", model.TradeName),
-               new SqlParameter("@NatureOfBusiness", model.NatureOfBusiness),
+               new SqlParameter("@NatureOfFirm", model.NatureOfBusiness),
                new SqlParameter("@AddressID", model.Address.AddressID),
                new SqlParameter("@AssesseeType", model.AssesseeType),
                new SqlParameter("@BankAccountID", model.BankAccount.BankAccountID),
@@ -69,14 +69,14 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@VendorPostingGroup", model.VendorPostingGroup.VendorPostingGroupID),
                new SqlParameter("@CustomerPostingGroup", model.CustomerPostingGroup.CustomerPostingGroupID),
-               new SqlParameter("@RenterPostingGroup", model.RenterPostingGroup.RenterPostingGroupID),
+               new SqlParameter("@RentPostingGroup", model.RenterPostingGroup.RenterPostingGroupID),
                new SqlParameter("@RegName", model.RegName),
                new SqlParameter("@TanNo", model.TanNo),
                new SqlParameter("@TdsApplicable", model.TdsApplicable),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartyUpdate]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Update]", parameters))
             {
                 model = GetModel(reader);
             }
