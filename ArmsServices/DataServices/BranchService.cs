@@ -16,17 +16,21 @@ namespace ArmsServices.DataServices
         string GetBranchName(int? BranchID);
         int Delete(int? AddressID, string UserID);
         IEnumerable<BranchModel> Select();
+        int AddContact(int? BranchID, ContactModel contact);
+        IEnumerable<ContactModel> GetContacts(int? PartyID);
     }
     public class BranchService: IBranchService
     {
         IDbService Iservice;
         IAddressService _addressService;
         IPlaceService _placeService;
-        public BranchService(IDbService iservice,IAddressService addressService,IPlaceService placeService)
+        IContactService _contactService;
+        public BranchService(IDbService iservice,IAddressService addressService,IPlaceService placeService,IContactService contactService)
         {
             Iservice = iservice;
             _addressService = addressService;
             _placeService = placeService;
+            _contactService = contactService;
         }
         public BranchModel Update(BranchModel model)
         {
@@ -104,7 +108,29 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+        public int AddContact(int? BranchID, ContactModel contact)
+        {
+            contact = _contactService.Update(contact);
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@contactID", contact?.ContactID??0)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Entity.Branch.Contacts.Update]", parameters);
+        }
+        public IEnumerable<ContactModel> GetContacts(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "GetContacts"),
+            };
 
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Branch.Select]", parameters))
+            {
+                yield return _contactService.SelectByID(reader.GetInt32("ContactID"));
+            }
+        }
         public string GetBranchName(int? BranchID)
         {
             var result = SelectByID(BranchID);
