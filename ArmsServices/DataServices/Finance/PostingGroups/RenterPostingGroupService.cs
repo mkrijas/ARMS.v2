@@ -33,7 +33,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RenterPostingGroupID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Renter.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Rent.Delete]", parameters);
         }
 
 
@@ -44,7 +44,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Renter.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Rent.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -58,7 +58,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
             };
             RenterPostingGroupModel model = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Renter.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Rent.Select]", parameters))
             {
                 model = GetModel(dr);
             }
@@ -76,7 +76,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Title", model.Title),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Renter.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Rent.Update]", parameters))
             {
                 model = GetModel(dr);
             }

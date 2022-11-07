@@ -18,6 +18,9 @@ namespace ArmsModels.BaseModels
 
 
         private string _branchName;
+        [Required]
+        public string BranchCode { get; set; }        
+        public ChartOfAccountModel Coa { get; set; }
         private PlaceModel _place;
         public int? BranchID { get; set; }
         [Required]
