@@ -118,9 +118,9 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@AssetID", .AssetID),
-               new SqlParameter("@Description", .Description),
-               new SqlParameter("@BranchID", .BranchID),
+               //new SqlParameter("@AssetID", AssetID),
+               new SqlParameter("@Description",model. Description),
+               //new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@AssetID", model.AssetID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@AccountTransactionID", model.CurrentValue),
