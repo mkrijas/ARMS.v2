@@ -54,7 +54,7 @@ namespace ArmsServices.DataServices
                    new SqlParameter("@TradeName", model.TradeName),
                    new SqlParameter("@NatureOfFirm", model.NatureOfBusiness),
                    new SqlParameter("@AddressID", model.Address.AddressID),
-                   new SqlParameter("@AssesseeType", model.AssesseeType),
+                  // new SqlParameter("@AssesseeType", model.AssesseeType),
                    new SqlParameter("@BankAccountID", model.BankAccount.BankAccountID),
                    new SqlParameter("@PAN", model.PAN),
                    new SqlParameter("@CreditLimit", model.CreditLimit),
