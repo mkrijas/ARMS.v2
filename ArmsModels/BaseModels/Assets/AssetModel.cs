@@ -37,7 +37,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? BranchID { get; set; }    
         [Required]
-        public GstRateModel GstRate { get; set; }
+        public int? GstRateID { get; set; }
         [Required]
         [StringLength(8)]
         public string HsnCode { get; set; }        
@@ -64,6 +64,8 @@ namespace ArmsModels.BaseModels
         }
         public DateTime? ProjectedDisposalDate { get; set; }
         public string Status { get; set; }//Scrap,Dismantled,Sold,Revaluated
+
+        public AccountInfoViewModel AccountInfo { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         //Additional Methods Required are 
         //Revaluation
