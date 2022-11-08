@@ -37,7 +37,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? BranchID { get; set; }    
         [Required]
-        public GstRateModel GstRate { get; set; }
+        public int? GstRateID { get; set; }
         [Required]
         [StringLength(8)]
         public string HsnCode { get; set; }        
