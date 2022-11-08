@@ -16,6 +16,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? BranchID { get; set; }
         public List<AssetModel> Assets { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
+
     }
 
 
@@ -65,7 +67,7 @@ namespace ArmsModels.BaseModels
         public DateTime? ProjectedDisposalDate { get; set; }
         public string Status { get; set; }//Scrap,Dismantled,Sold,Revaluated
 
-        public AccountInfoViewModel AccountInfo { get; set; }
+        public int? AccountTransactionID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         //Additional Methods Required are 
         //Revaluation
