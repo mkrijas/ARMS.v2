@@ -13,6 +13,7 @@ namespace ArmsServices.DataServices
         AssetClassModel UpdateClass(AssetClassModel model);
         AssetClassModel UpdateSubClass(AssetClassModel model);
         IEnumerable<AssetClassModel> SelectSubClasses(int? ID);
+        IEnumerable<AssetClassModel> SelectSubClassesByParty(int? ID);
         IEnumerable<AssetClassModel> SelectClasses();
         int DeleteClass(int? AssetClassID, string UserID);
         int DeleteSubClass(int? AssetSubClassID, string UserID);
@@ -73,6 +74,20 @@ namespace ArmsServices.DataServices
             }
             
         }
+        public IEnumerable<AssetClassModel> SelectSubClassesByParty(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "SelectByParty")
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetSubClass.Select]", parameters))
+            {
+                yield return GetAssetSubClass(dr);
+            }
+
+        }
 
         public AssetClassModel UpdateClass(AssetClassModel model)
         {    
@@ -128,7 +143,7 @@ namespace ArmsServices.DataServices
             return new AssetClassModel
             {
                 AssetClassID = dr.GetInt32("AssetClassID"),
-                AssetClassName = dr.GetString("AssetSubclass"),
+                AssetClassName = dr.GetString("AsstSubClassName"),
                 AssetSubClassID = dr.GetInt32("ID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
