@@ -54,7 +54,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TradeName", model.TradeName),
                new SqlParameter("@NatureOfFirm", model.NatureOfBusiness),
                new SqlParameter("@AddressID", model.Address.AddressID),
-               new SqlParameter("@AssesseeType", model.AssesseeType),
+               //new SqlParameter("@AssesseeType", model.AssesseeType),
                new SqlParameter("@BankAccountID", model.BankAccount.BankAccountID),
                new SqlParameter("@PAN", model.PAN),
                new SqlParameter("@CreditLimit", model.CreditLimit),
@@ -67,9 +67,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PanAvailable", model.PanAvailable),
                new SqlParameter("@PartyCode", model.PartyCode),
                new SqlParameter("@PaymentMode", model.PaymentMode),
-               new SqlParameter("@VendorPostingGroup", model.VendorPostingGroup.VendorPostingGroupID),
-               new SqlParameter("@CustomerPostingGroup", model.CustomerPostingGroup.CustomerPostingGroupID),
-               new SqlParameter("@RentPostingGroup", model.RenterPostingGroup.RenterPostingGroupID),
+               new SqlParameter("@VenderPostingID", model.VendorPostingGroup.VendorPostingGroupID),
+               new SqlParameter("@CustomerPostingID", model.CustomerPostingGroup.CustomerPostingGroupID),
+               new SqlParameter("@RentPostingID", model.RenterPostingGroup.RenterPostingGroupID),
                new SqlParameter("@RegName", model.RegName),
                new SqlParameter("@TanNo", model.TanNo),
                new SqlParameter("@TdsApplicable", model.TdsApplicable),
@@ -91,7 +91,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
             };
             PartyModel model = new PartyModel();
-            foreach( IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            foreach( IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                 model = GetModel(reader);
             }
@@ -118,7 +118,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
             };
 
-            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                 yield return GetModel(reader);
                
