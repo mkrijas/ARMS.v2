@@ -68,12 +68,12 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@Capitalization", model.Capitalization.CoaID),
-               new SqlParameter("@CWIP", model.CWIP.CoaID),
-               new SqlParameter("@Depreciation", model.Depreciation.CoaID),
-               new SqlParameter("@AccummulatedDepreciation", model.AccummulatedDepreciation.CoaID),
-               new SqlParameter("@Revaluation", model.Revaluation.CoaID),
-               new SqlParameter("@RevaluationReserve", model.RevaluationReserve.CoaID),
+               new SqlParameter("@CapitalizationID", model.Capitalization.CoaID),
+               new SqlParameter("@CWIPID", model.CWIP.CoaID),
+               new SqlParameter("@DepreciationID", model.AccummulatedDepreciation.CoaID),
+               new SqlParameter("@AccummulatedDepreciationID", model.Depreciation.CoaID),
+               new SqlParameter("@RevaluationID", model.Revaluation.CoaID),
+               new SqlParameter("@RevaluationReserveID", model.RevaluationReserve.CoaID),
                new SqlParameter("@Title", model.Title),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
