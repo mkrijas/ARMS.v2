@@ -154,7 +154,9 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.Id),
-               new SqlParameter("@UsageID", model.UsageID),
+               new SqlParameter("@UsageCode", model.UsageCode),
+               new SqlParameter("@Description", model.Description),
+               new SqlParameter("@Area", model.Area),
                new SqlParameter("@AccountID", model.AccountID),
                new SqlParameter("@PeriodFrom", model.PeriodFrom),
                new SqlParameter("@PeriodTo", model.PeriodTo),
@@ -190,7 +192,9 @@ namespace ArmsServices.DataServices
             return new GstUsageIDModel
             {
                 Id= dr.GetInt32("ID"),
-                UsageID = dr.GetString("UsageID"),
+                UsageCode = dr.GetString("UsageCode"),
+                Area = dr.GetString("Area"),
+                Description = dr.GetString("Description"),
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),
                 PeriodTo = dr.GetDateTime("PeriodTo"),
                 AccountID = dr.GetInt32("AccountID"),
