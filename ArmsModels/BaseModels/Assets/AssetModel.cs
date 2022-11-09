@@ -80,7 +80,7 @@ namespace ArmsModels.BaseModels
         public int? AssetClassID { get; set; }
         [Required]
         public string AssetClassName { get; set; }
-        [Required]
+       
         public int? PostingGroupID { get; set; }
         public int? AssetSubClassID { get; set; }
         public virtual string AssetSubclass { get; set; }
@@ -98,7 +98,7 @@ public class AssetStatusUpdateModel
     public DateTime? StatusDate { get; set; }
     public int? AccountTransactionID { get; set; }
     [Required]
-    public decimal? Amount { get; set; }
+    public decimal? Amount { get; set; } 
     public UserInfoModel UserInfo { get; set; } = new();
 }
 
