@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
     public interface IGstUsageIDService
     {
         GstUsageIDModel Update(GstUsageIDModel model);
-        GstUsageIDModel SelectByID(string ID);
+        GstUsageIDModel SelectByCode(string Code);
         IEnumerable<GstUsageIDModel> SelectByAccount(int AccountID , DateTime? entryDate);
         IEnumerable<GstUsageIDModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);
         IEnumerable<GstUsageIDModel> SelectBySAC(string SAC, DateTime? entryDate);
@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
         IEnumerable<GstUsageIDModel> Select(DateTime? entryDate);
         IEnumerable<GstRateModel> GetGstRates();      
         IEnumerable<GstUsageIDModel> SelectByTaxRateAccount(int? rateId, int? acID);
-        decimal? GetGstRate(string UsageID,DateTime? EntryDate);
+        decimal? GetGstRate(string UsageCode,DateTime? EntryDate);
     }
 
     public class GstUsageIDService : IGstUsageIDService
@@ -101,12 +101,12 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public GstUsageIDModel SelectByID(string ID)
+        public GstUsageIDModel SelectByCode(string Code)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@UsageID", ID),
-               new SqlParameter("@Operation", "ByID")
+               new SqlParameter("@UsageID", Code),
+               new SqlParameter("@Operation", "ByCode")
             };
             GstUsageIDModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
@@ -191,7 +191,7 @@ namespace ArmsServices.DataServices
         {
             return new GstUsageIDModel
             {
-                Id= dr.GetInt32("ID"),
+                Id = dr.GetInt32("ID"),
                 UsageCode = dr.GetString("UsageCode"),
                 Area = dr.GetString("Area"),
                 Description = dr.GetString("Description"),
@@ -211,13 +211,13 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public decimal? GetGstRate(string UsageID, DateTime? EntryDate)
+        public decimal? GetGstRate(string UsageCode, DateTime? EntryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "GetTaxRate"),
                new SqlParameter("@EntryDate", EntryDate),
-               new SqlParameter("@UsageID", UsageID),
+               new SqlParameter("@UsageCode", UsageCode),
             };
 
             decimal? result = null;

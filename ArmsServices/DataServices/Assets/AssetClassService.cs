@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
         AssetClassModel UpdateClass(AssetClassModel model);
         AssetClassModel UpdateSubClass(AssetClassModel model);
         IEnumerable<AssetClassModel> SelectSubClasses(int? ID);
-        IEnumerable<AssetClassModel> SelectSubClassesByParty(int? ID);
+        IEnumerable<AssetClassModel> SelectSubClassesByClass(int? ID);
         IEnumerable<AssetClassModel> SelectClasses();
         int DeleteClass(int? AssetClassID, string UserID);
         int DeleteSubClass(int? AssetSubClassID, string UserID);
@@ -74,12 +74,12 @@ namespace ArmsServices.DataServices
             }
             
         }
-        public IEnumerable<AssetClassModel> SelectSubClassesByParty(int? ID)
+        public IEnumerable<AssetClassModel> SelectSubClassesByClass(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
-               new SqlParameter("@Operation", "SelectByParty")
+               new SqlParameter("@Operation", "SelectByClass")
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetSubClass.Select]", parameters))
