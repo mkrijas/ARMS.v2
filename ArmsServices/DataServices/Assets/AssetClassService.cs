@@ -12,10 +12,10 @@ namespace ArmsServices.DataServices
     {
         AssetClassModel UpdateClass(AssetClassModel model);
         AssetClassModel UpdateSubClass(AssetClassModel model);
-        IEnumerable<AssetClassModel> SelectSubClasses(int? ID); 
-        int Delete(int? AssetClassID, string UserID);
-        IEnumerable<AssetClassModel> Select();
-        IEnumerable<AssetClassModel> SelectByGroup(int? ID);
+        IEnumerable<AssetClassModel> SelectSubClasses(int? ID);
+        IEnumerable<AssetClassModel> SelectClasses();
+        int DeleteClass(int? AssetClassID, string UserID);
+        int DeleteSubClass(int? AssetSubClassID, string UserID);
     }
 
     public class AssetClassService : IAssetClassService
@@ -27,7 +27,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Delete(int? AssetClassID, string UserID)
+        public int DeleteClass(int? AssetClassID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -36,8 +36,17 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.AssetClass.Delete]", parameters);
         }
+        public int DeleteSubClass(int? AssetSubClassID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetSubClassID", AssetSubClassID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Asset.AssetSubClass.Delete]", parameters);
+        }
 
-        public IEnumerable<AssetClassModel> Select()
+        public IEnumerable<AssetClassModel> SelectClasses()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -46,59 +55,56 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetClass.Select]", parameters))
             {
-                yield return GetModel(dr);
+                yield return GetAssetClass(dr);
             }
         }
 
-
-        public IEnumerable<AssetClassModel> SelectByGroup(int? ID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByGroup"),
-               new SqlParameter("@ID", ID)
-            };
-
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetClass.Select]", parameters))
-            {
-                yield return GetModel(dr);
-            }
-        }
-
-        public AssetClassModel SelectByID(int? ID)
+        public IEnumerable<AssetClassModel> SelectSubClasses(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AssetClassID", ID),
                new SqlParameter("@Operation", "ByID")
             };
-            AssetClassModel model = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetClass.Select]", parameters))
+            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetSubClass.Select]", parameters))
             {
-                model = GetModel(dr);
+                yield return GetAssetSubClass(dr);
             }
-            return model;
+            
         }
 
-        public AssetClassModel Update(AssetClassModel model)
+        public AssetClassModel UpdateClass(AssetClassModel model)
         {    
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AssetClassID", model.AssetClassID),
-               new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@AssetClassTime", model.AssetClassTime),
-               new SqlParameter("@AssetClassType", model.AssetClassType),
-               new SqlParameter("@ContactNumber", model.ContactNumber),
-               new SqlParameter("@Detail", model.Detail),
-               new SqlParameter("@TruckID", model.TruckID),
+               new SqlParameter("@AssetClassName", model.AssetClassName),               
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetClass.Update]", parameters))
             {
-                model =  GetAssetClass(dr);
+                return GetAssetClass(dr);
             }
-            return model;
+            return null;
+        }
+
+        public AssetClassModel UpdateSubClass(AssetClassModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetClassID", model.AssetClassID),
+               new SqlParameter("@AssetClassName", model.AssetClassName),
+               new SqlParameter("@ParentID", model.ParentID),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetSubClass.Update]", parameters))
+            {
+                return GetAssetClass(dr);
+            }
+            return null;
         }
 
         private AssetClassModel GetAssetClass(IDataRecord dr)

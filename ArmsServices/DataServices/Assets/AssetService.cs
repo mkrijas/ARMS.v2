@@ -173,7 +173,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AssetID", AssetID),
                new SqlParameter("@AssetHolderID", AssetHolderID),
                new SqlParameter("@Mode", Mode),// Attach,Detach
-               new SqlParameter("@AssetHolderID", UserID),
+               new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.Attach]", parameters);           
         }
