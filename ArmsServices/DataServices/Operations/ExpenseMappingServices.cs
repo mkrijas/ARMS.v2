@@ -12,8 +12,10 @@ namespace ArmsServices.DataServices
     public interface IExpenseMappingServices
     {
         IEnumerable<ExpenseMapping> Select();
+        IEnumerable<ExpenseMapping> SelectByArea(string Area);
         ExpenseMapping Update(ExpenseMapping model);
         ExpenseMapping SelectByID(int ID);
+
         int Delete(int? ID, string UserID);
     }
         public class ExpenseMappingServices : IExpenseMappingServices
@@ -29,6 +31,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ExpenseID", model.ExpenseID),
                new SqlParameter("@ExpenseTitle", model.ExpenseTitle),
+               new SqlParameter("@Area", model.Area),
                new SqlParameter("@MappedCoaID", model.MappedCoaID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -44,6 +47,19 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ExpenseID", 0)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.ExpenseMapping.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+        public IEnumerable<ExpenseMapping> SelectByArea(string Area)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByArea"),
+               new SqlParameter("@Area", Area),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.ExpenseMapping.Select]", parameters))
@@ -67,6 +83,7 @@ namespace ArmsServices.DataServices
                 ExpenseID = dr.GetInt32("ExpenseID"),
                 ExpenseTitle = dr.GetString("ExpenseTitle"),
                 ExpenseCode = dr.GetString("ExpenseCode"),
+                Area =  dr.GetString("Area"),
                 MappedCoaID = dr.GetInt32("MappedCoaID"),
                 AccountName = dr.GetString("AccountName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel()

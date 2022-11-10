@@ -12,6 +12,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string ExpenseTitle { get; set; }        
         public virtual string ExpenseCode { get; set; }
+        public string Area { get; set; }// Operation,Maintenance 
         [Required]
         public int? MappedCoaID { get; set; }
         public  virtual string AccountName { get; set; }
