@@ -144,6 +144,9 @@ namespace Views
             services.AddScoped<IRenterPostingGroupService, RenterPostingGroupService>();
             services.AddScoped<IVendorPostingGroupService, VendorPostingGroupService>();
             services.AddScoped<ICashAccountService, CashAccountService>();
+            //------------ASSETS-------------------
+            services.AddScoped<IAssetClassService, AssetClassService>();
+            services.AddScoped<IAssetService, AssetService>();
 
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
