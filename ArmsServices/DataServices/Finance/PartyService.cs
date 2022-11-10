@@ -54,7 +54,7 @@ namespace ArmsServices.DataServices
                    new SqlParameter("@TradeName", model.TradeName),
                    new SqlParameter("@NatureOfFirm", model.NatureOfBusiness),
                    new SqlParameter("@AddressID", model.Address.AddressID),
-                  // new SqlParameter("@AssesseeType", model.AssesseeType),
+                   new SqlParameter("@AssesseeType", model.AssesseeType),
                    new SqlParameter("@BankAccountID", model.BankAccount.BankAccountID),
                    new SqlParameter("@PAN", model.PAN),
                    new SqlParameter("@CreditLimit", model.CreditLimit),
@@ -90,7 +90,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
             };
             PartyModel model = new PartyModel();
-            foreach( IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            foreach( IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                 model = GetModel(reader);
             }
@@ -105,7 +105,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyID", PartyID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return Iservice.ExecuteNonQuery("[usp.Entity.PartyDelete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Entity.Party.Delete]", parameters);
         }
 
 
@@ -143,7 +143,7 @@ namespace ArmsServices.DataServices
                 PartyID = reader.GetInt32("PartyID"),
                 TradeName = reader.GetString("TradeName"),
                 Address = new AddressModel() { AddressID = reader.GetInt32("AddressID") },
-                AssesseeType = reader.GetString("AssesseeType"),
+                AssesseeType = reader.GetString("AssesseeTypeID"),
                 BankAccount = new BankAccountModel() { BankAccountID = reader.GetInt32("BankAccountID") },
                 CreditLimit = reader.GetInt32("CreditLimit"),
                 CreditPeriod = reader.GetInt32("CreditPeriod"),
@@ -178,9 +178,9 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@PartyCode", PartyCode),
                new SqlParameter("@Operation", "ByCode"),
-               new SqlParameter("@NatureOfBusiness","NatureOfBusiness")
+               new SqlParameter("@NatureOfBusiness",NatureOfBusiness)
             };            
-            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                yield return GetModel(reader);
             }            
@@ -194,7 +194,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "GetContacts"),
             };
 
-            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.PartySelect]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                 yield return _contactService.SelectByID(reader.GetInt32("ContactID"));
             }

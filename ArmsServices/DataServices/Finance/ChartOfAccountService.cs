@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
         IEnumerable<ChartOfAccountModel> SelectChildren(int? CoaID);
         IEnumerable<ChartOfAccountModel> SelectBase(); 
         IEnumerable<ChartOfAccountModel> FilterSubLedgers(string filterText);
+        IEnumerable<ChartOfAccountModel> SelectByGroup(int? GroupID);
         IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID);
         void AddBranch(CoaBranchAvailabilityModel model);
         void RemoveBranch(CoaBranchAvailabilityModel model);
@@ -40,6 +41,20 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Coa.Delete]", parameters);
+        }
+
+        public IEnumerable<ChartOfAccountModel> SelectByGroup(int? CoaID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByGroup"),
+               new SqlParameter("@CoaID",CoaID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
 
         public IEnumerable<ChartOfAccountModel> SelectChildren(int? CoaID)
@@ -105,6 +120,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+
 
         private ChartOfAccountModel GetModel(IDataRecord dr)
         {

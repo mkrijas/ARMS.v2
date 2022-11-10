@@ -63,7 +63,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@AssetClassID", ID),
+               new SqlParameter("@ID", ID),
                new SqlParameter("@Operation", "ByID")
             };
             
@@ -79,7 +79,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AssetClassID", model.AssetClassID),
-               new SqlParameter("@AssetClassName", model.AssetClassName),               
+               new SqlParameter("@AssetClasssName", model.AssetClassName),               
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -94,9 +94,9 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@ID", model.AssetSubClassID),
+               new SqlParameter("@AsstSubClassName", model.AssetSubclass),
                new SqlParameter("@AssetClassID", model.AssetClassID),
-               new SqlParameter("@AssetClassName", model.AssetClassName),
-               new SqlParameter("@ParentID", model.ParentID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -112,13 +112,13 @@ namespace ArmsServices.DataServices
             return new AssetClassModel
             {
                 AssetClassID = dr.GetInt32("AssetClassID"),
-                AssetClassName = dr.GetString("AssetClassName"),
-                ParentID = dr.GetInt32("AssetClassID"),
+                AssetClassName = dr.GetString("AssetClasssName"),
+                AssetSubClassID = dr.GetInt32("AssetClassID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
                     TimeStampField = dr.GetDateTime("TimeStamp"),
-                    UserID = dr.GetString("UserID"),
+                    UserID = dr.GetString("UserId"),
                 },
             };
         }
@@ -127,9 +127,9 @@ namespace ArmsServices.DataServices
         {
             return new AssetClassModel
             {
-                AssetClassID = dr.GetInt32("AssetSubClassID"),
-                AssetClassName = dr.GetString("AssetSubClassName"),
-                ParentID = dr.GetInt32("AssetClassID"),
+                AssetClassID = dr.GetInt32("AssetClassID"),
+                AssetClassName = dr.GetString("AssetSubclass"),
+                AssetSubClassID = dr.GetInt32("ID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
