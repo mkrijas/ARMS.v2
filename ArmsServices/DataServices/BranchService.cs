@@ -114,6 +114,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@UserID", contact.UserInfo.UserID),
                new SqlParameter("@contactID", contact?.ContactID??0)
             };
             return Iservice.ExecuteNonQuery("[usp.Entity.Branch.Contacts.Update]", parameters);

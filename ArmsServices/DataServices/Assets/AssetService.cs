@@ -50,12 +50,12 @@ namespace ArmsServices.DataServices
                 AssetHolderID = dr.GetInt32("AssetHolderID"),
                 Description = dr.GetString("Description"),
                 BranchID = dr.GetInt32("BranchID"),
-                UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                {
-                    RecordStatus = dr.GetByte("RecordStatus"),
-                    TimeStampField = dr.GetDateTime("TimeStamp"),
-                    UserID = dr.GetString("UserID"),
-                },
+                //UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                //{
+                //    RecordStatus = dr.GetByte("RecordStatus"),
+                //    TimeStampField = dr.GetDateTime("TimeStamp"),
+                //    UserID = dr.GetString("UserID"),
+                //},
             };
         }
         private AssetModel GetAsset(IDataRecord dr)
@@ -64,7 +64,7 @@ namespace ArmsServices.DataServices
             {
                 AssetID = dr.GetInt32("AssetID"),
                 BranchID = dr.GetInt32("BranchID"),
-                AccountTransactionID =dr.GetInt32("AccountTransactionID"),
+               // AccountTransactionID =dr.GetInt32("AccountTransactionID"),
                 AssetClass = new()
                 {
                     AssetClassID = dr.GetInt32("AssetClassID"),
@@ -118,7 +118,7 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@BranchID", Holder.BranchID),
                new SqlParameter("@AssetID", model.AssetID),
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@AccountTransactionID", model.AccountTransactionID),
+             //  new SqlParameter("@AccountTransactionID", model.AccountTransactionID),
                new SqlParameter("@AssetClassID", model.AssetClass.AssetClassID),
                new SqlParameter("@SubClassID", model.SubClass.AssetClassID),
                new SqlParameter("@AssetCode", model.AssetCode),
