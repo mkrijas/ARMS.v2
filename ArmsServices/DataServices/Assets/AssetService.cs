@@ -110,46 +110,46 @@ namespace ArmsServices.DataServices
 
 
 
-        public AssetModel UpdateSimpleAsset(AssetModel model, AssetModel )
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-                new SqlParameter("@AssetID", .AssetID),
-                new SqlParameter("@Description", .Description),
-                new SqlParameter("@BranchID", .BranchID),
-               new SqlParameter("@AssetID", model.AssetID),
-               new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@AccountTransactionID", model.CurrentValue),
-               new SqlParameter("@AssetClassID", model.AssetClass.AssetClassID),
-               new SqlParameter("@SubClassID", model.SubClass.AssetClassID),
-               new SqlParameter("@AssetCode", model.AssetCode),
-               new SqlParameter("@BookValue", model.BookValue),
-               new SqlParameter("@DepreciationBookCode", model.DepreciationBookCode),
-               new SqlParameter("@DepreciableValue", model.DepreciableValue),
-               new SqlParameter("@DepreciationEndingDate", model.DepreciationEndingDate),
-               new SqlParameter("@DepreciationStartingDate", model.DepreciationStartingDate),
-               new SqlParameter("@DepreciationMethod", model.DepreciationMethod),
-               new SqlParameter("@Description", model.Description),
-               new SqlParameter("@GstRateID", model.GstRateID),
-               new SqlParameter("@HsnCode", model.HsnCode),
-               new SqlParameter("@NatureOfAsset", model.NatureOfAsset),
-               new SqlParameter("@ProjectedDisposalDate", model.ProjectedDisposalDate),
-               new SqlParameter("@RateOfDepreciation", model.RateOfDepreciation),
-               new SqlParameter("@SalvageValue", model.SalvageValue),
-               new SqlParameter("@SerialNumber", model.SerialNumber),
-               new SqlParameter("@SpanOfYear", model.SpanOfYear),
-               new SqlParameter("@Status", model.Status),
-               new SqlParameter("@PartyID", model.VendorInfo.PartyID),
-               new SqlParameter("@WarrentyDate", model.WarrentyDate),
-               new SqlParameter("@UserID", model.UserInfo.UserID),
-            };
+        //public AssetModel UpdateSimpleAsset(AssetModel model )
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //        new SqlParameter("@AssetID", .AssetID),
+        //        new SqlParameter("@Description", .Description),
+        //        new SqlParameter("@BranchID", .BranchID),
+        //       new SqlParameter("@AssetID", model.AssetID),
+        //       new SqlParameter("@BranchID", model.BranchID),
+        //       new SqlParameter("@AccountTransactionID", model.CurrentValue),
+        //       new SqlParameter("@AssetClassID", model.AssetClass.AssetClassID),
+        //       new SqlParameter("@SubClassID", model.SubClass.AssetClassID),
+        //       new SqlParameter("@AssetCode", model.AssetCode),
+        //       new SqlParameter("@BookValue", model.BookValue),
+        //       new SqlParameter("@DepreciationBookCode", model.DepreciationBookCode),
+        //       new SqlParameter("@DepreciableValue", model.DepreciableValue),
+        //       new SqlParameter("@DepreciationEndingDate", model.DepreciationEndingDate),
+        //       new SqlParameter("@DepreciationStartingDate", model.DepreciationStartingDate),
+        //       new SqlParameter("@DepreciationMethod", model.DepreciationMethod),
+        //       new SqlParameter("@Description", model.Description),
+        //       new SqlParameter("@GstRateID", model.GstRateID),
+        //       new SqlParameter("@HsnCode", model.HsnCode),
+        //       new SqlParameter("@NatureOfAsset", model.NatureOfAsset),
+        //       new SqlParameter("@ProjectedDisposalDate", model.ProjectedDisposalDate),
+        //       new SqlParameter("@RateOfDepreciation", model.RateOfDepreciation),
+        //       new SqlParameter("@SalvageValue", model.SalvageValue),
+        //       new SqlParameter("@SerialNumber", model.SerialNumber),
+        //       new SqlParameter("@SpanOfYear", model.SpanOfYear),
+        //       new SqlParameter("@Status", model.Status),
+        //       new SqlParameter("@PartyID", model.VendorInfo.PartyID),
+        //       new SqlParameter("@WarrentyDate", model.WarrentyDate),
+        //       new SqlParameter("@UserID", model.UserInfo.UserID),
+        //    };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Simple.Update]", parameters))
-            {
-               return GetModel(dr);
-            }
-            return null;
-        }
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Simple.Update]", parameters))
+        //    {
+        //       return GetModel(dr);
+        //    }
+        //    return null;
+        //}
 
         public AssetModel UpdateComplexAsset(AssetModel model)
         {
