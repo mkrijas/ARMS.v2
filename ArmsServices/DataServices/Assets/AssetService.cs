@@ -80,7 +80,7 @@ namespace ArmsServices.DataServices
                 RateOfDepreciation = dr.GetDecimal("RateOfDepreciation"),                
                 SalvageValue = dr.GetDecimal("SalvageValue"),
                 SerialNumber = dr.GetString("SerialNumber"),
-                SpanOfYear = dr.GetInt32("SpanOfYear"),
+                SpanOfYear = dr.GetDecimal("SpanOfYear"),
                 Status = dr.GetString("Status"),               
                 VendorInfo = new()
                 {
