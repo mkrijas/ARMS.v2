@@ -306,6 +306,11 @@ namespace ArmsServices.DataServices
             }
             return view;
         }
+
+        public List<AssetViewModel> GetAssetView(int BranchID)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
    
