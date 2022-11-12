@@ -14,12 +14,13 @@ namespace ArmsServices.DataServices
         int MoveAsset(int? AssetID,int? ParentAssetID,string Mode, string UserID);
         AssetModel SelectByID(int? ID);
         int? Scrap(int? AssetID, string UserID);
-        IEnumerable<AssetModel> SelectByBranch(int BranchID,bool scrap);
+        IEnumerable<AssetModel> SelectByBranch(int BranchID,bool scrap);        
         IEnumerable<AssetModel> GetAttachedAssets(int? ParentAssetID);
         int? UpdateStatus(AssetStatusUpdateModel model); 
         AssetStatusUpdateModel GetCurrentStatus(int? AssetID);
         IEnumerable<AssetStatusUpdateModel> GetStatusHistory(int? AssetID);
     }
+
 
     public class AssetService : IAssetService
     {
@@ -40,8 +41,7 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
-        }      
-       
+        }   
 
        
         private AssetModel GetModel(IDataRecord dr)
@@ -219,6 +219,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+
         public AssetStatusUpdateModel GetCurrentStatus(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -246,6 +247,7 @@ namespace ArmsServices.DataServices
             }           
             return null;
         }
+
 
         public IEnumerable<AssetStatusUpdateModel> GetStatusHistory(int? AssetID)
         {
