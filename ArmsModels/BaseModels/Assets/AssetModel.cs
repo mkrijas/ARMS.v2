@@ -78,7 +78,7 @@ namespace ArmsModels.BaseModels
     public class AssetClassModel
     {
         public int? AssetClassID { get; set; }
-        [Required]
+        
         public string AssetClassName { get; set; }
        
         public int? PostingGroupID { get; set; }
