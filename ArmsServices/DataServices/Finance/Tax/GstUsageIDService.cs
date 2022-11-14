@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
     public interface IGstUsageIDService
     {
         GstUsageIDModel Update(GstUsageIDModel model);
-        GstUsageIDModel SelectByCode(string ICode;
+        GstUsageIDModel SelectByCode(string Code);
         IEnumerable<GstUsageIDModel> SelectByAccount(int AccountID , DateTime? entryDate);
         IEnumerable<GstUsageIDModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);
         IEnumerable<GstUsageIDModel> SelectBySAC(string SAC, DateTime? entryDate);
