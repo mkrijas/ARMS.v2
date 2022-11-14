@@ -16,47 +16,13 @@
                 <MudTooltip Text="New Simple Asset">
                 <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
+                  <MudTooltip Text="New Complex Asset">
+                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogComplexAsset(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
      </MudItem>
-   @*<MudItem xs="12">
-        <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
-           
+  
 
-             <ToolBarContent>
-               
-                
-              
-                <MudSpacer></MudSpacer>
-                </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<AssetModel, object>(x=> x.Description)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
-             <MudTh><MudTableSortLabel SortBy="new Func<AssetModel, object>(x=> x.AssetCode)" InitialDirection="SortDirection.Ascending">AssetCode</MudTableSortLabel></MudTh>
-               <MudTh><MudTableSortLabel SortBy="new Func<AssetModel, object>(x=> x.SerialNumber)" InitialDirection="SortDirection.Ascending">SerialNumber</MudTableSortLabel></MudTh>
-             <MudTh><MudTableSortLabel SortBy="new Func<AssetModel, object>(x=> x.NatureOfAsset)" InitialDirection="SortDirection.Ascending">NatureOfAsset</MudTableSortLabel></MudTh>
-            
-                
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="GrnNO">@context.Description</MudTd>
-                <MudTd DataLabel="EntryDate">@context.AssetCode</MudTd>
-                <MudTd DataLabel="EntryDate">@context.SerialNumber</MudTd>
-             
-                  <MudTd DataLabel="GrnNO">@context.NatureOfAsset</MudTd>
-             
-                <MudTd DataLabel="">
-                   
-                
-                    
-                  
-                    </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>*@
-
-
+ <MudItem xs="12" md="12">
     <MudTable Hover="true" Breakpoint="Breakpoint.Sm" Height="500px" FixedHeader="true"
           Items="@collection"
           GroupBy="@_groupDefinition"
@@ -69,24 +35,32 @@
         <MudTh>SerialNumber</MudTh>
         <MudTh>AssetCode</MudTh>
         <MudTh>NatureOfAsset</MudTh>
-      
+       <MudTh></MudTh>
     </HeaderContent>
     <GroupHeaderTemplate>
-        <MudTh Class="mud-table-cell-custom-group" colspan="6">@($"{context.GroupName}: {context.Key}")</MudTh>
-    </GroupHeaderTemplate>
+       
+        <MudTh Class="mud-table-cell-custom-group" colspan="5">@($"{context.Key}")</MudTh>
+   @*  <MudTd DataLabel="Nr">@context.Description</MudTd>
+        <MudTd DataLabel="Sign">@context.SerialNumber</MudTd>
+        <MudTd DataLabel="Name">@context.AssetCode</MudTd>
+        <MudTd DataLabel="Group">@context.NatureOfAsset</MudTd>*@
+
+   </GroupHeaderTemplate>
     <RowTemplate>
         <MudTd DataLabel="Nr">@context.Description</MudTd>
         <MudTd DataLabel="Sign">@context.SerialNumber</MudTd>
         <MudTd DataLabel="Name">@context.AssetCode</MudTd>
         <MudTd DataLabel="Group">@context.NatureOfAsset</MudTd>
-      
+         <MudTd DataLabel="">
+            <MudFab @onclick="@(()=> OpenDialogComplexAsset(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+      </MudTd>
 @*        <MudTd Style="text-align:right" DataLabel="Molar mass">@context.Molar</MudTd>
     *@</RowTemplate>
-    <GroupFooterTemplate>
+ @*   <GroupFooterTemplate>
         <MudTh Class="mud-table-cell-custom-group mud-table-cell-custom-group-footer" colspan="6">Total Mass: 12)</MudTh>
-    </GroupFooterTemplate>
+    </GroupFooterTemplate>*@
 </MudTable>
-
+</MudItem>
     </MudGrid>
 @code {
     private AssetModel model = new AssetModel();
@@ -103,10 +77,12 @@
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
         collection = new List<AssetModel>();
-        foreach (var item in Iservice.SelectByBranch(brancID,false))
-        {
-            collection.Add(item);
-        }
+        collection = Iservice.SelectByBranch(brancID,false).Where(x => x.ParentAssetID == null).ToList();
+
+        //foreach (var item in Iservice.SelectByBranch(brancID,false).Where(x => x.ParentAssetID == nul).ToList();)
+        //{
+        //    collection.Add(item);
+        //}
 
 
     }  
@@ -128,18 +104,43 @@
 
         }
     }
-     private TableGroupDefinition<AssetModel> _groupDefinition = new TableGroupDefinition<AssetModel>()
+    private async Task OpenDialogComplexAsset(AssetModel tds)
     {
-        GroupName = "Group",
-        Indentation = false,
-        Expandable = false,
-        Selector = (e) => e.Description,
-        InnerGroup = new TableGroupDefinition<AssetModel>()
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.IsComplex = true;
+        if(tds.AssetID!=null)
         {
-            GroupName = "Position",
-            Expandable = false,
-            Selector = (e) => e.AssetCode
+             model.ParentAssetID = tds.AssetID;
         }
+       
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",model);
+        var dialog =  DialogService.Show<AssetSimpleDialog>(model.AssetID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetAll();
+
+
+        }
+    }
+    private TableGroupDefinition<AssetModel> _groupDefinition = new TableGroupDefinition<AssetModel>()
+    {
+
+        //Indentation = false,
+        Expandable = true,
+        Selector = (e) => e.Description,
+        //InnerGroup = new TableGroupDefinition<AssetModel>()
+        //{
+
+        //    Expandable = false,
+        //    Selector = (e) => e.Description
+        //}
 
     };
+   
+  
 }
