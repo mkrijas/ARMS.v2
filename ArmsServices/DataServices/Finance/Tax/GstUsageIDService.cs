@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         GstUsageIDModel Update(GstUsageIDModel model);
         GstUsageIDModel SelectByCode(string Code);
         IEnumerable<GstUsageIDModel> SelectByAccount(int AccountID , DateTime? entryDate);
+        IEnumerable<GstUsageIDModel> SelectByArea(string Area, DateTime? entryDate);
         IEnumerable<GstUsageIDModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);
         IEnumerable<GstUsageIDModel> SelectBySAC(string SAC, DateTime? entryDate);
         IEnumerable<GstUsageIDModel> FilterByText(string FilterText, DateTime? entryDate);
@@ -38,7 +39,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@UsageID", ID),
+               new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Taxes.Gst.UsageID.Delete]", parameters);
@@ -49,7 +50,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "AutoComplete"),
-               new SqlParameter("@UsageID",FilterText),
+               new SqlParameter("@UsageCode",FilterText),
                new SqlParameter("@EntryDate", entryDate),
             };
 
@@ -101,11 +102,26 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<GstUsageIDModel> SelectByArea(string Area, DateTime? entryDate)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByArea"),
+               new SqlParameter("@Area", Area),
+               new SqlParameter("@EntryDate", entryDate),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public GstUsageIDModel SelectByCode(string Code)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@UsageID", Code),
+               new SqlParameter("@UsageCode", Code),
                new SqlParameter("@Operation", "ByCode")
             };
             GstUsageIDModel model = new();
@@ -114,10 +130,7 @@ namespace ArmsServices.DataServices
                 model = GetModel(dr);
             }
             return model;
-        }
-
-       
-
+        }      
 
         public IEnumerable<GstUsageIDModel> SelectBySAC(string SAC, DateTime? entryDate)
         {
