@@ -1,0 +1,133 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
+using ArmsModels.BaseModels;
+
+
+namespace ArmsServices.DataServices
+{
+    public interface IAssetPostingGroupService
+    {
+        AssetPostingGroupModel Update(AssetPostingGroupModel model);
+        AssetPostingGroupModel SelectByID(int? ID);
+        int Delete(int? ID, string UserID);
+        IEnumerable<AssetPostingGroupModel> Select();
+    }
+
+    public class AssetPostingGroupService : IAssetPostingGroupService
+    {
+        IDbService Iservice;
+
+        public AssetPostingGroupService(IDbService iservice)
+        {
+            Iservice = iservice;
+        }
+
+        public int Delete(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Asset.Delete]", parameters);
+        }
+
+
+        public IEnumerable<AssetPostingGroupModel> Select()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByID"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Asset.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public AssetPostingGroupModel SelectByID(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "ByID"),
+            };            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Asset.Select]", parameters))
+            {
+               return  GetModel(dr);
+            }
+            return null;
+        }
+
+        public AssetPostingGroupModel Update(AssetPostingGroupModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", model.ID),
+               new SqlParameter("@Capitalization", model.Capitalization.CoaID),
+               new SqlParameter("@CWIP", model.CWIP.CoaID),
+               new SqlParameter("@Depreciation", model.Depreciation.CoaID),
+               new SqlParameter("@AccummulatedDepreciation", model.AccummulatedDepreciation.CoaID),
+               new SqlParameter("@Revaluation", model.Revaluation.CoaID),
+               new SqlParameter("@RevaluationReserve", model.RevaluationReserve.CoaID),
+               new SqlParameter("@Title", model.Title),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Asset.Update]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
+        private AssetPostingGroupModel GetModel(IDataRecord dr)
+        {
+            return new AssetPostingGroupModel
+            {
+                ID = dr.GetInt32("ID"),
+                Title = dr.GetString("Title"),
+                Capitalization = new ChartOfAccountModel()
+                {
+                    CoaID = dr.GetInt32("Capitalization"),
+                    AccountName = dr.GetString("CapitalizationCoa"),
+                },
+                CWIP = new ChartOfAccountModel()
+                {
+                    CoaID = dr.GetInt32("CWIP"),
+                    AccountName = dr.GetString("CWIPCoa"),
+                },
+                Depreciation = new ChartOfAccountModel()
+                {
+                    CoaID = dr.GetInt32("Depreciation"),
+                    AccountName = dr.GetString("DepreciationCoa"),
+                },
+                AccummulatedDepreciation = new ChartOfAccountModel()
+                {
+                    CoaID = dr.GetInt32("AccummulatedDepreciation"),
+                    AccountName = dr.GetString("AccummulatedDepreciationCoa"),
+                },
+                Revaluation = new ChartOfAccountModel()
+                {
+                    CoaID = dr.GetInt32("Revaluation"),
+                    AccountName = dr.GetString("RevaluationCoa"),
+                },
+                RevaluationReserve = new ChartOfAccountModel()
+                {
+                    CoaID = dr.GetInt32("RevaluationReserve"),
+                    AccountName = dr.GetString("RevaluationReserveCoa"),
+                },
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+
+    }
+}

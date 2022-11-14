@@ -105,8 +105,7 @@ public class AssetStatusUpdateModel
 public class AssetPostingGroupModel
 {      
         public int? ID { get; set; }
-        public string Title { get; set; }
-        public int? AssetID { get; set; }
+        public string Title { get; set; }        
         public ChartOfAccountModel Capitalization { get; set; }
         public ChartOfAccountModel CWIP { get; set; }
         public ChartOfAccountModel AccummulatedDepreciation { get; set; }
