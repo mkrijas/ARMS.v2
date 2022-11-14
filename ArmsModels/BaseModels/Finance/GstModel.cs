@@ -8,17 +8,16 @@ namespace ArmsModels.BaseModels
         public GstUsageIDModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
-        }
-        [Required]
-        public int? Id { get; set; }
-
-
+        }        
+        public int? Id { get; set; }        
+        public virtual string UsageCode { get; set; }
         [Required]
         [StringLength(maximumLength: 25)]
-        public string UsageID { get; set; }
-        
+        public string Description { get; set; }
         public int? AccountID { get; set; }
         public virtual string AccountName { get; set; }
+        [Required]
+        public string Area { get; set; } // Operation,Maintenance,All
         [Required]
         public int? RID { get; set; }
         public virtual decimal? TaxRate { get; set; }
