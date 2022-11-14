@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
     public interface IGstUsageIDService
     {
         GstUsageIDModel Update(GstUsageIDModel model);
-        GstUsageIDModel SelectByID(string ID);
+        GstUsageIDModel SelectByCode(string ICode;
         IEnumerable<GstUsageIDModel> SelectByAccount(int AccountID , DateTime? entryDate);
         IEnumerable<GstUsageIDModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);
         IEnumerable<GstUsageIDModel> SelectBySAC(string SAC, DateTime? entryDate);
@@ -101,12 +101,12 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public GstUsageIDModel SelectByID(string ID)
+        public GstUsageIDModel SelectByCode(string Code)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@UsageID", ID),
-               new SqlParameter("@Operation", "ByID")
+               new SqlParameter("@UsageID", Code),
+               new SqlParameter("@Operation", "ByCode")
             };
             GstUsageIDModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
@@ -191,7 +191,7 @@ namespace ArmsServices.DataServices
         {
             return new GstUsageIDModel
             {
-                Id= dr.GetInt32("ID"),
+                Id = dr.GetInt32("ID"),
                 UsageCode = dr.GetString("UsageCode"),
                 Area = dr.GetString("Area"),
                 Description = dr.GetString("Description"),
