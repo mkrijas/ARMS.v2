@@ -278,7 +278,13 @@ namespace ArmsServices.DataServices
 
         public int? Scrap(int? AssetID, string UserID)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetID", AssetID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Asset.Scrap]", parameters);
+            //throw new NotImplementedException();
         }        
     }
 }
