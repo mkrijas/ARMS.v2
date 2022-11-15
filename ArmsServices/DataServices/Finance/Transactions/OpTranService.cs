@@ -15,13 +15,12 @@ namespace ArmsServices.DataServices
     {
         OpTranModel Update(OpTranModel model);
         int Delete(long? ID, string UserID);
-        IEnumerable<OpTranModel> SelectByTrip(long? TripID);        
+        IEnumerable<OpTranModel> SelectByTrip(long? TripID);
+        IEnumerable<OpTranModel> SelectByJobcard(int? JobcardID);
         OpTranModel SelectByID(long? ID);
         int Approve(int? ID, string UserID);
         int Reverse(int? ID, string UserID);
         IEnumerable<OpTranSubModel> GetExpenses(long? TransactionID);
-        IEnumerable<OpExpenseModel> GetOpExpenseHeads();
-        int UpdateExpenseHead(OpExpenseModel model);
     }
 
     public class OpTranService : IOpTranService
@@ -39,6 +38,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@OpTranID", model.OpTranID),
                new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@CreditCoaID", model.CreditCoaID),
+               new SqlParameter("@Area", model.Area),
+               new SqlParameter("@JobCardID", model.JobCardID),
+               new SqlParameter("@PaymentArdCode", model.PaymentArdCode),
+               new SqlParameter("@PaymentMode", model.PaymentMode),
+               new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@CostCenter", model.CostCenter),
@@ -95,27 +99,19 @@ namespace ArmsServices.DataServices
             }            
         }
 
-        public IEnumerable<OpExpenseModel> GetOpExpenseHeads()
+        public IEnumerable<OpTranModel> SelectByJobcard(int? JobcardID)
         {
-           
-            foreach (var dr in Iservice.GetDataReader("[usp.Operation.ExpenseMapping.Select]", null))
+            List<SqlParameter> parameters = new List<SqlParameter>
             {
-                yield return new OpExpenseModel()
-                {
-                   ExpenseID = dr.GetInt32("ExpenseID"),
-                   ExpenseTitle = dr.GetString("ExpenseTitle"),
-                   CoaID = dr.GetInt32("MappedCoaID"),
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                    {
-                        RecordStatus = dr.GetByte("RecordStatus"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        UserID = dr.GetString("UserID"),
-                    },
+               new SqlParameter("@JobcardID", JobcardID),
+               new SqlParameter("@Operation", "ByJobCard"),
+            };
 
-                };
+            foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
+            {
+                yield return GetModel(dr);
             }
         }
-
 
         public IEnumerable<OpTranSubModel> GetExpenses(long? TransactionID)
         {
@@ -128,8 +124,13 @@ namespace ArmsServices.DataServices
             {    
                 yield return new OpTranSubModel()
                 {
-                    ExpenseID  = dr.GetInt32("ExpenseID"),                     
+                    ExpenseUsageCode  = new GstUsageIDModel()
+                    {
+                        UsageCode = dr.GetString("UsageCode"),
+                        Id = dr.GetInt32("UsageID"),
+                    },                                      
                     OpTranID = dr.GetInt32("OpTranID"),
+                    CoaID = dr.GetInt32("CoaID"),
                     OpTranSubID = dr.GetInt64("OpTranSubID"),                    
                     Amount = dr.GetDecimal("Amount"),             
                     Quantity = dr.GetDecimal("Quantity"),
@@ -167,6 +168,11 @@ namespace ArmsServices.DataServices
                DocumentDate = dr.GetDateTime("DocumentDate"),
                Dimension = dr.GetInt32("Dimension"),               
                CostCenter = dr.GetInt32("CostCenter"),
+               Area = dr.GetString("Area"),
+               JobCardID = dr.GetInt32("JobCardID"),
+               PaymentArdCode = dr.GetString("PaymentArdCode"),
+               PaymentMode  = dr.GetString("PaymentMode"),
+               TruckID =  dr.GetInt32("TruckID"),
                TotalAmount = dr.GetDecimal("TotalAmount"),
                BranchID = dr.GetInt32("BranchID"),
                CreditCoaID = dr.GetInt32("CreditCoaID"), 
@@ -188,18 +194,5 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("ApprovedBy"),
                 }
             };
-        }
-
-        public int UpdateExpenseHead(OpExpenseModel model)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@CoaID", model.CoaID),
-               new SqlParameter("@ExpenseID", model.ExpenseID),
-               new SqlParameter("@ExpenseTitle", model.ExpenseTitle),             
-               new SqlParameter("@UserID", model.UserInfo.UserID),
-            };
-            return Iservice.ExecuteNonQuery("[usp.Operation.ExpenseMapping.Update]", parameters);
-        }
-    }
+        }       
 }
