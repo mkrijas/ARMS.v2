@@ -19,7 +19,9 @@ namespace ArmsServices.DataServices
         int? UpdateStatus(AssetStatusUpdateModel model); 
         AssetStatusUpdateModel GetCurrentStatus(int? AssetID);
         IEnumerable<AssetStatusUpdateModel> GetStatusHistory(int? AssetID);
+        List<AssetViewModel> GetAssetView(int BranchID);
     }
+
 
 
     public class AssetService : IAssetService
@@ -285,7 +287,25 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.Scrap]", parameters);
             //throw new NotImplementedException();
-        }        
+        }
+        private List<AssetModel> assets = new();
+        public List<AssetViewModel> GetAssetView(int BranchID,int? ParentID = null)
+        {            
+            if(assets.Count == 0)
+            {
+               assets = SelectByBranch(BranchID, false).ToList();
+            }  
+            List<AssetViewModel> view = new List<AssetViewModel>();
+
+            foreach(var item in assets.Where(x => x.ParentAssetID == ParentID))
+            {                
+                    view.Add(new AssetViewModel() { 
+                        Parent = item ,
+                        Children = GetAssetView(BranchID,item.AssetID)
+                    });               
+            }
+            return view;
+        }
     }
 }
    
