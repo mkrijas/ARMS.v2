@@ -1,0 +1,44 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+
+
+namespace ArmsModels.BaseModels
+{
+
+    public class DataAuthorizationModel
+    {
+        public int? ID { get; set; }
+        public int? DocumentID { get; set; }
+        public int? DocTypeID { get; set; }
+        public int? AuthorizationTypeID { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+    }
+
+    public class DocTypeModel
+    {
+        public int? ID { get; set; }
+        public string Description { get; set; }
+    }
+
+    public class DataAuthorizationSettingsModel
+    {
+        public int? ID { get; set; }
+        [Required]
+        public int? AuthorizeTypeID { get; set; }
+        [Required]
+        public int? DocTypeID { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+    }
+
+
+    public class DataAuthorizationTypeModel
+    {
+        public int? ID { get; set; }
+        public string Description { get; set; }
+        public int? Level { get; set; }
+        public bool IsApproval { get; set; }
+    }
+}
