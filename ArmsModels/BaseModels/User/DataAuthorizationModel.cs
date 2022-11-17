@@ -30,6 +30,8 @@ namespace ArmsModels.BaseModels
         public int? AuthorizeTypeID { get; set; }
         [Required]
         public int? DocTypeID { get; set; }
+        [Required]
+        public string RoleID { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
