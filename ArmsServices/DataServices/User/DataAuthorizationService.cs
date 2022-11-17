@@ -13,8 +13,8 @@ namespace ArmsServices.DataServices
     {
         DataAuthorizationModel Update(DataAuthorizationModel model);
         DataAuthorizationModel SelectByID(int? ID);
-        IEnumerable<DataAuthorizationModel> SelectByDocument(int? DocTypeID,int? DocumentID);
-        IEnumerable<DataAuthorizationModel> SelectByDocument(string DocType, int? DocumentID);        
+        IEnumerable<DataAuthorizationModel> SelectByDocument(int? DocTypeID, int? DocumentID);
+        IEnumerable<DataAuthorizationModel> SelectByDocument(string DocType, int? DocumentID);
         int Delete(int? ID, string UserID);
     }
     public class DataAuthorizationService : IDataAuthorizationService
@@ -52,9 +52,11 @@ namespace ArmsServices.DataServices
 
         private DataAuthorizationModel GetModel(IDataRecord dr)
         {
-            return new DataAuthorizationModel() {
+            return new DataAuthorizationModel()
+            {
             };
-                
+
         }
 
     }
+}
