@@ -15,16 +15,19 @@ namespace ArmsModels.BaseModels
             Transactions = new();
         }
         public int? OpTranID { get; set; }
-        public string PaymentMode { get; set; } // Cash,Bank
-        public string PaymentArdCode { get; set; } //  Account Rule Defenition Code For Bank Or Cash
+        [Required]
+        public string PaymentMode { get; set; } // Cash,Bank req
+        [Required]
+        public string PaymentArdCode { get; set; } //  Account Rule Defenition Code For Bank Or Cash req 8len
         public virtual int? CreditCoaID { get; set; }
-        public string Area { get; set; } // Operation,Maintenenace
-        public long? TripID { get; set; }
+        [Required]
+        public string Area { get; set; } // Operation,Maintenenace req
+        public long? TripID { get; set; } 
         public int? TruckID { get; set; }
         public int? JobCardID { get; set; }
         [ValidateComplexType]
         public List<OpTranSubModel> Transactions { get; set; }
-        public virtual TripInfoModel TripInfo { get; set; }     
+        public virtual TripInfoModel TripInfo { get; set; }  // select   
     }
 
 
