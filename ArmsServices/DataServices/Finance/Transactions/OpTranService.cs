@@ -50,10 +50,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@MID", model.MID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
-               new SqlParameter("@Narration", model.Narration),  
-               new SqlParameter("@Expenses", model.Transactions.ToDataTable()),                  
+               new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@Expenses", model.Transactions.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-            };            
+            };
             foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Update]", parameters))
             {
                 model = GetModel(dr);
@@ -92,11 +92,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TripID", TripID),
                new SqlParameter("@Operation", "ByTrip"),
             };
-           
+
             foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
-            {                
-                yield return GetModel(dr);                
-            }            
+            {
+                yield return GetModel(dr);
+            }
         }
 
         public IEnumerable<OpTranModel> SelectByJobcard(int? JobcardID)
@@ -121,22 +121,22 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "GetExpenses"),
             };
             foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
-            {    
+            {
                 yield return new OpTranSubModel()
                 {
-                    ExpenseUsageCode  = new GstUsageIDModel()
+                    ExpenseUsageCode = new GstUsageIDModel()
                     {
                         UsageCode = dr.GetString("UsageCode"),
                         Id = dr.GetInt32("UsageID"),
-                    },                                      
+                    },
                     OpTranID = dr.GetInt32("OpTranID"),
                     CoaID = dr.GetInt32("CoaID"),
-                    OpTranSubID = dr.GetInt64("OpTranSubID"),                    
-                    Amount = dr.GetDecimal("Amount"),             
+                    OpTranSubID = dr.GetInt64("OpTranSubID"),
+                    Amount = dr.GetDecimal("Amount"),
                     Quantity = dr.GetDecimal("Quantity"),
                     Reference = dr.GetString("Reference"),
                     Unit = dr.GetString("Unit")
-                }; 
+                };
             }
         }
 
@@ -164,35 +164,36 @@ namespace ArmsServices.DataServices
         private OpTranModel GetModel(IDataRecord dr)
         {
             return new OpTranModel
-            {               
-               DocumentDate = dr.GetDateTime("DocumentDate"),
-               Dimension = dr.GetInt32("Dimension"),               
-               CostCenter = dr.GetInt32("CostCenter"),
-               Area = dr.GetString("Area"),
-               JobCardID = dr.GetInt32("JobCardID"),
-               PaymentArdCode = dr.GetString("PaymentArdCode"),
-               PaymentMode  = dr.GetString("PaymentMode"),
-               TruckID =  dr.GetInt32("TruckID"),
-               TotalAmount = dr.GetDecimal("TotalAmount"),
-               BranchID = dr.GetInt32("BranchID"),
-               CreditCoaID = dr.GetInt32("CreditCoaID"), 
-               DocumentNumber = dr.GetString("DocumentNumber"),
-               OpTranID = dr.GetInt32("OpTranID"),
-               Narration = dr.GetString("Narration"),
-               MID = dr.GetInt32("MID"),
-               TripID = dr.GetInt64("TripID"),
+            {
+                DocumentDate = dr.GetDateTime("DocumentDate"),
+                Dimension = dr.GetInt32("Dimension"),
+                CostCenter = dr.GetInt32("CostCenter"),
+                Area = dr.GetString("Area"),
+                JobCardID = dr.GetInt32("JobCardID"),
+                PaymentArdCode = dr.GetString("PaymentArdCode"),
+                PaymentMode = dr.GetString("PaymentMode"),
+                TruckID = dr.GetInt32("TruckID"),
+                TotalAmount = dr.GetDecimal("TotalAmount"),
+                BranchID = dr.GetInt32("BranchID"),
+                CreditCoaID = dr.GetInt32("CreditCoaID"),
+                DocumentNumber = dr.GetString("DocumentNumber"),
+                OpTranID = dr.GetInt32("OpTranID"),
+                Narration = dr.GetString("Narration"),
+                MID = dr.GetInt32("MID"),
+                TripID = dr.GetInt64("TripID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
                 },
-                ApprovedInfo =  new ArmsModels.SharedModels.UserInfoModel()
+                ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
                 {
                     RecordStatus = dr.GetByte("ApprovedStatus"),
                     TimeStampField = dr.GetDateTime("ApprovedOn"),
                     UserID = dr.GetString("ApprovedBy"),
                 }
             };
-        }       
+        }
+    }
 }
