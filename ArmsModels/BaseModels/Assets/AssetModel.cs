@@ -74,6 +74,12 @@ namespace ArmsModels.BaseModels
         //Sale        
     }
 
+    public class AssetViewModel
+    {
+        public AssetModel Parent { get; set; }
+        public List<AssetViewModel> Children { get; set; } = new();
+    }
+
 
     public class AssetClassModel
     {
