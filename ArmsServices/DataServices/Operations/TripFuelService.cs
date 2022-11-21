@@ -95,7 +95,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InvoiceNo", model.invoiceNo),
                //new SqlParameter("@IsCredit", model.PurchaseEntry.IsCredit),
                new SqlParameter("@CostCenter", model.Costcenter),
-                new SqlParameter("@Dimension", model.Diomension),
+                new SqlParameter("@Dimension", model.Dimension),
                //new SqlParameter("@NonStoreInventory", model.PurchaseEntry.NonStoreInventory),
                //new SqlParameter("@PartyBranchID", model.PurchaseEntry.PartyBranchInfo.GstID),
                //new SqlParameter("@TotalAmount", model.TotalAmount),

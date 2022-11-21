@@ -68,7 +68,7 @@ namespace ArmsModels.BaseModels
         public virtual InventoryBaseModel IssueEntry { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
         public PartyModel PartyBranch { get; set; }
-        public int? Diomension { get; set; }
+        public int? Dimension { get; set; }
         public int? Costcenter { get; set; }
         public string UsageID { get; set; }
         public string invoiceNo { get; set; }
