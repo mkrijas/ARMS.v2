@@ -79,7 +79,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
-               new SqlParameter("@Operation", "SelectByClass")
+               new SqlParameter("@Operation", "SelectByParty")
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetSubClass.Select]", parameters))
