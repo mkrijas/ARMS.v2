@@ -186,13 +186,7 @@ namespace ArmsServices.DataServices
                     RecordStatus = dr.GetByte("RecordStatus"),
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
-                },
-                ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
-                {
-                    RecordStatus = dr.GetByte("ApprovedStatus"),
-                    TimeStampField = dr.GetDateTime("ApprovedOn"),
-                    UserID = dr.GetString("ApprovedBy"),
-                }
+                },                
             };
         }
     }

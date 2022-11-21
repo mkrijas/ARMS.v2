@@ -14,7 +14,7 @@ namespace ArmsServices.DataServices
         IEnumerable<DataAuthorizationTypeModel> GetAuthTypes();
         IDictionary<int?, string> GetDocTypes();
         IEnumerable<DataAuthorizationSettingsModel> Select(int? DocTypeID);
-        IEnumerable<DataAuthorizationSettingsModel> Select(string DocTye);
+        IEnumerable<DataAuthorizationSettingsModel> Select(string DocType);
         int? Update(DataAuthorizationSettingsModel model);
         int? Delete(int? ID);
     }
@@ -25,7 +25,6 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-
         public int? Delete(int? ID)
         {
             throw new NotImplementedException();
@@ -46,7 +45,7 @@ namespace ArmsServices.DataServices
             throw new NotImplementedException();
         }
 
-        public IEnumerable<DataAuthorizationSettingsModel> Select(string DocTye)
+        public IEnumerable<DataAuthorizationSettingsModel> Select(string DocType)
         {
             throw new NotImplementedException();
         }

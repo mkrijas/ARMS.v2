@@ -10,8 +10,7 @@ namespace ArmsModels.BaseModels
     {
         public TransactionBaseModel()
         {
-            UserInfo = new();
-            ApprovedInfo = new();
+            UserInfo = new();            
         }
         public int? MID { get; set; }
         [Required]
@@ -27,7 +26,6 @@ namespace ArmsModels.BaseModels
         public int? Dimension { get; set; }
         public string Narration { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
-        public SharedModels.UserInfoModel ApprovedInfo { get; set; }
     }
 
 

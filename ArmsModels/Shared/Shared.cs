@@ -14,6 +14,7 @@ namespace ArmsModels.SharedModels
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public DateTime? TimeStampField { get; set; }
     }
-  
+
+    
 
 }
