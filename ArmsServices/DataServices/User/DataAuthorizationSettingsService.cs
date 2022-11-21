@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Reflection.PortableExecutable;
 
 namespace ArmsServices.DataServices
 {
@@ -28,39 +29,89 @@ namespace ArmsServices.DataServices
 
         public int? Delete(int? ID)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+              
+            };
+            return Iservice.ExecuteNonQuery("[usp.User.DataAuthorization.Settings.Delete]", parameters);
         }
 
         public IEnumerable<DataAuthorizationTypeModel> GetAuthTypes()
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", "ID"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Types.Select]", parameters))
+            {
+            
+                yield return new DataAuthorizationTypeModel()
+                {
+                    ID = dr.GetInt32("ID"),
+                    Description = dr.GetString("Description")
+
+                };
+            }
         }
 
         public IDictionary<int?, string> GetDocTypes()
         {
+            //return new Dictionary<int, string>
+            //    {
+            //        { dr.GetInt32("ID"), dr.GetString("Description")},
+
+            //    };
             throw new NotImplementedException();
         }
 
         public IEnumerable<DataAuthorizationSettingsModel> Select(int? DocTypeID)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocTypeID",DocTypeID ),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Settings.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
 
-        public IEnumerable<DataAuthorizationSettingsModel> Select(string DocTye)
+        public IEnumerable<DataAuthorizationSettingsModel> Select(string DocTpye)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocType",DocTpye ),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Settings.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
 
         public int? Update(DataAuthorizationSettingsModel model)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", model.ID),
+               new SqlParameter("@AuthorizeTypeID", model.AuthorizeTypeID),
+                new SqlParameter("@DocTypeID", model.DocTypeID),
+               new SqlParameter("@RoleID", model.RoleID),
+                 new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.User.DataAuthorization.Settings.Update]", parameters);
         }
 
         private DataAuthorizationSettingsModel GetModel(IDataRecord dr)
         {
             return new DataAuthorizationSettingsModel()
             {
-
+                ID = dr.GetInt32("ID"),
+                AuthorizeTypeID = dr.GetInt32("AuthorizeTypeID"),
+                DocTypeID = dr.GetInt32("DocTypeID"),
+                RoleID = dr.GetString("RoleID"),
+                AuthorizeType=dr.GetString("AuthorzationType"),
+                DocType=dr.GetString("DocType")
             };
         }
     }
