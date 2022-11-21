@@ -1,0 +1,160 @@
+﻿@inject IAssetService Iservice
+@inject IAssetClassService assetclassIservice
+@inject IGstUsageIDService gstIservice
+@inject IPartyService partyIservice
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudDialog>
+    <TitleContent>
+
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 450px; overflow-y: scroll">
+
+            <MudGrid Spacing="4">
+                <MudItem xs="12" md="12">
+
+                    <h6>Asset Details</h6>
+                    <MudPaper>
+                        <MudContainer>
+                            <MudGrid>
+                                <MudItem xs="12" md="12">
+                                    <MudTextField ReadOnly="true" @bind-Value="model.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Description)"></MudTextField>
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <MudTextField ReadOnly="true" @bind-Value="model.SerialNumber" Label="SerialNumber" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.SerialNumber)"></MudTextField>
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <MudSelect ReadOnly="true" Label="NatureOfAsset" @bind-Value="model.NatureOfAsset" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                        @foreach (var ditem in NatureOfAssetList)
+                                        {
+                                            <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <MudTextField ReadOnly="true" @bind-Value="model.HsnCode" Label="HsnCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.HsnCode)"></MudTextField>
+
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <MudDatePicker ReadOnly="true" Label="WarrentyDate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.WarrentyDate)" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="model.WarrentyDate" />
+
+                                </MudItem>
+                            </MudGrid>
+                        </MudContainer>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="12">
+
+                    <h6>Asset Parent Details</h6>
+                    <MudPaper>
+                        <MudContainer>
+                            <MudGrid>
+                                <MudItem xs="12" md="10">
+                                    <MudAutocomplete T="AssetModel" Label="Select Parent Asset" @bind-Value="SelectedParentAsset" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                                     SearchFunc="SearchAsset" ToStringFunc="@(e => e == null ? null : $"{e.Description}")"></MudAutocomplete>
+
+
+                                </MudItem>
+                                 <MudItem xs="12" md="2">
+                                       <MudButton OnClick="GetDetails" Variant="Variant.Filled" Color="Color.Primary">Details</MudButton>
+          
+                                 </MudItem>
+                                @if (fetch)
+                                {
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField ReadOnly="true" @bind-Value="assetModel.SerialNumber" Label="SerialNumber" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => assetModel.SerialNumber)"></MudTextField>
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudSelect ReadOnly="true" Label="NatureOfAsset" @bind-Value="assetModel.NatureOfAsset" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                            @foreach (var ditem in NatureOfAssetList)
+                                            {
+                                                <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudTextField ReadOnly="true" @bind-Value="assetModel.HsnCode" Label="HsnCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => assetModel.HsnCode)"></MudTextField>
+
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudDatePicker ReadOnly="true" Label="WarrentyDate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => assetModel.WarrentyDate)" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="assetModel.WarrentyDate" />
+
+                                </MudItem>
+                                }
+                            </MudGrid>
+                        </MudContainer>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+      
+            
+            <MudButton OnClick="Move" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Move to Parent</MudButton>
+                    
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public AssetModel model { get; set; }
+    public bool fetch = false;
+    AssetModel assetModel = new AssetModel();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private List<string> NatureOfAssetList = new List<string>() { "Tangible", "Intangible" };
+    private AssetModel SelectedParentAsset = null;
+    private async Task<IEnumerable<AssetModel>> SearchAsset(string searchString)
+    {
+        await Task.Delay(5);
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        return await Task.FromResult(Iservice.SelectByBranch(brancID, false));
+    }
+    public void GetDetails()
+    {
+        if(SelectedParentAsset!=null)
+        {
+            fetch = true;
+            assetModel = Iservice.SelectByID(SelectedParentAsset.AssetID);
+        }
+        else
+        {
+            snackbar.Add("Please Select Parent Asset", Severity.Warning);
+        }
+    }
+    public async Task Move()
+    {
+         var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        
+       
+       
+       
+        try
+        {
+
+            Iservice.MoveAsset(model.AssetID,SelectedParentAsset.AssetID,"Mode", user.Identity.Name);
+            
+            snackbar.Add("Moved Successfully", Severity.Success);
+            model = new();
+
+        }
+         catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+        
+        MudDialog.Close();
+    }
+    }
+}

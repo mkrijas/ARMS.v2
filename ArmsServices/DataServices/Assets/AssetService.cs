@@ -19,7 +19,7 @@ namespace ArmsServices.DataServices
         int? UpdateStatus(AssetStatusUpdateModel model); 
         AssetStatusUpdateModel GetCurrentStatus(int? AssetID);
         IEnumerable<AssetStatusUpdateModel> GetStatusHistory(int? AssetID);
-        List<AssetViewModel> GetAssetView(int BranchID);
+        List<AssetViewModel> GetAssetView(int BranchID,int? parantID);
     }
 
 
@@ -306,6 +306,11 @@ namespace ArmsServices.DataServices
             }
             return view;
         }
+
+        //public List<AssetViewModel> GetAssetView(int BranchID)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }
    

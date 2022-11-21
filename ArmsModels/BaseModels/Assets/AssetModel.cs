@@ -77,6 +77,8 @@ namespace ArmsModels.BaseModels
     public class AssetViewModel
     {
         public AssetModel Parent { get; set; }
+        public string Description { get; set; }
+
         public List<AssetViewModel> Children { get; set; } = new();
     }
 

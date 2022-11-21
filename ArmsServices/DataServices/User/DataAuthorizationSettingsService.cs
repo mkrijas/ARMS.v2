@@ -61,8 +61,9 @@ namespace ArmsServices.DataServices
             return new DataAuthorizationSettingsModel()
             {
 
-            };               
+            };
         }
+    }
 
        
 }
