@@ -246,13 +246,7 @@ namespace ArmsServices.DataServices
                 OriginalTranDocDate  = dr.GetDateTime("OriginalTranDocDate"),
                 OriginalTranDocNumber = dr.GetString("OriginalTranDocNumber"),
                 OriginalTransactionID = dr.GetInt32("OriginalTransactionID"),                
-                BranchID = dr.GetInt32("BranchID"),
-                ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
-                {
-                    RecordStatus = dr.GetByte("ApprovedStatus"),
-                    TimeStampField = dr.GetDateTime("ApprovedOn"),
-                    UserID = dr.GetString("ApprovedBy"),
-                },
+                BranchID = dr.GetInt32("BranchID"),                
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),                
                 MID = dr.GetInt32("MID"),

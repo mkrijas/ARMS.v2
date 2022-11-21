@@ -185,13 +185,7 @@ namespace ArmsServices.DataServices
             {
                 ReceiptID = dr.GetInt32("ReceiptID"),
                 ReceiptType = dr.GetString("ReceiptType"),
-                BranchID = dr.GetInt32("BranchID"),
-                ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
-                {
-                    RecordStatus = dr.GetByte("ApprovedStatus"),
-                    TimeStampField = dr.GetDateTime("ApprovedOn"),
-                    UserID = dr.GetString("ApprovedBy"),
-                },
+                BranchID = dr.GetInt32("BranchID"),               
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),

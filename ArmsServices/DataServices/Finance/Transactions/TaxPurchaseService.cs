@@ -214,13 +214,7 @@ namespace ArmsServices.DataServices
             {
                 PID = dr.GetInt32("PID"),
                 AdditionalTDS = dr.GetDecimal("AdditionalTDS"),
-                BranchID = dr.GetInt32("BranchID"),
-                ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
-                {
-                    RecordStatus = dr.GetByte("ApprovedStatus"),
-                    TimeStampField = dr.GetDateTime("ApprovedOn"),
-                    UserID = dr.GetString("ApprovedBy"),
-                },
+                BranchID = dr.GetInt32("BranchID"),               
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 GRNID = dr.GetInt32("GRNID"),

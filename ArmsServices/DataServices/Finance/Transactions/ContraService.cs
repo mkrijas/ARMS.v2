@@ -114,14 +114,7 @@ namespace ArmsServices.DataServices
                 {
                     ChequeDate = dr.GetDateTime("ChequeDate"),
                     ChequeNumber = dr.GetString("ChequeNumber"),
-                },
-                // BranchName = dr.GetString("BranchName"),
-                ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
-                {
-                    RecordStatus = dr.GetByte("ApprovedStatus"),
-                    TimeStampField = dr.GetDateTime("ApprovedOn"),
-                    UserID = dr.GetString("ApprovedBy"),
-                },
+                },               
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 MID = dr.GetInt32("MID"),

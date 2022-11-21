@@ -145,13 +145,7 @@ namespace ArmsServices.DataServices
                 AccountName=dr.GetString("AccountName"),
                 Reference=dr.GetString("Reference"),
                 BranchID = dr.GetInt32("BranchID"),
-                // BranchName = dr.GetString("BranchName"),
-                ApprovedInfo = new ArmsModels.SharedModels.UserInfoModel()
-                {
-                    RecordStatus = dr.GetByte("ApprovedStatus"),
-                    TimeStampField = dr.GetDateTime("ApprovedOn"),
-                    UserID = dr.GetString("ApprovedBy"),
-                },
+                // BranchName = dr.GetString("BranchName"),                
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),

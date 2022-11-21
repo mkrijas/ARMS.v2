@@ -288,6 +288,8 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Scrap]", parameters);
             //throw new NotImplementedException();
         }
+
+
         private List<AssetModel> assets = new();
         public List<AssetViewModel> GetAssetView(int BranchID,int? ParentID = null)
         {            
