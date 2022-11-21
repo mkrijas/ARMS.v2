@@ -55,16 +55,26 @@
                     <MudPaper>
                         <MudContainer>
                             <MudGrid>
-                                <MudItem xs="12" md="10">
-                                    <MudAutocomplete T="AssetModel" Label="Select Parent Asset" @bind-Value="SelectedParentAsset" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                               
+                                    @if (model.ParentAssetID == null)
+                                    {
+                                         <MudItem xs="12" md="10">
+                                        <MudAutocomplete T="AssetModel" Label="Select Parent Asset" @bind-Value="SelectedParentAsset" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
                                                      SearchFunc="SearchAsset" ToStringFunc="@(e => e == null ? null : $"{e.Description}")"></MudAutocomplete>
-
-
-                                </MudItem>
-                                 <MudItem xs="12" md="2">
+                                         </MudItem>
+                                          <MudItem xs="12" md="2">
                                        <MudButton OnClick="GetDetails" Variant="Variant.Filled" Color="Color.Primary">Details</MudButton>
           
-                                 </MudItem>
+                                         </MudItem>
+                                    }
+                                    @if (model.ParentAssetID != null)
+                                    {
+                                          <MudItem xs="12" md="12">
+                                        <MudTextField ReadOnly="true" @bind-Value="assetModel.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => assetModel.Description)"></MudTextField>
+                                        </MudItem>
+                                    }
+                               
+                                
                                 @if (fetch)
                                 {
                                     <MudItem xs="12" md="3">
@@ -97,7 +107,7 @@
     <DialogActions>
       
             
-            <MudButton OnClick="Move" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Move to Parent</MudButton>
+            <MudButton OnClick="Move" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">@Buttontxt</MudButton>
                     
     </DialogActions>
 </MudDialog>
@@ -106,17 +116,27 @@
     [Parameter]
     public AssetModel model { get; set; }
     public bool fetch = false;
+    string Buttontxt = "Move To Parent";
     AssetModel assetModel = new AssetModel();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private List<string> NatureOfAssetList = new List<string>() { "Tangible", "Intangible" };
     private AssetModel SelectedParentAsset = null;
+    protected override void OnInitialized()
+    {
+        if(model.ParentAssetID!=null)
+        {
+            fetch = true;
+            assetModel = Iservice.SelectByID(model.ParentAssetID);
+            Buttontxt = "Remove";
+        }
+    }
     private async Task<IEnumerable<AssetModel>> SearchAsset(string searchString)
     {
         await Task.Delay(5);
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        return await Task.FromResult(Iservice.SelectByBranch(brancID, false));
+        return await Task.FromResult((Iservice.SelectByBranch(brancID, false).Where(x => x.IsComplex)));
     }
     public void GetDetails()
     {
@@ -132,18 +152,19 @@
     }
     public async Task Move()
     {
-         var authprov = await auth.GetAuthenticationStateAsync();
+        var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        
-       
-       
-       
+        string mode = "Attach";
+        if(Buttontxt=="Remove")
+        {
+            mode = "Detach";
+        }
         try
         {
 
-            Iservice.MoveAsset(model.AssetID,SelectedParentAsset.AssetID,"Mode", user.Identity.Name);
+            Iservice.MoveAsset(model.AssetID,assetModel.AssetID,mode, user.Identity.Name);
             
             snackbar.Add("Moved Successfully", Severity.Success);
             model = new();
@@ -156,5 +177,5 @@
         
         MudDialog.Close();
     }
-    }
+    
 }
