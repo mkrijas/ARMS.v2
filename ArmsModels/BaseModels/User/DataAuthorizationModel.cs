@@ -13,7 +13,7 @@ namespace ArmsModels.BaseModels
         public int? ID { get; set; }
         public int? DocumentID { get; set; }
         public int? DocTypeID { get; set; }
-        public int? AuthorizationTypeID { get; set; }
+        public int? AuthLevelID { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
@@ -27,7 +27,7 @@ namespace ArmsModels.BaseModels
     {
         public int? ID { get; set; }
         [Required]
-        public int? AuthorizeTypeID { get; set; }
+        public int? AuthLevelID { get; set; }
         [Required]
         public int? DocTypeID { get; set; }
         [Required]
@@ -40,9 +40,8 @@ namespace ArmsModels.BaseModels
 
     public class DataAuthorizationTypeModel
     {
-        public int? ID { get; set; }
-        public string Description { get; set; }
-        public int? Level { get; set; }
+        public int? AuthLevelID { get; set; }
+        public string Description { get; set; }        
         public bool IsApproval { get; set; }
     }
 }

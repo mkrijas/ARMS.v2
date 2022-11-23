@@ -61,17 +61,17 @@ namespace ArmsModels.BaseModels
         public decimal? TotalAmount { get; set; }
         [Required]
         public decimal? Quantity { get; set; }
-        public bool IsPurchase { get; set; }
+        public bool IsPurchase { get; set; } = false;
         public int? PurchaseID { get; set; }
         public int? InvTranID { get; set; }
         public  TaxPurchaseModel PurchaseEntry { get; set; }
         public virtual InventoryBaseModel IssueEntry { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
-        public PartyModel PartyBranch { get; set; }
-        public int? Diomension { get; set; }
+        public PartyModel PartyBranch { get; set; } = new();
+        public int? Dimension { get; set; }
         public int? Costcenter { get; set; }
         public string UsageID { get; set; }
-        public string invoiceNo { get; set; }
+        public string InvoiceNo { get; set; }
         // tax Purcahse model
 
     }

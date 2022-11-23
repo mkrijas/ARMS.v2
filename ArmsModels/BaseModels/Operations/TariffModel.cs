@@ -14,8 +14,8 @@ namespace ArmsModels.BaseModels
         {            
             UserInfo = new UserInfoModel();
         }
-        public int? TariffID { get; set; }  
-        public int? OrderID { get; set; }
+        public int? TariffID { get; set; }        
+        public int? OrderID { get; set; }        
         public int? RouteID { get; set; }
         [Required]
         public short? TariffTypeID { get; set; }

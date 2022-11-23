@@ -12,7 +12,7 @@ namespace ArmsModels.BaseModels
         public PartyModel()
         {                   
         }
-        public int? PartyID { get; set; }
+        public int? PartyID { get; set; } = 0;
         [Required]
         [StringLength(maximumLength: 8)]
         public string PartyCode { get; set; }        
