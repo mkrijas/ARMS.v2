@@ -133,6 +133,7 @@ namespace Views
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<IOutstandingBillsService, OutstandingBillsService>();
             services.AddScoped<ISundryPaymentService, SundryPaymentService>();
+            services.AddScoped<ISundryReceiptService, SundryReceiptService>();
             services.AddScoped<IContraService, ContraService>();
             services.AddScoped<IFreightBillingService, FreightBillingService>();
             services.AddScoped<IReceiptService, ReceiptService>();

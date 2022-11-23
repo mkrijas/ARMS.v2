@@ -67,7 +67,7 @@ namespace ArmsServices.DataServices
                     ParentID = dr.GetInt32("ParentID"),
                     BranchID = dr.GetInt32("BranchID"),
                     CoaID = dr.GetInt32("CoaID"),
-                    AccountName = dr.GetString("AccountName"),
+                    UsageCode = dr.GetString("UsageCode"),
                     Amount = dr.GetDecimal("Amount"),
                     Rederence = dr.GetString("Reference")                   
                 };
@@ -106,7 +106,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@SundryReceiptID", model.SundryReceiptID),
                new SqlParameter("@ReceiptMode", model.ReceiptMode),
                new SqlParameter("@ArdCode", model.ArdCode),
-               new SqlParameter("@DocumentType", model.DocumentType),
+               //new SqlParameter("@DocumentType", model.DocumentType),
                new SqlParameter("@PayerName", model.PayerName),
                new SqlParameter("@PayerContactNo", model.PayerContactNo),
                new SqlParameter("@CoaID", model.CoaID),
