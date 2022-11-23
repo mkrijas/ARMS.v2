@@ -30,8 +30,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID),
-              
+               new SqlParameter("@ID", ID),              
             };
             return Iservice.ExecuteNonQuery("[usp.User.DataAuthorization.Settings.Delete]", parameters);
         }
@@ -40,28 +39,31 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", "ID"),
+               new SqlParameter("@AuthLevelID", "AuthLevelID"),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Types.Select]", parameters))
             {
             
                 yield return new DataAuthorizationTypeModel()
                 {
-                    ID = dr.GetInt32("ID"),
+                    AuthLevelID = dr.GetInt32("AuthLevelID"),
                     Description = dr.GetString("Description")
-
                 };
             }
         }
 
         public IDictionary<int?, string> GetDocTypes()
         {
-            //return new Dictionary<int, string>
-            //    {
-            //        { dr.GetInt32("ID"), dr.GetString("Description")},
-
-            //    };
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AuthLevelID", "AuthLevelID"),
+            };
+            Dictionary<int?, string> DocTypes = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Types.Select]", parameters))
+            {
+                DocTypes.Add(dr.GetInt32("AuthLevelID"), dr.GetString("Description"));                
+            }
+            return DocTypes;
         }
 
         public IEnumerable<DataAuthorizationSettingsModel> Select(int? DocTypeID)
@@ -93,7 +95,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@AuthorizeTypeID", model.AuthorizeTypeID),
+               new SqlParameter("@AuthLevelID", model.AuthLevelID),
                 new SqlParameter("@DocTypeID", model.DocTypeID),
                new SqlParameter("@RoleID", model.RoleID),
                  new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -106,7 +108,7 @@ namespace ArmsServices.DataServices
             return new DataAuthorizationSettingsModel()
             {
                 ID = dr.GetInt32("ID"),
-                AuthorizeTypeID = dr.GetInt32("AuthorizeTypeID"),
+                AuthLevelID = dr.GetInt32("AuthLevelID"),
                 DocTypeID = dr.GetInt32("DocTypeID"),
                 RoleID = dr.GetString("RoleID"),
                 AuthorizeType=dr.GetString("AuthorzationType"),
