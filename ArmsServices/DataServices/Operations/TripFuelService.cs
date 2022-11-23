@@ -71,6 +71,7 @@ namespace ArmsServices.DataServices
 
         public TripFuelModel Update(TripFuelModel model)
         {
+            
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripID", model.TripID),
@@ -79,32 +80,27 @@ namespace ArmsServices.DataServices
                new SqlParameter("@FuelItemID", model.FuelItemID),
                new SqlParameter("@InvTranID", model.InvTranID),
                new SqlParameter("@IsPurchase", model.IsPurchase),
-               new SqlParameter("@PartyBranchID", model.PartyBranch.PartyID),
+            
                new SqlParameter("@Quantity", model.Quantity),
                new SqlParameter("@RatePerLitre", model.RatePerLitre),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@TripFuelID", model.TripFuelID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                // Tax Purcahse
-               // new SqlParameter("@PID", model.PurchaseEntry.PID),
-               //new SqlParameter("@AdditionalTDS", model.PurchaseEntry.AdditionalTDS),
+               new SqlParameter("@PartyBranchID", model.PartyBranch.PartyID),
                new SqlParameter("@DocumentDate", model.EntryDate),
-               //new SqlParameter("@DocumentNumber", model.PurchaseEntry.DocumentNumber),
-               //new SqlParameter("@GRNID", model.PurchaseEntry.GRNID),
+           
                new SqlParameter("@InvoiceDate", model.EntryDate),
-               new SqlParameter("@InvoiceNo", model.invoiceNo),
-               //new SqlParameter("@IsCredit", model.PurchaseEntry.IsCredit),
+               new SqlParameter("@InvoiceNo", model.InvoiceNo),
+        
                new SqlParameter("@CostCenter", model.Costcenter),
-                new SqlParameter("@Dimension", model.Diomension),
-               //new SqlParameter("@NonStoreInventory", model.PurchaseEntry.NonStoreInventory),
-               //new SqlParameter("@PartyBranchID", model.PurchaseEntry.PartyBranchInfo.GstID),
-               //new SqlParameter("@TotalAmount", model.TotalAmount),
-               //new SqlParameter("@Narration", model.PurchaseEntry.Narration),
+                new SqlParameter("@Dimension", model.Dimension),
+           
             };
 
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Fuel.Update]", parameters))
             {
-                model = GetModel(reader);
+                //model = GetModel(reader);
             }
             return model;
         }
@@ -116,14 +112,14 @@ namespace ArmsServices.DataServices
                 TripFuelID = reader.GetInt32("TripFuelID"),
                 EntryDate = reader.GetDateTime("EntryDate"),
                 FuelItemID = reader.GetInt32("FuelItemID"),
-                InvTranID = reader.GetInt32("InvTranID"),
+                //InvTranID = reader.GetInt32("InvTranID"),
                 IsPurchase = reader.GetBoolean("IsPurchase"),
-                PurchaseID = reader.GetInt32("PurchaseID"),
+                //PurchaseID = reader.GetInt32("PurchaseID"),
                 Quantity = reader.GetDecimal("Quantity"),
                 RatePerLitre = reader.GetDecimal("RatePerLitre"),
                 TotalAmount = reader.GetDecimal("TotalAmount"),
                 BranchID = reader.GetInt32("BranchID"),
-                TripID = reader.GetInt64("TripID"),
+                //TripID = reader.GetInt64("TripID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = reader.GetByte("RecordStatus"),
