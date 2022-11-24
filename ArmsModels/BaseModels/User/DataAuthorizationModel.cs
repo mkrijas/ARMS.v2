@@ -14,8 +14,18 @@ namespace ArmsModels.BaseModels
         public int? DocumentID { get; set; }
         public int? DocTypeID { get; set; }
         public int? AuthLevelID { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+    }
+
+    public class DataAuthorizationStatusModel
+    {        
+        public int? DocumentID { get; set; }
+        public int? DocTypeID { get; set; }
+        public int? AuthLevelID { get; set; }
+        public bool IsCompleted { get; set; } = false;
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
+
 
     public class DocTypeModel
     {

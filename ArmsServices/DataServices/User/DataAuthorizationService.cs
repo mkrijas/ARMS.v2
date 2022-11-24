@@ -16,13 +16,16 @@ namespace ArmsServices.DataServices
         IEnumerable<DataAuthorizationModel> SelectByDocument(int? DocTypeID, int? DocumentID);
         IEnumerable<DataAuthorizationModel> SelectByDocument(string DocType, int? DocumentID);
         int Delete(int? ID, string UserID);
+        IEnumerable<DataAuthorizationStatusModel> GetAuthStatus(int? DocTypeID, int? DocumentID);
     }
     public class DataAuthorizationService : IDataAuthorizationService
     {
         IDbService Iservice;
-        public DataAuthorizationService(IDbService iservice)
+        IDataAuthorizationSettingsService _settings
+        public DataAuthorizationService(IDbService iservice, IDataAuthorizationSettingsService settings)
         {
             Iservice = iservice;
+            _settings = settings;
         }
 
         public int Delete(int? ID, string UserID)
@@ -34,6 +37,31 @@ namespace ArmsServices.DataServices
 
             };
             return Iservice.ExecuteNonQuery("[usp.User.DataAuthorization.Delete]", parameters);
+        }
+
+        public IEnumerable<DataAuthorizationStatusModel> GetAuthStatus(int? DocTypeID, int? DocumentID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocTypeID",DocTypeID ),
+               new SqlParameter("@DocumentID",DocumentID ),
+               new SqlParameter("@Operation","ByDocTypeID" ),
+            };
+
+            List<DataAuthorizationModel> DA = SelectByDocument(DocTypeID,DocumentID).ToList();
+            List<DataAuthorizationSettingsModel> DS =  _settings.Select(DocTypeID).ToList();
+
+            foreach (var item in DS)
+            {
+                yield return new DataAuthorizationStatusModel()
+                {
+                    AuthLevelID = item.AuthLevelID,
+                    DocTypeID = item.DocTypeID,
+                    DocumentID = DocumentID,
+                    UserInfo = DA.FirstOrDefault(x => x.DocTypeID == item.DocTypeID && x.AuthLevelID == item.AuthLevelID).UserInfo,
+                    IsCompleted = DA.Exists(x => x.DocTypeID == item.DocTypeID && x.AuthLevelID == item.AuthLevelID)
+                };
+            }
         }
 
         public IEnumerable<DataAuthorizationModel> SelectByDocument(int? DocTypeID, int? DocumentID)
