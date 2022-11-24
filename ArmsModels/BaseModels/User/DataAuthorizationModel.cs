@@ -11,9 +11,13 @@ namespace ArmsModels.BaseModels
     public class DataAuthorizationModel
     {
         public int? ID { get; set; }
+        [Required]
         public int? DocumentID { get; set; }
+        [Required]
         public int? DocTypeID { get; set; }
+        [Required]
         public int? AuthLevelID { get; set; }
+        public string Remarks { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
@@ -22,6 +26,7 @@ namespace ArmsModels.BaseModels
         public int? DocumentID { get; set; }
         public int? DocTypeID { get; set; }
         public int? AuthLevelID { get; set; }
+        public string AuthType { get; set; }
         public bool IsCompleted { get; set; } = false;
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
