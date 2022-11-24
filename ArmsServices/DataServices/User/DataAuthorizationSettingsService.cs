@@ -59,7 +59,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AuthLevelID", "AuthLevelID"),
             };
             Dictionary<int?, string> DocTypes = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Types.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DocTypes.Select]", parameters))
             {
                 DocTypes.Add(dr.GetInt32("AuthLevelID"), dr.GetString("Description"));                
             }
@@ -71,6 +71,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@DocTypeID",DocTypeID ),
+               new SqlParameter("@Operation","ByDocTypeID" ),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Settings.Select]", parameters))
             {
@@ -83,6 +84,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@DocType",DocTpye ),
+               new SqlParameter("@Operation","ByDocType" ),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Settings.Select]", parameters))
             {
