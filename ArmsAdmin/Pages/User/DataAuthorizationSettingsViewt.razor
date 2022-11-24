@@ -1,0 +1,120 @@
+﻿@page "/DataAuthorizationSettingsViewt"
+@inject IDataAuthorizationSettingsService Iservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudPaper>
+    <MudContainer>
+<MudGrid Spacing="4">
+     <MudItem xs="12" md="10">
+        @*  <MudSelect Label="Document Type" @bind-Value="model.DocTypeID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+            @foreach (var ditem in doctypelist)
+            {
+                <MudSelectItem Value="@ditem.Key">@ditem.Value</MudSelectItem>
+            }
+        </MudSelect>*@
+     </MudItem>
+      <MudItem xs="12" md="2">
+            <MudButton OnClick="FetchDocData" Variant="Variant.Filled" Color="Color.Primary">Fetch Data</MudButton>
+
+      </MudItem>
+   <MudItem xs="12">
+        <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
+           
+
+           
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<DataAuthorizationSettingsModel, object>(x=> x.AuthorizeType)" InitialDirection="SortDirection.Ascending">AuthorizeType</MudTableSortLabel></MudTh>
+                 <MudTh><MudTableSortLabel SortBy="new Func<DataAuthorizationSettingsModel, object>(x=> x.DocType)" InitialDirection="SortDirection.Ascending">DocType</MudTableSortLabel></MudTh>
+              <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.AuthorizeType</MudTd>
+                
+              
+                <MudTd DataLabel="DocumentNumber">@context.DocType</MudTd>
+                 
+               <MudTd DataLabel="">
+                     <MudTooltip Text="Edit">
+                   @*<MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />*@
+                    </MudTooltip> 
+                 @*   @if(@context.ApprovedInfo.RecordStatus!=1)
+                    {
+                     <MudTooltip Text="Approve">
+                   <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    }*@
+               </MudTd>
+            </RowTemplate>
+            <ChildRowContent>
+                @if(@collection.Count==0)
+                        {
+                            <MudText>There is no authentication settings</MudText>
+                        }
+                    </ChildRowContent>
+          
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+               @*  <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>*@
+           
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+    <MudCardActions>
+        <MudGrid> <MudItem xs="12" md="10"></MudItem>
+             <MudItem xs="12" md="2">
+            <MudButton OnClick="AddNewAuthentiction" Variant="Variant.Filled" Color="Color.Primary">Add New</MudButton>
+</MudItem>
+</MudGrid>
+    </MudCardActions>
+   </MudContainer>
+   </MudPaper>
+@code {
+
+    private DataAuthorizationSettingsModel model = new DataAuthorizationSettingsModel();
+    private List<DataAuthorizationSettingsModel> collection = new List<DataAuthorizationSettingsModel>();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    private IDictionary<int?, string> doctypelist;
+
+    protected override void OnInitialized()
+    {
+        model = new();
+        doctypelist = Iservice.GetDocTypes();
+
+
+    }
+    public void FetchDocData()
+    {
+        if(model.DocTypeID==null)
+        {
+            snackbar.Add("Please Select Doctype", Severity.Warning);
+            return;
+        }
+
+        GetAll();
+    }
+    public async Task AddNewAuthentiction()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",model);
+        var dialog =  DialogService.Show<DataAuthorizationSettingsDialog>(model.ID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        { 
+           GetAll();
+        }
+        GetAll();
+    }
+    public void GetAll()
+    {
+        collection = Iservice.Select(model.DocTypeID).ToList();
+    }
+}
