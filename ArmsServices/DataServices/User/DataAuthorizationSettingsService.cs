@@ -53,15 +53,11 @@ namespace ArmsServices.DataServices
         }
 
         public IDictionary<int?, string> GetDocTypes()
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@AuthLevelID", "AuthLevelID"),
-            };
+        {            
             Dictionary<int?, string> DocTypes = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DocTypes.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DocTypes.Select]", null))
             {
-                DocTypes.Add(dr.GetInt32("AuthLevelID"), dr.GetString("Description"));                
+                DocTypes.Add(dr.GetInt32("ID"), dr.GetString("Description"));                
             }
             return DocTypes;
         }
