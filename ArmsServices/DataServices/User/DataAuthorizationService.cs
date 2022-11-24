@@ -45,7 +45,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@DocTypeID",DocTypeID ),
                new SqlParameter("@DocumentID",DocumentID ),
-               new SqlParameter("@Operation","ByDocTypeID" ),
+               new SqlParameter("@Operation","ByDocTypeID"),
             };
 
             List<DataAuthorizationModel> DA = SelectByDocument(DocTypeID,DocumentID).ToList();
@@ -56,6 +56,7 @@ namespace ArmsServices.DataServices
                 yield return new DataAuthorizationStatusModel()
                 {
                     AuthLevelID = item.AuthLevelID,
+                    AuthType = item.AuthorizeType,
                     DocTypeID = item.DocTypeID,
                     DocumentID = DocumentID,
                     UserInfo = DA.FirstOrDefault(x => x.DocTypeID == item.DocTypeID && x.AuthLevelID == item.AuthLevelID).UserInfo,

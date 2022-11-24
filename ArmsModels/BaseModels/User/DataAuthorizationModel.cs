@@ -22,6 +22,7 @@ namespace ArmsModels.BaseModels
         public int? DocumentID { get; set; }
         public int? DocTypeID { get; set; }
         public int? AuthLevelID { get; set; }
+        public string AuthType { get; set; }
         public bool IsCompleted { get; set; } = false;
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
