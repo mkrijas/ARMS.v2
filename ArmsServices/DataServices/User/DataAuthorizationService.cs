@@ -42,6 +42,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@DocTypeID",DocTypeID ),
                new SqlParameter("@DocumentID",DocumentID ),
+               new SqlParameter("@Operation","ByDocTypeID" ),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Select]", parameters))
             {
@@ -55,6 +56,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@DocType",DocType ),
                new SqlParameter("@DocumentID",DocumentID ),
+               new SqlParameter("@Operation","ByDocType" ),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Select]", parameters))
             {
@@ -100,7 +102,7 @@ namespace ArmsServices.DataServices
                 ID = dr.GetInt32("ID"),
                 DocumentID = dr.GetInt32("DocumentID"),
                 DocTypeID = dr.GetInt32("DocumentTypeId "),
-                AuthLevelID = dr.GetInt32("AuthLevelID"),
+                AuthLevelID = dr.GetInt32("AuthLevelID"),                
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
