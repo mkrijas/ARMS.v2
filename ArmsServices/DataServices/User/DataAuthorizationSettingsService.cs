@@ -36,14 +36,9 @@ namespace ArmsServices.DataServices
         }
 
         public IEnumerable<DataAuthorizationTypeModel> GetAuthTypes()
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@AuthLevelID", "AuthLevelID"),
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Types.Select]", parameters))
-            {
-            
+        {           
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Types.Select]", null))
+            {            
                 yield return new DataAuthorizationTypeModel()
                 {
                     AuthLevelID = dr.GetInt32("AuthLevelID"),
