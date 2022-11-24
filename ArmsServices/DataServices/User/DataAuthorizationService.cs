@@ -21,7 +21,7 @@ namespace ArmsServices.DataServices
     public class DataAuthorizationService : IDataAuthorizationService
     {
         IDbService Iservice;
-        IDataAuthorizationSettingsService _settings
+        IDataAuthorizationSettingsService _settings;
         public DataAuthorizationService(IDbService iservice, IDataAuthorizationSettingsService settings)
         {
             Iservice = iservice;
