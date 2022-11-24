@@ -25,6 +25,10 @@ namespace ArmsModels.BaseModels
 
     public class DataAuthorizationSettingsModel
     {
+        public DataAuthorizationSettingsModel()
+        {
+            UserInfo = new SharedModels.UserInfoModel();
+        }
         public int? ID { get; set; }
         [Required]
         public int? AuthLevelID { get; set; }
