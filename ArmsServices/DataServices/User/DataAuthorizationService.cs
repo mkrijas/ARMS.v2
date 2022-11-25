@@ -59,8 +59,8 @@ namespace ArmsServices.DataServices
                     AuthType = item.AuthorizeType,
                     DocTypeID = item.DocTypeID,
                     DocumentID = DocumentID,
-                    UserInfo = DA.FirstOrDefault(x => x.DocTypeID == item.DocTypeID && x.AuthLevelID == item.AuthLevelID).UserInfo,
-                    IsCompleted = DA.Exists(x => x.DocTypeID == item.DocTypeID && x.AuthLevelID == item.AuthLevelID)
+                    UserInfo = DA.FirstOrDefault(x => x?.DocTypeID == item?.DocTypeID && x?.AuthLevelID == item?.AuthLevelID).UserInfo,
+                    IsCompleted = DA.Exists(x => x?.DocTypeID == item?.DocTypeID && x?.AuthLevelID == item?.AuthLevelID)
                 };
             }
         }

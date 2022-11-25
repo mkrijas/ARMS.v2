@@ -10,60 +10,59 @@
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4">
-   <MudItem xs="12">
-        <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
-           
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
 
-             <ToolBarContent>
+
+            <ToolBarContent>
                 <MudText Typo="Typo.h6">Sundry Receipt </MudText>
                 <MudTooltip Text="New Sundry Receipt">
-                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-               
-             
+
+
                 <MudSpacer></MudSpacer>
-             
+
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<SundryReceiptModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
-                 <MudTh><MudTableSortLabel SortBy="new Func<SundryReceiptModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
-               <MudTh><MudTableSortLabel SortBy="new Func<SundryReceiptModel, object>(x=> x.ReceiptMode)" InitialDirection="SortDirection.Ascending">ReceiptMode</MudTableSortLabel></MudTh>
-              <MudTh><MudTableSortLabel SortBy="new Func<SundryReceiptModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
-               <MudTh>Actions</MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<SundryReceiptModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<SundryReceiptModel, object>(x=> x.ReceiptMode)" InitialDirection="SortDirection.Ascending">ReceiptMode</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<SundryReceiptModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                
-              
+
+
                 <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
-                 <MudTd DataLabel="PaymentMode">@context.ReceiptMode</MudTd>
-                  <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
-               <MudTd DataLabel="">
-                     <MudTooltip Text="Edit">
-                   <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip> 
-                 @*   @if(@context.ApprovedInfo.RecordStatus!=1)
-                    {
-                     <MudTooltip Text="Approve">
-                   <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                <MudTd DataLabel="PaymentMode">@context.ReceiptMode</MudTd>
+                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
+                <MudTd DataLabel="">
+                    <MudTooltip Text="Edit">
+                        <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
-                    }*@
-               </MudTd>
+
+                    <MudTooltip Text="View authentication Status">
+                        <MudFab @onclick="@(()=> authentication(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+
+                </MudTd>
             </RowTemplate>
-          
+
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-               @*  <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>*@
-           
+                @*  <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>*@
+
             </PagerContent>
         </MudTable>
     </MudItem>
-    </MudGrid>
+</MudGrid>
 
 
 @code {
 
-     private SundryReceiptModel model = new SundryReceiptModel();
+    private SundryReceiptModel model = new SundryReceiptModel();
 
     private List<SundryReceiptModel> collection = new List<SundryReceiptModel>();
     DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
@@ -73,7 +72,7 @@
         GetAll();
     }
 
-    private  async Task GetAll()
+    private async Task GetAll()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -86,25 +85,37 @@
 
 
     }
-    private async Task Approve(SundryReceiptModel tds)
+    private async Task authentication(SundryReceiptModel tds)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        Iservice.Approve(tds.SundryReceiptID, model.UserInfo.UserID);
+        DialogParameters parms = new DialogParameters();
+        parms.Add("DocTypeID", 12);
+        parms.Add("DocumentID", tds.SundryReceiptID);
+        var dialog = DialogService.Show<AutherizationDetailsView>(tds.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+
+            GetAll();
+
+
+        }
+        GetAll();
     }
     private async Task OpenDialog(SundryReceiptModel tds)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        
+
         DialogParameters parms = new DialogParameters();
-        parms.Add("model",tds);
-        var dialog =  DialogService.Show<SundryReceiptDialog>(tds.SundryReceiptID == null?"ADD":"EDIT",parms,mediumWidth);
+        parms.Add("model", tds);
+        var dialog = DialogService.Show<SundryReceiptDialog>(tds.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
+        if (!result.Cancelled)
+        {
 
             GetAll();
 

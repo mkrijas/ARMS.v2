@@ -141,7 +141,7 @@ namespace ArmsServices.DataServices
                 Reference=dr.GetString("Reference"),
                 BranchID = dr.GetInt32("BranchID"),                
                 DocumentDate = dr.GetDateTime("DocDate"),
-                DocumentNumber = dr.GetString("DocumentNumber"),
+                DocumentNumber = dr.GetString("DocNumber"),
                 MID = dr.GetInt32("MID"),
                 CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),

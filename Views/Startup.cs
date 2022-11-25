@@ -115,6 +115,8 @@ namespace Views
             services.AddScoped<IInventoryGrnService, InventoryGrnService>();
             //------------DATA AUTHENTICATION-------------------
             services.AddScoped<IDataAuthorizationSettingsService, DataAuthorizationSettingsService>();
+            services.AddScoped<IDataAuthorizationService, DataAuthorizationService>();
+
             //------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             //------------FINANCE-------------------
