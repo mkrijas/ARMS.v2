@@ -59,7 +59,7 @@ namespace ArmsServices.DataServices
                     AuthType = item.AuthorizeType,
                     DocTypeID = item.DocTypeID,
                     DocumentID = DocumentID,
-                    UserInfo = DA.FirstOrDefault(x => x?.DocTypeID == item?.DocTypeID && x?.AuthLevelID == item?.AuthLevelID).UserInfo,
+                    UserInfo = DA.FirstOrDefault(x => x?.DocTypeID == item?.DocTypeID && x?.AuthLevelID == item?.AuthLevelID)?.UserInfo,
                     IsCompleted = DA.Exists(x => x?.DocTypeID == item?.DocTypeID && x?.AuthLevelID == item?.AuthLevelID)
                 };
             }
@@ -129,9 +129,9 @@ namespace ArmsServices.DataServices
         {
             return new DataAuthorizationModel()
             {
-                ID = dr.GetInt32("ID"),
+                ID = (int?)dr.GetInt64("ID"),
                 DocumentID = dr.GetInt32("DocumentID"),
-                DocTypeID = dr.GetInt32("DocumentTypeId "),
+                DocTypeID = dr.GetInt32("DTid"),
                 AuthLevelID = dr.GetInt32("AuthLevelID"),     
                 Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
