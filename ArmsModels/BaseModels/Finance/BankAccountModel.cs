@@ -83,5 +83,29 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    public class UnReconciledBankEntryModel
+    {
+        public int ID { get; set; }
+        [Required]
+        public int? Nature { get; set; } //SELECT  -1 as Payment,1 as Receipt
+        [Required]
+        public DateTime? TransactionDate { get; set; }
+        [Required]
+        public string ArdCode { get; set; }  // Bank Code from Bank Model
+        [Required]
+        public string InstrumentType { get; set; }// Cheuque,DD,E Transfer
+        [Required]
+        public DateTime? InstrumentDate { get; set; }
+        [Required]
+        public string InstrumentReference { get; set; }
+        [Required]
+        public decimal? Amount { get; set; }
+        public DateTime? ReconciledDate { get; set; }
+        public string PaymentRemarks { get; set; }
+
+    }
+
+
+    
 
 }
