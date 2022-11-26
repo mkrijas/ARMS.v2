@@ -85,7 +85,7 @@ namespace ArmsModels.BaseModels
 
     public class UnReconciledBankEntryModel
     {
-        public int ID { get; set; }
+        public int? ID { get; set; }
         [Required]
         public int? Nature { get; set; } //SELECT  -1 as Payment,1 as Receipt
         [Required]
@@ -99,13 +99,18 @@ namespace ArmsModels.BaseModels
         [Required]
         public string InstrumentReference { get; set; }
         [Required]
-        public decimal? Amount { get; set; }
-        public DateTime? ReconciledDate { get; set; }
+        public decimal? Amount { get; set; }        
         public string PaymentRemarks { get; set; }
+        public bool IsReconciled { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+        public virtual ReconciledBankEntryModel ReconciledInfo { get; set; } = new();
 
     }
 
-
-    
-
-}
+    public class ReconciledBankEntryModel
+    {
+        public int? ID { get; set; }
+        public DateTime? ReconciledDate { get; set; }
+        public string Remarks { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+    }
