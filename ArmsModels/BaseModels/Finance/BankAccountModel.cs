@@ -9,10 +9,10 @@ namespace ArmsModels.BaseModels
     public class BankAccountModel
     {
         public BankAccountModel()
-        {            
-            UserInfo = new SharedModels.UserInfoModel();            
+        {
+            UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? BankAccountID { get; set; }        
+        public int? BankAccountID { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
         public string BeneficiaryName { get; set; }
@@ -37,7 +37,7 @@ namespace ArmsModels.BaseModels
         public OwnBankModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
-            _userInfo= new SharedModels.UserInfoModel();
+            _userInfo = new SharedModels.UserInfoModel();
         }
         SharedModels.UserInfoModel _userInfo;
         public int? ID { get; set; }
@@ -50,7 +50,7 @@ namespace ArmsModels.BaseModels
         [StringLength(8, MinimumLength = 8, ErrorMessage = "Must have 8 characters")]
         public string BankCode { get; set; }
         public bool IsGstRegistered { get; set; } = false;
-        
+
         [StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
         public string GstNo { get; set; }
         public SharedModels.UserInfoModel UserInfo
@@ -66,7 +66,7 @@ namespace ArmsModels.BaseModels
                 AddressInfo.UserInfo = _userInfo;
                 ContactInfo.UserInfo = _userInfo;
             }
-        } 
+        }
     }
 
     public class BankPostingGroupModel
@@ -93,13 +93,14 @@ namespace ArmsModels.BaseModels
         [Required]
         public string ArdCode { get; set; }  // Bank Code from Bank Model
         [Required]
+        public int BankID { get; set; }
         public string InstrumentType { get; set; }// Cheuque,DD,E Transfer
         [Required]
         public DateTime? InstrumentDate { get; set; }
         [Required]
         public string InstrumentReference { get; set; }
         [Required]
-        public decimal? Amount { get; set; }        
+        public decimal? Amount { get; set; }
         public string PaymentRemarks { get; set; }
         public bool IsReconciled { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
@@ -114,3 +115,4 @@ namespace ArmsModels.BaseModels
         public string Remarks { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
+}

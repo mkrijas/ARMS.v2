@@ -35,7 +35,7 @@ namespace ArmsServices.DataServices.Finance.Bank
                new SqlParameter("@UserID", UserID),
 
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.BankAccount.UnreconciledEntry.Select]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.BankAccount.UnreconciledEntry.Delete]", parameters);
         }
 
         public ReconciledBankEntryModel Reconcile(ReconciledBankEntryModel model)
@@ -141,6 +141,7 @@ namespace ArmsServices.DataServices.Finance.Bank
                new SqlParameter("@Amount", model.Amount),
                new SqlParameter("@ArdCode", model.ArdCode),
                new SqlParameter("@InstrumentDate", model.InstrumentDate),
+               new SqlParameter("@BankID", model.BankID),
                new SqlParameter("@InstrumentReference", model.InstrumentReference),
                new SqlParameter("@InstrumentType", model.InstrumentType),
                new SqlParameter("@Nature", model.Nature),
@@ -149,7 +150,7 @@ namespace ArmsServices.DataServices.Finance.Bank
                new SqlParameter("@TransactionDate", model.TransactionDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.UnReconciledBankEntry.Update]", parameters))
             {
                 model = GetModel(dr);
             }
