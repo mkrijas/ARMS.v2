@@ -151,6 +151,7 @@ namespace Views
             services.AddScoped<IVendorPostingGroupService, VendorPostingGroupService>();
             services.AddScoped<ICashAccountService, CashAccountService>();
             services.AddScoped<IAssetPostingGroupService, AssetPostingGroupService>();
+            services.AddScoped<IUnreconciledBankEntryService, UnreconciledBankEntryService>();
             //------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
