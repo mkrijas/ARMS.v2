@@ -87,7 +87,7 @@ namespace ArmsServices.DataServices.Finance.Bank
                         TimeStampField = dr.GetDateTime("TimeStamp"),
                         UserID = dr.GetString("UserID"),
                     },
-                }
+                };
             }
             return null;
         }
