@@ -10,11 +10,7 @@ namespace ArmsModels.BaseModels
 
     public class DataAuthorizationModel
     {
-        public DataAuthorizationModel()
-        {
-            UserInfo = new SharedModels.UserInfoModel();
-        }
-        public int? ID { get; set; }
+        public long? ID { get; set; }
         [Required]
         public int? DocumentID { get; set; }
         [Required]
