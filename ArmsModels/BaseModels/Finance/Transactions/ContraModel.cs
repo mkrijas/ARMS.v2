@@ -10,10 +10,13 @@ namespace ArmsModels.BaseModels
     {
         public int? ContraID { get; set; }        
         public string ContraModeHome { get; set; }
+        [Required]
+        public string ArdCodeHome { get; set; }        
         public int? CoaIDHome { get; set; }
         public bool IsPayment { get; set; }
         public int? BranchIDOther { get; set; }
         public string ContraModeOther { get; set; }
+        public string ArdCodeOther { get; set; }
         public int? CoaIDOther { get; set; }        
         public string PaymentTool { get; set; }
         public ChequeModel ChequeInfo { get; set; } = new();

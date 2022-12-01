@@ -216,6 +216,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@OriginalTranDocNumber", model.OriginalTranDocNumber),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@MID", model.MID),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@Particulars", model.Particulars.ToDataTable()),               
@@ -224,6 +225,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Items", model.Items.ToDataTable()),
                new SqlParameter("@PartyCoaID", model.PartyCoaID),
                new SqlParameter("@PartyID", model.Party.PartyID),
+               new SqlParameter("@PartyCode", model.Party.PartyCode),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -250,6 +252,7 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),                
                 MID = dr.GetInt32("MID"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),                
                 TotalAmount = dr.GetDecimal("TotalAmount"),
@@ -260,6 +263,7 @@ namespace ArmsServices.DataServices
                     TradeName = dr.GetString("TradeName")
                 },
                 PartyCoaID = dr.GetInt32("PartyCoaID"),
+                PartyCode = dr.GetString("PartyCode"),                
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

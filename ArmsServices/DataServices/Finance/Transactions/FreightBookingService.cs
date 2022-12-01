@@ -85,9 +85,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "PENDING"),
                new SqlParameter("@ProformaInvoiceID", ID)
-            };
-            
-                    
+            };                    
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
             {
@@ -96,9 +94,10 @@ namespace ArmsServices.DataServices
                     ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
                     DraftBillID = dr.GetInt32("DraftBillID"),
                     OrderID = dr.GetInt32("PartyBranchID"),
-                    PartyBranchCoa = dr.GetInt32("PartyBranchCoa"),
+                    PartyCoa = dr.GetInt32("PartyCoa"),
+                    PartyCode = dr.GetString("PartyCode"),
                     TariffTypeID = dr.GetInt32("TariffTypeID"),
-                    TariffTypeCoa = dr.GetInt32("TariffTypeCoa"),
+                    TariffTypeCoa = dr.GetInt32("TariffTypeCoa"),                    
                     Reference = dr.GetString("Reference"),
                     BranchID = dr.GetInt32("BranchID"),
                     // BranchName = dr.GetString("BranchName"),                   

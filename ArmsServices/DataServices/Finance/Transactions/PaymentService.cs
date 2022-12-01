@@ -401,6 +401,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PaymentMemoID", model.PaymentMemoID),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@PaymentInitiatedID", model.PaymentInitiatedID),
                new SqlParameter("@PaymentStatus", model.PaymentStatus),
                new SqlParameter("@BranchID", model.BranchID),
@@ -410,6 +411,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@PartyID", model.PartyInfo.PartyID),
+               new SqlParameter("@PartyCode", model.PartyInfo.PartyCode),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -426,6 +428,7 @@ namespace ArmsServices.DataServices
             return new PartyPaymentMemoModel
             {
                 PaymentMemoID = dr.GetInt32("PaymentMemoID"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
                 PaymentInitiatedID = dr.GetInt32("PaymentInitiatedID"),
                 PaymentStatus = dr.GetByte("PaymentStatus"),
                 BranchID = dr.GetInt32("BranchID"),
@@ -433,15 +436,15 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),
-                CostCenter = dr.GetInt32("CostCenter"),
-               
+                CostCenter = dr.GetInt32("CostCenter"),               
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
-                    TradeName = dr.GetString("TradeName")
+                    TradeName = dr.GetString("TradeName"),
+                    PartyCode = dr.GetString("PartyCode"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

@@ -36,6 +36,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@OpTranID", model.OpTranID),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@CreditCoaID", model.CreditCoaID),
                new SqlParameter("@Area", model.Area),
@@ -60,6 +61,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
         public int Delete(long? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -168,6 +170,7 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 Dimension = dr.GetInt32("Dimension"),
                 CostCenter = dr.GetInt32("CostCenter"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
                 Area = dr.GetString("Area"),
                 JobCardID = dr.GetInt32("JobCardID"),
                 PaymentArdCode = dr.GetString("PaymentArdCode"),
