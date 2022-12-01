@@ -96,8 +96,8 @@ namespace ArmsModels.BaseModels
         }
         public int? PfID { get; set; }
         public int? PiID { get; set; }       
-        public string PaymentMode { get; set; }        
-        public string PaymentTool { get; set; }
+        public string PaymentMode { get; set; }      // Bank,Cash   
+        public string PaymentTool { get; set; } // Cheque,DD
         public string PaymentArdCode { get; set; }
         public int? CoaID { get; set; }
         public DateTime? DocumentDate { get; set; }        

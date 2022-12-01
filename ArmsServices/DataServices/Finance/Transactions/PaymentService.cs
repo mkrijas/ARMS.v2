@@ -18,8 +18,8 @@ namespace ArmsServices.DataServices
         IEnumerable<PartyPaymentMemoModel> SelectByPeriod(DateTime? begin, DateTime? end,int? BranchID);
         IEnumerable<PartyPaymentMemoModel> Select(int PaymentInitiatedID, int? BranchID);
         IEnumerable<BillsPaidModel> GetBills(int? PID);
-        int Approve(int? PID, string UserID);
-        int Reverse(int? PID, string UserID);
+        int Approve(int? PID, string UserID,string Remarks);
+        int Reverse(int? PID, string UserID, string Remarks);
         int? InitiatePayment(PaymentInitiatedModel model);
         IEnumerable<PaymentInitiatedModel> SelectInitiated(int? BranchID);
         IEnumerable<PaymentFinishModel> SelectFinished(int? BranchID);
@@ -39,11 +39,12 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Approve(int? PID, string UserID)
+        public int Approve(int? PID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PaymentMemoID", PID),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 1)
             };
@@ -59,6 +60,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentDate", model.DocumentDate),              
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@CoaID", model.CoaID),
+               new SqlParameter("@PaymentArdCode", model.PaymentArdCode),
                new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@PaymentTool", model.PaymentTool),
                new SqlParameter("@Narration", model.Narration),
@@ -187,11 +189,12 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Reverse(int? PID, string UserID)
+        public int Reverse(int? PID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PaymentMemoID", PID),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 2)
             };
