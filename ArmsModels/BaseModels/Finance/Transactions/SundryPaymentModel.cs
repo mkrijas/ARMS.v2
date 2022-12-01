@@ -12,6 +12,7 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         [Required]
         public string PaymentMode { get; set; }
         public string PaymentTool { get; set; }
+        public string ArdCode { get; set; }
         [Required]
         public int? CoaID { get; set; }
         public virtual string AccountName { get; set; }
@@ -27,8 +28,8 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public int? ParentID { get; set; }
         public int? BranchID { get; set; }
         [Required]
-        public int? CoaID { get; set; }
-        public virtual string AccountName { get; set; }
+        public string UsageCode { get; set; }        
+        public int? CoaID { get; set; }       
         [Required]
         public decimal? Amount { get; set; }
         public string Rederence { get; set; }
