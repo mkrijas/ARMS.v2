@@ -21,9 +21,8 @@ namespace ArmsServices.DataServices
         IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? ID);
         IEnumerable<TaxPurchaseItemModel> GetItems(int? ID);
         IEnumerable<BillInfoModel> GetBillInfo(int? BranchID,string DrCrType,int? PartyBranchID,string  DocumentNumberSearchKey);
-        int Approve(int? ID, string UserID);
-        int Reverse(int? ID, string UserID);
-
+        int Approve(int? ID, string UserID,string Remarks);
+        int Reverse(int? ID, string UserID,string Remarks);
     }
 
     public class DrCrNoteService : IDrCrNoteService
@@ -35,12 +34,13 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Approve(int? ID, string UserID)
+        public int Approve(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@Status", 1)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Approve]", parameters);
@@ -93,7 +93,7 @@ namespace ArmsServices.DataServices
                 yield return new TaxPurchaseExpenseModel()
                 {
                     Amount = dr.GetDecimal("Amount"),
-                    CGST = dr.GetDecimal("CGST"),
+                    CGST = dr.GetDecimal("CGST"),                    
                     IGST = dr.GetDecimal("IGST"),
                     SGST = dr.GetDecimal("SGST"),
                     CoaID = dr.GetInt32("CoaID"),
@@ -101,7 +101,7 @@ namespace ArmsServices.DataServices
                     TDS = dr.GetDecimal("TDS"),
                     BillReference = dr.GetString("BillReference"),
                     BranchID = dr.GetInt32("BranchID"),
-                    UsageID = dr.GetString("UsageID"),
+                    UsageCode = dr.GetString("UsageCode"),
                     TpeID = dr.GetInt64("TpeID"),
                 };
             }
@@ -134,15 +134,16 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Reverse(int? ID, string UserID)
+        public int Reverse(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 2)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Reverse]", parameters);
         }
 
         public IEnumerable<DrCrNoteModel> Select()
@@ -208,6 +209,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@DrCrNoteID", model.DrCrNoteID),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@DrCrType", model.DrCrType),
                new SqlParameter("@ReasonCode", model.ReasonCode),
                new SqlParameter("@Reference", model.Reference),
@@ -215,13 +217,12 @@ namespace ArmsServices.DataServices
                new SqlParameter("@OriginalTranDocDate", model.OriginalTranDocDate),
                new SqlParameter("@OriginalTranDocNumber", model.OriginalTranDocNumber),
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@MID", model.MID),
-               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
+               new SqlParameter("@MID", model.MID),               
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@Particulars", model.Particulars.ToDataTable()),               
                new SqlParameter("@CostCenter", model.CostCenter),
-                new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@Items", model.Items.ToDataTable()),
                new SqlParameter("@PartyCoaID", model.PartyCoaID),
                new SqlParameter("@PartyID", model.Party.PartyID),
@@ -260,10 +261,11 @@ namespace ArmsServices.DataServices
                 Party = new PartyModel()
                 {                
                     PartyID = dr.GetInt32("PartyID"),
-                    TradeName = dr.GetString("TradeName")
+                    TradeName = dr.GetString("TradeName"),
+                    PartyCode = dr.GetString("PartyCode"),
                 },
                 PartyCoaID = dr.GetInt32("PartyCoaID"),
-                PartyCode = dr.GetString("PartyCode"),                
+                               
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

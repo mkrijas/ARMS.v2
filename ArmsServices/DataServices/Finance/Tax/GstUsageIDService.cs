@@ -12,17 +12,17 @@ namespace ArmsServices.DataServices
 {
     public interface IGstUsageIDService
     {
-        GstUsageIDModel Update(GstUsageIDModel model);
-        GstUsageIDModel SelectByCode(string Code);
-        IEnumerable<GstUsageIDModel> SelectByAccount(int AccountID , DateTime? entryDate);
-        IEnumerable<GstUsageIDModel> SelectByArea(string Area, DateTime? entryDate);
-        IEnumerable<GstUsageIDModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);
-        IEnumerable<GstUsageIDModel> SelectBySAC(string SAC, DateTime? entryDate);
-        IEnumerable<GstUsageIDModel> FilterByText(string FilterText, DateTime? entryDate);
+        GstUsageCodeModel Update(GstUsageCodeModel model);
+        GstUsageCodeModel SelectByCode(string Code);
+        IEnumerable<GstUsageCodeModel> SelectByAccount(int AccountID , DateTime? entryDate);
+        IEnumerable<GstUsageCodeModel> SelectByArea(string Area, DateTime? entryDate);
+        IEnumerable<GstUsageCodeModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);
+        IEnumerable<GstUsageCodeModel> SelectBySAC(string SAC, DateTime? entryDate);
+        IEnumerable<GstUsageCodeModel> FilterByText(string FilterText, DateTime? entryDate);
         int Delete(string ID, string UserID);
-        IEnumerable<GstUsageIDModel> Select(DateTime? entryDate);
+        IEnumerable<GstUsageCodeModel> Select(DateTime? entryDate);
         IEnumerable<GstRateModel> GetGstRates();      
-        IEnumerable<GstUsageIDModel> SelectByTaxRateAccount(int? rateId, int? acID);
+        IEnumerable<GstUsageCodeModel> SelectByTaxRateAccount(int? rateId, int? acID);
         decimal? GetGstRate(string UsageCode,DateTime? EntryDate);
     }
 
@@ -45,7 +45,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Taxes.Gst.UsageID.Delete]", parameters);
         }
 
-        public IEnumerable<GstUsageIDModel> FilterByText(string FilterText, DateTime? entryDate)
+        public IEnumerable<GstUsageCodeModel> FilterByText(string FilterText, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -74,7 +74,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<GstUsageIDModel> Select(DateTime? entryDate)
+        public IEnumerable<GstUsageCodeModel> Select(DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -88,7 +88,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<GstUsageIDModel> SelectByAccount(int AccountID, DateTime? entryDate)
+        public IEnumerable<GstUsageCodeModel> SelectByAccount(int AccountID, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -102,7 +102,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<GstUsageIDModel> SelectByArea(string Area, DateTime? entryDate)
+        public IEnumerable<GstUsageCodeModel> SelectByArea(string Area, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -117,14 +117,14 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public GstUsageIDModel SelectByCode(string Code)
+        public GstUsageCodeModel SelectByCode(string Code)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@UsageCode", Code),
                new SqlParameter("@Operation", "ByCode")
             };
-            GstUsageIDModel model = new();
+            GstUsageCodeModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
             {
                 model = GetModel(dr);
@@ -132,7 +132,7 @@ namespace ArmsServices.DataServices
             return model;
         }      
 
-        public IEnumerable<GstUsageIDModel> SelectBySAC(string SAC, DateTime? entryDate)
+        public IEnumerable<GstUsageCodeModel> SelectBySAC(string SAC, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -147,7 +147,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<GstUsageIDModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate)
+        public IEnumerable<GstUsageCodeModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -162,7 +162,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public GstUsageIDModel Update(GstUsageIDModel model)
+        public GstUsageCodeModel Update(GstUsageCodeModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -170,7 +170,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UsageCode", model.UsageCode),
                new SqlParameter("@Description", model.Description),
                new SqlParameter("@Area", model.Area),
-               new SqlParameter("@AccountID", model.AccountID),
+               new SqlParameter("@AccountID", model.CoaID),
                new SqlParameter("@PeriodFrom", model.PeriodFrom),
                new SqlParameter("@PeriodTo", model.PeriodTo),
                new SqlParameter("@RID", model.RID),
@@ -184,7 +184,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public IEnumerable<GstUsageIDModel> SelectByTaxRateAccount(int? rateId, int? acId)
+        public IEnumerable<GstUsageCodeModel> SelectByTaxRateAccount(int? rateId, int? acId)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -200,9 +200,9 @@ namespace ArmsServices.DataServices
         }
 
 
-        private GstUsageIDModel GetModel(IDataRecord dr)
+        private GstUsageCodeModel GetModel(IDataRecord dr)
         {
-            return new GstUsageIDModel
+            return new GstUsageCodeModel
             {
                 Id = dr.GetInt32("ID"),
                 UsageCode = dr.GetString("UsageCode"),
@@ -210,8 +210,8 @@ namespace ArmsServices.DataServices
                 Description = dr.GetString("Description"),
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),
                 PeriodTo = dr.GetDateTime("PeriodTo"),
-                AccountID = dr.GetInt32("AccountID"),
-                AccountName = dr.GetString("AccountName"),
+                CoaID = dr.GetInt32("AccountID"),
+                CoaDescreption = dr.GetString("AccountName"),
                 RID = dr.GetInt32("RID"),
                 TaxRate = dr.GetDecimal("Taxrate"),
                 SAC = dr.GetString("SAC"),

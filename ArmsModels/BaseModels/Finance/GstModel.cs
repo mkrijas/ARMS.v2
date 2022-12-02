@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
-    public class GstUsageIDModel
+    public class GstUsageCodeModel
     {
-        public GstUsageIDModel()
+        public GstUsageCodeModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
         }        
@@ -14,8 +14,8 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(maximumLength: 25)]
         public string Description { get; set; }
-        public int? AccountID { get; set; }
-        public virtual string AccountName { get; set; }
+        public int? CoaID { get; set; }
+        public virtual string CoaDescreption { get; set; }
         [Required]
         public string Area { get; set; } // Operation,Maintenance,All
         [Required]

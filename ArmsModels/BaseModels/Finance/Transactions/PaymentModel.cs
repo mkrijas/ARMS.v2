@@ -99,7 +99,7 @@ namespace ArmsModels.BaseModels
         public string PaymentMode { get; set; }      // Bank,Cash   
         public string PaymentTool { get; set; } // Cheque,DD
         public string PaymentArdCode { get; set; }
-        public int? CoaID { get; set; }
+        public int? PaymentCoaID { get; set; }
         public DateTime? DocumentDate { get; set; }        
         [Required]
         public int? BranchID { get; set; }

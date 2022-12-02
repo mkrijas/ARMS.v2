@@ -12,9 +12,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string DrCrType { get; set; } // Debit Note , Credit NOte 
         [Required]
-        public PartyModel Party { get; set; }
-        [Required]
-        public string PartyCode { get; set; }       
+        public PartyModel Party { get; set; }       
         public int? PartyCoaID { get; set; }        
         public string Reference { get; set; }
         public string ReasonCode { get; set; } // dropdownlist

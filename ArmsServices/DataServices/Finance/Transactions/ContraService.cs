@@ -14,7 +14,8 @@ namespace ArmsServices.DataServices
         ContraModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<ContraModel> Select();
-        int Approve(int? PID, string UserID);
+        int Approve(int? ID, string UserID, string Remarks);
+        int Reverse(int? ID, string UserID, string Remarks);
 
     }
     public class ContraService : IContraService
@@ -56,26 +57,42 @@ namespace ArmsServices.DataServices
         {
             throw new NotImplementedException();
         }
-        public int Approve(int? PID, string UserID)
+        public int Approve(int? ID, string UserID,string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ContraID", PID),
+               new SqlParameter("@ContraID", ID),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 1)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Contra.Approve]", parameters);
+        }
+
+        public int Reverse(int? ID, string UserID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ContraID", ID),
+               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Status", 1)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Contra.Reverse]", parameters);
         }
         public ContraModel Update(ContraModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ContraID", model.ContraID),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@ContraModeHome", model.ContraModeHome),
+               new SqlParameter("@ArdCodeHome", model.ArdCodeHome),
                new SqlParameter("@CoaIDHome", model.CoaIDHome),
                new SqlParameter("@BranchIDOther", model.BranchIDOther),
                new SqlParameter("@ContraModeOther", model.ContraModeOther),
-               new SqlParameter("@CoaIDOther", model.CoaIDOther),
+               new SqlParameter("@ArdCodeOther", model.ArdCodeOther),
+               new SqlParameter("@CoaIDOther", model.CoaIDOther),               
                new SqlParameter("@Reference", model.EntryReference),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocDate", model.DocumentDate),

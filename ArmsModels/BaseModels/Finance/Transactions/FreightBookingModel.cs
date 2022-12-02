@@ -37,10 +37,9 @@ namespace ArmsModels.BaseModels
         public int? DraftBillID { get; set; }
         public int? OrderID { get; set; }
         [Required]
-        public string PartyCode { get; set; }
+        public PartyModel Party { get; set; }
         public int? PartyCoa { get; set; }
-        public int? TariffTypeID { get; set; }
-        public int? TariffTypeCoa { get; set; }
+        public TariffTypeModel TariffType { get; set; }        
         public string Reference { get; set; }
         public GstModel Gst { get; set; } = new();
     }

@@ -76,7 +76,7 @@ namespace ArmsServices.DataServices
                     TDS = dr.GetDecimal("TDS"),
                     BillReference = dr.GetString("BillReference"),
                     BranchID = dr.GetInt32("BranchID"),
-                    UsageID = dr.GetString("UsageID"),
+                    UsageCode = dr.GetString("UsageCode"),
                     TpeID = dr.GetInt64("TpeID"),
                 };
             }
@@ -197,6 +197,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Items", model.Items.ToDataTable()),
                new SqlParameter("@NonStoreInventory", model.NonStoreInventory),
                new SqlParameter("@PartyID", model.PartyInfo.PartyID),
+               new SqlParameter("@PartyCode", model.PartyInfo.PartyCode),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -212,7 +213,7 @@ namespace ArmsServices.DataServices
         {
             return new TaxPurchaseModel
             {
-                PID = dr.GetInt32("PID"),
+                PID = dr.GetInt32("PID"),                
                 AdditionalTDS = dr.GetDecimal("AdditionalTDS"),
                 BranchID = dr.GetInt32("BranchID"),               
                 DocumentDate = dr.GetDateTime("DocDate"),
@@ -230,7 +231,8 @@ namespace ArmsServices.DataServices
                 PartyInfo = new PartyModel()
                 {                    
                     PartyID = dr.GetInt32("PartyID"),
-                    TradeName = dr.GetString("TradeName")                  
+                    TradeName = dr.GetString("TradeName"),
+                    PartyCode = dr.GetString("PartyCode"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
