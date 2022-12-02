@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using ArmsModels.BaseModels.Finance.Transactions;
 
 namespace ArmsServices.DataServices
 {
