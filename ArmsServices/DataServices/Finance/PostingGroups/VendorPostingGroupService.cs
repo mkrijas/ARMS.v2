@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         VendorPostingGroupModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<VendorPostingGroupModel> Select();
+        VendorPostingGroupModel GetPostingGroup(int? VendorID);
     }
 
     public class VendorPostingGroupService : IVendorPostingGroupService
@@ -36,6 +37,19 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Vendor.Delete]", parameters);
         }
 
+        public VendorPostingGroupModel GetPostingGroup(int? VendorID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", VendorID),
+               new SqlParameter("@Operation", "ByParty"),
+            };            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Vendor.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
 
         public IEnumerable<VendorPostingGroupModel> Select()
         {
@@ -57,12 +71,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", ID),
                new SqlParameter("@Operation", "ByID"),
             };
-            VendorPostingGroupModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Vendor.Select]", parameters))
             {
-                model = GetModel(dr);
+                return GetModel(dr);
             }
-            return model;
+            return null;
         }
 
         public VendorPostingGroupModel Update(VendorPostingGroupModel model)

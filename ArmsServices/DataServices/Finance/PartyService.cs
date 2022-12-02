@@ -22,6 +22,15 @@ namespace ArmsServices.DataServices
         IEnumerable<PartyModel> GetVendors(string Code);
         IEnumerable<PartyModel> GetRenters(string Code);
         int AddContact(int? PartyID, ContactModel contact);
+        int? GetVendorPayableCoaID(int? VendorID);
+        int? GetVendorDepositCoaID(int? VendorID);
+        int? GetVendorPrepaymentCoaID(int? VendorID);
+        int? GetCustomerReceivableCoaID(int? CustomerID);
+        int? GetCustomerDepositCoaID(int? CustomerID);
+        int? GetCustomerPrepaymentCoaID(int? CustomerID);
+        int? GetRenterRentCoaID(int? RenterID);
+        int? GetRenterDepositCoaID(int? RenterID);
+        int? GetRenterOtherCoaID(int? RenterID);
     }
 
     public class PartyService : IPartyService
@@ -30,14 +39,20 @@ namespace ArmsServices.DataServices
         IAddressService _addressService;
         IBankAccountService _bankAccountService;
         IContactService _contactService;
+        IVendorPostingGroupService _vendor;
+        ICustomerPostingGroupService _customer;
+        IRenterPostingGroupService _renter;
 
         public PartyService(IDbService iservice, IAddressService addressService, 
-            IBankAccountService bankAccountService,IContactService contactService)
+            IBankAccountService bankAccountService, IContactService contactService, IVendorPostingGroupService vendor, ICustomerPostingGroupService customer, IRenterPostingGroupService renter)
         {
             Iservice = iservice;
             _addressService = addressService;
             _bankAccountService = bankAccountService;
             _contactService = contactService;
+            _vendor = vendor;
+            _customer = customer;
+            _renter = renter;
         }
 
 
@@ -254,6 +269,51 @@ namespace ArmsServices.DataServices
                new SqlParameter("@contactID", contact?.ContactID??0)               
             };
             return Iservice.ExecuteNonQuery("[usp.Entity.Party.Contacts.Update]", parameters);            
+        }
+
+        public int? GetVendorPayableCoaID(int? VendorID)
+        {
+            return _vendor.GetPostingGroup(VendorID).Payable.CoaID;
+        }
+
+        public int? GetVendorDepositCoaID(int? VendorID)
+        {
+            return _vendor.GetPostingGroup(VendorID).Deposit.CoaID;
+        }
+
+        public int? GetVendorPrepaymentCoaID(int? VendorID)
+        {
+            return _vendor.GetPostingGroup(VendorID).PrePayment.CoaID;
+        }
+
+        public int? GetCustomerReceivableCoaID(int? CustomerID)
+        {
+            return _customer.GetPostingGroup(CustomerID).Payable.CoaID;
+        }
+
+        public int? GetCustomerDepositCoaID(int? CustomerID)
+        {
+            return _customer.GetPostingGroup(CustomerID).Deposit.CoaID;
+        }
+
+        public int? GetCustomerPrepaymentCoaID(int? CustomerID)
+        {
+            return _customer.GetPostingGroup(CustomerID).PrePayment.CoaID;
+        }
+
+        public int? GetRenterRentCoaID(int? RenterID)
+        {
+            return _renter.GetPostingGroup(RenterID).Rent.CoaID;
+        }
+
+        public int? GetRenterDepositCoaID(int? RenterID)
+        {
+            return _renter.GetPostingGroup(RenterID).Deposit.CoaID;
+        }
+
+        public int? GetRenterOtherCoaID(int? RenterID)
+        {
+            return _renter.GetPostingGroup(RenterID).Other.CoaID;
         }
     }
 }
