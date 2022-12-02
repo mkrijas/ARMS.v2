@@ -18,8 +18,8 @@ namespace ArmsServices.DataServices
         IEnumerable<PartyPaymentMemoModel> SelectByPeriod(DateTime? begin, DateTime? end,int? BranchID);
         IEnumerable<PartyPaymentMemoModel> Select(int PaymentInitiatedID, int? BranchID);
         IEnumerable<BillsPaidModel> GetBills(int? PID);
-        int Approve(int? PID, string UserID);
-        int Reverse(int? PID, string UserID);
+        int Approve(int? PID, string UserID,string Remarks);
+        int Reverse(int? PID, string UserID, string Remarks);
         int? InitiatePayment(PaymentInitiatedModel model);
         IEnumerable<PaymentInitiatedModel> SelectInitiated(int? BranchID);
         IEnumerable<PaymentFinishModel> SelectFinished(int? BranchID);
@@ -39,11 +39,12 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Approve(int? PID, string UserID)
+        public int Approve(int? PID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PaymentMemoID", PID),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 1)
             };
@@ -58,7 +59,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),              
                new SqlParameter("@TotalAmount", model.TotalAmount),
-               new SqlParameter("@CoaID", model.CoaID),
+               new SqlParameter("@CoaID", model.PaymentCoaID),
+               new SqlParameter("@PaymentArdCode", model.PaymentArdCode),
                new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@PaymentTool", model.PaymentTool),
                new SqlParameter("@Narration", model.Narration),
@@ -187,11 +189,12 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Reverse(int? PID, string UserID)
+        public int Reverse(int? PID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PaymentMemoID", PID),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 2)
             };
@@ -289,7 +292,7 @@ namespace ArmsServices.DataServices
                     BranchID = dr.GetInt32("BranchID"),
                     PfID = dr.GetInt32("PfID"),
                     PiID = dr.GetInt32("PiID"),
-                    CoaID = dr.GetInt32("CoaID"),
+                    PaymentCoaID = dr.GetInt32("CoaID"),
                     DocumentDate = dr.GetDateTime("DocumentDate"),
                     Narration = dr.GetString("Narration"),
                     PaymentMode = dr.GetString("PaymentMode"),
@@ -321,7 +324,7 @@ namespace ArmsServices.DataServices
                     BranchID = dr.GetInt32("BranchID"),
                     PfID = dr.GetInt32("PfID"),
                     PiID = dr.GetInt32("PiID"),
-                    CoaID = dr.GetInt32("CoaID"),
+                    PaymentCoaID = dr.GetInt32("CoaID"),
                     DocumentDate = dr.GetDateTime("DocumentDate"),
                     Narration = dr.GetString("Narration"),
                     PaymentMode = dr.GetString("PaymentMode"),
@@ -401,6 +404,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PaymentMemoID", model.PaymentMemoID),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@PaymentInitiatedID", model.PaymentInitiatedID),
                new SqlParameter("@PaymentStatus", model.PaymentStatus),
                new SqlParameter("@BranchID", model.BranchID),
@@ -410,6 +414,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@PartyID", model.PartyInfo.PartyID),
+               new SqlParameter("@PartyCode", model.PartyInfo.PartyCode),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -426,22 +431,22 @@ namespace ArmsServices.DataServices
             return new PartyPaymentMemoModel
             {
                 PaymentMemoID = dr.GetInt32("PaymentMemoID"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
                 PaymentInitiatedID = dr.GetInt32("PaymentInitiatedID"),
                 PaymentStatus = dr.GetByte("PaymentStatus"),
-                BranchID = dr.GetInt32("BranchID"),
-               // BranchName = dr.GetString("BranchName"),              
+                BranchID = dr.GetInt32("BranchID"),                       
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),
-                CostCenter = dr.GetInt32("CostCenter"),
-               
+                CostCenter = dr.GetInt32("CostCenter"),               
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
-                    TradeName = dr.GetString("TradeName")
+                    TradeName = dr.GetString("TradeName"),
+                    PartyCode = dr.GetString("PartyCode"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

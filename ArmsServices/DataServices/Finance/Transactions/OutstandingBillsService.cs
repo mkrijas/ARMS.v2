@@ -102,10 +102,9 @@ namespace ArmsServices.DataServices
                 {
                      DocDate = dr.GetDateTime("DocumentDate"),
                      DocNumber = dr.GetString("DocumentNumber"),
-                     InitialAmount = dr.GetDecimal("InitialAmount"),
-                     
+                     InitialAmount = dr.GetDecimal("InitialAmount"),                     
                      OutstandingAmount = dr.GetDecimal ("OutstandingAmount"),
-                     BranchName = dr.GetString("BramnchName"),
+                     BranchName = dr.GetString("BranchName"),
                      PartyInfo = new PartyModel()
                      {
                          PartyID = dr.GetInt32("PartyID"),

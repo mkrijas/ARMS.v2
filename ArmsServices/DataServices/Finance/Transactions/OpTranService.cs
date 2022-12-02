@@ -18,8 +18,8 @@ namespace ArmsServices.DataServices
         IEnumerable<OpTranModel> SelectByTrip(long? TripID);
         IEnumerable<OpTranModel> SelectByJobcard(int? JobcardID);
         OpTranModel SelectByID(long? ID);
-        int Approve(int? ID, string UserID);
-        int Reverse(int? ID, string UserID);
+        int Approve(int? ID, string UserID, string Remarks);
+        int Reverse(int? ID, string UserID,string Remarks);
         IEnumerable<OpTranSubModel> GetExpenses(long? TransactionID);
     }
 
@@ -36,6 +36,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@OpTranID", model.OpTranID),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@CreditCoaID", model.CreditCoaID),
                new SqlParameter("@Area", model.Area),
@@ -60,6 +61,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
         public int Delete(long? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -124,13 +126,13 @@ namespace ArmsServices.DataServices
             {
                 yield return new OpTranSubModel()
                 {
-                    ExpenseUsageCode = new GstUsageIDModel()
+                    ExpenseUsageCode = new GstUsageCodeModel()
                     {
                         UsageCode = dr.GetString("UsageCode"),
-                        Id = dr.GetInt32("UsageID"),
+                        Id = dr.GetInt32("UsageCode"),
+                        CoaID = dr.GetInt32("CoaID"),
                     },
-                    OpTranID = dr.GetInt32("OpTranID"),
-                    CoaID = dr.GetInt32("CoaID"),
+                    OpTranID = dr.GetInt32("OpTranID"),                    
                     OpTranSubID = dr.GetInt64("OpTranSubID"),
                     Amount = dr.GetDecimal("Amount"),
                     Quantity = dr.GetDecimal("Quantity"),
@@ -140,25 +142,25 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Approve(int? ID, string UserID)
+        public int Approve(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 1)
+               new SqlParameter("@Remarks", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Approve]", parameters);
         }
-        public int Reverse(int? ID, string UserID)
+        public int Reverse(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 2)
+               new SqlParameter("@Remarks", Remarks)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Reverse]", parameters);
         }
 
         private OpTranModel GetModel(IDataRecord dr)
@@ -168,6 +170,7 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 Dimension = dr.GetInt32("Dimension"),
                 CostCenter = dr.GetInt32("CostCenter"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
                 Area = dr.GetString("Area"),
                 JobCardID = dr.GetInt32("JobCardID"),
                 PaymentArdCode = dr.GetString("PaymentArdCode"),

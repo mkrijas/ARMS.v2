@@ -15,7 +15,8 @@ namespace ArmsServices.DataServices
         int Delete(int? ID, string UserID);
         IEnumerable<SundryReceiptModel> Select();
         IEnumerable<SundryReceiptEntryModel> GetEntries(int? SID);
-        int Approve(int? SundryReceiptID, string UserID);
+        int Approve(int? SundryReceiptID, string UserID,string Remarks);
+        int Reverse(int? SundryReceiptID, string UserID, string Remarks);
     }
     public class SundryReceiptService : ISundryReceiptService
     {
@@ -88,28 +89,38 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int Approve(int? SundryReceiptID, string UserID)
+        public int Approve(int? SundryReceiptID, string UserID,string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@SundryReceiptID", SundryReceiptID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 1)
+               new SqlParameter("@Remarks", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryReceipt.Approve]", parameters);
         }
 
+        public int Reverse(int? SundryReceiptID, string UserID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@SundryReceiptID", SundryReceiptID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Remarks", Remarks)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryReceipt.Reverse]", parameters);
+        }
         public SundryReceiptModel Update(SundryReceiptModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@SundryReceiptID", model.SundryReceiptID),
                new SqlParameter("@ReceiptMode", model.ReceiptMode),
-               new SqlParameter("@ArdCode", model.ArdCode),
-               //new SqlParameter("@DocumentType", model.DocumentType),
+               new SqlParameter("@ArdCode", model.ReceiptArdCode),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@PayerName", model.PayerName),
                new SqlParameter("@PayerContactNo", model.PayerContactNo),
-               new SqlParameter("@CoaID", model.CoaID),
+               new SqlParameter("@CoaID", model.ReceiptCoaID),
                new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocDate", model.DocumentDate),
@@ -132,12 +143,12 @@ namespace ArmsServices.DataServices
             return new SundryReceiptModel
             {
                 SundryReceiptID = dr.GetInt32("SundryReceiptID"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 ReceiptMode = dr.GetString("ReceiptMode"),          
-                ArdCode = dr.GetString("ArdCode"),
-                DocumentType = dr.GetString("DocumentType"),
+                ReceiptArdCode = dr.GetString("ArdCode"),                
                 PayerName = dr.GetString("PayerName"),
                 PayerContactNo = dr.GetString("PayerContactNo"),
-                CoaID = dr.GetInt32("CoaID"),                
+                ReceiptCoaID = dr.GetInt32("CoaID"),                
                 Reference=dr.GetString("Reference"),
                 BranchID = dr.GetInt32("BranchID"),                
                 DocumentDate = dr.GetDateTime("DocDate"),
