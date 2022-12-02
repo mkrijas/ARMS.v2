@@ -29,6 +29,14 @@ namespace ArmsModels.BaseModels
     }
 
 
+    public class AccountRuleDefinitionModel
+    {
+        public int? ID { get; set; }
+        public string ArdCode { get; set; }
+        public string Title { get; set; }
+        public int? CoaID { get; set; }
+    }
+
 
     public class AccountInfoViewModel
     {

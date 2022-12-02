@@ -52,4 +52,13 @@ namespace ArmsModels.BaseModels
         public bool IsSelected {get;set;} 
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
+
+    // For selecting ARD codes in  transaction pages
+    public class AccountRuleDefinitionModel
+    {
+        public int? ID { get; set; }
+        public string ArdCode { get; set; }
+        public string Title { get; set; }
+        public int? CoaID { get; set; }
+    }
 }
