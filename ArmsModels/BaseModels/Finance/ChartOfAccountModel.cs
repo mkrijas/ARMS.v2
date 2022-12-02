@@ -59,6 +59,7 @@ namespace ArmsModels.BaseModels
         public int? ID { get; set; }
         public string ArdCode { get; set; }
         public string Title { get; set; }
+        public virtual string paymentMode { get; set; }
         public int? CoaID { get; set; }
     }
 }
