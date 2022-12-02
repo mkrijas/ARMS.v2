@@ -11,9 +11,10 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public int? SundryReceiptID { get; set; }
         [Required]
         public string ReceiptMode { get; set; }
-        public string ArdCode { get; set; }
         [Required]
-        public int? CoaID { get; set; }        
+        public string ReceiptArdCode { get; set; }
+        [Required]
+        public int? ReceiptCoaID { get; set; }        
         public string Reference { get; set; }
         public string PayerName { get; set; }
         public string PayerContactNo { get; set; }        
@@ -27,8 +28,7 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public int? BranchID { get; set; }
         public string UsageCode { get; set; }
         [Required]
-        public int? CoaID { get; set; }
-        //public virtual string AccountName { get; set; }
+        public int? CoaID { get; set; }        
         [Required]
         public decimal? Amount { get; set; }
         public string Rederence { get; set; }

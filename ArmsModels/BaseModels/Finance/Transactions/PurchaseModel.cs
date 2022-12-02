@@ -33,7 +33,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? BranchID { get; set; }
         [Required]
-        public string UsageID { get; set; }
+        public string UsageCode { get; set; }
         public int? CoaID { get; set; }
         [Required]
         public decimal? Amount { get; set; }

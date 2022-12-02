@@ -17,25 +17,15 @@ namespace ArmsModels.BaseModels
         public DateTime? DocumentDate { get; set; }
         public string DocumentNumber { get; set; }
         [Required]
-        public string DocumentType { get; set; }
+        public string NatureOfTransaction { get; set; } //Deposit,Purchase,Payment,Receipt,Prepayment,BankCharges,Main,Depreciation,CWIP,Capitalization
         [Required]
         public int? BranchID { get; set; }
         public decimal? TotalAmount { get; set; }
-        
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
         public string Narration { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
-
-
-    //public class AccountRuleDefinitionModel
-    //{
-    //    public int? ID { get; set; }
-    //    public string ArdCode { get; set; }
-    //    public string Title { get; set; }
-    //    public int? CoaID { get; set; }
-    //}
 
 
     public class AccountInfoViewModel
@@ -47,6 +37,9 @@ namespace ArmsModels.BaseModels
         public string Narration { get; set; }
         public List<AccountInfoViewSubModel> Entries { get; set; }  = new List<AccountInfoViewSubModel>();
     }
+
+
+
     public class AccountInfoViewSubModel
     {
         private decimal? _amount;
@@ -78,6 +71,6 @@ namespace ArmsModels.BaseModels
         public string ChequeNumber { get; set; }
         public DateTime? ChequeDate { get; set; }
         public int? BankID { get; set; }
-    }
+    }    
 
     }

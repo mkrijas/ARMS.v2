@@ -59,7 +59,7 @@ namespace ArmsModels.BaseModels
         public string TariffGroup { get; set; }
         public string Unit { get; set; }
         [Required]
-        public string UsageID { get; set; }
+        public string UsageCode { get; set; }
         public bool AllowMultiple { get; set; } = true;
         public int? TariffSign { get; set; } = 1;
         public string Area { get; set; }        

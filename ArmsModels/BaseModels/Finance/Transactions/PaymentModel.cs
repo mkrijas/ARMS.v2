@@ -96,16 +96,16 @@ namespace ArmsModels.BaseModels
         }
         public int? PfID { get; set; }
         public int? PiID { get; set; }       
-        public string PaymentMode { get; set; }
-        public string PaymentTool { get; set; }
-        public int? CoaID { get; set; }
+        public string PaymentMode { get; set; }      // Bank,Cash   
+        public string PaymentTool { get; set; } // Cheque,DD
+        public string PaymentArdCode { get; set; }
+        public int? PaymentCoaID { get; set; }
         public DateTime? DocumentDate { get; set; }        
         [Required]
         public int? BranchID { get; set; }
         public decimal? TotalAmount { get; set; }        
         public string Narration { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }
-        public SharedModels.UserInfoModel ApprovedInfo { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }        
         public List<PaymentEntryModel> Payments { get; set; }
     }
 

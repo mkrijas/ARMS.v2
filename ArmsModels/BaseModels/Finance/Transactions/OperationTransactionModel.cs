@@ -36,13 +36,12 @@ namespace ArmsModels.BaseModels
         public long? OpTranSubID { get; set; }
         public int? OpTranID { get; set; } 
         [Required]
-        public GstUsageIDModel ExpenseUsageCode { get; set; }  
+        public GstUsageCodeModel ExpenseUsageCode { get; set; }  
         public string Reference { get; set; }        
         [Required]
         [Range(1, double.MaxValue, ErrorMessage = "Must have Non-Zero Value {1}")]
         public decimal? Amount { get; set; }        
         public decimal? Quantity { get; set; }        
-        public string Unit { get; set; }
-        public virtual int? CoaID { get; set; }        
+        public string Unit { get; set; }           
     }
 }

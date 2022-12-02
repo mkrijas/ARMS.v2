@@ -9,9 +9,10 @@ namespace ArmsModels.BaseModels
     public class DrCrNoteModel : TransactionBaseModel
     {
         public int? DrCrNoteID { get; set; }
-        public string DrCrType { get; set; } // DebitNote Or CreditNote
         [Required]
-        public PartyModel Party { get; set; }
+        public string DrCrType { get; set; } // Debit Note , Credit NOte 
+        [Required]
+        public PartyModel Party { get; set; }       
         public int? PartyCoaID { get; set; }        
         public string Reference { get; set; }
         public string ReasonCode { get; set; } // dropdownlist
@@ -21,7 +22,6 @@ namespace ArmsModels.BaseModels
         public List<TaxPurchaseExpenseModel> Particulars { get; set; }
         public List<TaxPurchaseItemModel> Items { get; set; }
     }
-
 
     public class BillInfoModel
     {

@@ -152,14 +152,15 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ReceiptID", model.ReceiptID),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
-               new SqlParameter("@DocNumber", model.DocumentNumber),
-               new SqlParameter("@PartyBranchCoa", model.PartyBranchCoa),
+               new SqlParameter("@DocNumber", model.DocumentNumber),               
                new SqlParameter("@ReceiptType", model.ReceiptType),
                new SqlParameter("@ReceiptMode", model.ReceiptMode),
                new SqlParameter("@ReceiptTool", model.ReceiptTool),
-               new SqlParameter("@ReceiptCoa", model.ReceiptCoa),
+               new SqlParameter("@ReceiptArdCode", model.ReceiptArdCode),
+               new SqlParameter("@ReceiptCoa", model.ReceiptCoaID),
                new SqlParameter("@Referece", model.Reference),
                new SqlParameter("@IsRealized", model.IsRealized),
                new SqlParameter("@EffectiveDate", model.EffectiveDate),
@@ -169,6 +170,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@PartyID", model.PartyInfo.PartyID),
+               new SqlParameter("@PartyCode", model.PartyInfo.PartyCode),
+               new SqlParameter("@PartyCoaID", model.PartyCoaID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -184,6 +187,7 @@ namespace ArmsServices.DataServices
             return new ReceiptModel
             {
                 ReceiptID = dr.GetInt32("ReceiptID"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 ReceiptType = dr.GetString("ReceiptType"),
                 BranchID = dr.GetInt32("BranchID"),               
                 DocumentDate = dr.GetDateTime("DocDate"),
@@ -191,7 +195,8 @@ namespace ArmsServices.DataServices
                 MID = dr.GetInt32("MID"),
                 ReceiptMode = dr.GetString("ReceiptMode"),
                 ReceiptTool = dr.GetString("ReceiptTool"),
-                ReceiptCoa = dr.GetInt32("ReceiptCoa"),
+                ReceiptCoaID = dr.GetInt32("ReceiptCoa"),
+                ReceiptArdCode = dr.GetString("ReceiptArdCode"),
                 IsRealized = dr.GetBoolean("IsRealized"),
                 Reference = dr.GetString("Reference"),
                 EffectiveDate = dr.GetDateTime("EffectiveDate"),
@@ -204,7 +209,7 @@ namespace ArmsServices.DataServices
                     PartyID = dr.GetInt32("PartyID"),
                     TradeName = dr.GetString("PartyName")                    
                 },
-                PartyBranchCoa = dr.GetInt32("PartyBranchCoa"),
+                PartyCoaID = dr.GetInt32("PartyCoaID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
