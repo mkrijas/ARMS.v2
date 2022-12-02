@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         AssetPostingGroupModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<AssetPostingGroupModel> Select();
+        AssetPostingGroupModel GetPostingGroup(int? AssetID);
     }
 
     public class AssetPostingGroupService : IAssetPostingGroupService
@@ -36,6 +37,19 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Asset.Delete]", parameters);
         }
 
+        public AssetPostingGroupModel GetPostingGroup(int? AssetID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "ByAsset"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Asset.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
 
         public IEnumerable<AssetPostingGroupModel> Select()
         {

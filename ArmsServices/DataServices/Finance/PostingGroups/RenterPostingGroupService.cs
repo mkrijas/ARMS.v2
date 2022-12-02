@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         RenterPostingGroupModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<RenterPostingGroupModel> Select();
+        RenterPostingGroupModel GetPostingGroup(int? RenterID);
     }
 
     public class RenterPostingGroupService : IRenterPostingGroupService
@@ -24,6 +25,19 @@ namespace ArmsServices.DataServices
         public RenterPostingGroupService(IDbService iservice)
         {
             Iservice = iservice;
+        }
+        public RenterPostingGroupModel GetPostingGroup(int? RenterID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", RenterID),
+               new SqlParameter("@Operation", "ByParty"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Renter.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
         }
 
         public int Delete(int? ID, string UserID)

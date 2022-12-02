@@ -13,6 +13,7 @@ namespace ArmsServices.DataServices
     {
         BankPostingGroupModel Update(BankPostingGroupModel model);
         BankPostingGroupModel SelectByID(int? ID);
+        BankPostingGroupModel SelectByBank(int? BankID);
         int Delete(int? ID, string UserID);        
         IEnumerable<BankPostingGroupModel> Select();        
     }
@@ -48,6 +49,21 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
+        }
+
+        public BankPostingGroupModel SelectByBank(int? BankID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", BankID),
+               new SqlParameter("@Operation", "ByBank"),
+            };
+            BankPostingGroupModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Bank.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
         }
 
         public BankPostingGroupModel SelectByID(int? ID)

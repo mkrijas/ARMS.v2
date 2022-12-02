@@ -20,6 +20,13 @@ namespace ArmsServices.DataServices
         AssetStatusUpdateModel GetCurrentStatus(int? AssetID);
         IEnumerable<AssetStatusUpdateModel> GetStatusHistory(int? AssetID);
         List<AssetViewModel> GetAssetView(int BranchID,int? parantID);
+        int? GetCapitalizationCoaID(int? AssetID);
+        int? GetCWIPCoaID(int? AssetID);
+        int? GetDepreciationCoaID(int? AssetID);
+        int? GetAccumulatedDepreciationCoaID(int? AssetID);
+        int? GetRevaluationCoaID(int? AssetID);
+        int? GetRevaluationReserveCoaID(int? AssetID);
+
     }
 
 
@@ -27,11 +34,13 @@ namespace ArmsServices.DataServices
     public class AssetService : IAssetService
     {
         IDbService Iservice;
+        IAssetPostingGroupService _asset;
 
-        public AssetService(IDbService iservice)
+        public AssetService(IDbService iservice, IAssetPostingGroupService asset)
         {
             Iservice = iservice;
-        }       
+            _asset = asset;            
+        }
 
         public IEnumerable<AssetModel> Select()
         {
@@ -51,8 +60,7 @@ namespace ArmsServices.DataServices
             return new AssetModel
             {
                 AssetID = dr.GetInt32("AssetID"),
-                BranchID = dr.GetInt32("BranchID"),
-               // AccountTransactionID =dr.GetInt32("AccountTransactionID"),
+                BranchID = dr.GetInt32("BranchID"),               
                 AssetClass = new()
                 {
                     AssetClassID = dr.GetInt32("AssetClassID"),
@@ -309,10 +317,35 @@ namespace ArmsServices.DataServices
             return view;
         }
 
-        //public List<AssetViewModel> GetAssetView(int BranchID)
-        //{
-        //    throw new NotImplementedException();
-        //}
+        public int? GetCapitalizationCoaID(int? AssetID)
+        {
+            return _asset.GetPostingGroup(AssetID).Capitalization.CoaID;
+        }
+
+        public int? GetCWIPCoaID(int? AssetID)
+        {
+            return _asset.GetPostingGroup(AssetID).CWIP.CoaID;
+        }
+
+        public int? GetDepreciationCoaID(int? AssetID)
+        {
+            return _asset.GetPostingGroup(AssetID).Depreciation.CoaID;
+        }
+
+        public int? GetAccumulatedDepreciationCoaID(int? AssetID)
+        {
+            return _asset.GetPostingGroup(AssetID).AccummulatedDepreciation.CoaID;
+        }
+
+        public int? GetRevaluationCoaID(int? AssetID)
+        {
+            return _asset.GetPostingGroup(AssetID).Revaluation.CoaID;
+        }
+
+        public int? GetRevaluationReserveCoaID(int? AssetID)
+        {
+            return _asset.GetPostingGroup(AssetID).RevaluationReserve.CoaID;
+        }       
     }
 }
    

@@ -15,7 +15,10 @@ namespace ArmsServices.DataServices
         int Delete(int? ID, string UserID);
         IEnumerable<OwnBankModel> Select();
         OwnBankModel SelectByID(int ID);
-        OwnBankModel SelectByCode(string BankCode);
+        OwnBankModel SelectByCode(string BankCode);       
+        int? GetBankChargeCoaID(int? BankID);
+        int? GetBankAccountCoaID(int? BankID);
+        int? GetProcessingFeeCoaID(int? BankID);
     }
 
     public class BankAccountOwnService : IBankAccountOwnService
@@ -24,12 +27,14 @@ namespace ArmsServices.DataServices
         IAddressService _address;
         IBankAccountService _bank;
         IContactService _contact;
-        public BankAccountOwnService(IDbService iservice,IAddressService address,IBankAccountService bank,IContactService contact)
+        IBankPostingGroupService _postingGroup;
+        public BankAccountOwnService(IDbService iservice,IAddressService address, IBankAccountService bank, IContactService contact, IBankPostingGroupService postingGroup)
         {
             Iservice = iservice;
             _address = address;
             _bank = bank;
             _contact = contact;
+            _postingGroup = postingGroup;
         }
         public OwnBankModel Update(OwnBankModel model)
         {
@@ -130,6 +135,19 @@ namespace ArmsServices.DataServices
                 model = GetModel(dr);
             }
             return model;
+        }      
+
+        public int? GetBankChargeCoaID(int? BankID)
+        {
+            return _postingGroup.SelectByBank(BankID).BankCharges.CoaID;
+        }
+        public int? GetBankAccountCoaID(int? BankID)
+        {
+            return _postingGroup.SelectByBank(BankID).BankAccount.CoaID;
+        }
+        public int? GetProcessingFeeCoaID(int? BankID)
+        {
+            return _postingGroup.SelectByBank(BankID).ProcessingFee.CoaID;
         }
     }
 }

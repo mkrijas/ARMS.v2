@@ -14,7 +14,8 @@ namespace ArmsServices.DataServices
         CustomerPostingGroupModel Update(CustomerPostingGroupModel model);
         CustomerPostingGroupModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);        
-        IEnumerable<CustomerPostingGroupModel> Select();        
+        IEnumerable<CustomerPostingGroupModel> Select();
+        CustomerPostingGroupModel GetPostingGroup(int? CustomerID);
     }
 
     public class CustomerPostingGroupService : ICustomerPostingGroupService
@@ -24,6 +25,20 @@ namespace ArmsServices.DataServices
         public CustomerPostingGroupService(IDbService iservice)
         {
             Iservice = iservice;
+        }
+
+        public CustomerPostingGroupModel GetPostingGroup(int? CustomerID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", CustomerID),
+               new SqlParameter("@Operation", "ByParty"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Customer.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
         }
 
         public int Delete(int? ID, string UserID)
