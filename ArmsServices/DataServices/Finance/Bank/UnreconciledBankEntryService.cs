@@ -5,10 +5,10 @@ using System.Data.SqlClient;
 using System.Data;
 using System.Reflection.Metadata;
 
-namespace ArmsServices.DataServices.Finance.Bank
+namespace ArmsServices.DataServices
 {
 
-    public interface IBankAccountOwnService
+    public interface IUnreconciledBankEntryService
     {
         UnReconciledBankEntryModel Update(UnReconciledBankEntryModel model);
         int Delete(int? ID, string UserID);
@@ -19,7 +19,7 @@ namespace ArmsServices.DataServices.Finance.Bank
         ReconciledBankEntryModel Reconcile(ReconciledBankEntryModel model);
     }
 
-    public class UnreconciledBankEntryService : IBankAccountOwnService
+    public class UnreconciledBankEntryService : IUnreconciledBankEntryService
     {
         IDbService Iservice;        
         public UnreconciledBankEntryService(IDbService iservice)
