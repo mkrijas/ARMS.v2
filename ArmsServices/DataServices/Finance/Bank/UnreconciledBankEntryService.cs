@@ -146,7 +146,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InstrumentType", model.InstrumentType),
                new SqlParameter("@Nature", model.Nature),
                new SqlParameter("@PaymentRemarks", model.PaymentRemarks),
-               new SqlParameter("@ReconciledDate", model.IsReconciled),
+               //new SqlParameter("@ReconciledDate", model.IsReconciled),
                new SqlParameter("@TransactionDate", model.TransactionDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
