@@ -288,7 +288,7 @@ namespace ArmsServices.DataServices
 
         public int? GetCustomerReceivableCoaID(int? CustomerID)
         {
-            return _customer.GetPostingGroup(CustomerID).Payable.CoaID;
+            return _customer.GetPostingGroup(CustomerID).Receivable.CoaID;
         }
 
         public int? GetCustomerDepositCoaID(int? CustomerID)

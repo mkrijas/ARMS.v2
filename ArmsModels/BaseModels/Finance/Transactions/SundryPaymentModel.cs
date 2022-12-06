@@ -16,6 +16,7 @@ namespace ArmsModels.BaseModels
         public string PaymentArdCode { get; set; }
         [Required]
         public int? PaymentCoaID { get; set; }
+        public decimal? BankCharges { get; set; }
         public virtual string AccountName { get; set; }
         public string Reference { get; set; }
         public string PayeeName { get; set; }

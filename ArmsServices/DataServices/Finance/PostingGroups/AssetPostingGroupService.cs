@@ -41,7 +41,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID),
+               new SqlParameter("@ID", AssetID),
                new SqlParameter("@Operation", "ByAsset"),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Asset.Select]", parameters))
