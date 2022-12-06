@@ -149,6 +149,7 @@ namespace ArmsServices.DataServices
                //new SqlParameter("@ReconciledDate", model.IsReconciled),
                new SqlParameter("@TransactionDate", model.TransactionDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@RecordStatus", 3),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.UnReconciledBankEntry.Update]", parameters))
             {
