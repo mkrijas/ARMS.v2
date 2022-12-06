@@ -60,6 +60,9 @@ namespace ArmsModels.BaseModels
         public string ArdCode { get; set; }
         public string Title { get; set; }
         public virtual string paymentMode { get; set; }
+        public virtual decimal? BankCharges { get; set; }
+        public virtual string BankTools { get; set; }
+        
         public int? CoaID { get; set; }
     }
 }

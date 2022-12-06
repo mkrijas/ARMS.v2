@@ -126,6 +126,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@PaymentArdCode", model.PaymentArdCode),
+               new SqlParameter("@BankCharges", model.BankCharges),
                new SqlParameter("@PaymentTool", model.PaymentTool),
                new SqlParameter("@PayeeName", model.PayeeName),
                new SqlParameter("@PayeeContactNo", model.PayeeContactNo),

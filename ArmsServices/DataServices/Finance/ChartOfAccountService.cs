@@ -246,7 +246,8 @@ namespace ArmsServices.DataServices
                     CoaID = dr.GetInt32("CoaID"),
                     ArdCode = dr.GetString("ArdCode"),
                     Title = dr.GetString("Title"),
-                    paymentMode= dr.GetString(PaymentMode),
+                    paymentMode = PaymentMode,
+
                 };
             }
         }
