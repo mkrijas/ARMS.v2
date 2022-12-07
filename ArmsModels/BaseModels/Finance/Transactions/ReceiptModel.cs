@@ -16,6 +16,7 @@ namespace ArmsModels.BaseModels
         public string ReceiptMode { get; set; } // Cash/Bank
         public string ReceiptTool { get; set; } // (Cheque/NEFT)
         public string ReceiptArdCode { get; set; }
+        public decimal? BankCharges { get; set; }
         public int? ReceiptCoaID { get; set; }//ac cash ac
         public string Reference { get; set; }
         public DateTime? EffectiveDate { get; set; }
