@@ -64,7 +64,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ContraID", ID),
                new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 1)
+               //new SqlParameter("@Status", 1)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Contra.Approve]", parameters);
         }
