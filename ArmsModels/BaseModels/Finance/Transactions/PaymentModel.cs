@@ -100,6 +100,7 @@ namespace ArmsModels.BaseModels
         public string PaymentMode { get; set; }      // Bank,Cash   
         public string PaymentTool { get; set; } // Cheque,DD
         public string PaymentArdCode { get; set; }
+        public decimal? BankCharges { get; set; }
         public int? PaymentCoaID { get; set; }
         public DateTime? DocumentDate { get; set; }        
         [Required]

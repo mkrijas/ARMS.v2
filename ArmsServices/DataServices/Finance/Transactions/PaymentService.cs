@@ -59,6 +59,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),              
                new SqlParameter("@TotalAmount", model.TotalAmount),
+                new SqlParameter("@BankCharges", model.BankCharges),
                new SqlParameter("@CoaID", model.PaymentCoaID),
                new SqlParameter("@PaymentArdCode", model.PaymentArdCode),
                new SqlParameter("@PaymentMode", model.PaymentMode),

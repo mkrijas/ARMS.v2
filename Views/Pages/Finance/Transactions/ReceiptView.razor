@@ -21,13 +21,52 @@
 <MudPaper>
     <MudContainer>
         <MudGrid Spacing="4">
-
+@*
             <MudItem xs="12" md="10">
                 <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Customer"></PartySelector>
             </MudItem>
             <MudItem xs="12" md="2">
                 <MudButton @onclick="OpenOtstandingBills" Variant="Variant.Filled" Color="Color.Primary">Search</MudButton>
-            </MudItem>
+            </MudItem>*@
+            <MudItem  xs="12" md="3">
+               <MudSelect Label="Select Party" @bind-Value="nbusiness" T="string" SelectedValuesChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in NatureOfBusiness)
+                            {
+                                <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
+                            }
+                        </MudSelect>
+               </MudItem>
+            <MudItem  xs="12" md="4">
+                @if(nbusiness=="Supplier")
+                {
+                <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Supplier"></PartySelector>
+                }
+                 @if(nbusiness=="Customer")
+                {
+                <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Customer"></PartySelector>
+                }
+                 @if(nbusiness=="Renter")
+                {
+                <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Renter"></PartySelector>
+                }
+               </MudItem>
+               
+                <MudItem  xs="12" md="3">
+                     <MudSelect Label="NatureOfBusiness" @bind-Value="model.NatureOfTransaction" T="string" SelectedValuesChanged="nTransactionchanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            <MudSelectItem Value="@("Deposit")" />
+                            <MudSelectItem Value="@("Receipt")" />
+                            <MudSelectItem Value="@("Advance")" />
+                        </MudSelect>
+                </MudItem>
+               
+            @if (model.NatureOfTransaction == "Receipt")
+            {
+
+                <MudItem  xs="12" md="2">
+                    <MudButton @onclick="OpenOtstandingBills" Variant="Variant.Filled" Color="Color.Primary" >Search</MudButton>
+                </MudItem>
+            }
+
         </MudGrid>
     </MudContainer>
 </MudPaper>
@@ -36,6 +75,7 @@
 <MudPaper Class="@value">
     <MudContainer>
         <MudGrid>
+            @if(Isbill){
             <MudItem xs="12">
                 <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
                     <thead>
@@ -68,9 +108,9 @@
                     </tbody>
                 </MudSimpleTable>
             </MudItem>
-
-            <MudItem xs="12" md="3">
-                <MudSelect Label="Select ReceiptType" @bind-Value="model.ReceiptType" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+            }
+            <MudItem xs="12" md="12">
+               @* <MudSelect Label="Select ReceiptType" @bind-Value="model.ReceiptType" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                     <MudSelectItem Value="@("Advance")" />
                     <MudSelectItem Value="@("Deposit")" />
                     <MudSelectItem Value="@("Settlement")" />
@@ -90,10 +130,13 @@
                         <MudSelectItem Value="@item">@item</MudSelectItem>
                     }
 
-                </MudSelect>
+                </MudSelect>*@
+
+                        <PaymentCodeSelector @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
+
 
             </MudItem>
-            <MudItem xs="12" md="3">
+            <MudItem xs="12" md="6">
 
                 <MudDatePicker Label="Effective Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EffectiveDate" DateFormat="dd/MM/yyyy" />
 
@@ -149,9 +192,12 @@
     private List<OutstandingPaymentModel> collection = new List<OutstandingPaymentModel>();
     public string value = "invisible";
     public bool readvalue = true;
+    public string nbusiness="Supplier";
     public bool checkread = false;
     public string status = null;
+      private bool Isbill = false;
     ProformaInvoiceModel pmodel = new();
+     private AccountRuleDefinitionModel accountRuleDefinitionModel = new();
     public bool Basic_CheckBox2 { get; set; } = false;
     private HashSet<OutstandingPaymentModel> selectedItems1 = new HashSet<OutstandingPaymentModel>();
     private List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
@@ -159,11 +205,30 @@
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
+    private List<string> NatureOfBusiness = new List<string>() { "Supplier", "Customer", "Renter"};
+
     protected override void OnInitialized()
     {
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
         // GetOutstandingBill();
+    }
+     private void nbusinesschanged()
+    {
+        StateHasChanged();
+    }
+    private void nTransactionchanged()
+    {
+        if(model.NatureOfTransaction!="Payment")
+        {
+            value="visible";
+            Isbill = false;
+        }
+        else
+        {
+            value="invisible";
+            Isbill = true;
+        }
     }
     public void ReceiptToolChange()
     {
@@ -248,6 +313,11 @@
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
         var user = authprov.User;
+        model.ReceiptMode = accountRuleDefinitionModel.paymentMode;
+        model.ReceiptCoaID = accountRuleDefinitionModel.CoaID;
+        model.ReceiptArdCode = accountRuleDefinitionModel.ArdCode;
+        model.ReceiptTool = accountRuleDefinitionModel.BankTools;
+        model.BankCharges = accountRuleDefinitionModel.BankCharges;
         model.UserInfo.UserID = user.Identity.Name;
         model.BranchID = brancID;
         model.NatureOfTransaction = "Receipt";

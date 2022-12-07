@@ -1,0 +1,238 @@
+﻿
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
+using ArmsModels.BaseModels;
+
+
+namespace ArmsServices.DataServices
+{
+    public interface ISaleService
+    {
+        SaleModel Update(SaleModel model);
+        SaleModel SelectByID(int? ID);
+        int Delete(int? ID, string UserID);
+        IEnumerable<SaleModel> Select();
+        IEnumerable<SaleModel> SelectByParty(int? PartyID);
+        IEnumerable<SaleModel> SelectByPeriod(DateTime? begin,DateTime? end);
+        IEnumerable<SaleExpenseModel> GetParticulars(int? SID);
+        IEnumerable<SaleItemModel> GetItems(int? PID);
+        int Approve(int? SID, string UserID);
+        int Reverse(int? SID, string UserID);
+    }
+
+    public class SaleService : ISaleService
+    {
+        IDbService Iservice;
+
+        public SaleService(IDbService iservice)
+        {
+            Iservice = iservice;
+        }
+
+        public int Approve(int? SID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@SID", SID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Status", 1)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sale.Approve]", parameters);
+        }
+
+        public int Delete(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@SID", ID),
+               new SqlParameter("@UserID", UserID),
+              
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sale.Delete]", parameters);
+        }
+
+        public IEnumerable<SaleExpenseModel> GetParticulars(int? SID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetExp"),
+               new SqlParameter("@SID", SID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            {
+                yield return new SaleExpenseModel()
+                {
+                    Amount = dr.GetDecimal("Amount"),
+                    CGST = dr.GetDecimal("CGST"),
+                    IGST = dr.GetDecimal("IGST"),
+                    SGST = dr.GetDecimal("SGST"),                   
+                    CoaID = dr.GetInt32("CoaID"),                 
+                    PID = dr.GetInt32("PID"),
+                    TCS = dr.GetDecimal("TCS"),
+                    BillReference = dr.GetString("BillReference"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    UsageCode = dr.GetString("UsageCode"),
+                    TpeID = dr.GetInt64("TpeID"),
+                };
+            }
+        }
+
+        public IEnumerable<SaleItemModel> GetItems(int? PID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetItems"),
+               new SqlParameter("@PID", PID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            {
+                yield return new SaleItemModel()
+                {
+                    Amount = dr.GetDecimal("Amount"),
+                    CGST = dr.GetDecimal("CGST"),
+                    IGST = dr.GetDecimal("IGST"),
+                    SGST = dr.GetDecimal("SGST"),
+                    ItemID = dr.GetInt32("ItemID"),
+                    CoaID = dr.GetInt32("CoaID"),
+                    ItemQty = dr.GetDecimal("ItemQty"),
+                    ItemRate = dr.GetDecimal("ItemRate"),
+                    PID = dr.GetInt32("PID"),
+                    TCS = dr.GetDecimal("TCS"),
+                    TpiID = dr.GetInt64("TpiID"),
+                };
+            }
+        }
+
+        public int Reverse(int? PID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PID", PID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Status", 2)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sale.Approve]", parameters);
+        }
+
+        public IEnumerable<SaleModel> Select()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByID"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }      
+
+        public SaleModel SelectByID(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PID", ID),
+               new SqlParameter("@Operation", "ByID")
+            };
+            SaleModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }      
+
+        public IEnumerable<SaleModel> SelectByParty(int? PartyID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByParty"),
+               new SqlParameter("@PartyID", PartyID),               
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<SaleModel> SelectByPeriod(DateTime? begin, DateTime? end)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByPeriod"),
+               new SqlParameter("@begin", begin),
+               new SqlParameter("@end", end),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public SaleModel Update(SaleModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@SID", model.SID),
+               new SqlParameter("@AdditionalTDS", model.AdditionalTCS),
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@DocumentDate", model.DocumentDate),
+               new SqlParameter("@DocumentNumber", model.DocumentNumber),
+               new SqlParameter("@Expenses", model.Particulars.ToDataTable()),               
+               new SqlParameter("@IsCredit", model.IsCredit),
+               new SqlParameter("@CostCenter", model.CostCenter),
+               new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@Items", model.Items.ToDataTable()),               
+               new SqlParameter("@PartyID", model.PartyInfo.PartyID),
+               new SqlParameter("@PartyCode", model.PartyInfo.PartyCode),
+               new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Update]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
+        private SaleModel GetModel(IDataRecord dr)
+        {
+            return new SaleModel
+            {
+                SID = dr.GetInt32("SID"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
+                AdditionalTCS = dr.GetDecimal("AdditionalTCS"),
+                BranchID = dr.GetInt32("BranchID"),               
+                DocumentDate = dr.GetDateTime("DocumentDate"),
+                DocumentNumber = dr.GetString("DocumentNumber"),
+                IsCredit = dr.GetBoolean("IsCredit"),
+                MID = dr.GetInt32("MID"),
+                CostCenter = dr.GetInt32("CostCenter"),
+                Dimension = dr.GetInt32("Dimension"),                
+                TotalAmount = dr.GetDecimal("TotalAmount"),
+                Narration = dr.GetString("Narration"),
+                PartyInfo = new PartyModel()
+                {                    
+                    PartyID = dr.GetInt32("PartyID"),
+                    TradeName = dr.GetString("TradeName"),
+                    PartyCode = dr.GetString("PartyCode"),
+                },
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+    }
+}

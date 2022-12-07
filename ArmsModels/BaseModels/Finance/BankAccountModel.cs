@@ -89,6 +89,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? Nature { get; set; } //SELECT  -1 as Payment,1 as Receipt
         [Required]
+        public string NatureName { get; set; } //SELECT  -1 as Payment,1 as Receipt
+        [Required]
         public DateTime? TransactionDate { get; set; }
         [Required]
         public string ArdCode { get; set; }  // Bank Code from Bank Model
