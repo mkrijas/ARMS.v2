@@ -157,6 +157,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),               
                new SqlParameter("@ReceiptType", model.ReceiptType),
+               new SqlParameter("@BankCharges", model.BankCharges),
                new SqlParameter("@ReceiptMode", model.ReceiptMode),
                new SqlParameter("@ReceiptTool", model.ReceiptTool),
                new SqlParameter("@ReceiptArdCode", model.ReceiptArdCode),
