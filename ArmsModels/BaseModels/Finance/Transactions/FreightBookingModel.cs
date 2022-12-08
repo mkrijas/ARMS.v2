@@ -36,7 +36,7 @@ namespace ArmsModels.BaseModels
         public int? ProformaInvoiceID { get; set; }        
         public int? DraftBillID { get; set; }
         public int? OrderID { get; set; }
-        [Required]
+     
         public PartyModel Party { get; set; }
         public int? PartyCoa { get; set; }
         public TariffTypeModel TariffType { get; set; }        
