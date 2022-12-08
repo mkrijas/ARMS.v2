@@ -222,9 +222,9 @@ namespace ArmsServices.DataServices
                 Narration = dr.GetString("Narration"),
                 PartyInfo = new PartyModel()
                 {                    
-                    PartyID = dr.GetInt32("PartyID"),
+                    PartyID = dr.GetInt32("CustomerID"),
                     TradeName = dr.GetString("TradeName"),
-                    PartyCode = dr.GetString("PartyCode"),
+                    PartyCode = dr.GetString("CustomerCode"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
