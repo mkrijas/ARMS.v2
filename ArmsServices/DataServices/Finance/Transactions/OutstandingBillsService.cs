@@ -64,7 +64,6 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByParty"),
                new SqlParameter("@PartyID", PartyID),
-               //new SqlParameter("@PartyBranchID", PartyBranchID),
                new SqlParameter("@BranchID", BranchID),
             };
 
