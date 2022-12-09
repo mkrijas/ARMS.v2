@@ -58,13 +58,13 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? PartyBranchID,int? BranchID)
+        public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByParty"),
                new SqlParameter("@PartyID", PartyID),
-               new SqlParameter("@PartyBranchID", PartyBranchID),
+               //new SqlParameter("@PartyBranchID", PartyBranchID),
                new SqlParameter("@BranchID", BranchID),
             };
 
