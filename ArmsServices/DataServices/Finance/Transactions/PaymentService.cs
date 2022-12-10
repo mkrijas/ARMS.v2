@@ -46,7 +46,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PaymentMemoID", PID),
                new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 1)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Approve]", parameters);
         }
@@ -197,7 +196,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PaymentMemoID", PID),
                new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 2)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Approve]", parameters);
         }
