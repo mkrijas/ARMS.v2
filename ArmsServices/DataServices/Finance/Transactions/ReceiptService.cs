@@ -70,7 +70,7 @@ namespace ArmsServices.DataServices
                     DocNumber = dr.GetString("DocumentNumber"),
                     InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     InvoiceNumber = dr.GetString("InvoiceNumber"),
-                    ReceiptAmount = dr.GetDecimal("PayAmount"),
+                    ReceiptAmount = dr.GetDecimal("ReceiptAmount"),
                 };
             }
         }

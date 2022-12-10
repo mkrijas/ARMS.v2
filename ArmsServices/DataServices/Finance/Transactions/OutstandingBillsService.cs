@@ -73,6 +73,11 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID)
+        {
+            throw new NotImplementedException();
+        }
+
         public IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
