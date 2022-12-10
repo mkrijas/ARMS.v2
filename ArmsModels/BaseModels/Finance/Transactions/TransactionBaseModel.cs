@@ -24,6 +24,8 @@ namespace ArmsModels.BaseModels
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
         public string Narration { get; set; }
+        public int? AuthLevelId { get; set; }
+        public string AuthStatus { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 

@@ -1,0 +1,239 @@
+﻿@page "/Sale"
+@inject ISaleService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+@using Inventory
+
+
+
+<MudGrid Spacing="4">
+   <MudItem xs="12">
+        <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
+           
+
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">Sale</MudText>
+                <MudTooltip Text="New Sales">
+                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+               <MudButton  Variant="Variant.Filled" @onclick="@(()=> Verified(1))" Size="Size.Small" >UnVerified Sale</MudButton>
+                
+               <MudButton  Style="margin-left:10px" Variant="Variant.Filled" @onclick="@(()=> Verified(2))" Size="Size.Small" Color="Color.Default">Verified Sale</MudButton>
+              
+                <MudSpacer></MudSpacer>
+               
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.PartyInfo.TradeName)" InitialDirection="SortDirection.Ascending">TradeName</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
+               <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
+             <MudTh><MudTableSortLabel SortBy="new Func<SaleModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
+            
+                
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="GrnNO">@context.PartyInfo.TradeName</MudTd>
+                <MudTd DataLabel="EntryDate">@context.TotalAmount</MudTd>
+                <MudTd DataLabel="EntryDate">@context.DocumentDate?.ToShortDateString()</MudTd>
+             
+                  <MudTd DataLabel="GrnNO">@context.DocumentNumber</MudTd>
+             
+                <MudTd DataLabel="">
+                   
+                    @if(@context.AuthLevelId==null)
+                    {
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                  
+                    }
+                    @if (@context.AuthLevelId!= 99)
+                    {
+                    <MudFab @onclick="@(()=> OpenDialogVerify(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                        
+                    }
+                    <MudFab @onclick="@(()=> OpenDialogView(context))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+                   
+                    
+                  
+                    </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+    </MudGrid>
+
+
+@code {
+
+    private SaleModel model = new SaleModel();
+    private List<SaleModel> collection = new List<SaleModel>();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    string bgcolor {get; set;} = "00f";
+
+    private string searchTax = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = new();
+        GetAll(1);
+    }
+
+    private  async Task GetAll(int val)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        if (val == 1)
+        {
+            collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
+        }
+        else
+        {
+            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
+
+        }
+
+
+    }   
+    private  void Verified(int val)
+    {
+
+        GetAll(val);
+
+    }   
+
+    private async Task OpenDialog(SaleModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        parms.Add("IsReadOnly",false);
+        parms.Add("IsView",false);
+        var dialog =  DialogService.Show<SaleDialog>(tds.SID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetAll(1);
+
+
+        }
+    }
+    private async Task OpenDialogView(SaleModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        parms.Add("IsReadOnly",true);
+        parms.Add("IsView",true);
+        var dialog =  DialogService.Show<SaleDialog>(tds.SID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetAll(1);
+
+
+        }
+    }
+     private async Task OpenDialogVerify(SaleModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        parms.Add("IsReadOnly",true);
+        parms.Add("IsView",false);
+        var dialog =  DialogService.Show<SaleDialog>(tds.SID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetAll(1);
+
+
+        }
+    }
+
+    private void Delete(SaleModel tx)
+    {
+        Iservice.Delete(tx.SID, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll(1);
+    }
+    private async Task Approve(SaleModel tpm)
+    {
+        //var parameters = new DialogParameters();
+        //parameters.Add("ContentText", "Are you sure you want to Approve this TaxPurchase,Purchase ID:"+tpm.PID+"?");
+        //parameters.Add("ButtonText", "Confirm");
+        //parameters.Add("Color", Color.Success);
+        //var dialog=DialogService.Show<ConfirmDialog>("Confirm", parameters);
+        //var result = await dialog.Result;
+
+
+        //if (!result.Cancelled)
+        //{
+        //    var authprov = await auth.GetAuthenticationStateAsync();
+        //    var user = authprov.User;
+        //    tpm.UserInfo.UserID = user.Identity.Name;
+        //    try
+        //    {
+
+        //        Iservice.Approve(tpm.PID.Value,tpm.UserInfo.UserID);
+
+        //        snackbar.Add("Approved", Severity.Success);
+
+        //        GetAll();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        snackbar.Add(ex.Message, Severity.Warning);
+        //    }
+        //}
+
+    }
+    private void GetAccountDetails(SaleModel tpm)
+    {
+        //int MID = tpm.MID.Value;
+        //DialogParameters parms = new DialogParameters();
+        //parms.Add("MID", MID);
+        //DialogService.Show<AccountInfoDialog>("MID", parms,maxWidth);
+    }
+    public async Task  openGrn()
+    {
+        //PurchaseOrderModel tds = new();
+        //var authprov = await auth.GetAuthenticationStateAsync();
+        //var user = authprov.User;
+
+        //DialogParameters parms = new DialogParameters();
+       
+        //var dialog =  DialogService.Show<InventoryGrnViewDialog>("GRN",parms,maxWidth);
+        //var result = await dialog.Result;
+        //   if(!result.Cancelled)
+        //{   
+           
+        //        GetAll();
+            
+
+        //}
+    }
+
+  
+
+    
+
+}
