@@ -1,6 +1,7 @@
 ﻿@page "/Receipt"
 @using Microsoft.Extensions.Configuration
 @inject IReceiptService Iservice
+@inject IPartyService partyIservice
 @inject IOutstandingBillsService OutstandingIservice
 @inject ICostCenterService costIservice
 @inject TruckDataArrayModel data
@@ -21,49 +22,71 @@
 <MudPaper>
     <MudContainer>
         <MudGrid Spacing="4">
-@*
+            @*
             <MudItem xs="12" md="10">
-                <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Customer"></PartySelector>
+            <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Customer"></PartySelector>
             </MudItem>
             <MudItem xs="12" md="2">
-                <MudButton @onclick="OpenOtstandingBills" Variant="Variant.Filled" Color="Color.Primary">Search</MudButton>
+            <MudButton @onclick="OpenOtstandingBills" Variant="Variant.Filled" Color="Color.Primary">Search</MudButton>
             </MudItem>*@
-            <MudItem  xs="12" md="3">
-               <MudSelect Label="Select Party" @bind-Value="nbusiness" T="string" SelectedValuesChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in NatureOfBusiness)
-                            {
-                                <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
-                            }
-                        </MudSelect>
-               </MudItem>
-            <MudItem  xs="12" md="4">
-                @if(nbusiness=="Supplier")
+            <MudItem xs="12" md="3">
+                <MudSelect Label="Select Party" @bind-Value="nbusiness" T="string" SelectedValuesChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    @foreach (var ditem in NatureOfBusiness)
+                    {
+                        <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                @if (nbusiness == "Supplier")
                 {
-                <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Supplier"></PartySelector>
+                    <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Supplier"></PartySelector>
                 }
-                 @if(nbusiness=="Customer")
+                @if (nbusiness == "Customer")
                 {
-                <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Customer"></PartySelector>
+                    <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Customer"></PartySelector>
                 }
-                 @if(nbusiness=="Renter")
+                @if (nbusiness == "Renter")
                 {
-                <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Renter"></PartySelector>
+                    <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Renter"></PartySelector>
                 }
-               </MudItem>
-               
-                <MudItem  xs="12" md="3">
+            </MudItem>
+
+            <MudItem xs="12" md="3">
+
+                @if (nbusiness == "Supplier")
+                {
                      <MudSelect Label="NatureOfBusiness" @bind-Value="model.NatureOfTransaction" T="string" SelectedValuesChanged="nTransactionchanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            <MudSelectItem Value="@("Deposit")" />
-                            <MudSelectItem Value="@("Receipt")" />
-                            <MudSelectItem Value="@("Advance")" />
-                        </MudSelect>
-                </MudItem>
+                    <MudSelectItem Value="@("Deposit")" />
+                    <MudSelectItem Value="@("Payable")" />
+                    <MudSelectItem Value="@("Prepayment")" />
+                </MudSelect>
+                }
+                @if (nbusiness == "Customer")
+                {
+                    <MudSelect Label="NatureOfBusiness" @bind-Value="model.NatureOfTransaction" T="string" SelectedValuesChanged="nTransactionchanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    <MudSelectItem Value="@("Receivable")" />
+                    <MudSelectItem Value="@("Deposit")" />
+                    <MudSelectItem Value="@("Prepayment")" />
+                </MudSelect>
+                }
+                @if (nbusiness == "Renter")
+                {
+                    <MudSelect Label="NatureOfBusiness" @bind-Value="model.NatureOfTransaction" T="string" SelectedValuesChanged="nTransactionchanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    <MudSelectItem Value="@("Deposit")" />
+                    <MudSelectItem Value="@("Rent")" />
+                    <MudSelectItem Value="@("Other")" />
+                </MudSelect>
+                }
+
                
-            @if (model.NatureOfTransaction == "Receipt")
+            </MudItem>
+
+            @if (Isbill)
             {
 
-                <MudItem  xs="12" md="2">
-                    <MudButton @onclick="OpenOtstandingBills" Variant="Variant.Filled" Color="Color.Primary" >Search</MudButton>
+                <MudItem xs="12" md="2">
+                    <MudButton @onclick="OpenOtstandingBills" Variant="Variant.Filled" Color="Color.Primary">Search</MudButton>
                 </MudItem>
             }
 
@@ -75,78 +98,87 @@
 <MudPaper Class="@value">
     <MudContainer>
         <MudGrid>
-            @if(Isbill){
-            <MudItem xs="12">
-                <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
-                    <thead>
-                        <tr>
-                            <th>Invoice info</th>
-                            <th>Accounting Info</th>
-                            <th>Branch</th>
-                            <th>ReceiptAmount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in billsReceipt)
-                        {
+            @if (Isbill)
+            {
+                <MudItem xs="12">
+                    <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+                        <thead>
                             <tr>
-                                <td>@item.InvoiceNumber - @item.InvoiceDate?.ToShortDateString()</td>
-                                <td>@item.DocNumber - @item.DocDate?.ToShortDateString()</td>
-                                <td>@item.BranchName</td>
-                                <td> <MudTextField T="decimal?" @bind-Value="item.ReceiptAmount" TextChanged="calcTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
-
+                                <th>Invoice info</th>
+                                <th>Accounting Info</th>
+                                <th>Branch</th>
+                                <th>ReceiptAmount</th>
                             </tr>
-                        }
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td>Total:@model.TotalAmount</td>
-                        </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in billsReceipt)
+                            {
+                                <tr>
+                                    <td>@item.InvoiceNumber - @item.InvoiceDate?.ToShortDateString()</td>
+                                    <td>@item.DocNumber - @item.DocDate?.ToShortDateString()</td>
+                                    <td>@item.BranchName</td>
+                                    <td> <MudTextField T="decimal?" @bind-Value="item.ReceiptAmount" TextChanged="calcTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
+
+                                </tr>
+                            }
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>Total:@model.TotalAmount</td>
+                            </tr>
 
 
-                    </tbody>
-                </MudSimpleTable>
-            </MudItem>
+                        </tbody>
+                    </MudSimpleTable>
+                </MudItem>
             }
             <MudItem xs="12" md="12">
-               @* <MudSelect Label="Select ReceiptType" @bind-Value="model.ReceiptType" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                    <MudSelectItem Value="@("Advance")" />
-                    <MudSelectItem Value="@("Deposit")" />
-                    <MudSelectItem Value="@("Settlement")" />
+                @* <MudSelect Label="Select ReceiptType" @bind-Value="model.ReceiptType" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                <MudSelectItem Value="@("Advance")" />
+                <MudSelectItem Value="@("Deposit")" />
+                <MudSelectItem Value="@("Settlement")" />
                 </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="3">
+                </MudItem>
+                <MudItem xs="12" md="3">
                 <MudSelect Label="Select ReceiptMode" @bind-Value="model.ReceiptMode" TextChanged="ReceiptModeChange" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                    <MudSelectItem Value="@("Cash")" />
-                    <MudSelectItem Value="@("Bank")" />
+                <MudSelectItem Value="@("Cash")" />
+                <MudSelectItem Value="@("Bank")" />
 
                 </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="3">
+                </MudItem>
+                <MudItem xs="12" md="3">
                 <MudSelect Label="Select ReceiptTool" ReadOnly="@readvalue" TextChanged="ReceiptToolChange" @bind-Valu="model.ReceiptTool" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                    @foreach (var item in data.BankTools)
-                    {
-                        <MudSelectItem Value="@item">@item</MudSelectItem>
-                    }
+                @foreach (var item in data.BankTools)
+                {
+                <MudSelectItem Value="@item">@item</MudSelectItem>
+                }
 
                 </MudSelect>*@
 
-                        <PaymentCodeSelector @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
+                <PaymentCodeSelector @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
 
 
             </MudItem>
-            <MudItem xs="12" md="6">
+            <MudItem xs="12" md="4">
 
                 <MudDatePicker Label="Effective Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EffectiveDate" DateFormat="dd/MM/yyyy" />
 
 
             </MudItem>
-            <MudItem xs="12" md="6">
+            <MudItem xs="12" md="4">
 
                 <MudTextField @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
 
             </MudItem>
+            @if (!Isbill)
+            {
+                <MudItem xs="12" md="4">
+
+                    <MudTextField @bind-Value="model.TotalAmount" Label="TotalAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
+
+                </MudItem>
+            }
             <MudItem xs="12" md="3">
 
                 <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
@@ -192,12 +224,12 @@
     private List<OutstandingPaymentModel> collection = new List<OutstandingPaymentModel>();
     public string value = "invisible";
     public bool readvalue = true;
-    public string nbusiness="Supplier";
+    public string nbusiness = "Supplier";
     public bool checkread = false;
     public string status = null;
-      private bool Isbill = false;
+    private bool Isbill = false;
     ProformaInvoiceModel pmodel = new();
-     private AccountRuleDefinitionModel accountRuleDefinitionModel = new();
+    private AccountRuleDefinitionModel accountRuleDefinitionModel = new();
     public bool Basic_CheckBox2 { get; set; } = false;
     private HashSet<OutstandingPaymentModel> selectedItems1 = new HashSet<OutstandingPaymentModel>();
     private List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
@@ -205,7 +237,7 @@
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
-    private List<string> NatureOfBusiness = new List<string>() { "Supplier", "Customer", "Renter"};
+    private List<string> NatureOfBusiness = new List<string>() { "Supplier", "Customer", "Renter" };
 
     protected override void OnInitialized()
     {
@@ -213,21 +245,26 @@
         dimension = dimensionIservice.Select().ToList();
         // GetOutstandingBill();
     }
-     private void nbusinesschanged()
+    private void nbusinesschanged()
     {
         StateHasChanged();
     }
     private void nTransactionchanged()
     {
-        if(model.NatureOfTransaction!="Payment")
+        if (model.NatureOfTransaction == "Payable")
         {
-            value="visible";
-            Isbill = false;
+            value = "visible";
+            Isbill = true;
+        }
+        else if (model.NatureOfTransaction == "Receivable")
+        {
+            value = "visible";
+            Isbill = true;
         }
         else
         {
-            value="invisible";
-            Isbill = true;
+            value = "visible";
+            Isbill = false;
         }
     }
     public void ReceiptToolChange()
@@ -266,7 +303,7 @@
     private async Task OpenOtstandingBills()
     {
         DialogParameters parms = new DialogParameters();
-        parms.Add("PartyID", model.PartyInfo.PartyID);        
+        parms.Add("PartyID", model.PartyInfo.PartyID);
         var dialog = DialogService.Show<OutstandingBillView>("Outstanding Bill", parms, maxWidth);
         var result = await dialog.Result;
 
@@ -318,6 +355,54 @@
         model.ReceiptArdCode = accountRuleDefinitionModel.ArdCode;
         model.ReceiptTool = accountRuleDefinitionModel.BankTools;
         model.BankCharges = accountRuleDefinitionModel.BankCharges;
+        if (nbusiness == "Supplier")
+        {
+            if (model.NatureOfTransaction=="Deposit")
+            {
+                model.PartyCoaID = partyIservice.GetVendorDepositCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction=="Payable")
+            {
+                model.PartyCoaID = partyIservice.GetVendorPayableCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction=="Prepayment")
+            {
+                model.PartyCoaID = partyIservice.GetVendorPrepaymentCoaID(model.PartyInfo.PartyID);
+            }
+           
+        }
+        if (nbusiness == "Customer")
+        {
+            if (model.NatureOfTransaction=="Receivable")
+            {
+                model.PartyCoaID = partyIservice.GetCustomerReceivableCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction=="Deposit")
+            {
+                model.PartyCoaID = partyIservice.GetCustomerDepositCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction=="Prepayment")
+            {
+                model.PartyCoaID = partyIservice.GetCustomerPrepaymentCoaID(model.PartyInfo.PartyID);
+            }
+        }
+        if (nbusiness == "Renter")
+        {
+           
+             if (model.NatureOfTransaction=="Rent")
+            {
+                model.PartyCoaID = partyIservice.GetRenterRentCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction=="Deposit")
+            {
+                model.PartyCoaID = partyIservice.GetRenterDepositCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction=="Other")
+            {
+                model.PartyCoaID = partyIservice.GetRenterOtherCoaID(model.PartyInfo.PartyID);
+            }
+        }
+        // model.PartyCoaID=model.PartyInfo.
         model.UserInfo.UserID = user.Identity.Name;
         model.BranchID = brancID;
         model.NatureOfTransaction = "Receipt";
