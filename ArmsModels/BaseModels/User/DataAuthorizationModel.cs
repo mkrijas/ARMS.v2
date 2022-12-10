@@ -67,4 +67,10 @@ namespace ArmsModels.BaseModels
         public string Description { get; set; }        
         public bool IsApproval { get; set; }
     }
+    public class DataApprovedStatus
+    {
+        public bool IsApprove { get; set; }
+        public string Remarks { get; set; }
+       
+    }
 }

@@ -150,6 +150,8 @@ namespace ArmsServices.DataServices
                 PayerContactNo = dr.GetString("PayerContactNo"),
                 ReceiptCoaID = dr.GetInt32("CoaID"),                
                 Reference=dr.GetString("Reference"),
+                AuthLevelId = dr.GetInt32("AuthLevelId"),
+                AuthStatus = dr.GetString("AuthStatus"),
                 BranchID = dr.GetInt32("BranchID"),                
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
