@@ -166,7 +166,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@IsRealized", model.IsRealized),
                new SqlParameter("@EffectiveDate", model.EffectiveDate),
                new SqlParameter("@RecordStatus", model.UserInfo.RecordStatus),
-               new SqlParameter("@TimeStamp", model.UserInfo.TimeStampField),
                new SqlParameter("@Bills", model.Bills.ToDataTable()),
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
