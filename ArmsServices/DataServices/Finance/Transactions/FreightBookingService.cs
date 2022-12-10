@@ -495,12 +495,13 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Approve]", parameters);
         }
 
-        public int? ReverseProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks)
+        public int? ReverseProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks,int DocumnetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ProformaInvoiceID", ProformaInvoiceID),
                new SqlParameter("@UserID", userID),
+               new SqlParameter("@DocumnetID", DocumnetID),
                new SqlParameter("@Remarks", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Reverse]", parameters);
@@ -524,6 +525,11 @@ namespace ArmsServices.DataServices
                 };
             }
             return new GstModel();
+        }
+
+        public int? ReverseProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks)
+        {
+            throw new NotImplementedException();
         }
     }
 
