@@ -87,7 +87,7 @@ namespace Views
             services.AddScoped<IBankAccountService, BankAccountService>();            
             services.AddScoped<IPartyService, PartyService>();            
             services.AddScoped<IOpTranService, OpTranService>();
-            services.AddScoped<IAssetDocumentService, AssetDocumentService>();
+            services.AddScoped<ITruckDocumentService, TruckDocumentService>();
             services.AddScoped<IExpenseMappingServices, ExpenseMappingServices>();
             
                  services.AddScoped<ITripFuelService, TripFuelService>();

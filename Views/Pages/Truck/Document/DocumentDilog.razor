@@ -1,0 +1,75 @@
+﻿@inject ITruckDocumentService Iservice
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+
+
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudCardHeader>
+                    
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField @bind-Value="@model.DocumentTypeName" Label="Document Type" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.DocumentTypeName)"></MudTextField>
+                   
+                   
+                    <MudTextField @bind-Value="@model.WarnBefore" Label="Warn Before" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.WarnBefore)" Adornment="Adornment.End" AdornmentText="Days"></MudTextField>
+                    <MudTextField @bind-Value="@model.BlockAfter" Label="Block After" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.BlockAfter)" Adornment="Adornment.End" AdornmentText="Days"></MudTextField>
+                    <br />
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+                </MudCardContent>
+            </EditForm>
+        
+
+
+@code {
+
+    [Parameter]
+    public TruckDocumentTypeModel model { get; set; }
+    private string searchDocumentType = "";
+    private List<TruckDocumentTypeModel>
+    collection = new ();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        //try
+        //{
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        try
+        {
+            model = Iservice.UpdateDocumentType(model);
+
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.DocumentTypeID == model.DocumentTypeID))
+            {
+                collection[collection.FindIndex(x => x.DocumentTypeID == model.DocumentTypeID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new ();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+     MudDialog.Cancel();
+    }
+
+    private void Edit(int? id)
+    {
+        model = collection.First(x=> x.DocumentTypeID == id);
+    }
+    private void Delete(int? id)
+    {
+        Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+    }
+  }
