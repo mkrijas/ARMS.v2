@@ -9,63 +9,63 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface ITruckDocumentService
+    public interface IAssetDocumentService
     {
-        TruckDocumentModel Update(TruckDocumentModel model);
+        AssetDocumentModel Update(AssetDocumentModel model);
         int SaveFilePath(string link, int? id);
-        TruckDocumentModel SelectByID(int? ID);
+        AssetDocumentModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
-        int Remove(TruckDocumentModel model);
-        IEnumerable<TruckDocumentModel> SelectByPeriod(DateTime? startDate,DateTime? endDate);
-        IEnumerable<TruckDocumentModel> SelectWithPast(int? TruckID);
-        IEnumerable<TruckDocumentModel> SelectByTruck(int? TruckID);
-        IEnumerable<TruckDocumentTypeModel> GetDocumentTypes();
-        TruckDocumentTypeModel UpdateDocumentType(TruckDocumentTypeModel model);
-        IEnumerable<TruckDocumentModel> ValidatePeriod(TruckDocumentModel model);
-        bool IsValid(TruckDocumentModel model,DateTime? DateToCheck);
+        int Remove(AssetDocumentModel model);
+        IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate,DateTime? endDate);
+        IEnumerable<AssetDocumentModel> SelectWithPast(int? AssetID);
+        IEnumerable<AssetDocumentModel> SelectByAsset(int? AssetID);
+        IEnumerable<AssetDocumentTypeModel> GetDocumentTypes();
+        AssetDocumentTypeModel UpdateDocumentType(AssetDocumentTypeModel model);
+        IEnumerable<AssetDocumentModel> ValidatePeriod(AssetDocumentModel model);
+        bool IsValid(AssetDocumentModel model,DateTime? DateToCheck);
 
 
     }
 
-    public class TruckDocumentService : ITruckDocumentService
+    public class AssetDocumentService : IAssetDocumentService
     {
         IDbService Iservice;
-        public TruckDocumentService(IDbService iservice)
+        public AssetDocumentService(IDbService iservice)
         {
             Iservice = iservice;
         }
-        public TruckDocumentModel Update(TruckDocumentModel model)
+        public AssetDocumentModel Update(AssetDocumentModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AttachedDocument", model.AttachedDocument),
                new SqlParameter("@EndDate", model.EndDate),               
                new SqlParameter("@DocumentID", model.DocumentID),
-               new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
+               new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
                new SqlParameter("@StartDate", model.StartDate),                       
-               new SqlParameter("@TruckID", model.TruckID),
-               new SqlParameter("@ReferenceDate", model.ReferenceDate),
+               new SqlParameter("@AssetID", model.Asset.AssetID),
+               new SqlParameter("@ReferenceDate", model.InvoiceDate),
                new SqlParameter("@NotificationID", model.NotificationID),              
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Document.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Update]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
         }
 
-        public IEnumerable<TruckDocumentModel> ValidatePeriod(TruckDocumentModel model)
+        public IEnumerable<AssetDocumentModel> ValidatePeriod(AssetDocumentModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ValidatePeriod"),
                new SqlParameter("@EndDate", model.EndDate),               
-               new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
+               new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
                new SqlParameter("@StartDate", model.StartDate),
-               new SqlParameter("@TruckID", model.TruckID),
+               new SqlParameter("@AssetID", model.Asset.AssetID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Document.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -78,19 +78,19 @@ namespace ArmsServices.DataServices
                new SqlParameter("@LINK",link),
                new SqlParameter("@ID", id)
             };
-            return Iservice.ExecuteNonQuery("[usp.Truck.Document.FilePath]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Asset.Document.FilePath]", parameters);
         }
 
 
-        public TruckDocumentModel SelectByID(int? ID)
+        public AssetDocumentModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID) ,
                new SqlParameter("@Operation", "ByID"),
             };
-            TruckDocumentModel model = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Document.Select]", parameters))
+            AssetDocumentModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
             {
                 model = GetModel(dr);
             }
@@ -104,23 +104,23 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Truck.Document.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Asset.Document.Delete]", parameters);
         }
 
 
-        public int Remove(TruckDocumentModel model)
+        public int Remove(AssetDocumentModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TruckID", model.TruckID),
-               new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
+               new SqlParameter("@AssetID", model.Asset.AssetID),
+               new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Truck.Document.RemoveType]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Asset.Document.RemoveType]", parameters);
         }
 
 
-        public IEnumerable<TruckDocumentModel> SelectByPeriod(DateTime? startDate, DateTime? endDate)
+        public IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate, DateTime? endDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -128,53 +128,58 @@ namespace ArmsServices.DataServices
                new SqlParameter("@StartDate", startDate),
                new SqlParameter("@EndDate", endDate),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Document.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        public IEnumerable<TruckDocumentModel> SelectWithPast(int? TruckID)
+        public IEnumerable<AssetDocumentModel> SelectWithPast(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "WithPast"),
-                new SqlParameter("@TruckID", TruckID) ,
+                new SqlParameter("@AssetID", AssetID) ,
 
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Document.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        public IEnumerable <TruckDocumentModel> SelectByTruck(int? TruckID)
+        public IEnumerable <AssetDocumentModel> SelectByAsset(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TruckID", TruckID) ,
-               new SqlParameter("@Operation", "ByTruck"),
+               new SqlParameter("@AssetID", AssetID) ,
+               new SqlParameter("@Operation", "ByAsset"),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Document.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        private TruckDocumentModel GetModel(IDataRecord dr)
+        private AssetDocumentModel GetModel(IDataRecord dr)
         {
-            return new TruckDocumentModel
+            return new AssetDocumentModel
             {
                 AttachedDocument = dr.GetString("AttachedDocument"),
                 EndDate = dr.GetDateTime("EndDate"),                
                 DocumentID = dr.GetInt32("DocumentID"),
-                DocumentTypeID = dr.GetInt32("DocumentTypeID"),
-                ReferenceDate = dr.GetDateTime("ReferenceDate"),
-                StartDate = dr.GetDateTime("StartDate"),                
-                TruckID = dr.GetInt32("TruckID"),
-                NotificationID = dr.GetInt32("NotificationID"),
-                DocumentTypeName = dr.GetString("DocumentTypeName"),
-
+                DocumentType = new AssetDocumentTypeModel()
+                {
+                    DocumentTypeID = dr.GetInt32("DocumentTypeID"),
+                    DocumentTypeName = dr.GetString("DocumentTypeName"),
+                },
+                InvoiceDate = dr.GetDateTime("ReferenceDate"),
+                StartDate = dr.GetDateTime("StartDate"),     
+                Asset = new AssetModel()
+                {
+                    AssetID = dr.GetInt32("AssetID"),
+                },
+                NotificationID = dr.GetInt32("NotificationID"),    
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -184,11 +189,11 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public IEnumerable<TruckDocumentTypeModel> GetDocumentTypes()
+        public IEnumerable<AssetDocumentTypeModel> GetDocumentTypes()
         {           
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.DocumentType.Select]", null))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentType.Select]", null))
             {
-                yield return new TruckDocumentTypeModel() {                 
+                yield return new AssetDocumentTypeModel() {                 
                 DocumentTypeName = dr.GetString("DocumentTypeName"),
                 BlockAfter = dr.GetInt32("BlockAfter"),                
                 DocumentTypeID = dr.GetInt32("DocumentTypeID"),
@@ -203,7 +208,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public TruckDocumentTypeModel UpdateDocumentType(TruckDocumentTypeModel model)
+        public AssetDocumentTypeModel UpdateDocumentType(AssetDocumentTypeModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {               
@@ -213,9 +218,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@WarnBefore", model.WarnBefore),                       
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.DocumentType.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentType.Update]", parameters))
             {
-                model = new TruckDocumentTypeModel()
+                model = new AssetDocumentTypeModel()
                 {                   
                     DocumentTypeName = dr.GetString("DocumentTypeName"),
                     BlockAfter = dr.GetInt32("BlockAfter"),                   
@@ -232,7 +237,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public bool IsValid(TruckDocumentModel model, DateTime? DateToCheck)
+        public bool IsValid(AssetDocumentModel model, DateTime? DateToCheck)
         {
             if (!(model.StartDate?.Date <= DateToCheck?.Date && model.EndDate?.Date >= DateToCheck?.Date))
             {
