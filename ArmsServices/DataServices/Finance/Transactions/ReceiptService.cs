@@ -173,6 +173,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyCode", model.PartyInfo.PartyCode),
                new SqlParameter("@PartyCoaID", model.PartyCoaID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@TimeStamp", model.UserInfo.TimeStampField),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };

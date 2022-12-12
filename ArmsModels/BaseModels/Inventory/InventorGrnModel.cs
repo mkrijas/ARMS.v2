@@ -64,7 +64,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? EntryDate { get; set; }       
         [Required]
-        public int? PartyBranchID { get; set; }
+        public int? PartyID { get; set; }
+        public string PartyCode { get; set; }
         public virtual string PartyName { get; set; }
         public decimal? TotalValue { get; set; }
         public string Reference { get; set; }
