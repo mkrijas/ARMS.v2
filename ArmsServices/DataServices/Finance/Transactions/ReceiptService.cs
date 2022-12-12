@@ -166,7 +166,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@IsRealized", model.IsRealized),
                new SqlParameter("@EffectiveDate", model.EffectiveDate),
                new SqlParameter("@RecordStatus", model.UserInfo.RecordStatus),
-               new SqlParameter("@TimeStamp", model.UserInfo.TimeStampField),
                new SqlParameter("@Bills", model.Bills.ToDataTable()),
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
@@ -174,6 +173,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyCode", model.PartyInfo.PartyCode),
                new SqlParameter("@PartyCoaID", model.PartyCoaID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@TimeStamp", model.UserInfo.TimeStampField),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
