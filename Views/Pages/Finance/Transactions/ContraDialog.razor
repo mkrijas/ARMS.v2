@@ -129,9 +129,12 @@
                         </MudSelect>
                  </MudItem>
                   <MudItem xs="12"md="12">
-                      <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                  @*    <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
                                      SearchFunc="SearchAccountsHome" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
-              
+              *@
+                <MudAutocomplete  T="AccountRuleDefinitionModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Accounts" @bind-Value="accountRuleDefinitionH" ResetValueOnEmptyText="true"
+                 Clearable="true" SearchFunc="SearchAccountsH"  ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
+
                  @* <PaymentCodeSelector Value="accountRuleDefinitionModel" PaymentMode="@model.ContraModeHome" LabelName="Select Accounts"></PaymentCodeSelector>*@
                                  </MudItem>
 </MudCardContent>
@@ -160,9 +163,12 @@
                         </MudSelect>
                  </MudItem>
                   <MudItem xs="12"md="12">
-                      <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount1" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                   @*   <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount1" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
                                      SearchFunc="SearchAccountsOther" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
-              
+              *@
+                 <MudAutocomplete  T="AccountRuleDefinitionModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Accounts" @bind-Value="accountRuleDefinitionO" ResetValueOnEmptyText="true"
+                 Clearable="true" SearchFunc="SearchAccountsO"  ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
+
                       </MudItem></MudCardContent>
         </MudCard>
     </MudItem>
@@ -265,7 +271,8 @@
     //public string customstr { get; set; } = "Bank";
     //public string customstr1 { get; set; } = "Bank";
     private ChartOfAccountModel SelectedAccount = null;
-   
+    private AccountRuleDefinitionModel accountRuleDefinitionH = new();
+    private AccountRuleDefinitionModel accountRuleDefinitionO = new();
     private ChartOfAccountModel SelectedAccount1 = null;
     public bool Ispayment = true;
     public bool bnktl = true;
@@ -281,6 +288,26 @@
         await Task.Delay(5);
         int coID =Convert.ToInt32(configuration.GetSection("Data")[model.ContraModeHome]);
         return accountService.SelectChildren(coID);
+    }
+    private async Task<IEnumerable<AccountRuleDefinitionModel>> SearchAccountsH(string searchString)
+    {
+        await Task.Delay(5);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int branchID = int.Parse(brancIDString);
+        //int coID =Convert.ToInt32(configuration.GetSection("Data")[model.ContraModeHome]);
+        return accountService.GetPaymentCodes(branchID,model.ContraModeHome).ToList();;
+    }
+    private async Task<IEnumerable<AccountRuleDefinitionModel>> SearchAccountsO(string searchString)
+    {
+        await Task.Delay(5);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int branchID = int.Parse(brancIDString);
+        //int coID =Convert.ToInt32(configuration.GetSection("Data")[model.ContraModeHome]);
+        return accountService.GetPaymentCodes(branchID,model.ContraModeOther).ToList();;
     }
     private async Task<IEnumerable<ChartOfAccountModel>> SearchAccountsOther(string searchString)
     {
@@ -337,7 +364,7 @@
 
             }
         }
-         SelectedAccount1 = new();
+        SelectedAccount1 = new();
     }
     protected override async Task OnInitializedAsync()
     {
@@ -388,8 +415,10 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        model.CoaIDHome = SelectedAccount.CoaID;
-        model.CoaIDOther = SelectedAccount1.CoaID;
+        model.CoaIDHome = accountRuleDefinitionH.CoaID;
+        model.ArdCodeHome = accountRuleDefinitionH.ArdCode;
+        model.CoaIDOther = accountRuleDefinitionO.CoaID;
+        model.ArdCodeOther = accountRuleDefinitionO.ArdCode;
         model.BranchID = brancID;
         model.IsPayment = Ispayment;
        

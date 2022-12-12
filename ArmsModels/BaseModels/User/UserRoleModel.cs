@@ -27,6 +27,7 @@ namespace ArmsModels.BaseModels
         public UserModel User { get; set; }
         public BranchModel Branch { get; set; }
         public RoleModel Role { get; set; }
+        //public UserInfoModel UserInfo_ { get; set; }
     }
 
   

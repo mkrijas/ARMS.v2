@@ -142,6 +142,7 @@ namespace Views
             services.AddScoped<IFreightBillingService, FreightBillingService>();
             services.AddScoped<IReceiptService, ReceiptService>();
             services.AddScoped<IDrCrNoteService, DrCrNoteService>();
+            services.AddScoped<ISaleService, SaleService>();
 
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();

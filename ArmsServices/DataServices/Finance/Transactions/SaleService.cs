@@ -20,7 +20,7 @@ namespace ArmsServices.DataServices
         IEnumerable<SaleModel> SelectByPeriod(DateTime? begin,DateTime? end);
         IEnumerable<SaleExpenseModel> GetParticulars(int? SID);
         IEnumerable<SaleItemModel> GetItems(int? PID);
-        int Approve(int? SID, string UserID);
+        int Approve(int? SID, string UserID,string Remarks);
         int Reverse(int? SID, string UserID);
     }
 
@@ -33,15 +33,16 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Approve(int? SID, string UserID)
+        public int Approve(int? SID, string UserID,string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@SID", SID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 1)
+               new SqlParameter("@Status", 1),
+               new SqlParameter("@Remarks", Remarks)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sale.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Approve]", parameters);
         }
 
         public int Delete(int? ID, string UserID)
@@ -52,7 +53,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
               
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sale.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Delete]", parameters);
         }
 
         public IEnumerable<SaleExpenseModel> GetParticulars(int? SID)
@@ -63,7 +64,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@SID", SID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
             {
                 yield return new SaleExpenseModel()
                 {
@@ -87,10 +88,10 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "GetItems"),
-               new SqlParameter("@PID", PID),
+               new SqlParameter("@SID", PID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
             {
                 yield return new SaleItemModel()
                 {
@@ -117,7 +118,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 2)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sale.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Approve]", parameters);
         }
 
         public IEnumerable<SaleModel> Select()
@@ -127,7 +128,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -141,7 +142,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID")
             };
             SaleModel model = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
             {
                 model = GetModel(dr);
             }
@@ -156,7 +157,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyID", PartyID),               
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -171,7 +172,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@end", end),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -197,7 +198,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sale.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Update]", parameters))
             {
                 model = GetModel(dr);
             }
@@ -212,12 +213,14 @@ namespace ArmsServices.DataServices
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 AdditionalTCS = dr.GetDecimal("AdditionalTCS"),
                 BranchID = dr.GetInt32("BranchID"),               
-                DocumentDate = dr.GetDateTime("DocumentDate"),
-                DocumentNumber = dr.GetString("DocumentNumber"),
+                DocumentDate = dr.GetDateTime("DocDate"),
+                DocumentNumber = dr.GetString("DocNumber"),
                 IsCredit = dr.GetBoolean("IsCredit"),
                 MID = dr.GetInt32("MID"),
                 CostCenter = dr.GetInt32("CostCenter"),
-                Dimension = dr.GetInt32("Dimension"),                
+                Dimension = dr.GetInt32("Dimension"),
+                AuthLevelId = dr.GetInt32("AuthLevelId"),
+                AuthStatus = dr.GetString("AuthStatus"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
                 PartyInfo = new PartyModel()
