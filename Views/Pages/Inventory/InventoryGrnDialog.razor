@@ -1,4 +1,5 @@
-﻿@inject IInventoryGrnService Iservice
+﻿@using Views.Pages.Finance.Transactions
+@inject IInventoryGrnService Iservice
 @inject IPartyService partyIservice
 @inject IInventoryItemService itemIservice
 @inject IStoreService storeIservice
@@ -17,9 +18,13 @@
             <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
             Create Goods Reciept Note
         </MudText>
+           @if (IsView)
+        {
+            <MudText Color="Color.Error">@model.AuthStatus</MudText>
+        }
     </TitleContent>
     <DialogContent>
-        <MudContainer Style="min-height:300px;max-height: 800px;">
+        <MudContainer Style="min-height:300px;max-height: 450px;overflow-y: scroll">
             <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
@@ -30,14 +35,14 @@
                     </MudItem>
 
                     <MudItem xs="12" md="4">
-                        <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EntryDate" DateFormat="dd/MM/yyyy" />
+                        <MudDatePicker ReadOnly="IsReadOnly" Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EntryDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                        <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
 
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudSelect Label="Select Store" @bind-Value="model.StoreID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        <MudSelect ReadOnly="IsReadOnly" Label="Select Store" @bind-Value="model.StoreID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in store)
                             {
                                 <MudSelectItem Value="@ditem.StoreID">@ditem.StoreName</MudSelectItem>
@@ -45,7 +50,7 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                        <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
 
                     </MudItem>
                     <MudItem xs="12" md="12">
@@ -81,15 +86,15 @@
                                         <td>@item.ItemGstVal</td>
 
                                         <td>
-                                            @if (model.ApprovedInfo.RecordStatus != 3)
+                                            @if (!IsReadOnly)
                                             {
                                                 <MudFab Color="Color.Error" @onclick="@(()=> Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                                             }
                                         </td>
                                     </tr>
                                 }
-                                @if (model.ApprovedInfo.RecordStatus != 1 && model.POID == null)
-                                {
+                               @if (!IsReadOnly)
+                               {
                                     <tr>
                                         <td>
 
@@ -118,7 +123,14 @@
 
 
                     </MudItem>
+                      <MudItem xs="12">
+                        @if ((IsReadOnly) && (!IsView))
+                        {
+                            <AutherizationStatusComponent DocTypeID="16" DocumentID="model.GrnID" OnApprove="IsApproveData"></AutherizationStatusComponent>
 
+                        }
+
+                    </MudItem>
 
                 </MudGrid>
             </EditForm>
@@ -128,15 +140,21 @@
         @*   <MudButton OnClick="DeleteTaxRate">Delete Tax Rate</MudButton>
             <MudButton OnClick="AddTaxRate">Add More Tax Rate</MudButton>*@
 
-        @if (model.ApprovedInfo.RecordStatus != 3 && model.ApprovedInfo.RecordStatus != 1)
+        @if (!IsReadOnly)
         {
             @if (model.POID != null)
             {
                 <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Reverse">Reverse</MudButton>
             }
 
-            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Cancel</MudButton>
+
             <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        }
+        @if (IsReadOnly)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Close</MudButton>
+
         }
     </DialogActions>
 </MudDialog>
@@ -146,6 +164,10 @@
 @code {
     [Parameter]
     public InventoryGrnModel model { get; set; }
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+    [Parameter]
+    public bool IsView { get; set; }
     private List<InventoryGrnModel> collection = new List<InventoryGrnModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
@@ -173,10 +195,12 @@
         if (model.GrnID != null)
         {
             items = Iservice.GetItemEntries(model.GrnID.Value).ToList();
+            partyinfo = partyIservice.SelectByID(model.PartyID);
         }
         else if (model.POID != null)
         {
             items = model.Entries;
+            partyinfo = partyIservice.SelectByID(model.PartyID);
         }
         else
         {
@@ -187,6 +211,9 @@
     private async Task OnValidSubmit(EditContext context)
     {
         model.Entries = items;
+        model.PartyCode = partyinfo.PartyCode;
+        model.PartyID=partyinfo.PartyID;
+        model.PartyName = partyinfo.TradeName;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
@@ -204,6 +231,18 @@
             snackbar.Add(ex.Message, Severity.Warning);
         }
         MudDialog.Close(model);
+
+    }
+      protected async Task IsApproveData(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            Iservice.Approve(model.GrnID.Value, model.UserInfo.UserID);
+            snackbar.Add("Approved Successfully", Severity.Success);
+        }
 
     }
 
@@ -238,7 +277,7 @@
     }
     private void AddItems()
     {
-        model.PartyBranchID = partyinfo.PartyID;
+        model.PartyID = partyinfo.PartyID;
         InventoryItemEntryModel ientry = new();
         ientry.ItemID = SelectedItems.InventoryItemID;
 

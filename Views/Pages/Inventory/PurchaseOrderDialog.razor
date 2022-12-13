@@ -1,4 +1,6 @@
-﻿@inject IPurchaseOrderService Iservice
+﻿@using Views.Pages.Finance.Transactions
+@inject IPurchaseOrderService Iservice
+@inject IPartyService partyIservice
 @inject IGstUsageIDService testIservice
 @inject IInventoryItemService itemIservice
 @inject IStoreService storeIservice
@@ -16,6 +18,10 @@
             <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
             Create Purchase Order
         </MudText>
+          @if (IsView)
+        {
+            <MudText Color="Color.Error">@model.AuthStatus</MudText>
+        }
     </TitleContent>
     <DialogContent>
         <MudContainer Style="min-height:300px;max-height: 450px;overflow-y: scroll">
@@ -28,14 +34,14 @@
                         </MudItem>
                        
                     <MudItem xs="12" md="4">
-                        <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EntryDate"  DateFormat="dd/MM/yyyy" />
+                        <MudDatePicker  ReadOnly="IsReadOnly" Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EntryDate"  DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="4">
-                         <MudTextField @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                         <MudTextField  ReadOnly="IsReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
 
                     </MudItem>
                     <MudItem xs="12" md="4">
-                          <MudSelect Label="Select Store" @bind-Value="model.StoreID" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                          <MudSelect  ReadOnly="IsReadOnly" Label="Select Store" @bind-Value="model.StoreID" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in store)
                             {
                                 <MudSelectItem Value="@ditem.StoreID">@ditem.StoreName</MudSelectItem>
@@ -43,7 +49,7 @@
                         </MudSelect>
                     </MudItem>
                      <MudItem xs="12" md="12">
-                         <MudTextField @bind-Value="model.Remarks" Lines="2" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                         <MudTextField  ReadOnly="IsReadOnly" @bind-Value="model.Remarks" Lines="2" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                         
                     </MudItem>
                     <MudItem xs="12" md="12">
@@ -78,15 +84,15 @@
                             <td>@item.ItemRate</td>
                             <td>@item.ItemGstVal</td>
 
-                             <td> @if ((model.ApprovedInfo.RecordStatus !=3) && (model.ApprovedInfo.RecordStatus !=1))
-                                            {
+                             <td>  @if (!IsReadOnly)
+                                            {         
                                                 <MudFab  Color="Color.Error" @onclick="@(()=> Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                                             }
                                         </td>
                         </tr>
                     }
-                    @if (model.ApprovedInfo.RecordStatus !=3 && @model.ApprovedInfo.RecordStatus!=1)
-                                {
+                    @if (!IsReadOnly)
+                                {           
                                     <tr>
                                                                                 <td>
                                             
@@ -117,7 +123,14 @@
 
          
            </MudItem>
-          
+           <MudItem xs="12">
+                        @if ((IsReadOnly) && (!IsView))
+                        {
+                            <AutherizationStatusComponent DocTypeID="17" DocumentID="model.POID" OnApprove="IsApproveData"></AutherizationStatusComponent>
+
+                        }
+
+                    </MudItem>
 
 
 
@@ -134,11 +147,17 @@
         @*   <MudButton OnClick="DeleteTaxRate">Delete Tax Rate</MudButton>
             <MudButton OnClick="AddTaxRate">Add More Tax Rate</MudButton>*@
        
-        @if (model.ApprovedInfo.RecordStatus != 3 && @model.ApprovedInfo.RecordStatus!=1)
+        @if (!IsReadOnly)
         {
-            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Cancel</MudButton>
+
          
             <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        }
+         @if (IsReadOnly)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Close</MudButton>
+
         }
     </DialogActions>
 </MudDialog>
@@ -148,6 +167,10 @@
 @code {
     [Parameter]
     public PurchaseOrderModel model { get; set; }
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+    [Parameter]
+    public bool IsView { get; set; }
     private List<PurchaseOrderModel> collection = new List<PurchaseOrderModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
@@ -163,7 +186,7 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private PartyModel SelectedParty = new();
-   
+
     private async Task<IEnumerable<InventoryItemModel>> SearchItems(string searchString)
     {
         return await Task.FromResult(itm.Where(x => x.InventoryItemCode.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
@@ -174,7 +197,8 @@
         itm = itemIservice.SearchByDescription(string.Empty).ToList();
         if(model.POID!=null)
         {
-            items = Iservice.GetItemEntries(model.POID.Value).ToList(); 
+            items = Iservice.GetItemEntries(model.POID.Value).ToList();
+            partyinfo = partyIservice.SelectByID(model.PartyID);
         }
         else
         {
@@ -182,7 +206,18 @@
         }    
     }
 
+     protected async Task IsApproveData(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            Iservice.Approve(model.POID.Value, model.UserInfo.UserID);
+            snackbar.Add("Approved Successfully", Severity.Success);
+        }
 
+    }
 
     private void OnValidSubmit(EditContext context)
     {
@@ -194,6 +229,9 @@
         else
         {
             model.Entries = items;
+            model.PartyCode = partyinfo.PartyCode;
+            model.PartyID=partyinfo.PartyID;
+            model.PartyName = partyinfo.TradeName;
             MudDialog.Close(model);
         }
     }
@@ -222,7 +260,7 @@
     private void AddItems()
     {
 
-        model.PartyBranchID = partyinfo.PartyID;
+        model.PartyID = partyinfo.PartyID;
         InventoryItemEntryModel ientry = new();
         ientry.ItemID = SelectedItems.InventoryItemID;
         

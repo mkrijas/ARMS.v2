@@ -69,6 +69,8 @@ namespace ArmsModels.BaseModels
         public virtual string PartyName { get; set; }
         public decimal? TotalValue { get; set; }
         public string Reference { get; set; }
+        public int? AuthLevelId { get; set; }
+        public string AuthStatus { get; set; }
         public string Remarks { get; set; }
         public UserInfoModel ApprovedInfo { get; }
         public UserInfoModel UserInfo { get; set; }

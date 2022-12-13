@@ -116,7 +116,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var item in model.Expenses)
+                                @foreach (var item in exitems)
                                 {
                                     <tr>
                                        
@@ -130,10 +130,10 @@
                                         <td>@item.TDS</td>
                                         <td>@item.BillReference</td>
                                         <td>
-                                            @* @if (model.ApprovedInfo.RecordStatus != 3)*@
-                                            {
+                                           @* @if (model.ApprovedInfo.RecordStatus != 3)
+                                            {*@
                                                 <MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                                            }
+                                            @*}*@
                                         </td>
                                         
                                     </tr>
@@ -150,12 +150,13 @@
                                         </MudSelect>
                                         </td>*@
                                         <td colspan="3">
-                                             <MudSelect Label="Items" Value="SelectedItems" T="GstUsageCodeModel" ValueChanged="UsageChanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" ToStringFunc="@(e => e?.UsageCode)" >
+                                           @*  <MudSelect Label="Items" Value="SelectedItems" T="GstUsageCodeModel" ValueChanged="UsageChanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" ToStringFunc="@(e => e?.UsageCode)" >
                                             @foreach (var ditem in usageID)
                                             {
                                                 <MudSelectItem Value="@ditem">@ditem.UsageCode</MudSelectItem>
                                             }
-                                        </MudSelect>
+                                        </MudSelect>*@
+                                         <UsageCodeSelector @bind-Value=gstusge></UsageCodeSelector>
                                         </td>
                                        
                                         <td colspan="2">
@@ -228,7 +229,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var item in model.Items)
+                                @foreach (var item in TxItitems)
                                 {
                                     <tr>
                                        
@@ -247,9 +248,9 @@
                                         <td>
 
                                            @*  @if (model.ApprovedInfo.RecordStatus != 3)*@
-                                            {
+                                            
                                                 <MudFab Color="Color.Error" @onclick="@(()=> DeleteItem(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                                            }
+                                            
                                         </td>
                                         
                                     </tr>
@@ -316,10 +317,10 @@
     </DialogContent>
     <DialogActions>
       @* @if(model.ApprovedInfo.RecordStatus!=3 && model.ApprovedInfo.RecordStatus!=1)*@
-                    {
+                    
              <MudButton OnClick="Cancel">Cancel</MudButton>
             <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-                    }
+                    
     </DialogActions>
 </MudDialog>
 
@@ -335,6 +336,7 @@
     private List<PartyModel> partyList = new();
     private List<GstUsageCodeModel> usageID = new();
     private List<CostCenterModel> costCenter = new();
+    public GstUsageCodeModel gstusge = new();
     private List<DimensionModel> dimension = new();
     public GstUsageCodeModel SelectedItems = new();
     public InventoryItemModel SelectedPurchaseItems = new();
@@ -355,6 +357,7 @@
         brancID = int.Parse(brancIDString);
         model.BranchID = brancID;
         model.NonStoreInventory = true;
+        model.NatureOfTransaction = "TaxPurchase";
         model.TotalAmount = 0;
         itm = itemIservice.SearchByDescription(string.Empty).ToList();
         if(model.GRNID==null)
@@ -386,12 +389,27 @@
                 tpi.CoaID = igm.MappedNonInventoryPurchaseHead;
                 GstItemModel gstItem =gstitemIservice.SelectByItem(item.ItemID.Value,DateTime.Now);
                 decimal? taxRate = gstItem.TaxRate;
-                decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyInfo.PartyID.Value,tpi.CoaID.Value);
+                decimal? tdsRate = 0;
+                try
+                {
+                    tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyInfo.PartyID.Value,tpi.CoaID.Value);
 
+                }
+                catch(Exception ex)
+                {
+                    tdsRate = 0;
+                }
 
                 BranchModel br = branchIservice.SelectByID(brancID);
-
-                string partyGstNo = (model.PartyInfo.GstNo).Substring(0,2);
+                string partyGstNo = null;
+                try
+                {
+                    partyGstNo = (model.PartyInfo.GstNo).Substring(0,2);
+                }
+                catch
+                {
+                    partyGstNo = null;
+                }
                 string branchGstNo = (br.GstNo).Substring(0,2);
 
                 if(partyGstNo==branchGstNo)
@@ -448,17 +466,20 @@
     }
     public void AddItems()
     {
-        TaxPurchaseExpenseModel ientry = new();
-        ientry.BranchID = brancID;
-        ientry.UsageCode = Expmodel.UsageCode;
-        ientry.CoaID = Expmodel.CoaID;
-        ientry.Amount = Expmodel.Amount;
-        ientry.SGST = Expmodel.SGST;
-        ientry.CGST = Expmodel.CGST;
-        ientry.IGST = Expmodel.IGST;
-        ientry.TDS = Expmodel.TDS;
-        ientry.BillReference = Expmodel.BillReference;
-        model.Expenses.Add(ientry);
+        //TaxPurchaseExpenseModel ientry = new();
+        //ientry.BranchID = brancID;
+        //ientry.UsageCode = Expmodel.UsageCode;
+        //ientry.CoaID = Expmodel.CoaID;
+        //ientry.Amount = Expmodel.Amount;
+        //ientry.SGST = Expmodel.SGST;
+        //ientry.CGST = Expmodel.CGST;
+        //ientry.IGST = Expmodel.IGST;
+        //ientry.TDS = Expmodel.TDS;
+        //ientry.BillReference = Expmodel.BillReference;
+        Expmodel.UsageCode=gstusge.UsageCode;
+        Expmodel.CoaID = gstusge.CoaID;
+        Expmodel.BranchID = brancID;
+        exitems.Add(Expmodel);
 
         decimal tvalue = 0;
         if (Expmodel.IGST == null)
@@ -480,20 +501,20 @@
     public void AddTaxItems()
     {
 
-        TaxPurchaseItemModel ientry = new();
-        ientry.ItemID = TaxItemModel.ItemID;
-        ientry.ItemRate = TaxItemModel.ItemRate;
-        ientry.ItemQty = TaxItemModel.ItemQty;
-        ientry.CoaID = TaxItemModel.CoaID;
-        ientry.SGST = TaxItemModel.SGST;
-        ientry.CGST = TaxItemModel.CGST;
-        ientry.IGST = TaxItemModel.IGST;
-        ientry.TDS = TaxItemModel.TDS;
-        ientry.Amount = TaxItemModel.Amount;
+        //TaxPurchaseItemModel ientry = new();
+        //ientry.ItemID = TaxItemModel.ItemID;
+        //ientry.ItemRate = TaxItemModel.ItemRate;
+        //ientry.ItemQty = TaxItemModel.ItemQty;
+        //ientry.CoaID = TaxItemModel.CoaID;
+        //ientry.SGST = TaxItemModel.SGST;
+        //ientry.CGST = TaxItemModel.CGST;
+        //ientry.IGST = TaxItemModel.IGST;
+        //ientry.TDS = TaxItemModel.TDS;
+        //ientry.Amount = TaxItemModel.Amount;
 
 
 
-        model.Items.Add(ientry);
+        TxItitems.Add(TaxItemModel);
         decimal tvalue = 0;
         try
         {
@@ -524,7 +545,7 @@
 
     private async Task taxRates()
     {
-        if(SelectedItems.UsageCode!=null)
+        if(gstusge.UsageCode!=null)
         {
             if(model.PartyInfo==null)
             {
@@ -532,13 +553,24 @@
                 return;
             }
 
-            decimal? taxRate =(decimal)usageIservice.GetGstRate(Expmodel.UsageCode,DateTime.Now);
-            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyInfo.PartyID.Value,Expmodel.CoaID.Value);
-
+            decimal? taxRate =(decimal)usageIservice.GetGstRate(gstusge.UsageCode,DateTime.Now);
+            decimal? tdsRate = 0;
+            try
+            {
+                tdsRate = (decimal)tdsIService.GetTdsRate(model.PartyInfo.PartyID.Value, gstusge.CoaID.Value).Value;
+            }
+            catch (Exception ex)
+            {
+                tdsRate = 0;
+            }
 
             BranchModel br = branchIservice.SelectByID(brancID);
 
-            string partyGstNo = (model.PartyInfo.GstNo).Substring(0,2);
+            string partyGstNo = null;
+            if (model.PartyInfo.GstNo != null)
+            {
+                partyGstNo = (model.PartyInfo.GstNo).Substring(0, 2);
+            }
             string branchGstNo = (br.GstNo).Substring(0,2);
 
             if(partyGstNo==branchGstNo)
@@ -620,12 +652,25 @@
 
             GstItemModel gstItem =gstitemIservice.SelectByItem(TaxItemModel.ItemID.Value,DateTime.Now);
             decimal? taxRate = gstItem.TaxRate;
-            decimal? tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyInfo.PartyID.Value,TaxItemModel.CoaID.Value);
+            decimal? tdsRate = 0;
+            try
+            {
+                tdsRate =(decimal)tdsIService.GetTdsRate(model.PartyInfo.PartyID.Value,TaxItemModel.CoaID.Value);
+
+            }
+            catch(Exception ex)
+            {
+                tdsRate = 0;
+            }
 
 
             BranchModel br = branchIservice.SelectByID(brancID);
-
-            string partyGstNo = (model.PartyInfo.GstNo).Substring(0,2);
+            string partyGstNo = null;
+            if(model.PartyInfo.GstNo!=null)
+            {
+                partyGstNo = (model.PartyInfo.GstNo).Substring(0,2);
+            }
+           
             string branchGstNo = (br.GstNo).Substring(0,2);
 
             if(partyGstNo==branchGstNo)
@@ -659,7 +704,7 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
-        model.NatureOfTransaction = "Purchase";
+        
         try
         {
 
