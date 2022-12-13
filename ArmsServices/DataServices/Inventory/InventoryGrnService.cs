@@ -109,7 +109,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@GrnID",model.GrnID),
                new SqlParameter("@GrnNo",model.GrnNo),               
                new SqlParameter("@EntryDate",model.EntryDate),
-               new SqlParameter("@PartyBranchID",model.PartyID),
+               //new SqlParameter("@PartyBranchID",model.PartyID),
                new SqlParameter("@TotalValue",model.TotalValue),
                new SqlParameter("@Reference",model.Reference),
                new SqlParameter("@Remarks",model.Remarks),
