@@ -126,6 +126,8 @@ namespace ArmsServices.DataServices
                 ArdCodeOther = dr.GetString("ArdCodeOther"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 EntryReference = dr.GetString("Reference"),
+                AuthLevelId = dr.GetInt32("AuthLevelId"),
+                AuthStatus = dr.GetString("AuthStatus"),
                 BranchID = dr.GetInt32("BranchID"),
                 IsPayment = dr.GetBoolean("IsPayment"),
                 PaymentTool = dr.GetString("PaymentTool"),

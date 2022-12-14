@@ -33,13 +33,20 @@
                 <MudTd DataLabel="Party">@context.PartyName</MudTd>
                 <MudTd DataLabel="">
                    
-                    @if(@context.ApprovedInfo.RecordStatus!=3 &&@context.ApprovedInfo.RecordStatus!=1)
+                     @if(@context.AuthLevelId==null)
                     {
-                      <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Check" title="Approve" Size="Size.Small" IconSize="Size.Small" />
+                    //  <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Check" title="Approve" Size="Size.Small" IconSize="Size.Small" />
                       <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" title="Edit" Size="Size.Small" IconSize="Size.Small" />
                      <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" title="Delete" Size="Size.Small" IconSize="Size.Small" />
                   
                     }
+                    @if (@context.AuthLevelId!= 99)
+                    {
+                    <MudFab @onclick="@(()=> OpenDialogVerify(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                        
+                    }
+                    <MudFab @onclick="@(()=> OpenDialogView(context))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+                   
 
 
                     </MudTd>
@@ -74,12 +81,8 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        collection = new List<PurchaseOrderModel>();
-        foreach (var item in Iservice.SelectPending(brancID))
-        {
-
-            collection.Add(item);
-        }
+        collection = Iservice.SelectPending(brancID).ToList();
+       
 
 
     }
@@ -99,6 +102,8 @@
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model",tds);
+         parms.Add("IsReadOnly",false);
+        parms.Add("IsView",false);
         var dialog =  DialogService.Show<PurchaseOrderDialog>(tds.POID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
@@ -121,6 +126,44 @@
                 snackbar.Add(ex.Message, Severity.Warning);
             }
 
+        }
+    }
+
+
+     private async Task OpenDialogVerify(PurchaseOrderModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        parms.Add("IsReadOnly",true);
+        parms.Add("IsView",false);
+        var dialog =  DialogService.Show<PurchaseOrderDialog>(tds.POID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+           
+            GetAll();
+        }
+    }
+     private async Task OpenDialogView(PurchaseOrderModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+         parms.Add("IsReadOnly",true);
+        parms.Add("IsView",true);
+        var dialog =  DialogService.Show<PurchaseOrderDialog>(tds.POID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+           
+            GetAll();
         }
     }
 
