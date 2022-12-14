@@ -31,6 +31,8 @@ namespace ArmsModels.BaseModels
         public long? TpeID { get; set; }
         public int? PID { get; set; }
         [Required]
+        public int ? RID { get; set; }
+        [Required]
         public int? BranchID { get; set; }
         [Required]
         public string UsageCode { get; set; }

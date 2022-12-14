@@ -120,6 +120,11 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Reverse]", parameters);
         }
 
+        public int Reverse(int? PID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
+
         public IEnumerable<TaxPurchaseModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
