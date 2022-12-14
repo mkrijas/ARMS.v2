@@ -109,15 +109,20 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Reverse(int? PID, string UserID)
+        public int Reverse(int? PID, string UserID,String Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PID", PID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 2)
+               new SqlParameter("@Remarks", Remarks)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Reverse]", parameters);
+        }
+
+        public int Reverse(int? PID, string UserID)
+        {
+            throw new NotImplementedException();
         }
 
         public IEnumerable<TaxPurchaseModel> Select()

@@ -31,6 +31,8 @@ namespace ArmsModels.BaseModels
         public long? TpeID { get; set; }
         public int? PID { get; set; }
         [Required]
+        public decimal ? GstRate { get; set; }
+        [Required]
         public int? BranchID { get; set; }
         [Required]
         public string UsageCode { get; set; }
@@ -49,6 +51,7 @@ namespace ArmsModels.BaseModels
     {
         public long? TpiID { get; set; }
         public int? PID { get; set; }
+        public decimal? GstRate { get; set; }
         public int? ItemID { get; set; }
         public decimal? ItemRate { get; set; }
         public decimal? ItemQty { get; set; }
