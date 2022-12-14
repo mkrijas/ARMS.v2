@@ -26,7 +26,7 @@ namespace ArmsModels.BaseModels
     {
         public UserBranchRoleModel()
         {
-            UserInfo = new();
+            UserInfo = new SharedModels.UserInfoModel();
         }
         public UserModel User { get; set; }
         public BranchModel Branch { get; set; }

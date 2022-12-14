@@ -109,15 +109,15 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Reverse(int? PID, string UserID)
+        public int Reverse(int? PID, string UserID,String Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PID", PID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 2)
+               new SqlParameter("@Remarks", Remarks)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Reverse]", parameters);
         }
 
         public IEnumerable<TaxPurchaseModel> Select()
@@ -193,7 +193,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InvoiceNo", model.InvoiceNo),
                new SqlParameter("@IsCredit", model.IsCredit),
                new SqlParameter("@CostCenter", model.CostCenter),
-                new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@Items", model.Items.ToDataTable()),
                new SqlParameter("@NonStoreInventory", model.NonStoreInventory),
                new SqlParameter("@PartyID", model.PartyInfo.PartyID),

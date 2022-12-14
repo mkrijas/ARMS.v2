@@ -117,7 +117,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", RequestID)
+               new SqlParameter("@ID", RequestID),
                new SqlParameter("@Operation", "GetAssets")
             };
 
