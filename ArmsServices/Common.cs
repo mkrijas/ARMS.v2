@@ -71,7 +71,19 @@ namespace ArmsServices
                 Console.WriteLine(ex.Message);
                 throw;
             }
-        }      
+        }
+
+        public static DataTable ToDataTable(this List<int> items)
+        {
+            DataTable dataTable = new DataTable("IntCol");                         
+            dataTable.Columns.Add("IntCol", typeof(int));
+            foreach (int item in items)
+            {              
+                dataTable.Rows.Add(item);
+            }
+            return dataTable;
+        }
+
 
         public static DataTable ToDataTable<T>(this List<T> items)
         {
