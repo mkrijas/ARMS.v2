@@ -69,15 +69,17 @@ namespace ArmsServices.DataServices
 
         public AssetDocumentRequestModel Update(AssetDocumentRequestModel model)
         {
+            var cc = model.Assets.Select(x => x.AssetID.Value).ToList();
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+                
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
                new SqlParameter("@StartDate", model.StartDate),
                new SqlParameter("@EndDate", model.EndDate),
                new SqlParameter("@Remarks", model.Remarks),
-               new SqlParameter("@Assets", model.Assets.Select(x=> x.AssetID).ToList().ToDataTable() ),
+               new SqlParameter("@Assets", model.Assets.Select(x=> x.AssetID.Value).ToList().ToDataTable() ),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
