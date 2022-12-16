@@ -11,7 +11,7 @@ namespace ArmsServices.DataServices
     public interface IAssetDocumentRequestService
     {
         AssetDocumentRequestModel Update(AssetDocumentRequestModel model); 
-        IEnumerable<AssetDocumentRequestModel> SelectPending();
+        IEnumerable<AssetDocumentRequestModel> SelectPendingByBranch(int? Branch);
         IEnumerable<AssetModel> GetRequestedDocuments(int? RequestID);
         AssetDocumentRequestModel SelectDocumentRequest(int? ID);
         int Delete(int? ID, string UserID);        
@@ -37,11 +37,12 @@ namespace ArmsServices.DataServices
         }
       
 
-        public IEnumerable<AssetDocumentRequestModel> SelectPending()
+        public IEnumerable<AssetDocumentRequestModel> SelectPendingByBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByID")
+               new SqlParameter("@Operation", "ByBranch"),
+               new SqlParameter("@ID", BranchID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Select]", parameters))
@@ -73,11 +74,11 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
+               new SqlParameter("@DocumentType", model.DocumentType.DocumentTypeID),
                new SqlParameter("@StartDate", model.StartDate),
                new SqlParameter("@EndDate", model.EndDate),
                new SqlParameter("@Remarks", model.Remarks),
-               new SqlParameter("@Assets", model.Assets.Select(x=> x.AssetID).ToList().ToDataTable() ),
+               new SqlParameter("@Assets", model.Assets.Select(x=> x.AssetID.Value).ToList().ToDataTable() ),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
