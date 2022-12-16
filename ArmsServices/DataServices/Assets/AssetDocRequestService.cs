@@ -82,6 +82,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PaymentMemoID", model.PaymentMemoID),
                new SqlParameter("@Assets", model.Assets.Select(x=> x.AssetID.Value).ToList().ToDataTable() ),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@RecordStatus", 3),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Update]", parameters))
