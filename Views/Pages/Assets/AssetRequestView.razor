@@ -11,20 +11,16 @@
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
-
-
             <ToolBarContent>
                 <MudText Typo="Typo.h6"> Add New Asset Request.</MudText>
                 <MudTooltip Text="New Asset Request">
                     <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew())"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-
-
                 <MudSpacer></MudSpacer>
 
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentRequestModel, object>(x=> x.DocumentType)" InitialDirection="SortDirection.Ascending">Document Type</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentRequestModel, object>(x=> x.DocumentType.DocumentTypeName)" InitialDirection="SortDirection.Ascending">Document Type</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentRequestModel, object>(x=> x.StartDate)" InitialDirection="SortDirection.Ascending">Start Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentRequestModel, object>(x=> x.EndDate)" InitialDirection="SortDirection.Ascending">EndDate</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentRequestModel, object>(x=> x.Remarks)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
@@ -33,7 +29,7 @@
                 @*<MudTh>Actions</MudTh>*@
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="DocumentType">@context.DocumentType</MudTd>
+                <MudTd DataLabel="DocumentType">@context.DocumentType.DocumentTypeName</MudTd>
                 <MudTd DataLabel="StartDate">@context.StartDate</MudTd>
                 <MudTd DataLabel="EndDate">@context.EndDate</MudTd>
                 <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
@@ -71,18 +67,7 @@
 
     private List<AssetDocumentRequestModel> collection = new();
 
-    //private void OpenDialog()
-    //{
-    //    AssetDocumentRequestModel AssetRequest = new();
-    //    AssetRequest.BankID = 12323213;
-    //    AssetRequest.ArdCode = "cksdfjhdshfgs";
-    //    //AssetRequest.ID= 1;
 
-    //    var model = new DialogParameters { ["model"] = AssetRequest };
-
-    //    var options = new DialogOptions { CloseOnEscapeKey = true };
-    //    DialogService.Show<AssetRequestDialog>("Simple Dialog", model, options);
-    //}
     protected override void OnParametersSet()
     {
         //the param will be set now
@@ -92,7 +77,7 @@
     private async Task OpenDialogAddNew()
     {
         AssetDocumentRequestModel AssetRequest = new();
-        
+
         AssetRequest.UserInfo = new();
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
@@ -122,14 +107,15 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        
+
         AssetRequest.UserInfo = new();
         if (AssetRequest.UserInfo != null)
         {
             AssetRequest.UserInfo.UserID = user.Identity.Name;
         }
         AssetRequest.BranchID = int.Parse(brancIDString);
-
+        AssetRequest.Assets = Iservice.GetRequestedDocuments(AssetRequest.ID).ToList();
+        
         var model = new DialogParameters { ["model"] = AssetRequest };
 
         var options = new DialogOptions { CloseOnEscapeKey = true };
@@ -170,21 +156,33 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        
+
         model.UserInfo = new();
         if(model.UserInfo!=null)
         {
-        model.UserInfo.UserID = user.Identity.Name;  
+            model.UserInfo.UserID = user.Identity.Name;  
         }
         model.BranchID = int.Parse(brancIDString);
-        
 
-        //foreach (var item in Iservice.Select(model.BranchID, true))
-        //{
-        //    collection.Add(item);
-        //}
+        foreach (var item in Iservice.SelectPending())
+        {
+            collection.Add(item);
+        }
 
 
     }
+
+        //private void OpenDialog()
+    //{
+    //    AssetDocumentRequestModel AssetRequest = new();
+    //    AssetRequest.BankID = 12323213;
+    //    AssetRequest.ArdCode = "cksdfjhdshfgs";
+    //    //AssetRequest.ID= 1;
+
+    //    var model = new DialogParameters { ["model"] = AssetRequest };
+
+    //    var options = new DialogOptions { CloseOnEscapeKey = true };
+    //    DialogService.Show<AssetRequestDialog>("Simple Dialog", model, options);
+    //}
 
 }
