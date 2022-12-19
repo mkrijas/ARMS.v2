@@ -83,7 +83,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 2)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Reciept.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Reciept.Reverse]", parameters);
         }
 
         public IEnumerable<ReceiptModel> Select(int? BranchID)

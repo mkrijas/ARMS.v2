@@ -140,8 +140,8 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ID", ID),
                new SqlParameter("@Remarks", Remarks),
-               new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 2)
+               new SqlParameter("@UserID", UserID)
+             
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Reverse]", parameters);
         }

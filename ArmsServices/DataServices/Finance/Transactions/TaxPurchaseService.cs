@@ -21,7 +21,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? PID);
         IEnumerable<TaxPurchaseItemModel> GetItems(int? PID);
         int Approve(int? PID, string UserID);
-        int Reverse(int? PID, string UserID);
+        int Reverse(int? PID, string UserID,string Remarks);
     }
 
     public class TaxPurchaseService : ITaxPurchaseService
@@ -120,10 +120,10 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Reverse]", parameters);
         }
 
-        public int Reverse(int? PID, string UserID)
-        {
-            throw new NotImplementedException();
-        }
+        //public int Reverse(int? PID, string UserID)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         public IEnumerable<TaxPurchaseModel> Select()
         {

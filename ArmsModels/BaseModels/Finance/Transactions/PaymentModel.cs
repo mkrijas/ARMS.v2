@@ -18,33 +18,33 @@ namespace ArmsModels.BaseModels
     }
 
 
-    public class OutstandingBillsModel
-    {
-        public int? BoID { get; set; }
-        public string BillTransactionType { get; set; }
-        public int? BillTransactionID { get; set; }
-        public PartyModel PartyInfo { get; set; }
-        public decimal? InitialAmount { get; set; }
-        private decimal? _amount;
-        public decimal? OutstandingAmount {
-            get { return _amount; }
-            set
-            {
-                _amount = value;
-                if (value > 0)
-                    DrCr = "Dr";
-                else
-                    DrCr = "Cr";
-            } 
-        }
-        public string DrCr { get; private set; }
-        public string DocNumber { get; set; }
-        public virtual string BranchName { get; set; }
-        public virtual int? BranchID { get; set; }
-        public DateTime? DocDate { get; set; }
-        public string InvoiceNumber { get; set; }
-        public DateTime? InvoiceDate { get; set; }
-    }
+    //public class OutstandingBillsModel
+    //{
+    //    public int? BoID { get; set; }
+    //    public string BillTransactionType { get; set; }
+    //    public int? BillTransactionID { get; set; }
+    //    public PartyModel PartyInfo { get; set; }
+    //    public decimal? InitialAmount { get; set; }
+    //    private decimal? _amount;
+    //    public decimal? OutstandingAmount {
+    //        get { return _amount; }
+    //        set
+    //        {
+    //            _amount = value;
+    //            if (value > 0)
+    //                DrCr = "Dr";
+    //            else
+    //                DrCr = "Cr";
+    //        } 
+    //    }
+    //    public string DrCr { get; private set; }
+    //    public string DocNumber { get; set; }
+    //    public virtual string BranchName { get; set; }
+    //    public virtual int? BranchID { get; set; }
+    //    public DateTime? DocDate { get; set; }
+    //    public string InvoiceNumber { get; set; }
+    //    public DateTime? InvoiceDate { get; set; }
+    //}
 
 
     public class BillsPaidModel
