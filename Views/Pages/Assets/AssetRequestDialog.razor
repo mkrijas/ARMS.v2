@@ -1,0 +1,154 @@
+﻿@inject AuthenticationStateProvider auth
+@inject IAssetDocumentRequestService Iservice
+@inject IAssetDocumentService IDocumentService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add New asset request
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 300px; overflow-y: scroll">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+
+                <MudItem xs="12" md="12">
+
+                    <MudSelect T="int?" @bind-Value="@(model.DocumentType.DocumentTypeID)" Label="Select Document Type" HelperText="Document Type" Placeholder="Please Select">
+                        @foreach (AssetDocumentTypeModel item in DocumentTypes)
+                        {
+                            <MudSelectItem Value="@(item.DocumentTypeID)">@item.DocumentTypeName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudDatePicker Label="Start Date" @bind-Date="@(model.StartDate)" />
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudDatePicker Label="End Date" @bind-Date="@(model.EndDate)" />
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Remarks)"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="12">
+
+                    @foreach(var item in @PassedListAssets)
+                    {
+                        <MudGrid>
+                            <MudItem xs="6" md="6">
+                                @item.Description
+                            </MudItem>
+                            <MudItem xs="6" md="6">
+                                 <MudButton Style="align-content-end" Variant="Variant.Filled" Color="Color.Primary" OnClick="(() => DeleteAssets((item.AssetID != null ? (int)item.AssetID:0)))">Delete</MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    }
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <AssetSelector @bind-Value="SelectedAsset" PassedListAssets="PassedListAssets">
+                    </AssetSelector>
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SetAssets">ADD Selected</MudButton>
+                </MudItem>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-10">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+        [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+        [Parameter]
+        public AssetDocumentRequestModel model { get; set; } = new();
+
+    public AssetModel SelectedAsset { get; set; }
+    public List<AssetModel> PassedListAssets { get; set; }
+
+    //Dictionary<int?, string> TransNature = new Dictionary<int?, string>()
+    //{
+    //   (1,"Receipt"),
+    //   (-1,"Payment")
+    //};
+    List<AssetDocumentTypeModel> DocumentTypes = new();
+
+    public void SetAssets()
+    {
+        if (PassedListAssets == null)
+        {
+            PassedListAssets = new List<AssetModel>();
+        }
+        if (SelectedAsset != null && SelectedAsset.AssetID != 0 && (!PassedListAssets.Any(s => s.AssetID == SelectedAsset.AssetID)))
+        {
+            PassedListAssets.Add(SelectedAsset);
+            SelectedAsset = null;
+        }
+    }
+    public void DeleteAssets(int AssetId = 0)
+    {
+        if (AssetId != 0)
+        {
+            if (PassedListAssets != null && PassedListAssets.Where(s => s.AssetID == AssetId).Count() != 0)
+            {
+                if (PassedListAssets.Any(s => s.AssetID != AssetId))
+                {
+                    var itemToRemove = PassedListAssets.First(r => r.AssetID == AssetId);
+                    PassedListAssets.Remove(itemToRemove);
+
+                }
+                else
+                {
+                    PassedListAssets.Clear();
+                }
+            }
+        }
+    }
+    protected override void OnInitialized()
+    {
+        if(model.DocumentType == null)
+        {
+            model.DocumentType = new();
+        }
+        if (PassedListAssets == null)
+        {
+            PassedListAssets = new List<AssetModel>();
+            if (model != null && model.Assets != null && model.Assets.Count() != 0)
+            {
+                PassedListAssets.AddRange(model.Assets);
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        DocumentTypes = IDocumentService.GetDocumentTypes().ToList();
+    }
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public async Task Submit()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model != null)
+        {           
+            model.Assets = new();
+            model.Assets.AddRange(PassedListAssets);
+
+            model.UserInfo.UserID = user.Identity.Name;
+            Iservice.Update(model);
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

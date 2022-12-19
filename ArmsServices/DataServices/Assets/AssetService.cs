@@ -201,7 +201,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByParent"),
+               new SqlParameter("@Operation", null),
                new SqlParameter("@AssetID", ParentAssetID)
             };
 

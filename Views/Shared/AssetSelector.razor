@@ -1,0 +1,74 @@
+﻿@inject IAssetService Iasset
+
+@if(IsLoaded)
+{
+    <MudAutocomplete Class="@Class"  T="AssetModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Asset" @bind-Value="Value" ResetValueOnEmptyText="true"
+         Clearable="true" SearchFunc="SearchAsset" ToStringFunc="@(e => e == null ? null : $"{e.Description}")"></MudAutocomplete>
+
+}
+else
+{
+   <MudText> Loading..... </MudText> 
+}
+
+@code {
+    private List<AssetModel> AssetList = new();    
+
+    [Parameter]
+    public AssetModel Value
+    {
+        get => _value;
+        set
+        {
+            if (_value == value) return;
+            _value = value;
+            ValueChanged.InvokeAsync(value);
+        }
+    }
+
+    [Parameter]
+    public EventCallback<AssetModel> ValueChanged { get; set; }
+
+    [Parameter]
+    public string Class { get; set; }
+
+    private AssetModel _value;
+    private bool IsLoaded = false;
+
+    [Parameter]
+    public List<AssetModel> PassedListAssets { get; set; }
+
+    private async Task<IEnumerable<AssetModel>> SearchAsset(string searchString)
+    {
+        await Task.Delay(3);
+
+
+        if (PassedListAssets != null && PassedListAssets.Count() != 0)
+        {
+            var result = AssetList.Where(x => (!PassedListAssets.Any(g => g.AssetID == x.AssetID) )&& x.AssetCode.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+            Value = null;
+            return result;
+        }
+        else
+        {
+            return AssetList.Where(x => x.AssetCode.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+
+        }
+    }
+        
+  
+
+    protected override void OnInitialized()
+    {
+        if(PassedListAssets != null && PassedListAssets.Count() != 0)
+        {
+            AssetList = Iasset.GetAttachedAssets(null).Where(s=>!PassedListAssets.Any(g=>g.AssetID == s.AssetID)).ToList();
+        }
+        else
+        {
+        AssetList = Iasset.GetAttachedAssets(null).ToList();
+            
+        }
+        IsLoaded = true;
+    }
+}
