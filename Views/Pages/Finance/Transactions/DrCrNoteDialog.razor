@@ -1,5 +1,6 @@
-﻿@page "/DrCrNoteDialog"
+﻿@*@page "/DrCrNoteDialog"*@
 @inject IDrCrNoteService Iservice
+@inject IPartyService partyIservice
 @inject ITaxPurchaseService TaxIservice
 @inject IInventoryItemService itemIservice
 @inject IDimensionService dimensionIservice
@@ -14,311 +15,358 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
-<h3>DrCrNoteDialog</h3>
- <MudLink Href="DrCrNoteView" Underline="Underline.Always">DrCrNote Approve</MudLink>
+@*<h3>DrCrNoteDialog</h3>*@
+ @*<MudLink Href="DrCrNoteView" Underline="Underline.Always">DrCrNote Approve</MudLink>
+*@
 
-
-<MudPaper>
-    <MudContainer>
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Sales
+        </MudText>
+        @if (IsView)
+        {
+            <MudText Color="Color.Error">@model.AuthStatus</MudText>
+        }
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="min-height: 450px; max-height: 450px; overflow-y: scroll">
 <MudGrid Spacing="4">
    <MudItem  xs="12" md="2">
 
-        <MudSwitch @bind-Checked="drCrType" Color="Color.Primary" Converter="@(new CustomStringToBoolConverter())" > @(drCrType)</MudSwitch>
+        <MudSwitch ReadOnly="IsReadOnly" @bind-Checked="drCrType" Color="Color.Primary" Converter="@(new CustomStringToBoolConverter())" > @(drCrType)</MudSwitch>
             
    </MudItem>
-            <MudItem  xs="12" md="8">
-                <PartySelector @bind-Value="model.Party" ></PartySelector>
+             <MudItem  xs="12" md="4">
+                 <MudSelect Label="Select Party"  @bind-Value="nbusiness" T="string"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    @foreach (var ditem in PartyList)
+                    {
+                        <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
+                    }
+                </MudSelect>
 
                </MudItem>
-               <MudItem  xs="12" md="2">
-       <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Fetch</MudButton>
+            <MudItem  xs="12" md="4">
+
+                
+                @if (nbusiness == "Supplier")
+                {
+                    <PartySelector @bind-Value="model.Party" NatureOfBusiness="Supplier"></PartySelector>
+                }
+                @if (nbusiness == "Customer")
+                {
+                    <PartySelector @bind-Value="model.Party" NatureOfBusiness="Customer"></PartySelector>
+                }
+               </MudItem>
+                @if (!IsReadOnly)
+                {
+                    <MudItem  xs="12" md="2">
+                        <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Fetch</MudButton>
 
                </MudItem>
-           <MudItem  xs="12" md="6">  
-                <MudTextField @bind-Value="model.Reference" Label="Reference"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
-        </MudItem>
-            <MudItem  xs="12" md="6">  
-                 <MudTextField @bind-Value="model.ReasonCode" Label="ReasonCode"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ReasonCode)"></MudTextField>
-</MudItem>
-  <MudItem xs="12" md="12">
-                       <h6>Expenses</h6>
-                    </MudItem>
-  <MudItem xs="12" md="12">
-                          <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+               }
+            @if (Isvisible)
+            {
+
+                <MudItem  xs="12" md="6">  
+                    <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.Reference" Label="Reference"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                </MudItem>
+                <MudItem  xs="12" md="6">  
+                    <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.ReasonCode" Label="ReasonCode"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ReasonCode)"></MudTextField>
+                </MudItem>
+                <MudItem xs="12"md="4">
+
+                    <MudDatePicker ReadOnly="IsReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
 
 
-                            <thead>
-                               @* <tr>
+                </MudItem>
+                <MudItem xs="12"md="4">
+
+                    <MudSelect ReadOnly="IsReadOnly" Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        @foreach (var ditem in costCenter)
+                        {
+                            <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                </MudItem>
+                <MudItem xs="12"md="4">
+
+                    <MudSelect ReadOnly="IsReadOnly" Label="Select Dimension" @bind-Value="model.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
+                        @foreach (var ditem in dimension)
+                        {
+                            <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                </MudItem>
+                @*<MudItem xs="12"md="3">
+     <MudTextField @bind-Value="model.TotalAmount" ReadOnly="true" Label="TotalAmount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
+
+    </MudItem>*@
+                <MudItem xs="12"md="12">
+                    <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <h6>Expenses</h6>
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+
+
+                        <thead>
+                            @* <tr>
                                     <th></th>
                                     <th></th>
                                     <th></th>
                                     <th>Total</th>
                                     <th>@model.TotalValue</th>
                                 </tr>*@
+                            <tr>
+
+                                @*  <th>Branch</th>*@
+                                <th width="200px">UsageID</th>
+                                @* <th>CoaID</th>*@
+                                <th>Amount</th>
+                                <th>SGST</th>
+                                <th>CGST</th>
+                                <th>IGST</th>
+                                <th>TDS</th>
+                                <th>Bill</th>
+                                <th></th>
+
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in txexpenses)
+                            {
                                 <tr>
 
-                                  @*  <th>Branch</th>*@
-                                    <th width="200px">UsageID</th>
-                                    <th>CoaID</th>
-                                    <th>Amount</th>
-                                    <th>SGST</th>
-                                    <th>CGST</th>
-                                    <th>IGST</th>
-                                     <th>TDS</th>
-                                      <th>Bill</th>
-                                      <th></th>
-                                       
+                                    @*  <td>@item.BranchID</td>*@
+                                    <td>@item.UsageCode</td>
+                                    @* <td>@item.CoaID</td>*@
+                                    <td>@item.Amount</td>
+                                    <td>@item.SGST</td>
+                                    <td>@item.CGST</td>
+                                    <td>@item.IGST</td>
+                                    <td>@item.TDS</td>
+                                    <td>@item.BillReference</td>
+                                    <td>
+                                        @* <MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+*@
+                                    </td>
 
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in txexpenses)
-                                {
-                                    <tr>
-                                       
-                                      @*  <td>@item.BranchID</td>*@
-                                        <td>@item.UsageCode</td>
-                                        <td>@item.CoaID</td>
-                                        <td>@item.Amount</td>
-                                        <td>@item.SGST</td>
-                                        <td>@item.CGST</td>
-                                        <td>@item.IGST</td>
-                                        <td>@item.TDS</td>
-                                        <td>@item.BillReference</td>
-                                        
-                                    </tr>
-                                }
-                                
-                                  <tr>
-                                      @*  <td>
+                            }
 
-                                          <MudSelect Label="Select UsageID" @bind-Value="Expmodel.UsageID" T="st?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                                            @foreach (var ditem in dimension)
-                                            {
-                                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
-                                            }
-                                        </MudSelect>
-                                        </td>*@
-                                        <td>
-                                             <MudSelect  Value="SelectedItems" T="GstUsageCodeModel" ValueChanged="UsageChanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" ToStringFunc="@(e => e?.UsageCode)" >
-                                            @foreach (var ditem in usageID)
-                                            {
-                                                <MudSelectItem Value="@ditem">@ditem.UsageCode</MudSelectItem>
-                                            }
-                                        </MudSelect>
+                            @* <tr>
+
+                                        <td colspan="3">
+
+                                            <UsageCodeSelector @bind-Value=gstusge></UsageCodeSelector>
+
                                         </td>
-                                         <td>
-                                            <MudTextField @bind-Value="txexpense.CoaID"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.CoaID)"></MudTextField>
+
+                                        <td colspan="2">
+                                            <MudTextField Label="Amount" @bind-Value="txexpense.Amount" TextChanged="taxRates" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.Amount)"></MudTextField>
 
                                         </td>
                                         <td>
-                                            <MudTextField @bind-Value="txexpense.Amount" TextChanged="taxRates" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.Amount)"></MudTextField>
+                                            <MudTextField Label="SGST" @bind-Value="txexpense.SGST"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.SGST)"></MudTextField>
+                                        </td>
+                                        <td>
+                                            <MudTextField Label="CGST" @bind-Value="txexpense.CGST" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.CGST)"></MudTextField>
 
-                                        </td>
-                                        <td>
-                                            <MudTextField @bind-Value="txexpense.SGST"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.SGST)"></MudTextField>
-                                        </td>
-                                        <td>
-                                            <MudTextField @bind-Value="txexpense.CGST" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.CGST)"></MudTextField>
+                                        </td></tr>
+                                        <tr>
+                                          <td>
+                                            <MudTextField Label="IGST" @bind-Value="txexpense.IGST" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.IGST)"></MudTextField>
 
                                         </td>
                                           <td>
-                                            <MudTextField @bind-Value="txexpense.IGST" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.IGST)"></MudTextField>
+                                            <MudTextField Label="TDS" @bind-Value="txexpense.TDS" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.TDS)"></MudTextField>
 
                                         </td>
-                                          <td>
-                                            <MudTextField @bind-Value="txexpense.TDS" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.TDS)"></MudTextField>
-
-                                        </td>
-                                          <td>
-                                            <MudTextField @bind-Value="txexpense.BillReference" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.BillReference)"></MudTextField>
+                                          <td colspan="4">
+                                            <MudTextField Label="BillReference" @bind-Value="txexpense.BillReference" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => txexpense.BillReference)"></MudTextField>
 
                                         </td>
                                         <td>
-                                           
+
                                             <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
 
                                         </td>
                                     </tr>
-                               
-                            </tbody>
-                        </MudSimpleTable>
-                    </MudItem>
-<MudItem xs="12" md="12">
-                       <h6>TaxPurchaseItems</h6>
-                    </MudItem>
-  <MudItem xs="12" md="12">
-                           <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+                               *@
+                        </tbody>
+                    </MudSimpleTable>
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <h6>TaxPurchaseItems</h6>
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
 
 
-                            <thead>
-                               @* <tr>
+                        <thead>
+                            @* <tr>
                                     <th></th>
                                     <th></th>
                                     <th></th>
                                     <th>Total</th>
                                     <th>@model.TotalValue</th>
                                 </tr>*@
+                            <tr>
+
+                                @*  <th>Branch</th>*@
+                                <th width="200px">ItemID</th>
+                                <th>ItemRate</th>
+                                <th>ItemQty</th>
+                                @* <th>CoaID</th>*@
+                                <th>Amount</th>
+                                <th>SGST</th>
+                                <th>CGST</th>
+                                <th>IGST</th>
+                                <th>TDS</th>
+
+                                <th></th>
+
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in txitemlist)
+                            {
                                 <tr>
 
-                                  @*  <th>Branch</th>*@
-                                    <th width="200px">ItemID</th>
-                                    <th>ItemRate</th>
-                                    <th>ItemQty</th>
-                                    <th>CoaID</th>
-                                    <th>Amount</th>
-                                     <th>SGST</th>
-                                      <th>CGST</th>
-                                    <th>IGST</th>
-                                     <th>TDS</th>
-                                    
-                                      <th></th>
-                                       
-
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in txitemlist)
-                                {
-                                    <tr>
-                                       
-                                      @*  <td>@item.BranchID</td>
+                                    @*  <td>@item.BranchID</td>
                                         <td>@item.ItemID</td>*@
-                                       <td style="width:200px">@(itm.First(x=> x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
-                                        <td>@item.ItemRate</td>
-                                        <td>@item.ItemQty</td>
-                                        <td>@item.CoaID</td>
-                                        <td>@item.Amount</td>
-                                      
-                                        <td>@item.SGST</td>
-                                        <td>@item.CGST</td>
-                                        <td>@item.IGST</td>
-                                        <td>@item.TDS</td>
-                                       
-                                       @* <td>
+                                    <td style="width:200px">@(itm.First(x=> x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
+                                    <td>@item.ItemRate</td>
+                                    <td>@item.ItemQty</td>
+                                    @*  <td>@item.CoaID</td>*@
+                                    <td>@item.Amount</td>
 
-                                             @if (model.ApprovedInfo.RecordStatus != 3)
+                                    <td>@item.SGST</td>
+                                    <td>@item.CGST</td>
+                                    <td>@item.IGST</td>
+                                    <td>@item.TDS</td>
+
+                                    <td>
+
+                                        @* @if (model.ApprovedInfo.RecordStatus != 3)
                                             {
                                                 <MudFab Color="Color.Error" @onclick="@(()=> DeleteItem(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                                            }
-                                        </td>*@
-                                        
-                                    </tr>
-                                }
-                                
-                                 <tr>
-                                      @*  <td>
+                                            @*}*@
+                                    </td>
 
-                                          <MudSelect Label="Select UsageID" @bind-Value="Expmodel.UsageID" T="st?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                                            @foreach (var ditem in dimension)
-                                            {
-                                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
-                                            }
-                                        </MudSelect>
-                                        </td>*@
-                                        <td>
-                                             <MudAutocomplete T="InventoryItemModel" ValueChanged="getitemCode" Value="SelectedPurchaseItems" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Items" ResetValueOnEmptyText="true"
+                                </tr>
+                            }
+
+                            @* <tr>
+
+                                        <td colspan="2">
+                                             <MudAutocomplete T="InventoryItemModel"  ValueChanged="getitemCode" Value="SelectedPurchaseItems" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Items" ResetValueOnEmptyText="true"
                                                          SearchFunc="@SearchItems" ToStringFunc="@(e => e==null?string.Empty:e?.InventoryItemCode)"></MudAutocomplete>
 
-                                        </td>
-                                         <td>
-                                            <MudTextField @bind-Value="TaxItemModel.ItemRate" TextChanged="calcAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.ItemRate)"></MudTextField>
+                                        </td >
+                                         <td colspan="2">
+                                            <MudTextField Label="ItemRate" @bind-Value="TaxItemModel.ItemRate" TextChanged="calcAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.ItemRate)"></MudTextField>
 
                                         </td>
+                                        <td colspan="2">
+                                            <MudTextField Label="ItemQty" @bind-Value="TaxItemModel.ItemQty" TextChanged="calcAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.ItemQty)"></MudTextField>
+
+                                        </td>
+
+                                         <td colspan="2">
+                                            <MudTextField Label="Amount" @bind-Value="TaxItemModel.Amount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.Amount)"></MudTextField>
+
+                                        </td>  </tr>
+                                        <tr>
+                                        <td colspan="2">
+
+                                            <MudTextField Label="SGST" @bind-Value="TaxItemModel.SGST"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.SGST)"></MudTextField>
+                                        </td >
+                                        <td colspan="2">
+                                            <MudTextField Label="CGST" @bind-Value="TaxItemModel.CGST" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.CGST)"></MudTextField>
+
+                                        </td>
+                                          <td colspan="2">
+                                            <MudTextField Label="IGST" @bind-Value="TaxItemModel.IGST" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.IGST)"></MudTextField>
+
+                                        </td>
+                                          <td colspan="2">
+                                            <MudTextField Label="TDS" @bind-Value="TaxItemModel.TDS" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.TDS)"></MudTextField>
+
+                                        </td>
+
                                         <td>
-                                            <MudTextField @bind-Value="TaxItemModel.ItemQty" TextChanged="calcAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.ItemQty)"></MudTextField>
 
-                                        </td>
-                                         <td>
-                                            <MudTextField @bind-Value="TaxItemModel.CoaID"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.CoaID)"></MudTextField>
-
-                                        </td>
-                                         <td>
-                                            <MudTextField @bind-Value="TaxItemModel.Amount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.Amount)"></MudTextField>
-
-                                        </td>
-                                        <td>
-                                            <MudTextField @bind-Value="TaxItemModel.SGST"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.SGST)"></MudTextField>
-                                        </td>
-                                        <td>
-                                            <MudTextField @bind-Value="TaxItemModel.CGST" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.CGST)"></MudTextField>
-
-                                        </td>
-                                          <td>
-                                            <MudTextField @bind-Value="TaxItemModel.IGST" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.IGST)"></MudTextField>
-
-                                        </td>
-                                          <td>
-                                            <MudTextField @bind-Value="TaxItemModel.TDS" ReadOnly="true"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => TaxItemModel.TDS)"></MudTextField>
-
-                                        </td>
-                                          
-                                        <td>
-                                           
                                             <MudFab OnClick="AddTaxItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
 
                                         </td>
-                                    </tr>
-                               
-                            </tbody>
-                        </MudSimpleTable>
+                                    </tr>*@
+
+                        </tbody>
+                    </MudSimpleTable>
+                </MudItem>
+            }
+
+                <MudItem xs="12">
+                        @if ((IsReadOnly) && (!IsView))
+                        {
+                            <AutherizationStatusComponent DocTypeID="5" DocumentID="model.DrCrNoteID" OnApprove="IsApproveData"></AutherizationStatusComponent>
+
+                        }
+
                     </MudItem>
-                         
-    <MudItem xs="12"md="3">
-   
-      <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
-
-
-    </MudItem>
-    <MudItem xs="12"md="3">
-   
-       <MudSelect Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in costCenter)
-                            {
-                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
-                            }
-                        </MudSelect>
-
-    </MudItem>
-    <MudItem xs="12"md="3">
-   
-     <MudSelect Label="Select Dimension" @bind-Value="model.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
-                            @foreach (var ditem in dimension)
-                            {
-                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
-                            }
-                        </MudSelect>
-
-    </MudItem>
-    <MudItem xs="12"md="3">
-     <MudTextField @bind-Value="model.TotalAmount" ReadOnly="true" Label="TotalAmount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
-
-    </MudItem>
-     <MudItem xs="12"md="12">
-           <MudTextField @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-
-     </MudItem>
-     <MudItem xs="12"md="10">
-        
+    
+         
+          @*<MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" OnClick="Submit">Submit</MudButton>*@
            
-     </MudItem>
-     <MudItem xs="12"md="2">
-          <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" OnClick="Submit">Submit</MudButton>
-           
-     </MudItem>
+   
 
 </MudGrid>
 </MudContainer>
-</MudPaper>
+</DialogContent>
 
+
+<DialogActions>
+        @* @if(model.ApprovedInfo.RecordStatus!=3 && model.ApprovedInfo.RecordStatus!=1)*@
+        <b>Total:@model.TotalAmount</b>
+
+        @if (!IsReadOnly)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Cancel</MudButton>
+
+            <MudButton  Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        }
+        @if (IsReadOnly)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Close</MudButton>
+
+        }
+    </DialogActions>
+    </MudDialog>
                   
             @* <MudButton OnClick="Cancel">Cancel</MudButton>*@
                     
 
 @code {
-    private DrCrNoteModel model = new DrCrNoteModel();
+
+    [Parameter]
+    public DrCrNoteModel model { get; set; }
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+    [Parameter]
+    public bool IsView { get; set; }
     public string drCrType { get; set; } = "Credit";
-    private string NatureOfBusiness = "Customer";
+    private string nbusiness = "Customer";
+    public bool Isvisible = false;
     private List<InventoryItemModel> itm = new();
     private List<TaxPurchaseExpenseModel> txexpenses = new();
     private List<TaxPurchaseExpenseModel> txexpensesList = new();
@@ -331,18 +379,32 @@
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
     private List<GstUsageCodeModel> usageID = new();
+    public GstUsageCodeModel gstusge = new();
     private List<BillInfoModel> Bill = new List<BillInfoModel>();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private List<string> PartyList = new List<string>() { "Supplier", "Customer" };
+
 
     int brancID;
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
     protected override void OnInitialized()
     {       
-        model.TotalAmount = 0;
+        //model.TotalAmount = 0;
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
         usageID = usageIservice.Select(DateTime.Now).ToList();
         itm = itemIservice.SearchByDescription(string.Empty).ToList();
+        if(model.DrCrNoteID!=null)
+        {
+            Isvisible = true;
+            txexpenses=Iservice.GetExpenses(model.DrCrNoteID).ToList();
+            txitemlist=Iservice.GetItems(model.DrCrNoteID).ToList();
+            drCrType = model.DrCrType;
+        }
     }
 
     private async Task<IEnumerable<InventoryItemModel>> SearchItems(string searchString)
@@ -564,7 +626,18 @@
 
     }
 
+     protected async Task IsApproveData(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+           // Iservice.Approve(model.SID, model.UserInfo.UserID,aprvd.Remarks);
+            snackbar.Add("Approved Successfully", Severity.Success);
+        }
 
+    }
     public void AddTaxItems()
     {
 
@@ -603,27 +676,45 @@
     }
     private async Task Submit()
     {
-        model.Particulars=txexpenses;  
-        model.Items=txitemlist;
-        model.DrCrType = drCrType;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        model.UserInfo.UserID = user.Identity.Name;
-        model.BranchID = brancID;
-        try
+        if (!Isvisible)
         {
-
-            Iservice.Update(model);
-            model = new();
-            snackbar.Add("Saved Successfully", Severity.Success);
-            model = new DrCrNoteModel();
-
+            snackbar.Add("Please Feth the Bill", Severity.Success);
+            return;
         }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
+        model.Particulars = txexpenses;
+            model.Items = txitemlist;
+            model.DrCrType = drCrType;
+            if (nbusiness == "Supplier")
+            {
+                model.PartyCoaID = partyIservice.GetVendorPayableCoaID(model.Party.PartyID);
+                model.NatureOfTransaction = "Payable";
+            }
+            else
+            {
+                model.PartyCoaID = partyIservice.GetCustomerReceivableCoaID(model.Party.PartyID);
+                model.NatureOfTransaction = "Receivable";
+            }
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            model.BranchID = int.Parse(brancIDString);
+            model.UserInfo.UserID = user.Identity.Name;
+
+            try
+            {
+
+                Iservice.Update(model);
+                model = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
+                model = new DrCrNoteModel();
+
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        
+
 
     }
     public async Task fetch()
@@ -642,19 +733,78 @@
             //  List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
             //SelectedItems=result.Data;     
             //// GetAll();
+            int PID = 0;
             if(SelectedItems!=null)
             {
-                // value = "visible";
+
+                Isvisible = true;
                 foreach (var item in Bill)
                 {
                     model.OriginalTranDocDate=item.DocumentDate;
                     model.OriginalTransactionID=item.BillID;
                     model.OriginalTranDocNumber = item.DocumentNumber;
+                    model.TotalAmount = item.TotalAmount;
+                    PID = item.PID.Value;
                 }
 
             }
 
+            txexpenses=TaxIservice.GetExpenses(PID).ToList();
+            txitemlist=TaxIservice.GetItems(PID).ToList();
+
 
         }
+    }
+
+
+    private void DeleteExpenses(TaxPurchaseExpenseModel i)
+    {
+        decimal gstrate = 0;
+        if (i.IGST == null)
+        {
+            i.IGST = 0;
+        }
+        if (i.SGST == null)
+        {
+            i.SGST = 0;
+        }
+        if (i.CGST == null)
+        {
+            i.CGST = 0;
+        }
+
+        gstrate = (i.CGST.Value) + (i.SGST.Value) + (i.IGST.Value) + (i.TDS.Value);
+        decimal total = i.Amount.Value + gstrate;
+
+        model.TotalAmount = model.TotalAmount - total;
+        int rowIndex = txexpenses.IndexOf(i);
+        txexpenses.RemoveAt(rowIndex);
+    }
+
+    private void DeleteItem(TaxPurchaseItemModel i)
+    {
+        decimal gstrate = 0;
+        if(i.IGST==null)
+        {
+            i.IGST = 0;
+        }
+         if(i.SGST==null)
+        {
+            i.SGST = 0;
+        }
+         if(i.CGST==null)
+        {
+            i.CGST = 0;
+        }
+       
+        gstrate = (i.CGST.Value)+(i.SGST.Value)+(i.IGST.Value)+(i.TDS.Value);
+    
+
+    decimal total = i.Amount.Value+gstrate;
+
+    model.TotalAmount = model.TotalAmount - total;
+    
+    int rowIndex = txitemlist.IndexOf(i);
+    txitemlist.RemoveAt(rowIndex);
     }
 }

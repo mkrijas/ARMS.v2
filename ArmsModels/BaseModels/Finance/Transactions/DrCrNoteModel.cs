@@ -25,6 +25,7 @@ namespace ArmsModels.BaseModels
 
     public class BillInfoModel
     {
+        public int? PID { get; set; }
         public int? BillID { get; set; }
         public string DocumentNumber { get; set; }
         public DateTime? DocumentDate { get; set; }

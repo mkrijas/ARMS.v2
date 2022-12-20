@@ -26,7 +26,8 @@
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTax" Placeholder="Search Tax... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                              IconSize="Size.Medium" Class="mt-0">
+                </MudTextField>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.InvoiceDate)" InitialDirection="SortDirection.Ascending">Invoice No</MudTableSortLabel></MudTh>
@@ -45,18 +46,24 @@
                   <MudTd DataLabel="GrnNO">@context.DocumentNumber</MudTd>
              
                 <MudTd DataLabel="">
-                   
-                    @*@if(@context.ApprovedInfo.RecordStatus!=3 && @context.ApprovedInfo.RecordStatus!=1)*@
+                    @if(@context.AuthLevelId==null)
                     {
-                      <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" title="Approve" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                      @*<MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" title="Approve" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />*@
                          <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                   
                     }
-                    @*@if(@context.ApprovedInfo.RecordStatus==3 || @context.ApprovedInfo.RecordStatus==1)*@
+                    @if (@context.AuthLevelId!= 99)
                     {
-               <MudFab @onclick="@(()=> GetAccountDetails(context))" Color="Color.Info" Icon="@Icons.Material.Filled.CurrencyExchange" title="Accounts" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> OpenDialogVerify(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                        
                     }
+                     @if (@context.AuthLevelId== 99)
+                   {
+                    <MudFab @onclick="@(()=> GetAccountDetails(context))" Color="Color.Info" Icon="@Icons.Material.Filled.CurrencyExchange" title="Accounts" Size="Size.Small" IconSize="Size.Small" />
+                    }
+                      <MudFab @onclick="@(()=> OpenDialogView(context))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+                   
                     
                   
                     </MudTd>
@@ -107,6 +114,48 @@
         
         DialogParameters parms = new DialogParameters();
         parms.Add("model",tds);
+         parms.Add("IsReadOnly",false);
+        parms.Add("IsView",false);
+        var dialog =  DialogService.Show<TaxPurchaseDialog>(tds.PID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetAll();
+
+
+        }
+    }
+     private async Task OpenDialogView(TaxPurchaseModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+         parms.Add("IsReadOnly",true);
+        parms.Add("IsView",true);
+        var dialog =  DialogService.Show<TaxPurchaseDialog>(tds.PID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetAll();
+
+
+        }
+    }
+     private async Task OpenDialogVerify(TaxPurchaseModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+         parms.Add("IsReadOnly",true);
+        parms.Add("IsView",false);
         var dialog =  DialogService.Show<TaxPurchaseDialog>(tds.PID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
@@ -125,37 +174,37 @@
         snackbar.Add("Deleted Successfully", Severity.Success);
         GetAll();
     }
-    private async Task Approve(TaxPurchaseModel tpm)
-    {
-        var parameters = new DialogParameters();
-        parameters.Add("ContentText", "Are you sure you want to Approve this TaxPurchase,Purchase ID:"+tpm.PID+"?");
-        parameters.Add("ButtonText", "Confirm");
-        parameters.Add("Color", Color.Success);
-        var dialog=DialogService.Show<ConfirmDialog>("Confirm", parameters);
-        var result = await dialog.Result;
+    //private async Task Approve(TaxPurchaseModel tpm)
+    //{
+    //    var parameters = new DialogParameters();
+    //    parameters.Add("ContentText", "Are you sure you want to Approve this TaxPurchase,Purchase ID:"+tpm.PID+"?");
+    //    parameters.Add("ButtonText", "Confirm");
+    //    parameters.Add("Color", Color.Success);
+    //    var dialog=DialogService.Show<ConfirmDialog>("Confirm", parameters);
+    //    var result = await dialog.Result;
 
 
-        if (!result.Cancelled)
-        {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            tpm.UserInfo.UserID = user.Identity.Name;
-            try
-            {
+    //    if (!result.Cancelled)
+    //    {
+    //        var authprov = await auth.GetAuthenticationStateAsync();
+    //        var user = authprov.User;
+    //        tpm.UserInfo.UserID = user.Identity.Name;
+    //        try
+    //        {
 
-                Iservice.Approve(tpm.PID.Value,tpm.UserInfo.UserID);
+    //            Iservice.Approve(tpm.PID.Value,tpm.UserInfo.UserID);
 
-                snackbar.Add("Approved", Severity.Success);
+    //            snackbar.Add("Approved", Severity.Success);
 
-                GetAll();
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
-        }
+    //            GetAll();
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            snackbar.Add(ex.Message, Severity.Warning);
+    //        }
+    //    }
 
-    }
+    //}
     private void GetAccountDetails(TaxPurchaseModel tpm)
     {
         int MID = tpm.MID.Value;

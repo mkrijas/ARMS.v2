@@ -20,7 +20,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TaxPurchaseModel> SelectByPeriod(DateTime? begin,DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? PID);
         IEnumerable<TaxPurchaseItemModel> GetItems(int? PID);
-        int Approve(int? PID, string UserID);
+        int Approve(int? PID, string UserID,string Remark);
         int Reverse(int? PID, string UserID);
     }
 
@@ -33,13 +33,14 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Approve(int? PID, string UserID)
+        public int Approve(int? PID, string UserID,string Remark)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PID", PID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 1)
+               new SqlParameter("@Status", 1),
+               new SqlParameter("@Remarks", Remark)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Approve]", parameters);
         }

@@ -14,7 +14,15 @@
        
         <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
            
-
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">DrCrNote</MudText>
+                <MudTooltip Text="New DrCrNote">
+                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+              
+                <MudSpacer></MudSpacer>
+               
+            </ToolBarContent>
             
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<DrCrNoteModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
@@ -31,16 +39,21 @@
                 
                    <MudTd DataLabel="">
 
-                    <MudFab @onclick="@(()=> View(context))" Color="Color.Primary" title="View" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
-                  
-                    @*@if(@context.ApprovedInfo.RecordStatus!=3 && @context.ApprovedInfo.RecordStatus!=1)*@
+                    <MudFab @onclick="@(()=> OpenDialogView(context))" Color="Color.Primary" title="View" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                   @if (@context.AuthLevelId == null)
                     {
-                      <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" title="Approve" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
-                     <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Reverse(context))" Color="Color.Error" title="Reverse" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />
+                     <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                      <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                     
+                    }
+                    @* <MudFab @onclick="@(()=> Reverse(context))" Color="Color.Error" title="Reverse" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />
+                   *@     
+                    @if (@context.AuthLevelId != 99)
+                    {
+                    <MudFab @onclick="@(()=> OpenDialogVerify(context))" Color="Color.Warning" title="Approve" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
                         
                     }
-              
+
                     </MudTd>
                  
            
@@ -57,7 +70,7 @@
 
 
     <br />
-     <MudPaper Class="@value" >
+    @* <MudPaper Class="@value" >
     <MudContainer>
     <MudGrid   >
       <MudItem xs="12"md="4">
@@ -110,7 +123,7 @@
         }
         </MudItem>
 
-  </MudGrid></MudContainer></MudPaper>
+  </MudGrid></MudContainer></MudPaper>*@
 
 
 @code {
@@ -121,6 +134,8 @@
     DrCrNoteModel pmodel=new();
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
 
 
     protected override async Task OnInitializedAsync()
@@ -129,7 +144,68 @@
         dimension = dimensionIservice.Select().ToList();
         GetPerfomaInvoice();
     }
+    private async Task OpenDialog(DrCrNoteModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        parms.Add("IsReadOnly",false);
+        parms.Add("IsView",false);
+        var dialog =  DialogService.Show<DrCrNoteDialog>(tds.DrCrNoteID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
 
+        if(!result.Cancelled)
+        {   
+
+            GetPerfomaInvoice();
+
+
+        }
+
+    }
+    
+     private async Task OpenDialogView(DrCrNoteModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        parms.Add("IsReadOnly",true);
+        parms.Add("IsView",true);
+        var dialog =  DialogService.Show<DrCrNoteDialog>(tds.DrCrNoteID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetPerfomaInvoice();
+
+
+        }
+    }
+     private async Task OpenDialogVerify(DrCrNoteModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        parms.Add("IsReadOnly",true);
+        parms.Add("IsView",false);
+        var dialog =  DialogService.Show<DrCrNoteDialog>(tds.DrCrNoteID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetPerfomaInvoice();
+
+
+        }
+    }
 
     public void GetPerfomaInvoice()
     {
@@ -138,6 +214,12 @@
         collection = Iservice.Select().ToList();
         int s = 0;
 
+    }
+     private void Delete(DrCrNoteModel tx)
+    {
+        Iservice.Delete(tx.DrCrNoteID, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetPerfomaInvoice();
     }
     public void Edit(DrCrNoteModel pim)
     {

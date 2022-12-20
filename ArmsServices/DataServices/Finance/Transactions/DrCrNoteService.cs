@@ -72,7 +72,8 @@ namespace ArmsServices.DataServices
             {
                 yield return new BillInfoModel()
                 {
-                    TotalAmount = dr.GetDecimal("TotalAmount"),                 
+                    TotalAmount = dr.GetDecimal("TotalAmount"),
+                    PID = dr.GetInt32("PID"),
                     BillID = dr.GetInt32("ID"),                  
                     DocumentNumber = dr.GetString("DocumentNumber"),
                     DocumentDate = dr.GetDateTime("DocumentDate")
@@ -250,13 +251,16 @@ namespace ArmsServices.DataServices
                 OriginalTranDocNumber = dr.GetString("OriginalTranDocNumber"),
                 OriginalTransactionID = dr.GetInt32("OriginalTransactionID"),                
                 BranchID = dr.GetInt32("BranchID"),                
-                DocumentDate = dr.GetDateTime("DocDate"),
-                DocumentNumber = dr.GetString("DocNumber"),                
+                DocumentDate = dr.GetDateTime("DocumentDate"),
+                DocumentNumber = dr.GetString("DocumentNumber"),                
                 MID = dr.GetInt32("MID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 CostCenter = dr.GetInt32("CostCenter"),
-                Dimension = dr.GetInt32("Dimension"),                
+
+                Dimension = dr.GetInt32("Dimension"),              
                 TotalAmount = dr.GetDecimal("TotalAmount"),
+                AuthLevelId = dr.GetInt32("AuthLevelId"),
+                AuthStatus = dr.GetString("AuthStatus"),
                 Narration = dr.GetString("Narration"),
                 Party = new PartyModel()
                 {                
