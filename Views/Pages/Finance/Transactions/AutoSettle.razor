@@ -1,0 +1,115 @@
+﻿@page "/AutoSettlement"
+@inject IOutstandingBillsService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject NavigationManager uriHelper;
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+ <MudPaper>
+     <MudContainer>
+          <MudGrid >
+               <MudItem xs="12" md="12">
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.AutoFixOff" Class="mr-3 mb-n1" />
+                Auto Settle
+            </MudText>
+            </MudItem>
+                <MudItem xs="12" md="3">
+                    <PartySelector @bind-Value="model.PartyInfo"></PartySelector>
+                    </MudItem>
+            <MudItem xs="12" md="3">
+                <MudDatePicker Label="DateFrom" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="frmDate" DateFormat="dd/MM/yyyy" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudDatePicker Label="DateTo" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="tDate" DateFormat="dd/MM/yyyy" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Fetch</MudButton>
+            </MudItem>
+        </MudGrid>
+              </MudContainer></MudPaper>
+              
+
+    <br />  
+<MudGrid Spacing="4">
+    <br />
+    <MudItem xs="12">
+        <MudTable Items="@collection" MultiSelection="true" @bind-SelectedItems="selectedItems1" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
+
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.MID)" InitialDirection="SortDirection.Ascending">MID</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.PartyInfo.PartyID)" InitialDirection="SortDirection.Ascending">Party ID</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.BranchName)" InitialDirection="SortDirection.Ascending">BranchName</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.ReferenceDocNo)" InitialDirection="SortDirection.Ascending">DocNumber</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.InitialAmount)" InitialDirection="SortDirection.Ascending">InitialAmount</MudTableSortLabel></MudTh>
+   @*             <MudTh><MudTableSortLabel SortBy="new Func<OutstandingBillsModel, object>(x=> x.ReferenceDocDate)" InitialDirection="SortDirection.Ascending">OutstandingAmount</MudTableSortLabel></MudTh>*@
+            </HeaderContent>
+            <RowTemplate>
+
+                <MudTd DataLabel="EntryDate">@context.MID</MudTd>
+                <MudTd DataLabel="DocNumber">@context.PartyInfo.PartyID</MudTd>
+                <MudTd DataLabel="BranchName">@context.BranchName</MudTd>
+                <MudTd DataLabel="InvoiceDate"> @context.ReferenceDocNo-@context.ReferenceDocDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="InitialAmount">@context.InitialAmount</MudTd>
+             
+
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+
+</MudGrid>
+
+@code {
+    [Parameter]
+    public int PartyID { get; set; }
+
+     public DateTime? frmDate=System.DateTime.Now;
+    public DateTime? tDate =System.DateTime.Now;
+    private OutstandingBillsModel model = new OutstandingBillsModel();
+    private List<OutstandingBillsModel> collection = new List<OutstandingBillsModel>();
+    private List<OutstandingBillsModel> selecteditem = new List<OutstandingBillsModel>();
+    private HashSet<OutstandingBillsModel> selectedItems1 = new HashSet<OutstandingBillsModel>();
+    protected override async Task OnInitializedAsync()
+    {
+        GetAll();
+        model = new();
+    }
+    private async Task GetAll()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = new List<OutstandingBillsModel>();
+        foreach (var item in Iservice.SelectByParty(PartyID, brancID))
+        {
+            collection.Add(item);
+        }
+
+
+    }
+    public async Task fetch()
+    {
+        await GetOutstandingBillDetails();
+    }
+    public async Task GetOutstandingBillDetails()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = new List<OutstandingBillsModel>();
+        foreach (var item in Iservice.SelectByParty(model.PartyInfo.PartyID, brancID))
+        {
+            collection.Add(item);
+        }
+
+    }
+    private void GetSelectedItem()
+    {
+        
+    }
+    }

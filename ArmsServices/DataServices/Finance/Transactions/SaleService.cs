@@ -118,7 +118,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 2)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Reverse]", parameters);
         }
 
         public IEnumerable<SaleModel> Select()

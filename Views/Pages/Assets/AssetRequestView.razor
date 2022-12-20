@@ -1,0 +1,187 @@
+﻿@page "/AssetRequestView"
+
+@inject IAssetDocumentRequestService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6"> Add New Asset Request.</MudText>
+                <MudTooltip Text="New Asset Request">
+                    <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew())"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+                <MudSpacer></MudSpacer>
+
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentRequestModel, object>(x=> x.DocumentType.DocumentTypeName)" InitialDirection="SortDirection.Ascending">Document Type</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentRequestModel, object>(x=> x.StartDate)" InitialDirection="SortDirection.Ascending">Start Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentRequestModel, object>(x=> x.EndDate)" InitialDirection="SortDirection.Ascending">EndDate</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentRequestModel, object>(x=> x.Remarks)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
+                <MudTh>Edit</MudTh>
+                <MudTh>Delete</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentType">@context.DocumentType.DocumentTypeName</MudTd>
+                <MudTd DataLabel="StartDate">@context.StartDate</MudTd>
+                <MudTd DataLabel="EndDate">@context.EndDate</MudTd>
+                <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+                <MudTd DataLabel="">
+                    <MudTooltip Text="Edit">
+                        <MudFab @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                </MudTd>
+                <MudTd DataLabel="">
+                    <MudTooltip Text="Delete">
+                        <MudFab @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    @*
+                    @if(@context.ApprovedInfo.RecordStatus!=1)
+                    {
+                    <MudTooltip Text="Approve">
+                    <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    }*@
+                </MudTd>
+            </RowTemplate>
+
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                @*  <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>*@
+
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+@code {
+
+
+    private AssetDocumentRequestModel model = new();
+
+    private List<AssetDocumentRequestModel> collection = new();
+
+
+    protected override void OnParametersSet()
+    {
+        //the param will be set now
+        GetAll();
+
+    }
+    private async Task OpenDialogAddNew()
+    {
+        AssetDocumentRequestModel AssetRequest = new();
+
+        AssetRequest.UserInfo = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        if(AssetRequest.UserInfo != null)
+        {
+            AssetRequest.UserInfo.UserID = user.Identity.Name;
+
+        }
+        AssetRequest.BranchID = int.Parse(brancIDString);
+        var model = new DialogParameters { ["model"] = AssetRequest };
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog = DialogService.Show<AssetRequestDialog>("Simple Dialog", model, options);
+
+
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Cancelled;
+        if(!isCancelled)
+        {
+            GetAll();
+        }
+    }
+    private async Task OpenDialogEdit(AssetDocumentRequestModel AssetRequest)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        AssetRequest.UserInfo = new();
+        if (AssetRequest.UserInfo != null)
+        {
+            AssetRequest.UserInfo.UserID = user.Identity.Name;
+        }
+        AssetRequest.BranchID = int.Parse(brancIDString);
+        AssetRequest.Assets = Iservice.GetRequestedDocuments(AssetRequest.ID).ToList();
+        
+        var model = new DialogParameters { ["model"] = AssetRequest };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog = DialogService.Show<AssetRequestDialog>("Simple Dialog", model, options);
+
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Cancelled;
+        if(!isCancelled)
+        {
+            GetAll();
+        }
+    }
+    private async Task OpenDialogDelete(AssetDocumentRequestModel AssetRequest)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User; 
+        AssetRequest.UserInfo = new();
+        if (AssetRequest.UserInfo != null)
+        {
+            AssetRequest.UserInfo.UserID = user.Identity.Name;
+            Iservice.Delete(AssetRequest.ID, AssetRequest.UserInfo.UserID);
+        }
+        GetAll();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        //model = new();
+        GetAll();
+    }
+
+    private async Task GetAll()
+    {
+
+        collection = new();
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        model.UserInfo = new();
+        if(model.UserInfo!=null)
+        {
+            model.UserInfo.UserID = user.Identity.Name;  
+        }
+        model.BranchID = int.Parse(brancIDString);
+
+        foreach (var item in Iservice.SelectPendingByBranch(model.BranchID))
+        {
+            collection.Add(item);
+        }
+
+
+    }
+
+        //private void OpenDialog()
+    //{
+    //    AssetDocumentRequestModel AssetRequest = new();
+    //    AssetRequest.BankID = 12323213;
+    //    AssetRequest.ArdCode = "cksdfjhdshfgs";
+    //    //AssetRequest.ID= 1;
+
+    //    var model = new DialogParameters { ["model"] = AssetRequest };
+
+    //    var options = new DialogOptions { CloseOnEscapeKey = true };
+    //    DialogService.Show<AssetRequestDialog>("Simple Dialog", model, options);
+    //}
+
+}

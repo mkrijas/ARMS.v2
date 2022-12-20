@@ -14,7 +14,9 @@ namespace ArmsServices.DataServices
         
         OutstandingBillsModel SelectByID(int? ID);       
         IEnumerable<OutstandingBillsModel> Select(int BranchID);
-        IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? PartyBranchID,int? BranchID);
+        IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID);
+
+       IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID,int? BranchID, int? PartyBranchID);
         IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end);
         int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills);
         IEnumerable<OutstandingPaymentModel> SelectOutstandingPayments(int? PartyID, int? BranchID);
@@ -73,10 +75,26 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID)
+        public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID, int? PartyBranchID)
         {
             throw new NotImplementedException();
         }
+
+        //public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@PartyBranchID", PartyBranchID),
+        //       new SqlParameter("@PartyID", PartyID),
+        //       new SqlParameter("@BranchID", BranchID),
+        //    };
+
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.Select]", parameters))
+        //    {
+        //        yield return GetModel(dr);
+        //    }
+        //    //   throw new NotImplementedException();
+        //}
 
         public IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
@@ -138,17 +156,19 @@ namespace ArmsServices.DataServices
         {
             return new OutstandingBillsModel
             {
-                BillTransactionID = dr.GetInt32("BillTransactionID"),
-                BillTransactionType = dr.GetString("BillTransactionType"),
+                //BillTransactionID = dr.GetInt32("BillTransactionID"),
+                //BillTransactionType = dr.GetString("BillTransactionType"),
                 BoID = dr.GetInt32("BoID"),
                 InitialAmount = dr.GetDecimal("InitialAmount"),
-                OutstandingAmount = dr.GetDecimal("OutstandingAmount"),
-                DocDate = dr.GetDateTime("DocumentDate"),
-                DocNumber = dr.GetString("DocumentNumber"),
+                NatureOfTransaction= dr.GetString("NatureOfTransaction"),
+                //OutstandingAmount = dr.GetDecimal("OutstandingAmount"),
+                //DocDate = dr.GetDateTime("DocumentDate"),
+                //DocNumber = dr.GetString("DocumentNumber"),
                 BranchName = dr.GetString("BranchName"),
                 BranchID= dr.GetInt32("BranchID"),
-                InvoiceDate = dr.GetDateTime("InvoiceDate"),                
-                InvoiceNumber = dr.GetString("InvoiceNumber"),               
+                CoaID = dr.GetInt32("CoaID"),
+                ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),                
+                ReferenceDocNo = dr.GetString("ReferenceDocNo"),               
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
