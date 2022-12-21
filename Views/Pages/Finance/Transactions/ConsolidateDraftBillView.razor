@@ -49,7 +49,17 @@
                 <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
                  <MudTd DataLabel="">
-
+                      <MudFab @onclick="@(()=> OpenDialogView(context))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+                    @if (@context.AuthLevelId!= 99)
+                    {
+                    <MudFab @onclick="@(()=> OpenDialogVerify(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                    }
+                    @if (@context.AuthLevelId== 99)
+                    {
+                        <MudTooltip Text="Create Proforma Invoice">
+                    <MudFab @onclick="@(()=> OpenDialogproformainvoice(context))" Color="Color.Success" Icon="@Icons.Material.Filled.CreditCard"  Size="Size.Small" IconSize="Size.Small" />
+                   </MudTooltip>
+                    }
 
                  </MudTd>
                  
@@ -62,9 +72,9 @@
             </PagerContent>
         </MudTable>
     </MudItem>
-       <MudItem xs="12"md="8"> </MudItem><MudItem xs="12"md="4">
+    @*   <MudItem xs="12"md="8"> </MudItem><MudItem xs="12"md="4">
                 <MudButton OnClick="selected" Class="@value" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Create Proforma Invoice</MudButton>
-        </MudItem>
+        </MudItem>*@
     </MudGrid>
 <br />
 <br />
@@ -148,6 +158,50 @@
     GstModel gs = new();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
+    private async Task OpenDialogView(ConsolidatedDraftBillModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        parms.Add("IsReadOnly",true);
+        parms.Add("IsView",true);
+        var dialog =  DialogService.Show<ConsolidateDraftBillDialog>(tds.DraftBillID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetConsolidatedDraftBill();
+
+
+        }
+    }
+    private async Task OpenDialogVerify(ConsolidatedDraftBillModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",tds);
+        parms.Add("IsReadOnly",true);
+        parms.Add("IsView",false);
+        var dialog =  DialogService.Show<ConsolidateDraftBillDialog>(tds.DraftBillID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetConsolidatedDraftBill();
+
+
+        }
+    }
+
+
+
+
     protected override async Task OnInitializedAsync()
     {
         costCenter = costIservice.Select().ToList();
@@ -197,15 +251,45 @@
     }
     public async Task selected()
     {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-            int brancID = int.Parse(brancIDString);
-            var user = authprov.User;
-            pmodel.BranchID = brancID;
-     
-            pmodel.UserInfo.UserID = user.Identity.Name;  
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        var user = authprov.User;
+        pmodel.BranchID = brancID;
+
+        pmodel.UserInfo.UserID = user.Identity.Name;  
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",pmodel);
+        var dialog =  DialogService.Show<ProformaInvoceDialog>("ProformaInvoce",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        { 
+            ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;   
+
+            Iservice.UpdateProformaInvoice(UpatedModel);
+            snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
+        }
+        GetConsolidatedDraftBill();
+
+    }
+    public async Task OpenDialogproformainvoice(ConsolidatedDraftBillModel cdm)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        var user = authprov.User;
+        ProformaInvoiceModel pfm = new ProformaInvoiceModel();
+        pfm.BranchID = brancID;
+        pfm.TotalAmount = cdm.TotalAmount;
+        pfm.DraftBillID = cdm.DraftBillID;
+        pfm.OrderID = cdm.Order.OrderID;
+        pfm.TariffType = cdm.TariffType;
+        pfm.Gst = Iservice.GetGstRate(pfm.DraftBillID);
+        
+            pfm.UserInfo.UserID = user.Identity.Name;  
             DialogParameters parms = new DialogParameters();
-            parms.Add("model",pmodel);
+            parms.Add("model",pfm);
             var dialog =  DialogService.Show<ProformaInvoceDialog>("ProformaInvoce",parms,maxWidth);
             var result = await dialog.Result;
 
