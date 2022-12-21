@@ -61,11 +61,8 @@ namespace ArmsModels.BaseModels
             {
                 _PayAmount = (value>(OutstandingAmount??0)?OutstandingAmount:value);
             }
-        }
-        public virtual string DocNumber { get; set; }
-        public virtual string BranchName { get; set; }
-        
-        public virtual DateTime? DocDate { get; set; }
+        }        
+        public virtual string BranchName { get; set; }        
         public virtual int? BranchID { get; set; }
         public virtual string InvoiceNumber { get; set; }
         public virtual DateTime? InvoiceDate { get; set; }
