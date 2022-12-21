@@ -30,10 +30,8 @@ namespace ArmsModels.BaseModels
         //outstading bills tick 
         public int? BrID { get; set; }
         public int? BoID { get; set; }
-        public decimal? ReceiptAmount { get; set; }
-        public virtual string DocNumber { get; set; }
+        public decimal? ReceiptAmount { get; set; }       
         public virtual string BranchName { get; set; }
-        public virtual DateTime? DocDate { get; set; }
         public virtual int? BranchID { get; set; }
         public virtual string InvoiceNumber { get; set; }
         public virtual DateTime? InvoiceDate { get; set; }

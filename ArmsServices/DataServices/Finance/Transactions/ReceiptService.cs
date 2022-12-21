@@ -65,11 +65,9 @@ namespace ArmsServices.DataServices
                     BoID = dr.GetInt32("BoID"),
                     BrID = dr.GetInt32("BpID"),
                     BranchID = dr.GetInt32("BranchID"),
-                    BranchName = dr.GetString("BranchName"),
-                    DocDate = dr.GetDateTime("DocumentDate"),
-                    DocNumber = dr.GetString("DocumentNumber"),
-                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
-                    InvoiceNumber = dr.GetString("InvoiceNumber"),
+                    BranchName = dr.GetString("BranchName"),                  
+                    InvoiceDate = dr.GetDateTime("ReferenceDocDate"),
+                    InvoiceNumber = dr.GetString("ReferenceDocNo"),
                     ReceiptAmount = dr.GetDecimal("ReceiptAmount"),
                 };
             }
