@@ -77,6 +77,8 @@ namespace ArmsModels.BaseModels
         public int? PiID { get; set; }        
         public DateTime? DueOn { get; set; }
         public int? BranchID { get; set; }
+        public int? AuthLevelId { get; set; }
+        public string AuthStatus { get; set; }
         public DateTime? DocDate { get; set; }
         public string DocNumber { get; set; }
         public decimal? TotalAmount { get; set; }
@@ -102,6 +104,8 @@ namespace ArmsModels.BaseModels
         public DateTime? DocumentDate { get; set; }        
         [Required]
         public int? BranchID { get; set; }
+        public int? AuthLevelId { get; set; }
+        public string AuthStatus { get; set; }
         public decimal? TotalAmount { get; set; }        
         public string Narration { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }        

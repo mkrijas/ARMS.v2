@@ -21,7 +21,7 @@
              <ToolBarContent>
                 <MudText Typo="Typo.h6">Paymet Memos</MudText>
                 <MudTooltip Text="New Payment Memos">
-                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="openPaymentMemos"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogpayment(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                
                @* <MudButton @onclick="openpurchaseorder" @onclick="@(()=> OpenDialog(model))"  Variant="Variant.Filled" Color="Color.Primary" >Purchase Order</MudButton>
@@ -43,9 +43,21 @@
                 <MudTd DataLabel="PartyName">@context.PartyInfo.TradeName</MudTd>
                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
                <MudTd DataLabel="">
-                     <MudTooltip Text="View">
-                    <MudFab @onclick="@(()=> View(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>  
+                    @if (@context.AuthLevelId == null)
+                    {
+                        <MudTooltip Text="Edit">
+                            <MudFab @onclick="@(()=> OpenDialogpayment(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip> 
+                    }
+                     @if (@context.AuthLevelId!= 99)
+                    {
+                        <MudTooltip Text="Verify">
+                    <MudFab @onclick="@(()=> OpenDialogpaymentVerify(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                    }
+                    <MudTooltip Text="view">
+                            <MudFab @onclick="@(()=> OpenDialogpaymentView(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip> 
                </MudTd>
             </RowTemplate>
           
@@ -88,10 +100,11 @@
     PaymentInitiatedModel pim = new PaymentInitiatedModel();
     private HashSet<PartyPaymentMemoModel> selectedItems1= new HashSet<PartyPaymentMemoModel>();
     public string value="invisible";
+
     protected override async Task OnInitializedAsync()
     {
         model = new();
-      // await GetAll();
+        await GetAll();
     }
     public void View(PartyPaymentMemoModel ppmm)
     {
@@ -113,9 +126,71 @@
 
 
     }   
-    public void openPaymentMemos()
+    public async Task OpenDialogpayment(PartyPaymentMemoModel ppm)
     {
-        uriHelper.NavigateTo("/PaymentMemo");  
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",ppm);
+        parms.Add("IsReadOnly",false);
+        parms.Add("IsView",false);
+        var dialog =  DialogService.Show<PaymentMemoDialog>(ppm.PaymentMemoID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetAll();
+
+
+        }
+
+        GetAll();
+    }
+    public async Task OpenDialogpaymentView(PartyPaymentMemoModel ppm)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",ppm);
+        parms.Add("IsReadOnly",true);
+        parms.Add("IsView",true);
+        var dialog =  DialogService.Show<PaymentMemoDialog>(ppm.PaymentMemoID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetAll();
+
+
+        }
+        GetAll();
+
+    }
+    public async Task OpenDialogpaymentVerify(PartyPaymentMemoModel ppm)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",ppm);
+        parms.Add("IsReadOnly",true);
+        parms.Add("IsView",false);
+        var dialog =  DialogService.Show<PaymentMemoDialog>(ppm.PaymentMemoID == null?"ADD":"EDIT",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        {   
+
+            GetAll();
+
+
+        }
+
+        GetAll();
     }
 
     //public async Task CreatePaymentInitialMemo()
@@ -167,6 +242,14 @@
 
         if(selectedItems1.Count>0)
         {
+            foreach (var item in selectedItems1)
+            {
+                if(item.AuthLevelId!=99)
+                {
+                    snackbar.Add("Unverified cannot be selected", Severity.Warning);
+                    return;
+                }
+            }
             // value = "visible";
             pim.PaymentMemos = selectedItems1.ToList();
             foreach (var item in pim.PaymentMemos)
