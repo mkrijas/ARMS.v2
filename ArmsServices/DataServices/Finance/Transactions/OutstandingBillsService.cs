@@ -168,18 +168,12 @@ namespace ArmsServices.DataServices
         private OutstandingBillsModel  GetModel(IDataRecord dr)
         {
             return new OutstandingBillsModel
-            {
-                //BillTransactionID = dr.GetInt32("BillTransactionID"),
-                //BillTransactionType = dr.GetString("BillTransactionType"),
+            {                
                 BoID = dr.GetInt32("BoID"),
-                InitialAmount = dr.GetDecimal("OutstandingAmount"),
-                NatureOfTransaction= dr.GetString("NatureOfTransaction"),
-                //OutstandingAmount = dr.GetDecimal("OutstandingAmount"),
-                //DocDate = dr.GetDateTime("DocumentDate"),
-                //DocNumber = dr.GetString("DocumentNumber"),
+                InitialAmount = dr.GetDecimal("InitialAmount"),
+                NatureOfTransaction= dr.GetString("NatureOfTransaction"),                
                 BranchName = dr.GetString("BranchName"),
-                BranchID= dr.GetInt32("BranchID"),
-                CoaID = dr.GetInt32("CoaID"),
+                BranchID= dr.GetInt32("BranchID"),               
                 ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),                
                 ReferenceDocNo = dr.GetString("ReferenceDocNo"),               
                 PartyInfo = new PartyModel()

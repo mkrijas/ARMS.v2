@@ -102,13 +102,9 @@ namespace ArmsServices.DataServices
                     BoID = dr.GetInt32("BoID"),
                     BpID = dr.GetInt32("BpID"),
                     BranchID = dr.GetInt32("BranchID"),
-                    BranchName = dr.GetString("BranchName"),
-                    DocDate = dr.GetDateTime("DocumentDate"),
-                    DocNumber=dr.GetString("DocumentNumber"),
-                    InvoiceDate=dr.GetDateTime("InvoiceDate"),
-                    InvoiceNumber=dr.GetString("InvoiceNumber"),
-
-                    
+                    BranchName = dr.GetString("BranchName"),                    
+                    InvoiceDate=dr.GetDateTime("ReferenceDocDate"),
+                    InvoiceNumber=dr.GetString("ReferenceDocNo"),                    
                     PayAmount = dr.GetDecimal("PayAmount"),
                 };
             }
@@ -356,6 +352,8 @@ namespace ArmsServices.DataServices
                     DueOn = dr.GetDateTime("DueOn"),
                     PiID = dr.GetInt32("PiID"),
                     DocNumber = dr.GetString("DocNumber"),
+                    AuthLevelId = dr.GetInt32("AuthLevelId"),
+                    AuthStatus = dr.GetString("AuthStatus"),
                     DocDate = dr.GetDateTime("DocDate"),
                     TotalAmount = dr.GetDecimal("TotalAmount"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
@@ -437,7 +435,9 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),
-                CostCenter = dr.GetInt32("CostCenter"),               
+                CostCenter = dr.GetInt32("CostCenter"),
+                AuthLevelId = dr.GetInt32("AuthLevelId"),
+                AuthStatus = dr.GetString("AuthStatus"),
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),

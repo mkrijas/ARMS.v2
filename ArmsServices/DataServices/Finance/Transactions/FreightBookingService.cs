@@ -159,6 +159,8 @@ namespace ArmsServices.DataServices
                     DocumentDate = dr.GetDateTime("DocumentDate"),
                     DocumentNumber = dr.GetString("DocumentNumber"),
                     TotalAmount = dr.GetDecimal("TotalAmount"),
+                    AuthLevelId = dr.GetInt32("AuthLevelId"),
+                    AuthStatus = dr.GetString("AuthStatus"),
                     Narration = dr.GetString("Narration"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
@@ -183,11 +185,17 @@ namespace ArmsServices.DataServices
             {
                 yield return new GcTariffModel()
                 {
-                   
+
+                    GcTariffID = dr.GetInt64("GcTariffID"),
                     ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
-                    GcID = dr.GetInt32("GcID"),
+                    GcID = dr.GetInt64("GcID"),
                     TariffID = dr.GetInt32("TariffID"),
                     Amount = dr.GetDecimal("Amount"),
+                    BillDate = dr.GetDateTime("BillDate"),
+                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
+                    BillNumber = dr.GetString("BillNumber"),
+                    BillQuantity = dr.GetDecimal("BillQuantity"),
+                    ConsigneeName = dr.GetString("ConsigneeName"),
                 };
             }
         }
