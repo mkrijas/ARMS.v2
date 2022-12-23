@@ -95,19 +95,19 @@ namespace ArmsServices.DataServices
                     DraftBillID = dr.GetInt32("DraftBillID"),
                     OrderID = dr.GetInt32("PartyBranchID"),
                     PartyCoa = dr.GetInt32("PartyCoaID"),
-                    Party = new PartyModel() 
-                    { 
+                    Party = new PartyModel()
+                    {
                         PartyCode = dr.GetString("PartyCode"),
-                        PartyID = dr.GetInt32("PartyID") 
+                        PartyID = dr.GetInt32("PartyID")
                     },
                     TariffType = new TariffTypeModel()
                     {
-                        TariffTypeID = dr.GetInt16("TariffTypeID"),
+                        TariffTypeID = (short?)dr.GetInt32("TariffTypeID"),
                         UsageCode = dr.GetString("UsageCode"),
                     },
                     Reference = dr.GetString("Reference"),
-                    BranchID = dr.GetInt32("BranchID"),                                
-                    DocumentDate = dr.GetDateTime("DocDate"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    DocumentDate = dr.GetDateTime("DocumentDate"),
                     DocumentNumber = dr.GetString("DocumentNumber"),
                     MID = dr.GetInt32("MID"),
                     CostCenter = dr.GetInt32("CostCenter"),
