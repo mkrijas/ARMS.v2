@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Security.Cryptography;
 
 
 namespace ArmsServices.DataServices
@@ -19,6 +20,7 @@ namespace ArmsServices.DataServices
        IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID,int? BranchID, int? PartyBranchID);
         IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end);
         int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills);
+        int? AutoSettle(OutstandingBillsModel model,List<OutstandingBillsModel> Bills);
         IEnumerable<OutstandingPaymentModel> SelectOutstandingPayments(int? PartyID, int? BranchID);
     }
 
@@ -31,7 +33,18 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-       
+        public int? AutoSettle(OutstandingBillsModel model, List<OutstandingBillsModel> Bills)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "AutoSettle"),
+               new SqlParameter("@Bills", Bills.ToDataTable()),
+               new SqlParameter("@PartyID", model.PartyInfo.PartyID),
+                 new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Update]", parameters);
+        }
+
         public IEnumerable<OutstandingBillsModel> Select(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -110,7 +123,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<OutstandingPaymentModel> SelectOutstandingPayments(int? PartyID, int? BranchID)
+        public IEnumerable<OutstandingBillsModel> SelectOutstandingPayments(int? PartyID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -120,22 +133,22 @@ namespace ArmsServices.DataServices
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingPayments.Select]", parameters))
             {
-                yield return new OutstandingPaymentModel()
+                yield return new OutstandingBillsModel()
                 {
-                     DocDate = dr.GetDateTime("DocumentDate"),
-                     DocNumber = dr.GetString("DocumentNumber"),
-                     InitialAmount = dr.GetDecimal("InitialAmount"),                     
-                     OutstandingAmount = dr.GetDecimal ("OutstandingAmount"),
+                    ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
+                    ReferenceDocNo = dr.GetString("ReferenceDocNo"),
+                     InitialAmount = dr.GetDecimal("OutstandingAmount"),                     
                      BranchName = dr.GetString("BranchName"),
                      PartyInfo = new PartyModel()
                      {
                          PartyID = dr.GetInt32("PartyID"),
+                         PartyCode= dr.GetString("PartyID"),
                      },
-                     OpID = dr.GetInt32("OpID"),
-                     PaymentTransactionID = dr.GetInt32("PaymentTransactionID"),
-                     PaymentTransactionType = dr.GetString("PaymentTransactionType"),
-                     ReferenceDate = dr.GetDateTime("ReferenceDate"),
-                     ReferenceNumber = dr.GetString("ReferenceNumber"),
+                     //OpID = dr.GetInt32("OpID"),
+                     //PaymentTransactionID = dr.GetInt32("PaymentTransactionID"),
+                     //PaymentTransactionType = dr.GetString("PaymentTransactionType"),
+                     //ReferenceDate = dr.GetDateTime("ReferenceDate"),
+                     //ReferenceNumber = dr.GetString("ReferenceNumber"),
                 };
             }
         }
@@ -171,6 +184,11 @@ namespace ArmsServices.DataServices
                   
                 }
             };
+        }
+
+        IEnumerable<OutstandingPaymentModel> IOutstandingBillsService.SelectOutstandingPayments(int? PartyID, int? BranchID)
+        {
+            throw new NotImplementedException();
         }
     }
 }

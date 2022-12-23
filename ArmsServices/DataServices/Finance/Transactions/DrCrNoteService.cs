@@ -73,7 +73,7 @@ namespace ArmsServices.DataServices
                 yield return new BillInfoModel()
                 {
                     TotalAmount = dr.GetDecimal("TotalAmount"),
-                    PID = dr.GetInt32("PID"),
+                    //PID = dr.GetInt32("PID"),
                     BillID = dr.GetInt32("ID"),                  
                     DocumentNumber = dr.GetString("DocumentNumber"),
                     DocumentDate = dr.GetDateTime("DocumentDate")

@@ -39,7 +39,6 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@SID", SID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 1),
                new SqlParameter("@Remarks", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Approve]", parameters);
