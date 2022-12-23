@@ -8,6 +8,10 @@ namespace ArmsModels.BaseModels
 {
     public class OutstandingBillsModel : TransactionBaseModel
     {
+        public OutstandingBillsModel()
+        {
+            PartyInfo = new();
+        }
         public int? BoID { get; set; }
         public PartyModel PartyInfo { get; set; }
         public int  ? CoaID { get; set; }
