@@ -99,7 +99,7 @@ namespace ArmsServices.DataServices
             {
                 yield return new BillsPaidModel()
                 {
-                    BoID = dr.GetInt32("BoID"),
+                    MID = dr.GetInt32("MID"),
                     BpID = dr.GetInt32("BpID"),
                     BranchID = dr.GetInt32("BranchID"),
                     BranchName = dr.GetString("BranchName"),                    

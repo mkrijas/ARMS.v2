@@ -14,7 +14,7 @@ namespace ArmsModels.BaseModels
         }
         public int? BoID { get; set; }
         public PartyModel PartyInfo { get; set; }        
-        public decimal? InitialAmount { get; set; }
+        public decimal? Amount { get; set; }
         public virtual string BranchName { get; set; }        
         public string ReferenceDocNo { get; set; }
         public DateTime? ReferenceDocDate { get; set; }

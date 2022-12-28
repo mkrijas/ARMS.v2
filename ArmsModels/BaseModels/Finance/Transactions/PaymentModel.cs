@@ -17,7 +17,6 @@ namespace ArmsModels.BaseModels
         public List<BillsPaidModel> Bills { get; set; }
     }
 
-
     //public class OutstandingBillsModel
     //{
     //    public int? BoID { get; set; }
@@ -51,7 +50,7 @@ namespace ArmsModels.BaseModels
     {
         decimal? _PayAmount;
         public int? BpID { get; set; }
-        public int? BoID { get; set; }
+        public int? MID { get; set; }
         public virtual decimal? OutstandingAmount { get; set; }
         
         public decimal? PayAmount
@@ -87,6 +86,7 @@ namespace ArmsModels.BaseModels
     }
 
 
+
     public class PaymentFinishModel 
     {
         public PaymentFinishModel()
@@ -96,8 +96,8 @@ namespace ArmsModels.BaseModels
         }
         public int? PfID { get; set; }
         public int? PiID { get; set; }       
-        public string PaymentMode { get; set; }      // Bank,Cash   
-        public string PaymentTool { get; set; } // Cheque,DD
+        public string PaymentMode { get; set; }  // Bank,Cash   
+        public string PaymentTool { get; set; }  // Cheque,DD
         public string PaymentArdCode { get; set; }
         public decimal? BankCharges { get; set; }
         public int? PaymentCoaID { get; set; }

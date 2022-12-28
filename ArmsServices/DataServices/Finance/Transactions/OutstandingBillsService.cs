@@ -15,13 +15,10 @@ namespace ArmsServices.DataServices
         
         OutstandingBillsModel SelectByID(int? ID);       
         IEnumerable<OutstandingBillsModel> Select(int BranchID);
-        IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID);
-
-       IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID,int? BranchID, int? PartyBranchID);
+        IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID);        
         IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end);
-        int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills);
-        int? AutoSettle(OutstandingBillsModel model,List<OutstandingBillsModel> Bills);
-        IEnumerable<OutstandingPaymentModel> SelectOutstandingPayments(int? PartyID, int? BranchID);
+       // int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills);
+        int? AutoSettle(OutstandingBillsModel model,List<OutstandingBillsModel> Bills);       
     }
 
     public class OutstandingBillsService : IOutstandingBillsService
@@ -137,7 +134,7 @@ namespace ArmsServices.DataServices
                 {
                     ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
                     ReferenceDocNo = dr.GetString("ReferenceDocNo"),
-                     InitialAmount = dr.GetDecimal("OutstandingAmount"),                     
+                     Amount = dr.GetDecimal("OutstandingAmount"),                     
                      BranchName = dr.GetString("BranchName"),
                      PartyInfo = new PartyModel()
                      {
@@ -170,7 +167,7 @@ namespace ArmsServices.DataServices
             return new OutstandingBillsModel
             {                
                 BoID = dr.GetInt32("BoID"),
-                InitialAmount = dr.GetDecimal("InitialAmount"),
+                Amount = dr.GetDecimal("Amount"),
                 NatureOfTransaction= dr.GetString("NatureOfTransaction"),                
                 BranchName = dr.GetString("BranchName"),
                 BranchID= dr.GetInt32("BranchID"),               
@@ -184,11 +181,6 @@ namespace ArmsServices.DataServices
                   
                 }
             };
-        }
-
-        IEnumerable<OutstandingPaymentModel> IOutstandingBillsService.SelectOutstandingPayments(int? PartyID, int? BranchID)
-        {
-            throw new NotImplementedException();
-        }
+        }        
     }
 }
