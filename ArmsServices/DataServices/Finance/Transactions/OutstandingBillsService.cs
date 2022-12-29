@@ -30,7 +30,12 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int? AutoSettle(OutstandingBillsModel model, List<OutstandingBillsModel> Bills)
+        //public int? AutoSettle(OutstandingBillsModel model, List<OutstandingBillsModel> Bills)
+        //{
+           
+        //}
+
+        public int? AutoSettle(OutstandingBillsModel model, List<OutstandingBillTableType> Bills)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -136,6 +141,7 @@ namespace ArmsServices.DataServices
                     ReferenceDocNo = dr.GetString("ReferenceDocNo"),
                      Amount = dr.GetDecimal("OutstandingAmount"),                     
                      BranchName = dr.GetString("BranchName"),
+                     
                      PartyInfo = new PartyModel()
                      {
                          PartyID = dr.GetInt32("PartyID"),
@@ -170,16 +176,28 @@ namespace ArmsServices.DataServices
                 Amount = dr.GetDecimal("Amount"),
                 NatureOfTransaction= dr.GetString("NatureOfTransaction"),                
                 BranchName = dr.GetString("BranchName"),
-                BranchID= dr.GetInt32("BranchID"),               
-                ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),                
-                ReferenceDocNo = dr.GetString("ReferenceDocNo"),               
+                BranchID = dr.GetInt32("BranchID"),
+                ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
+                ReferenceDocNo = dr.GetString("ReferenceDocNo"),
+                //Obt = new List<OutstandingBillTableType>
+                //{
+
+                //},
+                BillInfo = new OutstandingBillTableType()
+                {
+                    BoID=dr.GetInt32("BOID"),
+                    MId = dr.GetInt32("MID"),
+                    InitialAmount=dr.GetDecimal("OutstandingAmount")
+                },
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
                     GstNo = dr.GetString("GstNo"),
                     TradeName= dr.GetString("TradeName")
+                    
                   
                 }
+                
             };
         }        
     }

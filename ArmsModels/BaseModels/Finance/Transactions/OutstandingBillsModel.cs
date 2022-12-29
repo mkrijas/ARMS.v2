@@ -8,10 +8,6 @@ namespace ArmsModels.BaseModels
 {
     public class OutstandingBillsModel : TransactionBaseModel
     {
-        public OutstandingBillsModel()
-        {
-            PartyInfo = new();
-        }
         public int? BoID { get; set; }
         public PartyModel PartyInfo { get; set; }        
         public decimal? Amount { get; set; }
@@ -21,5 +17,14 @@ namespace ArmsModels.BaseModels
         public int? PaymentMemoID { get; set; }
         public int? SettlementID { get; set; }
         public int? AutoSettleID { get; set; }
+        public OutstandingBillTableType BillInfo { get; set; }
+   
+
+    }
+    public class OutstandingBillTableType
+    {
+        public int ? BoID { get; set; }
+        public int ? MId { get; set; }
+        public decimal ? InitialAmount { get; set; }
     }
 }
