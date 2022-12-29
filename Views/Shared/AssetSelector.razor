@@ -1,18 +1,20 @@
 ﻿@inject IAssetService Iasset
 
-@if(IsLoaded)
+@if (IsLoaded)
 {
-    <MudAutocomplete Class="@Class"  T="AssetModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Asset" @bind-Value="Value" ResetValueOnEmptyText="true"
-         Clearable="true" SearchFunc="SearchAsset" ToStringFunc="@(e => e == null ? null : $"{e.Description}")"></MudAutocomplete>
+    <MudAutocomplete @ref="_autoComplete" Class="@Class" T="AssetModel" OnKeyUp="Enter" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Add Asset" @bind-Value="Value" ResetValueOnEmptyText="true"
+                 Clearable="true" SearchFunc="SearchAsset" ToStringFunc="@(e => e == null ? null : $"{e.Description}")"></MudAutocomplete>
 
 }
 else
 {
-   <MudText> Loading..... </MudText> 
+    <MudText> Loading..... </MudText>
 }
 
 @code {
-    private List<AssetModel> AssetList = new();    
+    private List<AssetModel> AssetList = new();
+    private MudAutocomplete<AssetModel> _autoComplete {get;set;}
+    [Parameter] public EventCallback<bool> SetAssets { get; set; }
 
     [Parameter]
     public AssetModel Value
@@ -23,6 +25,16 @@ else
             if (_value == value) return;
             _value = value;
             ValueChanged.InvokeAsync(value);
+        }
+    }
+
+    private async Task Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            SetAssets.InvokeAsync();
+            await _autoComplete.Clear();
+            SearchAsset("");
         }
     }
 
@@ -45,8 +57,7 @@ else
 
         if (PassedListAssets != null && PassedListAssets.Count() != 0)
         {
-            var result = AssetList.Where(x => (!PassedListAssets.Any(g => g.AssetID == x.AssetID) )&& x.AssetCode.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
-            Value = null;
+            var result = AssetList.Where(x => (!PassedListAssets.Any(g => g.AssetID == x.AssetID)) && x.AssetCode.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
             return result;
         }
         else
@@ -55,19 +66,19 @@ else
 
         }
     }
-        
-  
+
+
 
     protected override void OnInitialized()
     {
-        if(PassedListAssets != null && PassedListAssets.Count() != 0)
+        if (PassedListAssets != null && PassedListAssets.Count() != 0)
         {
-            AssetList = Iasset.GetAttachedAssets(null).Where(s=>!PassedListAssets.Any(g=>g.AssetID == s.AssetID)).ToList();
+            AssetList = Iasset.GetAttachedAssets(null).Where(s => !PassedListAssets.Any(g => g.AssetID == s.AssetID)).ToList();
         }
         else
         {
-        AssetList = Iasset.GetAttachedAssets(null).ToList();
-            
+            AssetList = Iasset.GetAttachedAssets(null).ToList();
+
         }
         IsLoaded = true;
     }
