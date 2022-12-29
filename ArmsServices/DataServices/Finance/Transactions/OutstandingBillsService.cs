@@ -18,7 +18,7 @@ namespace ArmsServices.DataServices
         IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID);        
         IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end);
        // int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills);
-        int? AutoSettle(OutstandingBillsModel model,List<OutstandingBillsModel> Bills);       
+        int? AutoSettle(OutstandingBillsModel model,List<BillsPaidModel> Bills);       
     }
 
     public class OutstandingBillsService : IOutstandingBillsService
@@ -35,7 +35,7 @@ namespace ArmsServices.DataServices
            
         //}
 
-        public int? AutoSettle(OutstandingBillsModel model, List<OutstandingBillTableType> Bills)
+        public int? AutoSettle(OutstandingBillsModel model, List<BillsPaidModel> Bills)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -125,48 +125,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<OutstandingBillsModel> SelectOutstandingPayments(int? PartyID, int? BranchID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByBranch"),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@PartyID", PartyID),
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingPayments.Select]", parameters))
-            {
-                yield return new OutstandingBillsModel()
-                {
-                    ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
-                    ReferenceDocNo = dr.GetString("ReferenceDocNo"),
-                     Amount = dr.GetDecimal("OutstandingAmount"),                     
-                     BranchName = dr.GetString("BranchName"),
-                     
-                     PartyInfo = new PartyModel()
-                     {
-                         PartyID = dr.GetInt32("PartyID"),
-                         PartyCode= dr.GetString("PartyID"),
-                     },
-                     //OpID = dr.GetInt32("OpID"),
-                     //PaymentTransactionID = dr.GetInt32("PaymentTransactionID"),
-                     //PaymentTransactionType = dr.GetString("PaymentTransactionType"),
-                     //ReferenceDate = dr.GetDateTime("ReferenceDate"),
-                     //ReferenceNumber = dr.GetString("ReferenceNumber"),
-                };
-            }
-        }
-
-        public int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "Settle"),
-               new SqlParameter("@Bills", Bills.ToDataTable()),
-               new SqlParameter("@OPID", OPID),
-            };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingPayments.SettleBills]", parameters);
-            
-        }
+        
 
         private OutstandingBillsModel  GetModel(IDataRecord dr)
         {
@@ -179,16 +138,8 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
                 ReferenceDocNo = dr.GetString("ReferenceDocNo"),
-                //Obt = new List<OutstandingBillTableType>
-                //{
-
-                //},
-                BillInfo = new OutstandingBillTableType()
-                {
-                    BoID=dr.GetInt32("BOID"),
-                    MId = dr.GetInt32("MID"),
-                    InitialAmount=dr.GetDecimal("OutstandingAmount")
-                },
+              isMemo=dr.GetBoolean("IsMemo"),
+              
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
