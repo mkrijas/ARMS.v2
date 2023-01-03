@@ -17,10 +17,11 @@ namespace ArmsModels.BaseModels
         public PartyModel PartyInfo { get; set; }        
         public decimal? OutstandingAmount { get; set; }
         public virtual string BranchName { get; set; }        
-        public string ReferenceDocNo { get; set; }
-        public DateTime? ReferenceDocDate { get; set; }
-        public int? PaymentMemoID { get; set; }
-        public int? SettlementID { get; set; }
-        public int? AutoSettleID { get; set; }
-    }
+        public virtual string ReferenceDocNo { get; set; }
+        public virtual DateTime? ReferenceDocDate { get; set; }
+        public virtual int? PaymentMemoID { get; set; }
+        public virtual int? SettlementID { get; set; }
+        public virtual int? AutoSettleID { get; set; } 
+        public bool isMemo { get; set; }
+    }   
 }

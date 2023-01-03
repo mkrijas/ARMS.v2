@@ -15,13 +15,10 @@ namespace ArmsServices.DataServices
         
         OutstandingBillsModel SelectByID(int? ID);       
         IEnumerable<OutstandingBillsModel> Select(int BranchID);
-        IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID);
-
-       IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID,int? BranchID, int? PartyBranchID);
+        IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID);        
         IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end);
-        int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills);
-        int? AutoSettle(OutstandingBillsModel model,List<OutstandingBillsModel> Bills);
-        IEnumerable<OutstandingPaymentModel> SelectOutstandingPayments(int? PartyID, int? BranchID);
+       // int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills);
+        int? AutoSettle(OutstandingBillsModel model,List<BillsPaidModel> Bills);       
     }
 
     public class OutstandingBillsService : IOutstandingBillsService
@@ -33,7 +30,12 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int? AutoSettle(OutstandingBillsModel model, List<OutstandingBillsModel> Bills)
+        //public int? AutoSettle(OutstandingBillsModel model, List<OutstandingBillsModel> Bills)
+        //{
+           
+        //}
+
+        public int? AutoSettle(OutstandingBillsModel model, List<BillsPaidModel> Bills)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -184,14 +186,11 @@ namespace ArmsServices.DataServices
                     PartyID = dr.GetInt32("PartyID"),
                     GstNo = dr.GetString("GstNo"),
                     TradeName= dr.GetString("TradeName")
+                    
                   
                 }
+                
             };
-        }
-
-        IEnumerable<OutstandingPaymentModel> IOutstandingBillsService.SelectOutstandingPayments(int? PartyID, int? BranchID)
-        {
-            throw new NotImplementedException();
-        }
+        }        
     }
 }

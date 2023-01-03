@@ -12,12 +12,12 @@ namespace ArmsModels.BaseModels
         public int? ReceiptID { get; set; }
         public PartyModel PartyInfo { get; set; }
         public int? PartyCoaID { get; set; }
-        public string ReceiptType { get; set; } // Advance/Deposit/Settlement        
-        public string ReceiptMode { get; set; } // Cash/Bank
-        public string ReceiptTool { get; set; } // (Cheque/NEFT)
+        public string ReceiptType { get; set; }  // Advance/Deposit/Settlement        
+        public string ReceiptMode { get; set; }  // Cash/Bank
+        public string ReceiptTool { get; set; }  // (Cheque/NEFT)
         public string ReceiptArdCode { get; set; }
         public decimal? BankCharges { get; set; }
-        public int? ReceiptCoaID { get; set; }//ac cash ac
+        public int? ReceiptCoaID { get; set; }  //ac cash ac
         public string Reference { get; set; }
         public DateTime? EffectiveDate { get; set; }
         public bool IsRealized { get; set; }
@@ -29,7 +29,7 @@ namespace ArmsModels.BaseModels
     {
         //outstading bills tick 
         public int? BrID { get; set; }
-        public int? BoID { get; set; }
+        public int? MID { get; set; }
         public decimal? ReceiptAmount { get; set; }       
         public virtual string BranchName { get; set; }
         public virtual int? BranchID { get; set; }
