@@ -12,9 +12,10 @@ namespace ArmsModels.BaseModels
         {
             PartyInfo = new();
         }
-        public int? BoID { get; set; }
+        public virtual int? BoID { get; set; }
+        public int? MID { get; set; }
         public PartyModel PartyInfo { get; set; }        
-        public decimal? InitialAmount { get; set; }
+        public decimal? OutstandingAmount { get; set; }
         public virtual string BranchName { get; set; }        
         public string ReferenceDocNo { get; set; }
         public DateTime? ReferenceDocDate { get; set; }
