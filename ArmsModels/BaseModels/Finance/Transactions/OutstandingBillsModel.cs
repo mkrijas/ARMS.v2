@@ -12,8 +12,7 @@ namespace ArmsModels.BaseModels
         {
             PartyInfo = new();
         }
-        public virtual int? BoID { get; set; }
-        public int? MID { get; set; }
+        public virtual int? BoID { get; set; }        
         public PartyModel PartyInfo { get; set; }        
         public decimal? OutstandingAmount { get; set; }
         public virtual string BranchName { get; set; }        

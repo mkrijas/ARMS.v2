@@ -123,16 +123,5 @@ namespace ArmsModels.BaseModels
         public DateTime? EffectiveDate { get; set; }
         public decimal? Amount { get; set; }
     }
-    public class CombinationtypeModel
-    {
-        public int? Cid { get; set; }
-        public int FundType { get; set; }
-        public int BranchID { get; set; }
-        public string CombinationCode { get; set; }
-    }
-    public class FundTypeModel
-    {
-        public int? Id { get; set; }
-        public string FundTypeName { get; set; }
-    }
+
 }
