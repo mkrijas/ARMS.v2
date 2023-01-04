@@ -90,26 +90,26 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID, int? PartyBranchID)
-        {
-            throw new NotImplementedException();
-        }
-
-        //public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID)
+        //public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID, int? PartyBranchID)
         //{
-        //    List<SqlParameter> parameters = new List<SqlParameter>
-        //    {
-        //       new SqlParameter("@PartyBranchID", PartyBranchID),
-        //       new SqlParameter("@PartyID", PartyID),
-        //       new SqlParameter("@BranchID", BranchID),
-        //    };
-
-        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.Select]", parameters))
-        //    {
-        //        yield return GetModel(dr);
-        //    }
-        //    //   throw new NotImplementedException();
+        //    throw new NotImplementedException();
         //}
+
+        public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PartyBranchID", PartyBranchID),
+               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@BranchID", BranchID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+            //   throw new NotImplementedException();
+        }
 
         public IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
@@ -125,14 +125,55 @@ namespace ArmsServices.DataServices
             }
         }
 
-        
+        public IEnumerable<OutstandingBillsModel> SelectOutstandingPayments(int? PartyID, int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByBranch"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@PartyID", PartyID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingPayments.Select]", parameters))
+            {
+                yield return new OutstandingBillsModel()
+                {
+                    ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
+                    ReferenceDocNo = dr.GetString("ReferenceDocNo"),
+                    OutstandingAmount = dr.GetDecimal("OutstandingAmount"),                     
+                     BranchName = dr.GetString("BranchName"),
+                     PartyInfo = new PartyModel()
+                     {
+                         PartyID = dr.GetInt32("PartyID"),
+                         PartyCode= dr.GetString("PartyID"),
+                     },
+                     //OpID = dr.GetInt32("OpID"),
+                     //PaymentTransactionID = dr.GetInt32("PaymentTransactionID"),
+                     //PaymentTransactionType = dr.GetString("PaymentTransactionType"),
+                     //ReferenceDate = dr.GetDateTime("ReferenceDate"),
+                     //ReferenceNumber = dr.GetString("ReferenceNumber"),
+                };
+            }
+        }
+
+        public int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "Settle"),
+               new SqlParameter("@Bills", Bills.ToDataTable()),
+               new SqlParameter("@OPID", OPID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingPayments.SettleBills]", parameters);
+            
+        }
 
         private OutstandingBillsModel  GetModel(IDataRecord dr)
         {
             return new OutstandingBillsModel
             {                
                 BoID = dr.GetInt32("BoID"),
-                Amount = dr.GetDecimal("Amount"),
+                MID = dr.GetInt32("MID"),
+                OutstandingAmount = dr.GetDecimal("OutstandingAmount"),
                 NatureOfTransaction= dr.GetString("NatureOfTransaction"),                
                 BranchName = dr.GetString("BranchName"),
                 BranchID = dr.GetInt32("BranchID"),

@@ -8,9 +8,13 @@ namespace ArmsModels.BaseModels
 {
     public class OutstandingBillsModel : TransactionBaseModel
     {
-        public int? BoID { get; set; }        
-        public virtual PartyModel PartyInfo { get; set; }        
-        public decimal? Amount { get; set; }
+        public OutstandingBillsModel()
+        {
+            PartyInfo = new();
+        }
+        public virtual int? BoID { get; set; }        
+        public PartyModel PartyInfo { get; set; }        
+        public decimal? OutstandingAmount { get; set; }
         public virtual string BranchName { get; set; }        
         public virtual string ReferenceDocNo { get; set; }
         public virtual DateTime? ReferenceDocDate { get; set; }
