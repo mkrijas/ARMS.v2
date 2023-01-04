@@ -138,7 +138,8 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
                 ReferenceDocNo = dr.GetString("ReferenceDocNo"),
-              isMemo=dr.GetBoolean("IsMemo"),
+                isMemo=dr.GetBoolean("IsMemo"),
+                MID=dr.GetInt32("MID"),
               
                 PartyInfo = new PartyModel()
                 {
