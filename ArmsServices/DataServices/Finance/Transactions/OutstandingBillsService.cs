@@ -178,11 +178,11 @@ namespace ArmsServices.DataServices
                 OutstandingAmount = dr.GetDecimal("OutstandingAmount"),
                 NatureOfTransaction= dr.GetString("NatureOfTransaction"),                
                 BranchName = dr.GetString("BranchName"),
-                BranchID= dr.GetInt32("BranchID"),
-                DocumentDate = dr.GetDateTime("DocDate"),
-                DocumentNumber = dr.GetString("DocNumber"),
-                ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),                
-                ReferenceDocNo = dr.GetString("ReferenceDocNo"),               
+                BranchID = dr.GetInt32("BranchID"),
+                ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
+                ReferenceDocNo = dr.GetString("ReferenceDocNo"),
+                isMemo=dr.GetBoolean("IsMemo"),
+              
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),

@@ -52,8 +52,8 @@ namespace ArmsModels.BaseModels
         public int? BpID { get; set; }
         public int? MID { get; set; }
         public virtual decimal? OutstandingAmount { get; set; }
-
-        public decimal? PayAmount
+  public decimal? Amount_ { get; set; }
+        public virtual decimal? PayAmount
         {
             get { return _PayAmount; }
             set
@@ -65,7 +65,7 @@ namespace ArmsModels.BaseModels
         public virtual int? BranchID { get; set; }
         public virtual string InvoiceNumber { get; set; }
         public virtual DateTime? InvoiceDate { get; set; }
-        public bool IsMemo { get; set; }
+        public  bool IsMemo { get; set; }
     }
 
     public class PaymentInitiatedModel
