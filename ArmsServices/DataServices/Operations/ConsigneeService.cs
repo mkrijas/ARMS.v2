@@ -109,6 +109,7 @@ namespace ArmsServices.DataServices
             {
                 ConsigneeID = dr.GetInt32("ConsigneeID"),
                 ConsigneeName = dr.GetString("ConsigneeName"),
+                ArdCode = dr.GetString("ArdCode"),
                 Consignor = dr.GetBoolean("Consignor"),
                 Mobile = dr.GetString("Mobile"),
                 Address = Iaddress.SelectByID(dr.GetInt32("AddressID").GetValueOrDefault()),

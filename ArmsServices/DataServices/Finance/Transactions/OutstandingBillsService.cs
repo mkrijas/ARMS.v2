@@ -47,6 +47,8 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Update]", parameters);
         }
 
+
+
         public IEnumerable<OutstandingBillsModel> Select(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
