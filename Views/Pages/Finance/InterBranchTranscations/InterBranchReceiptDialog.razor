@@ -1,10 +1,12 @@
-﻿@*@page "/Receipt"*@
-@using Microsoft.Extensions.Configuration
+﻿@using Microsoft.Extensions.Configuration
+@using Views.Pages.Finance.Transactions
 @inject IReceiptService Iservice
 @inject IPartyService partyIservice
+@inject IInterBranchTransactionService intermappingIservice
 @inject IOutstandingBillsService OutstandingIservice
 @inject ICostCenterService costIservice
 @inject TruckDataArrayModel data
+@inject IBranchService branchIservice
 @inject IDimensionService dimensionIservice
 @inject IConfiguration configuration
 @inject NavigationManager uriHelper;
@@ -16,11 +18,6 @@
 
 
 
-@*<MudLink Href="ReceiptApproveView" Underline="Underline.Always">Receipt Approve</MudLink>
-
-<hr />
-<MudPaper>
-    <MudContainer>*@
         <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -35,13 +32,7 @@
     <DialogContent>
            <MudContainer Style="max-height: 450px; overflow-y: scroll">
         <MudGrid Spacing="4">
-            @*
-            <MudItem xs="12" md="10">
-            <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Customer"></PartySelector>
-            </MudItem>
-            <MudItem xs="12" md="2">
-            <MudButton @onclick="OpenOtstandingBills" Variant="Variant.Filled" Color="Color.Primary">Search</MudButton>
-            </MudItem>*@
+          
             <MudItem xs="12" md="3">
                 <MudSelect Label="Select Party" ReadOnly="IsReadOnly" @bind-Value="nbusiness" T="string" SelectedValuesChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                     @foreach (var ditem in NatureOfBusiness)
@@ -94,10 +85,24 @@
 
                
             </MudItem>
-
+              <MudItem xs="12" md="5">
+                   <MudSelect Label="Select Branch" ReadOnly="IsReadOnly" @bind-Value="OtherBranch" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in branches)
+                            {
+                                <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
+                            }
+                        </MudSelect>
+              </MudItem>  <MudItem xs="12" md="5">
+                   <MudSelect Label="Select Transaction Type" ReadOnly="IsReadOnly" @bind-Value="model.TransactionType" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in transactionTypeList)
+                            {
+                                <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
+              </MudItem>
             @if (Isbill)
             {
-
+               
                 <MudItem xs="12" md="2">
                     <MudButton @onclick="OpenOtstandingBills" Variant="Variant.Filled" Color="Color.Primary">Search</MudButton>
                 </MudItem>
@@ -105,13 +110,13 @@
 
         </MudGrid>
        
-    @*</MudContainer>
-</MudPaper>*@
+ 
 <br />
 
 <MudPaper Class="@value">
     <MudContainer>
         <MudGrid>
+             
             @if (Isbill)
             {
                 <MudItem xs="12">
@@ -145,28 +150,7 @@
                 </MudItem>
             }
             <MudItem xs="12" md="12">
-                @* <MudSelect Label="Select ReceiptType" @bind-Value="model.ReceiptType" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                <MudSelectItem Value="@("Advance")" />
-                <MudSelectItem Value="@("Deposit")" />
-                <MudSelectItem Value="@("Settlement")" />
-                </MudSelect>
-                </MudItem>
-                <MudItem xs="12" md="3">
-                <MudSelect Label="Select ReceiptMode" @bind-Value="model.ReceiptMode" TextChanged="ReceiptModeChange" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                <MudSelectItem Value="@("Cash")" />
-                <MudSelectItem Value="@("Bank")" />
-
-                </MudSelect>
-                </MudItem>
-                <MudItem xs="12" md="3">
-                <MudSelect Label="Select ReceiptTool" ReadOnly="@readvalue" TextChanged="ReceiptToolChange" @bind-Valu="model.ReceiptTool" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                @foreach (var item in data.BankTools)
-                {
-                <MudSelectItem Value="@item">@item</MudSelectItem>
-                }
-
-                </MudSelect>*@
-
+             
                 <PaymentCodeSelector @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
 
 
@@ -264,6 +248,10 @@
     public bool checkread = false;
     public string status = null;
     private bool Isbill = false;
+    //public BranchModel OtherBranch = new();
+    public int? OtherBranch;
+    private List<InterBranchTransactionTypeModel> transactionTypeList = new();
+    private List<BranchModel> branches = new();
     ProformaInvoiceModel pmodel = new();
     private AccountRuleDefinitionModel accountRuleDefinitionModel = new();
     public bool Basic_CheckBox2 { get; set; } = false;
@@ -288,6 +276,8 @@
         }
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
+        branches = branchIservice.Select().ToList();
+        transactionTypeList = intermappingIservice.GetTypes().ToList();
         // GetOutstandingBill();
     }
     private void nbusinesschanged()
@@ -351,12 +341,14 @@
 
     private async Task OpenOtstandingBills()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
+        if(OtherBranch==null)
+        {
+            snackbar.Add("Please Select Branch", Severity.Info);
+            return;
+        }
         DialogParameters parms = new DialogParameters();
         parms.Add("PartyID", model.PartyInfo.PartyID);
-         parms.Add("BranchID", brancID);
+        parms.Add("BranchID", OtherBranch);
         var dialog = DialogService.Show<OutstandingBillView>("Outstanding Bill", parms, maxWidth);
         var result = await dialog.Result;
 
@@ -456,6 +448,7 @@
         model.ReceiptType = nbusiness;
         model.UserInfo.UserID = user.Identity.Name;
         model.BranchID = brancID;
+        model.IsInterBranch = true;
         Iservice.Update(model);
         snackbar.Add("Saved Successfully", Severity.Success);
         MudDialog.Close();

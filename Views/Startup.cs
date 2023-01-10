@@ -129,7 +129,7 @@ namespace Views
             services.AddScoped<IGstItemService, GstItemService>();
             services.AddScoped<ICostCenterService, CostCenterService>();
             services.AddScoped<IDimensionService, DimensionService>();
-            services.AddScoped<IInterBranchMappingService, InterBranchMappingService>();
+            services.AddScoped<IInterBranchTransactionService, InterBranchTransactionService>();
 
             //------------FINANCE TRANSACTIONS-------------------
             services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();
@@ -144,7 +144,7 @@ namespace Views
             services.AddScoped<IReceiptService, ReceiptService>();
             services.AddScoped<IDrCrNoteService, DrCrNoteService>();
             services.AddScoped<ISaleService, SaleService>();
-
+           
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();
             services.AddScoped<IBankAccountOwnService, BankAccountOwnService>();

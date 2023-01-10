@@ -34,7 +34,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
 
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.InterBranchAccount.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.InterBranchAccount.Delete]", parameters);
 
         }
 
@@ -44,7 +44,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "GetTypes"),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InterBranchAccount.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.InterBranchAccount.Select]", parameters))
             {
                 yield return new InterBranchTransactionTypeModel()
                 {
@@ -60,7 +60,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByID"),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InterBranchAccount.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.InterBranchAccount.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -74,7 +74,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TransactionTypeID", TransactionTypeID),
                new SqlParameter("@BranchID", BranchID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InterBranchAccount.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.InterBranchAccount.Select]", parameters))
             {
                  return GetModel(dr);
             }
@@ -88,7 +88,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
                new SqlParameter("@ID", ID),               
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InterBranchAccount.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.InterBranchAccount.Select]", parameters))
             {
                 return GetModel(dr);
             }
@@ -106,7 +106,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@CoaID", model.CoaID),             
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InterBranchAccount.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.InterBranchAccount.Update]", parameters))
             {
                 model = GetModel(dr);
             }

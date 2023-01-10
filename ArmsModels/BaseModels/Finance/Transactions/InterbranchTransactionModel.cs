@@ -10,6 +10,11 @@ namespace ArmsModels.BaseModels
 {
     public class InterBranchAccountMappingModel
     {
+        public InterBranchAccountMappingModel()
+        {
+
+            UserInfo = new SharedModels.UserInfoModel();
+        }
         public int? ID { get; set; }
         public int? TransactionTypeID { get; set; }
         public int? BranchID { get; set; }
