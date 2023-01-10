@@ -11,9 +11,10 @@ namespace ArmsServices.DataServices
     public interface IContraService
     {
         ContraModel Update(ContraModel model);
+        IEnumerable<ContraModel> SelectInterBranch(int? BranchID);
         ContraModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
-        IEnumerable<ContraModel> Select();
+        IEnumerable<ContraModel> Select(int? BranchID);
         int Approve(int? ID, string UserID, string Remarks);
         int Reverse(int? ID, string UserID, string Remarks);
 
@@ -39,12 +40,26 @@ namespace ArmsServices.DataServices
 
         }
 
-        public IEnumerable<ContraModel> Select()
+        public IEnumerable<ContraModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
+                new SqlParameter("@BranchID", BranchID),
+            };
 
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+        public IEnumerable<ContraModel> SelectInterBranch(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByID"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsInterBranch", true),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Select]", parameters))
@@ -104,6 +119,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@IsInterBranch", model.IsInterBranch),
+               new SqlParameter("@InterBranchTranID", model.InterBranchTranID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Update]", parameters))
@@ -131,6 +148,8 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 IsPayment = dr.GetBoolean("IsPayment"),
                 PaymentTool = dr.GetString("PaymentTool"),
+                InterBranchTranID = dr.GetInt32("InterBranchTranID"),
+                IsInterBranch = dr.GetBoolean("IsInterBranch"),
                 ChequeInfo = new ChequeModel()
                 {
                     ChequeDate = dr.GetDateTime("ChequeDate"),

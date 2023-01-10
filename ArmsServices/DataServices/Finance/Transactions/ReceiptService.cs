@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
         ReceiptModel SelectByID(int? ReceiptID);
         int Delete(int? ID, string UserID);
         IEnumerable<ReceiptModel> Select(int? BranchID);
+        IEnumerable<ReceiptModel> SelectInterBranch(int? BranchID);
         IEnumerable<ReceiptModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID);
         IEnumerable<ReceiptModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);
         IEnumerable<BillsReceiptModel> GetBills(int? ReceiptID);
@@ -98,6 +99,21 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<ReceiptModel> SelectInterBranch(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByID"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsInterBranch", true),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Receipt.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public ReceiptModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -173,6 +189,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@TimeStamp", model.UserInfo.TimeStampField),
                new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@IsInterBranch", model.IsInterBranch),
+               new SqlParameter("@InterBranchTranID", model.InterBranchTranID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Receipt.Update]", parameters))
@@ -205,6 +223,8 @@ namespace ArmsServices.DataServices
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
+                InterBranchTranID = dr.GetInt32("InterBranchTranID"),
+                IsInterBranch = dr.GetBoolean("IsInterBranch"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),

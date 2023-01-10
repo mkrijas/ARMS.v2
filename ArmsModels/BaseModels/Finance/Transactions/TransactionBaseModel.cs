@@ -27,7 +27,7 @@ namespace ArmsModels.BaseModels
         public int? AuthLevelId { get; set; }
         public string AuthStatus { get; set; }
         public bool IsInterBranch { get; set; }=false;
-        public int? TransactionType { get; set; } = null;
+        public int? InterBranchTranID { get; set; } = null;
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
