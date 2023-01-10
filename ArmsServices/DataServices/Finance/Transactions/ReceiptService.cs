@@ -17,7 +17,7 @@ namespace ArmsServices.DataServices
         IEnumerable<ReceiptModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID);
         IEnumerable<ReceiptModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);
         IEnumerable<BillsReceiptModel> GetBills(int? ReceiptID);
-        int Approve(int? PID, string UserID);
+        int Approve(int? PID, string UserID,string remarks);
         int Reverse(int? PID, string UserID);
         //IEnumerable<PaymentEntryModel> GetPaymentEntries(int? PfID);
     }
@@ -29,13 +29,13 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-        public int Approve(int? PID, string UserID)
+        public int Approve(int? PID, string UserID,string remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ReceiptID", PID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 1)
+               new SqlParameter("@Remarks", remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Reciept.Approve]", parameters);
         }

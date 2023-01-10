@@ -21,8 +21,8 @@ namespace ArmsModels.BaseModels
         public string Reference { get; set; }
         public DateTime? EffectiveDate { get; set; }
         public bool IsRealized { get; set; }
-        public bool IsInterBranch { get; set; }
-        public int? TransactionType { get; set; }
+        public string remarks { get; set; }
+       
         public List<BillsReceiptModel> Bills { get; set; }
 
     }
