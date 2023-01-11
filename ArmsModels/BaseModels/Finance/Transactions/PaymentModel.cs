@@ -51,8 +51,9 @@ namespace ArmsModels.BaseModels
         decimal? _PayAmount;
         public int? BpID { get; set; }
         public int? MID { get; set; }
+        public bool IsMemo { get; set; } = false;
         public virtual decimal? OutstandingAmount { get; set; }
-  public decimal? Amount_ { get; set; }
+        public decimal? Amount_ { get; set; }
         public virtual decimal? PayAmount
         {
             get { return _PayAmount; }
