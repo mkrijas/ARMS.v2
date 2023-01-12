@@ -47,6 +47,8 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Update]", parameters);
         }
 
+
+
         public IEnumerable<OutstandingBillsModel> Select(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -180,7 +182,7 @@ namespace ArmsServices.DataServices
                 ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
                 ReferenceDocNo = dr.GetString("ReferenceDocNo"),
                 isMemo=dr.GetBoolean("IsMemo"),
-                //MID=dr.GetInt32("MID"),
+                MID=dr.GetInt32("MID"),
               
                 PartyInfo = new PartyModel()
                 {

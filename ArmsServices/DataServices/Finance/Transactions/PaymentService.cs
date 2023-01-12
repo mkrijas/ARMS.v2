@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
         PartyPaymentMemoModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<PartyPaymentMemoModel> Select(int? BranchID);
+        IEnumerable<PartyPaymentMemoModel> SelectInterBranch(int? BranchID);
         IEnumerable<PartyPaymentMemoModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID);
         IEnumerable<PartyPaymentMemoModel> SelectByPeriod(DateTime? begin, DateTime? end,int? BranchID);
         IEnumerable<PartyPaymentMemoModel> Select(int PaymentInitiatedID, int? BranchID);
@@ -202,6 +203,20 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByID"),
                new SqlParameter("@BranchID", BranchID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+        public IEnumerable<PartyPaymentMemoModel> SelectInterBranch(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByID"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsInterBranch", true),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
@@ -414,6 +429,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyCode", model.PartyInfo.PartyCode),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@IsInterBranch", model.IsInterBranch),
+               new SqlParameter("@InterBranchTranID", model.InterBranchTranID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Update]", parameters))
@@ -441,6 +458,8 @@ namespace ArmsServices.DataServices
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
+                InterBranchTranID = dr.GetInt32("InterBranchTranID"),
+                IsInterBranch = dr.GetBoolean("IsInterBranch"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),

@@ -22,6 +22,7 @@ namespace ArmsModels.BaseModels
         public DateTime? EffectiveDate { get; set; }
         public bool IsRealized { get; set; }
         public string remarks { get; set; }
+       
         public List<BillsReceiptModel> Bills { get; set; }
 
     }
@@ -31,6 +32,7 @@ namespace ArmsModels.BaseModels
         //outstading bills tick 
         public int? BrID { get; set; }
         public int? MID { get; set; }
+        public bool IsMemo { get; set; } = false;
         public decimal? ReceiptAmount { get; set; }       
         public virtual string BranchName { get; set; }
         public virtual int? BranchID { get; set; }

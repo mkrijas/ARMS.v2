@@ -1,0 +1,138 @@
+﻿@inject IInterBranchTransactionService Iservice
+@inject IBranchService branchIservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            InterBranchMapping
+        </MudText>
+       
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 450px; overflow-y: scroll">
+            <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                  
+
+
+
+
+
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect Label="Select Transaction Type" ReadOnly="IsReadOnly" @bind-Value="model.TransactionTypeID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in transactionTypeList)
+                            {
+                                <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect Label="Select Branch" ReadOnly="IsReadOnly" @bind-Value="model.BranchID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in branches)
+                            {
+                                <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="model.InterBranchArdCode" ReadOnly="true"  Label="InterBranchArdCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InterBranchArdCode)"></MudTextField>
+
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                            <CoaSelector   @bind-Value="IntermappingCoaID" LabelName="Select Account"  />
+                    </MudItem>
+                
+
+                  
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+      
+        @if (!IsReadOnly)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Cancel</MudButton>
+
+            <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        }
+        @if (IsReadOnly)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Close</MudButton>
+
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public InterBranchAccountMappingModel model { get; set; }
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+    [Parameter]
+    public bool IsView { get; set; }
+    private List<InterBranchTransactionTypeModel> transactionTypeList = new();
+    private List<BranchModel> branches = new();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    public ChartOfAccountModel IntermappingCoaID = new();
+    protected override async Task OnInitializedAsync()
+    {
+        transactionTypeList = Iservice.GetTypes().ToList();
+        branches = branchIservice.Select().ToList();
+        //if (model.SID == null)
+        //{
+        //    model.TotalAmount = 0;
+        //}
+        //else
+        //{
+        //    saleExpensesList = Iservice.GetParticulars(model.SID).ToList();
+        //    saleItemsList = Iservice.GetItems(model.SID).ToList();
+        //}
+
+        //var authprov = await auth.GetAuthenticationStateAsync();
+        //var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        //branchID = int.Parse(brancIDString);
+
+        //dimension = dimensionIservice.Select().ToList();
+        //itm = itemIservice.SearchByDescription(string.Empty).ToList();
+
+        //model.NatureOfTransaction = "Sale";
+        //model.BranchID = branchID;
+    }
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    private async Task OnValidSubmit(EditContext context)
+    {
+
+        model.CoaID = IntermappingCoaID.CoaID;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+
+        try
+        {
+
+            Iservice.Update(model);
+            model = new();
+            snackbar.Add("Saved Successfully", Severity.Success);
+            model = new();
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+        MudDialog.Close();
+    }
+}

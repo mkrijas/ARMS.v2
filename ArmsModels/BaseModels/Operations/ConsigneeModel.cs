@@ -17,6 +17,7 @@ namespace ArmsModels.BaseModels
         public int? ConsigneeID { get; set; }
         [Required]
         public string ConsigneeName { get; set; }
+        public virtual string ArdCode { get; set; }
         public string Mobile { get; set; }       
         public int? PlaceID { get; set; }        
         public int? OrderID { get; set; }

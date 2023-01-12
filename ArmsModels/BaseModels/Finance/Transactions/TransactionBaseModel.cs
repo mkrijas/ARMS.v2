@@ -26,6 +26,8 @@ namespace ArmsModels.BaseModels
         public string Narration { get; set; }
         public int? AuthLevelId { get; set; }
         public string AuthStatus { get; set; }
+        public bool IsInterBranch { get; set; }=false;
+        public int? InterBranchTranID { get; set; } = null;
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 

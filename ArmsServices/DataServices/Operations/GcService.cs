@@ -49,34 +49,16 @@ namespace ArmsServices.DataServices
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@RouteID", model.RouteID),
                new SqlParameter("@PaidBy", model.PaidBy),
+               new SqlParameter("@PaidBy", model.PaidBy),
+               new SqlParameter("@Gcs", model.Gcs),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             GcSetModel InsertedModel = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.GcSet.Update]", parameters))
             {
-                InsertedModel = GetModel(dr);
-            }
-            foreach (GcModel bill in model.Gcs)
-            {
-                parameters = new List<SqlParameter>()
-                {
-                    new SqlParameter("@GcID", bill.GcID),
-                new SqlParameter("@BranchID", InsertedModel.BranchID),
-                new SqlParameter("@GcDate", InsertedModel.GcDate),
-                new SqlParameter("@GcSetID", InsertedModel.GcSetID),
-                new SqlParameter("@GcType", bill.GcType),
-                new SqlParameter("@BillDate", bill.BillDate),
-                new SqlParameter("@BillNumber", bill.BillNumber),
-                new SqlParameter("@BillQuantity", bill.BillQuantity),
-                new SqlParameter("@PassNumber", bill.PassNumber),
-                new SqlParameter("@UnloadedQuantity", bill.UnloadedQuantity),               
-                new SqlParameter("@UserID", bill.UserInfo.UserID),
-                };
-                foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.Gcs.Update]", parameters))
-                {
-                    InsertedModel.Gcs.Add(GetGcModel(dr));
-                }
-            }
-            return InsertedModel;
+                return GetModel(dr);
+            }           
+            return null;
         }
 
         public int Delete(long? GcID, string UserID)
@@ -205,7 +187,7 @@ namespace ArmsServices.DataServices
                 ConsigneeName = dr.GetString("ConsigneeName"),
                 ConsignorID = dr.GetInt32("ConsignorID"),
                 ConsignorName = dr.GetString("ConsignorName"),
-                PaidBy = dr.GetByte("PaidBy"),
+                PaidBy = dr.GetByte("PaidBy"),                
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
