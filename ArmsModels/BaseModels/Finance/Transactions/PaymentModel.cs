@@ -66,7 +66,7 @@ namespace ArmsModels.BaseModels
         public virtual int? BranchID { get; set; }
         public virtual string InvoiceNumber { get; set; }
         public virtual DateTime? InvoiceDate { get; set; }
-        public  bool IsMemo { get; set; }
+       // public  bool IsMemo { get; set; }
     }
 
     public class PaymentInitiatedModel
