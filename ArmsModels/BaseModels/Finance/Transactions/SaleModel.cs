@@ -9,9 +9,9 @@ namespace ArmsModels.BaseModels
     public class SaleModel : TransactionBaseModel
     {
         public int? SID { get; set; } 
-        public PartyModel PartyInfo { get; set; }  
+        public PartyModel PartyInfo { get; set; }
         [Required]
-        public bool IsCredit { get; set; }
+        public bool IsCredit { get; set; } = true;
 
         public decimal? AdditionalTCS { get; set; } 
 
