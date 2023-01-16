@@ -14,7 +14,7 @@ namespace ArmsModels.BaseModels
         public PartyModel PartyInfo { get; set; }
 
         public byte? PaymentStatus { get; set; } = 0; // 0 - generated; 1 - initiated; 2 - completed;
-        public List<BillsPaidModel> Bills { get; set; }
+        public List<BillsPaidModel> Bills { get; set; } = new();
     }
 
     //public class OutstandingBillsModel
@@ -52,14 +52,14 @@ namespace ArmsModels.BaseModels
         public int? BpID { get; set; }
         public int? MID { get; set; }
         public bool IsMemo { get; set; } = false;
-        public virtual decimal? OutstandingAmount { get; set; }
-        public decimal? Amount_ { get; set; }
-        public virtual decimal? PayAmount
+        public virtual decimal? OutstandingAmount { get; set; }        
+        public decimal? PayAmount
         {
             get { return _PayAmount; }
             set
             {
-                _PayAmount = (value > (OutstandingAmount ?? 0) ? OutstandingAmount : value);
+               // _PayAmount = (Math.Abs(value??0) > Math.Abs(OutstandingAmount ?? 0) || Math.Abs(value + OutstandingAmount??0) > Math.Abs(OutstandingAmount??0) ? -OutstandingAmount : value);
+            _PayAmount = value;
             }
         }
         public virtual string BranchName { get; set; }

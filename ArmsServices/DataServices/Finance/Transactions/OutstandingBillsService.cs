@@ -179,6 +179,8 @@ namespace ArmsServices.DataServices
                 NatureOfTransaction= dr.GetString("NatureOfTransaction"),                
                 BranchName = dr.GetString("BranchName"),
                 BranchID = dr.GetInt32("BranchID"),
+                DocumentNumber= dr.GetString("DocNumber"),
+                DocumentDate = dr.GetDateTime("DocDate"),                
                 ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
                 ReferenceDocNo = dr.GetString("ReferenceDocNo"),
                 isMemo=dr.GetBoolean("IsMemo"), 
