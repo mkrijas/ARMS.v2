@@ -179,7 +179,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Reverse(int GrnID, string UserID)
+        public int Reverse(int GrnID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
