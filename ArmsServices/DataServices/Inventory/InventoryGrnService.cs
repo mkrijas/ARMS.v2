@@ -17,8 +17,8 @@ namespace ArmsServices.DataServices
         IEnumerable<InventoryGrnModel> SelectPending(int BranchID);
         IEnumerable<InventoryGrnModel> PendingToInvoice(int BranchID);
         IEnumerable<InventoryGrnModel> SelectByStore(int StoreID);
-        int Approve(int GrnID, string UserID);
-        int Reverse(int GrnID, string UserID);
+        int Approve(int GrnID, string UserID, string Remarks);
+        int Reverse(int GrnID, string UserID, string Remarks);
         IEnumerable<InventoryItemEntryModel> GetItemEntries(int GrnID);
 
     }
@@ -30,12 +30,13 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Approve(int GrnID, string UserID)
+        public int Approve(int GrnID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@GrnID", GrnID),
                new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@Operation","Approve")
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Approve]", parameters);
@@ -130,19 +131,13 @@ namespace ArmsServices.DataServices
         {
             return new InventoryGrnModel(                
                 dr.GetString("GrnNo"),
-                dr.GetBoolean("Invoiced"),               
-                new ArmsModels.SharedModels.UserInfoModel
-                {
-                    RecordStatus = dr.GetByte("ApprovedStatus"),
-                    TimeStampField = dr.GetDateTime("ApprovedOn"),
-                    UserID = dr.GetString("ApprovedBy"),
-                })
+                dr.GetBoolean("Invoiced"))
             {
                 POID = dr.GetInt32("POID"),
                 GrnID = dr.GetInt32("GrnID"), 
                 EntryDate = dr.GetDateTime("EntryDate"),
                 PartyID = dr.GetInt32("PartyBranchID"),
-                AuthLevelId = dr.GetInt32("AuthLevelId"),
+                AuthLevelID = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 PartyName = dr.GetString("TradeName"),
                 TotalValue = dr.GetDecimal("TotalValue"),
@@ -184,12 +179,13 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Reverse(int GrnID, string UserID)
+        public int Reverse(int GrnID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@GrnID", GrnID),
                new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@Operation","Reverse")
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Approve]", parameters);

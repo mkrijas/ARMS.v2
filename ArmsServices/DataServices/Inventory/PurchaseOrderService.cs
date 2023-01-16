@@ -17,8 +17,8 @@ namespace ArmsServices.DataServices
         IEnumerable<PurchaseOrderModel> SelectPending(int BranchID);
         IEnumerable<PurchaseOrderModel> PendingForGrn(int BranchID);
         IEnumerable<PurchaseOrderModel> SelectByStore(int StoreID);
-        int Approve(int POID,string UserID);
-        int Reverse(int POID, string UserID);
+        int Approve(int POID,string UserID, string Remarks);
+        int Reverse(int POID, string UserID, string Remarks);
         IEnumerable<InventoryItemEntryModel> GetItemEntries(int POID);
     }
     public class PurchaseOrderService : IPurchaseOrderService
@@ -29,13 +29,25 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Approve(int POID,string UserID)
+        public int Approve(int POID,string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@POID", POID),
                new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@Operation", "Approve"),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
+        }
+
+        public int Reverse(int POID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@POID", POID),
+               new SqlParameter("@UserID", UserID),               
+               new SqlParameter("@Operation","Reverse")
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
         }
@@ -109,7 +121,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@QuoteID",model.QuoteID),
                new SqlParameter("@EntryDate",model.EntryDate),
                new SqlParameter("@PartyID",model.PartyID),
-                new SqlParameter("@PartyCode",model.PartyCode),
+               new SqlParameter("@PartyCode",model.PartyCode),
                new SqlParameter("@TotalValue",model.TotalValue),
                new SqlParameter("@Reference",model.Reference),
                new SqlParameter("@Remarks",model.Remarks),
@@ -124,19 +136,11 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
-
         private PurchaseOrderModel GetModel(IDataRecord dr)
         {
             return new PurchaseOrderModel(
                 dr.GetBoolean("GrnCreated"), 
-                dr.GetString("PoNo"),         
-                new ArmsModels.SharedModels.UserInfoModel
-                {
-                    RecordStatus = dr.GetByte("ApprovedStatus"),
-                    TimeStampField = dr.GetDateTime("ApprovedOn"),
-                    UserID = dr.GetString("ApprovedBy"),
-                })
+                dr.GetString("PoNo"))
             {
                 POID = dr.GetInt32("POID"),               
                 PRID = dr.GetInt32("PRID"),
@@ -144,7 +148,7 @@ namespace ArmsServices.DataServices
                 EntryDate = dr.GetDateTime("EntryDate"),
                 PartyID = dr.GetInt32("PartyID"),
                 PartyName = dr.GetString("TradeName"),
-                AuthLevelId = dr.GetInt32("AuthLevelId"),
+                AuthLevelID = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 TotalValue = dr.GetDecimal("TotalValue"),
                 Reference = dr.GetString("Reference"),
@@ -185,15 +189,6 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Reverse(int POID, string UserID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@POID", POID),
-               new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Operation","Reverse")
-            };
-            return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
-        }
+        
     }
 }
