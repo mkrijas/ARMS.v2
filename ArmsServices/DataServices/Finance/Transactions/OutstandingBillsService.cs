@@ -181,8 +181,7 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
                 ReferenceDocNo = dr.GetString("ReferenceDocNo"),
-                isMemo=dr.GetBoolean("IsMemo"),
-              
+                isMemo=dr.GetBoolean("IsMemo"), 
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
