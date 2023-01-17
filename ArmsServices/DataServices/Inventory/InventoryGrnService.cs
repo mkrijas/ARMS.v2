@@ -132,7 +132,7 @@ namespace ArmsServices.DataServices
             return new InventoryGrnModel(                
                 dr.GetString("GrnNo"),
                 dr.GetBoolean("Invoiced"))
-            {
+                {
                 POID = dr.GetInt32("POID"),
                 GrnID = dr.GetInt32("GrnID"), 
                 EntryDate = dr.GetDateTime("EntryDate"),
