@@ -182,7 +182,7 @@ namespace ArmsServices.DataServices
                 ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
                 ReferenceDocNo = dr.GetString("ReferenceDocNo"),
                 isMemo=dr.GetBoolean("IsMemo"),
-                MID=dr.GetInt32("MID"),
+                
               
                 PartyInfo = new PartyModel()
                 {
