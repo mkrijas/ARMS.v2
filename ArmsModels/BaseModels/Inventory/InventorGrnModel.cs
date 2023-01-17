@@ -9,16 +9,14 @@ namespace ArmsModels.BaseModels
 {
     public class InventoryGrnModel : InventoryBaseModel
     {
-        public InventoryGrnModel(string grnNo, bool invoiced, UserInfoModel _approvedInfo) : base( _approvedInfo)
+        public InventoryGrnModel(string grnNo, bool invoiced )
         {
             GrnNo = grnNo;
             Invoiced = invoiced;
         }
-
         public InventoryGrnModel()
         {
         }
-
         public int? GrnID { get; set; }
         public string GrnNo { get; }        
         public int? POID { get; set; }      
@@ -31,7 +29,7 @@ namespace ArmsModels.BaseModels
         public PurchaseOrderModel()
         {
         }
-        public PurchaseOrderModel(bool _grnCreated,string _poNo, UserInfoModel _approvedInfo) :base(_approvedInfo)
+        public PurchaseOrderModel(bool _grnCreated,string _poNo) 
         {
             GrnCreated = _grnCreated;
             PONo = _poNo;            
@@ -50,16 +48,8 @@ namespace ArmsModels.BaseModels
         public InventoryBaseModel()
         {
             UserInfo = new();
-            Entries = new();
-            ApprovedInfo = new();
-        }      
-
-        public InventoryBaseModel(UserInfoModel _approvedInfo)
-        {
-            UserInfo = new();
-            Entries = new();
-            ApprovedInfo = _approvedInfo;
-        }
+            Entries = new();            
+        }  
         public int? StoreID { get; set; }
         [Required]
         public DateTime? EntryDate { get; set; }       
@@ -69,10 +59,9 @@ namespace ArmsModels.BaseModels
         public virtual string PartyName { get; set; }
         public decimal? TotalValue { get; set; }
         public string Reference { get; set; }
-        public int? AuthLevelId { get; set; }
+        public int? AuthLevelID { get; set; }
         public string AuthStatus { get; set; }
-        public string Remarks { get; set; }
-        public UserInfoModel ApprovedInfo { get; }
+        public string Remarks { get; set; }              
         public UserInfoModel UserInfo { get; set; }
         [ValidateComplexType]
         public List<InventoryItemEntryModel> Entries { get; set; }
