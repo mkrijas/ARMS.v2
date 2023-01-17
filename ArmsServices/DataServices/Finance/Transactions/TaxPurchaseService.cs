@@ -38,8 +38,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PID", PID),
-               new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Status", 1),
+               new SqlParameter("@UserID", UserID),               
                new SqlParameter("@Remarks", Remark)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Approve]", parameters);
