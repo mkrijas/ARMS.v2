@@ -5,6 +5,7 @@
 @inject IChartOfAccountService accountService
 @inject IDimensionService dimensionIservice
 @inject IBranchService branchService
+@inject IInterBranchTransactionService intermappingIservice
 @inject TruckDataArrayModel data
 @inject IConfiguration configuration
 @using Microsoft.Extensions.Configuration
@@ -79,7 +80,7 @@
       <MudItem xs="12"md="6">
         <MudCard> <MudCardContent>
              <MudItem xs="12"md="12">
-              <MudSelect ReadOnly="true" Label="Select Other Branch" @bind-Value="model.BranchIDOther" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
+              <MudSelect ReadOnly="IsReadOnly" Label="Select Other Branch" @bind-Value="model.BranchIDOther" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
                             @foreach (var ditem in branches)
                             {
                                 <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
@@ -143,7 +144,15 @@
  <MudItem xs="12"md="12">
   
     </MudItem>
-   <MudItem xs="12"md="6">
+     <MudItem xs="12" md="4">
+                   <MudSelect Label="Select Transaction Type" ReadOnly="IsReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in transactionTypeList)
+                            {
+                                <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
+              </MudItem>
+   <MudItem xs="12"md="4">
    
        <MudSelect ReadOnly="IsReadOnly" Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in costCenter)
@@ -153,7 +162,7 @@
                         </MudSelect>
 
     </MudItem>
-    <MudItem xs="12"md="6">
+    <MudItem xs="12"md="4">
    
      <MudSelect ReadOnly="IsReadOnly" Label="Select Dimension" @bind-Value="model.Dimension" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" >
                             @foreach (var ditem in dimension)
@@ -202,6 +211,7 @@
     public bool IsReadOnly { get; set; }
     [Parameter]
     public bool IsView { get; set; }
+    private List<InterBranchTransactionTypeModel> transactionTypeList = new();
     // private List<SundryPaymentEntryModel> Entrys = new List<SundryPaymentEntryModel>();
     //private SundryPaymentEntryModel spe = new SundryPaymentEntryModel();
     private List<CostCenterModel> costCenter = new();
@@ -321,9 +331,8 @@
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
-        
         hmbarnchName = brancIDString.ToString();
-        
+        transactionTypeList = intermappingIservice.GetTypes().ToList();
         OrouteName = "Reciept";
         if (model.ContraID == null)
         {
@@ -378,6 +387,7 @@
         model.ArdCodeOther = accountRuleDefinitionO.ArdCode;
         model.BranchID = brancID;
         model.IsPayment = Ispayment;
+        model.IsInterBranch = true;
         model.NatureOfTransaction = "Contra";
 
         var user = authprov.User;

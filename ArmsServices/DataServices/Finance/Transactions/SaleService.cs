@@ -102,9 +102,9 @@ namespace ArmsServices.DataServices
                     CoaID = dr.GetInt32("CoaID"),
                     ItemQty = dr.GetDecimal("ItemQty"),
                     ItemRate = dr.GetDecimal("ItemRate"),
-                    PID = dr.GetInt32("PID"),
+                    PID = dr.GetInt32("SID"),
                     TCS = dr.GetDecimal("TCS"),
-                    TpiID = dr.GetInt64("TpiID"),
+                    TpiID = dr.GetInt64("SiID"),
                 };
             }
         }
