@@ -32,7 +32,7 @@ namespace ArmsModels.BaseModels
         //outstading bills tick 
         public int? BrID { get; set; }
         public int? MID { get; set; }
-        public bool IsMemo { get; set; } = false;
+        public bool ? IsMemo { get; set; } 
         public decimal? ReceiptAmount { get; set; }       
         public virtual string BranchName { get; set; }
         public virtual int? BranchID { get; set; }
