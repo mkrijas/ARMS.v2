@@ -67,6 +67,7 @@ namespace ArmsModels.BaseModels
         public decimal? Cgst { get; set; }
         public decimal? Sgst { get; set; }
         public decimal? Igst { get; set; }
+        public decimal ? TDS { get; set; }
     }
 
     public class ChequeModel
