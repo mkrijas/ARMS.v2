@@ -110,7 +110,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@GrnID",model.GrnID),
                new SqlParameter("@GrnNo",model.GrnNo),               
                new SqlParameter("@EntryDate",model.EntryDate),
-               //new SqlParameter("@PartyBranchID",model.PartyID),
+               new SqlParameter("@PartyID",model.PartyID),
                new SqlParameter("@TotalValue",model.TotalValue),
                new SqlParameter("@Reference",model.Reference),
                new SqlParameter("@Remarks",model.Remarks),
@@ -132,7 +132,7 @@ namespace ArmsServices.DataServices
             return new InventoryGrnModel(                
                 dr.GetString("GrnNo"),
                 dr.GetBoolean("Invoiced"))
-            {
+                {
                 POID = dr.GetInt32("POID"),
                 GrnID = dr.GetInt32("GrnID"), 
                 EntryDate = dr.GetDateTime("EntryDate"),
