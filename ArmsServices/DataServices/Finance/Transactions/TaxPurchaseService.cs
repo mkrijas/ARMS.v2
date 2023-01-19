@@ -98,6 +98,7 @@ namespace ArmsServices.DataServices
                     CGST = dr.GetDecimal("CGST"),
                     IGST = dr.GetDecimal("IGST"),
                     SGST = dr.GetDecimal("SGST"),
+                    GstRate= dr.GetDecimal("GstRate"),
                     ItemID = dr.GetInt32("ItemID"),
                     CoaID = dr.GetInt32("CoaID"),
                     ItemQty = dr.GetDecimal("ItemQty"),
