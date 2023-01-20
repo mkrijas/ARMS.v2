@@ -100,7 +100,6 @@ namespace ArmsServices.DataServices
             {
                 yield return await GetModel(dr);
             }
-
         }
 
         private async Task<ConsigneeModel> GetModel(IDataRecord dr)
