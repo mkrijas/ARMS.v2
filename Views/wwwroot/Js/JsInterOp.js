@@ -33,3 +33,9 @@ function runReport(url) {
     http.send(null);
     return false;
 }
+
+
+function focusElement (id) {
+    const element = document.getElementById(id);
+    element.focus();
+}
