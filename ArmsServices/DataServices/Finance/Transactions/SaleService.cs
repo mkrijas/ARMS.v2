@@ -101,7 +101,7 @@ namespace ArmsServices.DataServices
                     SGST = dr.GetDecimal("SGST"),
                     ItemID = dr.GetInt32("ItemID"),
                     CoaID = dr.GetInt32("CoaID"),
-                    GstRate= dr.GetInt32("GstRate"),
+                    GstRate= dr.GetDecimal("GstRate"),
                     ItemQty = dr.GetDecimal("ItemQty"),
                     ItemRate = dr.GetDecimal("ItemRate"),
                     PID = dr.GetInt32("SID"),
