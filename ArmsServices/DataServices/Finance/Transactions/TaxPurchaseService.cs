@@ -74,6 +74,7 @@ namespace ArmsServices.DataServices
                     CoaID = dr.GetInt32("CoaID"),                 
                     PID = dr.GetInt32("PID"),
                     TDS = dr.GetDecimal("TDS"),
+                    GstRate = dr.GetDecimal("GstRate"),
                     BillReference = dr.GetString("BillReference"),
                     BranchID = dr.GetInt32("BranchID"),
                     UsageCode = dr.GetString("UsageCode"),
