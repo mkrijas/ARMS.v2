@@ -155,7 +155,7 @@ namespace ArmsServices.DataServices
                 SundryPaymentID = dr.GetInt32("SundryPaymentID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 PaymentMode = dr.GetString("PaymentMode"),
-                PaymentArdCode = dr.GetString("PaymentArdCode"),
+                PaymentArdCode = dr.GetString("ArdCode"),
                 PaymentTool = dr.GetString("PaymentTool"),
                 PayeeName = dr.GetString("PayeeName"),
                 PayeeContactNo = dr.GetString("PayeeContactNo"),
@@ -171,6 +171,8 @@ namespace ArmsServices.DataServices
                 CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
+                BankCharges= dr.GetDecimal("BankCharges"),
+
                 Narration = dr.GetString("Narration"),
                
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

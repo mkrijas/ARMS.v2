@@ -93,13 +93,15 @@ namespace ArmsServices.DataServices
                 {
                     ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
                     DraftBillID = dr.GetInt32("DraftBillID"),
-                    OrderID = dr.GetInt32("PartyBranchID"),
+                    OrderID = dr.GetInt32("OrderID"),
                     PartyCoa = dr.GetInt32("PartyCoaID"),
+                    
                     Party = new PartyModel()
                     {
                         PartyCode = dr.GetString("PartyCode"),
                         PartyID = dr.GetInt32("PartyID")
                     },
+
                     TariffType = new TariffTypeModel()
                     {
                         TariffTypeID = (short?)dr.GetInt32("TariffTypeID"),

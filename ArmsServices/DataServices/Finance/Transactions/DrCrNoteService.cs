@@ -38,10 +38,10 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID),
+               new SqlParameter("@DrCrNoteID", ID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remarks),
-               new SqlParameter("@Status", 1)
+               new SqlParameter("@Remarks", Remarks)
+               //new SqlParameter("@Status", 1)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Approve]", parameters);
         }
@@ -73,7 +73,7 @@ namespace ArmsServices.DataServices
                 yield return new BillInfoModel()
                 {
                     TotalAmount = dr.GetDecimal("TotalAmount"),
-                    //PID = dr.GetInt32("PID"),
+                    PID = dr.GetInt32("PID"),
                     BillID = dr.GetInt32("ID"),                  
                     DocumentNumber = dr.GetString("DocumentNumber"),
                     DocumentDate = dr.GetDateTime("DocumentDate")
@@ -98,12 +98,12 @@ namespace ArmsServices.DataServices
                     IGST = dr.GetDecimal("IGST"),
                     SGST = dr.GetDecimal("SGST"),
                     CoaID = dr.GetInt32("CoaID"),
-                    PID = dr.GetInt32("PID"),
+                    PID = dr.GetInt32("DrCrID"),
                     TDS = dr.GetDecimal("TDS"),
                     BillReference = dr.GetString("BillReference"),
                     BranchID = dr.GetInt32("BranchID"),
                     UsageCode = dr.GetString("UsageCode"),
-                    TpeID = dr.GetInt64("TpeID"),
+                    TpeID = dr.GetInt64("DrCreID"),
                 };
             }
         }
@@ -128,9 +128,9 @@ namespace ArmsServices.DataServices
                     CoaID = dr.GetInt32("CoaID"),
                     ItemQty = dr.GetDecimal("ItemQty"),
                     ItemRate = dr.GetDecimal("ItemRate"),
-                    PID = dr.GetInt32("PID"),
+                    PID = dr.GetInt32("DrCrID"),
                     TDS = dr.GetDecimal("TDS"),
-                    TpiID = dr.GetInt64("TpiID"),
+                    TpiID = dr.GetInt64("DrCriID"),
                 };
             }
         }
