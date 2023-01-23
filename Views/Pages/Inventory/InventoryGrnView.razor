@@ -24,6 +24,8 @@
                  <MudTooltip Text="Approved Data">
                 <MudIconButton Icon="@Icons.Material.Filled.TableView" Title="Approved Data" @onclick="@(()=> OpenDialogApproved(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                </MudTooltip>
+               <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
                @* <MudButton @onclick="openpurchaseorder"  Variant="Variant.Filled" Color="Color.Primary" >Purchase Order</MudButton>
                *@ 
                 <MudSpacer></MudSpacer>
@@ -82,22 +84,34 @@
 
 
     private string searchGrn = "";
-
+    public bool IsApproved { get; set; } = false;
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        GetAll();
+        GetAll(IsApproved);
     }
+    async Task ApprovedChanged(bool value)
+    {
 
-    private  async Task GetAll()
+        IsApproved = value;
+        await GetAll(IsApproved);
+
+    }
+    private  async Task GetAll(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        collection = new List<InventoryGrnModel>();//Only View Pending
-        foreach (var item in Iservice.SelectPending(brancID))
+        
+         if (val)
         {
-            collection.Add(item);
+            collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID == 99).ToList();
+            
+        }
+        else
+        {
+             collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID != 99).ToList();
+       
         }
 
 
@@ -118,11 +132,11 @@
         if(!result.Cancelled)
         {   
            
-                GetAll();
+                GetAll(IsApproved);
             
 
         }
-         GetAll();
+         GetAll(IsApproved);
     }
      private async Task OpenDialogVerify(InventoryGrnModel tds)
     {
@@ -139,11 +153,11 @@
         if(!result.Cancelled)
         {   
            
-                GetAll();
+                GetAll(IsApproved);
             
 
         }
-         GetAll();
+         GetAll(IsApproved);
     }
      private async Task OpenDialogView(InventoryGrnModel tds)
     {
@@ -160,11 +174,11 @@
         if(!result.Cancelled)
         {   
            
-                GetAll();
+                GetAll(IsApproved);
             
 
         }
-         GetAll();
+         GetAll(IsApproved);
     }
     public void OpenDialogApproved(InventoryGrnModel p)
     {
@@ -179,7 +193,7 @@
     {
         Iservice.Delete(tds.GrnID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        GetAll(IsApproved);
     }
     private async Task Approve(InventoryGrnModel tds)
     {
@@ -204,7 +218,7 @@
 
                 snackbar.Add("Approved", Severity.Success);
 
-                GetAll();
+                GetAll(IsApproved);
             }
             catch (Exception ex)
             {
@@ -230,11 +244,11 @@
            if(!result.Cancelled)
         {   
            
-                GetAll();
+                GetAll(IsApproved);
             
 
         }
-         GetAll();
+         GetAll(IsApproved);
     }
 
     private bool search(InventoryGrnModel tds)

@@ -9,12 +9,24 @@
 @inject IDialogService DialogService
 
 
-<h3>ProformaInvoice</h3>
+
  <MudGrid Spacing="4">
    <MudItem xs="12">
        
         <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
            
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">ProformaInvoice</MudText>
+                
+               <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
+               @* <MudButton @onclick="openpurchaseorder" @onclick="@(()=> OpenDialog(model))"  Variant="Variant.Filled" Color="Color.Primary" >Purchase Order</MudButton>
+               *@ 
+                <MudSpacer></MudSpacer>
+               @* <MudTextField @bind-Value="searchMemos" Placeholder="Search Tax... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>*@
+            </ToolBarContent>
 
             
             <HeaderContent>
@@ -140,14 +152,20 @@
     private List<DimensionModel> dimension = new();
     GstModel gs = new();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-
+     public bool IsApproved { get; set; } = false;
     protected override async Task OnInitializedAsync()
     {
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
-        GetPerfomaInvoice();
+        GetPerfomaInvoice(IsApproved);
     }
+     async Task ApprovedChanged(bool value)
+    {
 
+        IsApproved = value;
+        GetPerfomaInvoice(IsApproved);
+
+    }
     public async Task OpenDialog(ProformaInvoiceModel pfm)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -172,7 +190,7 @@
             Iservice.UpdateProformaInvoice(UpatedModel);
             snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
         }
-        GetPerfomaInvoice();
+        GetPerfomaInvoice(IsApproved);
 
     }
     public async Task OpenDialogVerify(ProformaInvoiceModel pfm)
@@ -199,7 +217,7 @@
             Iservice.UpdateProformaInvoice(UpatedModel);
             snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
         }
-        GetPerfomaInvoice();
+        GetPerfomaInvoice(IsApproved);
 
     }
     public async Task OpenDialogView(ProformaInvoiceModel pfm)
@@ -226,15 +244,24 @@
             Iservice.UpdateProformaInvoice(UpatedModel);
             snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
         }
-        GetPerfomaInvoice();
+        GetPerfomaInvoice(IsApproved);
 
     }
-    public void GetPerfomaInvoice()
+    public void GetPerfomaInvoice(bool val)
     {
 
 
-        collection = Iservice.SelectPendingProformaInvoiceList(0).ToList();
-        int m = 0;
+       
+        if (val)
+        {
+            collection = Iservice.SelectPendingProformaInvoiceList(0).Where(x => x.AuthLevelId == 99).ToList();
+            
+        }
+        else
+        {
+             collection = Iservice.SelectPendingProformaInvoiceList(0).Where(x => x.AuthLevelId != 99).ToList();
+       
+        }
 
     }
     public void Edit(ProformaInvoiceModel pim)
@@ -258,7 +285,7 @@
         pmodel = pim;
         Iservice.ReverseProformaInvoice(pim.ProformaInvoiceID, "Rijas","remarks");
         snackbar.Add("Update Successfully", Severity.Success);
-        GetPerfomaInvoice();
+        GetPerfomaInvoice(IsApproved);
     }
      public  void Approve(ProformaInvoiceModel pim)
     {   
@@ -267,7 +294,7 @@
         pmodel = pim;
         Iservice.ApproveProformaInvoice(pim.ProformaInvoiceID, "Rijas","remarks");
         snackbar.Add("Update Successfully", Severity.Success);
-        GetPerfomaInvoice();
+        GetPerfomaInvoice(IsApproved);
     }
     public async Task Update()
     {   
