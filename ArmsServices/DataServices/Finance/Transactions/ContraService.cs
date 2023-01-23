@@ -59,7 +59,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByID"),
                new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@IsInterBranch", true),
+               new SqlParameter("@InterBranch", true),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Select]", parameters))
