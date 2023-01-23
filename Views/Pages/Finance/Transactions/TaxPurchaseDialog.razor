@@ -114,9 +114,9 @@
                                     <th>IGST</th>
                                     <th>TDS</th>*@
                                     <th width="150px" colspan="2">Bill</th>
-                                    <th colspan="1"></th>
+                                    <th colspan="1">Gst/TDS</th>
                                       <th></th>
-                                       
+                                   
 
                                 </tr>
                             </thead>
@@ -124,16 +124,12 @@
                                 @foreach (var item in exitems)
                                 {
                                     <tr>
-                                       
-                                      @*  <td>@item.BranchID</td>*@
                                         <td colspan="2">@item.UsageCode</td>
-
                                         <td colspan="1">@item.Amount</td>
-                                        @*  <td>@item.SGST</td>
-                                    <td>@item.CGST</td>
-                                    <td>@item.IGST</td>
-                                    <td>@item.TCS</td>*@
                                         <td colspan="2">@item.BillReference</td>
+                                          <td colspan="1">
+                                              @item.GstRate/@item.TDS
+                                              </td>
                                         <td colspan="2">
                                            @if (!IsReadOnly)
                                             {
@@ -170,7 +166,7 @@
                                             <MudTextField Label="Amount" @bind-Value="Expmodel.Amount" TextChanged="taxRates" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Expmodel.Amount)"></MudTextField>
 
                                         </td>
-                                        <td colspan="3">
+                                        <td colspan="2">
                                             <MudTextField Label="Bill Reference" @bind-Value="Expmodel.BillReference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Expmodel.BillReference)"></MudTextField>
 
                                         </td>
@@ -224,14 +220,15 @@
                                 <tr>
 
                                   @*  <th>Branch</th>*@
-                                    <th width="200px" colspan="2">ItemID</th>
+                                    <th width="150px" colspan="1">ItemID</th>
                                     <th colspan="1">ItemRate</th>
                                     <th colspan="1">ItemQty</th>
 
                                     <th colspan="1">Amount</th>
-                                 
+                                    <th colspan="1">Gst/TDS</th>
                                     <th></th>
-                                    <th>TaxRates</th>
+                                  
+                                
                                        
 
                                 </tr>
@@ -243,17 +240,25 @@
                                        
                                       @*  <td>@item.BranchID</td>
                                         <td>@item.ItemID</td>*@
-                                        <td style="width:200px" colspan="2">@(itm.First(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
+                                        <td style="width:150px" colspan="1">@(itm.First(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
                                         <td colspan="1">@item.ItemRate</td>
                                         <td colspan="1">@item.ItemQty</td>
 
                                         <td colspan="1">@item.Amount</td>
+                                       
+                                       
+                                        <td colspan="1">
+                                            @item.GstRate/@item.TDS
+                                          
+                                        </td>
+                                            
+                                             
                                       @*  <td>@item.SGST</td>
                                         <td>@item.CGST</td>
                                         <td>@item.IGST</td>
                                         <td>@item.TDS</td>*@
                                        
-                                        <td colspan="2">
+                                        <td colspan="1">
 
                                             @*  @if (model.ApprovedInfo.RecordStatus != 3)*@
                                             @if (!IsReadOnly)
@@ -368,7 +373,7 @@
     [Parameter]
     public bool IsView { get; set; }
     private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
-    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true };
     private PartyModel SelectedParty = new();
     private List<PartyModel> partyList = new();
     private List<GstUsageCodeModel> usageID = new();
@@ -388,6 +393,7 @@
     public string customstr { get; set; } = "Cash";
     private GstModel taxModel = new GstModel();
 
+
     private async Task OpenDialogTaxRates(TaxPurchaseExpenseModel i)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -399,9 +405,18 @@
         taxModel.GstRate = i.GstRate;
         DialogParameters parms = new DialogParameters();
         parms.Add("tax", taxModel);
-        parms.Add("IsReadOnly", true);
+        parms.Add("IsReadOnly", false);
         var dialog = DialogService.Show<TaxRatedialog>(i.PID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            taxModel = (GstModel)result.Data;
+            i.CGST = taxModel.Cgst;
+            i.IGST = taxModel.Igst;
+            i.TDS = taxModel.TDS;
+            i.SGST = taxModel.Sgst;
+            i.GstRate = taxModel.GstRate;
+        }
     }
     private async Task OpenDialogTax2Rates(TaxPurchaseItemModel i)
     {
@@ -414,11 +429,21 @@
         taxModel.GstRate = i.GstRate;
         DialogParameters parms = new DialogParameters();
         parms.Add("tax", taxModel);
-        parms.Add("IsReadOnly", true);
+        parms.Add("IsReadOnly", false);
         var dialog = DialogService.Show<TaxRatedialog>(i.PID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
+        if(!result.Cancelled)
+        {
+            taxModel = (GstModel)result.Data;
+            i.CGST = taxModel.Cgst;
+            i.IGST=taxModel.Igst;
+            i.TDS=taxModel.TDS;
+            i.SGST = taxModel.Sgst;
+            //i.GstRate = taxModel.Cgst + taxModel.Igst + taxModel.Sgst;
+            i.GstRate = taxModel.GstRate;
+        }
     }
-      protected async Task IsApproveData(DataApprovedStatus aprvd)
+    protected async Task IsApproveData(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
         {
@@ -520,10 +545,11 @@
                     tpi.CGST = 0;
                 }
 
-
+                tpi.GstRate = tpi.SGST + tpi.CGST + tpi.IGST;
                 TxItitems.Add(tpi);
                 model.TotalAmount = model.TotalAmount + tpi.Amount + tpi.CGST +
                 tpi.SGST + tpi.IGST + tpi.TDS;
+
             }
             // model.Items = TxItitems;
 
@@ -559,6 +585,19 @@
         //ientry.IGST = Expmodel.IGST;
         //ientry.TDS = Expmodel.TDS;
         //ientry.BillReference = Expmodel.BillReference;
+        if (Expmodel.SGST == null)
+        {
+            Expmodel.SGST = 0;
+        }
+        if (Expmodel.IGST == null)
+        {
+            Expmodel.IGST = 0;
+        }
+        if (Expmodel.CGST == null)
+        {
+            Expmodel.CGST = 0;
+        }
+        Expmodel.GstRate = Expmodel.SGST + Expmodel.CGST + Expmodel.IGST;
         Expmodel.UsageCode = gstusge.UsageCode;
         Expmodel.CoaID = gstusge.CoaID;
         Expmodel.BranchID = brancID;
@@ -595,8 +634,19 @@
         //ientry.TDS = TaxItemModel.TDS;
         //ientry.Amount = TaxItemModel.Amount;
 
-
-
+        if (TaxItemModel.SGST == null)
+        {
+            TaxItemModel.SGST = 0;
+        }
+        if (TaxItemModel.IGST == null)
+        {
+            TaxItemModel.IGST = 0;
+        }
+        if (TaxItemModel.CGST == null)
+        {
+            TaxItemModel.CGST = 0;
+        }
+        TaxItemModel.GstRate = TaxItemModel.SGST + TaxItemModel.CGST + TaxItemModel.IGST;
         TxItitems.Add(TaxItemModel);
         decimal tvalue = 0;
         try
@@ -611,8 +661,11 @@
             }
         }
         catch (Exception ex)
-        { }
+        {
+
+        }
         model.TotalAmount = model.TotalAmount + TaxItemModel.Amount +
+        
                                tvalue;
         TaxItemModel = new();
         // itm = new();
@@ -782,6 +835,7 @@
             }
 
             TaxItemModel.TDS = (TaxItemModel.Amount * tdsRate) / 100;
+            TaxItemModel.GstRate = TaxItemModel.SGST + TaxItemModel.CGST + TaxItemModel.IGST;
 
         }
 
