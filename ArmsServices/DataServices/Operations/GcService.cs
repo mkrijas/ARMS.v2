@@ -48,12 +48,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@GcDate", model.GcDate??DateTime.Today),
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@RouteID", model.RouteID),
-               new SqlParameter("@PaidBy", model.PaidBy),
-               new SqlParameter("@PaidBy", model.PaidBy),
-               new SqlParameter("@Gcs", model.Gcs),
+               new SqlParameter("@PaidBy", model.PaidBy),               
+               new SqlParameter("@Gcs", model.Gcs.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-            };
-            GcSetModel InsertedModel = new();
+            };            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.GcSet.Update]", parameters))
             {
                 return GetModel(dr);
