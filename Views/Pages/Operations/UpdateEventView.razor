@@ -43,7 +43,7 @@
                         <MudText></MudText>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudSelect Label="Select Action" T="byte?" Value="model.EventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" ValueChanged="EventSelected" >
+                        <MudSelect Label="Select Action" T="byte?" Value="model.EventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" ValueChanged="EventSelected">
                             @foreach (var item in EventTypes)
                             {
                                 <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
@@ -52,18 +52,18 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudAutocomplete  Variant="Variant.Outlined" T="PlaceModel" Label="Origin" @bind-Value="Origin" ResetValueOnEmptyText="true" Clearable="true"
-                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true"></MudAutocomplete>
+                        <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label="Origin" @bind-Value="Origin" ResetValueOnEmptyText="true" Clearable="true"
+                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true"></MudAutocomplete>
                     </MudItem>
 
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
-                        <MudAutocomplete  Variant="Variant.Outlined" T="PlaceModel" Label="Destination" @bind-Value="Destination" ResetValueOnEmptyText="true" Clearable="true"
-                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                        <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label="Destination" @bind-Value="Destination" ResetValueOnEmptyText="true" Clearable="true"
+                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                     </MudItem>
 
                     <MudItem xs="12" md="6" hidden="@(SelectedEvent.EventTypeID != 4)">
-                        <MudSelect  Variant="Variant.Outlined" Label="Select GCs To Unload" MultiSelection="true" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))"
-                                   T="GcSetModel" OffsetY="true" AdornmentColor="Color.Secondary" @bind-SelectedValues="SelectedGCs">
+                        <MudSelect Variant="Variant.Outlined" Label="Select GCs To Unload" MultiSelection="true" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))"
+                               T="GcSetModel" OffsetY="true" AdornmentColor="Color.Secondary" @bind-SelectedValues="SelectedGCs">
                             @foreach (var item in GCsToUnload)
                             {
                                 <MudSelectItem T="GcSetModel" Value="@item">@item.SetGcNumber</MudSelectItem>
@@ -72,10 +72,19 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudTextField   @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined" ></MudTextField>
+                        <MudTextField @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined"></MudTextField>
                     </MudItem>
                     <MudItem xs="12">
                         <MyDateTimePicker Label="Event" @bind-Value="model.EventTime"></MyDateTimePicker>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect Label="Select Default Next Action" T="byte?" Value="model.DefaultNextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" ValueChanged="DefaultNextEventSelected">
+                            @foreach (var item in DefaultNextEventTypes)
+                            {
+                                <MudSelectItem T="byte?" Value="@item.DefaultNextEventTypeID">@item.DefaultNextEventTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
                     </MudItem>
 
                 </MudGrid>
@@ -111,6 +120,7 @@
 
     private List<PlaceModel> places;
     private List<EventTypeModel> EventTypes;
+    private List<EventTypeModel> DefaultNextEventTypes;
     private EventTypeModel SelectedEvent = new();
 
     private List<GcSetModel> GCsToUnload = new();
@@ -126,12 +136,21 @@
         if (model == null) model = new();
 
         EventTypes = new();
-        foreach(var item in Ievent.GetEventTypes())
+        foreach (var item in Ievent.GetEventTypes())
         {
-            if(item.EventTypeID != 1 && item.IsTripRelated)
+            if (item.EventTypeID != 1 && item.IsTripRelated)
                 EventTypes.Add(item);
         }
+        DefaultNextEventTypes = new();
+        DefaultNextEventTypes = Ievent.GetEventTypes().ToList();
+        foreach (var item in DefaultNextEventTypes)
+        {
+            if (DefaultNextEventTypes != null && DefaultNextEventTypes.Any(s => s.EventTypeID == item.DefaultNextEventTypeID))
+            {
+                item.DefaultNextEventTypeName = DefaultNextEventTypes.First(s => s.EventTypeID == item.DefaultNextEventTypeID).EventTypeName;
 
+            }
+        }
         places = new();
         places = Iplace.Select(0).ToList();
 
@@ -183,7 +202,7 @@
                 return;
             }
 
-            if (model.TruckEventID == null &&  SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
+            if (model.TruckEventID == null && SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
             {
                 snackbar.Add("Cannot start this event without Driver", Severity.Warning);
                 return;
@@ -195,7 +214,7 @@
             model.EventTypeID = SelectedEvent.EventTypeID;
             model.UserInfo.UserID = authprov.User.Identity.Name;
 
-            if(!ValidateEvent(model))
+            if (!ValidateEvent(model))
             {
                 return;
             }
@@ -249,18 +268,18 @@
 
         }
 
-        if(preEvent != null && model.EventTime < preEvent.EventTime)
+        if (preEvent != null && model.EventTime < preEvent.EventTime)
         {
             snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
             return false;
         }
-        else if (NextEvent != null &&  model.EventTime > NextEvent.EventTime)
+        else if (NextEvent != null && model.EventTime > NextEvent.EventTime)
         {
             snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
             return false;
         }
         else
-        if ((preEvent != null && preEvent.EventTypeID == SelectedEvent.EventTypeID) ||(NextEvent!= null && NextEvent.EventTypeID == SelectedEvent.EventTypeID))
+        if ((preEvent != null && preEvent.EventTypeID == SelectedEvent.EventTypeID) || (NextEvent != null && NextEvent.EventTypeID == SelectedEvent.EventTypeID))
         {
             snackbar.Add("Cannot enter an event twice in a row", Severity.Warning);
             return false;
@@ -280,12 +299,27 @@
         if (SelectedEvent.EventTypeName != null)
         {
             ButtonLabel = SelectedEvent.EventTypeName;
-            if(SelectedEvent.EventTypeID == 4)
+            if (SelectedEvent.EventTypeID == 4)
             {
                 GCsToUnload = Igc.SelectToUnload(CurrentTrip.TripID).ToList();
             }
         }
         else
             ButtonLabel = "Select an Event";
+        SetDefaultNextEventBySelectingEvent(e);
+    }
+
+    private void SetDefaultNextEventBySelectingEvent(byte? e)
+    {
+        if (DefaultNextEventTypes != null && DefaultNextEventTypes.Any(s => s.EventTypeID == e))
+        {
+            model.DefaultNextEventTypeID = DefaultNextEventTypes.First(s => s.EventTypeID == e).DefaultNextEventTypeID;
+
+        }
+    }
+
+    private void DefaultNextEventSelected(byte? e)
+    {
+        model.DefaultNextEventTypeID = e;
     }
 }

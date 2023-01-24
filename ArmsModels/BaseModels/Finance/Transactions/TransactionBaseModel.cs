@@ -23,6 +23,7 @@ namespace ArmsModels.BaseModels
         public decimal? TotalAmount { get; set; }
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
+        [Required]
         public string Narration { get; set; }
         public int? AuthLevelId { get; set; }
         public string AuthStatus { get; set; }

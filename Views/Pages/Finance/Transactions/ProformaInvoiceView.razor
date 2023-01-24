@@ -9,12 +9,24 @@
 @inject IDialogService DialogService
 
 
-<h3>ProformaInvoice</h3>
+
  <MudGrid Spacing="4">
    <MudItem xs="12">
        
         <MudTable Items="@collection"   Dense="true" Hover="true"  Striped="true" Elevation="10"  @bind-place="model">
            
+             <ToolBarContent>
+                <MudText Typo="Typo.h6">ProformaInvoice</MudText>
+                
+               <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
+               @* <MudButton @onclick="openpurchaseorder" @onclick="@(()=> OpenDialog(model))"  Variant="Variant.Filled" Color="Color.Primary" >Purchase Order</MudButton>
+               *@ 
+                <MudSpacer></MudSpacer>
+               @* <MudTextField @bind-Value="searchMemos" Placeholder="Search Tax... "
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0"></MudTextField>*@
+            </ToolBarContent>
 
             
             <HeaderContent>
@@ -140,40 +152,46 @@
     private List<DimensionModel> dimension = new();
     GstModel gs = new();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-
+     public bool IsApproved { get; set; } = false;
     protected override async Task OnInitializedAsync()
     {
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
-        GetPerfomaInvoice();
+        GetPerfomaInvoice(IsApproved);
     }
+     async Task ApprovedChanged(bool value)
+    {
 
+        IsApproved = value;
+        GetPerfomaInvoice(IsApproved);
+
+    }
     public async Task OpenDialog(ProformaInvoiceModel pfm)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
         var user = authprov.User;
-       
+
         pfm.Gst = Iservice.GetGstRate(pfm.DraftBillID);
         
-            pfm.UserInfo.UserID = user.Identity.Name;  
-            DialogParameters parms = new DialogParameters();
-            parms.Add("model",pfm);
-            parms.Add("IsReadOnly",false);
-            parms.Add("IsView",false);
-            var dialog =  DialogService.Show<ProformaInvoceDialog>("ProformaInvoce",parms,maxWidth);
-            var result = await dialog.Result;
+        pfm.UserInfo.UserID = user.Identity.Name;  
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",pfm);
+        parms.Add("IsReadOnly",false);
+        parms.Add("IsView",false);
+        var dialog =  DialogService.Show<ProformaInvoceDialog>("ProformaInvoce",parms,maxWidth);
+        var result = await dialog.Result;
 
-            if(!result.Cancelled)
-            { 
-             ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;   
-            
-             Iservice.UpdateProformaInvoice(UpatedModel);
-             snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
-            }
-        GetPerfomaInvoice();
-       
+        if(!result.Cancelled)
+        { 
+            ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;   
+
+            Iservice.UpdateProformaInvoice(UpatedModel);
+            snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
+        }
+        GetPerfomaInvoice(IsApproved);
+
     }
     public async Task OpenDialogVerify(ProformaInvoiceModel pfm)
     {
@@ -181,26 +199,26 @@
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
         var user = authprov.User;
-       
-        pfm.Gst = Iservice.GetGstRate(pfm.DraftBillID);
-        
-            pfm.UserInfo.UserID = user.Identity.Name;  
-            DialogParameters parms = new DialogParameters();
-            parms.Add("model",pfm);
-            parms.Add("IsReadOnly",true);
-            parms.Add("IsView",false);
-            var dialog =  DialogService.Show<ProformaInvoceDialog>("ProformaInvoce",parms,maxWidth);
-            var result = await dialog.Result;
 
-            if(!result.Cancelled)
-            { 
-             ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;   
-            
-             Iservice.UpdateProformaInvoice(UpatedModel);
-             snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
-            }
-        GetPerfomaInvoice();
-       
+        pfm.Gst = Iservice.GetGstRate(pfm.DraftBillID);
+
+        pfm.UserInfo.UserID = user.Identity.Name;  
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",pfm);
+        parms.Add("IsReadOnly",true);
+        parms.Add("IsView",false);
+        var dialog =  DialogService.Show<ProformaInvoceDialog>("ProformaInvoce",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        { 
+            ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;   
+
+            Iservice.UpdateProformaInvoice(UpatedModel);
+            snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
+        }
+        GetPerfomaInvoice(IsApproved);
+
     }
     public async Task OpenDialogView(ProformaInvoiceModel pfm)
     {
@@ -208,33 +226,42 @@
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
         var user = authprov.User;
-       
-        pfm.Gst = Iservice.GetGstRate(pfm.DraftBillID);
-        
-            pfm.UserInfo.UserID = user.Identity.Name;  
-            DialogParameters parms = new DialogParameters();
-            parms.Add("model",pfm);
-            parms.Add("IsReadOnly",true);
-            parms.Add("IsView",true);
-            var dialog =  DialogService.Show<ProformaInvoceDialog>("ProformaInvoce",parms,maxWidth);
-            var result = await dialog.Result;
 
-            if(!result.Cancelled)
-            { 
-             ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;   
-            
-             Iservice.UpdateProformaInvoice(UpatedModel);
-             snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
-            }
-        GetPerfomaInvoice();
-       
+        pfm.Gst = Iservice.GetGstRate(pfm.DraftBillID);
+
+        pfm.UserInfo.UserID = user.Identity.Name;  
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model",pfm);
+        parms.Add("IsReadOnly",true);
+        parms.Add("IsView",true);
+        var dialog =  DialogService.Show<ProformaInvoceDialog>("ProformaInvoce",parms,maxWidth);
+        var result = await dialog.Result;
+
+        if(!result.Cancelled)
+        { 
+            ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;   
+
+            Iservice.UpdateProformaInvoice(UpatedModel);
+            snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
+        }
+        GetPerfomaInvoice(IsApproved);
+
     }
-    public void GetPerfomaInvoice()
+    public void GetPerfomaInvoice(bool val)
     {
 
 
-        collection = Iservice.SelectPendingProformaInvoiceList(0).ToList();
-
+       
+        if (val)
+        {
+            collection = Iservice.SelectPendingProformaInvoiceList(0).Where(x => x.AuthLevelId == 99).ToList();
+            
+        }
+        else
+        {
+             collection = Iservice.SelectPendingProformaInvoiceList(0).Where(x => x.AuthLevelId != 99).ToList();
+       
+        }
 
     }
     public void Edit(ProformaInvoiceModel pim)
@@ -258,7 +285,7 @@
         pmodel = pim;
         Iservice.ReverseProformaInvoice(pim.ProformaInvoiceID, "Rijas","remarks");
         snackbar.Add("Update Successfully", Severity.Success);
-        GetPerfomaInvoice();
+        GetPerfomaInvoice(IsApproved);
     }
      public  void Approve(ProformaInvoiceModel pim)
     {   
@@ -267,7 +294,7 @@
         pmodel = pim;
         Iservice.ApproveProformaInvoice(pim.ProformaInvoiceID, "Rijas","remarks");
         snackbar.Add("Update Successfully", Severity.Success);
-        GetPerfomaInvoice();
+        GetPerfomaInvoice(IsApproved);
     }
     public async Task Update()
     {   

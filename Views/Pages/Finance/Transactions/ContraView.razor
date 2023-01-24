@@ -19,7 +19,8 @@
                 <MudTooltip Text="New Payment Memos">
                 <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-               
+               <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
              
                 <MudSpacer></MudSpacer>
              
@@ -73,33 +74,46 @@
 
 @code {
     private ContraModel model = new ContraModel();
-
+      public bool IsApproved { get; set; } = false;
     private List<ContraModel> collection = new List<ContraModel>();
     DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        GetAll();
+        GetAll(IsApproved);
     }
 
-    private  async Task GetAll()
+    private  async Task GetAll(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
         collection = new List<ContraModel>();
-        foreach (var item in Iservice.Select(brancID))
+       
+         if (val)
         {
-            collection.Add(item);
+            collection = Iservice.Select(brancID).Where(x => x.AuthLevelId == 99).ToList();
+            
+        }
+        else
+        {
+             collection = Iservice.Select(brancID).Where(x => x.AuthLevelId != 99).ToList();
+       
         }
 
+    }
+      async Task ApprovedChanged(bool value)
+    {
+
+        IsApproved = value;
+        await GetAll(IsApproved);
 
     }
     private void Delete(ContraModel tx)
     {
         Iservice.Delete(tx.ContraID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        GetAll(IsApproved);
     }
      private async Task Approve(ContraModel tds)
     {
@@ -107,7 +121,7 @@
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
         Iservice.Approve(tds.ContraID, model.UserInfo.UserID,"");
-         GetAll();
+         GetAll(IsApproved);
     }
    
     private async Task OpenDialog(ContraModel tds)
@@ -125,11 +139,11 @@
         if(!result.Cancelled)
         {   
 
-            GetAll();
+            GetAll(IsApproved);
 
 
         }
-        GetAll();
+        GetAll(IsApproved);
     }
       private async Task OpenDialogView(ContraModel tds)
     {
@@ -146,11 +160,11 @@
         if(!result.Cancelled)
         {   
 
-            GetAll();
+            GetAll(IsApproved);
 
 
         }
-        GetAll();
+        GetAll(IsApproved);
     }
       private async Task OpenDialogVerify(ContraModel tds)
     {
@@ -167,10 +181,10 @@
         if(!result.Cancelled)
         {   
 
-            GetAll();
+            GetAll(IsApproved);
 
 
         }
-        GetAll();
+        GetAll(IsApproved);
     }
 }
