@@ -13,8 +13,9 @@ namespace ArmsModels.BaseModels
         }
 
         public long? TruckEventID { get; set; }
-        public byte? EventTypeID { get; set; }       
-        public DateTime? EventTime { get; set; }
+        public byte? EventTypeID { get; set; }  
+        public byte? DefaultNextEventTypeID { get; set; }
+        public DateTime? EventTime { get; set; } = DateTime.Now;
         public long? EventReading { get; set; }
         public int? BranchID { get; set; }
         public string BranchName { get; set; }
@@ -33,7 +34,9 @@ namespace ArmsModels.BaseModels
     public class EventTypeModel
     {
         public byte? EventTypeID { get; set; }
+        public byte? DefaultNextEventTypeID { get; set; }
         public string EventTypeName { get; set; }
+        public string DefaultNextEventTypeName { get; set; }
         public bool IsStationary { get; set; }
         public bool IsGcRelated { get; set; }
         public bool IsTripRelated { get; set; }
