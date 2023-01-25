@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
         IEnumerable<GcTypeModel> SelectGcTypes();
         int AppendToTrip(long? TripID, long? GcSetID, string UserID);
         int BeginUnload(long? TripID, long? GcSetID);
-        int RemoveFromTrip(long? GcSetID, int? TripID, string UserID);
+        int RemoveFromTrip(long? GcSetID, long? TripID, string UserID);
         int UpdateEwayBill(EwayBillModel model);
         decimal? GetFreight(int? OrderID,int? RouteID,int? Axles,decimal? Qty);
     }
@@ -250,7 +250,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.GcSet.EventUpdate]", parameters);
         }
 
-        public int RemoveFromTrip(long? GcSetID, int? TripID, string UserID)
+        public int RemoveFromTrip(long? GcSetID, long? TripID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

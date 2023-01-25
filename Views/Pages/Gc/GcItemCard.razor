@@ -1,4 +1,7 @@
 ﻿@inject IDialogService DialogService
+@inject  IGcService Iservice 
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
 
 <MudCard Class="@Class" Style="@Style">
     <MudCardHeader>
@@ -9,7 +12,19 @@
             <MudText Typo="Typo.body1" GutterBottom="true"><b>@item.SetGcNumber</b></MudText>
             <MudText Typo="Typo.body2">@item.SetBillNumber</MudText>
         </CardHeaderContent>
+         
+         <CardHeaderActions>
+            @if (IsLoading)
+            {
+                <MudTooltip Text="Remove GC">
+
+            <MudIconButton  @onclick="@(() => Remove(item.GcSetID))"  Icon="@Icons.Material.Filled.Close" Color="Color.Error" />
+            </MudTooltip>
+            }
+        </CardHeaderActions>
+             
     </MudCardHeader>
+
     <MudCardContent>
         <MudText>@item.ConsignorName</MudText>
         <MudText>@item.ConsigneeName</MudText>
@@ -38,7 +53,8 @@
 
     [Parameter]
     public string Style { get; set; }
-
+    [Parameter]
+    public bool IsLoading { get; set; } = false;
     [Parameter]
     public EventCallback<long?> TransactionUpdated { get; set; }
 
@@ -106,6 +122,16 @@
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         var result = DialogService.Show<GcDialog>("Edit GC", parameters, maxWidth);
         var data = await result.Result;
+        StateHasChanged();
+    }
+    private async Task Remove(long? id)
+    {
+        var e = await auth.GetAuthenticationStateAsync();
+        var user = e.User;
+        var userID = user.Identity.Name;
+        Iservice.RemoveFromTrip(item.GcSetID,item.TripID.Value, userID);
+        snackbar.Add("Removed", Severity.Success, null);
+        await TransactionUpdated.InvokeAsync(0);
         StateHasChanged();
     }
 }

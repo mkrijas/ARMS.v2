@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
         int ReverseFinalInvoice(int? ID, string UserID, string Remarks);
         int DeleteProformaInvoice(int? ID,string UserID, string Remarks);
         int DeleteConsolidatedDraftBill(int? ID, string UserID, string Remarks);
-        IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID);
+        IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID,int? BranchId);
         IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? ID);
 
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID);
@@ -85,6 +85,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "PENDING"),
                new SqlParameter("@ProformaInvoiceID", ID)
+              
             };                    
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
@@ -135,12 +136,13 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID)
+        public IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID,int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "PENDING"),
-               new SqlParameter("@DraftBillID", ID)
+               new SqlParameter("@DraftBillID", ID),
+               new SqlParameter("@BranchID", BranchID)
             };
 
 
