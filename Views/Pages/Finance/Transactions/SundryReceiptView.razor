@@ -19,6 +19,7 @@
                 <MudTooltip Text="New Sundry Receipt">
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
+                <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
 
 
                 <MudSpacer></MudSpacer>
@@ -72,26 +73,38 @@
 @code {
 
     private SundryReceiptModel model = new SundryReceiptModel();
-
+    public bool IsApproved { get; set; } = false;
     private List<SundryReceiptModel> collection = new List<SundryReceiptModel>();
     DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        GetAll();
+        await GetAll(IsApproved);
     }
 
-    private async Task GetAll()
+    private async Task GetAll(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        collection = new List<SundryReceiptModel>();
-        foreach (var item in Iservice.Select())
+        
+         if (val)
         {
-            collection.Add(item);
+            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
+            
+        }
+        else
+        {
+             collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
+       
         }
 
+    }
+    async Task ApprovedChanged(bool value)
+    {
+
+        IsApproved = value;
+        await GetAll(IsApproved);
 
     }
     private async Task authentication(SundryReceiptModel tds)
@@ -104,14 +117,8 @@
         var dialog = DialogService.Show<AutherizationDetailsView>(tds.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
 
-        if (!result.Cancelled)
-        {
-
-            GetAll();
-
-
-        }
-        GetAll();
+        
+        await GetAll(IsApproved);
     }
     private async Task OpenDialog(SundryReceiptModel tds)
     {
@@ -125,14 +132,8 @@
         var dialog = DialogService.Show<SundryReceiptDialog>(tds.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
 
-        if (!result.Cancelled)
-        {
-
-            GetAll();
-
-
-        }
-        GetAll();
+        
+       await GetAll(IsApproved);
     }
 
      private async Task OpenDialogVerify(SundryReceiptModel tds)
@@ -147,14 +148,8 @@
         var dialog = DialogService.Show<SundryReceiptDialog>(tds.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
 
-        if (!result.Cancelled)
-        {
-
-            GetAll();
-
-
-        }
-        GetAll();
+       
+        await GetAll(IsApproved);
     }
 
      private async Task OpenDialogView(SundryReceiptModel tds)
@@ -169,21 +164,15 @@
         var dialog = DialogService.Show<SundryReceiptDialog>(tds.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
 
-        if (!result.Cancelled)
-        {
-
-            GetAll();
-
-
-        }
-        GetAll();
+       
+        await GetAll(IsApproved);
     }
 
      private void Delete(SundryReceiptModel tx)
     {
         Iservice.Delete(tx.SundryReceiptID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        GetAll(IsApproved);
     }
 
 }

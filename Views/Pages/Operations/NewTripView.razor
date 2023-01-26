@@ -1,5 +1,4 @@
-﻿
-@inject ITripService Iservice
+﻿@inject ITripService Iservice
 @inject IPlaceService Iplace
 @inject IEventService Ievent
 
@@ -37,23 +36,35 @@
                         <MudText></MudText>
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudCheckBox @bind-Checked="@startWithLoading" Label="Start with Loading"></MudCheckBox>
+                        <MudCheckBox @bind-Checked="@startWithLoading" Label="Start with Loading" @onclick="EventSelected"></MudCheckBox>
                     </MudItem>
                 }
                 <MudItem xs="12" md="6">
                     <MudAutocomplete T="PlaceModel" Label="Origin" @bind-Value="Origin" ResetValueOnEmptyText="true"
                                      SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                 </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="KmReading" Label="Audometer Reading" Variant="Variant.Outlined" Margin="Margin.Normal"></MudTextField>
+                </MudItem>
+
                 @if (!startWithLoading)
                 {
                     <MudItem xs="12" md="6">
                         <MudAutocomplete T="PlaceModel" Label="Destination" @bind-Value="Destination" ResetValueOnEmptyText="true"
-                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                     </MudItem>
                 }
+
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="KmReading" Label="Audometer Reading" Variant="Variant.Outlined" Margin="Margin.Normal"></MudTextField>
+                    <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="CurrentEvent.DefaultNextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
+                        @foreach (var item in EventTypes)
+                        {
+                            <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
+
             </MudGrid>
         </EditForm>
     </DialogContent>
@@ -73,7 +84,7 @@
     [Parameter] public EventModel CurrentEvent { get; set; }
     private TripModel model = new();
 
-    private bool IsLoading = false;    
+    private bool IsLoading = false;
 
     private bool startWithLoading = false;
     private PlaceModel Origin = new();
@@ -83,6 +94,7 @@
     bool isSubmitting;
 
     private List<PlaceModel> places;
+    private List<EventTypeModel> EventTypes;
 
 
     private void Cancel()
@@ -97,9 +109,15 @@
         places = new();
         places = Iplace.Select(0).ToList();
 
+        EventTypes = Ievent.GetEventTypes().ToList();
+
+        if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 1))
+        {
+            CurrentEvent.DefaultNextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
+        }
         KmReading = CurrentEvent?.EventReading;
         int? OriginID = CurrentEvent?.DestinationID;
-        Origin = OriginID==null?null:await Iplace.SelectByID(OriginID.Value);
+        Origin = OriginID == null ? null : await Iplace.SelectByID(OriginID.Value);
 
         model.BranchID = int.Parse(Task.Run(() => auth.GetAuthenticationStateAsync()).Result.User.Claims.FirstOrDefault(c => c.Type == "BranchID").Value);
         model.TruckID = Truck.TruckID;
@@ -112,6 +130,24 @@
         return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
+    private void EventSelected()
+    {
+
+        if (!startWithLoading)
+        {
+            if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 2))
+            {
+                CurrentEvent.DefaultNextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 2).DefaultNextEventTypeID;
+            }
+        }
+        else
+        {
+            if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 1))
+            {
+                CurrentEvent.DefaultNextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
+            }
+        }
+    }
     private async Task OnValidSubmit(EditContext context)
     {
         if (isSubmitting)
@@ -137,7 +173,7 @@
 
             EventModel em = new();
             em.BranchID = model.BranchID;
-            em.DestinationID = startWithLoading?Origin.PlaceID:Destination.PlaceID;
+            em.DestinationID = startWithLoading ? Origin.PlaceID : Destination.PlaceID;
             em.OriginID = Origin.PlaceID;
             em.DriverID = model.DriverID;
             em.EventTime = DateTime.Now;
@@ -146,6 +182,7 @@
             em.TripID = model.TripID;
             em.TruckID = model.TruckID;
             em.UserInfo.UserID = model.UserInfo.UserID;
+            em.DefaultNextEventTypeID = CurrentEvent.DefaultNextEventTypeID;
             em = Ievent.Update(em);
 
             #endregion
@@ -156,7 +193,6 @@
                 em.EventTypeID = 2;
                 em = Ievent.Update(em);
             }
-
 
             MudDialog.Close(DialogResult.Ok(model));
 

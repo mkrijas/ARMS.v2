@@ -24,7 +24,8 @@
                 <MudTooltip Text="New Payment Memos">
                 <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogpayment(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-               
+               <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
                @* <MudButton @onclick="openpurchaseorder" @onclick="@(()=> OpenDialog(model))"  Variant="Variant.Filled" Color="Color.Primary" >Purchase Order</MudButton>
                *@ 
                 <MudSpacer></MudSpacer>
@@ -101,11 +102,18 @@
     PaymentInitiatedModel pim = new PaymentInitiatedModel();
     private HashSet<PartyPaymentMemoModel> selectedItems1= new HashSet<PartyPaymentMemoModel>();
     public string value="invisible";
-
+     public bool IsApproved { get; set; } = false;
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        await GetAll();
+        await GetAll(IsApproved);
+    }
+     async Task ApprovedChanged(bool value)
+    {
+
+        IsApproved = value;
+        await GetAll(IsApproved);
+
     }
     public void View(PartyPaymentMemoModel ppmm)
     {
@@ -114,17 +122,22 @@
         var dialog =  DialogService.Show<InterBranchPaymentMemoDialog>(ppmm.PaymentMemoID == null?"Payment Memo":"Payment Memo",parms,mediumWidth);
 
     }
-    private  async Task GetAll()
+    private  async Task GetAll(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        collection = new List<PartyPaymentMemoModel>();
-        foreach (var item in Iservice.SelectInterBranch(brancID))
+       
+         if (val)
         {
-            collection.Add(item);
+            collection = Iservice.SelectInterBranch(brancID).Where(x => x.AuthLevelId == 99).ToList();
+            
         }
-
+        else
+        {
+             collection = Iservice.SelectInterBranch(brancID).Where(x => x.AuthLevelId != 99).ToList();
+       
+        }
 
     }   
     public async Task OpenDialogpayment(PartyPaymentMemoModel ppm)
@@ -139,15 +152,8 @@
         var dialog =  DialogService.Show<InterBranchPaymentMemoDialog>(ppm.PaymentMemoID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
 
-            GetAll();
-
-
-        }
-
-        GetAll();
+        GetAll(IsApproved);
     }
     public async Task OpenDialogpaymentView(PartyPaymentMemoModel ppm)
     {
@@ -161,14 +167,8 @@
         var dialog =  DialogService.Show<InterBranchPaymentMemoDialog>(ppm.PaymentMemoID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-
-            GetAll();
-
-
-        }
-        GetAll();
+       
+        GetAll(IsApproved);
 
     }
     public async Task OpenDialogpaymentVerify(PartyPaymentMemoModel ppm)
@@ -183,15 +183,8 @@
         var dialog =  DialogService.Show<InterBranchPaymentMemoDialog>(ppm.PaymentMemoID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
 
-            GetAll();
-
-
-        }
-
-        GetAll();
+        GetAll(IsApproved);
     }
 
     //public async Task CreatePaymentInitialMemo()
@@ -225,17 +218,16 @@
         var dialog =  DialogService.Show<PaymentInitiatedDialog>(tds.PaymentMemoID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-            await GetAll();
-        }
+          
+            await GetAll(IsApproved);
+        
     }
 
     private async Task Delete(PartyPaymentMemoModel tx)
     {
         Iservice.Delete(tx.PaymentMemoID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        await GetAll();
+        await GetAll(IsApproved);
     }
 
     private async Task selected()
@@ -279,7 +271,7 @@
                 UpatedModel.UserInfo.UserID = user.Identity.Name;
                 UpatedModel.BranchID = brancID;
                 Iservice.InitiatePayment(UpatedModel);
-               await GetAll();
+               await GetAll(IsApproved);
             }
         }
         else

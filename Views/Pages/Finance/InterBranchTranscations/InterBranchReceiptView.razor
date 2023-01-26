@@ -18,7 +18,8 @@
                 <MudTooltip Text="Add Receipt">
                 <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-              
+              <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
                 <MudSpacer></MudSpacer>
                
             </ToolBarContent>
@@ -86,24 +87,40 @@
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-
+     public bool IsApproved { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
 
-        await GetReceiptBill();
+        await GetReceiptBill(IsApproved);
 
     }
 
+     async Task ApprovedChanged(bool value)
+    {
 
-    public async Task GetReceiptBill()
+        IsApproved = value;
+        await GetReceiptBill(IsApproved);
+
+    }
+    public async Task GetReceiptBill(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        collection = Iservice.SelectInterBranch(brancID).ToList();
+       // collection = Iservice.SelectInterBranch(brancID).ToList();
+        if (val)
+        {
+            collection = Iservice.SelectInterBranch(brancID).Where(x => x.AuthLevelId == 99).ToList();
+            
+        }
+        else
+        {
+             collection = Iservice.SelectInterBranch(brancID).Where(x => x.AuthLevelId != 99).ToList();
+       
+        }
     }
    
 
@@ -119,14 +136,8 @@
         var dialog =  DialogService.Show<InterBranchReceiptDialog>(tds.ReceiptID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-
-           await GetReceiptBill();
-
-
-        }
-       await GetReceiptBill();
+       
+       await GetReceiptBill(IsApproved);
     }
     private async Task OpenDialogVerify(ReceiptModel tds)
     {
@@ -140,14 +151,8 @@
         var dialog =  DialogService.Show<InterBranchReceiptDialog>(tds.ReceiptID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-
-           await GetReceiptBill();
-
-
-        }
-        await GetReceiptBill();
+       
+        await GetReceiptBill(IsApproved);
     }
     private async Task OpenDialogView(ReceiptModel tds)
     {
@@ -161,20 +166,14 @@
         var dialog =  DialogService.Show<InterBranchReceiptDialog>(tds.ReceiptID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-
-           await GetReceiptBill();
-
-
-        }
-        await GetReceiptBill();
+       
+        await GetReceiptBill(IsApproved);
     }
     private void Delete(ReceiptModel tx)
     {
         Iservice.Delete(tx.ReceiptID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetReceiptBill();
+        GetReceiptBill(IsApproved);
     }
 }
 

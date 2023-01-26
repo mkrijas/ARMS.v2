@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
         IEnumerable<GcTypeModel> SelectGcTypes();
         int AppendToTrip(long? TripID, long? GcSetID, string UserID);
         int BeginUnload(long? TripID, long? GcSetID);
-        int RemoveFromTrip(long? GcSetID, int? TripID, string UserID);
+        int RemoveFromTrip(long? GcSetID, long? TripID, string UserID);
         int UpdateEwayBill(EwayBillModel model);
         decimal? GetFreight(int? OrderID,int? RouteID,int? Axles,decimal? Qty);
     }
@@ -48,12 +48,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@GcDate", model.GcDate??DateTime.Today),
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@RouteID", model.RouteID),
-               new SqlParameter("@PaidBy", model.PaidBy),
-               //new SqlParameter("@PaidBy", model.PaidBy),
+               new SqlParameter("@PaidBy", model.PaidBy),               
                new SqlParameter("@Gcs", model.Gcs.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-            };
-            GcSetModel InsertedModel = new();
+            };            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.GcSet.Update]", parameters))
             {
                 return GetModel(dr);
@@ -250,7 +248,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.GcSet.EventUpdate]", parameters);
         }
 
-        public int RemoveFromTrip(long? GcSetID, int? TripID, string UserID)
+        public int RemoveFromTrip(long? GcSetID, long? TripID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

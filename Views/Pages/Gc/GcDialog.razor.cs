@@ -185,6 +185,7 @@ namespace Views.Pages.Gc
             model.ConsigneeID = Consignee.ConsigneeID;
 
             var authprov = await auth.GetAuthenticationStateAsync();
+            model.UserInfo.UserID = authprov.User.Identity.Name;
 
             foreach (var item in model.Gcs)
             {

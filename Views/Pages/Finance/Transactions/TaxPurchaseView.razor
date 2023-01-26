@@ -21,6 +21,8 @@
                  <MudTooltip Text="Add from GRN">
                 <MudIconButton  Icon="@Icons.Material.Filled.AddLink"  @onclick="openGrn"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
+                <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
                @* <MudButton @onclick="openpurchaseorder"  Variant="Variant.Filled" Color="Color.Primary" >Purchase Order</MudButton>
                *@ 
                 <MudSpacer></MudSpacer>
@@ -83,25 +85,37 @@
     private TaxPurchaseModel model = new TaxPurchaseModel();
     private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-
+     public bool IsApproved { get; set; } = false;
 
     private string searchTax = "";
 
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        GetAll();
+        GetAll(IsApproved);
     }
+     async Task ApprovedChanged(bool value)
+    {
 
-    private  async Task GetAll()
+        IsApproved = value;
+        await GetAll(IsApproved);
+
+    }
+    private  async Task GetAll(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        collection = new List<TaxPurchaseModel>();
-        foreach (var item in Iservice.Select())
+       
+         if (val)
         {
-            collection.Add(item);
+            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
+            
+        }
+        else
+        {
+             collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
+       
         }
 
 
@@ -119,13 +133,11 @@
         var dialog =  DialogService.Show<TaxPurchaseDialog>(tds.PID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-
-            GetAll();
+       
+           await GetAll(IsApproved);
 
 
-        }
+        
     }
      private async Task OpenDialogView(TaxPurchaseModel tds)
     {
@@ -139,13 +151,11 @@
         var dialog =  DialogService.Show<TaxPurchaseDialog>(tds.PID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-
-            GetAll();
+       
+           await GetAll(IsApproved);
 
 
-        }
+        
     }
      private async Task OpenDialogVerify(TaxPurchaseModel tds)
     {
@@ -159,52 +169,20 @@
         var dialog =  DialogService.Show<TaxPurchaseDialog>(tds.PID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-
-            GetAll();
+       
+           await GetAll(IsApproved);
 
 
-        }
+        
     }
 
     private void Delete(TaxPurchaseModel tx)
     {
         Iservice.Delete(tx.PID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        GetAll(IsApproved);
     }
-    //private async Task Approve(TaxPurchaseModel tpm)
-    //{
-    //    var parameters = new DialogParameters();
-    //    parameters.Add("ContentText", "Are you sure you want to Approve this TaxPurchase,Purchase ID:"+tpm.PID+"?");
-    //    parameters.Add("ButtonText", "Confirm");
-    //    parameters.Add("Color", Color.Success);
-    //    var dialog=DialogService.Show<ConfirmDialog>("Confirm", parameters);
-    //    var result = await dialog.Result;
-
-
-    //    if (!result.Cancelled)
-    //    {
-    //        var authprov = await auth.GetAuthenticationStateAsync();
-    //        var user = authprov.User;
-    //        tpm.UserInfo.UserID = user.Identity.Name;
-    //        try
-    //        {
-
-    //            Iservice.Approve(tpm.PID.Value,tpm.UserInfo.UserID);
-
-    //            snackbar.Add("Approved", Severity.Success);
-
-    //            GetAll();
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            snackbar.Add(ex.Message, Severity.Warning);
-    //        }
-    //    }
-
-    //}
+   
     private void GetAccountDetails(TaxPurchaseModel tpm)
     {
         int MID = tpm.MID.Value;
@@ -225,7 +203,7 @@
            if(!result.Cancelled)
         {   
            
-                GetAll();
+                GetAll(IsApproved);
             
 
         }

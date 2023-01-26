@@ -11,9 +11,11 @@
         <MudTable Items="@collection" RowStyleFunc="TableRowStyle"  Dense="true" Hover="true"  Striped="true" Elevation="10" Filter="new Func<PurchaseOrderModel, bool>(search)" @bind-place="model">           
              <ToolBarContent>
                 <MudText Typo="Typo.h6">Purchase Order</MudText>
+
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                  <MudIconButton Icon="@Icons.Material.Filled.TableView" Title="Approved Data" @onclick="@(()=> OpenDialogApproved(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
-               
+               <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchPurchase" Placeholder="Search Purchase order... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
@@ -66,23 +68,38 @@
     private PurchaseOrderModel model = new PurchaseOrderModel();
     private List<PurchaseOrderModel> collection = new List<PurchaseOrderModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-
+     public bool IsApproved { get; set; } = false;
 
     private string searchPurchase = "";
 
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        GetAll(); //View only Unapproved
+        await GetAll(IsApproved); //View only Unapproved
     }
+    async Task ApprovedChanged(bool value)
+    {
 
-    private  async Task GetAll()
+        IsApproved = value;
+        await GetAll(IsApproved);
+
+    }
+    private  async Task GetAll(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        collection = Iservice.SelectPending(brancID).ToList();
        
+       if (val)
+        {
+            collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID == 99).ToList();
+            
+        }
+        else
+        {
+             collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID != 99).ToList();
+       
+        }
 
 
     }
@@ -119,7 +136,7 @@
                 model = new();
                 snackbar.Add("Saved Successfully", Severity.Success);
                 model = new PurchaseOrderModel();
-                GetAll();
+               
             }
             catch (Exception ex)
             {
@@ -127,6 +144,7 @@
             }
 
         }
+       GetAll(IsApproved);
     }
 
 
@@ -141,12 +159,9 @@
         parms.Add("IsView",false);
         var dialog =  DialogService.Show<PurchaseOrderDialog>(tds.POID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
-
-        if(!result.Cancelled)
-        {   
-           
-            GetAll();
-        }
+  
+            GetAll(IsApproved);
+       
     }
      private async Task OpenDialogView(PurchaseOrderModel tds)
     {
@@ -160,56 +175,54 @@
         var dialog =  DialogService.Show<PurchaseOrderDialog>(tds.POID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-           
-            GetAll();
-        }
+         
+           // GetAll(IsApproved);
+        
     }
 
     private void Delete(PurchaseOrderModel tds)
     {
         Iservice.Delete(tds.POID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        GetAll(IsApproved);
     }
     
-    private async Task Approve(PurchaseOrderModel tds)
-    {
+    //private async Task Approve(PurchaseOrderModel tds)
+    //{
 
-        var parameters = new DialogParameters();
-        parameters.Add("ContentText", "Are you sure you want to Approve this Purchase Order,Order No:"+tds.PONo+"?");
-        parameters.Add("ButtonText", "Confirm");
-        parameters.Add("Color", Color.Success);
-        var dialog=DialogService.Show<ConfirmDialog>("Confirm", parameters);
-        var result = await dialog.Result;
-
-
-        if (!result.Cancelled)
-        {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            tds.UserInfo.UserID = user.Identity.Name;
-            try
-            {
-
-                Iservice.Approve(tds.POID.Value,tds.UserInfo.UserID,string.Empty);
-
-                snackbar.Add("Approved", Severity.Success);
-
-                GetAll();
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
-        }
+    //    var parameters = new DialogParameters();
+    //    parameters.Add("ContentText", "Are you sure you want to Approve this Purchase Order,Order No:"+tds.PONo+"?");
+    //    parameters.Add("ButtonText", "Confirm");
+    //    parameters.Add("Color", Color.Success);
+    //    var dialog=DialogService.Show<ConfirmDialog>("Confirm", parameters);
+    //    var result = await dialog.Result;
 
 
+    //    if (!result.Cancelled)
+    //    {
+    //        var authprov = await auth.GetAuthenticationStateAsync();
+    //        var user = authprov.User;
+    //        tds.UserInfo.UserID = user.Identity.Name;
+    //        try
+    //        {
+
+    //            Iservice.Approve(tds.POID.Value,tds.UserInfo.UserID,string.Empty);
+
+    //            snackbar.Add("Approved", Severity.Success);
+
+    //            GetAll(IsApproved);
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            snackbar.Add(ex.Message, Severity.Warning);
+    //        }
+    //    }
 
 
 
-    }
+
+
+    //}
 
     private bool search(PurchaseOrderModel tds)
     {

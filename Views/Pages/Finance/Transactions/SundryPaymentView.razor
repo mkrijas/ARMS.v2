@@ -22,7 +22,8 @@
                 <MudTooltip Text="New Sundry Paymnet">
                 <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-               
+                <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
              
                 <MudSpacer></MudSpacer>
              
@@ -74,24 +75,36 @@
 @code {
 
     private SundryPaymentModel model = new SundryPaymentModel();
-
+      public bool IsApproved { get; set; } = false;
     private List<SundryPaymentModel> collection = new List<SundryPaymentModel>();
     DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        GetAll();
+        GetAll(IsApproved);
     }
+    async Task ApprovedChanged(bool value)
+    {
 
-    private  async Task GetAll()
+        IsApproved = value;
+        await GetAll(IsApproved);
+
+    }
+    private  async Task GetAll(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        collection = new List<SundryPaymentModel>();
-        foreach (var item in Iservice.Select())
+       
+         if (val)
         {
-            collection.Add(item);
+            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
+            
+        }
+        else
+        {
+             collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
+       
         }
 
 
@@ -100,7 +113,7 @@
     {
         Iservice.Delete(tx.SundryPaymentID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        GetAll(IsApproved);
     }
     private async Task Approve(SundryPaymentModel tds)
     {
@@ -121,14 +134,11 @@
         var dialog =  DialogService.Show<SundryPaymentDialog>(tds.SundryPaymentID == null?"ADD":"EDIT",parms,mediumWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-
-            GetAll();
+        
+           await GetAll(IsApproved);
 
 
-        }
-        GetAll();
+        
     }
      private async Task OpenDialogView(SundryPaymentModel tds)
     {
@@ -142,14 +152,8 @@
         var dialog =  DialogService.Show<SundryPaymentDialog>(tds.SundryPaymentID == null?"ADD":"EDIT",parms,mediumWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-
-            GetAll();
-
-
-        }
-        GetAll();
+        
+        await GetAll(IsApproved);
     }
      private async Task OpenDialogVerify(SundryPaymentModel tds)
     {
@@ -163,13 +167,7 @@
         var dialog =  DialogService.Show<SundryPaymentDialog>(tds.SundryPaymentID == null?"ADD":"EDIT",parms,mediumWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-
-            GetAll();
-
-
-        }
-        GetAll();
+       
+       await GetAll(IsApproved);
     }
 }

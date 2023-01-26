@@ -19,10 +19,11 @@
                 <MudTooltip Text="New Sales">
                 <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-               <MudButton  Variant="Variant.Filled" @onclick="@(()=> Verified(1))" Size="Size.Small" >UnVerified Sale</MudButton>
+               @*<MudButton  Variant="Variant.Filled" @onclick="@(()=> Verified(1))" Size="Size.Small" >UnVerified Sale</MudButton>
                 
                <MudButton  Style="margin-left:10px" Variant="Variant.Filled" @onclick="@(()=> Verified(2))" Size="Size.Small" Color="Color.Default">Verified Sale</MudButton>
-              
+             *@ <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
                 <MudSpacer></MudSpacer>
                
             </ToolBarContent>
@@ -77,34 +78,42 @@
     string bgcolor {get; set;} = "00f";
 
     private string searchTax = "";
-
+    public bool IsApproved { get; set; } = false;
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        GetAll(1);
+        await GetAll(IsApproved);
     }
 
-    private  async Task GetAll(int val)
+    async Task ApprovedChanged(bool value)
+    {
+
+        IsApproved = value;
+        await GetAll(IsApproved);
+
+    }
+    private  async Task GetAll(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        if (val == 1)
+        if (val)
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
+            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
+            
         }
         else
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
-
+             collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
+       
         }
 
 
     }   
-    private  void Verified(int val)
+    private  void Verified()
     {
 
-        GetAll(val);
+        GetAll(IsApproved);
 
     }   
 
@@ -120,13 +129,11 @@
         var dialog =  DialogService.Show<SaleDialog>(tds.SID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-
-            GetAll(1);
+        
+            await GetAll(IsApproved);
 
 
-        }
+        
     }
     private async Task OpenDialogView(SaleModel tds)
     {
@@ -140,13 +147,11 @@
         var dialog =  DialogService.Show<SaleDialog>(tds.SID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
+          
 
-            GetAll(1);
+           await GetAll(IsApproved);
 
 
-        }
     }
      private async Task OpenDialogVerify(SaleModel tds)
     {
@@ -159,80 +164,26 @@
         parms.Add("IsView",false);
         var dialog =  DialogService.Show<SaleDialog>(tds.SID == null?"ADD":"EDIT",parms,maxWidth);
         var result = await dialog.Result;
-        if(!result.Cancelled)
-        {   
+         
 
-            GetAll(1);
+           await GetAll(IsApproved);
 
 
-        }
+        
     }
 
     private void Delete(SaleModel tx)
     {
         Iservice.Delete(tx.SID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll(1);
+        GetAll(IsApproved);
     }
-    private async Task Approve(SaleModel tpm)
-    {
-        //var parameters = new DialogParameters();
-        //parameters.Add("ContentText", "Are you sure you want to Approve this TaxPurchase,Purchase ID:"+tpm.PID+"?");
-        //parameters.Add("ButtonText", "Confirm");
-        //parameters.Add("Color", Color.Success);
-        //var dialog=DialogService.Show<ConfirmDialog>("Confirm", parameters);
-        //var result = await dialog.Result;
-
-
-        //if (!result.Cancelled)
-        //{
-        //    var authprov = await auth.GetAuthenticationStateAsync();
-        //    var user = authprov.User;
-        //    tpm.UserInfo.UserID = user.Identity.Name;
-        //    try
-        //    {
-
-        //        Iservice.Approve(tpm.PID.Value,tpm.UserInfo.UserID);
-
-        //        snackbar.Add("Approved", Severity.Success);
-
-        //        GetAll();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        snackbar.Add(ex.Message, Severity.Warning);
-        //    }
-        //}
-
-    }
-    private void GetAccountDetails(SaleModel tpm)
-    {
-        //int MID = tpm.MID.Value;
-        //DialogParameters parms = new DialogParameters();
-        //parms.Add("MID", MID);
-        //DialogService.Show<AccountInfoDialog>("MID", parms,maxWidth);
-    }
-    public async Task  openGrn()
-    {
-        //PurchaseOrderModel tds = new();
-        //var authprov = await auth.GetAuthenticationStateAsync();
-        //var user = authprov.User;
-
-        //DialogParameters parms = new DialogParameters();
-       
-        //var dialog =  DialogService.Show<InventoryGrnViewDialog>("GRN",parms,maxWidth);
-        //var result = await dialog.Result;
-        //   if(!result.Cancelled)
-        //{   
-           
-        //        GetAll();
-            
-
-        //}
-    }
+    
+ 
+ }
 
   
 
     
 
-}
+

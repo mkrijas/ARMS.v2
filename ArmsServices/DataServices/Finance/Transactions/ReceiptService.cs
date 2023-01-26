@@ -215,8 +215,9 @@ namespace ArmsServices.DataServices
                 ReceiptMode = dr.GetString("ReceiptMode"),
                 ReceiptTool = dr.GetString("ReceiptTool"),
                 ReceiptCoaID = dr.GetInt32("ReceiptCoa"),
-                ReceiptArdCode = dr.GetString("ReceiptArdCode"),
+                ReceiptArdCode = dr.GetString("ArdCode"),
                 IsRealized = dr.GetBoolean("IsRealized"),
+                BankCharges= dr.GetDecimal("BankCharges"),
                 Reference = dr.GetString("Reference"),
                 EffectiveDate = dr.GetDateTime("EffectiveDate"),
                 CostCenter = dr.GetInt32("CostCenter"),
@@ -230,7 +231,7 @@ namespace ArmsServices.DataServices
                     PartyID = dr.GetInt32("PartyID"),
                     TradeName = dr.GetString("PartyName")                    
                 },
-                PartyCoaID = dr.GetInt32("PartyCoaID"),
+                PartyCoaID = dr.GetInt32("PartyCoa"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
