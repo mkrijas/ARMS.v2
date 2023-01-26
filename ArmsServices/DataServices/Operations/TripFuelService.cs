@@ -87,7 +87,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TripFuelID", model.TripFuelID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                // Tax Purcahse
-               new SqlParameter("@PartyBranchID", model.PartyBranch.PartyID),
+               new SqlParameter("@vendorID", model.PartyBranch.PartyID),
                new SqlParameter("@DocumentDate", model.EntryDate),
            
                new SqlParameter("@InvoiceDate", model.EntryDate),
