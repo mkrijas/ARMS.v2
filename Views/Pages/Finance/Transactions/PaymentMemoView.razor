@@ -22,9 +22,11 @@
                 <MudTooltip Text="New Payment Memo">
                 <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogpayment(model,false,false))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
 
-                <MudSpacer></MudSpacer>              
+
+                <MudSpacer></MudSpacer>  
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PartyPaymentMemoModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
@@ -73,52 +75,55 @@
     private PartyPaymentMemoModel model = new PartyPaymentMemoModel();
     private List<PartyPaymentMemoModel> collection = new List<PartyPaymentMemoModel>(); 
     public bool IsApproved { get; set; } = false;
-    
-    private HashSet<PartyPaymentMemoModel> selectedItems1= new HashSet<PartyPaymentMemoModel>();    
 
-    async Task ApprovedChanged(bool value)
+    private HashSet<PartyPaymentMemoModel> selectedItems1= new HashSet<PartyPaymentMemoModel>();
+    private int? branchID = null;
+    private string UserID = null;
+    void ApprovedChanged(bool value)
     {
         IsApproved = value;
-        await GetAll(IsApproved);
+        GetAll(IsApproved);
     }
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        await GetAll(IsApproved);
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        GetAll(IsApproved);
     }
 
-    private  async Task GetAll(bool val)
+    private  void GetAll(bool val)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        int brancID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        if (val)
+       if (val)
         {
-            collection = Iservice.Select(brancID).Where(x => x.AuthLevelId == 99).ToList();
+            collection = Iservice.Select(branchID).Where(x => x.AuthLevelId == 99).ToList();
         }
         else
         {
-            collection = Iservice.Select(brancID).Where(x => x.AuthLevelId != 99).ToList();
+            collection = Iservice.Select(branchID).Where(x => x.AuthLevelId != 99).ToList();
         }
     }
 
     public async Task OpenDialogpayment(PartyPaymentMemoModel ppm, bool ReadOnly, bool View)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
+        //var authprov = await auth.GetAuthenticationStateAsync();
+        //var user = authprov.User;
         DialogParameters parms = new DialogParameters();
         parms.Add("model", ppm);
         parms.Add("IsReadOnly", ReadOnly);
         parms.Add("IsView", View);
         var dialog = DialogService.Show<PaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
-        await GetAll(IsApproved);
+        GetAll(IsApproved);
     }
 
-    private async Task Delete(PartyPaymentMemoModel tx)
+    private void Delete(PartyPaymentMemoModel tx)
     {
         Iservice.Delete(tx.PaymentMemoID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        await GetAll(IsApproved);
+        GetAll(IsApproved);
     }
 
     private async Task selected()
@@ -150,12 +155,12 @@
             if(!result.Canceled)
             {   
                 PaymentInitiatedModel UpatedModel = (PaymentInitiatedModel)result.Data; 
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-                int brancID = int.Parse(brancIDString);
-                var user = authprov.User;
-                UpatedModel.UserInfo.UserID = user.Identity.Name;
-                UpatedModel.BranchID = brancID;
+                //var authprov = await auth.GetAuthenticationStateAsync();
+                //var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+                //int brancID = int.Parse(brancIDString);
+                //var user = authprov.User;
+                UpatedModel.UserInfo.UserID = UserID;
+                UpatedModel.BranchID = branchID;
                 Iservice.InitiatePayment(UpatedModel);              
             }
         }
@@ -164,6 +169,6 @@
             snackbar.Add("Please Select Memo", Severity.Success);
             return;
         }
-         await GetAll(IsApproved);    
+         GetAll(IsApproved);    
     }
 }
