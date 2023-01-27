@@ -189,7 +189,8 @@ namespace Views.Pages.Gc
 
             foreach (var item in model.Gcs)
             {
-                item.UserInfo.UserID = model.UserInfo.UserID;
+                item.UserInfo.UserID = authprov.User.Identity.Name;
+                model.UserInfo.UserID= authprov.User.Identity.Name;
             }
             try
             {

@@ -15,7 +15,7 @@ namespace ArmsModels.BaseModels
 
         public decimal? AdditionalTCS { get; set; } 
 
-        [ValidateComplexType]
+       
         public List<SaleExpenseModel> Particulars { get; set; } = new();
         [ValidateComplexType]
         public List<SaleItemModel> Items { get; set; } = new();

@@ -1,0 +1,294 @@
+﻿@inject IOpTranService Iservice
+@inject ITripService tripIservice
+@inject ITripFuelService tripFuelIservice
+@inject ICostCenterService costIservice
+@inject IGstUsageIDService usageIservice
+@inject IDimensionService dimensionIservice
+@inject MudBlazor.ISnackbar snackbar
+@inject ITdsRateService tdsIService
+@inject IChartOfAccountService accountService
+@inject IConfiguration configuration
+@using Microsoft.Extensions.Configuration
+@inject IBranchService brIservice
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+@inject IInventoryItemService itemIservice
+
+<MudDialog  Style="height:500px;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Create Transaction
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+         <MudPaper Class="@valueTran" >
+    <MudContainer>
+    <MudGrid>
+         <MudItem  xs="12" md="12">
+             <h6>Transaction</h6>
+         </MudItem>
+
+               <MudItem xs="12"md="4">
+                    <MudSelect Label="Mode" @bind-Value="model.PaymentMode" SelectedValuesChanged="ModeChange"  T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                             <MudSelectItem Value="@("Bank")" />
+                             <MudSelectItem Value="@("Cash")" />
+
+
+                        </MudSelect>
+                 </MudItem>
+                @*  <MudItem xs="12"md="4">*@
+                   @* <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
+              *@
+              @* <PaymentCodeSelector   @bind-Value="SelectedAccount" LabelName="SelectedAccount" CoaID="accountgroup"/>
+              *@     
+              @*   </MudItem>*@
+                  <MudItem xs="12"md="4">
+                    <MudSelect Label="Area" @bind-Value="model.Area" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                             <MudSelectItem Value="@("Operation")" />
+                             <MudSelectItem Value="@("Maintenenace")" />
+
+
+                        </MudSelect>
+                 </MudItem>
+                     <MudItem xs="12"md="4">
+
+      <MudDatePicker Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+
+
+    </MudItem>
+                    <MudItem xs="12" md="4">
+
+                        <MudSelect Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in costCenter)
+                            {
+                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
+                            }
+                        </MudSelect>
+
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+
+                        <MudSelect Label="Select Dimension" @bind-Value="model.Dimension" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in dimension)
+                            {
+                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                            }
+                        </MudSelect>
+
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="model.TotalAmount" ReadOnly="true" Label="TotalAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
+
+                    </MudItem>
+         <MudItem  xs="12" md="12">
+
+              <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+
+
+                            <thead>
+
+                                <tr>
+
+                                  @*  <th>Branch</th>*@
+
+                                    <th>ExpenseID</th>
+                                    <th>Reference</th>
+                                    <th>Amount</th>
+                                    <th>Quantity</th>
+                                    <th>Unit</th>
+
+                                      <th></th>
+
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in subModels)
+                                {
+                                        <tr>
+
+
+                                            <td>@item.ExpenseUsageCode.UsageCode</td>
+                                            <td>@item.Reference</td>
+                                            <td>@item.Amount</td>
+                                            <td>@item.Quantity</td>
+                                            <td>@item.Unit</td>
+
+
+                                            <td>
+                                            @* @if (model.ApprovedInfo.RecordStatus != 3)*@
+
+                                                    <MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+
+                                            </td>
+
+                                        </tr>
+                                }
+
+                                  <tr>
+
+                                        <td>
+                                           <MudSelect Label="Items" @bind-Value="opTranSubModel.ExpenseUsageCode" T="GstUsageCodeModel"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" ToStringFunc="@(e => e?.UsageCode)" >
+                                            @foreach (var ditem in usageID)
+                                            {
+                                                    <MudSelectItem Value="@ditem">@ditem.UsageCode</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                        </td>
+                                         <td>
+                                            <MudTextField @bind-Value="opTranSubModel.Reference"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Reference)"></MudTextField>
+
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="opTranSubModel.Amount"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Amount)"></MudTextField>
+
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="opTranSubModel.Quantity"  Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Quantity)"></MudTextField>
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="opTranSubModel.Unit"   Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Unit)"></MudTextField>
+
+                                        </td>
+
+                                        <td>
+
+                                            <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+
+                                        </td>
+                                    </tr>
+
+                            </tbody>
+                        </MudSimpleTable>
+
+
+             </MudItem>
+          
+   
+               <MudItem xs="12"md="10">
+                   </MudItem>
+     <MudItem xs="12"md="2">
+          <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" OnClick="Submit">Submit</MudButton>
+
+     </MudItem>
+        </MudGrid>
+        </MudContainer>
+        </MudPaper>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public OpTranModel model  { get; set; }
+    public TruckModel SelectedTruck { get; set; }
+   // public OpTranModel model = new OpTranModel();
+    public string tripnumber;
+    private List<TripModel> collection = new List<TripModel>();
+    public string value = "invisible";
+    public string IsPurBtn = "invisible";
+    //public string valueTran = "invisible";
+    public string valueTran = "visible";
+    private TripModel tripModel = new TripModel();
+    private TripModel selectedItem1 = null;
+    private int selectedRowNumber = -1;
+    private MudTable<TripModel> mudTable;
+    public int? accountgroup = 0;
+    private ChartOfAccountModel SelectedAccount = null;
+    private List<OpTranSubModel> subModels = new List<OpTranSubModel>();
+    private OpTranSubModel opTranSubModel = new();
+    // private OpExpenseModel SelectedExpenses = null;
+    private List<CostCenterModel> costCenter = new();
+    private List<DimensionModel> dimension = new();
+    // private GstUsageIDModel usg = new GstUsageIDModel();
+    private List<GstUsageCodeModel> usageID = new();
+    private TaxPurchaseModel Taxmodel = new TaxPurchaseModel();
+    //public PartyBranchModel selectedpartybr{ get; set; }
+    //public string FuelVal="invisible";
+    //public string IsPur = "invisible";
+    //public bool? isInv { get; set; } = null;
+    private List<BranchModel> branch = new();
+    //public TripFuelModel TModel = new TripFuelModel();
+    private List<InventoryItemModel> items = new();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private List<TaxPurchaseExpenseModel> exitems = new List<TaxPurchaseExpenseModel>();
+    private List<TaxPurchaseItemModel> TxItitems = new List<TaxPurchaseItemModel>();
+    private List<TaxPurchaseModel> Taxmodellist = new List<TaxPurchaseModel>();
+
+
+    protected override void OnInitialized()
+    {
+        usageID = usageIservice.Select(DateTime.Now).ToList();
+    }
+    public void ModeChange()
+    {
+        if (model.PaymentMode == "Bank")
+        {
+            accountgroup = Convert.ToInt32(configuration.GetSection("Data")[model.PaymentMode]);
+
+        }
+        else
+        {
+            accountgroup = Convert.ToInt32(configuration.GetSection("Data")[model.PaymentMode]);
+
+
+        }
+
+        SelectedAccount = new();
+    }
+    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
+    {
+        await Task.Delay(5);
+        int coID = Convert.ToInt32(configuration.GetSection("Data")[model.PaymentMode]);
+        return accountService.SelectChildren(coID);
+    }
+    
+    public void AddItems()
+    {
+
+       // opTranSubModel.ExpenseUsageCode=SelectedExpenses.ExpenseID;
+        //opTranSubModel.ExpenseID=1;
+        subModels.Add(opTranSubModel);
+
+        model.TotalAmount = model.TotalAmount + opTranSubModel.Amount;
+        opTranSubModel = new();
+        // SelectedExpenses = new();
+
+    }
+    public void DeleteExpenses(OpTranSubModel i)
+    {
+        int rowIndex = subModels.IndexOf(i);
+        model.TotalAmount = model.TotalAmount - i.Amount;
+        subModels.RemoveAt(rowIndex);
+    }
+    private async Task Submit()
+    {
+        model.Transactions = subModels;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        model.UserInfo.UserID = user.Identity.Name;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        model.BranchID = int.Parse(brancIDString);
+        model.PaymentArdCode = SelectedAccount.AccountCode;
+        model.CreditCoaID = SelectedAccount.CoaID;
+        //  model.JobCardID=model.TripInfo.
+        try
+        {
+
+            Iservice.Update(model);
+
+            snackbar.Add("Saved Successfully", Severity.Success);
+            model = new OpTranModel();
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+    }
+
+}
