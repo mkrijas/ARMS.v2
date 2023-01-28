@@ -4,6 +4,7 @@
 @inject ITripService Itrip
 @inject IGcService Igc
 @inject IDriverService Idriver
+@inject ITruckService Itruck
 
 
 @inject MudBlazor.ISnackbar snackbar
@@ -110,10 +111,12 @@
     [Parameter] public TruckModel Truck { get; set; }
     [Parameter] public DriverModel AssignedDriver { get; set; }
     [Parameter] public TripModel CurrentTrip { get; set; }
-    [Parameter] public EventModel CurrentEvent { get; set; }
+    private EventModel PreEvent { get; set; }
 
     [Parameter]
     public EventModel model { get; set; } = new();
+
+    
 
     private bool IsLoading = false;
     private string ButtonLabel = "Select an Event";
@@ -130,39 +133,50 @@
 
     private List<GcSetModel> GCsToUnload = new();
     private IEnumerable<GcSetModel> SelectedGCs = new HashSet<GcSetModel>();
+
     private void Cancel()
     {
         MudDialog.Cancel();
     }
 
 
-    protected override async Task OnInitializedAsync()
+    protected async override Task OnInitializedAsync()
     {        
         EventTypes = Ievent.GetEventTypes().Where(x => x.EventTypeID != 1 && x.IsTripRelated).ToList();
-        places = Iplace.Select(0).ToList();
+        places = Iplace.Select(0).ToList();         
+        PreEvent =  model.TruckEventID == null?Ievent.GetCurrentEvent(Truck.TruckID):Ievent.GetPreviousEvent(model.TruckEventID);
         int? OriginID = null, DestinationID = null;
+
+        if (Truck == null)
+        {
+            Truck = Itruck.SelectByID(CurrentTrip.TruckID);
+        }
+        AssignedDriver = AssignedDriver ?? Idriver.SelectByID(model.DriverID);
 
         if (model.TruckEventID == null)
         {
-            KmReading = CurrentEvent?.EventReading;
-            OriginID = CurrentEvent?.DestinationID;
-            model.DriverID = AssignedDriver?.DriverID;
-            model.TripID = CurrentTrip.TripID;
-            model.TruckID = Truck.TruckID;
-
+            KmReading = model.EventReading ?? PreEvent?.EventReading;
+            OriginID = model.OriginID ?? PreEvent?.DestinationID;
+            model.DriverID = model.DriverID ?? AssignedDriver?.DriverID;
+            model.TripID = model.TripID ?? CurrentTrip.TripID;
+            model.TruckID = model.TruckID ?? Truck.TruckID;
         }
         else
         {
             OriginID = model.OriginID;
             DestinationID = model.DestinationID;
             SelectedEvent = Ievent.GetEventType(model.EventTypeID);
-            AssignedDriver = Idriver.SelectByID(model.DriverID);
         }
 
         Origin = OriginID == null ? null : await Iplace.SelectByID(OriginID.Value);
         Destination = DestinationID == null ? null : await Iplace.SelectByID(DestinationID.Value);
+    
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+       
+    }
 
     private async Task<IEnumerable<PlaceModel>> SearchPlaces(string searchString)
     {
@@ -177,7 +191,7 @@
         {
             if(gcSetList.Any())
             {
-                 snackbar.Add("The trip is not unloaded", Severity.Warning);
+                snackbar.Add("The trip is not unloaded", Severity.Warning);
                 return;
             }
         }
@@ -229,9 +243,9 @@
                         Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
                     }
                 }
-            }
-            CurrentEvent = model;
+            }            
             MudDialog.Close(DialogResult.Ok(model));
+            
         }
         catch (Exception ex)
         {
@@ -244,23 +258,11 @@
     }
 
     private bool ValidateEvent(EventModel ev)
-    {
-        EventModel preEvent = new();
-        EventModel NextEvent = new();
+    {        
+        EventModel NextEvent = new();                    
+        NextEvent = Ievent.GetNextEvent(ev.TruckEventID);        
 
-        if (ev.TruckEventID == null)
-        {
-            preEvent = CurrentEvent;
-            NextEvent = null;
-        }
-        else
-        {
-            preEvent = Ievent.GetPreviousEvent(ev.TruckEventID);
-            NextEvent = Ievent.GetNextEvent(ev.TruckEventID);
-
-        }
-
-        if (preEvent != null && model.EventTime < preEvent.EventTime)
+        if (PreEvent != null && model.EventTime < PreEvent.EventTime)
         {
             snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
             return false;
@@ -271,7 +273,7 @@
             return false;
         }
         else
-        if ((preEvent != null && preEvent.EventTypeID == SelectedEvent.EventTypeID) || (NextEvent != null && NextEvent.EventTypeID == SelectedEvent.EventTypeID))
+        if ((PreEvent != null && PreEvent.EventTypeID == SelectedEvent.EventTypeID) || (NextEvent != null && NextEvent.EventTypeID == SelectedEvent.EventTypeID))
         {
             snackbar.Add("Cannot enter an event twice in a row", Severity.Warning);
             return false;
@@ -299,8 +301,5 @@
         }
         else
             ButtonLabel = "Select an Event";
-    }
-   
-
-   
+    }   
 }
