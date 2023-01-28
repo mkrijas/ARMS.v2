@@ -20,44 +20,49 @@
 @inject IDriverService Idriver
 @inject IGcService Igc
 @using Views.Pages.Gc
-<MudCard Class="@Class" Style="height:auto;">
+<MudCard Class="@Class" Style="height:370px">
     <MudCardHeader>
         <CardHeaderAvatar>
             <MudAvatar Color="Color.Tertiary">TM</MudAvatar>
         </CardHeaderAvatar>
         <CardHeaderContent>
             <MudGrid>
-                <MudItem xs="6">
+                <MudItem xs="4">
                 <MudText Typo="Typo.body1" GutterBottom="true">
-                    <MudIcon Icon="@Icons.Filled.ConfirmationNumber" Title="Trip Number" Color="Color.Primary" />
+                    <MudIcon Icon="@Icons.Material.Filled.ConfirmationNumber" Title="Trip Number" Color="Color.Primary" />
                     <b>@trips.TripPrefix@trips.TripNumber</b>
                 </MudText>
-
-                <MudText Typo="Typo.body1" GutterBottom="true">
-                    <MudIcon Icon="@Icons.Filled.AirlineSeatFlat" Title="Driver" Color="Color.Primary" />
-                    <b>@AssignedDriver.DriverName</b>
-                </MudText>
+                 <MudText Typo="Typo.body2">
+                        <MudIcon Icon="@Icons.Material.Filled.DateRange" Title="Trip Number" Color="Color.Primary" />
+                        <b>@Convert.ToDateTime(@trips.TripDate).ToString("dd/MM/yyyy")</b>
+                    </MudText>
+             
             </MudItem>
-            <MudItem xs="6">
-                <MudButton @onclick="@(()=> OpenDialog(Tmodel))" Color="@Color.Info" StartIcon="@Icons.Outlined.Add" Variant="Variant.Filled">
-                    Add Fuel
-                </MudButton>
+              <MudItem xs="4">
+                    <MudText Typo="Typo.body1" GutterBottom="true">
+                        <MudIcon Icon="@Icons.Material.Filled.AirlineSeatFlat" Title="Driver" Color="Color.Primary" />
+                        <b>@AssignedDriver.DriverName</b>
+                    </MudText>
+                    <MudText Typo="Typo.body1" GutterBottom="true">
+                        <MudIcon Icon="@Icons.Material.Filled.FireTruck" Title="Driver" Color="Color.Primary" />
+                        <b>@Truck?.RegNo</b>
+                    </MudText>
+                  </MudItem>
+            <MudItem xs="4">
+           
             </MudItem>
             </MudGrid>
             
 
-            <MudText Typo="Typo.body2">@trips.TripDate</MudText>
+           
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent>
-        @* <MudText>@trips.TruckID</MudText>
-        <MudText>@trips.DriverID</MudText>*@
-        @*    <MudText Typo="Typo.body2">@trips.RouteName</MudText>
-        <MudText>@trips.TotalBillQuantity</MudText>
-        <MudText>@trips.TotalFreight</MudText>*@
-        <MudTabs Elevation="4" Rounded="true" Color="@Color.Transparent" PrevIcon="@Icons.Material.Filled.SkipPrevious" NextIcon="@Icons.Material.Filled.SkipNext">
-            <MudTabPanel Text="Consignments" ToolTip="AssignedConsignments">
-                <MudContainer>
+        <MudPaper>
+        <MudTabs Rounded="true" Color="@Color.Transparent" PrevIcon="@Icons.Material.Filled.SkipPrevious" NextIcon="@Icons.Material.Filled.SkipNext" style="background-color:#E4E5E8">
+
+                <MudTabPanel Text="Consignments" ToolTip="AssignedConsignments">
+                    <MudContainer Style="height:220px; overflow-y:scroll">
                     <br />
                     @if (AssignedGCs != null)
                     {
@@ -77,14 +82,48 @@
                 </MudContainer>
 
             </MudTabPanel>
-            <MudTabPanel Text="Transactions" ToolTip="Transactions">
-                <br />
-                <MudItem md="12" lg="12">
-                    <MudContainer>
+                <MudTabPanel Text="Events" ToolTip="Events">
+                    <MudContainer Style="height:220px; overflow-y:scroll">
+                    <MudTimeline>
+                        @foreach (var item in TripEvents)
+                        {
+                            string timetext;
+                            DateTime today = DateTime.Today;
+                            @if (item.EventTime?.Date == today)
+                                timetext = "Today " + item.EventTime?.ToString("hh:mm tt");
+                            else if (item.EventTime?.Date.AddDays(1) == today)
+                                timetext = "YesterDay " + item.EventTime?.ToString("hh:mm tt");
+                            else timetext = item.EventTime?.ToString("ddd dd-MMM-yyyy hh:mm tt");
+
+                            EventTypeModel et = EventTypes.First(x => x.EventTypeID == item.EventTypeID);
+
+
+                            <MudTimelineItem Color="Color.Success" Elevation="10">
+                                <MudCard Elevation="25" Style="@($"background:{Colors.Brown.Lighten5};")">
+                                    <MudCardContent>
+                                        <MudText Typo="Typo.h6" Color="Color.Primary">@et.EventStatusText </MudText>
+                                        @if (et.EventTypeID != 1)
+                                        {
+                                            <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Edit" OnClick="(() => UpdateEvent(item))"></MudIconButton>
+                                        }
+                                        <MudText Typo="Typo.button">@(et.IsStationary ? "Reached " : "Left ")  @item.OriginName </MudText>
+                                        <MudText Typo="Typo.body2" Class="mud-text-secondary">@timetext  </MudText>
+                                    </MudCardContent>
+                                </MudCard>
+                            </MudTimelineItem>
+                        }
+                    </MudTimeline>
+                    </MudContainer>
+                </MudTabPanel>
+            <MudTabPanel Text="Transactions" ToolTip="Accounting entries">
+           
+             @*   <MudItem md="12" lg="12">*@
+                    <MudContainer Style="height:220px; overflow-y:scroll">
                         <MudGrid>
-                            <MudTable Items="@OptranList" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="Opmodel">
+                            <br />
+                            <MudTable Items="@OptranList" Dense="true" Hover="true" Striped="true"  @bind-place="Opmodel">
                                 <ToolBarContent>
-                                    <MudText Typo="Typo.h6">Transaction</MudText>
+                                    <MudText>Add New</MudText>
 
                                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(Opmodel))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
 
@@ -92,8 +131,8 @@
                                 </ToolBarContent>
 
                                 <HeaderContent>
-                                    <MudTh><MudTableSortLabel SortBy="new Func<OpTranModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumnetNo</MudTableSortLabel></MudTh>
-                                    <MudTh><MudTableSortLabel SortBy="new Func<OpTranModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Doc Date</MudTableSortLabel></MudTh>
+                                    <MudTh Style="width:160px;"><MudTableSortLabel SortBy="new Func<OpTranModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document No</MudTableSortLabel></MudTh>
+                                    <MudTh Style="width:150px;"><MudTableSortLabel SortBy="new Func<OpTranModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Doc Date</MudTableSortLabel></MudTh>
                                     <MudTh><MudTableSortLabel SortBy="new Func<OpTranModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
                                     <MudTh>Actions</MudTh>
                                 </HeaderContent>
@@ -109,110 +148,58 @@
                         </MudGrid>
                     </MudContainer>
 
-                </MudItem>
-
-                <br />
+            @*    </MudItem>
+*@
+        
 
             </MudTabPanel>
-            <MudTabPanel Text="Events" ToolTip="Events">
-                <MudTimeline>
-                    @foreach (var item in TripEvents)
-                    {
-                        string timetext;
-                        DateTime today = DateTime.Today;
-                        @if (item.EventTime?.Date == today)
-                            timetext = "Today " + item.EventTime?.ToString("hh:mm tt");
-                        else if (item.EventTime?.Date.AddDays(1) == today)
-                            timetext = "YesterDay " + item.EventTime?.ToString("hh:mm tt");
-                        else timetext = item.EventTime?.ToString("ddd dd-MMM-yyyy hh:mm tt");
+        
+            <MudTabPanel Text="Fuleing" ToolTip="FuelEntries">
+              
+                    <MudContainer Style="height:220px; overflow-y:scroll">
+                        <br />
+                        <MudGrid>
+                              
+                            <MudTable Items="@TFuelList" Dense="true" Hover="true" Striped="true" @bind-place="Tmodel">
+                                <ToolBarContent>
+                                @*    <MudText><b>Add Fuel</b></MudText>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"
+                                    @onclick="@(()=> OpenDialog(Tmodel))" Color="Color.Dark"
+                                    Size="Size.Small"></MudIconButton>*@
+                                    <MudButton @onclick="@(()=> OpenDialog(Tmodel))" Color="@Color.Transparent" StartIcon="@Icons.Outlined.Add" Variant="Variant.Filled">
+                                        Add Fuel
+                                    </MudButton>
+                                    <MudSpacer></MudSpacer>
+                                </ToolBarContent>
 
-                        EventTypeModel et = EventTypes.First(x => x.EventTypeID == item.EventTypeID);
-
-
-                        <MudTimelineItem Color="Color.Success" Elevation="10">
-                            <MudCard Elevation="25" Style="@($"background:{Colors.Brown.Lighten5};")">
-                                <MudCardContent>
-                                    <MudText Typo="Typo.h6" Color="Color.Primary">@et.EventStatusText </MudText>
-                                    @if (et.EventTypeID != 1)
-                                    {
-                                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Edit" OnClick="(() => UpdateEvent(item))"></MudIconButton>
-                                    }
-                                    <MudText Typo="Typo.button">@(et.IsStationary ? "Reached " : "Left ")  @item.OriginName </MudText>
-                                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@timetext  </MudText>
-                                </MudCardContent>
-                            </MudCard>
-                        </MudTimelineItem>
-                    }
-                </MudTimeline>
-            </MudTabPanel>
-          @*  <MudTabPanel Text="Fuleing" ToolTip="Fueling">
-                
-
-                <MudPaper>
-                    <MudGrid Spacing="4">
-                        <MudItem xs="12" md="4">
-                            <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="Tmodel.EntryDate" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudSelect Label="Select Item " @bind-Value="Tmodel.FuelItemID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                                @foreach (var ditem in Ac)
-                                {
-                                    <MudSelectItem Value="@ditem.InventoryItemID">@ditem.InventoryItemCode</MudSelectItem>
-                                }
-                            </MudSelect>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="Tmodel.Quantity" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.Quantity)"></MudTextField>
-                        </MudItem>
-
-                        <MudItem xs="12" md="3">
-                            <MudCheckBox @bind-Checked="@Tmodel.IsPurchase" Color="Color.Primary" Label="Is Purchase"></MudCheckBox>
-                        </MudItem>
-                    </MudGrid>
-                </MudPaper>
-
-                <MudPaper>
-                    <MudGrid Spacing="2">
-                        @if (Tmodel.IsPurchase == true)
-                        {
-                            <MudItem xs="12" md="4">
-                                <MudTextField @bind-Value="Tmodel.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.InvoiceNo)"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="12" md="4">
-                                <PartySelector @bind-Value="Tmodel.PartyBranch"></PartySelector>
-                            </MudItem>
-                            <MudItem xs="12" md="4">
-                                <MudSelect Label="Select CostCenter" @bind-Value="Tmodel.Costcenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                                    @foreach (var ditem in costCenter)
-                                    {
-                                        <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudItem>
-                            <MudItem xs="12" md="4">
-                                <MudSelect Label="Select Dimension" @bind-Value="Tmodel.Dimension" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                                    @foreach (var ditem in dimension)
-                                    {
-                                        <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudItem>
-                            <MudItem xs="12" md="4">
-                                <MudTextField @bind-Value="Tmodel.RatePerLitre" TextChanged="totalAmt" Label="Rate Per Liter" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.RatePerLitre)"></MudTextField>
-                            </MudItem>
-                            <MudItem xs="12" md="4">
-                                <MudTextField @bind-Value="Tmodel.TotalAmount" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.TotalAmount)" ReadOnly="true"></MudTextField>
-                            </MudItem>
-                        }
-                    </MudGrid>
-                </MudPaper>
-                <MudButton OnClick="Submit" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-
-
+                                <HeaderContent>
+                                    <MudTh Style="width:160px;"><MudTableSortLabel SortBy="new Func<TripFuelModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Ascending">Entry Date</MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<TripFuelModel, object>(x=> x.FuelItemID)" InitialDirection="SortDirection.Ascending">Item</MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<TripFuelModel, object>(x=> x.Quantity)" InitialDirection="SortDirection.Ascending">Quantity</MudTableSortLabel></MudTh>
+                                    <MudTh Style="width:150px;"><MudTableSortLabel SortBy="new Func<TripFuelModel, object>(x=> x.RatePerLitre)" InitialDirection="SortDirection.Ascending">Rate/Ltr</MudTableSortLabel></MudTh>
+                                    @*<MudTh>Actions</MudTh>*@
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd DataLabel="EntryDate">@context.EntryDate</MudTd>
+                                    <MudTd DataLabel="Item">@context.FuelItemID</MudTd>
+                                    <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+                                    <MudTd DataLabel="Frieght">@context.RatePerLitre</MudTd>
+                                @*    <MudTd DataLabel="">
+                                        <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                                    </MudTd>*@
+                                </RowTemplate>
+                         @* <FooterContent>
+                              <MudText>Total Frieght</MudText>
+                          </FooterContent>*@
+                            </MudTable>
+                          
+                        </MudGrid>
+                    </MudContainer>
 
               
-            </MudTabPanel>*@
+            </MudTabPanel>
         </MudTabs>
+        </MudPaper>
     </MudCardContent>
     @*<MudCardActions>
     <MudButton @onclick="@(() => Edit(trips.GcSetID))" Color="Color.Primary">EDIT</MudButton>
@@ -237,7 +224,8 @@
     private List<OpTranModel> OptranList = new List<OpTranModel>();
     private OpTranModel Opmodel = new OpTranModel();
     //Fueling
-    public TripFuelModel Tmodel { get; set; } = new();
+    private List<TripFuelModel> TFuelList = new List<TripFuelModel>();
+    public TripFuelModel Tmodel { get; set; } = new TripFuelModel();
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
     private List<InventoryItemModel> Ac = new();
@@ -288,13 +276,18 @@
         dimension = dimensionIservice.Select().ToList();
         //Ac = IsInvService.SelectByID(0).ToList();
         Ac = IsInvService.SearchByDescription(string.Empty).ToList();
-        //OptranList = Iservice.SelectByTrip(trips.TripID);
+     
+        foreach (var fitem in tripFuelIservice.SelectByTrip(trips.TripID))
+        {
+            TFuelList.Add(fitem);
+        }
         foreach (var item in Iservice.SelectByTrip(trips.TripID))
         {
             OptranList.Add(item);
         }
         EventTypes = Ievent.GetEventTypes().ToList();
         AssignedDriver = trips.DriverID == null ? null : Idriver.SelectByID(trips.DriverID.Value);
+        //string truck
     }
     private void totalAmt()
     {

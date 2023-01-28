@@ -119,7 +119,7 @@ namespace ArmsServices.DataServices
                 RatePerLitre = reader.GetDecimal("RatePerLitre"),
                 TotalAmount = reader.GetDecimal("TotalAmount"),
                 BranchID = reader.GetInt32("BranchID"),
-                //TripID = reader.GetInt64("TripID"),
+                TripID = reader.GetInt32("TripID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = reader.GetByte("RecordStatus"),
