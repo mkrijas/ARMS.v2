@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
         TripInfoModel GetTripInfo(long? TripID);
         IEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString);
         IEnumerable<object> GetOutstandingBills(long? TripID);
-        IEnumerable<GcTariffModel> GetTariffs(int? TripID);
+        IEnumerable<GcTariffModel> GetTariffs(long? TripID);
 
     }
 
@@ -216,7 +216,7 @@ namespace ArmsServices.DataServices
         }
 
 
-        public IEnumerable<GcTariffModel> GetTariffs(int? TripID)
+        public IEnumerable<GcTariffModel> GetTariffs(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {               
