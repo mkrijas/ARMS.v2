@@ -45,6 +45,8 @@ namespace ArmsModels.BaseModels
         public DateTime? SoldDate { get; set; }
         public EventModel CurrentEvent { get; set; }
         public TruckRegistrationModel CurrentRegistration { get; set; }
+        [Required]
+        public int? AssetID { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
 
    
