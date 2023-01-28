@@ -57,7 +57,7 @@
                 }
 
                 <MudItem xs="12" md="6">
-                    <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="CurrentEvent.DefaultNextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
+                    <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="lastEvent.DefaultNextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
                         @foreach (var item in EventTypes)
                         {
                             <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
@@ -81,7 +81,8 @@
 
     [Parameter] public TruckModel Truck { get; set; }
     [Parameter] public DriverModel AssignedDriver { get; set; }
-    [Parameter] public EventModel CurrentEvent { get; set; }
+    //[Parameter] public EventModel CurrentEvent { get; set; }
+    private EventModel lastEvent;
     private TripModel model = new();
 
     private bool IsLoading = false;
@@ -110,13 +111,14 @@
         places = Iplace.Select(0).ToList();
 
         EventTypes = Ievent.GetEventTypes().ToList();
+        lastEvent = Ievent.GetCurrentEvent(Truck.TruckID);
 
         if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 1))
         {
-            CurrentEvent.DefaultNextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
+            lastEvent.DefaultNextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
         }
-        KmReading = CurrentEvent?.EventReading;
-        int? OriginID = CurrentEvent?.DestinationID;
+        KmReading = lastEvent?.EventReading;
+        int? OriginID = lastEvent?.DestinationID;
         Origin = OriginID == null ? null : await Iplace.SelectByID(OriginID.Value);
 
         model.BranchID = int.Parse(Task.Run(() => auth.GetAuthenticationStateAsync()).Result.User.Claims.FirstOrDefault(c => c.Type == "BranchID").Value);
@@ -137,14 +139,14 @@
         {
             if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 2))
             {
-                CurrentEvent.DefaultNextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 2).DefaultNextEventTypeID;
+                lastEvent.DefaultNextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 2).DefaultNextEventTypeID;
             }
         }
         else
         {
             if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 1))
             {
-                CurrentEvent.DefaultNextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
+                lastEvent.DefaultNextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
             }
         }
     }
@@ -182,7 +184,7 @@
             em.TripID = model.TripID;
             em.TruckID = model.TruckID;
             em.UserInfo.UserID = model.UserInfo.UserID;
-            em.DefaultNextEventTypeID = CurrentEvent.DefaultNextEventTypeID;
+            em.DefaultNextEventTypeID = lastEvent.DefaultNextEventTypeID;
             em = Ievent.Update(em);
 
             #endregion
