@@ -10,47 +10,21 @@
 
 
 
-    <MudText Typo="Typo.h5" Style="display:inline-block" Class="text-danger"><b> @CancelledStatus</b></MudText>
+<MudText Typo="Typo.h5" Style="display:inline-block" Class="text-danger"><b> @CancelledStatus</b></MudText>
 
 
-<MudExpansionPanels MultiExpansion="true" Class="mt-4" hidden="@hidden">
+<MudExpansionPanels MultiExpansion="true" Class="mt-4"  hidden="@hidden">
     <MudExpansionPanel>
         <TitleContent>
             <div class="d-flex px-3">
-                <MudBadge Content="@(TripEvents.Count)" Color="Color.Primary" Overlap="true" Class="d-flex">
+                <MudBadge Content="@EventCount" Color="Color.Primary" Overlap="true" Class="d-flex">
                     <MudIcon Icon="@Icons.Material.Filled.AccessTimeFilled"></MudIcon>
                 </MudBadge>
                 <MudText Class="ml-3"><strong>@Truck?.RegNo</strong> @TruckStatus </MudText>
             </div>
         </TitleContent>
         <ChildContent>
-            <MudTimeline>
-                @foreach (var item in TripEvents)
-                {
-                    string timetext;
-                    DateTime today = DateTime.Today;
-                    @if (item.EventTime?.Date == today)
-                        timetext = "Today " + item.EventTime?.ToString("hh:mm tt");
-                    else if (item.EventTime?.Date.AddDays(1) == today)
-                        timetext = "YesterDay " + item.EventTime?.ToString("hh:mm tt");
-                    else timetext = item.EventTime?.ToString("ddd dd-MMM-yyyy hh:mm tt");
-
-                    EventTypeModel et = EventTypes.First(x => x.EventTypeID == item.EventTypeID);
-
-
-                    <MudTimelineItem Color="Color.Success" Elevation="10">
-                        <MudCard Elevation="25" Style="@($"background:{Colors.Brown.Lighten5};")">
-                            <MudCardContent>
-                                <MudText Typo="Typo.h6" Color="Color.Primary">@et.EventStatusText </MudText>
-                                @if (et.EventTypeID != 1)
-                                {<MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Edit" OnClick="(() => UpdateEvent(item))"></MudIconButton>}
-                                <MudText Typo="Typo.button">@(et.IsStationary ? "Reached " : "Left ")  @item.OriginName </MudText>
-                                <MudText Typo="Typo.body2" Class="mud-text-secondary">@timetext  </MudText>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudTimelineItem>
-                }
-            </MudTimeline>
+            <TripEventsComponent Trip="@Trip" OnEventCount="@OnEventCount"></TripEventsComponent>
         </ChildContent>
     </MudExpansionPanel>
     @if (AssignedGCs != null)
@@ -69,24 +43,13 @@
                     @foreach (var gc in AssignedGCs)
                     {
                         <MudItem xs="6" lg="4">
-                            <GcItemCard IsLoading="Isloading"   item="gc" Style="@($"background:{Colors.Brown.Lighten5};")" TransactionUpdated="TransactionUpdated"></GcItemCard>
+                            <GcItemCard IsLoading="Isloading"   item="gc" Style="@($"background:{Colors.Brown.Lighten5};")" ></GcItemCard>
                         </MudItem>
                     }
                 </MudGrid>
             </ChildContent>
         </MudExpansionPanel>
-    }
-    <MudExpansionPanel>
-        <TitleContent>
-            <div class="d-flex px-3">
-                <MudIcon Icon="@Icons.Material.Filled.MonetizationOn"></MudIcon>
-                <MudText Class="ml-3"><strong>Financial Entries</strong></MudText>
-            </div>
-        </TitleContent>
-        <ChildContent>
-            @*<TransactionsListView Trip="Trip" @ref="TransactionsListViewRef"></TransactionsListView>*@
-        </ChildContent>
-    </MudExpansionPanel>
+    }   
 </MudExpansionPanels>
 
 
@@ -109,26 +72,30 @@
     public string TruckStatus;
     private string CancelledStatus;
     private bool Isloading = false;
-    protected override void OnInitialized()
+
+    private int? EventCount = 0;
+
+    [Parameter]
+    public EventCallback<EventModel> OnTripStatusUpdated { get; set; }
+
+    protected async override Task OnInitializedAsync()
     {
-        EventTypes = Ievent.GetEventTypes().ToList();
-
-
-    }
-
-
-    protected async override Task OnParametersSetAsync()
-    {
+        hidden = false;
         if (_trip?.TripID != Trip?.TripID)
         {
-            _trip = new TripModel { TripID = Trip?.TripID }; 
-            LoadAll();
+            _trip = new TripModel { TripID = Trip?.TripID };
+            await LoadAll();
         }
     }
 
 
+    protected override void OnParametersSet()
+    {
 
-    private void LoadAll()
+    }
+
+
+    private async Task LoadAll()
     {
         CancelledStatus = string.Empty;
         if (Trip != null)
@@ -142,11 +109,10 @@
         else
         {
             hidden = true;
-        }        
-
+        }   
         Truck = Itruck.SelectByID(Trip?.TruckID);
         LoadGcs();
-        LoadEvents();       
+        await IsLoading();       
     }
 
 
@@ -157,34 +123,23 @@
         else
             AssignedGCs = Igc.SelectByTrip(Trip.TripID);
     }
-    public void LoadEvents()
+
+    // To check whether truck is in loading status currently and enable Gc removal button
+    // Also invoke Tripstatus Changed method
+    public async Task IsLoading()
     {
-        if (Trip == null)
-            TripEvents = new();
-        else
+        if (Trip != null)        
         {
-            TripEvents = Ievent.SelectByTrip(Trip.TripID).ToList();
             EventModel ev = Ievent.GetCurrentEvent(Trip.TruckID);
-            EventID = ev.EventTypeID;
-            if (EventID == 2)
-            {
-                Isloading = true;
-            }
-            else
-            {
-                Isloading = false;
-            }
+            await OnTripStatusUpdated.InvokeAsync(ev);            
+            Isloading = ev.EventTypeID == 2;
         }
     }
-    public void LoadTransactions()
-    {
-        //TransactionsListViewRef.Refresh();
-    }
 
-    private void TransactionUpdated(long? TransID)
-    {
 
-        LoadGcs();
+    protected void OnEventCount(int? eventCount)
+    {
+        EventCount = eventCount;
     }
 
 
@@ -197,7 +152,11 @@
 
         var result = DialogService.Show<UpdateEventView>("Edit Event", parameters);
         var Data = await result.Result;
-        LoadEvents();
+        if (!Data.Canceled)
+        {
+            ev = (EventModel)Data.Data;
+            await OnTripStatusUpdated.InvokeAsync(ev);
+            await IsLoading();
+        }
     }
-
 }
