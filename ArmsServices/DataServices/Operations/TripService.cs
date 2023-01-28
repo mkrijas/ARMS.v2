@@ -22,6 +22,7 @@ namespace ArmsServices.DataServices
         TripInfoModel GetTripInfo(long? TripID);
         IEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString);
         IEnumerable<object> GetOutstandingBills(long? TripID);
+        IEnumerable<GcTariffModel> GetTariffs(int? TripID);
 
     }
 
@@ -212,6 +213,26 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(reader);
             }            
+        }
+
+
+        public IEnumerable<GcTariffModel> GetTariffs(int? TripID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {               
+               new SqlParameter("@TruckID", TripID),
+               new SqlParameter("@Operation", "ByTrip"),
+            };
+            foreach (var dr in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
+            {
+                yield return new GcTariffModel()
+                {
+                    Amount = dr.GetDecimal("Amount"),
+                    GcNumber = dr.GetString("GcNumber"),
+                    TripNumber = dr.GetString("TripNumber"),
+                    TariffTypeName = dr.GetString("TariffTypeName"),
+                };
+            }
         }
     }
 }
