@@ -125,13 +125,8 @@ namespace ArmsServices.DataServices
             foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
             {
                 yield return new OpTranSubModel()
-                {
-                    ExpenseUsageCode = new GstUsageCodeModel()
-                    {
-                        UsageCode = dr.GetString("UsageCode"),
-                        Id = dr.GetInt32("UsageCode"),
-                        CoaID = dr.GetInt32("CoaID"),
-                    },
+                {                  
+                    ExpenseUsageCode = dr.GetString("UsageCode"),                     
                     OpTranID = dr.GetInt32("OpTranID"),                    
                     OpTranSubID = dr.GetInt64("OpTranSubID"),
                     Amount = dr.GetDecimal("Amount"),
