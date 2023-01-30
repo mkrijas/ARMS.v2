@@ -195,6 +195,7 @@ namespace ArmsServices.DataServices
                     TripNumber = (reader.GetInt64("TripNumber")).ToString(),
                     Truck = reader.GetString("Truck"),
                     Gcs = reader.GetString("Gcs"),
+                    Mileage = reader.GetString("Mileage"),
                 };
             }
             return model;
@@ -220,16 +221,16 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {               
-               new SqlParameter("@TruckID", TripID),
+               new SqlParameter("@TripID", TripID),
                new SqlParameter("@Operation", "ByTrip"),
             };
-            foreach (var dr in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
+            foreach (var dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
             {
                 yield return new GcTariffModel()
                 {
                     Amount = dr.GetDecimal("Amount"),
                     GcNumber = dr.GetString("GcNumber"),
-                    TripNumber = dr.GetString("TripNumber"),
+                    TripNumber = dr.GetInt64("TripNumber"),
                     TariffTypeName = dr.GetString("TariffTypeName"),
                 };
             }
