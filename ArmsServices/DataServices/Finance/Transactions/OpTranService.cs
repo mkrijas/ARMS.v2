@@ -119,7 +119,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", TransactionID),
+               new SqlParameter("@OpTranID", TransactionID),
                new SqlParameter("@Operation", "GetExpenses"),
             };
             foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))

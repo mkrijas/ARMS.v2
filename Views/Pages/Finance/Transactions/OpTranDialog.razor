@@ -15,16 +15,20 @@
 @inject IDialogService DialogService
 @inject IInventoryItemService itemIservice
 
-<MudDialog  Style="height:500px;">
+<MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
             Create Transaction
         </MudText>
+        @if (IsView)
+        {
+            <MudText Color="Color.Error">@model.AuthStatus</MudText>
+        }
     </TitleContent>
     <DialogContent>
-         <MudPaper Class="@valueTran" >
-    <MudContainer>
+        
+    <MudContainer Style="max-height: 450px; overflow-y: scroll">
     <MudGrid>
          <MudItem  xs="12" md="12">
              <h6>Transaction</h6>
@@ -83,10 +87,10 @@
                  Clearable="true" SearchFunc="SearchAccounts"  ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
 
                     </MudItem>
-                    <MudItem xs="12" md="12">
+                  @*  <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="model.TotalAmount" ReadOnly="true" Label="TotalAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
 
-                    </MudItem>
+                    </MudItem>*@
          <MudItem  xs="12" md="12">
 
               <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
@@ -98,7 +102,7 @@
 
                                   @*  <th>Branch</th>*@
 
-                                    <th colspan="2">ExpenseID</th>
+                                    <th colspan="3">UsageCode</th>
                                     <th>Reference</th>
                                     <th>Amount</th>
                                     <th>Quantity</th>
@@ -115,7 +119,7 @@
                                         <tr>
 
 
-                                            <td colspan="2">@item.ExpenseUsageCode.UsageCode</td>
+                                            <td colspan="3">@item.ExpenseUsageCode</td>
                                             <td>@item.Reference</td>
                                             <td>@item.Amount</td>
                                             <td>@item.Quantity</td>
@@ -131,10 +135,11 @@
 
                                         </tr>
                                 }
+                                 @if (!IsReadOnly)
+                                {
+                                <tr>
 
-                                  <tr>
-
-                                          <td colspan="2">
+                                          <td colspan="3">
                                            @*<MudSelect Label="Items" @bind-Value="opTranSubModel.ExpenseUsageCode" T="GstUsageCodeModel"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" ToStringFunc="@(e => e?.UsageCode)" >
                                             @foreach (var ditem in usageID)
                                             {
@@ -165,21 +170,38 @@
 
                                         </td>
                                     </tr>
-
+                                }
                             </tbody>
                         </MudSimpleTable>
 
 
              </MudItem>
-          
+           <MudItem xs="12">
+                        @if ((IsReadOnly) && (!IsView))
+                        {
+                            <AutherizationStatusComponent DocTypeID="6" DocumentID="model.OpTranID" OnApprove="IsApproveData"></AutherizationStatusComponent>
+
+                        }
+
+                    </MudItem>
    
         </MudGrid>
         </MudContainer>
-        </MudPaper>
+        
     </DialogContent>
     <DialogActions>
-          <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" OnClick="Submit">Submit</MudButton>
+        <MudText>Total:@model.TotalAmount</MudText> 
+         @if (!IsReadOnly)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Cancel</MudButton>
 
+          <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" OnClick="Submit">Submit</MudButton>
+        }
+         @if (IsReadOnly)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Close</MudButton>
+
+        }
     </DialogActions>
 </MudDialog>
 
@@ -190,54 +212,80 @@
     public string PaymentMode  { get; set; }
     [Parameter]
     public string Area  { get; set; }
-    public TruckModel SelectedTruck { get; set; }
+    [Parameter]
+    public bool IsReadOnly { get; set; } = false;
+    [Parameter]
+    public bool IsView { get; set; } = false;
+    //public TruckModel SelectedTruck { get; set; }
     private AccountRuleDefinitionModel accountRuleDefinition = new();
-    public string tripnumber;
-    private List<TripModel> collection = new List<TripModel>();
-    public string value = "invisible";
-    public string IsPurBtn = "invisible";
+    //public string tripnumber;
+    //private List<TripModel> collection = new List<TripModel>();
+    //public string value = "invisible";
+    //public string IsPurBtn = "invisible";
     //public string valueTran = "invisible";
-    public string valueTran = "visible";
-    private TripModel tripModel = new TripModel();
-    private TripModel selectedItem1 = null;
-    private int selectedRowNumber = -1;
+    //public string valueTran = "visible";
+    //private TripModel tripModel = new TripModel();
+    //private TripModel selectedItem1 = null;
+    //private int selectedRowNumber = -1;
     public GstUsageCodeModel gstusge = new();
-    private MudTable<TripModel> mudTable;
-    public int? accountgroup = 0;
-    private ChartOfAccountModel SelectedAccount = null;
+    // private MudTable<TripModel> mudTable;
+    // public int? accountgroup = 0;
+    //private ChartOfAccountModel SelectedAccount = null;
     private List<OpTranSubModel> subModels = new List<OpTranSubModel>();
     private OpTranSubModel opTranSubModel = new();
     // private OpExpenseModel SelectedExpenses = null;
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
     // private GstUsageIDModel usg = new GstUsageIDModel();
-    private List<GstUsageCodeModel> usageID = new();
+    //private List<GstUsageCodeModel> usageID = new();
     private TaxPurchaseModel Taxmodel = new TaxPurchaseModel();
     //public PartyBranchModel selectedpartybr{ get; set; }
     //public string FuelVal="invisible";
     //public string IsPur = "invisible";
     //public bool? isInv { get; set; } = null;
-    private List<BranchModel> branch = new();
+    //private List<BranchModel> branch = new();
     //public TripFuelModel TModel = new TripFuelModel();
-    private List<InventoryItemModel> items = new();
+    // private List<InventoryItemModel> items = new();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-    private List<TaxPurchaseExpenseModel> exitems = new List<TaxPurchaseExpenseModel>();
-    private List<TaxPurchaseItemModel> TxItitems = new List<TaxPurchaseItemModel>();
-    private List<TaxPurchaseModel> Taxmodellist = new List<TaxPurchaseModel>();
-
+    // private List<TaxPurchaseExpenseModel> exitems = new List<TaxPurchaseExpenseModel>();
+    // private List<TaxPurchaseItemModel> TxItitems = new List<TaxPurchaseItemModel>();
+    // private List<TaxPurchaseModel> Taxmodellist = new List<TaxPurchaseModel>();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     protected override void OnInitialized()
     {
         if(model.OpTranID==null)
         {
+            //model = new();
             model.Area=Area;
             model.PaymentMode = PaymentMode;
             model.TotalAmount = 0;
         }
+        else
+        {
+            accountRuleDefinition.CoaID = model.CreditCoaID;
+            accountRuleDefinition.ArdCode = model.PaymentArdCode;
+            //subModels = Iservice.GetExpenses(model.OpTranID).ToList();
+        }
 
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
-        usageID = usageIservice.Select(DateTime.Now).ToList();
+        //usageID = usageIservice.Select(DateTime.Now).ToList();
+    }
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+     protected async Task IsApproveData(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            Iservice.Approve(model.OpTranID, model.UserInfo.UserID, aprvd.Remarks);
+            snackbar.Add("Approved Successfully", Severity.Success);
+        }
     }
     private async Task<IEnumerable<AccountRuleDefinitionModel>> SearchAccounts(string searchString)
     {
@@ -259,7 +307,7 @@
     public void AddItems()
     {
 
-        opTranSubModel.ExpenseUsageCode=gstusge;
+        opTranSubModel.ExpenseUsageCode=gstusge.UsageCode;
 
         subModels.Add(opTranSubModel);
 
@@ -271,7 +319,7 @@
     public void DeleteExpenses(OpTranSubModel i)
     {
         int rowIndex = subModels.IndexOf(i);
-        model.TotalAmount = model.TotalAmount - i.Amount;
+        model.TotalAmount = model.TotalAmount - (i.Amount*i.Quantity);
         subModels.RemoveAt(rowIndex);
     }
     private async Task Submit()
@@ -297,7 +345,7 @@
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
-
+        //MudDialog.Close();
     }
 
 }
