@@ -14,7 +14,7 @@ namespace ArmsModels.BaseModels
 
         public long? TruckEventID { get; set; }
         public byte? EventTypeID { get; set; }  
-        public byte? DefaultNextEventTypeID { get; set; }
+        public byte? NextEventTypeID { get; set; }
         public DateTime? EventTime { get; set; } = DateTime.Now;
         public long? EventReading { get; set; }
         public int? BranchID { get; set; }

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static NuGet.Packaging.PackagingConstants;
 
 namespace Views.Pages.Gc
 {
@@ -22,7 +23,7 @@ namespace Views.Pages.Gc
         [Inject] MudBlazor.ISnackbar snackbar { get; set; }
         [Inject] AuthenticationStateProvider auth { get; set; }
         [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-        [Parameter] public GcSetModel model { get; set; }
+        [Parameter] public GcSetModel model { get; set; } = new GcSetModel();
         [Parameter] public OrderModel Order { get; set; }
 
 
@@ -50,95 +51,33 @@ namespace Views.Pages.Gc
         private bool _tabAdded = false;
 
 
-        protected override async Task OnInitializedAsync()
+        protected async override Task OnInitializedAsync()
         {
-            var e = await auth.GetAuthenticationStateAsync();
-            string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
-            int BranchID = int.Parse(BranchIDString);
+            GcTypes = Iservice.SelectGcTypes().ToList();
+            Orders = await Iorder.Select(0).ToListAsync();
+        }
 
-            IsLoading = true;
-            GcTypes = new();
-            foreach (var item in Iservice.SelectGcTypes())
-            {
-                GcTypes.Add(item);
-            }
-            await foreach (var item in Iorder.Select(0))
-            {
-                Orders.Add(item);
-            }
+        protected override async Task OnParametersSetAsync()
+        {           
+            IsLoading = true;  
+            Order = Order ?? Orders.FirstOrDefault(x => x.OrderID == model.OrderID) ?? Orders.FirstOrDefault();
+            
+            await OrderSelected(Order);
 
-            if (Order == null)
+            if (model.GcSetID != null)
             {
-                if (model?.GcSetID > 0)
-                    Order = Orders.Find(x => x.OrderID == model.OrderID);
-                else
-                if (Orders.Count == 1) Order = Orders.First();
+                Route = Routes.FirstOrDefault(x => x.RouteID == model.RouteID);
+                Consignor = Consignees.FirstOrDefault(x => x.ConsigneeID == model.ConsignorID);
+                Consignee = Consignees.FirstOrDefault(x => x.ConsigneeID == model.ConsigneeID);
             }
-            else
-            {
-                model = new() { BranchID = BranchID };
-            }
-
-            await OrderChanged(Order);
-
-            if (model?.GcSetID > 0)
-            {
-                Route = Routes.Find(x => x.RouteID == model.RouteID);
-                Consignor = Consignees.Find(x => x.ConsigneeID == model.ConsignorID);
-                Consignee = Consignees.Find(x => x.ConsigneeID == model.ConsigneeID);
-            }
-
             if (model.Gcs.Count == 0)
             {
                 model.Gcs.Add(new GcModel());
             }
             IsLoading = false;
-
         }
 
-        private async Task OrderChanged(OrderModel Order)
-        {
-            IsLoading = true;
-            Routes.Clear();
-            Consignees.Clear();
-            Route = null;
-            Consignor = null;
-            Consignee = null;
-            model.ConsignorID = null;
-            model.ConsigneeID = null;
-            model.RouteID = null;
-
-            if (Order != null)
-            {
-                await foreach (var item in Iroute.SelectByOrder(Order?.OrderID))
-                {
-                    Routes.Add(item);
-                }
-
-                await foreach (var item in Iconsignee.SelectByOrder(Order.OrderID))
-                {
-                    Consignees.Add(item);
-                }
-                if (Routes.Count() == 1)
-                {
-                    Route = Routes.First();
-                    model.RouteID = Route.RouteID;
-                }
-                if (Consignees.Where(x => x.Consignor == true).Count() == 1)
-                {
-                    Consignor = Consignees.First(x => x.Consignor == true);
-                    model.ConsignorID = Consignor.ConsigneeID;
-                }
-                if (Consignees.Where(x => x.Consignor == false).Count() == 1)
-                {
-                    Consignee = Consignees.First(x => x.Consignor == false);
-                    model.ConsigneeID = Consignee.ConsigneeID;
-                }
-            }
-
-            GetFreight(model);
-            IsLoading = false;
-        }
+       
 
         private void GetFreight(GcSetModel GcSet)
         {
@@ -166,19 +105,7 @@ namespace Views.Pages.Gc
         }
 
         private async Task OnValidSubmit(EditContext context)
-        {
-            if (!Orders.Select(x => x.OrderName).Contains(Order.OrderName))
-            {
-                snackbar.Add("Invalid Order", Severity.Error);
-                return;
-            }
-            else
-                 if (!Routes.Select(x => x.RouteName).Contains(Route.RouteName))
-            {
-                snackbar.Add("Invalid Route", Severity.Error);
-                return;
-            }
-
+        {   
             model.OrderID = Order.OrderID;
             model.RouteID = Route.RouteID;
             model.ConsignorID = Consignor.ConsigneeID;
@@ -186,6 +113,7 @@ namespace Views.Pages.Gc
 
             var authprov = await auth.GetAuthenticationStateAsync();
             model.UserInfo.UserID = authprov.User.Identity.Name;
+            model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
             foreach (var item in model.Gcs)
             {
@@ -214,7 +142,38 @@ namespace Views.Pages.Gc
         {
             Order = obj;
             model.OrderID = obj?.OrderID;
-            await OrderChanged(Order);
+
+
+            Routes.Clear();
+            Consignees.Clear();
+            Route = null;
+            Consignor = null;
+            Consignee = null; 
+            if (Order != null)
+            {
+                Routes = await Iroute.SelectByOrder(Order?.OrderID).ToListAsync();
+                Consignees = await Iconsignee.SelectByOrder(Order.OrderID).ToListAsync();
+
+                if (model.GcSetID == null)
+                {
+                    if (Routes.Count() == 1)
+                    {
+                        Route = Routes.First();
+                        model.RouteID = Route.RouteID;
+                    }
+                    if (Consignees.Where(x => x.Consignor == true).Count() == 1)
+                    {
+                        Consignor = Consignees.FirstOrDefault(x => x.Consignor == true);
+                        model.ConsignorID = Consignor.ConsigneeID;
+                    }
+                    if (Consignees.Where(x => x.Consignor == false).Count() == 1)
+                    {
+                        Consignee = Consignees.First(x => x.Consignor == false);
+                        model.ConsigneeID = Consignee.ConsigneeID;
+                    }
+                }
+            }
+            GetFreight(model);
         }
 
         private void RouteChanged(RouteModel obj)

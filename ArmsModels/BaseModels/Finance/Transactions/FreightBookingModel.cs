@@ -66,7 +66,7 @@ namespace ArmsModels.BaseModels
         public virtual string ConsigneeName { get; set; }
         public virtual decimal? BillQuantity { get; set; }
         public virtual string GcNumber { get; set; }
-        public virtual string TripNumber { get; set; }
+        public virtual long? TripNumber { get; set; }
         public virtual string TariffTypeName { get; set; }
 
     }
