@@ -17,12 +17,12 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Sundry Receipt </MudText>
                 <MudTooltip Text="New Sundry Receipt">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model,false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-                <MudCheckBox Label="Approved Entries"  CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
 
 
                 <MudSpacer></MudSpacer>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
 
             </ToolBarContent>
             <HeaderContent>
@@ -43,26 +43,25 @@
                     @if (@context.AuthLevelId == null)
                     {
                         <MudTooltip Text="Edit">
-                            <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>
-                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                            <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
 
                     }
                     @if (@context.AuthLevelId != 99)
                     {
                         <MudTooltip Text="View authentication Status">
-                            <MudFab @onclick="@(()=> OpenDialogVerify(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>
+                            <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
                     }
                     <MudTooltip Text="View">
-                        <MudFab @onclick="@(()=> OpenDialogView(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
                 </MudTd>
             </RowTemplate>
 
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                @*  <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>*@
 
             </PagerContent>
         </MudTable>
@@ -75,100 +74,54 @@
     private SundryReceiptModel model = new SundryReceiptModel();
     public bool IsApproved { get; set; } = false;
     private List<SundryReceiptModel> collection = new List<SundryReceiptModel>();
-    DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         model = new();
-        await GetAll(IsApproved);
+        GetAll(IsApproved);
     }
 
-    private async Task GetAll(bool val)
+    private void GetAll(bool val)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        
-         if (val)
+
+
+        if (val)
         {
             collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
-            
+
         }
         else
         {
-             collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
-       
+            collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
+
         }
 
     }
-    async Task ApprovedChanged(bool value)
+    void ApprovedChanged(bool value)
     {
 
         IsApproved = value;
-        await GetAll(IsApproved);
+        GetAll(IsApproved);
 
     }
-    private async Task authentication(SundryReceiptModel tds)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        DialogParameters parms = new DialogParameters();
-        parms.Add("DocTypeID", 12);
-        parms.Add("DocumentID", tds.SundryReceiptID);
-        var dialog = DialogService.Show<AutherizationDetailsView>(tds.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
-        var result = await dialog.Result;
 
-        
-        await GetAll(IsApproved);
-    }
-    private async Task OpenDialog(SundryReceiptModel tds)
+    private async Task OpenDialog(SundryReceiptModel tds, bool ReadOnly, bool View)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
+
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds);
-         parms.Add("IsReadOnly",false);
-        parms.Add("IsView",false);
+        parms.Add("IsReadOnly", false);
+        parms.Add("IsView", false);
         var dialog = DialogService.Show<SundryReceiptDialog>(tds.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
 
-        
-       await GetAll(IsApproved);
+
+        GetAll(IsApproved);
     }
 
-     private async Task OpenDialogVerify(SundryReceiptModel tds)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
 
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds);
-         parms.Add("IsReadOnly",true);
-        parms.Add("IsView",false);
-        var dialog = DialogService.Show<SundryReceiptDialog>(tds.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
-        var result = await dialog.Result;
-
-       
-        await GetAll(IsApproved);
-    }
-
-     private async Task OpenDialogView(SundryReceiptModel tds)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds);
-         parms.Add("IsReadOnly",true);
-        parms.Add("IsView",true);
-        var dialog = DialogService.Show<SundryReceiptDialog>(tds.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
-        var result = await dialog.Result;
-
-       
-        await GetAll(IsApproved);
-    }
-
-     private void Delete(SundryReceiptModel tx)
+    private void Delete(SundryReceiptModel tx)
     {
         Iservice.Delete(tx.SundryReceiptID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);

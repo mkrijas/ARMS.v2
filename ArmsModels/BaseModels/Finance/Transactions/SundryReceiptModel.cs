@@ -17,8 +17,8 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public int? ReceiptCoaID { get; set; }        
         public string Reference { get; set; }
         public string PayerName { get; set; }
-        public string PayerContactNo { get; set; }        
-        public List<SundryReceiptEntryModel> Entries { get; set; }
+        public string PayerContactNo { get; set; }
+        public List<SundryReceiptEntryModel> Entries { get; set; } = new();
     }
 
     public class SundryReceiptEntryModel

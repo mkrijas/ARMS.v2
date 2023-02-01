@@ -218,7 +218,7 @@ namespace ArmsServices.DataServices
                 ReceiptArdCode = dr.GetString("ArdCode"),
                 IsRealized = dr.GetBoolean("IsRealized"),
                 BankCharges= dr.GetDecimal("BankCharges"),
-                Reference = dr.GetString("Reference"),
+                Reference = dr.GetString("Referece"),
                 EffectiveDate = dr.GetDateTime("EffectiveDate"),
                 CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),

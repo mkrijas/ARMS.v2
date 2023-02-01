@@ -29,16 +29,8 @@
         <MudPaper>
             <MudContainer Style="max-height: 450px; overflow-y: scroll">
                 <MudGrid>
-                    @* <MudItem xs="12" md="2">
-                    <MudSelect Label="Mode" @bind-Value="model.ReceiptMode" SelectedValuesChanged="ModeChange" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                    <MudSelectItem Value="@("Bank")" />
-                    <MudSelectItem Value="@("Cash")" />
 
-
-                    </MudSelect>
-                    </MudItem>*@
                     <MudItem xs="12" md="12">
-                        @*<PaymentCodeSelector @bind-Value="SelectedAccount" LabelName="SelectedAccount" CoaID="accountgroup" />*@
                         <PaymentCodeSelector @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
                     </MudItem>
                     <MudItem xs="12" md="4">
@@ -107,7 +99,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var item in Entrys)
+                                @foreach (var item in model.Entries)
                                 {
                                     <tr>
 
@@ -126,7 +118,6 @@
                                 {
                                     <tr>
                                         <td>
-                                            @*  <CoaSelector   @bind-Value="SelectedAccounts" LabelName="SelectedAccount" />*@
                                             <UsageCodeSelector @bind-Value=gstusge></UsageCodeSelector>
                                         </td>
                                         <td>
@@ -188,79 +179,63 @@
     public bool IsReadOnly { get; set; }
     [Parameter]
     public bool IsView { get; set; }
-    private List<SundryReceiptEntryModel> Entrys = new List<SundryReceiptEntryModel>();
     private SundryReceiptEntryModel spe = new SundryReceiptEntryModel();
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
-    public string customstr { get; set; } = "Bank";
-    public int? accountgroup = 0;
+    private int? branchID = null;
+    private string UserID = null;
     public GstUsageCodeModel gstusge = new();
-    private ChartOfAccountModel SelectedAccount = null;
-    private ChartOfAccountModel SelectedAccounts = null;
+
     private AccountRuleDefinitionModel accountRuleDefinitionModel = new();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccountsCash(string searchString)
-    {
-        int coID = Convert.ToInt32(configuration.GetSection("Data")[customstr]);
-        return await Task.FromResult(accountService.SelectChildren(coID));
 
-    }
-    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
-    {
-
-        return await Task.FromResult(accountService.FilterSubLedgers(searchString));
-
-    }
     public void statechange()
     {
         StateHasChanged();
     }
     protected override async Task OnInitializedAsync()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
         if (model.SundryReceiptID == null)
         {
             model.TotalAmount = 0;
         }
         else
         {
-            SelectedAccount = new();
+
             accountRuleDefinitionModel.CoaID = model.ReceiptCoaID;
             accountRuleDefinitionModel.ArdCode = model.ReceiptArdCode;
             accountRuleDefinitionModel.paymentMode = model.ReceiptMode;
-           
-            Entrys = Iservice.GetEntries(model.SundryReceiptID).ToList();
+
+            model.Entries = Iservice.GetEntries(model.SundryReceiptID).ToList();
         }
 
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
     }
-    public async Task AddItems()
+    public void AddItems()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        SundryReceiptEntryModel sp = new SundryReceiptEntryModel();
-        // sp.AccountName = SelectedAccounts.AccountName;
-        // sp.CoaID = SelectedAccounts.CoaID;
-        sp.UsageCode = gstusge.UsageCode;
-        sp.Amount = spe.Amount;
-        sp.Rederence = spe.Rederence;
-        sp.BranchID = brancID;
 
-        model.TotalAmount = model.TotalAmount + sp.Amount;
-        Entrys.Add(sp);
+
+        spe.UsageCode = gstusge.UsageCode;
+        spe.BranchID = branchID;
+
+        model.TotalAmount = model.TotalAmount + spe.Amount;
+        model.Entries.Add(spe);
 
         spe = new();
 
     }
-    protected async Task IsApproveData(DataApprovedStatus aprvd)
+    protected void IsApproveData(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.UserInfo.UserID = user.Identity.Name;
+
+            model.UserInfo.UserID = UserID;
             Iservice.Approve(model.SundryReceiptID, model.UserInfo.UserID, aprvd.Remarks);
             snackbar.Add("Approved Successfully", Severity.Success);
         }
@@ -270,38 +245,18 @@
     {
         MudDialog.Cancel();
     }
-    public void ModeChange()
+
+    public void CreatePaymentMemo()
     {
-        if (model.ReceiptMode == "Bank")
-        {
 
-            accountgroup = Convert.ToInt32(configuration.GetSection("Data")[model.ReceiptMode]);
-
-        }
-        else
-        {
-
-            accountgroup = Convert.ToInt32(configuration.GetSection("Data")[model.ReceiptMode]);
-
-
-        }
-        StateHasChanged();
-        SelectedAccount = new();
-    }
-    public async Task CreatePaymentMemo()
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
         model.NatureOfTransaction = "Sundry Receipt";
         model.ReceiptCoaID = accountRuleDefinitionModel.CoaID;
         model.ReceiptArdCode = accountRuleDefinitionModel.ArdCode;
         model.ReceiptMode = accountRuleDefinitionModel.paymentMode;
-        model.Entries = Entrys;
-        model.BranchID = brancID;
-        //model.ReceiptMode = m;
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
+        model.BranchID = branchID;
+
+
+        model.UserInfo.UserID = UserID;
 
         try
         {

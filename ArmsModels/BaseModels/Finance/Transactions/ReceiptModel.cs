@@ -23,17 +23,27 @@ namespace ArmsModels.BaseModels
         public bool IsRealized { get; set; }
         public string remarks { get; set; }
        
-        public List<BillsReceiptModel> Bills { get; set; }
+        public List<BillsReceiptModel> Bills { get; set; } = new();
 
     }
 
     public class BillsReceiptModel
     {
         //outstading bills tick 
+        decimal? _ReceiptAmount;
         public int? BrID { get; set; }
         public int? MID { get; set; }
         public bool? IsMemo { get; set; } = false;
-        public decimal? ReceiptAmount { get; set; }       
+        //public decimal? ReceiptAmount { get; set; }
+        public decimal? ReceiptAmount
+        {
+            get { return _ReceiptAmount; }
+            set
+            {
+                // _PayAmount = (Math.Abs(value??0) > Math.Abs(OutstandingAmount ?? 0) || Math.Abs(value + OutstandingAmount??0) > Math.Abs(OutstandingAmount??0) ? -OutstandingAmount : value);
+                _ReceiptAmount = value;
+            }
+        }
         public virtual string BranchName { get; set; }
         public virtual int? BranchID { get; set; }
         public virtual string InvoiceNumber { get; set; }

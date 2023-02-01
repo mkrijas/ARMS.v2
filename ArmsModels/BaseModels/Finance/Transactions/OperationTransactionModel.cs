@@ -34,7 +34,7 @@ namespace ArmsModels.BaseModels
     public class OpTranSubModel
     {
         public long? OpTranSubID { get; set; }
-        public int? OpTranID { get; set; } 
+        public long? OpTranID { get; set; } 
         [Required]
         public string ExpenseUsageCode { get; set; }  
         public string Reference { get; set; }        

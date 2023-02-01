@@ -15,36 +15,29 @@
 
 
 <MudDialog>
-    <TitleContent><h3>Sundry Payment</h3>
-         @if (IsView)
+    <TitleContent>
+        <h3>Sundry Payment</h3>
+        @if (IsView)
         {
             <MudText Color="Color.Error">@model.AuthStatus</MudText>
         }
-        </TitleContent>
+    </TitleContent>
     <DialogContent>
 
 
         <MudPaper>
             <MudContainer Style="max-height: 450px; overflow-y: scroll">
                 <MudGrid>
-                    @* <MudItem xs="12" md="2">
-                    <MudSwitch @bind-Checked="customstr" @onchange="statechange" Color="Color.Primary" Converter="@(new CustomStringToBoolConverter())"> @(customstr)</MudSwitch>
 
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                    <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
-                    SearchFunc="SearchAccountsCash" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
-
-                    </MudItem>*@
                     <MudItem xs="12" md="12">
                         <PaymentCodeSelector @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
                     </MudItem>
-                   
-                 
 
-                 
-                    
-                     <MudItem xs="12" md="4">
+
+
+
+
+                    <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
 
                     </MudItem>
@@ -109,7 +102,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var item in Entrys)
+                                @foreach (var item in model.Entries)
                                 {
                                     <tr>
 
@@ -124,30 +117,27 @@
 
                                     </tr>
                                 }
-                                 @if (!IsReadOnly)
+                                @if (!IsReadOnly)
                                 {
                                     <tr>
                                         <td>
-                                        @*     <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccounts" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
-                                        SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
 
-                                        *@
-                                        <UsageCodeSelector @bind-Value=gstusge></UsageCodeSelector>
+                                            <UsageCodeSelector @bind-Value=gstusge></UsageCodeSelector>
 
-                                    </td>
-                                    <td>
-                                        <MudTextField @bind-Value="spe.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Amount)"></MudTextField>
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="spe.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Amount)"></MudTextField>
 
-                                    </td>
-                                    <td>
-                                        <MudTextField @bind-Value="spe.Rederence" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Rederence)"></MudTextField>
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="spe.Rederence" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Rederence)"></MudTextField>
 
-                                    </td>
-                                    <td>
-                                        <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+                                        </td>
+                                        <td>
+                                            <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
 
-                                    </td>
-                                </tr>
+                                        </td>
+                                    </tr>
                                 }
                             </tbody>
                         </MudSimpleTable>
@@ -176,7 +166,7 @@
 
             <MudButton @onclick="Cancel" Variant="Variant.Filled" Color="Color.Primary">Cancel</MudButton>
         }
-         @if (IsReadOnly)
+        @if (IsReadOnly)
         {
             <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Close</MudButton>
 
@@ -187,54 +177,45 @@
 @code {
     [Parameter]
     public SundryPaymentModel model { get; set; }
-     [Parameter]
+    [Parameter]
     public bool IsReadOnly { get; set; }
     [Parameter]
     public bool IsView { get; set; }
-    private List<SundryPaymentEntryModel> Entrys = new List<SundryPaymentEntryModel>();
+
     private SundryPaymentEntryModel spe = new SundryPaymentEntryModel();
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
-    public string customstr { get; set; } = "Bank";
+
     public GstUsageCodeModel gstusge = new();
     private AccountRuleDefinitionModel accountRuleDefinitionModel = new();
-    private ChartOfAccountModel SelectedAccount = null;
-    private ChartOfAccountModel SelectedAccounts = null;
+    private int? branchID = null;
+    private string UserID = null;
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccountsCash(string searchString)
-    {
-        int coID = Convert.ToInt32(configuration.GetSection("Data")[customstr]);
-        return await Task.FromResult(accountService.SelectChildren(coID));
 
-    }
-    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
-    {
-
-        return await Task.FromResult(accountService.FilterSubLedgers(searchString));
-
-    }
     public void statechange()
     {
         StateHasChanged();
     }
     protected override async Task OnInitializedAsync()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
         if (model.SundryPaymentID == null)
         {
             model.TotalAmount = 0;
         }
         else
         {
-            SelectedAccount = new();
-            SelectedAccount.CoaID = model.PaymentCoaID;
-            SelectedAccount.AccountName = model.AccountName;
-            Entrys = Iservice.GetEntries(model.SundryPaymentID).ToList();
-            accountRuleDefinitionModel.CoaID=model.PaymentCoaID;
-            accountRuleDefinitionModel.ArdCode=model.PaymentArdCode;
-            accountRuleDefinitionModel.paymentMode=model.PaymentMode;
-            accountRuleDefinitionModel.BankTools=model.PaymentTool;
-            accountRuleDefinitionModel.BankCharges=model.BankCharges;
+
+            model.Entries = Iservice.GetEntries(model.SundryPaymentID).ToList();
+            accountRuleDefinitionModel.CoaID = model.PaymentCoaID;
+            accountRuleDefinitionModel.ArdCode = model.PaymentArdCode;
+            accountRuleDefinitionModel.paymentMode = model.PaymentMode;
+            accountRuleDefinitionModel.BankTools = model.PaymentTool;
+            accountRuleDefinitionModel.BankCharges = model.BankCharges;
         }
 
         costCenter = costIservice.Select().ToList();
@@ -242,34 +223,26 @@
     }
 
 
-     protected async Task IsApproveData(DataApprovedStatus aprvd)
+    protected void IsApproveData(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.UserInfo.UserID = user.Identity.Name;
-            Iservice.Approve(model.SundryPaymentID, model.UserInfo.UserID,aprvd.Remarks);
+
+            model.UserInfo.UserID = UserID;
+            Iservice.Approve(model.SundryPaymentID, model.UserInfo.UserID, aprvd.Remarks);
             snackbar.Add("Approved Successfully", Severity.Success);
         }
 
     }
 
-    public async Task AddItems()
+    public void AddItems()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        SundryPaymentEntryModel sp = new SundryPaymentEntryModel();
-        sp.UsageCode = gstusge.UsageCode;
-        sp.CoaID = gstusge.CoaID;
-        sp.Amount = spe.Amount;
-        sp.Rederence = spe.Rederence;
-        sp.BranchID = brancID;
 
-        model.TotalAmount = model.TotalAmount + sp.Amount;
-        Entrys.Add(sp);
-
+        spe.UsageCode = gstusge.UsageCode;
+        spe.CoaID = gstusge.CoaID;
+        spe.BranchID = branchID;
+        model.TotalAmount = model.TotalAmount + spe.Amount;
+        model.Entries.Add(spe);
         spe = new();
 
     }
@@ -277,72 +250,22 @@
     {
         MudDialog.Cancel();
     }
-    public async Task CreatePaymentMemo()
+    public void CreatePaymentMemo()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
+
         model.PaymentCoaID = accountRuleDefinitionModel.CoaID;
-        model.PaymentArdCode=accountRuleDefinitionModel.ArdCode;
-        model.PaymentMode=accountRuleDefinitionModel.paymentMode;
-        model.PaymentTool=accountRuleDefinitionModel.BankTools;
-        model.BankCharges=accountRuleDefinitionModel.BankCharges;
-        model.Entries = Entrys;
+        model.PaymentArdCode = accountRuleDefinitionModel.ArdCode;
+        model.PaymentMode = accountRuleDefinitionModel.paymentMode;
+        model.PaymentTool = accountRuleDefinitionModel.BankTools;
+        model.BankCharges = accountRuleDefinitionModel.BankCharges;
+        model.PaymentMode = accountRuleDefinitionModel.paymentMode;
         model.NatureOfTransaction = "Payment";
-        model.BranchID = brancID;
-        model.PaymentMode = customstr;
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
+        model.BranchID = branchID;
+        model.UserInfo.UserID = UserID;
         Iservice.Update(model);
         MudDialog.Close();
 
     }
 
-    public class CustomStringToBoolConverter : BoolConverter<string>
-    {
 
-        public CustomStringToBoolConverter()
-        {
-            SetFunc = OnSet;
-            GetFunc = OnGet;
-        }
-
-        private string TrueString = "Cash";
-        private string FalseString = "Bank";
-        private string NullString = "Error";
-
-        private string OnGet(bool? value)
-        {
-            try
-            {
-                return (value == true) ? TrueString : FalseString;
-            }
-            catch (Exception e)
-            {
-                UpdateGetError("Conversion error: " + e.Message);
-                return NullString;
-            }
-        }
-
-        private bool? OnSet(string arg)
-        {
-            if (arg == null)
-                return null;
-            try
-            {
-                if (arg == TrueString)
-                    return true;
-                if (arg == FalseString)
-                    return false;
-                else
-                    return null;
-            }
-            catch (FormatException e)
-            {
-                UpdateSetError("Conversion error: " + e.Message);
-                return null;
-            }
-        }
-
-    }
 }

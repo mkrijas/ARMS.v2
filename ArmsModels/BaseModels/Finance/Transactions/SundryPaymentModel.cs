@@ -20,8 +20,8 @@ namespace ArmsModels.BaseModels
         public virtual string AccountName { get; set; }
         public string Reference { get; set; }
         public string PayeeName { get; set; }
-        public string PayeeContactNo { get; set; }        
-        public List<SundryPaymentEntryModel> Entries { get; set; }
+        public string PayeeContactNo { get; set; }
+        public List<SundryPaymentEntryModel> Entries { get; set; } = new();
     }
 
     public class SundryPaymentEntryModel
