@@ -49,6 +49,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PurchaseDate", model.PurchaseDate),
                new SqlParameter("@TruckTypeID", model.TruckTypeID),
                new SqlParameter("@TransmissionType", model.TransmissionType),              
+               new SqlParameter("@AssetID", model.AssetID),              
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -112,6 +113,7 @@ namespace ArmsServices.DataServices
             {
                 RegNo = reader.GetString("RegNo"),
                 HomeBranchID = reader.GetInt32("HomeBranchID"),
+                AssetID = reader.GetInt32("AssetID"),
                 BodyType = reader.GetString("BodyType"),
                 ChassisNumber = reader.GetString("ChassisNumber"),
                 EngineNumber = reader.GetString("EngineNumber"),
