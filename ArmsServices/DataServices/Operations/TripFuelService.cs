@@ -109,17 +109,17 @@ namespace ArmsServices.DataServices
         {
             return new TripFuelModel
             {
-                TripFuelID = reader.GetInt32("TripFuelID"),
+                TripFuelID = reader.GetInt64("TripFuelID"),
                 EntryDate = reader.GetDateTime("EntryDate"),
                 FuelItemID = reader.GetInt32("FuelItemID"),
-                //InvTranID = reader.GetInt32("InvTranID"),
+                InvTranID = reader.GetInt32("InvTranID"),
                 IsPurchase = reader.GetBoolean("IsPurchase"),
-                //PurchaseID = reader.GetInt32("PurchaseID"),
+                PurchaseID = reader.GetInt32("PurchaseID"),
                 Quantity = reader.GetDecimal("Quantity"),
                 RatePerLitre = reader.GetDecimal("RatePerLitre"),
                 TotalAmount = reader.GetDecimal("TotalAmount"),
                 BranchID = reader.GetInt32("BranchID"),
-                TripID = reader.GetInt32("TripID"),
+                TripID = reader.GetInt64("TripID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = reader.GetByte("RecordStatus"),
