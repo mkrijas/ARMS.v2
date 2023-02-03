@@ -47,7 +47,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
         }
-        public int? TripFuelID { get; set; }
+        public long? TripFuelID { get; set; }
         [Required]
         public DateTime? EntryDate { get; set; }
         [Required]
