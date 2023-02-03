@@ -28,40 +28,39 @@
         <MudContainer Style="max-height: 450px; overflow-y: scroll">
             <MudGrid Spacing="4">
                 <MudItem xs="12" md="6">
-                    <MudSelect Label="Select Party" ReadOnly="IsReadOnly" @bind-Value="nbusiness" T="string" SelectedValuesChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                        @foreach (var ditem in NatureOfBusiness)
-                        {
-                            <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
-                        }
+                    <MudSelect Label="Select Party" ReadOnly="IsReadOnly" @bind-Value="nbusiness" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        <MudSelectItem Value="@("Supplier")" />
+                        <MudSelectItem Value="@("Customer")" />
+                        <MudSelectItem Value="@("Renter")" />
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="@nbusiness"></PartySelector>
                 </MudItem>
-                  <MudItem xs="12" md="4">
-                   <MudSelect Label="Select Branch" ReadOnly="IsReadOnly" @bind-Value="OtherBranch" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in branches)
-                            {
-                                <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
-                            }
-                        </MudSelect>
-              </MudItem>  <MudItem xs="12" md="4">
-                   <MudSelect Label="Select Transaction Type" ReadOnly="IsReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in transactionTypeList)
-                            {
-                                <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
-                            }
-                        </MudSelect>
-              </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect Label="Select Branch" ReadOnly="IsReadOnly" @bind-Value="OtherBranch" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        @foreach (var ditem in branches)
+                        {
+                            <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>  <MudItem xs="12" md="4">
+                    <MudSelect Label="Select Transaction Type" ReadOnly="IsReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        @foreach (var ditem in transactionTypeList)
+                        {
+                            <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
                 <MudItem xs="12" md="4">
                     <MudSelect Label="NatureOfBusiness" ReadOnly="IsReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionchanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                         <MudSelectItem Value="@("Deposit")" />
                         <MudSelectItem Value="@("Payment")" />
                         <MudSelectItem Value="@("Prepayment")" />
                     </MudSelect>
-                </MudItem>                
+                </MudItem>
             </MudGrid>
-            <MudPaper Class="@value">
+            <MudPaper>
                 <MudContainer>
                     <MudGrid>
                         @if (Isbill)
@@ -161,7 +160,6 @@
         }
     </DialogActions>
 </MudDialog>
-@* <MudText Inline="true">Selected items: @(selectedItems1==null ? "" : string.Join(", ", selectedItems1.Select(x=>x.BoID)))</MudText>*@
 @code {
 
     [Parameter]
@@ -170,35 +168,31 @@
     public bool IsReadOnly { get; set; }
     [Parameter]
     public bool IsView { get; set; }
-    //private PartyPaymentMemoModel model = new PartyPaymentMemoModel();
-    private List<OutstandingBillsModel> collection = new List<OutstandingBillsModel>();
-    //private List<BillsPaidModel> billsPayed = new List<BillsPaidModel>();
-    //private HashSet<Element> selectedItems1 = new HashSet<Element>();
-    //private HashSet<OutstandingBillsModel> selectedItems1= new HashSet<OutstandingBillsModel>();
-    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+
+
     private List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
-    public string value = "invisible";
+
     private bool Isbill = false;
     public string nbusiness = "Supplier";
-    private List<string> NatureOfBusiness = new List<string>() { "Supplier", "Customer", "Renter" };
+
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
     public int? OtherBranch;
     private List<InterBranchTransactionTypeModel> transactionTypeList = new();
     private List<BranchModel> branches = new();
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         if (model.PaymentMemoID != null)
         {
-            value = "visible";
+
             model.Bills = Iservice.GetBills(model.PaymentMemoID.Value).ToList();
             if (model.Bills.Count > 0)
             {
                 Isbill = true;
             }
-        }        
-        await GetAll();
+        }
+
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
         branches = branchIservice.Select().ToList();
@@ -220,21 +214,7 @@
         }
 
     }
-    private async Task GetAll()
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        if (model?.PartyInfo?.PartyID != null)
-        {
-            collection = OBIservice.SelectByParty(model.PartyInfo.PartyID, brancID).ToList();
-        }
-    }
 
-    private async Task GetTaxPurchase()
-    {
-        await GetAll();
-    }
 
     private async Task CreatePaymentMemo()
     {
@@ -246,37 +226,36 @@
         model.BranchID = brancID;
         model.IsInterBranch = true;
         model.PaymentStatus = 0;
-        // model.Bills = billsPayed;
+
         Iservice.Update(model);
         uriHelper.NavigateTo("/InterBranchPaymentMemoView");
     }
     private void calcTotalAmt()
-    {        
-      model.TotalAmount = model.Bills.Sum(x => x.PayAmount);
-    }
-    private void nbusinesschanged()
     {
-        StateHasChanged();
+        model.TotalAmount = model.Bills.Sum(x => x.PayAmount);
     }
+
     private async Task nTransactionchanged(string nt)
     {
         model.NatureOfTransaction = nt;
-        
+
         if (nt != "Payment")
         {
-            value = "visible";
+
             Isbill = false;
         }
         else
         {
-            value = "invisible";
+
             Isbill = true;
             await OpenOtstandingBills();
         }
     }
     private async Task OpenOtstandingBills()
     {
-        if(OtherBranch==null)
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+
+        if (OtherBranch == null)
         {
             snackbar.Add("Please Select Branch", Severity.Info);
             return;
@@ -293,12 +272,10 @@
         if (!result.Canceled)
         {
             SelectedItems = (List<OutstandingBillsModel>)result.Data;
-            //  List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
-            //SelectedItems=result.Data;
-            // GetAll();
+
             if (SelectedItems != null)
             {
-                value = "visible";
+
                 foreach (var item in SelectedItems)
                 {
                     BillsPaidModel bpm = new BillsPaidModel();
@@ -314,14 +291,5 @@
         }
 
     }
-    private void GetSelectedItem()
-    {
-        //if (selectedItems != null)
-        //{
-        //    string k = "0";
-        //}
 
-        //string itm = string.Join(", ", selectedItems1.Select(x=>x.BoID))
-        //
-    }
 }
