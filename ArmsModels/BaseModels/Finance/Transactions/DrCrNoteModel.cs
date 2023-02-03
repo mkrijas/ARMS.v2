@@ -19,8 +19,8 @@ namespace ArmsModels.BaseModels
         public int? OriginalTransactionID { get; set; } // Transaction against which this issuing
         public string OriginalTranDocNumber { get; set; } // auto complete if possible or confirm the number
         public DateTime? OriginalTranDocDate { get; set; }
-        public List<TaxPurchaseExpenseModel> Particulars { get; set; }
-        public List<TaxPurchaseItemModel> Items { get; set; }
+        public List<TaxPurchaseExpenseModel> Particulars { get; set; } = new();
+        public List<TaxPurchaseItemModel> Items { get; set; } = new();
     }
 
     public class BillInfoModel
