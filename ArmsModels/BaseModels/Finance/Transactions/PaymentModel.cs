@@ -73,6 +73,7 @@ namespace ArmsModels.BaseModels
         public PaymentInitiatedModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
+            PaymentMemos = new List<PartyPaymentMemoModel>();
         }
         public int? PiID { get; set; }
         public DateTime? DueOn { get; set; }
