@@ -20,7 +20,7 @@ namespace ArmsServices.DataServices
         bool IsClosed(long? TripID);
         bool IsSettled(long? TripID);
         TripInfoModel GetTripInfo(long? TripID);
-        IEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString);
+        IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString);
         IEnumerable<object> GetOutstandingBills(long? TripID);
         IEnumerable<GcTariffModel> GetTariffs(long? TripID);
 
@@ -181,12 +181,10 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@TripID", TripID),
                new SqlParameter("@Operation", "GetTripInfo"),
-            };
-
-            TripInfoModel model = null;
+            };            
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
             {
-                model = new TripInfoModel()
+               return new TripInfoModel()
                 {
                     Driver = reader.GetString("Driver"),
                     Fuel = reader.GetDecimal("Fuel"),
@@ -196,12 +194,14 @@ namespace ArmsServices.DataServices
                     Truck = reader.GetString("Truck"),
                     Gcs = reader.GetString("Gcs"),
                     Mileage = reader.GetString("Mileage"),
+                    Expenses = reader.GetDecimal("Expenses"),
+                    Freight = reader.GetDecimal("Freight"),
                 };
             }
-            return model;
+            return null;
         }
 
-        public IEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString)
+        public async IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -210,8 +210,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckID", TruckID),
                new SqlParameter("@Operation", "SearchTrip"),
             };           
-            foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
-            {
+            await foreach (var reader in Iservice.GetDataReaderAsync("[usp.Operation.Trip.Select]", parameters))
+            {                
                 yield return GetModel(reader);
             }            
         }

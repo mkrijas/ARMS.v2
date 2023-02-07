@@ -77,7 +77,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var item in items)
+                                @foreach (var item in model.Entries)
                                 {
                                     <tr>
                                         <td>@(itm.First(x=> x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
@@ -102,11 +102,7 @@
                                             <ItemSelector Value="SelectedItems"  ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" />
                                         </td>
 
-@*                                        <td>
 
-                                            <MudAutocomplete T="InventoryItemModel" @bind-Value="SelectedItems" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Items" ResetValueOnEmptyText="true"
-                                                         SearchFunc="@SearchItems" ToStringFunc="@(e => e==null?string.Empty:e?.InventoryItemCode)"></MudAutocomplete>
-                                        </td>*@
                                         <td>
                                             <MudTextField @bind-Value="Entrymodel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField>
 
@@ -117,7 +113,6 @@
                                         <td>
                                         </td>
                                         <td>
-                                            @*       <MudButton OnClick="AddItems" Variant="Variant.Filled" Color="Color.Primary">Add</MudButton>*@
                                             <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
 
                                         </td>
@@ -142,8 +137,7 @@
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        @*   <MudButton OnClick="DeleteTaxRate">Delete Tax Rate</MudButton>
-            <MudButton OnClick="AddTaxRate">Add More Tax Rate</MudButton>*@
+      
 
         @if (!IsReadOnly)
         {
@@ -173,42 +167,36 @@
     public bool IsReadOnly { get; set; }
     [Parameter]
     public bool IsView { get; set; }
-    private List<InventoryGrnModel> collection = new List<InventoryGrnModel>();
-    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-
-    private List<GstRateModel> gstRate = new();
-    private List<PartyModel> partyList = new();
+   
     private List<StoreModel> store = new();
     private List<InventoryItemModel> itm = new();
     public PartyModel partyinfo = new();
-    private List<GstItemModel> gstitem = new();
-    private PurchaseOrderModel tds = new();
+    private int? branchID = null;
+    private string UserID = null;
+   
     public InventoryItemModel SelectedItems = new();
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
-    private List<InventoryItemEntryModel> items = new List<InventoryItemEntryModel>();
-
+    
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    private PartyModel SelectedParty = new();    
-    private async Task<IEnumerable<InventoryItemModel>> SearchItems(string searchString)
-    {
-        return await Task.FromResult(itm.Where(x => x.InventoryItemCode.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
+    
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        store = storeIservice.SelectByBranch(brancID).ToList();
+        branchID = int.Parse(brancIDString);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        store = storeIservice.SelectByBranch(branchID.Value).ToList();
         itm = itemIservice.SearchByDescription(string.Empty).ToList();
         if (model.GrnID != null)
         {
-            items = Iservice.GetItemEntries(model.GrnID.Value).ToList();
+            model.Entries = Iservice.GetItemEntries(model.GrnID.Value).ToList();
             partyinfo = partyIservice.SelectByID(model.PartyID);
             model.PartyID=partyinfo.PartyID;
         }
         else if (model.POID != null)
         {
-            items = model.Entries;
+           
             partyinfo = partyIservice.SelectByID(model.PartyID);
             model.PartyID=partyinfo.PartyID;
         }
@@ -218,15 +206,14 @@
         }
     }
 
-    private async Task OnValidSubmit(EditContext context)
+    private void OnValidSubmit(EditContext context)
     {
-        model.Entries = items;
+       
         model.PartyCode = partyinfo.PartyCode;
         model.PartyID=partyinfo.PartyID;
         model.PartyName = partyinfo.TradeName;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
+        
+        model.UserInfo.UserID = UserID;
         try
         {
 
@@ -243,13 +230,12 @@
         MudDialog.Close(model);
 
     }
-      protected async Task IsApproveData(DataApprovedStatus aprvd)
+      protected void IsApproveData(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.UserInfo.UserID = user.Identity.Name;
+            
+            model.UserInfo.UserID = UserID;
             Iservice.Approve(model.GrnID.Value, model.UserInfo.UserID,string.Empty);
             snackbar.Add("Approved Successfully", Severity.Success);
         }
@@ -260,12 +246,11 @@
     {
         MudDialog.Cancel();
     }
-    private async Task Reverse()
+    private void Reverse()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        pIservice.Reverse(model.POID.Value, model.UserInfo.UserID);
+       
+        
+        pIservice.Reverse(model.POID.Value, UserID);
         MudDialog.Close(model);
 
     }
@@ -275,8 +260,8 @@
         decimal total = (((i.ItemQty.Value) * (i.ItemRate.Value)) + (i.ItemGstVal.Value));
 
         model.TotalValue = model.TotalValue - total;
-        int rowIndex = items.IndexOf(i);
-        items.RemoveAt(rowIndex);
+        int rowIndex = model.Entries.IndexOf(i);
+        model.Entries.RemoveAt(rowIndex);
     }
     
     protected void getitemCode(InventoryItemModel item)
@@ -298,7 +283,8 @@
     }
     public decimal getgstrate(int itemID)
     {
-        gstitem = new();
+        List<GstItemModel> gstitem = new();
+        
         gstitem = gstIservice.SelectByItem(itemID).ToList();
         decimal gstrate = gstitem[0].TaxRate.Value;
         return gstrate;
@@ -306,12 +292,11 @@
     private void AddItems()
     {
         model.PartyID = partyinfo.PartyID;
-        InventoryItemEntryModel ientry = new();
-        ientry.ItemID = SelectedItems.InventoryItemID;
+       
+        Entrymodel.ItemID = SelectedItems.InventoryItemID;
 
-        ientry.ItemQty = Entrymodel.ItemQty;
-        ientry.ItemRate = Entrymodel.ItemRate;
-        if (ientry.ItemID == null || ientry.ItemRate == null || ientry.ItemQty == null)
+        
+        if (Entrymodel.ItemID == null || Entrymodel.ItemRate == null || Entrymodel.ItemQty == null)
         {
             snackbar.Add("Please fill in all Fields", Severity.Success);
             return;
@@ -320,10 +305,10 @@
         decimal gstrate = 0;
         try
         {
-            gstrt = getgstrate(ientry.ItemID.Value);
+            gstrt = getgstrate(Entrymodel.ItemID.Value);
 
         }
-        catch (Exception ex)
+        catch (Exception )
         {
             gstrt = 0;
         }
@@ -331,10 +316,10 @@
         {
             gstrate = (((Entrymodel.ItemRate.Value) * (Entrymodel.ItemQty.Value)) * gstrt) / 100;
         }
-        ientry.ItemGstVal = gstrate;
-        items.Add(ientry);
+        Entrymodel.ItemGstVal = gstrate;
+        model.Entries.Add(Entrymodel);
 
-        decimal total = ((Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value) + (ientry.ItemGstVal.Value));
+        decimal total = ((Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value) + (Entrymodel.ItemGstVal.Value));
         model.TotalValue = model.TotalValue + total;
         Entrymodel = new();
 

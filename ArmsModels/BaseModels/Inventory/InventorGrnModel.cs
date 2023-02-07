@@ -64,7 +64,7 @@ namespace ArmsModels.BaseModels
         public string Remarks { get; set; }              
         public UserInfoModel UserInfo { get; set; }
         [ValidateComplexType]
-        public List<InventoryItemEntryModel> Entries { get; set; }
+        public List<InventoryItemEntryModel> Entries { get; set; } = new();
     }
 
     public class InventoryItemEntryModel

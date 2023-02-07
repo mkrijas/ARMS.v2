@@ -174,6 +174,8 @@ namespace ArmsServices.DataServices
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 BranchID = dr.GetInt32("BranchID"),
                 CreditCoaID = dr.GetInt32("CreditCoaID"),
+                AuthLevelId = dr.GetInt32("AuthLevelId"),
+                AuthStatus = dr.GetString("AuthStatus"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 OpTranID = dr.GetInt32("OpTranID"),
                 Narration = dr.GetString("Narration"),

@@ -26,7 +26,7 @@ namespace ArmsModels.BaseModels
         public int? TruckID { get; set; }
         public int? JobCardID { get; set; }
         [ValidateComplexType]
-        public List<OpTranSubModel> Transactions { get; set; }
+        public List<OpTranSubModel> Transactions { get; set; } = new();
         public virtual TripInfoModel TripInfo { get; set; }  // select   
     }
 

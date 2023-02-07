@@ -67,13 +67,10 @@
                                     </MudSelect>
                                 </MudItem>
                                 <MudItem xs="12" md="12">
-                                    @*    <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
-                                    SearchFunc="SearchAccountsHome" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
-                                    *@
+
                                     <MudAutocomplete ReadOnly="IsReadOnly" T="AccountRuleDefinitionModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Accounts" @bind-Value="accountRuleDefinitionH" ResetValueOnEmptyText="true"
                                                      Clearable="true" SearchFunc="SearchAccountsH" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
 
-                                    @* <PaymentCodeSelector Value="accountRuleDefinitionModel" PaymentMode="@model.ContraModeHome" LabelName="Select Accounts"></PaymentCodeSelector>*@
                                 </MudItem>
                             </MudCardContent>
                         </MudCard>
@@ -102,9 +99,7 @@
                                     </MudSelect>
                                 </MudItem>
                                 <MudItem xs="12" md="12">
-                                    @*   <MudAutocomplete T="ChartOfAccountModel" Label="Select Accounts" @bind-Value="SelectedAccount1" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
-                                    SearchFunc="SearchAccountsOther" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")"></MudAutocomplete>
-                                    *@
+
                                     <MudAutocomplete ReadOnly="IsReadOnly" T="AccountRuleDefinitionModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Accounts" @bind-Value="accountRuleDefinitionO" ResetValueOnEmptyText="true"
                                                      Clearable="true" SearchFunc="SearchAccountsO" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
 
@@ -119,7 +114,7 @@
 
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudSelect ReadOnly=bnktl Label="Select Payment Mode" SelectedValuesChanged="banktoolChanged" T="string" @bind-Value="model.PaymentTool" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        <MudSelect ReadOnly=bnktl Label="Select Payment Mode" T="string" @bind-Value="model.PaymentTool" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var item in data.BankTools)
                             {
                                 <MudSelectItem Value="@item">@item</MudSelectItem>
@@ -217,49 +212,34 @@
     [Parameter]
     public bool IsView { get; set; }
     private List<InterBranchTransactionTypeModel> transactionTypeList = new();
-    // private List<SundryPaymentEntryModel> Entrys = new List<SundryPaymentEntryModel>();
-    //private SundryPaymentEntryModel spe = new SundryPaymentEntryModel();
+
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
     private List<BranchModel> branches = new();
-    //public string customstr { get; set; } = "Bank";
-    //public string customstr1 { get; set; } = "Bank";
-    private ChartOfAccountModel SelectedAccount = null;
+
+
     private AccountRuleDefinitionModel accountRuleDefinitionH = new();
     private AccountRuleDefinitionModel accountRuleDefinitionO = new();
-    private ChartOfAccountModel SelectedAccount1 = null;
+
     public bool Ispayment = true;
     public bool bnktl = true;
     private string vaal = "Payment";
     public string value = "invisible";
     private string hmbarnchName, OrouteName;
-
+    private int? branchID = null;
+    private string UserID = null;
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    //private async Task<IEnumerable<ChartOfAccountModel>> SearchAccountsHome(string searchString)
-    //{
-    //    await Task.Delay(5);
-    //    int coID =Convert.ToInt32(configuration.GetSection("Data")[model.ContraModeHome]);
-    //    return accountService.SelectChildren(coID);
-    //}
-    protected async Task IsApproveData(DataApprovedStatus aprvd)
+
+    protected void IsApproveData(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.UserInfo.UserID = user.Identity.Name;
-            try
-            {
-                Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks);
-                snackbar.Add("Approved Successfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
 
+            model.UserInfo.UserID = UserID;
+            Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks);
+            snackbar.Add("Approved Successfully", Severity.Success);
         }
 
     }
@@ -270,7 +250,6 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int branchID = int.Parse(brancIDString);
-        //int coID =Convert.ToInt32(configuration.GetSection("Data")[model.ContraModeHome]);
         return accountService.GetPaymentCodes(branchID, model.ContraModeHome).ToList(); ;
     }
     private async Task<IEnumerable<AccountRuleDefinitionModel>> SearchAccountsO(string searchString)
@@ -280,29 +259,10 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int branchID = int.Parse(brancIDString);
-        //int coID =Convert.ToInt32(configuration.GetSection("Data")[model.ContraModeHome]);
         return accountService.GetPaymentCodes(branchID, model.ContraModeOther).ToList(); ;
     }
-    //private async Task<IEnumerable<ChartOfAccountModel>> SearchAccountsOther(string searchString)
-    //{
-    //    await Task.Delay(5);
-    //    int coID =Convert.ToInt32(configuration.GetSection("Data")[model.ContraModeOther]);
-    //    return await Task.FromResult(accountService.SelectChildren(coID));
-    //}
-    public void banktoolChanged()
-    {
-        if (model.PaymentTool == "CHEQUE")
-        {
-            value = "visible";
-        }
-        else
-        {
-            model.ChequeInfo.ChequeDate = null;
-            model.ChequeInfo.ChequeNumber = null;
-            value = "invisible";
 
-        }
-    }
+
     public void ModeChange()
     {
         if (Ispayment == true)
@@ -319,7 +279,7 @@
 
             }
         }
-        SelectedAccount = new();
+
     }
 
     public void ModeChangeOther()
@@ -338,11 +298,16 @@
 
             }
         }
-        SelectedAccount1 = new();
+
     }
     protected override async Task OnInitializedAsync()
     {
+
         var authprov = await auth.GetAuthenticationStateAsync();
+
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
         hmbarnchName = brancIDString.ToString();
         transactionTypeList = intermappingIservice.GetTypes().ToList();
@@ -353,16 +318,13 @@
         }
         else
         {
-            //SelectedAccount = accountService.SelectByID(model.CoaIDHome);
-            //SelectedAccount1 = accountService.SelectByID(model.CoaIDOther);
+
             accountRuleDefinitionH.CoaID = model.CoaIDHome;
             accountRuleDefinitionH.ArdCode = model.ArdCodeHome;
             accountRuleDefinitionO.CoaID = model.CoaIDOther;
             accountRuleDefinitionO.ArdCode = model.ArdCodeOther;
 
-            if (model.PaymentTool == "CHEQUE")
-            { value = "visible"; }
-            else { value = "invisible"; }
+
 
         }
 
@@ -389,86 +351,24 @@
     {
         MudDialog.Cancel();
     }
-    public async Task CreatePaymentMemo()
+    public void CreatePaymentMemo()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
+
         model.CoaIDHome = accountRuleDefinitionH.CoaID;
         model.ArdCodeHome = accountRuleDefinitionH.ArdCode;
         model.CoaIDOther = accountRuleDefinitionO.CoaID;
         model.ArdCodeOther = accountRuleDefinitionO.ArdCode;
-        model.BranchID = brancID;
+        model.BranchID = branchID;
         model.IsPayment = Ispayment;
         model.IsInterBranch = true;
         model.NatureOfTransaction = "Contra";
 
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
-        {
-            Iservice.Update(model);
-            model = new();
-            snackbar.Add("Saved Successfully", Severity.Success);
-            model = new();
 
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-
+        model.UserInfo.UserID = UserID;
+        Iservice.Update(model);
         MudDialog.Close();
 
     }
 
-    //public class CustomStringToBoolConverter : BoolConverter<string>
-    //{
 
-    //    public CustomStringToBoolConverter()
-    //    {
-    //        SetFunc = OnSet;
-    //        GetFunc = OnGet;
-    //    }
-
-    //    private string TrueString = "Cash";
-    //    private string FalseString = "Bank";
-    //    private string NullString = "Error";
-
-    //    private string OnGet(bool? value)
-    //    {
-    //        try
-    //        {
-
-    //            return (value == true) ? TrueString : FalseString;
-
-    //        }
-    //        catch (Exception e)
-    //        {
-    //            UpdateGetError("Conversion error: " + e.Message);
-    //            return NullString;
-    //        }
-    //    }
-
-    //    private bool? OnSet(string arg)
-    //    {
-    //        if (arg == null)
-    //            return null;
-    //        try
-    //        {
-    //            if (arg == TrueString)
-    //                return true;
-    //            if (arg == FalseString)
-    //                return false;
-    //            else
-    //                return null;
-    //        }
-    //        catch (FormatException e)
-    //        {
-    //            UpdateSetError("Conversion error: " + e.Message);
-    //            return null;
-    //        }
-    //    }
-
-    //}
 }
