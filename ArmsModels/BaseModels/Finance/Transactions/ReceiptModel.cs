@@ -22,6 +22,7 @@ namespace ArmsModels.BaseModels
         public DateTime? EffectiveDate { get; set; }
         public bool IsRealized { get; set; }
         public string remarks { get; set; }
+     
        
         public List<BillsReceiptModel> Bills { get; set; } = new();
 
