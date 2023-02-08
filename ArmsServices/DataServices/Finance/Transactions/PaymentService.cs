@@ -67,7 +67,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@PiID", model.PiID),
                new SqlParameter("@PfID", model.PfID),                         
-               new SqlParameter("@Entries", model.Payments.ToDataTable()),
+              // new SqlParameter("@Entries", model.Payments.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             }; 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Finish]", parameters))
@@ -142,6 +142,7 @@ namespace ArmsServices.DataServices
                 DataRow row = dt.NewRow();
                 row["memo"] = item.PaymentMemoID;
                  dt.Rows.Add(row);
+                model.PiID = item.PaymentInitiatedID;
             }
             List<SqlParameter> parameters = new List<SqlParameter>
             {

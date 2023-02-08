@@ -1,0 +1,221 @@
+﻿@page "/RoutineCheckListView"
+@using ArmsModels.BaseModels.FMS
+@using ArmsModels.BaseModels.General
+@using ArmsServices.DataServices.FMS
+@using ArmsServices.DataServices.Operations
+
+<h3>Item  View</h3>
+
+@inject IRoutineCheckListService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+@inject ITruckService IserviceTruck
+@inject IRoutineCheckListMasterService IserviceRoutineMaster
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6"> Add Item.</MudText>
+                <MudTooltip Text="New Item">
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew())" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+                <MudSpacer></MudSpacer>
+
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListModel, object>(x=> x.TruckName)" InitialDirection="SortDirection.Ascending">TruckName</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListModel, object>(x=> x.CreatedDate)" InitialDirection="SortDirection.Ascending">Created Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListModel, object>(x=> x.Description)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListModel, object>(x=> x.ItemNames)" InitialDirection="SortDirection.Ascending">Item Names</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentType">@context.TruckName</MudTd>
+                <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
+                <MudTd DataLabel="Description">@context.Description</MudTd>
+                <MudTd DataLabel="Description">@context.ItemNames</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudTooltip Text="Edit">
+                        <MudIconButton @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    <MudTooltip Text="Remove">
+                        <MudIconButton @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                </MudTd>
+            </RowTemplate>
+
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                @*  <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>*@
+
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+@code {
+
+
+    private RoutineCheckListModel model = new();
+
+    private List<RoutineCheckListModel> collection = new();
+
+    List<TruckModel> TruckList = new();
+    List<RoutineCheckListMasterModel> ItemList = new();
+    string state = "Message box hasn't been opened yet";
+
+    private async Task OpenDialogAddNew()
+    {
+        RoutineCheckListModel Item = new();
+
+        Item.UserInfo = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        if (Item.UserInfo != null)
+        {
+            Item.UserInfo.UserID = user.Identity.Name;
+
+        }
+        Item.BranchID = int.Parse(brancIDString);
+        var model = new DialogParameters { ["model"] = Item };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var dialog = DialogService.Show<RoutineCheckListDialog>("Simple Dialog", model, options);
+
+
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+            await  GetAll();
+        }
+    }
+    private async Task OpenDialogEdit(RoutineCheckListModel Item)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        Item.UserInfo = new();
+        if (Item.UserInfo != null)
+        {
+            Item.UserInfo.UserID = user.Identity.Name;
+        }
+        Item.BranchID = int.Parse(brancIDString);
+
+        var model = new DialogParameters { ["model"] = Item };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var dialog = DialogService.Show<RoutineCheckListDialog>("Simple Dialog", model, options);
+
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+            await  GetAll();
+        }
+    }
+    private async Task OpenDialogDelete(RoutineCheckListModel Item)
+    {
+
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Are you sure you want to delete this entry?",
+            yesText: "Delete!", cancelText: "Cancel");
+        state = result == null ? "Cancelled" : "Deleted!";
+        if (state == "Deleted!")
+        {
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            Item.UserInfo = new();
+            if (Item.UserInfo != null)
+            {
+                Item.UserInfo.UserID = user.Identity.Name;
+                Iservice.Delete(Item.RoutineCheckListID, Item.UserInfo.UserID);
+            }
+            await GetAll();
+        }
+
+    }
+    protected async override  Task OnInitializedAsync()
+    {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        TruckList = IserviceTruck.SelectByBranch(int.Parse(brancIDString)).ToList();
+        ItemList = IserviceRoutineMaster.SelectItemByBranch(int.Parse(brancIDString)).ToList();
+        //model = new();
+        await GetAll();
+
+    }
+
+    private async Task GetAll()
+    {
+
+        collection = new();
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        model.UserInfo = new();
+        if (model.UserInfo != null)
+        {
+            model.UserInfo.UserID = user.Identity.Name;
+        }
+        model.BranchID = int.Parse(brancIDString);
+
+        collection = Iservice.SelectItemByBranch(model.BranchID).ToList();
+        foreach (var item in collection)
+        {
+            item.TruckName = TruckList.First(s => s.TruckID == item.TruckID).RegNo;
+            string ItemNames = "";
+            if(item.ItemIDs != null && item.ItemIDs!= string.Empty )
+            {
+                foreach (var itemId in item.ItemIDs.Split(","))
+                {
+                    if(ItemList!= null && ItemList.Count()!= 0)
+                    {
+                        int resultId = 0;
+                        int.TryParse(itemId, out resultId);
+                        if(resultId != null && ItemList.Any(s=>s.ItemID == resultId))
+                        {
+                            if(ItemNames == string.Empty)
+                            {
+                                ItemNames = ItemList.First(s => s.ItemID == resultId).ItemName;
+                            }
+                            else
+                            {
+                            ItemNames = ItemNames + "," + ItemList.First(s => s.ItemID == resultId).ItemName;
+                                
+                            }
+                        }
+                    }
+                }
+            }
+            item.ItemNames = ItemNames;
+
+        }
+    }
+
+    private void OpenDialog()
+    {
+        RoutineCheckListModel Item = new();
+        //Item.ID= 1;
+
+        var model = new DialogParameters { ["model"] = Item };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        DialogService.Show<RoutineCheckListDialog>("Simple Dialog", model, options);
+    }
+
+}

@@ -1,0 +1,145 @@
+﻿@using ArmsModels.BaseModels.FMS
+@using ArmsModels.BaseModels.General
+@using ArmsServices.DataServices.FMS
+@using ArmsServices.DataServices.Operations
+@inject AuthenticationStateProvider auth
+@inject IRoutineCheckListService Iservice
+@inject ITruckService IserviceTruck
+@inject IRoutineCheckListMasterService IserviceRoutineMaster
+@inject IAssetDocumentService IDocumentService
+
+<MudDialog>
+    <TitleContent>
+        @if (model.RoutineCheckListID == null || model.RoutineCheckListID == 0)
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Item .
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Item .
+            </MudText>
+        }
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+
+                <MudItem xs="11" md="11">
+
+                    <MudSelect T="TruckModel" @bind-Value="@(model.Truck)" AdornmentColor="Color.Secondary" Label="Select Document Type" HelperText="Document Type" Placeholder="Please Select">
+                        @foreach (TruckModel item in TruckList)
+                        {
+                            <MudSelectItem T="TruckModel" Value="@item">@item.RegNo</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudTextField @bind-Value="model.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Description)"></MudTextField>
+                </MudItem>
+                <MudItem xs="11" md="11">
+                    <MudList>
+                        @foreach (var item in ItemList)
+                        {
+                            <MudListItem>
+                                <MudCheckBox @bind-Checked="@item.IsChecked" Disabled="@item.IsDisabled">@item.ItemName</MudCheckBox>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudItem>
+
+                @*
+                <MudItem xs="11" md="11">
+
+                <MudSelect T="RoutineCheckListMasterModel" Label="Items" MultiSelection="true" @bind-Value="@(model.RoutineCheckItem)" @bind-SelectedValues="RoutineCheckListItem">
+                @foreach (var item in ItemList)
+                {
+                <MudSelectItem T="RoutineCheckListMasterModel" Value="@item">@item.ItemName</MudSelectItem>
+                }
+                </MudSelect>
+                </MudItem>*@
+
+            </EditForm>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public RoutineCheckListModel model { get; set; } = new();
+
+    List<TruckModel> TruckList = new();
+    List<RoutineCheckListMasterModel> ItemList = new();
+
+    private IEnumerable<RoutineCheckListMasterModel> RoutineCheckListItem { get; set; } = new HashSet<RoutineCheckListMasterModel>();
+
+    protected override void OnInitialized()
+    {
+        if (model.BranchID != null)
+        {
+            ItemList = IserviceRoutineMaster.SelectItemByBranch(model.BranchID).ToList();
+            TruckList = IserviceTruck.SelectByBranch(model.BranchID).ToList();
+            if (model.TruckID != null && TruckList != null && TruckList.Any(s => s.TruckID == model.TruckID))
+            {
+                model.Truck = TruckList.First(s => s.TruckID == model.TruckID);
+            }
+
+            foreach (var item in ItemList)
+            {
+                if (model.ItemIDs != null && model.ItemIDs != string.Empty)
+                {
+                    foreach (var itemId in model.ItemIDs.Split(","))
+                    {
+                        int resultId = 0;
+                        int.TryParse(itemId, out resultId);
+                        if (resultId != null && item.ItemID == resultId)
+                        {
+                            item.IsChecked = true;
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    protected override void OnParametersSet()
+    {
+
+    }
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public async Task Submit()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model != null)
+        {
+            if (model.Truck != null)
+            {
+                model.TruckID = model.Truck.TruckID;
+            }
+            model.ItemIDs = String.Join(",", ItemList.Where(d => d.IsChecked).Select(s => s.ItemID));
+
+            model.UserInfo.UserID = user.Identity.Name;
+            Iservice.Update(model);
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

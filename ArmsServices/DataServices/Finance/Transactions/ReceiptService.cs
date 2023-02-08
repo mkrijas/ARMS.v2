@@ -168,6 +168,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ReceiptID", model.ReceiptID),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@OtherBranch", model.OtherBranch),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),               
                new SqlParameter("@ReceiptType", model.ReceiptType),
