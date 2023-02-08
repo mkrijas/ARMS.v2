@@ -1,0 +1,186 @@
+﻿@page "/RoutineCheckListMasterView"
+@using ArmsModels.BaseModels.General
+@using ArmsServices.DataServices.Operations
+
+<h3>Item Master View</h3>
+
+@inject IRoutineCheckListMasterService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6"> Add Item.</MudText>
+                <MudTooltip Text="New Item">
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew())" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+                <MudSpacer></MudSpacer>
+
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.ItemName)" InitialDirection="SortDirection.Ascending">Item Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.CreatedDate)" InitialDirection="SortDirection.Ascending">Created Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.Description)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentType">@context.ItemName</MudTd>
+                <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
+                <MudTd DataLabel="Description">@context.Description</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudTooltip Text="Edit">
+                        <MudIconButton @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    <MudTooltip Text="Remove">
+                        <MudIconButton @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                </MudTd>
+                @* <MudTd DataLabel="">
+
+                @if(@context.ApprovedInfo.RecordStatus!=1)
+                {
+                <MudTooltip Text="Approve">
+                <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                </MudTooltip>
+                }
+                </MudTd>*@
+            </RowTemplate>
+
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                @*  <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>*@
+
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+@code {
+
+
+    private RoutineCheckListMasterModel model = new();
+
+    private List<RoutineCheckListMasterModel> collection = new();
+
+    string state = "Message box hasn't been opened yet";
+   
+    private async Task OpenDialogAddNew()
+    {
+        RoutineCheckListMasterModel ItemMaster = new();
+
+        ItemMaster.UserInfo = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        if (ItemMaster.UserInfo != null)
+        {
+            ItemMaster.UserInfo.UserID = user.Identity.Name;
+
+        }
+        ItemMaster.BranchID = int.Parse(brancIDString);
+        var model = new DialogParameters { ["model"] = ItemMaster };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var dialog = DialogService.Show<RoutineCheckListMasterDialog>("Simple Dialog", model, options);
+
+
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+           await  GetAll();
+        }
+    }
+    private async Task OpenDialogEdit(RoutineCheckListMasterModel ItemMaster)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        ItemMaster.UserInfo = new();
+        if (ItemMaster.UserInfo != null)
+        {
+            ItemMaster.UserInfo.UserID = user.Identity.Name;
+        }
+        ItemMaster.BranchID = int.Parse(brancIDString);
+
+        var model = new DialogParameters { ["model"] = ItemMaster };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var dialog = DialogService.Show<RoutineCheckListMasterDialog>("Simple Dialog", model, options);
+
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+           await  GetAll();
+        }
+    }
+    private async Task OpenDialogDelete(RoutineCheckListMasterModel ItemMaster)
+    {
+
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Are you sure you want to delete this entry?",
+            yesText: "Delete!", cancelText: "Cancel");
+        state = result == null ? "Cancelled" : "Deleted!";
+        if (state == "Deleted!")
+        {
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            ItemMaster.UserInfo = new();
+            if (ItemMaster.UserInfo != null)
+            {
+                ItemMaster.UserInfo.UserID = user.Identity.Name;
+                Iservice.Delete(ItemMaster.ItemID, ItemMaster.UserInfo.UserID);
+            }
+            await GetAll();
+        }
+
+    }
+    protected async override  Task OnInitializedAsync()
+    {
+        //model = new();
+       await GetAll();
+    }
+
+    private async Task GetAll()
+    {
+
+        collection = new();
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        model.UserInfo = new();
+        if (model.UserInfo != null)
+        {
+            model.UserInfo.UserID = user.Identity.Name;
+        }
+        model.BranchID = int.Parse(brancIDString);
+
+        collection = Iservice.SelectItemByBranch(model.BranchID).ToList();
+    }
+
+    private void OpenDialog()
+    {
+        RoutineCheckListMasterModel ItemMaster = new();
+        //ItemMaster.ID= 1;
+
+        var model = new DialogParameters { ["model"] = ItemMaster };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        DialogService.Show<RoutineCheckListMasterDialog>("Simple Dialog", model, options);
+    }
+
+}

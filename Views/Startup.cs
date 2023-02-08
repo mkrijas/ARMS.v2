@@ -1,6 +1,8 @@
 using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
+using ArmsServices.DataServices.FMS;
+using ArmsServices.DataServices.Operations;
 using Blazored.SessionStorage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -106,6 +108,7 @@ namespace Views
             services.AddScoped<IMechanicJobService, MechanicJobService>();
             services.AddScoped<IPeriodicMaintenanceService, PeriodicMaintenanceService>();
             services.AddScoped<IInsuranceClaimService, InsuranceClaimService>();
+            services.AddScoped<IRoutineCheckListService, RoutineCheckListService>();
 
             //------------INVENTORY-------------------
             services.AddScoped<IInventoryGroupService, InventoryGroupService>();
@@ -130,6 +133,7 @@ namespace Views
             services.AddScoped<ICostCenterService, CostCenterService>();
             services.AddScoped<IDimensionService, DimensionService>();
             services.AddScoped<IInterBranchTransactionService, InterBranchTransactionService>();
+            services.AddScoped<IRoutineCheckListMasterService, RoutineCheckListMasterService>();
 
             //------------FINANCE TRANSACTIONS-------------------
             services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();
