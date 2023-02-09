@@ -16,6 +16,8 @@ namespace ArmsServices.DataServices
         int Delete(int? ID, string UserID);
         IEnumerable<StoreModel> Select();
         IEnumerable<StoreModel> SelectByBranch(int BranchID);
+        int OutFlow(int? StoreID, List<InventoryItemEntryModel> Items,string UserID);
+        InventoryItemModel GetItemAvailability(int StoreID,int ItemID);
     }
     public class StoreService : IStoreService
     {
@@ -33,6 +35,36 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Delete]", parameters);
+        }
+
+        public InventoryItemModel GetItemAvailability(int StoreID, int ItemID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@StoreID", StoreID),
+               new SqlParameter("@ItemID", ItemID),
+               new SqlParameter("@Operation", "GetItemAvailability"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Select]", parameters))
+            {
+                return new InventoryItemModel()
+                {
+                    InventoryItemID = ItemID,
+                    QtyAvailable = dr.GetDecimal("QtyAvailable"),
+                };
+            }
+            return null;
+        }
+
+        public int OutFlow(int? StoreID, List<InventoryItemEntryModel> Items,string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@StoreID", StoreID),
+               new SqlParameter("@Items", Items.ToDataTable()),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Outflow]", parameters);
         }
 
         public IEnumerable<StoreModel> Select()
