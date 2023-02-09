@@ -27,6 +27,8 @@
                @* <MudTextField @bind-Value="searchMemos" Placeholder="Search Tax... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium" Class="mt-0"></MudTextField>*@
+                <MudCheckBox Label="Finalized Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentInitiatedModel, object>(x=> x.DocNumber)" InitialDirection="SortDirection.Ascending">DocNumber</MudTableSortLabel></MudTh>
@@ -47,18 +49,25 @@
 
                 <MudTd DataLabel="">
 
-                   @*  @if (@context.AuthLevelId== 99)
-                    {*@
-                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" title="Finish" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
-                    @*}*@
-                   @* @if (@context.AuthLevelId != 99)
+                 @if (!IsApproved)
                     {
-                         <MudFab @onclick="@(()=> ViewVerify(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" title="Finish" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                        <MudTooltip Text="View">
+                            <MudFab @onclick="@(()=> View(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                    }
+                    @if (IsApproved && @context.AuthLevelId != 99)
+                    {
+                        <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
                    
-                    }  *@ 
-                    <MudTooltip Text="View">
-                    <MudFab @onclick="@(()=> View(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip> 
+                    }   
+                   @if (IsApproved && @context.AuthLevelId == 99)
+                    {
+                        <MudTooltip Text="View">
+                            <MudFab @onclick="@(()=> View(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                    }
+
                   </MudTd>
               
             </RowTemplate>
@@ -78,23 +87,43 @@
     private PaymentInitiatedModel model = new PaymentInitiatedModel();
     private List<PaymentInitiatedModel> collection = new List<PaymentInitiatedModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    public bool IsApproved { get; set; } = false;
+    async Task ApprovedChanged(bool value)
+    {
+        IsApproved = value;
+        await GetAll(IsApproved);
+
+    }
     protected override async Task OnInitializedAsync()
 
     {
         model = new();
-        GetAll();
+        GetAll(false);
     }
 
-    private  async Task GetAll()
+    private async Task GetAll(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
         collection = new List<PaymentInitiatedModel>();
-        foreach (var item in Iservice.SelectInitiated(brancID))
+        if(val)
         {
-            collection.Add(item);
+
+            foreach (var item in Iservice.SelectFinInitiated(brancID))
+            {
+                collection.Add(item);
+            }
         }
+        else
+        {
+            foreach (var item in Iservice.SelectInitiated(brancID))
+            {
+                collection.Add(item);
+            }
+        }
+
 
 
     } 
@@ -111,7 +140,7 @@
         if(!result.Cancelled)
         {   
 
-            await GetAll();
+            await GetAll(false);
 
 
         }
@@ -130,28 +159,33 @@
         if(!result.Cancelled)
         {   
 
-            await GetAll();
+            await GetAll(false);
 
 
         }
 
     }
-    private async Task OpenDialog(PaymentInitiatedModel tds)
+    private async Task OpenDialog(PaymentInitiatedModel tds, bool ReadOnly, bool View)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         PaymentFinishModel pfm = new PaymentFinishModel();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
         pfm.PiID = tds.PiID;
         pfm.TotalAmount = tds.TotalAmount;
+        pfm.PfID = tds.pfID;
         DialogParameters parms = new DialogParameters();
         parms.Add("model",pfm);
+        parms.Add("IsReadOnly", ReadOnly);
+        parms.Add("IsView", View);
         var dialog =  DialogService.Show<PaymentFinishedDilaog>("Finalize Payment Memo",parms,maxWidth);
         var result = await dialog.Result;
 
         if(!result.Cancelled)
         {   
 
-            GetAll();
+            GetAll(IsApproved);
 
 
         }

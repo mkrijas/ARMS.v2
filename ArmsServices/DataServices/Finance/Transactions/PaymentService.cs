@@ -20,9 +20,11 @@ namespace ArmsServices.DataServices
         IEnumerable<PartyPaymentMemoModel> Select(int PaymentInitiatedID, int? BranchID);
         IEnumerable<BillsPaidModel> GetBills(int? PID);
         int Approve(int? PID, string UserID,string Remarks);
+        int FinalMemmoApprove(int? PID, string UserID, string Remarks);
         int Reverse(int? PID, string UserID, string Remarks);
         int? InitiatePayment(PaymentInitiatedModel model);
         IEnumerable<PaymentInitiatedModel> SelectInitiated(int? BranchID);
+        IEnumerable<PaymentInitiatedModel> SelectFinInitiated(int? BranchID);
         IEnumerable<PaymentFinishModel> SelectFinished(int? BranchID);
         IEnumerable<PaymentInitiatedModel> SelectInitiatedBetween(int? BranchID,DateTime Begin,DateTime End);
         IEnumerable<PaymentFinishModel> SelectFinishedBetween(int? BranchID,DateTime Begin,DateTime End);
@@ -366,7 +368,8 @@ namespace ArmsServices.DataServices
                 {
                     BranchID = dr.GetInt32("BranchID"),
                     DueOn = dr.GetDateTime("DueOn"),
-                    PiID = dr.GetInt32("PiID"),
+                   PiID = dr.GetInt32("PiID"),
+                    //pfID=dr.GetInt32("pfID"),
                     DocNumber = dr.GetString("DocNumber"),
                     AuthLevelId = dr.GetInt32("AuthLevelId"),
                     AuthStatus = dr.GetString("AuthStatus"),
@@ -381,7 +384,37 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+        public IEnumerable<PaymentInitiatedModel> SelectFinInitiated(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByPFID"),
+               new SqlParameter("@BranchID", BranchID),
+            };
 
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Initiate.Select]", parameters))
+            {
+                yield return new PaymentInitiatedModel()
+                {
+                    BranchID = dr.GetInt32("BranchID"),
+                    DueOn = dr.GetDateTime("DueOn"),
+                    PiID = dr.GetInt32("PiID"),
+                    pfID = dr.GetInt32("pfID"),
+                    DocNumber = dr.GetString("DocNumber"),
+                    AuthLevelId = dr.GetInt32("AuthLevelId"),
+                    AuthStatus = dr.GetString("AuthStatus"),
+                    DocDate = dr.GetDateTime("DocDate"),
+                    TotalAmount = dr.GetDecimal("TotalAmount"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
+            }
+        }
         public IEnumerable<PaymentInitiatedModel> SelectInitiatedBetween(int? BranchID, DateTime Begin, DateTime End)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -421,6 +454,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PaymentInitiatedID", model.PaymentInitiatedID),
                new SqlParameter("@PaymentStatus", model.PaymentStatus),
                new SqlParameter("@BranchID", model.BranchID),
+                new SqlParameter("@otherBranch", model.OtherBranch),
                new SqlParameter("@DocDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),
                new SqlParameter("@Bills", model.Bills.ToDataTable()),
@@ -474,6 +508,17 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },
             };
+        }
+
+        public int FinalMemmoApprove(int? PfID, string UserID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@pfID", PfID),
+               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Finish.Approve]", parameters);
         }
     }
 }
