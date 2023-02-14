@@ -13,13 +13,13 @@
         @if (model.RoutineCheckListID == null || model.RoutineCheckListID == 0)
         {
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Item .
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Routine Check List .
             </MudText>
         }
         else
         {
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Item .
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Routine Check List .
             </MudText>
         }
     </TitleContent>
@@ -31,39 +31,22 @@
                 <ValidationSummary />
 
                 <MudItem xs="11" md="11">
-
-                    <MudSelect T="TruckModel" @bind-Value="@(model.Truck)" AdornmentColor="Color.Secondary" Label="Select Document Type" HelperText="Document Type" Placeholder="Please Select">
-                        @foreach (TruckModel item in TruckList)
-                        {
-                            <MudSelectItem T="TruckModel" Value="@item">@item.RegNo</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <TruckSelector Value="model.Truck" ValueChanged="TruckSelected" />
                 </MudItem>
 
                 <MudItem xs="11" md="11" Class="mb-6">
                     <MudTextField @bind-Value="model.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Description)"></MudTextField>
                 </MudItem>
                 <MudItem xs="11" md="11">
-                    <MudList>
+                    <MudGrid>
                         @foreach (var item in ItemList)
                         {
-                            <MudListItem>
-                                <MudCheckBox @bind-Checked="@item.IsChecked" Disabled="@item.IsDisabled">@item.ItemName</MudCheckBox>
-                            </MudListItem>
+                            <MudItem Style="border:none; height:fit-content; border-radius:4px;" Class="m-2 mr-2 p-0 pl-2 ml-2 mt-1 mb-1">
+                                <MudCheckBox @bind-Checked="@item.IsChecked" Disabled="@item.IsDisabled">@(item.ItemName + (item.CurrentTruckLastUpdatedDate != null ? (" (" + @Convert.ToDateTime(item.CurrentTruckLastUpdatedDate).ToString("dd/MM/yyyy hh:mm") + ")"):"") )</MudCheckBox>
+                            </MudItem>
                         }
-                    </MudList>
+                    </MudGrid>
                 </MudItem>
-
-                @*
-                <MudItem xs="11" md="11">
-
-                <MudSelect T="RoutineCheckListMasterModel" Label="Items" MultiSelection="true" @bind-Value="@(model.RoutineCheckItem)" @bind-SelectedValues="RoutineCheckListItem">
-                @foreach (var item in ItemList)
-                {
-                <MudSelectItem T="RoutineCheckListMasterModel" Value="@item">@item.ItemName</MudSelectItem>
-                }
-                </MudSelect>
-                </MudItem>*@
 
             </EditForm>
         </MudContainer>
@@ -86,7 +69,7 @@
 
     private IEnumerable<RoutineCheckListMasterModel> RoutineCheckListItem { get; set; } = new HashSet<RoutineCheckListMasterModel>();
 
-    protected override void OnInitialized()
+    protected override async void OnInitialized()
     {
         if (model.BranchID != null)
         {
@@ -111,6 +94,10 @@
                         }
                     }
                 }
+            }
+            if (model != null && model.Truck != null)
+            {
+                await TruckSelected(model.Truck);
             }
         }
 
@@ -142,4 +129,37 @@
 
         MudDialog.Close(DialogResult.Ok(true));
     }
+
+    private async Task TruckSelected(TruckModel obj)
+    {
+        model.Truck = obj;
+        List<RoutineCheckListModel> TruckListTemp = new();
+        if (ItemList != null && ItemList.Count() != 0)
+        {
+            foreach (RoutineCheckListMasterModel Values in ItemList)
+            {
+                Values.CurrentTruckLastUpdatedDate = null;
+            }
+        }
+        if (obj != null && obj.TruckID != null)
+        {
+            TruckListTemp = Iservice.GetLastRoutineCheckListDetailsUsingTruckId(obj.TruckID).ToList();
+            foreach (var item in TruckListTemp.OrderBy(s => s.CreatedDate))
+            {
+                foreach (var itemId in item.ItemIDs.Split(",").ToList())
+                {
+                    int resultConvert = 0;
+                    if (ItemList != null && ItemList.Count() != 0 && Int32.TryParse(itemId, out resultConvert) && ItemList.Any(s => s.ItemID == Int32.Parse(itemId)))
+                    {
+                        //ItemList.Where(s => s.ItemID == Int32.TryParse(itemId));
+                        foreach (RoutineCheckListMasterModel Values in ItemList.Where(s => (int)s.ItemID == Int32.Parse(itemId)))
+                        {
+                            Values.CurrentTruckLastUpdatedDate = item.CreatedDate;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }

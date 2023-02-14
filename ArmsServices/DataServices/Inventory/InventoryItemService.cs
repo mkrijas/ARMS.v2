@@ -13,6 +13,7 @@ namespace ArmsServices.DataServices
     {
         InventoryItemModel Update(InventoryItemModel model);
         InventoryItemModel SelectByID(int? ID);
+        IEnumerable<InventoryItemModel> SelectListByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<InventoryItemModel> SelectByGroup(int? GroupID);
         IEnumerable<InventoryItemModel> SearchByItemCode(string itemCode);
@@ -110,6 +111,20 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+
+        public IEnumerable<InventoryItemModel> SelectListByID(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@InventoryItemID", ID),
+               new SqlParameter("@Operation", "ByID")
+                };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Item.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
         public InventoryItemModel Update(InventoryItemModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

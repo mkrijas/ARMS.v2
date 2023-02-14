@@ -11,6 +11,7 @@ namespace ArmsModels.BaseModels.General
         public bool IsChecked { get; set; }
         public bool IsDisabled { get; set; }
         public DateTime? CreatedDate { get; set; }
+        public DateTime? CurrentTruckLastUpdatedDate { get; set; }
         public string Description { get; set; }
         public UserInfoModel UserInfo { get; set; }
 
