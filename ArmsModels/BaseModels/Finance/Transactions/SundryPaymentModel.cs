@@ -4,11 +4,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 
+
 namespace ArmsModels.BaseModels
 {
     public class SundryPaymentModel:TransactionBaseModel
     {
         public int? SundryPaymentID { get; set; }
+        public bool  deferredExpenditure { get; set; } = false;
+        
+        public DateTime ? beginDate { get; set; }
+      
+        public DateTime ? EndDate { get; set; }
+
         [Required]
         public string PaymentMode { get; set; }
         public string PaymentTool { get; set; }

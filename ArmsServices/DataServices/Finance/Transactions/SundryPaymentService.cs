@@ -43,18 +43,18 @@ namespace ArmsServices.DataServices
 
         public IEnumerable<SundryPaymentModel> Select()
         {
-            
-                List<SqlParameter> parameters = new List<SqlParameter>
+
+            List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
-              
+
             };
 
-                foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryPayment.Select]", parameters))
-                {
-                    yield return GetModel(dr);
-                }
-            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryPayment.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+
         }
 
 
@@ -70,14 +70,14 @@ namespace ArmsServices.DataServices
             {
                 yield return new SundryPaymentEntryModel()
                 {
-              
+
                     ID = dr.GetInt32("ID"),
                     ParentID = dr.GetInt32("ParentID"),
-                    BranchID = dr.GetInt32("BranchID"),                    
+                    BranchID = dr.GetInt32("BranchID"),
                     CoaID = dr.GetInt32("CoaID"),
-                    UsageCode = dr.GetString("UsageCode"),                                                         
+                    UsageCode = dr.GetString("UsageCode"),
                     Amount = dr.GetDecimal("Amount"),
-                    Rederence = dr.GetString("Reference")                   
+                    Rederence = dr.GetString("Reference")
                 };
             }
         }
@@ -137,7 +137,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocNumber", model.DocumentNumber),
                new SqlParameter("@entries", model.Entries.ToDataTable()),
                new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),   
+               new SqlParameter("@Dimension", model.Dimension),
+                      new SqlParameter("@deferredExpenditure", model.deferredExpenditure),
+               new SqlParameter("@beginDate", model.beginDate),
+                 new SqlParameter("@EndDate", model.EndDate),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -160,21 +163,21 @@ namespace ArmsServices.DataServices
                 PayeeName = dr.GetString("PayeeName"),
                 PayeeContactNo = dr.GetString("PayeeContactNo"),
                 PaymentCoaID = dr.GetInt32("CoaID"),
-                AccountName=dr.GetString("AccountName"),
+                AccountName = dr.GetString("AccountName"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
-                Reference =dr.GetString("Reference"),
-                BranchID = dr.GetInt32("BranchID"),                         
+                Reference = dr.GetString("Reference"),
+                BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 MID = dr.GetInt32("MID"),
                 CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
-                BankCharges= dr.GetDecimal("BankCharges"),
+                BankCharges = dr.GetDecimal("BankCharges"),
 
                 Narration = dr.GetString("Narration"),
-               
+
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
