@@ -1,0 +1,135 @@
+﻿@using ArmsModels.BaseModels.General
+@using ArmsServices.DataServices.Inventory
+@using ArmsServices.DataServices.Operations
+@inject AuthenticationStateProvider auth
+@inject ITyreMasterService Iservice
+@inject IInventoryItemService IInventoryservice
+@inject IAssetDocumentService IDocumentService
+
+<MudDialog>
+    <TitleContent>
+        @if (model.TyreID == null || model.TyreID == 0)
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Routine Check List.
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Routine Check List.
+            </MudText>
+        }
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudTextField @bind-Value="model.TyreSerialNumber" Label="Tyre Serial Number" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TyreSerialNumber)"></MudTextField>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudTextField @bind-Value="model.Make" Label="Make" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Make)"></MudTextField>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <InventoryItemSelector Value="SelectedInvetoryItem" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))"></InventoryItemSelector>
+                </MudItem>
+                @*                <MudItem xs="11" md="11" Class="mb-6">
+                <MudSelect T="InventoryItemModel" Label="Inventory Item" @bind-Value="@SelectedInvetoryItem" Required="true">
+                @foreach (var selectItem in InvetoryItemList)
+                {
+                <MudSelectItem Value="@selectItem">@selectItem.ItemDecription</MudSelectItem>
+                }
+                </MudSelect>
+                </MudItem>*@
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudSelect T="string" Label="Tyre Type" @bind-Value="@model.TyreType" Required="true">
+                        @foreach (var TyreType in TyreTypeList)
+                        {
+                            <MudSelectItem Value="@TyreType">@TyreType</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+@*                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudTextField @bind-Value="model.TyreType" Label="Tyre Type" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TyreType)"></MudTextField>
+                </MudItem>*@
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudTextField @bind-Value="model.TyreSize" Label="Tyre Size" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TyreSize)"></MudTextField>
+                </MudItem>
+                <MudItem xs="11" md="11">
+                    <MudCheckBox @bind-Checked="@model.Tubeless" Label="Tubeless"></MudCheckBox>
+                </MudItem>
+            </EditForm>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public TyreModel model { get; set; } = new();
+
+    List<string> TyreTypeList = new List<string>()
+    {
+        "Front",
+        "Back",
+        "All-Position"
+    };
+
+    List<AssetDocumentTypeModel> DocumentTypes = new();
+    List<InventoryItemModel> InvetoryItemList = new();
+    InventoryItemModel SelectedInvetoryItem = new();
+    List<AssetDocumentTypeModel> InventoryBatchList = new();
+
+    protected override void OnInitialized()
+    {
+        InvetoryItemList = IInventoryservice.SelectListByID(null).ToList();
+    }
+
+    protected override void OnParametersSet()
+    {
+        DocumentTypes = IDocumentService.GetDocumentTypes().ToList();
+    }
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public async Task Submit()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model != null)
+        {
+
+            model.UserInfo.UserID = user.Identity.Name;
+            Iservice.Update(model);
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    protected void getitemCode(InventoryItemModel item)
+    {
+        if (item != null)
+        {
+            if (SelectedInvetoryItem != null && SelectedInvetoryItem.InventoryItemID == null)
+            {
+                SelectedInvetoryItem = item;
+            }
+            else
+            {
+                SelectedInvetoryItem = new InventoryItemModel();
+            }
+            model.InventoryItemID = SelectedInvetoryItem.InventoryItemID;
+        }
+    }
+}

@@ -21,21 +21,32 @@
         {
             <MudText Color="Color.Error">@model.AuthStatus</MudText>
         }
+        <MudCheckBox Label="Is DeferredExpenditure?" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@model.deferredExpenditure" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+
     </TitleContent>
+
     <DialogContent>
-
-
         <MudPaper>
             <MudContainer Style="max-height: 450px; overflow-y: scroll">
                 <MudGrid>
 
+
+
+                    @if (model.deferredExpenditure)
+                    {
+                        <MudItem xs="6" md="6">
+                            <MudDatePicker ReadOnly="IsReadOnly" Label="Begin Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.beginDate" DateFormat="dd/MM/yyyy" />
+
+                        </MudItem>
+                        <MudItem xs="6" md="6">
+                            <MudDatePicker ReadOnly="IsReadOnly" Label="End Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EndDate" DateFormat="dd/MM/yyyy" />
+
+                        </MudItem>
+                    }
                     <MudItem xs="12" md="12">
+
                         <PaymentCodeSelector @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
                     </MudItem>
-
-
-
-
 
                     <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
@@ -222,7 +233,10 @@
         dimension = dimensionIservice.Select().ToList();
     }
 
-
+    async Task ApprovedChanged(bool value)
+    {
+        model.deferredExpenditure = value;
+    }
     protected void IsApproveData(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
@@ -251,19 +265,36 @@
         MudDialog.Cancel();
     }
     public void CreatePaymentMemo()
-    {
 
-        model.PaymentCoaID = accountRuleDefinitionModel.CoaID;
-        model.PaymentArdCode = accountRuleDefinitionModel.ArdCode;
-        model.PaymentMode = accountRuleDefinitionModel.paymentMode;
-        model.PaymentTool = accountRuleDefinitionModel.BankTools;
-        model.BankCharges = accountRuleDefinitionModel.BankCharges;
-        model.PaymentMode = accountRuleDefinitionModel.paymentMode;
-        model.NatureOfTransaction = "Payment";
-        model.BranchID = branchID;
-        model.UserInfo.UserID = UserID;
-        Iservice.Update(model);
-        MudDialog.Close();
+
+    {
+        try
+        {
+            if (model.deferredExpenditure == true && (model.beginDate == null || model.EndDate == null))
+            {
+                snackbar.Add("Date Field required !", Severity.Warning);
+                return;
+            }
+            model.PaymentCoaID = accountRuleDefinitionModel.CoaID;
+            model.PaymentArdCode = accountRuleDefinitionModel.ArdCode;
+            model.PaymentMode = accountRuleDefinitionModel.paymentMode;
+            model.PaymentTool = accountRuleDefinitionModel.BankTools;
+            model.BankCharges = accountRuleDefinitionModel.BankCharges;
+            model.PaymentMode = accountRuleDefinitionModel.paymentMode;
+            model.NatureOfTransaction = "Payment";
+            model.BranchID = branchID;
+            model.UserInfo.UserID = UserID;
+            Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close();
+            model = new SundryPaymentModel();
+            model = new();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+
 
     }
 

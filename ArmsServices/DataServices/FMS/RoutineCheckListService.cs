@@ -10,6 +10,7 @@ namespace ArmsServices.DataServices.FMS
     {
         RoutineCheckListModel Update(RoutineCheckListModel model);
         IEnumerable<RoutineCheckListModel> SelectItemByBranch(int? Branch);
+        IEnumerable<RoutineCheckListModel> GetLastRoutineCheckListDetailsUsingTruckId(int? TruckId);
         //IEnumerable<AssetModel> GetRequestedDocuments(int? RequestID);
         //AssetDocumentRequestModel SelectDocumentRequest(int? ID);
         int Delete(int? ID, string UserID);
@@ -41,7 +42,6 @@ namespace ArmsServices.DataServices.FMS
                new SqlParameter("@Operation", "ByBranch"),
                new SqlParameter("@ID", BranchID),
             };
-            // var cc = Iservice.GetDataReader("[usp.Operation.RoutineCheckListMaster.Select]", parameters);
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RoutineCheckList.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -104,6 +104,20 @@ namespace ArmsServices.DataServices.FMS
                     UserID = dr.GetString("UserId"),
                 },
             };
+        }
+
+
+        public IEnumerable<RoutineCheckListModel> GetLastRoutineCheckListDetailsUsingTruckId(int? TruckId)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", TruckId),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RoutineCheckList.SelectByTruckID]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
 
 
