@@ -62,11 +62,6 @@ namespace ArmsModels.BaseModels
         }
 
         public const string Data = "Data";
-
-        //public string[] BodyTypes { get; set; }
-        //public string[] FuelTypes { get; set; }
-        //public string[] TransmissionTypes { get; set; }
-
         public string[] BodyTypes { get { return Configuration.GetSection(Data).GetSection("BodyTypes").Get<string[]>(); } }
         public string[] FuelTypes { get { return Configuration.GetSection(Data).GetSection("FuelTypes").Get<string[]>(); } }
         public string[] TransmissionTypes { get { return Configuration.GetSection(Data).GetSection("TransmissionTypes").Get<string[]>(); } }

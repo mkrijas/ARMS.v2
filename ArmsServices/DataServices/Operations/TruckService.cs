@@ -28,13 +28,13 @@ namespace ArmsServices.DataServices
     public class TruckService : ITruckService
     {
         IDbService Iservice;
-
         public TruckService(IDbService iservice)
         {
             Iservice = iservice;
         }
         public TruckModel Update(TruckModel model)
         {
+            bool create = model.TruckID == null;
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TruckID", model.TruckID),
@@ -57,14 +57,17 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Truck.Update]", parameters))
             {
-                model.CurrentRegistration.TruckID = dr.GetInt32("TruckID");                
+                model = GetModel(dr);               
+            }
+            model.CurrentRegistration.TruckID = model.TruckID;
+            if (create)
+            {
                 int reg = ChangeRegistration(model.CurrentRegistration);
-                model = GetModel(dr);
                 if (reg > 0)
                 {
                     model.RegNo = model.CurrentRegistration.RegNo;
                 }
-            }           
+            }
             return model;
         }
         public int Delete(int? TruckID,string UserID)

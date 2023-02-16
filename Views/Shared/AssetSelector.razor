@@ -2,8 +2,8 @@
 
 @if (IsLoaded)
 {
-    <MudAutocomplete SelectValueOnTab @ref="_autoComplete" Class="@Class" T="AssetModel" OnKeyUp="Enter" Label="Add Asset" @bind-Value="Value" AdornmentColor="Color.Secondary" ResetValueOnEmptyText="true"
-                 Clearable="true" SearchFunc="SearchAsset" ToStringFunc="@(e => e == null ? null : $"{e.Description}")"></MudAutocomplete>
+    <MudAutocomplete Variant="Variant.Outlined" SelectValueOnTab @ref="_autoComplete" Class="@Class" T="AssetModel" OnKeyUp="Enter" Label="@Label" @bind-Value="Value" AdornmentColor="Color.Secondary" ResetValueOnEmptyText="true"
+                 Clearable="true" SearchFunc="SearchAsset" ToStringFunc="@(e => e == null ? null : string.Format("{0} | {1}",e.AssetCode,e.Description))" ></MudAutocomplete>
 
 }
 else
@@ -15,7 +15,9 @@ else
     private List<AssetModel> AssetList = new();
     private MudAutocomplete<AssetModel> _autoComplete {get;set;}
     [Parameter] public EventCallback<bool> SetAssets { get; set; }
-
+    [Parameter] public string Label { get; set; } = "Select Asset";
+    [Parameter] public int BranchID { get; set; } = 0;         
+    
     [Parameter]
     public AssetModel Value
     {
@@ -32,9 +34,9 @@ else
     {
         if (e.Code == "Enter" || e.Code == "NumpadEnter")
         {
-            SetAssets.InvokeAsync();
+            await SetAssets.InvokeAsync();
             await _autoComplete.Clear();
-            SearchAsset("");
+            await SearchAsset("");
         }
     }
 
@@ -70,12 +72,11 @@ else
     {
         if (PassedListAssets != null && PassedListAssets.Count() != 0)
         {
-            AssetList = Iasset.GetAttachedAssets(null).Where(s => !PassedListAssets.Any(g => g.AssetID == s.AssetID)).ToList();
+            AssetList = Iasset.SelectByBranch(BranchID,false).Where(s => !PassedListAssets.Any(g => g.AssetID == s.AssetID)).ToList();
         }
         else
         {
             AssetList = Iasset.GetAttachedAssets(null).ToList();
-
         }
         IsLoaded = true;
     }
