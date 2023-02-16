@@ -9,6 +9,7 @@ namespace ArmsModels.BaseModels
     {
         public int? TyreID { get; set; }
         public string TyreSerialNumber { get; set; }
+        public int? BranchID { get; set; }
         public string Make { get; set; } // Hint: MRF , CEAT
         public int? InventoryItemID { get; set; }
         public int? InventoryBatchID { get; set; }
@@ -57,7 +58,7 @@ namespace ArmsModels.BaseModels
         public DateTime? RequestedDate { get; set; }
         public DateTime? DeliveredDate { get; set; }
         public List<int?> Tyres { get; set; }
-
+        public UserInfoModel UserInfo { get; set; } = new();
     }
 
 
