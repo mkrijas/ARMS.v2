@@ -27,7 +27,7 @@
 
 <MudGrid Spacing="4">
    <MudItem xs="12">
-        <MudTable Items="@collection" @bind-SelectedItem="selectedItems1" @ref="mudTable" RowClassFunc="@SelectedRowClassFunc" MultiSelection="false" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model" T="PartyPaymentMemoModel">
+        <MudTable Items="@collection"   Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model" T="PartyPaymentMemoModel">
            
              <ToolBarContent>
                 <MudText Typo="Typo.h6">Payment Memo</MudText>
@@ -48,7 +48,7 @@
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
                 <MudTd DataLabel="PartyName">@context.PartyInfo.TradeName</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
@@ -64,9 +64,16 @@
                             <MudFab @onclick="@(()=> OpenDialogpayment(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
                     }
+                     @if (@context.AuthLevelId == 99 && context.PaymentInitiatedID==null)
+                    {
+                        <MudTooltip Text="Initiate PaymentMemo">
+                            <MudFab @onclick="@(()=> selected(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Payment" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    }
                     <MudTooltip Text="view">
                    <MudFab @onclick="@(()=> OpenDialogpayment(context,true,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip> 
+                    
                </MudTd>
             </RowTemplate>
 
@@ -75,8 +82,9 @@
 
             </PagerContent>
         </MudTable>
-    </MudItem> <MudItem xs="12"md="9"></MudItem><MudItem xs="12"md="3">
-         <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Initiate PaymentMemo</MudButton>           
+@*    </MudItem> <MudItem xs="12"md="9"></MudItem><MudItem xs="12"md="3">
+         <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" 
+         ButtonType="ButtonType.Submit">Initiate PaymentMemo</MudButton>  *@         
     </MudItem>
 </MudGrid>
 
@@ -92,7 +100,7 @@
     private PartyPaymentMemoModel selectedItems1 = null;
     private int? branchID = null;
     private string UserID = null;
-    private int selectedRowNumber = -1;
+   // private int selectedRowNumber = -1;
     void ApprovedChanged(bool value)
     {
         IsApproved = value;
@@ -119,26 +127,26 @@
             collection = Iservice.Select(branchID).Where(x => x.AuthLevelId != 99).ToList();
         }
     }
-    private string SelectedRowClassFunc(PartyPaymentMemoModel paymnetmodel, int rowNumber)
-    {
-        if (selectedRowNumber == rowNumber)
-        {
-            selectedRowNumber = -1;
+    //private string SelectedRowClassFunc(PartyPaymentMemoModel paymnetmodel, int rowNumber)
+    //{
+    //    if (selectedRowNumber == rowNumber)
+    //    {
+    //        selectedRowNumber = -1;
 
-            return string.Empty;
-        }
-        else if (mudTable.SelectedItem != null && mudTable.SelectedItem.Equals(paymnetmodel))
-        {
-            selectedRowNumber = rowNumber;
+    //        return string.Empty;
+    //    }
+    //    else if (mudTable.SelectedItem != null && mudTable.SelectedItem.Equals(paymnetmodel))
+    //    {
+    //        selectedRowNumber = rowNumber;
 
-            return "selected";
-        }
-        else
-        {
-            return string.Empty;
-        }
+    //        return "selected";
+    //    }
+    //    else
+    //    {
+    //        return string.Empty;
+    //    }
 
-    }
+    //}
     public async Task OpenDialogpayment(PartyPaymentMemoModel ppm, bool ReadOnly, bool View)
     {
 
@@ -157,40 +165,39 @@
         snackbar.Add("Deleted Successfully", Severity.Success);
         GetAll(IsApproved);
     }
-
-    private async Task selected()
+    private async Task selected(PartyPaymentMemoModel ppm)
     {
         PaymentInitiatedModel pim = new PaymentInitiatedModel();
 
-        if (selectedItems1.PaymentMemoID!= null )
+        if (ppm.PaymentMemoID != null)
         {
 
-            if (selectedItems1.AuthLevelId != 99)
+            if (ppm.AuthLevelId != 99)
             {
-                snackbar.Add(selectedItems1.DocumentNumber + "is Approved!", Severity.Warning);
+                snackbar.Add(ppm.DocumentNumber + "is Approved!", Severity.Warning);
                 return;
             }
 
-            pim.PaymentMemos.Add(selectedItems1);
+            pim.PaymentMemos.Add(ppm);
             //pim.PaymentMemos = selectedItems1.ToList();
             //foreach (var item in pim.PaymentMemos)
             //{
-            selectedItems1.Bills = Iservice.GetBills(selectedItems1.PaymentMemoID).ToList();
-            selectedItems1.PaymentStatus = 1;
+            ppm.Bills = Iservice.GetBills(ppm.PaymentMemoID).ToList();
+            ppm.PaymentStatus = 1;
             //}
-            
+
             DialogParameters parms = new DialogParameters();
             parms.Add("model", pim);
             var dialog = DialogService.Show<PaymentInitialMemo>("Payment", parms);
             var result = await dialog.Result;
 
-            if(!result.Canceled)
-            {   
-                PaymentInitiatedModel UpatedModel = (PaymentInitiatedModel)result.Data; 
-                
+            if (!result.Canceled)
+            {
+                PaymentInitiatedModel UpatedModel = (PaymentInitiatedModel)result.Data;
+
                 UpatedModel.UserInfo.UserID = UserID;
                 UpatedModel.BranchID = branchID;
-                Iservice.InitiatePayment(UpatedModel);              
+                Iservice.InitiatePayment(UpatedModel);
             }
         }
         else
@@ -198,8 +205,50 @@
             snackbar.Add("Please Select Memo", Severity.Success);
             return;
         }
-         GetAll(IsApproved);    
+        GetAll(IsApproved);
     }
+    //private async Task selected(PartyPaymentMemoModel ppm, bool ReadOnly, bool View)
+    //{
+    //    PaymentInitiatedModel pim = new PaymentInitiatedModel();
+
+    //    if (selectedItems1.PaymentMemoID!= null )
+    //    {
+
+    //        if (selectedItems1.AuthLevelId != 99)
+    //        {
+    //            snackbar.Add(selectedItems1.DocumentNumber + "is Approved!", Severity.Warning);
+    //            return;
+    //        }
+
+    //        pim.PaymentMemos.Add(selectedItems1);
+    //        //pim.PaymentMemos = selectedItems1.ToList();
+    //        //foreach (var item in pim.PaymentMemos)
+    //        //{
+    //        selectedItems1.Bills = Iservice.GetBills(selectedItems1.PaymentMemoID).ToList();
+    //        selectedItems1.PaymentStatus = 1;
+    //        //}
+            
+    //        DialogParameters parms = new DialogParameters();
+    //        parms.Add("model", pim);
+    //        var dialog = DialogService.Show<PaymentInitialMemo>("Payment", parms);
+    //        var result = await dialog.Result;
+
+    //        if(!result.Canceled)
+    //        {   
+    //            PaymentInitiatedModel UpatedModel = (PaymentInitiatedModel)result.Data; 
+                
+    //            UpatedModel.UserInfo.UserID = UserID;
+    //            UpatedModel.BranchID = branchID;
+    //            Iservice.InitiatePayment(UpatedModel);              
+    //        }
+    //    }
+    //    else
+    //    {
+    //        snackbar.Add("Please Select Memo", Severity.Success);
+    //        return;
+    //    }
+    //     GetAll(IsApproved);    
+    //}
     //private async Task selected()
     //{
     //    PaymentInitiatedModel pim = new PaymentInitiatedModel();

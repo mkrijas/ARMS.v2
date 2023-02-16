@@ -16,7 +16,7 @@
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" @bind-SelectedItems="selectedItems1" MultiSelection="true" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
 
 
             <ToolBarContent>
@@ -38,7 +38,7 @@
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
                 <MudTd DataLabel="PartyName">@context.PartyInfo.TradeName</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
@@ -54,6 +54,12 @@
                             <MudFab @onclick="@(()=> OpenDialogpayment(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
                     }
+                    @if (@context.AuthLevelId == 99 && context.PaymentInitiatedID == null)
+                    {
+                        <MudTooltip Text="Initiate PaymentMemo">
+                            <MudFab @onclick="@(()=> selected(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Payment" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                    }
                     <MudTooltip Text="view">
                         <MudFab @onclick="@(()=> OpenDialogpayment(context,true,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
@@ -65,8 +71,8 @@
 
             </PagerContent>
         </MudTable>
-    </MudItem> <MudItem xs="12" md="9"></MudItem><MudItem xs="12" md="3">
-        <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Initiated PaymentMemo</MudButton>
+   @* </MudItem> <MudItem xs="12" md="9"></MudItem><MudItem xs="12" md="3">
+        <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Initiated PaymentMemo</MudButton>*@
 
     </MudItem>
 </MudGrid>
@@ -81,7 +87,7 @@
     private List<PartyPaymentMemoModel> collection = new List<PartyPaymentMemoModel>();
     private List<BillsPaidModel> pmnList = new List<BillsPaidModel>();
 
-    private HashSet<PartyPaymentMemoModel> selectedItems1 = new HashSet<PartyPaymentMemoModel>();
+   // private HashSet<PartyPaymentMemoModel> selectedItems1 = new HashSet<PartyPaymentMemoModel>();
 
     public bool IsApproved { get; set; } = false;
     private int? branchID = null;
@@ -142,21 +148,21 @@
         GetAll(IsApproved);
     }
 
-    private async Task selected()
+    private async Task selected(PartyPaymentMemoModel ppm)
     {
         PaymentInitiatedModel pim = new PaymentInitiatedModel();
-        if (selectedItems1.Count > 0)
+        if (ppm.PaymentMemoID != null)
         {
-            foreach (var item in selectedItems1)
+            //foreach (var item in selectedItems1)
+            //{
+            if (ppm.AuthLevelId != 99)
             {
-                if (item.AuthLevelId != 99)
-                {
-                    snackbar.Add("Unverified cannot be selected", Severity.Warning);
-                    return;
-                }
+                snackbar.Add("Unverified cannot be selected", Severity.Warning);
+                return;
             }
+            //}
 
-            pim.PaymentMemos = selectedItems1.ToList();
+            pim.PaymentMemos.Add(ppm);
             foreach (var item in pim.PaymentMemos)
             {
                 foreach (var item1 in Iservice.GetBills(item.PaymentMemoID))
@@ -177,11 +183,11 @@
             {
                 PaymentInitiatedModel UpatedModel = (PaymentInitiatedModel)result.Data;
                 var authprov = await auth.GetAuthenticationStateAsync();
-                var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-                int brancID = int.Parse(brancIDString);
-                var user = authprov.User;
-                UpatedModel.UserInfo.UserID = user.Identity.Name;
-                UpatedModel.BranchID = brancID;
+                //var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+                //int brancID = int.Parse(brancIDString);
+                //var user = authprov.User;
+                UpatedModel.UserInfo.UserID = UserID;
+                UpatedModel.BranchID = branchID;
                 Iservice.InitiatePayment(UpatedModel);
                 GetAll(IsApproved);
             }

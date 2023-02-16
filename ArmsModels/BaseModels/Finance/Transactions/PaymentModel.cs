@@ -83,7 +83,7 @@ namespace ArmsModels.BaseModels
         public DateTime? DocDate { get; set; }
         public string DocNumber { get; set; }
         public decimal? TotalAmount { get; set; }
-        public virtual int ? pfID {get;set;}
+        public  int ? pfID {get;set;}
         public List<PartyPaymentMemoModel> PaymentMemos { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
