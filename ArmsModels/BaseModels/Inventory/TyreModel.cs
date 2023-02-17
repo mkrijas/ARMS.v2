@@ -26,6 +26,17 @@ namespace ArmsModels.BaseModels
         public int? PositionID { get; set; }
         public string Side { get; set; } // LEFT , RIGHT
         public string Description { get; set; }
+        public bool IsChecked { get; set; } = false;
+        public int? SRow { get; set; }
+        public int? SColumn { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
+    }
+
+    public class TyreTypeAndPositionMappingModel
+    {
+        public int? ID { get; set; }
+        public int? TruckTypeID { get; set; }
+        public string? PositionIDs { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
 

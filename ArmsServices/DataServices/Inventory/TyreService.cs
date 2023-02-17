@@ -12,10 +12,13 @@ namespace ArmsServices.DataServices
     public interface ITyreService
     {
         TyreModel Update(TyreModel model);
+        TyreTypeAndPositionMappingModel UpdateMappingTyrePositionAndType(TyreTypeAndPositionMappingModel model);
+        public IEnumerable<TyreTypeAndPositionMappingModel> SelectMappingTyrePositionAndType(int? TrucktypeID);
         TyreModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);        
         IEnumerable<TyreModel> SelectByBranch(int? BranchID);
         IEnumerable<TyreModel> SelectByTruck(int? TruckID);
+        IEnumerable<TyrePositionModel> GetTyrePositionList(int? ID = null);
         int Mount(TyreMountedModel model);
         int Unmount(int? TyreID, DateTime? UnmountedOn, int? UnmountedKm, string UserID);
         int Unmount(string UserID, int? MountedID, DateTime? UnmountedOn, int? UnmountedKm);
@@ -144,6 +147,18 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<TyrePositionModel> GetTyrePositionList(int? ID = null )
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Postion.Select]", parameters))
+            {
+                yield return GetPositionModel(dr);
+            }
+        }
+
       
 
         public TyreModel Update(TyreModel model)
@@ -166,6 +181,36 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+
+        public IEnumerable<TyreTypeAndPositionMappingModel> SelectMappingTyrePositionAndType(int? TrucktypeID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TrucktypeID", TrucktypeID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Postion.Trucktype.Mapping.Select]", parameters))
+            {
+                yield return GetPositionAndTypeMappingModel(dr);
+            }
+        }
+
+        public TyreTypeAndPositionMappingModel UpdateMappingTyrePositionAndType(TyreTypeAndPositionMappingModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", model.ID),
+               new SqlParameter("@TruckTypeID", model.TruckTypeID),
+               new SqlParameter("@PositionIDs",model.PositionIDs),
+               new SqlParameter("@UserID",model.UserInfo.UserID),
+               new SqlParameter("@RecordStatus",3),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Postion.Trucktype.Mapping.Update]", parameters))
+            {
+                model = GetPositionAndTypeMappingModel(dr);
+            }
+            return model;
+        }
       
         private TyreModel GetModel(IDataRecord dr)
         {
@@ -180,6 +225,40 @@ namespace ArmsServices.DataServices
                 Tubeless = dr.GetBoolean("Tubeless"),
                 TyreSize = dr.GetString("TyreSize"),
                 TyreType = dr.GetString("TyreType"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+      
+        private TyrePositionModel GetPositionModel(IDataRecord dr)
+        {
+            return new TyrePositionModel()
+            {
+                PositionID = dr.GetInt32("ID"),
+                Side = dr.GetString("Side"),
+                Description = dr.GetString("Description"),
+                SRow = dr.GetInt32("SRow"),
+                SColumn = dr.GetInt32("SColumn"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+      
+        private TyreTypeAndPositionMappingModel GetPositionAndTypeMappingModel(IDataRecord dr)
+        {
+            return new TyreTypeAndPositionMappingModel()
+            {
+                ID = dr.GetInt32("ID"),
+                TruckTypeID = dr.GetInt32("TruckTypeID"),
+                PositionIDs = dr.GetString("PositionIDs"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

@@ -1,0 +1,219 @@
+﻿@inject AuthenticationStateProvider auth
+@inject ITyreService Iservice
+
+<MudDialog>
+    <TitleContent>
+        @if (TypeModel.TruckTypeID == null || TypeModel.TruckTypeID == 0)
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Tyre Position.
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Tyre Position.
+            </MudText>
+        }
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <MudItem xs="12" md="12">
+                <MudGrid>
+                    <MudItem xs="4" md="4">
+                    </MudItem>
+                    <MudItem xs="2" md="2">
+                        <MudText>Left</MudText>
+                    </MudItem>
+                    <MudItem xs="2" md="2">
+                        <MudText>Right</MudText>
+                    </MudItem>
+                    <MudItem xs="2" md="2">
+                    </MudItem>
+                    <MudItem xs="2" md="2">
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+            @foreach (var i in TyrePositionList.Select(s => Convert.ToInt32(s.SRow)).Where(g => g == 1 || g == 2).Distinct().ToArray())
+            {
+                <MudItem xs="12" md="12">
+                    <MudGrid>
+
+                        @if (i == 1 || i == 2)
+                        {
+
+                            if (i == 1)
+                            {
+                                <MudItem xs="4" md="4">
+                                    <MudText>Front Tyre</MudText>
+                                </MudItem>
+                            }
+                            else if (i == 2)
+                            {
+                                <MudItem xs="4" md="4">
+                                    <MudText>Auxiliary Tyre</MudText>
+                                </MudItem>
+                            }
+                            @foreach (var item in TyrePositionList.Where(s => s.SRow == i).ToList())
+                            {
+
+                                <MudItem xs="2" md="2">
+                                    <MudCheckBox @bind-Checked="@item.IsChecked"></MudCheckBox>
+                                </MudItem>
+
+                                @if (item.SColumn == 2)
+                                {
+                                    <MudItem xs="2" md="2">
+                                    </MudItem>
+                                }
+                            }
+                        }
+                    </MudGrid>
+                </MudItem>
+            }
+
+            <MudItem xs="12" md="12">
+                <MudGrid>
+                    <MudItem xs="4" md="4">
+                    </MudItem>
+                    <MudItem xs="2" md="2">
+                        <MudText>Outer Left</MudText>
+                    </MudItem>
+                    <MudItem xs="2" md="2">
+                        <MudText>Inner Left</MudText>
+                    </MudItem>
+                    <MudItem xs="2" md="2">
+                        <MudText>Inner Right</MudText>
+                    </MudItem>
+                    <MudItem xs="2" md="2">
+                        <MudText>Outer Right</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+            @foreach (var i in TyrePositionList.Select(s => Convert.ToInt32(s.SRow)).Where(g => g != 1 && g != 2).Distinct().ToArray())
+            {
+                <MudItem xs="12" md="12">
+                    <MudGrid>
+                        @if (i != 1 && i != 2)
+                        {
+                            if (i == 3)
+                            {
+                                <MudItem xs="4" md="4">
+                                    <MudText>Rear Tyre</MudText>
+                                </MudItem>
+                            }
+                            else if (i == 4)
+                            {
+                                <MudItem xs="4" md="4">
+                                    <MudText>Housing Tyre</MudText>
+                                </MudItem>
+                            }
+                            @foreach (var item in TyrePositionList.Where(s => s.SRow == i).ToList())
+                            {
+
+                                <MudItem xs="2" md="2">
+                                    <MudCheckBox @bind-Checked="@item.IsChecked"></MudCheckBox>
+                                </MudItem>
+
+                            }
+                        }
+                    </MudGrid>
+                </MudItem>
+                <MudItem xs="12" md="12">
+
+                </MudItem>
+            }
+
+
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+
+    [Parameter]
+    public TruckTypeModel TypeModel { get; set; } = new();
+
+    List<TyrePositionModel> TyrePositionList = new();
+
+    TyreTypeAndPositionMappingModel TyreMappingModel = new();
+    //private IEnumerable<RoutineCheckListMasterModel> RoutineCheckListItem { get; set; } = new HashSet<RoutineCheckListMasterModel>();
+
+    protected override void OnInitialized()
+    {
+        var tempTyrePositionList = Iservice.GetTyrePositionList(0);
+        if (tempTyrePositionList != null && tempTyrePositionList.Count() != 0)
+        {
+            TyrePositionList = tempTyrePositionList.ToList();
+        }
+        if (TypeModel != null && TypeModel.TruckTypeID != 0)
+        {
+            var result = Iservice.SelectMappingTyrePositionAndType(TypeModel.TruckTypeID);
+            if (result != null && result.Count() != 0)
+            {
+                TyreMappingModel = result.First();
+
+            }
+
+        }
+        if (TyreMappingModel != null && TyreMappingModel.PositionIDs != null)
+        {
+            int valueItem = 0;
+            foreach (var item in TyreMappingModel.PositionIDs.Split(","))
+            {
+
+                if (Int32.TryParse(item, out valueItem) && TyrePositionList.Any(d => (int)d.PositionID == Convert.ToInt32(item)))
+                {
+                    foreach (var elements in TyrePositionList.Where(d => (int)d.PositionID == Convert.ToInt32(item)))
+                    {
+                        elements.IsChecked = true;
+                    }
+                }
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+
+    }
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public async Task Submit()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        TyreTypeAndPositionMappingModel Result = new();
+        if (TypeModel != null)
+        {
+            Result.UserInfo = new();
+            Result.UserInfo.UserID = user.Identity.Name;
+            Result.TruckTypeID = TypeModel.TruckTypeID;
+            if (TyrePositionList != null && TyrePositionList.Any(s => s.IsChecked))
+            {
+                Result.PositionIDs = String.Join(",", TyrePositionList.Where(s => s.IsChecked).Select(s => s.PositionID));
+            }
+            else
+            {
+                Result.PositionIDs = "";
+            }
+            Iservice.UpdateMappingTyrePositionAndType(Result);
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+
+}
+
+

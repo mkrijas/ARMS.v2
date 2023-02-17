@@ -118,6 +118,7 @@ namespace Views
             services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
             services.AddScoped<IInventoryGrnService, InventoryGrnService>();
             services.AddScoped<ITyreMasterService, TyreMasterService>();
+            services.AddScoped<ITyreService, TyreService>();
             //------------DATA AUTHENTICATION-------------------
             services.AddScoped<IDataAuthorizationSettingsService, DataAuthorizationSettingsService>();
             services.AddScoped<IDataAuthorizationService, DataAuthorizationService>();
