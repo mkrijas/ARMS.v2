@@ -38,7 +38,7 @@ namespace ArmsServices.DataServices
         }
         public DriverModel Update(DriverModel model)
         {
-            model.Address = Task.Run(()=> _addressService.Update(model.Address)).Result;
+            model.Address =  _addressService.Update(model.Address);
             List<SqlParameter> parameters = new List<SqlParameter>
             {    
                new SqlParameter("@DriverID", model.DriverID),
@@ -53,7 +53,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@FestivalBonus", model.FestivalBonus),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-
             
             foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Update]", parameters))
             {

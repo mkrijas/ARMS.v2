@@ -11,17 +11,17 @@
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Elevation="10" Filter="new Func<PlaceModel, bool>(search)" @bind-place="model">
-             <ToolBarContent>
-                <MudText Typo="Typo.h6">Places</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="OpenDialog"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Manage Places</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new PlaceModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
                 <MudSpacer></MudSpacer>
 
-               <MudTextField @bind-Value="searchPlace" Placeholder="Search Places... "
+                <MudTextField @bind-Value="searchPlace" Placeholder="Search Places... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium" Class="mt-0"></MudTextField>
-          </ToolBarContent>
-          
+            </ToolBarContent>
+
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.PlaceName)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
                 <MudTh><MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.PinCode)" InitialDirection="SortDirection.Ascending">PinCode</MudTableSortLabel></MudTh></MudTh>
@@ -33,7 +33,7 @@
                 <MudTd DataLabel="PinCode">@context.PinCode</MudTd>
                 <MudTd DataLabel="DistrictName">@context.District.DistrictName</MudTd>
                 <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> Edit(context.PlaceID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Delete(context.PlaceID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
@@ -42,7 +42,7 @@
             </PagerContent>
         </MudTable>
     </MudItem>
- 
+
 </MudGrid>
 @code {
 
@@ -52,12 +52,8 @@
 
     private string searchPlace = "";
 
-    protected override async Task OnInitializedAsync()
-    {
-        await foreach (var district in Idistrict.Select(0))
-        {
-            districts.Add(district);
-        }
+    protected override void OnInitialized()
+    {        
         GetAll();
     }
 
@@ -66,59 +62,12 @@
         return await Task.FromResult(districts.Where(x => x.DistrictName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
-    private  void GetAll()
-    {
-        foreach (var place in Iservice.Select(0))
-        {
-            collection.Add(place);
-        }
-    }
-
-    private async void OnValidSubmit(EditContext context)
-    {
-        if (!districts.Select(x => x.DistrictName).Contains(model.District.DistrictName))
-        {
-            snackbar.Add("Invalid District", Severity.Error);
-            return;
-        }
-
-        //try
-        //{
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        model.DistrictID = model.District.DistrictID;
-
-        try {
-            model = await Iservice.Update(model);
-
-            if (collection.Exists(x => x.PlaceID == model.PlaceID))
-            {
-                collection[collection.FindIndex(x => x.PlaceID == model.PlaceID)] = model;
-            }
-            else
-            {
-                collection.Add(model);
-            }
-            model = new PlaceModel();
-            snackbar.Add("Saved Successfully", Severity.Success);
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
+    private void GetAll()
+    {        
+        collection = Iservice.Select(0).ToList();       
     }
 
 
-
-    private void Edit(int? id)
-    {
-        model = collection.FirstOrDefault(x => x.PlaceID == id);
-        DialogParameters parms = new();
-        parms.Add("placemodel",model);
-        DialogService.Show<PlaceDilogue>("ADD/EDIT",parms);
-    }
     private async void Delete(int? id)
     {
         await Iservice.Delete(id, "Rijas");
@@ -135,13 +84,12 @@
         }
         return false;
     }
-         private void OpenDialog()
+    private void OpenDialog(PlaceModel model)
     {
-
         DialogParameters parms = new DialogParameters();
-        parms.Add("placemodel", new PlaceModel());
-
-        DialogService.Show<PlaceDilogue>("ADD PLACE",parms);
+        parms.Add("placemodel", model);
+        DialogService.Show<PlaceDilogue>("ADD/EDIT PLACE", parms);
+        GetAll();
     }
 }
 

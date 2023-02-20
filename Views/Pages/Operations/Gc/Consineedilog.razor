@@ -8,6 +8,8 @@
 @inject IOrderService Iorder
 
     
+
+<MudCard>
             <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
@@ -17,46 +19,38 @@
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudGrid Spacing="4">
-                        <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="model.ConsigneeName" Label="Consignee Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ConsigneeName)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="model.Mobile" Label="Mobile" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Mobile)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudAutocomplete T="PlaceModel" Label="Place" @bind-Value="Place" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
+                    <MudTabs>
+                        <MudTabPanel Text="Info" >
+                        <MudGrid Spacing="4">
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="model.ConsigneeName" Label="Consignee Name" Variant="Variant.Outlined"  For="@(() => model.ConsigneeName)"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="model.Mobile" Label="Mobile" Variant="Variant.Outlined"  For="@(() => model.Mobile)"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudAutocomplete T="PlaceModel" Label="Place" Value="Place" ValueChanged="PlaceSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
                                              SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="Order" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudAutocomplete T="OrderModel" Label="Order" @bind-Value="Order" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
                                              SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
-                        </MudItem>
-
-                        <MudItem xs="12">
-                            <MudText Typo="Typo.subtitle2">Address Info</MudText>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="model.Address.Building" Label="Building" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Address.Building)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="model.Address.Street" Label="Street" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Address.Street)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="model.Address.City" Label="City" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Address.City)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="model.Address.PinCode" Label="PinCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Address.PinCode)"></MudTextField>
-                        </MudItem>
-                    </MudGrid>
-                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save @customstr</MudButton>
-
+                            </MudItem>
+                        </MudGrid>
+                        </MudTabPanel>
+                        <MudTabPanel Text="Address">
+                        <AddressView Address="model.Address" HideLabel></AddressView>
+                        </MudTabPanel>
+                    </MudTabs>
                 </MudCardContent>
+                <MudCardActions>
+                     <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save @customstr</MudButton>
+                </MudCardActions>
             </EditForm>
 
+    </MudCard>
 
-
-@code {
+    @code {
 
     [Parameter]
     public ConsigneeModel model { get; set; }
@@ -75,24 +69,29 @@
 
     protected override async Task OnInitializedAsync()
     {
-        places = Iplace.Select(0).ToList();
-
-        await foreach (var item in Iorder.Select(0))
-        {
-            orders.Add(item);
-        }   
-
-        if (model.Address == null)
-        { model.Address = new AddressModel() { AddresseeName = "temp", Place = "temp" }; }
-
+        places = Iplace.Select(0).ToList();       
+        orders = await Iorder.Select(0).ToListAsync();        
 
 
         CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
         customstr = cs.GetFunc(model.Consignor);
 
         Place = places.FirstOrDefault(x => x.PlaceID == model.PlaceID);
+        Order = orders.FirstOrDefault(y => y.OrderID == model.OrderID);
     }
 
+    private void PlaceSelected(PlaceModel _place)
+    {
+        Place = _place;
+        model.PlaceID = _place.PlaceID;
+        model.Address.Place = _place.PlaceName;
+    }
+
+    private void OrderSelected(OrderModel _order)
+    {
+        Order = _order;
+        model.OrderID = _order.OrderID;        
+    }
 
     public class CustomStringToBoolConverter : BoolConverter<string>
     {
@@ -158,24 +157,8 @@
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-
-        if (Place?.PlaceID == 0)
-        {
-            snackbar.Add("Place is not selected", Severity.Error);
-            return;
-        }
-        else
-        if (!places.Select(x => x.PlaceName).Contains(Place.PlaceName))
-        {
-            snackbar.Add("Invalid Place", Severity.Error);
-            return;
-        }
-
-        model.PlaceID = Place.PlaceID;
-        model.Address.Place = Place.PlaceName;
-        model.OrderID = Order.OrderID;
-        model.Address.AddresseeName = model.ConsigneeName;
+        model.UserInfo.UserID = user.Identity.Name;       
+        model.OrderID = Order.OrderID;        
         CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
         model.Consignor = cs.SetFunc(customstr).Value;
 

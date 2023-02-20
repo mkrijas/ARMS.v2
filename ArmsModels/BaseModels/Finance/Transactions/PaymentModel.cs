@@ -116,7 +116,7 @@ namespace ArmsModels.BaseModels
     }
 
 
-    public class PaymentEntryModel
+    public class PaymentEntryModel 
     {
         public int? PeID { get; set; }
         public int? PaymentMemoID { get; set; }
@@ -125,5 +125,4 @@ namespace ArmsModels.BaseModels
         public DateTime? EffectiveDate { get; set; }
         public decimal? Amount { get; set; }
     }
-
 }

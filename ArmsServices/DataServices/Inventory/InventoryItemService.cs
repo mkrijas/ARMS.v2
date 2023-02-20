@@ -38,7 +38,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Item.Delete]", parameters);
         }
 
-
+       
 
         public IEnumerable<InventoryItemModel> SearchByDescription(string itemDescription)
         {

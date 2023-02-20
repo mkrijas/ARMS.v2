@@ -1,0 +1,85 @@
+﻿  @inject IPlaceService Iservice
+@inject IDistrictService Idistrict
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudDialog >
+ <DialogContent>
+      <EditForm id="placeForm" Model="@placemodel" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary/> 
+                    <MudTextField @bind-Value="@placemodel.PlaceName" Label="Place" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => placemodel.PlaceName)"></MudTextField>
+                    <MudTextField @bind-Value="@placemodel.PinCode" Label="PinCode" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => placemodel.PinCode)"></MudTextField>
+                    <MudAutocomplete T="DistrictModel" Label="District" @bind-Value="@placemodel.District" ResetValueOnEmptyText="true"
+                             SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.DistrictName}")" Variant="Variant.Outlined"
+                                     Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Rounded.Add" OnAdornmentClick="OpenDistrictDialog"
+                                     Immediate="true">
+                                 <NoItemsTemplate>
+                                     Create new District
+                                 </NoItemsTemplate>
+                                 </MudAutocomplete>      
+            </EditForm>      
+ </DialogContent>
+    <DialogActions>
+        <MudButton form="placeForm"  Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Place</MudButton>
+    </DialogActions>
+    </MudDialog>
+@code {
+    [Parameter]
+    public PlaceModel placemodel { get; set; }
+    private List<DistrictModel> districts = new List<DistrictModel>();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    protected override void OnInitialized()
+    {       
+        districts = Idistrict.Select(0).ToList();                
+    }
+
+    private async Task<IEnumerable<DistrictModel>> Search(string searchString)
+    {
+        return await Task.FromResult(districts.Where(x => x.DistrictName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        if (!districts.Select(x => x.DistrictName).Contains(placemodel.District.DistrictName))
+        {
+            snackbar.Add("Invalid District", Severity.Error);
+            return;
+        }
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        placemodel.UserInfo.UserID = user.Identity.Name;
+        placemodel.DistrictID = placemodel.District.DistrictID;
+
+        try {
+            placemodel = await Iservice.Update(placemodel);
+            MudDialog.Close(placemodel);
+            placemodel = new PlaceModel();
+            snackbar.Add("Saved Successfully", Severity.Success);            
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }   
+
+
+    private async Task OpenDistrictDialog()
+    {
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", new DistrictModel());
+        var dialog = DialogService.Show<DistrictDialogue>("Add District", parms);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            districts = Idistrict.Select(0).ToList();
+        }
+    }
+}

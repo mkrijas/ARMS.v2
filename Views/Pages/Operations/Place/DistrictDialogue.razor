@@ -1,0 +1,69 @@
+﻿@inject IDistrictService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+
+<MudDialog>
+    <DialogContent>
+        <EditForm id="districtForm" Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <MudTextField @bind-Value="@model.DistrictName" Label="District Name" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.DistrictName)"></MudTextField>
+           
+            <MudAutocomplete T="StateModel" Label="State" Value="@SelectedState" ResetValueOnEmptyText="true"
+                             SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.StateName}")"
+                             Immediate="true" ValueChanged="StateSelected" Variant="Variant.Outlined">
+                
+            </MudAutocomplete>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton form="districtForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [Parameter]
+    public DistrictModel model { get; set; }    
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    StateModel SelectedState = new();
+
+    private List<StateModel> states = new();
+
+    protected override void OnInitialized()
+    {
+        states = Iservice.GetStates().ToList();
+    }
+
+    private async Task<IEnumerable<StateModel>> Search(string searchString)
+    {
+        return await Task.FromResult(states.Where(x => x.StateName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private void StateSelected(StateModel state)
+    {
+        SelectedState = state;
+        model.StateID = state.StateID;
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;       
+
+        try
+        {
+            model = Iservice.Update(model);
+            MudDialog.Close(model);
+            model = new DistrictModel();
+            snackbar.Add("Saved Successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+}

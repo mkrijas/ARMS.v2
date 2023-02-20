@@ -6,17 +6,12 @@
 @inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
 
-
-
-<MudGrid Spacing="4">
-  
-    <MudItem xs="12" md="12">
         <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true"
         Elevation="10" Filter="new Func<RouteModel, bool>(search)" @bind-model="model">
            
              <ToolBarContent>
-                <MudText Typo="Typo.h6">Route</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"  @onclick="OpenDialog"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudText Typo="Typo.h6">Manage Routes</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"  @onclick="@(()=> OpenDialog(new RouteModel()))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 
                 <MudSpacer></MudSpacer>
 
@@ -41,7 +36,7 @@
                 <MudTd DataLabel="RouteType">@context.RouteType</MudTd>
                 <MudTd DataLabel="TollBooths">@context.TollBooths</MudTd>
                 <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> Edit(context.RouteID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Delete(context.RouteID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
@@ -49,11 +44,7 @@
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
             </PagerContent>
         </MudTable>
-    </MudItem>
 
-
-
-</MudGrid>
 @code {
 
     private RouteModel model = new RouteModel();
@@ -81,64 +72,21 @@
         {
             collection.Add(route);
         }
-    }
+    }  
 
-    private async Task OnValidSubmit(EditContext context)
-    {
-        if (!places.Select(x => x.PlaceName).Contains(model.Origin.PlaceName))
-        {
-            snackbar.Add("Invalid Origin", Severity.Error);
-            return;
-        }
-        else
-             if (!places.Select(x => x.PlaceName).Contains(model.Via.PlaceName))
-        {
-            snackbar.Add("Invalid Via", Severity.Error);
-            return;
-        }
-        else
-        if (!places.Select(x => x.PlaceName).Contains(model.Destination.PlaceName))
-        {
-            snackbar.Add("Invalid Destination", Severity.Error);
-            return;
-        }
-        var authprov = await auth.GetAuthenticationStateAsync();
-        model.UserInfo.UserID = authprov.User.Identity.Name;
-        model.RouteName = model.Origin.PlaceName + "-" + model.Via.PlaceName + "-" + model.Destination.PlaceName;
-        model.MieageModifier = 1;
-        try
-        {
-            model = await Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            if (collection.Exists(x => x.RouteID == model.RouteID))
-            {
-                collection[collection.FindIndex(x => x.RouteID == model.RouteID)] = model;
-            }
-            else
-            {
-                collection.Add(model);
-            }
-            model = new RouteModel();
-        }
-        catch(Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-    }
+    //private void Edit(int? id)
+    //{
 
-    private void Edit(int? id)
-    {
+    //    model = collection.FirstOrDefault(x => x.RouteID == id);
+    //    model.Origin = places.FirstOrDefault(x => x.PlaceID == model.Origin.PlaceID);
+    //    model.Via = places.FirstOrDefault(x => x.PlaceID == model.Via.PlaceID);
+    //    model.Destination = places.FirstOrDefault(x => x.PlaceID == model.Destination.PlaceID);
+    //    DialogParameters parms = new DialogParameters();
+    //    parms.Add("routemodel",model);
+    //    DialogService.Show<RouteDilog>("ADD ROUTE",parms);
 
-        model = collection.FirstOrDefault(x => x.RouteID == id);
-        model.Origin = places.FirstOrDefault(x => x.PlaceID == model.Origin.PlaceID);
-        model.Via = places.FirstOrDefault(x => x.PlaceID == model.Via.PlaceID);
-        model.Destination = places.FirstOrDefault(x => x.PlaceID == model.Destination.PlaceID);
-        DialogParameters parms = new DialogParameters();
-        parms.Add("routemodel",model);
-        DialogService.Show<RouteDilog>("ADD ROUTE",parms);
-        
 
-    }
+    //}
     private async void Delete(int? id)
     {
         await Iservice.Delete(id, "Rijas");
@@ -155,13 +103,12 @@
         }
         return false;
     }
-      private void OpenDialog()
+    private async void OpenDialog(RouteModel model)
     {
-
         DialogParameters parms = new DialogParameters();
         parms.Add("routemodel", model);
-
-        DialogService.Show<RouteDilog>("ADD ROUTE",parms);
+        DialogService.Show<RouteDilog>("ADD/EDIT",parms,new DialogOptions(){MaxWidth=MaxWidth.Large});
+        await GetAll();
     }
 }
 

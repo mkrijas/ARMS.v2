@@ -23,6 +23,7 @@ namespace ArmsServices.DataServices
         int Unmount(int? TyreID, DateTime? UnmountedOn, int? UnmountedKm, string UserID);
         int Unmount(string UserID, int? MountedID, DateTime? UnmountedOn, int? UnmountedKm);
         int ResoleBegin(TyreResoleModel model);
+        IEnumerable<LinkableBatchModel> GetNonLinkedTyreBatches(int BranchID, int ItemID);
     }
     public class TyreService : ITyreService
     {
@@ -41,7 +42,28 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Delete]", parameters);
         }
-        
+
+        public IEnumerable<LinkableBatchModel> GetNonLinkedTyreBatches(int BranchID, int ItemID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetNonlinkedBatches"),
+               new SqlParameter("@itemID",ItemID),
+               new SqlParameter("@BranchID",BranchID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Select]", parameters))
+            {
+                yield return new LinkableBatchModel()
+                {
+                    BatchID = dr.GetInt64("BatchID"),
+                    LinkableQty = dr.GetDecimal("LinkableQty"),
+                    GrnNo = dr.GetString("GrnNo"),
+                    PartyID = dr.GetInt32("PartyID")
+                };
+            }
+        }
+
         public int Mount(TyreMountedModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

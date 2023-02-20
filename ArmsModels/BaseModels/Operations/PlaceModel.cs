@@ -25,4 +25,25 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
         public virtual DistrictModel District { get; set; }
     }
+
+    public class StateModel
+    {
+        public int? StateID { get; set; }
+        [Required]
+        [StringLength(maximumLength: 200)]
+        public string StateName { get; set; }
+        public string GstString { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+    }
+
+    public class DistrictModel
+    {
+        public int? DistrictID { get; set; }
+        [Required]
+        [StringLength(maximumLength: 200)]
+        public string DistrictName { get; set; }
+        [Required]
+        public int? StateID { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+    }
 }

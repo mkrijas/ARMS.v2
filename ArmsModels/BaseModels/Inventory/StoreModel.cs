@@ -41,4 +41,12 @@ namespace ArmsModels.BaseModels
         public decimal? PurchaseQty { get; set; }
         public decimal? InhandQty { get; set; }
     }
+
+    public class LinkableBatchModel
+    {
+        public long? BatchID { get; set; }
+        public decimal? LinkableQty { get; set; }
+        public int? PartyID { get; set; }
+        public string GrnNo { get; set; }
+    }
 }
