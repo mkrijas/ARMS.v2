@@ -27,6 +27,7 @@ namespace ArmsModels.BaseModels
         public string Side { get; set; } // LEFT , RIGHT
         public string Description { get; set; }
         public bool IsChecked { get; set; } = false;
+        public bool IsMounted { get; set; } = false;
         public int? SRow { get; set; }
         public int? SColumn { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();

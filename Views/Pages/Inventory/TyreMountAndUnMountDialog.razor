@@ -1,0 +1,251 @@
+﻿@using ArmsModels.BaseModels.General
+@using ArmsServices.DataServices.Inventory
+@using System.ComponentModel.DataAnnotations
+@inject AuthenticationStateProvider auth
+@inject ITyreService IServices
+
+<MudDialog>
+    <TitleContent>
+        @if (model.ID == null || model.ID == 0)
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Mount/Unmount Tyre.
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Mount/Unmount Tyre.
+            </MudText>
+        }
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <TruckSelector Value="SelectedTruck" ValueChanged="OnValueChanged" IsDisabled="IsTruckDisabled"></TruckSelector>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudSelect T="int?" Variant="Variant.Outlined" Disabled="IsTyreDisabled" Margin="Margin.Dense" Label="Tyre" @bind-Value="@SelectedTyre.TyreID" @onchange="OnChangedTyre">
+                        @foreach (TyreModel Tyre in TyreList)
+                        {
+                            <MudSelectItem Value="@Tyre.TyreID">@Tyre.TyreSerialNumber</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudSelect T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Tyre Position" @bind-Value="@SelectedTyrePosition.PositionID">
+                        @foreach (TyrePositionModel TyrePosition in TyrePositionListForMountAndUnMount)
+                        {
+                            <MudSelectItem Value="@TyrePosition.PositionID">@TyrePosition.Side</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudTextField @bind-Value="@MountedOrUnMountKM" Label="Mount/UnMount KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @MountedOrUnMountKM)"></MudTextField>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    @if (SelectedTruck != null && SelectedTruck.TruckID != 0 || SelectedTyre != null && SelectedTyre.TyreID != 0)
+                    {
+                        if (SelectedTyrePosition.IsMounted == false)
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Mount" Class="px-12">Mount</MudButton>
+                        }
+                        else
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UnMount" Class="px-12">UnMount</MudButton>
+                        }
+                    }
+
+                </MudItem>
+            </EditForm>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        @*<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>*@
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public TyreMountedModel model { get; set; } = new();
+    [Parameter]
+    public TruckModel SelectedTruck { get; set; } = new();
+    [Required]
+    [Parameter]
+    public TyreModel SelectedTyre { get; set; } = new();
+    [Required]
+    public TyrePositionModel SelectedTyrePosition { get; set; } = new();
+    [Required]
+    public int? MountedOrUnMountKM { get; set; }
+
+    public bool IsTruckDisabled { get; set; } = false;
+
+    public bool IsTyreDisabled { get; set; } = false;
+
+    List<TyreModel> TyreList = new();
+    List<TyrePositionModel> TyrePositionListForMountAndUnMount = new();
+
+    protected override void OnInitialized()
+    {
+        var Tyres = IServices.SelectUnmontedTyresByID(0);
+        if (Tyres != null && Tyres.Count() != 0)
+        {
+            TyreList = Tyres.ToList();
+
+        }
+        if (SelectedTruck != null && SelectedTruck.TruckID != null && SelectedTruck.TruckID != 0)
+        {
+            IsTruckDisabled = true;
+        }
+        else
+        {
+            IsTruckDisabled = false;
+        }
+
+        if (SelectedTyre != null && SelectedTyre.TyreID != null && SelectedTyre.TyreID != 0)
+        {
+            IsTyreDisabled = true;
+        }
+        else
+        {
+            IsTyreDisabled = false;
+        }
+
+        if (SelectedTruck != null && SelectedTruck.TruckTypeID != 0 || SelectedTyre != null && SelectedTyre.TyreID != 0)
+        {
+            model.TruckID = SelectedTruck.TruckID;
+            TyrePositionListForMountAndUnMount = IServices.GetTyrePositionListUsingTruckTypeId(SelectedTruck.TruckTypeID).ToList();
+            var SelectedMountedTyreList = IServices.SelectMontedTyresByID(SelectedTyre?.TyreID ?? 0, SelectedTruck?.TruckID ?? 0);
+
+            if (SelectedMountedTyreList != null && SelectedMountedTyreList.Count() != 0)
+            {
+                foreach (var item in TyrePositionListForMountAndUnMount)
+                {
+                    if (SelectedMountedTyreList.Select(s => s.PositionID).Distinct().Any(g => g.Value == item.PositionID))
+                    {
+                        item.IsMounted = true;
+
+                    }
+                }
+            }
+        }
+    }
+    private void OnValueChanged(TruckModel obj)
+    {
+        SelectedTruck = obj;
+        if (SelectedTruck != null && SelectedTruck.TruckTypeID != 0)
+        {
+            if (SelectedTruck.TruckID != null)
+            {
+                model.TruckID = SelectedTruck.TruckID;
+            }
+            TyrePositionListForMountAndUnMount = IServices.GetTyrePositionListUsingTruckTypeId(SelectedTruck.TruckTypeID).ToList();
+            var SelectedMountedTyreList = IServices.SelectMontedTyresByID(SelectedTyre?.TyreID ?? 0, SelectedTruck.TruckID);
+
+            if (SelectedMountedTyreList != null && SelectedMountedTyreList.Count() != 0)
+            {
+                foreach (var item in TyrePositionListForMountAndUnMount)
+                {
+                    if (SelectedMountedTyreList.Select(s => s.PositionID).Distinct().Any(g => g.Value == item.PositionID))
+                    {
+                        item.IsMounted = true;
+
+                    }
+                }
+            }
+        }
+    }
+    private void OnChangedTyre()
+    {
+        if (SelectedTyre != null && SelectedTyre.TyreID != 0)
+        {
+            var SelectedMountedTyreList = IServices.SelectMontedTyresByID(SelectedTyre.TyreID, SelectedTruck?.TruckID ?? 0);
+
+            if (SelectedMountedTyreList != null && SelectedMountedTyreList.Count() != 0)
+            {
+                foreach (var item in TyrePositionListForMountAndUnMount)
+                {
+                    if (SelectedMountedTyreList.Select(s => s.PositionID).Distinct().Any(g => g.Value == item.PositionID))
+                    {
+                        item.IsMounted = true;
+
+                    }
+                }
+            }
+        }
+    }
+    protected override void OnParametersSet()
+    {
+    }
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+
+    public async Task Mount()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        if (model != null)
+        {
+            model.TruckID = SelectedTruck.TruckID;
+            model.TyreID = SelectedTyre.TyreID;
+            model.PositionID = SelectedTyrePosition.PositionID;
+            model.MountedKM = MountedOrUnMountKM;
+            model.MountedOn = DateTime.Now;
+            model.UserInfo.UserID = user.Identity.Name;
+            IServices.Mount(model);
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    public async Task UnMount()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        if (model != null)
+        {
+            //model.BranchID = int.Parse(brancIDString);
+            model.UserInfo.UserID = user.Identity.Name;
+
+            IServices.Unmount(model.UserInfo.UserID, model.ID, DateTime.Now, MountedOrUnMountKM);
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    //public async Task Submit()
+    //{
+    //    var authprov = await auth.GetAuthenticationStateAsync();
+    //    var user = authprov.User;
+    //    var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+    //    if (model != null)
+    //    {
+    //        //model.BranchID = int.Parse(brancIDString);
+    //        model.UserInfo.UserID = user.Identity.Name;
+    //        //IServices.Update(model);
+    //    }
+
+    //    MudDialog.Close(DialogResult.Ok(true));
+    //}
+
+    //protected void getitemCode(InventoryItemModel item)
+    //{
+    //    if (item != null)
+    //    {
+    //    }
+    //}
+}
