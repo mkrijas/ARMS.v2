@@ -19,7 +19,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TyreModel> SelectByBranch(int? BranchID);
         IEnumerable<TyreModel> SelectByTruck(int? TruckID);
         IEnumerable<TyreModel> SelectUnmontedTyresByID(int? ID);
-        IEnumerable<TyreMountedModel> SelectMontedTyresByID(int? TyreID, int? TruckID);
+        IEnumerable<TyreMountedModel> SelectMountedTyresByID( int? TruckID);
         IEnumerable<TyrePositionModel> GetTyrePositionList(int? ID = null);
         IEnumerable<TyrePositionModel> GetTyrePositionListUsingTruckTypeId(int? TruckTypeId = null);
         int Mount(TyreMountedModel model);
@@ -185,11 +185,10 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<TyreMountedModel> SelectMontedTyresByID(int? TyreID, int? TruckID)
+        public IEnumerable<TyreMountedModel> SelectMountedTyresByID(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TyreID", TyreID),
                new SqlParameter("@TruckID", TruckID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tyre.Mount.Select]", parameters))
@@ -303,8 +302,10 @@ namespace ArmsServices.DataServices
             {
                 ID = dr.GetInt32("ID"),
                 TyreID = dr.GetInt32("TyreID"),
+                TyreNo = dr.GetString("TyreSerialNumber"),
                 TruckID = dr.GetInt32("TruckID"),
                 PositionID = dr.GetInt32("PositionID"),
+                PositionName = dr.GetString("Side"),
                 MountedOn = dr.GetDateTime("MountedOn"),
                 MountedKM = dr.GetInt32("MountedKM"),
                 UnmountedKM = dr.GetInt32("MountedKM") + dr.GetInt32("RunKM"),

@@ -18,6 +18,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string TyreSize { get; set; } // 1000 x 25 etc
         public bool Tubeless { get; set; } = false;
+        public TyrePositionModel TyrePosition { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
@@ -46,10 +47,12 @@ namespace ArmsModels.BaseModels
         public int? ID { get; set; }
         [Required]
         public int? TyreID { get; set; }
+        public string TyreNo { get; set; }
         [Required]
         public int? TruckID { get; set; }
         [Required]
         public int? PositionID { get; set; } // TyrePosition Table 
+        public string PositionName { get; set; }
         [Required]
         public DateTime? MountedOn { get; set; }
         public DateTime? UnmountedOn { get; set; }
