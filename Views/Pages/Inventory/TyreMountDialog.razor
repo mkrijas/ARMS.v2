@@ -27,15 +27,15 @@
                 <ValidationSummary />
 
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <TruckSelector Value="SelectedTruck" ValueChanged="OnValueChanged" IsDisabled="IsTruckDisabled"></TruckSelector>
-                </MudItem>
-                <MudItem xs="11" md="11" Class="mb-6">
                     <MudSelect T="int?" Variant="Variant.Outlined" Disabled="IsTyreDisabled" Margin="Margin.Dense" Label="Tyre" @bind-Value="@SelectedTyre.TyreID" @onchange="OnChangedTyre">
                         @foreach (TyreModel Tyre in TyreList)
                         {
                             <MudSelectItem Value="@Tyre.TyreID">@Tyre.TyreSerialNumber</MudSelectItem>
                         }
                     </MudSelect>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <TruckSelector Value="SelectedTruck" ValueChanged="OnValueChanged" IsDisabled="IsTruckDisabled"></TruckSelector>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
                     <MudSelect T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Tyre Position" @bind-Value="@SelectedTyrePosition.PositionID">
@@ -46,19 +46,12 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <MudTextField @bind-Value="@MountedOrUnMountKM" Label="Mount/UnMount KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @MountedOrUnMountKM)"></MudTextField>
+                    <MudTextField @bind-Value="@MountedKM" Label="Mount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @MountedKM)"></MudTextField>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
                     @if (SelectedTruck != null && SelectedTruck.TruckID != 0 || SelectedTyre != null && SelectedTyre.TyreID != 0)
                     {
-                        if (SelectedTyrePosition.IsMounted == false)
-                        {
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Mount" Class="px-12">Mount</MudButton>
-                        }
-                        else
-                        {
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UnMount" Class="px-12">UnMount</MudButton>
-                        }
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Mount" Class="px-12">Mount</MudButton>
                     }
 
                 </MudItem>
@@ -85,7 +78,7 @@
     [Required]
     public TyrePositionModel SelectedTyrePosition { get; set; } = new();
     [Required]
-    public int? MountedOrUnMountKM { get; set; }
+    public int? MountedKM { get; set; }
 
     public bool IsTruckDisabled { get; set; } = false;
 
@@ -149,7 +142,7 @@
                 model.TruckID = SelectedTruck.TruckID;
             }
             TyrePositionListForMountAndUnMount = IServices.GetTyrePositionListUsingTruckTypeId(SelectedTruck.TruckTypeID).ToList();
-            var SelectedMountedTyreList = IServices.SelectMountedTyresByID( SelectedTruck.TruckID);
+            var SelectedMountedTyreList = IServices.SelectMountedTyresByID(SelectedTruck.TruckID);
 
             if (SelectedMountedTyreList != null && SelectedMountedTyreList.Count() != 0)
             {
@@ -168,7 +161,7 @@
     {
         if (SelectedTyre != null && SelectedTyre.TyreID != 0)
         {
-            var SelectedMountedTyreList = IServices.SelectMountedTyresByID( SelectedTruck?.TruckID ?? 0);
+            var SelectedMountedTyreList = IServices.SelectMountedTyresByID(SelectedTruck?.TruckID ?? 0);
 
             if (SelectedMountedTyreList != null && SelectedMountedTyreList.Count() != 0)
             {
@@ -202,7 +195,7 @@
             model.TruckID = SelectedTruck.TruckID;
             model.TyreID = SelectedTyre.TyreID;
             model.PositionID = SelectedTyrePosition.PositionID;
-            model.MountedKM = MountedOrUnMountKM;
+            model.MountedKM = MountedKM;
             model.MountedOn = DateTime.Now;
             model.UserInfo.UserID = user.Identity.Name;
             IServices.Mount(model);
@@ -211,21 +204,21 @@
         MudDialog.Close(DialogResult.Ok(true));
     }
 
-    public async Task UnMount()
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (model != null)
-        {
-            //model.BranchID = int.Parse(brancIDString);
-            model.UserInfo.UserID = user.Identity.Name;
+    //public async Task UnMount()
+    //{
+    //    var authprov = await auth.GetAuthenticationStateAsync();
+    //    var user = authprov.User;
+    //    var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+    //    if (model != null)
+    //    {
+    //        //model.BranchID = int.Parse(brancIDString);
+    //        model.UserInfo.UserID = user.Identity.Name;
 
-            IServices.Unmount(model.UserInfo.UserID, model.ID, DateTime.Now, MountedOrUnMountKM);
-        }
+    //        IServices.Unmount(model.UserInfo.UserID, model.ID, DateTime.Now, MountedKM);
+    //    }
 
-        MudDialog.Close(DialogResult.Ok(true));
-    }
+    //    MudDialog.Close(DialogResult.Ok(true));
+    //}
 
     //public async Task Submit()
     //{
@@ -242,10 +235,4 @@
     //    MudDialog.Close(DialogResult.Ok(true));
     //}
 
-    //protected void getitemCode(InventoryItemModel item)
-    //{
-    //    if (item != null)
-    //    {
-    //    }
-    //}
 }
