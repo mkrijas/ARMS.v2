@@ -16,8 +16,7 @@
 
     <MudItem xs="12" md="12">
         <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true"
-        Elevation="10" Filter="new Func<OrderModel, bool>(search)" @bind-model="model">
-         
+        Elevation="10" Filter="new Func<OrderModel, bool>(search)" @bind-model="model">        
 
              <ToolBarContent>
                 <MudText Typo="Typo.h6">Orders</MudText>
@@ -90,46 +89,11 @@
     }
 
     private async Task GetAll()
-    {
-        await foreach (var item in Iservice.Select(0))
-        {
-            collection.Add(item);
-        }
+    {       
+       collection = await Iservice.Select(0).ToListAsync();
     }
 
-
-
-    private async Task OnValidSubmit(EditContext context)
-    {
-        if (model.Party?.PartyID == 0)
-        {
-            snackbar.Add("Customer is not selected", Severity.Error);
-            return;
-        }
-        
-        model.ClientID = model.Party.PartyID;       
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        model.UserInfo.UserID = authprov.User.Identity.Name;
-        try
-        {
-            model = await Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            if (collection.Exists(x => x.OrderID == model.OrderID))
-            {
-                collection[collection.FindIndex(x => x.OrderID == model.OrderID)] = model;
-            }
-            else
-            {
-                collection.Add(model);
-            }
-            model = new OrderModel();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-    }
+   
     private void ViewConsignees(int? id)
     {
         UriHelper.NavigateTo("consignee/" + id);
@@ -138,14 +102,7 @@
     {
         UriHelper.NavigateTo("tariff/"+id);
     }
-    private void Edit(int? id)
-    {
-        model = collection.FirstOrDefault(x => x.OrderID == id);
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model",model);
-
-        DialogService.Show<OrderDiloge>("ADD Order",parms);
-    }
+   
     private async void Delete(int? id)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -164,9 +121,6 @@
     }
     private async Task OpenDialog(OrderModel odr)
     {
-
-       
-
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
 
@@ -174,17 +128,15 @@
         parms.Add("model", odr);
         var dialog = DialogService.Show<OrderDiloge>(odr.OrderID == null ? "ADD" : "EDIT", parms);
         var result = await dialog.Result;
-
-        if (!result.Cancelled)
+        if (!result.Canceled)
         {
             OrderModel UpatedModel = (OrderModel)result.Data;
             model.UserInfo.UserID = user.Identity.Name;
-
             try
             {
-                Iservice.Update(UpatedModel);
+                await Iservice.Update(UpatedModel);
                 snackbar.Add("Saved Successfully", Severity.Success);
-                GetAll();
+                await GetAll();
             }
             catch (Exception ex)
             {

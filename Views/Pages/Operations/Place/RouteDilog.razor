@@ -1,0 +1,119 @@
+﻿@inject IRouteService Iservice
+@inject IPlaceService Iplace
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+
+<MudDialog>
+    <DialogContent>
+        <EditForm id="routeForm" Model="@routemodel" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />           
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Origin" @bind-Value="@routemodel.Origin" ResetValueOnEmptyText="true"
+                                         SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")" Variant="Variant.Outlined"
+                                         Immediate="true"></MudAutocomplete>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Via" @bind-Value="@routemodel.Via" ResetValueOnEmptyText="true"
+                                     SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")" Variant="Variant.Outlined"
+                                         Immediate="true"></MudAutocomplete>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Destination" @bind-Value="@routemodel.Destination" ResetValueOnEmptyText="true"
+                                         SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")" Variant="Variant.Outlined"
+                                         Immediate="true"></MudAutocomplete>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudTextField @bind-Value="@routemodel.Distance" Label="Distance" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => routemodel.Distance)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudTextField @bind-Value="@routemodel.SpeedLimit" Label="Speed Limit" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => routemodel.SpeedLimit)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudTextField @bind-Value="@routemodel.RunningHours" Label="Running Hours" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() =>routemodel.RunningHours)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudNumericField @bind-Value="@routemodel.TollBooths" Label="No of TollBooths" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => routemodel.TollBooths)"></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudRadioGroup @bind-SelectedOption="@routemodel.RouteType">
+                            @foreach (var rtype in RouteTypes)
+                            {
+                                <MudRadio Option="@rtype" Color="Color.Primary">@rtype</MudRadio>
+                            }
+                        </MudRadioGroup>
+                    </MudItem>
+                </MudGrid>         
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton form="routeForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Route</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public RouteModel routemodel { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    public List<PlaceModel> places = new List<PlaceModel>();
+    private List<string> RouteTypes = new List<string>() { "Highland", "City", "Highway", "Other" };
+
+    private string searchRoute = "";
+
+    protected override void OnInitialized()
+    {
+        places = Iplace.Select(0).ToList();
+        if (routemodel?.RouteID != null)
+        {
+            routemodel.Origin = places.FirstOrDefault(x => x.PlaceID == routemodel.Origin.PlaceID);
+            routemodel.Via = places.FirstOrDefault(x => x.PlaceID == routemodel.Via.PlaceID);
+            routemodel.Destination = places.FirstOrDefault(x => x.PlaceID == routemodel.Destination.PlaceID);
+        }
+    }
+
+    private async Task<IEnumerable<PlaceModel>> Search(string searchString)
+    {
+        return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }    
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        if (!places.Select(x => x.PlaceName).Contains(routemodel.Origin.PlaceName))
+        {
+            snackbar.Add("Invalid Origin", Severity.Error);
+            return;
+        }
+        else
+             if (!places.Select(x => x.PlaceName).Contains(routemodel.Via.PlaceName))
+        {
+            snackbar.Add("Invalid Via", Severity.Error);
+            return;
+        }
+        else
+        if (!places.Select(x => x.PlaceName).Contains(routemodel.Destination.PlaceName))
+        {
+            snackbar.Add("Invalid Destination", Severity.Error);
+            return;
+        }
+        var authprov = await auth.GetAuthenticationStateAsync();
+        routemodel.UserInfo.UserID = authprov.User.Identity.Name;
+        routemodel.RouteName = routemodel.Origin.PlaceName + "-" + routemodel.Via.PlaceName + "-" + routemodel.Destination.PlaceName;
+        routemodel.MieageModifier = 1;
+        try
+        {
+            routemodel = await Iservice.Update(routemodel);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close(routemodel);
+            routemodel = new RouteModel();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+}

@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using static NuGet.Packaging.PackagingConstants;
 
-namespace Views.Pages.Gc
+namespace Views.Pages.Operations.Gc
 {
     public partial class GcDialog : ComponentBase
     {

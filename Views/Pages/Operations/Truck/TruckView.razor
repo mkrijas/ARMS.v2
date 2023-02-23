@@ -1,0 +1,168 @@
+﻿@page "/trucks"
+
+@inject TruckDataArrayModel data
+@inject ITruckService Iservice
+@inject ITruckTypeService Itrucktype
+@inject IBranchService Ibranch
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+@using System.Globalization
+@using Views.Pages.Inventory
+
+
+
+<MudTable Items="@collection" Elevation="8" Filter="new Func<TruckModel, bool>(search)" @bind-Truck="model">
+
+
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Truck</MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
+        <MudSpacer></MudSpacer>
+        <MudTextField @bind-Value="searchTruck" Placeholder="Search Trucks... "
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      IconSize="Size.Medium"></MudTextField>
+    </ToolBarContent>
+
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
+        <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.TruckType)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh></MudTh>
+        <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.FuelType)" InitialDirection="SortDirection.Ascending">Fuel Type</MudTableSortLabel></MudTh></MudTh>
+        <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.FuelTankCapacity)" InitialDirection="SortDirection.Ascending">Fuel Capacity</MudTableSortLabel></MudTh></MudTh>
+        <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.BodyType)" InitialDirection="SortDirection.Ascending">Body Type</MudTableSortLabel></MudTh></MudTh>
+        <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.ManufacturedYear)" InitialDirection="SortDirection.Ascending">Year</MudTableSortLabel></MudTh></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Truck">@context.RegNo</MudTd>
+        <MudTd DataLabel="TruckType">@context.TruckType</MudTd>
+        <MudTd DataLabel="FuelType">@context.FuelType</MudTd>
+        <MudTd DataLabel="FuelTankCapacity">@context.FuelTankCapacity</MudTd>
+        <MudTd DataLabel="BodyType">@context.BodyType</MudTd>
+        <MudTd DataLabel="ManufacturedYear">@context.ManufacturedYear</MudTd>
+        <MudTd DataLabel="">
+            <MudFab style="font-size:5px" @onclick="@(()=> Edit(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" /><MudFab @onclick="@(()=> Delete(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+            <MudTooltip Text="Mount Details">
+                <MudFab @onclick="@(()=> TruckMountDetails(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.TableView" Size="Size.Small" IconSize="Size.Small" />
+            </MudTooltip>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+    </PagerContent>
+</MudTable>
+
+
+
+@code {
+
+    private TruckModel model = new TruckModel();
+
+    private string searchTruck = "";
+    private List<TruckModel> collection = new List<TruckModel>();
+    private List<TruckTypeModel> TruckTypes = new List<TruckTypeModel>();
+    private List<BranchModel> Branches = new List<BranchModel>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Run(() => GetAll());
+        TruckTypes = Itrucktype.Select(0).ToList();
+        Branches = Ibranch.Select().ToList();
+    }
+
+    private void GetAll()
+    {
+        collection.Clear();
+        foreach (var item in Iservice.Select(0))
+        {
+            collection.Add(item);
+        }
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        try
+        {
+            model = Iservice.Update(model);
+
+            snackbar.Add("Saved Successfully", Severity.Success);
+            if (collection.Exists(x => x.TruckID == model.TruckID))
+            {
+                collection[collection.FindIndex(x => x.TruckID == model.TruckID)] = model;
+            }
+            else
+            {
+                collection.Add(model);
+            }
+            model = new TruckModel();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void TruckMountDetails(int? id)
+    {
+        model = new();
+        DialogOptions options = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Large,
+            };
+        if (id != null)
+        {
+            model = Iservice.SelectByID(id);
+            model.CurrentRegistration = Iservice.GetRegistration(id);
+        }
+        DialogParameters parms = new();
+        parms.Add("SelectedTruck", model);
+        DialogService.Show<MountTruckDetailsDialog>("ADD/EDIT", parms, options);
+
+    }
+
+    private void Edit(int? id)
+    {
+        model = new();
+        DialogOptions options = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Large,
+            };
+        if (id != null)
+        {
+            model = Iservice.SelectByID(id);
+            model.CurrentRegistration = Iservice.GetRegistration(id);
+        }
+        DialogParameters parms = new();
+        parms.Add("EditModel", model);
+        DialogService.Show<Truckdilog>("ADD/EDIT", parms, options);
+
+    }
+    private void Delete(int? id)
+    {
+        Iservice.Delete(id, "Rijas");
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        GetAll();
+    }
+
+
+    private bool search(TruckModel Truck)
+    {
+        if (Truck.RegNo != null && Truck.RegNo.Contains(searchTruck, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (Truck.RegNo == null) return true;
+        return false;
+    }
+}
+
+

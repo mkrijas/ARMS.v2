@@ -39,7 +39,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.PlacesUpdate]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.Places.Update]", parameters))
             {
                 model = GetModel(dr);
             }             
@@ -52,7 +52,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PlaceID", PlaceID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return await Iservice.ExecuteNonQueryAsync("[usp.Place.PlacesDelete]", parameters);
+            return await Iservice.ExecuteNonQueryAsync("[usp.Place.Places.Delete]", parameters);
         }
         public IEnumerable<PlaceModel> Select(int? PlaceID)
         {
@@ -61,7 +61,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PlaceID", PlaceID)               
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.PlacesSelect]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.Places.Select]", parameters))
             {
                 yield return GetModel(dr);            
             }
@@ -73,7 +73,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PlaceID", ID)
             };
             PlaceModel model = new PlaceModel();
-            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.PlacesSelect]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.Places.Select]", parameters))
             {
                  model = GetModel(dr);
             }

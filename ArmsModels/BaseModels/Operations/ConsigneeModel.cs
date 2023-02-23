@@ -14,12 +14,15 @@ namespace ArmsModels.BaseModels
             Address = new AddressModel();
         }
 
+        string _name;
         public int? ConsigneeID { get; set; }
         [Required]
-        public string ConsigneeName { get; set; }
+        public string ConsigneeName { get { return _name; } set { _name = value; this.Address.AddresseeName = value; } }
         public virtual string ArdCode { get; set; }
-        public string Mobile { get; set; }       
-        public int? PlaceID { get; set; }        
+        public string Mobile { get; set; }
+        [Required]
+        public int? PlaceID { get; set; }
+        [Required]
         public int? OrderID { get; set; }
         public bool Consignor { get; set; }
         public int? AddressID { get; set; }
