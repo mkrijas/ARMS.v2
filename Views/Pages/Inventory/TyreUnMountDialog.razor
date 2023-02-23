@@ -7,9 +7,9 @@
 <MudDialog>
     <TitleContent>
 
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Mount Tyre.
-            </MudText>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Unmount Tyre.
+        </MudText>
 
     </TitleContent>
     <DialogContent>
@@ -28,28 +28,17 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <TruckSelector Value="SelectedTruck" ValueChanged="OnValueChanged" IsDisabled="IsTruckDisabled"></TruckSelector>
+                    <MudTextField @bind-Value="@SelectedTyre.TyrePosition.Side" Label="Tyre position" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @SelectedTyre.TyrePosition.Side)"></MudTextField>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <MudSelect T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Tyre Position" @bind-Value="@SelectedTyrePosition.PositionID">
-                        @foreach (TyrePositionModel TyrePosition in TyrePositionListForMountAndUnMount)
-                        {
-                            <MudSelectItem Value="@TyrePosition.PositionID">@TyrePosition.Side</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudTextField @bind-Value="@UnMountedKM" Label="Un Mounted KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @UnMountedKM)"></MudTextField>
                 </MudItem>
-                <MudItem xs="11" md="11" Class="mb-6">
-                    <MudTextField @bind-Value="@MountedKM" Label="Mount KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @MountedKM)"></MudTextField>
-                </MudItem>
-@*                <MudItem xs="11" md="11" Class="mb-6">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Mount" Class="px-12">Mount</MudButton>
-                </MudItem>*@
             </EditForm>
         </MudContainer>
 
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Mount" Class="px-12">Mount</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UnMount" Class="px-12">UnMount</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -67,7 +56,7 @@
     [Required]
     public TyrePositionModel SelectedTyrePosition { get; set; } = new();
     [Required]
-    public int? MountedKM { get; set; }
+    public int? UnMountedKM { get; set; }
 
     public bool IsTruckDisabled { get; set; } = false;
 
@@ -95,6 +84,16 @@
 
         if (SelectedTyre != null && SelectedTyre.TyreID != null && SelectedTyre.TyreID != 0)
         {
+            List<TyreMountedModel> MountedTyreList = IServices.SelectMountedTyresByTyreID(SelectedTyre.TyreID).ToList();
+            if (MountedTyreList != null && MountedTyreList.Count != 0)
+            {
+                if (SelectedTyre.TyrePosition == null)
+                {
+                    SelectedTyre.TyrePosition = new();
+                }
+                SelectedTyre.TyrePosition.PositionID = MountedTyreList.First().PositionID;
+                SelectedTyre.TyrePosition.Side = MountedTyreList.First().PositionName;
+            }
             IsTyreDisabled = true;
         }
         else
@@ -109,19 +108,6 @@
 
         }
     }
-    private void OnValueChanged(TruckModel obj)
-    {
-        SelectedTruck = obj;
-        if (SelectedTruck != null && SelectedTruck.TruckTypeID != 0)
-        {
-            if (SelectedTruck.TruckID != null)
-            {
-                model.TruckID = SelectedTruck.TruckID;
-            }
-            TyrePositionListForMountAndUnMount = IServices.GetTyrePositionListUsingTruckTypeId(SelectedTruck.TruckTypeID).ToList();
-
-        }
-    }
 
     protected override void OnParametersSet()
     {
@@ -132,23 +118,21 @@
     }
 
 
-    public async Task Mount()
+    public async Task UnMount()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         if (model != null)
         {
-            model.TruckID = SelectedTruck.TruckID;
-            model.TyreID = SelectedTyre.TyreID;
-            model.PositionID = SelectedTyrePosition.PositionID;
-            model.MountedKM = MountedKM;
-            model.MountedOn = DateTime.Now;
+            //model.BranchID = int.Parse(brancIDString);
             model.UserInfo.UserID = user.Identity.Name;
-            IServices.Mount(model);
+
+            IServices.Unmount(SelectedTyre.TyreID, DateTime.Now, UnMountedKM, model.UserInfo.UserID);
         }
 
         MudDialog.Close(DialogResult.Ok(true));
     }
+
 
 }

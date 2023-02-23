@@ -20,6 +20,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TyreModel> SelectByTruck(int? TruckID);
         IEnumerable<TyreModel> SelectUnmontedTyresByID(int? ID);
         IEnumerable<TyreMountedModel> SelectMountedTyresByID( int? TruckID);
+        IEnumerable<TyreMountedModel> SelectMountedTyresByTyreID( int? TyreID);
         IEnumerable<TyrePositionModel> GetTyrePositionList(int? ID = null);
         IEnumerable<TyrePositionModel> GetTyrePositionListUsingTruckTypeId(int? TruckTypeId = null);
         int Mount(TyreMountedModel model);
@@ -79,7 +80,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TyreID", model.TyreID),               
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.position.MountDetails.Update]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Mount]", parameters);
         }
 
         public int Unmount(int? TyreID,DateTime? UnmountedOn,int? UnmountedKm, string UserID)
@@ -91,7 +92,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UnmountedOn", UnmountedOn),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.position.UnMountDetails.Update]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.UnMount]", parameters);
         }
 
         public int Unmount(string UserID, int? MountedID, DateTime? UnmountedOn, int? UnmountedKm )
@@ -103,7 +104,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UnmountedOn", UnmountedOn),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.position.UnMountDetails.Update]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.UnMount]", parameters);
         }
 
         public int ResoleBegin(TyreResoleModel model)
@@ -189,7 +190,21 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@ID", TruckID),
+               new SqlParameter("@Operation", "ByTruckID"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tyre.Mount.Select]", parameters))
+            {
+                yield return GetTyreMountModel(dr);
+            }
+        }
+
+        public IEnumerable<TyreMountedModel> SelectMountedTyresByTyreID(int? TyreID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", TyreID),
+               new SqlParameter("@Operation", "ByTyreID"),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tyre.Mount.Select]", parameters))
             {

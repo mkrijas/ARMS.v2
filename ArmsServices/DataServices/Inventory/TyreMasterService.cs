@@ -85,7 +85,7 @@ namespace ArmsServices.DataServices.Inventory
                 InventoryBatchID = dr.GetInt32("InventoryBatchID"),
                 TyreType = dr.GetString("TyreType"),
                 TyreSize = dr.GetString("TyreSize"),
-                Tubeless = dr.GetInt32("Tubeless") == 1 ? true:false,
+                Tubeless = dr.GetBoolean("Tubeless"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
