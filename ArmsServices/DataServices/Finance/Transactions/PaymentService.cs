@@ -26,6 +26,7 @@ namespace ArmsServices.DataServices
         IEnumerable<PaymentInitiatedModel> SelectInitiated(int? BranchID);
         IEnumerable<PaymentInitiatedModel> SelectFinInitiated(int? BranchID);
         IEnumerable<PaymentFinishModel> SelectFinished(int? BranchID,int ? PfID);
+        IEnumerable<PaymentInitiatedModel> SelectFinishedbyMemo(int? BranchID, int? paymentMemoID);
         IEnumerable<PaymentInitiatedModel> SelectInitiatedBetween(int? BranchID,DateTime Begin,DateTime End);
         IEnumerable<PaymentFinishModel> SelectFinishedBetween(int? BranchID,DateTime Begin,DateTime End);
         int? CompletePayment(PaymentFinishModel model);
@@ -322,7 +323,62 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+        public IEnumerable<PaymentInitiatedModel> SelectFinishedbyMemo(int? BranchID, int? paymentmemoID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByMemoID"),
+               new SqlParameter("@BranchID", BranchID),
+                 new SqlParameter("@paymentmemoID", paymentmemoID),
+            };
 
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Finish.Select]", parameters))
+            {
+                yield return new PaymentInitiatedModel()
+                {
+                    PaymentMemoID = dr.GetInt32("PaymentMemoID"),
+                    PaymentInitiatedID = dr.GetInt32("PaymentInitiatedID"),
+                    NatureOfTransaction = dr.GetString("NatureOfTransaction"),
+                    PaymentStatus = dr.GetByte("PaymentStatus"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    DocumentDate = dr.GetDateTime("DocDate"),
+                    DocumentNumber = dr.GetString("DocNumber"),
+                    MID = dr.GetInt32("MID"),
+                    DueOn=dr.GetDateTime("DueOn"),
+                    CostCenter = dr.GetInt32("CostCenter"),
+                    AuthLevelId = dr.GetInt32("AuthLevelId"),
+                    AuthStatus = dr.GetString("AuthStatus"),
+                    Dimension = dr.GetInt32("Dimension"),
+                    TotalAmount = dr.GetDecimal("TotalAmount"),
+                    Narration = dr.GetString("Narration"),
+                    InterBranchTranID = dr.GetInt32("InterBranchTranID"),
+                    IsInterBranch = dr.GetBoolean("IsInterBranch"),
+                    PartyInfo = new PartyModel()
+                    {
+                        PartyID = dr.GetInt32("PartyID"),
+                        TradeName = dr.GetString("TradeName"),
+                        PartyCode = dr.GetString("PartyCode"),
+                    },
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+
+                   // PfID = dr.GetInt32("PfID"),
+                    PiID = dr.GetInt32("PaymentInitiatedID"),
+                   // PaymentCoaID = dr.GetInt32("CoaID"),
+                   // BankCharges = dr.GetDecimal("BankCharges"),
+                   // DocumentDate = dr.GetDateTime("DocumentDate"),
+                   // Narration = dr.GetString("Narration"),
+                    //PaymentMode = dr.GetString("PaymentMode"),
+                    //PaymentTool = dr.GetString("PaymentTool"),
+               
+                  
+                };
+            }
+        }
         public IEnumerable<PaymentFinishModel> SelectFinishedBetween(int? BranchID, DateTime Begin, DateTime End)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -402,6 +458,7 @@ namespace ArmsServices.DataServices
                     DueOn = dr.GetDateTime("DueOn"),
                     PiID = dr.GetInt32("PiID"),
                     pfID = dr.GetInt32("pfID"),
+                    MID=dr.GetInt32("MID"),
                     DocNumber = dr.GetString("DocNumber"),
                     AuthLevelId = dr.GetInt32("AuthLevelId"),
                     AuthStatus = dr.GetString("AuthStatus"),

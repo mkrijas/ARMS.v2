@@ -68,7 +68,7 @@ namespace ArmsModels.BaseModels
         public virtual DateTime? InvoiceDate { get; set; }       
     }
 
-    public class PaymentInitiatedModel
+    public class PaymentInitiatedModel : PartyPaymentMemoModel
     {
         public PaymentInitiatedModel()
         {
@@ -77,20 +77,20 @@ namespace ArmsModels.BaseModels
         }
         public int? PiID { get; set; }
         public DateTime? DueOn { get; set; }
-        public int? BranchID { get; set; }
-        public int? AuthLevelId { get; set; }
-        public string AuthStatus { get; set; }
+        //public int? BranchID { get; set; }
+       // public int? AuthLevelId { get; set; }
+        //public string AuthStatus { get; set; }
         public DateTime? DocDate { get; set; }
         public string DocNumber { get; set; }
-        public decimal? TotalAmount { get; set; }
+        //public decimal? TotalAmount { get; set; }
         public  int ? pfID {get;set;}
         public List<PartyPaymentMemoModel> PaymentMemos { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }
+        //public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
 
 
-    public class PaymentFinishModel 
+    public class PaymentFinishModel :PaymentInitiatedModel
     {
         public PaymentFinishModel()
         {
@@ -98,20 +98,20 @@ namespace ArmsModels.BaseModels
 
         }
         public int? PfID { get; set; }
-        public int? PiID { get; set; }       
+      //  public int? PiID { get; set; }       
         public string PaymentMode { get; set; }  // Bank,Cash   
         public string PaymentTool { get; set; }  // Cheque,DD
         public string PaymentArdCode { get; set; }
         public decimal? BankCharges { get; set; }
         public int? PaymentCoaID { get; set; }
-        public DateTime? DocumentDate { get; set; }
+      //  public DateTime? DocumentDate { get; set; }
         [Required]
-        public int? BranchID { get; set; }
-        public int? AuthLevelId { get; set; }
-        public string AuthStatus { get; set; }
-        public decimal? TotalAmount { get; set; }
-        public string Narration { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }
+        //public int? BranchID { get; set; }
+        //public int? AuthLevelId { get; set; }
+        //public string AuthStatus { get; set; }
+        //public decimal? TotalAmount { get; set; }
+        //public string Narration { get; set; }
+        //public SharedModels.UserInfoModel UserInfo { get; set; }
         public List<PaymentEntryModel> Payments { get; set; }
     }
 

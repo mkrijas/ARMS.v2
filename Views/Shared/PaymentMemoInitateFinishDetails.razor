@@ -1,0 +1,103 @@
+﻿@inject IPaymentService Iservice
+@inject ICostCenterService costIservice
+@inject IDimensionService dimensionIservice
+@inject IOutstandingBillsService OBIservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+@using Views.Pages.Finance.Transactions
+@using Views.Pages.Finance.InterBranchTranscations
+
+@*<MudContainer Style="max-height: auto; overflow-y: scroll">*@
+<MudExpansionPanels Class="p-1 m-2">
+    <MudExpansionPanel >
+        <TitleContent>
+            <div class="d-flex">
+
+                <MudIcon Icon="@Icons.Material.Filled.Info" class="mr-3"></MudIcon>
+
+                <MudText>PaymentMemos - <strong>@model.PaymentMemoID</strong></MudText>
+            </div>
+        </TitleContent>
+        <ChildContent>
+            <div Style="max-height:250px; overflow-y: scroll">
+                @if (model.IsInterBranch)
+                {
+                    <InterBranchPaymentMemoDialog IsReadOnly=true IsView=true model="model" Dialog=false></InterBranchPaymentMemoDialog>
+                }
+                else
+                {
+                    <PaymentMemoDialog IsReadOnly=true IsView=true model="model" Dialog=false></PaymentMemoDialog>
+                }
+              
+            </div>
+        </ChildContent>
+    </MudExpansionPanel>
+    @if (model.PaymentInitiatedID != null)
+    {
+        <MudExpansionPanel Style="max-height:150px">
+            <TitleContent>
+                <div class="d-flex">
+
+                    <MudIcon Icon="@Icons.Material.Filled.Info" class="mr-3"></MudIcon>
+
+                    <MudText>PaymentInitaite details - <strong>@model.PaymentInitiatedID</strong></MudText>
+                </div>
+            </TitleContent>
+            <ChildContent>
+                <PaymentInitialMemo model="model1" Dialog=false></PaymentInitialMemo>
+            </ChildContent>
+        </MudExpansionPanel>
+    }
+
+</MudExpansionPanels>
+
+
+
+@code {
+    [Parameter]
+    public PartyPaymentMemoModel model { get; set; }
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+    [Parameter]
+    public bool IsView { get; set; }
+    public PaymentInitiatedModel model1 { get; set; } = new();
+
+    private bool Isbill = false;
+    public string nbusiness = "Supplier";
+    private int? branchID = null;
+    private string UserID = null;
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private List<CostCenterModel> costCenter = new();
+    private List<DimensionModel> dimension = new();
+    private List<PaymentInitiatedModel> collection = new List<PaymentInitiatedModel>();
+    protected override async Task OnInitializedAsync()
+    {
+        costCenter = costIservice.Select().ToList();
+        dimension = dimensionIservice.Select().ToList();
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+        collection = Iservice.SelectFinishedbyMemo(model.BranchID, model.PaymentMemoID).ToList();
+        foreach (var item in collection)
+
+        {
+            model.PaymentMemoID = item.PaymentMemoID;
+            if (item.PaymentInitiatedID != null)
+            {
+                model1.DueOn = item.DueOn;
+                model1.DocDate = item.DocumentDate;
+
+            }
+
+
+        }
+
+
+    }
+}
+

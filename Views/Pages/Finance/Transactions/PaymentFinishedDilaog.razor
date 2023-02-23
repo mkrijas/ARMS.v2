@@ -11,33 +11,40 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
-
 @using System.Globalization
+
 <MudDialog>
     <TitleContent>
-
+       
         @if (IsView)
         {
             <MudText Color="Color.Error">@model.AuthStatus</MudText>
         }
     </TitleContent>
     <DialogContent>
+
         <EditForm id="formtfinishmemo" Model="@model" OnValidSubmit="OnValidSubmit">
             <MudPaper>
-                <MudContainer Style="max-height: 450px; overflow-y: scroll">
+                <MudContainer Style="max-height:450px; overflow-y: scroll">
+                    <PaymentMemoInitateFinishDetails model="pm" IsReadOnly="true" IsView="true"></PaymentMemoInitateFinishDetails>
+
+                    <MudText Class="m-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+                        Finalaize Payment Memo
+                    </MudText>
+                   
                     <MudGrid Spacing="4">
 
                         <MudItem xs="12" md="12">
-                            <PaymentCodeSelector  @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
+                            <PaymentCodeSelector IsReadonly="IsReadOnly" @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
 
 
                         </MudItem>
-                        <MudItem xs="12" md="12">
+                        <MudItem xs="6" md="6">
                             <MudDatePicker @bind-Date="model.DocumentDate" ReadOnly="IsReadOnly" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)"></MudDatePicker>
 
                         </MudItem>
-                        <MudItem xs="12" md="12">
-
+                        <MudItem xs="6" md="6">
 
 
                             <MudTextField @bind-Value="model.Narration" ReadOnly="IsReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
@@ -45,54 +52,7 @@
                         </MudItem>
 
 
-                        @*
-                        <MudItem xs="12">
-                        <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
 
-
-                        <thead>
-
-                        <tr>
-
-
-                        <th>Document No</th>
-                        <th>Reference</th>
-                        <th>EffectiveDate</th>
-                        <th>Amount</th>
-
-                        <th></th>
-
-
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @foreach (var item in paymentEntry)
-                        {
-                        <tr>
-
-
-                        <td>@item.DocumentNumber</td>
-                        <td> <MudTextField  @bind-Value="item.Reference"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
-                        <td> <MudDatePicker DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="item.EffectiveDate"  Variant="Variant.Outlined" Margin="Margin.Dense"> </MudDatePicker></td>
-                        <td> <MudTextField T="decimal?" @bind-Value="item.Amount" TextChanged="calcAmount" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
-
-
-
-
-                        </tr>
-                        }
-                        <tr>
-                        <td></td
-                        <td></td>
-                        <td></td>
-                        <td>Total:<b>@model.TotalAmount</b></td>
-                        </tr>
-
-
-                        </tbody>
-                        </MudSimpleTable>
-                        </MudItem>
-                        *@
 
                         <MudItem xs="12">
                             @if ((IsReadOnly) && (!IsView))
@@ -125,12 +85,12 @@
     public bool IsReadOnly { get; set; }
     [Parameter]
     public bool IsView { get; set; }
+    PartyPaymentMemoModel pm = new PartyPaymentMemoModel();
     public string customstr { get; set; } = "Bank";
     private ChartOfAccountModel SelectedAccount = null;
     private List<PaymentEntryModel> paymentEntry = new List<PaymentEntryModel>();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private AccountRuleDefinitionModel accountRuleDefinitionModel = new();
-    //@bind-Value="model.ReceiptMode"
     private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
     {
 
@@ -198,18 +158,20 @@
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
         List<PartyPaymentMemoModel> ppmm = new List<PartyPaymentMemoModel>();
+
         List<PaymentFinishModel> pfm = new List<PaymentFinishModel>();
-        if(model.PfID != null)
+        if (model.PfID != null)
         {
             pfm = Iservice.SelectFinished(brancID, model.PfID).ToList();
             foreach (var item in pfm)
             {
-                PaymentFinishModel f = new PaymentFinishModel();
+                PaymentFinishModel f = new ();
                 model.DocumentDate = item.DocumentDate;
-                model.PaymentTool=item.PaymentTool;
-                model.PaymentMode = item.PaymentMode;
-                model.BankCharges = item.BankCharges;
+                accountRuleDefinitionModel.BankTools = item.PaymentTool;
+                accountRuleDefinitionModel.paymentMode = item.PaymentMode;
+                accountRuleDefinitionModel.BankCharges = item.BankCharges;
                 model.Narration = item.Narration;
+                accountRuleDefinitionModel.CoaID = item.PaymentCoaID;
 
             }
         }
@@ -219,15 +181,26 @@
         // model.Payments = new();
         foreach (var item in ppmm)
         {
-            PaymentEntryModel p = new PaymentEntryModel();
-            p.PaymentMemoID = item.PaymentMemoID;
-            p.DocumentNumber = item.DocumentNumber;
-            p.Amount = null;
-            p.EffectiveDate = null;
-            p.Reference = null;
-            p.PeID = null;
-            //model.Payments.Add(p);
-            paymentEntry.Add(p);
+
+            //PaymentEntryModel p = new PaymentEntryModel();
+            //p.PaymentMemoID = item.PaymentMemoID;
+            //p.DocumentNumber = item.DocumentNumber;
+            //p.Amount = null;
+            //p.EffectiveDate = null;
+            //p.Reference = null;
+            //p.PeID = null;
+            ////model.Payments.Add(p);
+            //paymentEntry.Add(p);
+            pm.PaymentMemoID = item.PaymentMemoID;
+            pm.PaymentInitiatedID = item.PaymentInitiatedID;
+            pm.DocumentNumber = item.DocumentNumber;
+            pm.DocumentDate = item.DocumentDate;
+            pm.PaymentStatus = item.PaymentStatus;
+            pm.CostCenter = item.CostCenter;
+            pm.Dimension = item.Dimension;
+            pm.TotalAmount = item.TotalAmount;
+            pm.Narration = item.Narration;
+            pm.IsInterBranch = item.IsInterBranch;
 
         }
 
@@ -238,7 +211,7 @@
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
 
-        model.Payments = paymentEntry;
+        //model.Payments = paymentEntry;
         model.PaymentMode = accountRuleDefinitionModel.paymentMode;
         model.PaymentCoaID = accountRuleDefinitionModel.CoaID;
         model.PaymentArdCode = accountRuleDefinitionModel.ArdCode;
@@ -252,7 +225,9 @@
         MudDialog.Close();
     }
     public void Cancel()
-    { }
+    {
+        MudDialog.Close(); 
+    }
     public void calcAmount()
     {
         model.TotalAmount = 0;
