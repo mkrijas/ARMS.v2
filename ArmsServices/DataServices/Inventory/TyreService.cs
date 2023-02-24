@@ -245,6 +245,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TyreID", model.TyreID),
                new SqlParameter("@BranchID",model.BranchID),
                new SqlParameter("@TyreSize",model.TyreSize),
+               new SqlParameter("@TyreType",model.TyreType),
                new SqlParameter("@Tubeless",model.Tubeless),
                new SqlParameter("@InventoryItemID",model.InventoryItemID),
                new SqlParameter("@Make",model.Make),

@@ -12,7 +12,7 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         public string Make { get; set; } // Hint: MRF , CEAT
         public int? InventoryItemID { get; set; }
-        public int? InventoryBatchID { get; set; }
+        public long? InventoryBatchID { get; set; }
         [Required]
         public string TyreType { get; set; } // Front/ Back/ All-Position
         [Required]
