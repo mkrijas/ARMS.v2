@@ -303,6 +303,7 @@ namespace ArmsServices.DataServices
                 Tubeless = dr.GetBoolean("Tubeless"),
                 TyreSize = dr.GetString("TyreSize"),
                 TyreType = dr.GetString("TyreType"),
+                TyrePosition = dr.GetString("TyrePosition"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -321,7 +322,7 @@ namespace ArmsServices.DataServices
                 TyreNo = dr.GetString("TyreSerialNumber"),
                 TruckID = dr.GetInt32("TruckID"),
                 PositionID = dr.GetInt32("PositionID"),
-                PositionName = dr.GetString("Side"),
+                PositionName = dr.GetString("Description"),
                 MountedOn = dr.GetDateTime("MountedOn"),
                 MountedKM = dr.GetInt32("MountedKM"),
                 UnmountedKM = dr.GetInt32("MountedKM") + dr.GetInt32("RunKM"),
