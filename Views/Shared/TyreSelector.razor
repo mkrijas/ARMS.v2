@@ -1,0 +1,89 @@
+﻿@inject ITyreService Iasset
+@inject AuthenticationStateProvider auth
+
+@if (IsLoaded)
+{
+    <MudAutocomplete Variant="Variant.Outlined" SelectValueOnTab @ref="_autoComplete" Class="@Class" T="TyreModel" OnKeyUp="Enter" Label="@Label" @bind-Value="Value" AdornmentColor="Color.Secondary" ResetValueOnEmptyText="true"
+                 Clearable="true" SearchFunc="SearchTyre" ToStringFunc="@(e => e == null ? null : string.Format("{0}",e.TyreSerialNumber))" ></MudAutocomplete>
+
+}
+else
+{
+    <MudText> Loading..... </MudText>
+}
+
+@code {
+    private List<TyreModel> TyreList = new();
+    private MudAutocomplete<TyreModel> _autoComplete {get;set;}
+    [Parameter] public EventCallback<bool> SetTyres { get; set; }
+    [Parameter] public string Label { get; set; } = "Select Tyre";
+    [Parameter] public int BranchID { get; set; } = 0;         
+    
+    [Parameter]
+    public TyreModel Value
+    {
+        get => _value;
+        set
+        {
+            if (_value == value) return;
+            _value = value;
+            ValueChanged.InvokeAsync(value);
+        }
+    }
+
+    private async Task Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            await SetTyres.InvokeAsync();
+            await _autoComplete.Clear();
+            await SearchTyre("");
+        }
+    }
+
+    [Parameter]
+    public EventCallback<TyreModel> ValueChanged { get; set; }
+
+    [Parameter]
+    public string Class { get; set; }
+
+    private TyreModel _value;
+    private bool IsLoaded = false;
+
+    [Parameter]
+    public List<TyreModel> PassedListTyres { get; set; }
+
+    private async Task<IEnumerable<TyreModel>> SearchTyre(string searchString)
+    {
+        await Task.Delay(3);
+
+        if (PassedListTyres != null && PassedListTyres.Count() != 0)
+        {
+            var result = TyreList.Where(x => (!PassedListTyres.Any(g => g.TyreID == x.TyreID)) && x.TyreSerialNumber.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+            return result;
+        }
+        else
+        {
+            return TyreList.Where(x => x.TyreSerialNumber.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+         var BranchID = int.Parse(brancIDString);
+        if (PassedListTyres != null && PassedListTyres.Count() != 0)
+        {
+            TyreList = Iasset.SelectUnmontedTyresByBranch(BranchID).Where(s => !PassedListTyres.Any(g => g.TyreID == s.TyreID)).ToList();
+        }
+        else
+        {
+            TyreList = Iasset.SelectUnmontedTyresByBranch(BranchID).ToList();
+        }
+        IsLoaded = true;
+    }
+}

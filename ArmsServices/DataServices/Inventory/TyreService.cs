@@ -15,18 +15,22 @@ namespace ArmsServices.DataServices
         TyreTypeAndPositionMappingModel UpdateMappingTyrePositionAndType(TyreTypeAndPositionMappingModel model);
         public IEnumerable<TyreTypeAndPositionMappingModel> SelectMappingTyrePositionAndType(int? TrucktypeID);
         TyreModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);        
+        int Delete(int? ID, string UserID);
         IEnumerable<TyreModel> SelectByBranch(int? BranchID);
         IEnumerable<TyreModel> SelectByTruck(int? TruckID);
         IEnumerable<TyreModel> SelectUnmontedTyresByID(int? ID);
-        IEnumerable<TyreMountedModel> SelectMountedTyresByID( int? TruckID);
-        IEnumerable<TyreMountedModel> SelectMountedTyresByTyreID( int? TyreID);
+        IEnumerable<TyreModel> SelectUnmontedTyresByBranch(int? ID);
+        IEnumerable<TyreMountedModel> SelectMountedTyresByID(int? TruckID);
+        IEnumerable<TyreMountedModel> SelectMountedTyresByTyreID(int? TyreID);
         IEnumerable<TyrePositionModel> GetTyrePositionList(int? ID = null);
         IEnumerable<TyrePositionModel> GetTyrePositionListUsingTruckTypeId(int? TruckTypeId = null);
         int Mount(TyreMountedModel model);
         int Unmount(int? TyreID, DateTime? UnmountedOn, int? UnmountedKm, string UserID);
         int Unmount(string UserID, int? MountedID, DateTime? UnmountedOn, int? UnmountedKm);
         int ResoleBegin(TyreResoleModel model);
+        int ResoleCancel(int? ID, string UserID);
+        IEnumerable<int?> ResoleTyresByResoleId(int? ResoleId);
+        IEnumerable<TyreResoleModel> SelectTyreResoleList(int? ID);
         IEnumerable<LinkableBatchModel> GetNonLinkedTyreBatches(int BranchID, int ItemID);
     }
     public class TyreService : ITyreService
@@ -77,13 +81,13 @@ namespace ArmsServices.DataServices
                new SqlParameter("@MountedOn", model.MountedOn),
                new SqlParameter("@PositionID", model.PositionID),
                new SqlParameter("@TruckID", model.TruckID),
-               new SqlParameter("@TyreID", model.TyreID),               
+               new SqlParameter("@TyreID", model.TyreID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Mount]", parameters);
         }
 
-        public int Unmount(int? TyreID,DateTime? UnmountedOn,int? UnmountedKm, string UserID)
+        public int Unmount(int? TyreID, DateTime? UnmountedOn, int? UnmountedKm, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -95,7 +99,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.UnMount]", parameters);
         }
 
-        public int Unmount(string UserID, int? MountedID, DateTime? UnmountedOn, int? UnmountedKm )
+        public int Unmount(string UserID, int? MountedID, DateTime? UnmountedOn, int? UnmountedKm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -112,25 +116,49 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@PartyID", model.Party.PartyID),
+               new SqlParameter("@Party", model.Party.PartyID),
                new SqlParameter("@RequestedDate", model.RequestedDate),
-               new SqlParameter("@Tyres", model.Tyres.ToDataTable()),               
+               new SqlParameter("@Tyres", model.Tyres.Select(s=>s.Value).ToList().ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Begin]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Update]", parameters);
         }
 
-        public IEnumerable<TyreModel> SelectByBranch(int BranchID)
+        public IEnumerable<TyreResoleModel> SelectTyreResoleList(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@Operation", "ByBranch"),
+               new SqlParameter("@ID", ID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Resole.Select]", parameters))
             {
-                yield return GetModel(dr);
+                yield return GetTyreResoleModel(dr);
             }
+        }
+
+        public int ResoleCancel(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", UserID)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Update]", parameters);
+
+        }
+
+        public IEnumerable<int?> ResoleTyresByResoleId(int? ResoleId)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ResoleId)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tyre.Resole.SelectTyreIds]", parameters))
+            {
+                yield return dr.GetInt32("TyreID");
+            }
+
         }
 
         public IEnumerable<TyreModel> SelectByBranch(int? BranchID)
@@ -143,7 +171,7 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Select]", parameters))
             {
                 yield return GetModel(dr);
-            }            
+            }
         }
 
         public TyreModel SelectByID(int? ID)
@@ -152,7 +180,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@TyreID", ID),
                new SqlParameter("@Operation", "ByID")
-            };            
+            };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Select]", parameters))
             {
                 return GetModel(dr);
@@ -177,8 +205,21 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TyreID", ID),
+               new SqlParameter("@ID", ID),
                new SqlParameter("@Operation", "ByID")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tyre.UnMount.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<TyreModel> SelectUnmontedTyresByBranch(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "ByBranch")
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tyre.UnMount.Select]", parameters))
             {
@@ -212,7 +253,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<TyrePositionModel> GetTyrePositionList(int? ID = null )
+        public IEnumerable<TyrePositionModel> GetTyrePositionList(int? ID = null)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -224,7 +265,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<TyrePositionModel> GetTyrePositionListUsingTruckTypeId(int? TruckTypeId = null )
+        public IEnumerable<TyrePositionModel> GetTyrePositionListUsingTruckTypeId(int? TruckTypeId = null)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -236,7 +277,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-      
+
 
         public TyreModel Update(TyreModel model)
         {
@@ -289,7 +330,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-      
+
         private TyreModel GetModel(IDataRecord dr)
         {
             return new TyreModel()
@@ -312,7 +353,23 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-      
+
+        private TyreResoleModel GetTyreResoleModel(IDataRecord dr)
+        {
+            return new TyreResoleModel()
+            {
+                ID = dr.GetInt32("ID"),
+                RequestedDate = dr.GetDateTime("RequestedDate"),
+                Party = new PartyModel() {PartyID = dr.GetInt32("Party") },
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("MountedOn"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+
         private TyreMountedModel GetTyreMountModel(IDataRecord dr)
         {
             return new TyreMountedModel()
@@ -334,7 +391,7 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-      
+
         private TyrePositionModel GetPositionModel(IDataRecord dr)
         {
             return new TyrePositionModel()
@@ -352,7 +409,7 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-      
+
         private TyreTypeAndPositionMappingModel GetPositionAndTypeMappingModel(IDataRecord dr)
         {
             return new TyreTypeAndPositionMappingModel()

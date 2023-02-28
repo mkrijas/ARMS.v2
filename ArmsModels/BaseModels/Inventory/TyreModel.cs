@@ -20,6 +20,7 @@ namespace ArmsModels.BaseModels
         public bool Tubeless { get; set; } = false;
         public virtual string TyrePosition { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
+        public bool IsChecked { get; set; } = false;
     }
 
     public class TyrePositionModel
