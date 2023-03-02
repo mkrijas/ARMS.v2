@@ -78,5 +78,28 @@ namespace ArmsModels.BaseModels
     }
 
 
+    public class ResoleDeliveryTyreModel
+    {
+        public int? ID { get; set; }
+        public int? DeliveryID { get; set; }
+        public int? TyreID { get; set; }
+        public bool Status { get; set; }
+        public decimal Amount { get; set; }
+        public decimal Tax { get; set; }
+    }
+
+
+    public class ResoleDeliveryModel
+    {
+        public int? ID { get; set; }
+        public int? ResoleID { get; set; }
+        public int? PartyID { get; set; }
+        public DateTime DeliveryDate { get; set; }
+        public string UsageCode { get; set; }
+        public bool TaxIncluded { get; set; }
+        public int? PID { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
+    }
+
 }
 
