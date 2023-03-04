@@ -206,7 +206,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID)
             };
-            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Update]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Delete]", parameters);
 
         }
 
