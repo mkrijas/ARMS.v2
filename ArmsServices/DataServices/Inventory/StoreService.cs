@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
         IEnumerable<StoreModel> SelectByBranch(int BranchID);
         int OutFlow(int? StoreID, List<InventoryItemEntryModel> Items,string UserID);
         InventoryItemModel GetItemAvailability(int StoreID,int ItemID);
+        LinkableBatchModel GetBatchDetails(long? BatchID);
     }
     public class StoreService : IStoreService
     {
@@ -36,6 +37,27 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Delete]", parameters);
         }
+
+        public LinkableBatchModel GetBatchDetails(long? BatchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BatchID", BatchID),               
+               new SqlParameter("@Operation", "GetBatchDetail"),
+            };
+            foreach(var dr in Iservice.GetDataReader("[usp.Inventory.Store.Select]", parameters))
+            {
+                return new LinkableBatchModel()
+                {
+                    BatchID = dr.GetInt64("BatchID"),
+                    LinkableQty = dr.GetDecimal("LinkableQty"),
+                    GrnNo = dr.GetString("GrnNo"),
+                    PartyID = dr.GetInt32("PartyID")
+                };
+            }
+            return null;
+        }
+
 
         public InventoryItemModel GetItemAvailability(int StoreID, int ItemID)
         {

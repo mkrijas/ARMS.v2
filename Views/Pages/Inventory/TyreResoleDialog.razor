@@ -1,0 +1,186 @@
+﻿@using ArmsModels.BaseModels.General
+@inject AuthenticationStateProvider auth
+@inject ITyreService Iservice
+@inject IInventoryItemService IInventoryservice
+@inject IStoreService IStoreservice
+
+<MudDialog>
+    <TitleContent>
+        @if (model.ID == null || model.ID == 0)
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Tyre Resole
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Tyre Resole
+            </MudText>
+        }
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <PartySelector @bind-Value="model.Party"></PartySelector>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudDatePicker Variant="Variant.Outlined" Label="Start Date" @bind-Date="@(model.RequestedDate)" />
+                </MudItem>
+
+                <MudItem xs="11" md="11">
+                    <MudGrid>
+                        @foreach (var item in @PassedListTyres)
+                        {
+                            <MudItem Style="border:1px solid #c4c4c4; height:fit-content; border-radius:4px;" Class="m-2 mb-3 p-0 pl-2 ml-2 mt-4 mb-4">
+                                @item.TyreSerialNumber
+                                <MudTooltip Text="Remove">
+                                    <ChildContent>
+                                        <MudIconButton Class="mr-1" Color="Color.Primary" Size="@Size.Small" Icon="@Icons.Material.Filled.Remove" OnClick="(() => DeleteTyres((item.TyreID != null ? (int)item.TyreID:0)))" />
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        <MudText Typo="Typo.inherit">Remove @item.TyreSerialNumber</MudText>
+                                    </TooltipContent>
+                                </MudTooltip>
+                            </MudItem>
+                        }
+
+
+                    </MudGrid>
+                </MudItem>
+
+                <MudGrid>
+                    <MudItem xs="10" md="10" sm="10">
+                        <TyreSelector @bind-Value="SelectedTyre" SetTyres="SetTyres" PassedListTyres="PassedListTyres">
+                        </TyreSelector>
+                    </MudItem>
+                    <MudItem xs="2" md="2" sm="2">
+                        <MudIconButton Class="ml-4 mt-1" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="SetTyres">ADD Selected</MudIconButton>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public TyreResoleModel model { get; set; } = new();
+
+
+    public TyreModel SelectedTyre { get; set; }
+    public List<TyreModel> PassedListTyres { get; set; }
+
+    TyreModel SelectedBatch = new();
+
+    List<TyreModel> TyreList = new();
+
+    Func<LinkableBatchModel, string> converter = p => p?.GrnNo;
+    protected override async Task OnInitializedAsync()
+    {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        var BranchID = int.Parse(brancIDString);
+
+        List<TyreModel> TyreListCollection = Iservice.SelectByBranch(BranchID).ToList();
+        model.Tyres = Iservice.ResoleTyresByResoleId(model.ID).ToList();
+
+
+        if (PassedListTyres == null)
+        {
+            PassedListTyres = new List<TyreModel>();
+        }
+        if (model != null && model.Tyres != null && model.Tyres.Count() != 0)
+        {
+
+            if (TyreListCollection != null && TyreListCollection.Count() != 0)
+            {
+                foreach (var item in TyreListCollection)
+                {
+                    if (model.Tyres.Contains(item.TyreID))
+                    {
+                        PassedListTyres.Add(item);
+                    }
+                }
+            }
+
+        }
+
+
+    }
+
+    public void SetTyres()
+    {
+        if (PassedListTyres == null)
+        {
+            PassedListTyres = new List<TyreModel>();
+        }
+        if (SelectedTyre != null && SelectedTyre.TyreID != 0 && (!PassedListTyres.Any(s => s.TyreID == SelectedTyre.TyreID)))
+        {
+            PassedListTyres.Add(SelectedTyre);
+            SelectedTyre = null;
+        }
+    }
+
+    public void RemoveTyres()
+    {
+
+        SelectedTyre = null;
+
+    }
+    public void DeleteTyres(int TyreId = 0)
+    {
+        if (TyreId != 0)
+        {
+            if (PassedListTyres != null && PassedListTyres.Where(s => s.TyreID == TyreId).Count() != 0)
+            {
+                if (PassedListTyres.Any(s => s.TyreID != TyreId))
+                {
+                    var itemToRemove = PassedListTyres.First(r => r.TyreID == TyreId);
+                    PassedListTyres.Remove(itemToRemove);
+
+                }
+                else
+                {
+                    PassedListTyres.Clear();
+                }
+            }
+        }
+    }
+    protected override void OnParametersSet()
+    {
+    }
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public async Task Submit()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        if (model != null)
+        {
+            //model.BranchID = int.Parse(brancIDString);
+            model.UserInfo.UserID = user.Identity.Name;
+            model.Tyres = PassedListTyres.Select(s => s.TyreID).ToList();
+            Iservice.ResoleBegin(model);
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

@@ -1,21 +1,21 @@
 ﻿@using ArmsModels.BaseModels.General
-@using ArmsServices.DataServices.Inventory
 @inject AuthenticationStateProvider auth
-@inject ITyreMasterService Iservice
+@inject ITyreService Iservice
 @inject IInventoryItemService IInventoryservice
+@inject IStoreService IStoreservice
 
 <MudDialog>
     <TitleContent>
         @if (model.TyreID == null || model.TyreID == 0)
         {
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Tyre.
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Tyre
             </MudText>
         }
         else
         {
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Tyre.
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Tyre
             </MudText>
         }
     </TitleContent>
@@ -32,28 +32,25 @@
                 <MudItem xs="11" md="11" Class="mb-6">
                     <MudTextField @bind-Value="model.Make" Label="Make" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Make)"></MudTextField>
                 </MudItem>
-                <MudItem xs="11" md="11" Class="mb-6" >
-                    <InventoryItemSelector  Value="SelectedInvetoryItem" LabelName="Inventory Item" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))"></InventoryItemSelector>
-                </MudItem>
-                @*                <MudItem xs="11" md="11" Class="mb-6">
-                <MudSelect T="InventoryItemModel" Label="Inventory Item" @bind-Value="@SelectedInvetoryItem" Required="true">
-                @foreach (var selectItem in InvetoryItemList)
-                {
-                <MudSelectItem Value="@selectItem">@selectItem.ItemDecription</MudSelectItem>
-                }
-                </MudSelect>
-                </MudItem>*@
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <MudSelect T="string"  Variant="Variant.Outlined" Margin="Margin.Dense" Label="Tyre Type" @bind-Value="@model.TyreType">
+                    <InventoryItemSelector Value="SelectedInvetoryItem" LabelName="Inventory Item" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))"></InventoryItemSelector>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudSelect T="LinkableBatchModel" Label="Batch" ToStringFunc="@converter" @bind-Value="@SelectedBatch" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true">
+                        @foreach (var Batch in BatchList)
+                        {
+                            <MudSelectItem Value="@Batch">@Batch.GrnNo</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <MudSelect T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Tyre Type" @bind-Value="@model.TyreType">
                         @foreach (var TyreType in TyreTypeList)
                         {
                             <MudSelectItem Value="@TyreType">@TyreType</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
-@*                <MudItem xs="11" md="11" Class="mb-6">
-                    <MudTextField @bind-Value="model.TyreType" Label="Tyre Type" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TyreType)"></MudTextField>
-                </MudItem>*@
                 <MudItem xs="11" md="11" Class="mb-6">
                     <MudTextField @bind-Value="model.TyreSize" Label="Tyre Size" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TyreSize)"></MudTextField>
                 </MudItem>
@@ -85,11 +82,20 @@
 
     List<InventoryItemModel> InvetoryItemList = new();
     InventoryItemModel SelectedInvetoryItem = new();
-    List<AssetDocumentTypeModel> InventoryBatchList = new();
+    LinkableBatchModel SelectedBatch = new();
 
+    List<LinkableBatchModel> BatchList = new();
+
+    Func<LinkableBatchModel,string> converter = p => p?.GrnNo;
     protected override void OnInitialized()
     {
         InvetoryItemList = IInventoryservice.SelectListByID(null).ToList();
+        if(model != null && model.InventoryItemID != null)
+        {
+            SelectedInvetoryItem = InvetoryItemList.FirstOrDefault(x => x.InventoryItemID == model.InventoryItemID);
+            SelectedBatch = IStoreservice.GetBatchDetails(model.InventoryBatchID);
+        }
+        
     }
 
     protected override void OnParametersSet()
@@ -108,13 +114,17 @@
         {
             model.BranchID = int.Parse(brancIDString);
             model.UserInfo.UserID = user.Identity.Name;
+            if (SelectedBatch != null && SelectedBatch.BatchID != 0)
+            {
+                model.InventoryBatchID = SelectedBatch.BatchID;
+            }
             Iservice.Update(model);
         }
 
         MudDialog.Close(DialogResult.Ok(true));
     }
 
-    protected void getitemCode(InventoryItemModel item)
+    protected async Task getitemCode(InventoryItemModel item)
     {
         if (item != null)
         {
@@ -127,6 +137,24 @@
                 SelectedInvetoryItem = new InventoryItemModel();
             }
             model.InventoryItemID = SelectedInvetoryItem.InventoryItemID;
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            int BranchID = int.Parse(brancIDString);
+            if (BatchList == null)
+            {
+                BatchList = new();
+            }
+            if (BatchList != null && BatchList.Count() != 0)
+            {
+                BatchList.Clear();
+            }
+            if (SelectedInvetoryItem.InventoryItemID != null)
+            {
+                BatchList = Iservice.GetNonLinkedTyreBatches(BranchID, (int)SelectedInvetoryItem.InventoryItemID).ToList();
+
+            }
         }
     }
 }

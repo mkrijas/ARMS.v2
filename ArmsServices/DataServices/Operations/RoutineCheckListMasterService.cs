@@ -75,6 +75,7 @@ namespace ArmsServices.DataServices.Operations
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@Description", model.Description),
                new SqlParameter("@IsDisabled", model.IsDisabled),
+               new SqlParameter("@ValidDays", model.ValidDays),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@RecordStatus", 3),
             };
@@ -96,6 +97,7 @@ namespace ArmsServices.DataServices.Operations
                 BranchID = dr.GetInt32("BranchID"),
                 IsChecked = dr.GetInt32("IsChecked") == 1 ? true : false,
                 IsDisabled = dr.GetInt32("IsDisabled") == 1 ? true : false,
+                ValidDays = dr.GetInt32("ValidDays"),
                 Description = dr.GetString("Description"),
                 CreatedDate = dr.GetDateTime("TimeStamp"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

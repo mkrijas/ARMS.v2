@@ -10,6 +10,7 @@ namespace ArmsModels.BaseModels.General
         public string ItemName { get; set; }
         public bool IsChecked { get; set; }
         public bool IsDisabled { get; set; }
+        public int? ValidDays { get; set; }
         public DateTime? CreatedDate { get; set; }
         public DateTime? CurrentTruckLastUpdatedDate { get; set; }
         public string Description { get; set; }

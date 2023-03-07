@@ -12,14 +12,15 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         public string Make { get; set; } // Hint: MRF , CEAT
         public int? InventoryItemID { get; set; }
-        public int? InventoryBatchID { get; set; }
+        public long? InventoryBatchID { get; set; }
         [Required]
         public string TyreType { get; set; } // Front/ Back/ All-Position
         [Required]
         public string TyreSize { get; set; } // 1000 x 25 etc
         public bool Tubeless { get; set; } = false;
-        public TyrePositionModel TyrePosition { get; set; }
+        public virtual string TyrePosition { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
+        public bool IsChecked { get; set; } = false;
     }
 
     public class TyrePositionModel
@@ -38,7 +39,7 @@ namespace ArmsModels.BaseModels
     {
         public int? ID { get; set; }
         public int? TruckTypeID { get; set; }
-        public string? PositionIDs { get; set; }
+        public string PositionIDs { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
@@ -72,10 +73,41 @@ namespace ArmsModels.BaseModels
         public PartyModel Party { get; set; }
         public DateTime? RequestedDate { get; set; }
         public DateTime? DeliveredDate { get; set; }
+        public int? DeliveryID { get; set; }
         public List<int?> Tyres { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
+
+    public class ResoleDeliveryTyreModel
+    {
+        public int? ID { get; set; }
+        public int? DeliveryID { get; set; }
+        public int? TyreID { get; set; }
+        public TyreModel Tyre { get; set; }
+        public bool Status { get; set; } = true;
+        public decimal? Amount { get; set; }
+        public decimal? Tax { get; set; }
+        public decimal? TotalAmount { get; set; }
+    }
+
+
+    public class ResoleDeliveryModel
+    {
+        public int? ID { get; set; }
+        public int? ResoleID { get; set; }
+        public TyreResoleModel Resole { get; set; }
+        public PartyModel Party { get; set; }
+        public DateTime? RequestedDate { get; set; }
+        public DateTime? DeliveryDate { get; set; }
+        public string UsageCode { get; set; }
+        public bool TaxIncluded { get; set; }
+        public int? PID { get; set; } = 0;
+        public List<int?> Tyres { get; set; }
+
+        public List<ResoleDeliveryTyreModel> ResoleDeliveryTyreList = new();
+        public UserInfoModel UserInfo { get; set; } = new();
+    }
 
 }
 

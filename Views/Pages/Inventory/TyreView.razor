@@ -1,11 +1,9 @@
 ﻿@page "/TyreMasterView"
 @using ArmsModels.BaseModels.General
-@using ArmsServices.DataServices.Inventory
 @using ArmsServices.DataServices.Operations
 
 <h3>Tyre Master View</h3>
 
-@inject ITyreMasterService Iservice
 @inject ITyreService ITyreservice
 @inject MudBlazor.ISnackbar snackbar
 
@@ -16,11 +14,11 @@
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" >
             <ToolBarContent>
-                <MudText Typo="Typo.h6">Add New Tyre.</MudText>
+                <MudText Typo="Typo.h6">Add New Tyre</MudText>
                 <MudTooltip Text="New Tyre">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew())" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEdit(new TyreModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
 
@@ -30,6 +28,7 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Make)" InitialDirection="SortDirection.Ascending">Make</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreType)" InitialDirection="SortDirection.Ascending">Tyre Type</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreSize)" InitialDirection="SortDirection.Ascending">Tyre Size</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyrePosition)" InitialDirection="SortDirection.Ascending">Mounted Truck</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.Tubeless)" InitialDirection="SortDirection.Ascending">Tubeless</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
@@ -38,16 +37,23 @@
                 <MudTd DataLabel="Make">@context.Make</MudTd>
                 <MudTd DataLabel="TyreType">@context.TyreType</MudTd>
                 <MudTd DataLabel="TyreSize">@context.TyreSize</MudTd>
+                <MudTd DataLabel="TyreSize">@context.TyrePosition</MudTd>
                 <MudTd DataLabel="Tubeless">@context.Tubeless</MudTd>
                 <MudTd DataLabel="Actions">
                     <MudTooltip Text="Edit">
-                        <MudIconButton @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        <MudIconButton @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small"/>
                     </MudTooltip>
                     <MudTooltip Text="Remove">
-                        <MudIconButton @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" IconSize="Size.Small" />
+                        <MudIconButton @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" />
                     </MudTooltip>
-                    <MudTooltip Text="Mount Or Unmount">
-                        <MudFab @onclick="@(()=> TyreMountOrUnmount(context.TyreID))" Color="Color.Primary" Icon="@Icons.Material.Filled.TableView" Size="Size.Small" IconSize="Size.Small" />
+                    @{
+                        var Ismounted = context.TyrePosition != null; 
+                        string txt = Ismounted ? "UnMount" : "Mount";
+                        string icon  = Ismounted ? Icons.Material.Filled.Download :Icons.Material.Filled.Upload  ;
+                    }
+
+                    <MudTooltip Text="@txt">
+                        <MudIconButton @onclick="@(()=> TyreMountOrUnmount(context))" Color="Color.Primary" Icon="@icon" Size="Size.Small" />
                     </MudTooltip>
                 </MudTd>
             </RowTemplate>
@@ -61,37 +67,34 @@
 @code {
 
 
-    private TyreModel model = new();
-
     private List<TyreModel> collection = new();
+    string UserID;
 
-    string state = "Message box hasn't been opened yet";
+    //private async Task OpenDialogAddNew()
+    //{
+    //    TyreModel TyreMaster = new();
 
-    private async Task OpenDialogAddNew()
-    {
-        TyreModel TyreMaster = new();
+    //    TyreMaster.UserInfo = new();
+    //    var authprov = await auth.GetAuthenticationStateAsync();
+    //    var user = authprov.User;
+    //    if (TyreMaster.UserInfo != null)
+    //    {
+    //        TyreMaster.UserInfo.UserID = user.Identity.Name;
 
-        TyreMaster.UserInfo = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        if (TyreMaster.UserInfo != null)
-        {
-            TyreMaster.UserInfo.UserID = user.Identity.Name;
-
-        }
-        var model = new DialogParameters { ["model"] = TyreMaster };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<TyreDialog>("Simple Dialog", model, options);
+    //    }
+    //    var model = new DialogParameters { ["model"] = TyreMaster };
+    //    var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+    //    var dialog = DialogService.Show<TyreDialog>("Simple Dialog", model, options);
 
 
-        var result = await dialog.Result;
+    //    var result = await dialog.Result;
 
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
-        {
-            await GetAll();
-        }
-    }
+    //    var isCancelled = result.Canceled;
+    //    if (!isCancelled)
+    //    {
+    //        await GetAll();
+    //    }
+    //}
     private async Task OpenDialogEdit(TyreModel TyreMaster)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -103,10 +106,9 @@
             TyreMaster.UserInfo.UserID = user.Identity.Name;
         }
 
-        var model = new DialogParameters { ["model"] = TyreMaster };
-
+        var param = new DialogParameters { ["model"] = TyreMaster };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<TyreDialog>("Simple Dialog", model, options);
+        var dialog = DialogService.Show<TyreDialog>("ADD/EDIT", param, options);
 
         var result = await dialog.Result;
 
@@ -124,49 +126,58 @@
             "Warning",
             "Are you sure you want to delete this entry?",
             yesText: "Delete!", cancelText: "Cancel");
-        state = result == null ? "Cancelled" : "Deleted!";
-        if (state == "Deleted!")
-        {
 
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            TyreMaster.UserInfo = new();
-            if (TyreMaster.UserInfo != null)
+        if (result != null)
+        {
+            try
             {
-                TyreMaster.UserInfo.UserID = user.Identity.Name;
-                Iservice.Delete(TyreMaster.TyreID, TyreMaster.UserInfo.UserID);
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                TyreMaster.UserInfo = new();
+                if (TyreMaster.UserInfo != null)
+                {
+                    TyreMaster.UserInfo.UserID = user.Identity.Name;
+                    ITyreservice.Delete(TyreMaster.TyreID, TyreMaster.UserInfo.UserID);
+                }
+                await GetAll();
+                snackbar.Add("Deleted Successfully", Severity.Success);
             }
-            await GetAll();
+            catch(Exception ex)
+            {                
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+
         }
 
     }
 
 
-    private void TyreMountOrUnmount(int? TyreID)
+    private void TyreMountOrUnmount(TyreModel model)
     {
-        model = new();
+
         DialogOptions options = new DialogOptions()
             {
                 MaxWidth = MaxWidth.Large,
             };
-        if (TyreID != null)
-        {
-            model = ITyreservice.SelectByID(TyreID);
-        }
-        List<TyreMountedModel> MountedTyreList = ITyreservice.SelectMountedTyresByTyreID(TyreID).ToList();
-        if (MountedTyreList != null && MountedTyreList.Count() != 0)
+
+        // List<TyreMountedModel> MountedTyreList = ITyreservice.SelectMountedTyresByTyreID(TyreID).ToList();
+
+        bool IsMounted = model.TyrePosition != null;
+        model.UserInfo.UserID = UserID;
+
+        if (IsMounted)
         {
 
             DialogParameters parms = new();
             parms.Add("SelectedTyre", model);
-            DialogService.Show<TyreUnMountDialog>("ADD/EDIT", parms, options);
+            DialogService.Show<TyreUnMountDialog>("UnMount", parms, options);
         }
         else
         {
 
             DialogParameters parms = new();
             parms.Add("SelectedTyre", model);
-            DialogService.Show<TyreMountDialog>("ADD/EDIT", parms, options);
+            DialogService.Show<TyreMountDialog>("Mount", parms, options);
         }
 
     }
@@ -183,14 +194,10 @@
         collection = new();
 
         var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        model.UserInfo = new();
-        if (model.UserInfo != null)
-        {
-            model.UserInfo.UserID = user.Identity.Name;
-        }
-        collection = Iservice.SelectTyre(null).ToList();
+        var user = authprov.User; 
+        UserID = user.Identity.Name;        
+        var BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        collection = ITyreservice.SelectByBranch(BranchID).ToList();
     }
 
     private void OpenDialog()
