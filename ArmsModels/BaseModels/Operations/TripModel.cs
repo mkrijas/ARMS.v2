@@ -25,8 +25,9 @@ namespace ArmsModels.BaseModels
         public DateTime? TripDate { get; set; }
         public decimal? Mileage { get; set; }
         public int? RunKM { get; set; }
-        public decimal? Fuel { get; set; }                
-        public SharedModels.UserInfoModel UserInfo { get; set; }
+        public decimal? Fuel { get; set; }
+        public bool Closed { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }        
     }
 
 
@@ -45,37 +46,30 @@ namespace ArmsModels.BaseModels
     }
     public class TripFuelModel
     {
-        public TripFuelModel()
-        {
-            UserInfo = new();
-        }
+        DateTime? docdate;
+        decimal? amount;
+
         public long? TripFuelID { get; set; }
         [Required]
-        public DateTime? EntryDate { get; set; }
-        [Required]
+        public DateTime? EntryDate { 
+            get { return docdate; } 
+            set { docdate = value;this.PurchaseModel.DocumentDate = value; } 
+        }        
         public long? TripID { get; set; }
-        [Required]
-        public int? BranchID { get; set; }
+        public int? TruckID { get; set; }        
         [Required]
         public int? FuelItemID { get; set; }
-        [Required]
         public decimal? RatePerLitre { get; set; }
-        [Required]
-        public decimal? TotalAmount { get; set; }
+        public decimal? Amount {
+            get { return amount; }
+            set { amount = value; this.PurchaseModel.TotalAmount = value; }
+        }
         [Required]
         public decimal? Quantity { get; set; }
-        public bool IsPurchase { get; set; } = false;
-        public int? PurchaseID { get; set; }
-        public int? InvTranID { get; set; }
-        public  TaxPurchaseModel PurchaseEntry { get; set; }
-        public virtual InventoryBaseModel IssueEntry { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }
-        public PartyModel PartyBranch { get; set; } = new();
-        public int? Dimension { get; set; }
-        public int? Costcenter { get; set; }
+        [Required]
+        public bool IsPurchase { get; set; } = false; 
+        public TaxPurchaseModel PurchaseModel { get; set; } = new(); 
         public string UsageID { get; set; }
-        public string InvoiceNo { get; set; }
-        // tax Purcahse model
-
+       
     }
 }

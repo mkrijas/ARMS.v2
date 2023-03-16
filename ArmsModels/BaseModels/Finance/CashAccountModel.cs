@@ -15,7 +15,7 @@ namespace ArmsModels.BaseModels
         [StringLength(8)]
         public string CashCode { get; set; }
         [Required]
-        public ChartOfAccountModel CoaID { get; set; } = new();
+        public ChartOfAccountModel Coa { get; set; } = new();
       
         public int? BranchID { get; set; }
         public decimal? MinBalance { get; set; }

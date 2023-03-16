@@ -25,6 +25,7 @@ namespace ArmsModels.BaseModels
         [StringLength(8)]
         public string HsnCode { get; set; }
         public virtual decimal? QtyAvailable { get; set; }
+        public InventoryGroupModel Group { get; set; } = new();        
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 

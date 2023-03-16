@@ -116,6 +116,7 @@ namespace ArmsServices.DataServices
             {
                 RegNo = reader.GetString("RegNo"),
                 HomeBranchID = reader.GetInt32("HomeBranchID"),
+                CurrentBranchID = reader.GetInt32("CurrentBranchID"),
                 AssetID = reader.GetInt32("AssetID"),
                 BodyType = reader.GetString("BodyType"),
                 ChassisNumber = reader.GetString("ChassisNumber"),

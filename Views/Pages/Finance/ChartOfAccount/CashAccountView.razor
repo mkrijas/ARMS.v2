@@ -23,7 +23,7 @@
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<CashAccountModel, object>(x=> x.Title)" InitialDirection="SortDirection.Ascending">Tittle</MudTableSortLabel></MudTh>
                  <MudTh><MudTableSortLabel SortBy="new Func<CashAccountModel, object>(x=> x.CashCode)" InitialDirection="SortDirection.Ascending">Cash code</MudTableSortLabel></MudTh>
-               <MudTh><MudTableSortLabel SortBy="new Func<CashAccountModel, object>(x=> x.CoaID.AccountName)" InitialDirection="SortDirection.Ascending">CoaID</MudTableSortLabel></MudTh>
+               <MudTh><MudTableSortLabel SortBy="new Func<CashAccountModel, object>(x=> x.Coa.AccountName)" InitialDirection="SortDirection.Ascending">CoaID</MudTableSortLabel></MudTh>
               <MudTh><MudTableSortLabel SortBy="new Func<CashAccountModel, object>(x=> x.MinBalance)" InitialDirection="SortDirection.Ascending">Minimum Balance</MudTableSortLabel></MudTh>
               <MudTh><MudTableSortLabel SortBy="new Func<CashAccountModel, object>(x=> x.MaxBalance)" InitialDirection="SortDirection.Ascending">Maximum Balance</MudTableSortLabel></MudTh>
              
@@ -32,7 +32,7 @@
             <RowTemplate>
                 <MudTd DataLabel="Title">@context.Title</MudTd>                  
                 <MudTd DataLabel="BeneficiaryName">@context.CashCode</MudTd>
-                 <MudTd DataLabel="AccountNumber">@context.CoaID.AccountName</MudTd>
+                 <MudTd DataLabel="AccountNumber">@context.Coa.AccountName</MudTd>
                   <MudTd DataLabel="Place">@context.MinBalance</MudTd>
                   <MudTd DataLabel="BankCode">@context.MaxBalance</MudTd>
                <MudTd DataLabel="">
@@ -61,46 +61,29 @@
 
 @code {
     private CashAccountModel model = new CashAccountModel();
-    
     private List<CashAccountModel> collection = new List<CashAccountModel>();
     DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-     protected override async Task OnInitializedAsync()
-    {
-        model = new();
-        GetAll();
+    protected override async Task OnInitializedAsync()
+    {       
+        await GetAll();
     }
-    private  void GetAll()
+    private  async Task GetAll()
     {
-
-        collection = new List<CashAccountModel>();
-        foreach (var item in Iservice.Select())
-        {
-            collection.Add(item);
-        }
-
-
+        var authState = await auth.GetAuthenticationStateAsync();
+        var branch = int.Parse(authState.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+        collection = Iservice.SelectByBranch(branch).ToList();
     }
      public async Task OpenDialog(CashAccountModel Cam)
-    {
-        //var authprov = await auth.GetAuthenticationStateAsync();
-        //var user = authprov.User;
-        //var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-
-        //model.UserInfo.UserID = user.Identity.Name;
-        //model.BranchID = int.Parse(brancIDString);
+    {        
         DialogParameters parms = new DialogParameters();
         parms.Add("model",Cam);
         var dialog =  DialogService.Show<CashaccDialog>(Cam.CashAccountID == null?"ADD":"EDIT",parms);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
+        if(!result.Canceled)
         {   
-            CashAccountModel UpatedModel = (CashAccountModel)result.Data;   
-            Iservice.Update(UpatedModel);
-            GetAll();
-
-
-        }
-        GetAll();
+            CashAccountModel UpatedModel = (CashAccountModel)result.Data;               
+            await GetAll();
+        }        
     }
 }
