@@ -1,0 +1,278 @@
+﻿@using ArmsModels.BaseModels.General
+@inject AuthenticationStateProvider auth
+@inject ITyreService Iservice
+@inject IInventoryItemService IInventoryservice
+@inject IStoreService IStoreservice
+@inject IGstUsageIDService IusageService
+
+<MudDialog>
+    <TitleContent>
+
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />  Resole Delivery
+        </MudText>
+
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="6" md="6" Class="mb-6">
+                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Label="Party" @bind-Value="@model.Party.TradeName" Disabled></MudTextField>
+                    </MudItem>
+                    <MudItem xs="6" md="6" Class="mb-6">
+                        <MudDatePicker Variant="Variant.Outlined" Margin="Margin.Dense" Label="Delivery Date" @bind-Date="@model.DeliveryDate" />
+                    </MudItem>
+
+                    <MudItem xs="6" md="6">
+                        <UsageCodeSelector Value="CurrentUsageCode" ValueChanged="UsageCodeChanged"></UsageCodeSelector>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudCheckBox Checked="@model.TaxIncluded" CheckedChanged="((bool val) => IsTaxIncludedChanged(val))" Label="Tax Included In Amount"></MudCheckBox>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudGrid>
+                            @foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList)
+                            {
+                                <MudItem xs="3">
+                                    <MudTextField @bind-Value="@item.Tyre.TyreSerialNumber" Label="Tyre" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.Tyre.TyreSerialNumber)"></MudTextField>
+                                </MudItem>
+                                <MudItem xs="2">
+                                    <MudSelect T="bool" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Status" @bind-Value="@item.Status" SelectedValuesChanged="@(() => OnChangeStatus(item.Status,item.TyreID))">
+                                        <MudSelectItem Value="true">Resoled</MudSelectItem>
+                                        <MudSelectItem Value="false">Not Resoled</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="2">
+                                    @if (item.Status)
+                                    {
+                                        <MudTextField @bind-Value="@item.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" TextChanged="(()=> OnChangeAmount(item.Status,item.TyreID))" For="@(() => item.Amount)"></MudTextField>
+                                    }
+                                    else
+                                    {
+                                        <MudTextField @bind-Value="@item.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.Amount)" Disabled></MudTextField>
+                                    }
+                                </MudItem>
+                                <MudItem xs="2">
+                                    @if (item.Status)
+                                    {
+                                        <MudTextField @bind-Value="@item.Tax" Label="Tax" Variant="Variant.Outlined" Margin="Margin.Dense" TextChanged="(()=>OnChangeTax(item.Status,item.TyreID))" For="@(() => item.Tax)"></MudTextField>
+                                    }
+                                    else
+                                    {
+                                        <MudTextField @bind-Value="@item.Tax" Label="Tax" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.Tax)" Disabled></MudTextField>
+                                    }
+                                </MudItem>
+                                <MudItem xs="3">
+                                    <MudTextField @bind-Value="@item.TotalAmount" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public ResoleDeliveryModel model { get; set; } = new();
+    [Parameter]
+
+    public GstUsageCodeModel CurrentUsageCode { get; set; } = new();
+
+    public TyreModel SelectedTyre { get; set; }
+
+
+    List<TyreModel> TyreList = new();
+
+
+    public void OnChangeStatus(bool status, int? tyreId)
+    {
+        if (!status)
+        {
+            foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList.Where(s => s.TyreID == tyreId))
+            {
+                item.Amount = 0;
+                item.Tax = 0;
+                item.TotalAmount = 0;
+            }
+
+        }
+    }
+    public void OnChangeAmount(bool status, int? tyreId)
+    {
+        if (status)
+        {
+            foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList.Where(s => s.TyreID == tyreId))
+            {
+                if (model.TaxIncluded)
+                {
+                    item.Tax = (CurrentUsageCode.TaxRate != -100) ? (item.Amount - (item.Amount * (100 / (CurrentUsageCode.TaxRate + 100)))) : 0;
+                    item.TotalAmount = item.Amount;
+
+                }
+                else
+                {
+                    item.Tax = (item.Amount * (CurrentUsageCode.TaxRate / 100));
+                    item.TotalAmount = item.Amount + item.Tax;
+                }
+            }
+        }
+    }
+
+    public void OnChangeTax(bool status, int? tyreId)
+    {
+        if (status)
+        {
+            foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList.Where(s => s.TyreID == tyreId))
+            {
+                if (model.TaxIncluded)
+                {
+                    item.TotalAmount = item.Amount;
+                }
+                else
+                {
+                    item.TotalAmount = item.Amount + item.Tax;
+                }
+            }
+        }
+    }
+    public void UsageCodeChanged(GstUsageCodeModel UsageCode)
+    {
+        CurrentUsageCode = UsageCode;
+        if (CurrentUsageCode != null)
+        {
+            foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList)
+            {
+                if (model.TaxIncluded)
+                {
+                    item.Tax = (CurrentUsageCode.TaxRate != -100) ? (item.Amount - (item.Amount * (100 / (CurrentUsageCode.TaxRate + 100)))) : 0;
+                    item.TotalAmount = item.Amount;
+
+                }
+                else
+                {
+                    item.Tax = (item.Amount * (CurrentUsageCode.TaxRate / 100));
+                    item.TotalAmount = item.Amount + item.Tax;
+                }
+            }
+        }
+        else
+        {
+            foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList)
+            {
+
+                item.Tax = 0;
+                item.TotalAmount = item.Amount;
+
+            }
+        }
+    }
+
+    public void IsTaxIncludedChanged(bool IsChecked)
+    {
+        model.TaxIncluded = IsChecked;
+        foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList)
+        {
+            if (model.TaxIncluded)
+            {
+                item.Tax = (CurrentUsageCode.TaxRate != -100) ? (item.Amount - (item.Amount * (100 / (CurrentUsageCode.TaxRate + 100)))) : 0;
+                item.TotalAmount = item.Amount;
+
+            }
+            else
+            {
+                item.Tax = (item.Amount * (CurrentUsageCode.TaxRate / 100));
+                item.TotalAmount = item.Amount + item.Tax;
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        var BranchID = int.Parse(brancIDString);
+
+        List<TyreModel> TyreListCollection = Iservice.SelectByBranch(BranchID).ToList();
+
+
+        if (model.ResoleDeliveryTyreList == null)
+        {
+            model.ResoleDeliveryTyreList = new();
+        }
+        if(model.ID == null || model.ID == 0)
+        {
+            model.PID = 0;
+        }
+        List<ResoleDeliveryTyreModel> ResoleDeliveryTyreList = Iservice.SelectResoleDeliveryTyresList(model.ResoleID, model.ID).ToList();
+        if (ResoleDeliveryTyreList != null && ResoleDeliveryTyreList.Count() != 0)
+        {
+            model.ResoleDeliveryTyreList = ResoleDeliveryTyreList;
+        }
+        List<GstUsageCodeModel> usageList = IusageService.SelectByArea(null, System.DateTime.Now).ToList();
+        if (usageList != null && usageList.Count() != 0)
+        {
+            if (usageList.Any(d => d.UsageCode == model.UsageCode))
+            {
+                CurrentUsageCode = usageList.First(d => d.UsageCode == model.UsageCode);
+            }
+
+        }
+        var TyresList = Iservice.SelectByBranch(BranchID);
+        if (TyresList != null && TyresList.Count() != 0)
+        {
+            foreach (var item in model.ResoleDeliveryTyreList)
+            {
+                if (TyresList.Any(s => s.TyreID == item.TyreID))
+                {
+                    item.Tyre = TyresList.First(s => s.TyreID == item.TyreID);
+                    //if(item.ID == null || item.ID == 0)
+                    //{
+                    //    item.Status =true;
+                    //}
+                }
+                else
+                {
+                    item.Tyre = new();
+                }
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+    }
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public async Task Submit()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        model.UsageCode = CurrentUsageCode.UsageCode;
+        if (model != null)
+        {
+            model.UserInfo.UserID = user.Identity.Name;
+            int ReturnValue = Iservice.ResoleDeliveryUpdate(model);
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

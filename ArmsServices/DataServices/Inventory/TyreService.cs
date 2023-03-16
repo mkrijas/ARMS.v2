@@ -31,6 +31,10 @@ namespace ArmsServices.DataServices
         int ResoleCancel(int? ID, string UserID);
         IEnumerable<int?> ResoleTyresByResoleId(int? ResoleId);
         IEnumerable<TyreResoleModel> SelectTyreResoleList(int? ID);
+        IEnumerable<ResoleDeliveryModel> SelectResoleDeliveryViewList(int? ID);
+        IEnumerable<ResoleDeliveryTyreModel> SelectResoleDeliveryTyresList(int? ResoleID, int? DeliveryID);
+        int ResoleDeliveryUpdate(ResoleDeliveryModel model);
+        int UndoResoleDelivery(int? DeliveryId, string UserID);
         IEnumerable<LinkableBatchModel> GetNonLinkedTyreBatches(int BranchID, int ItemID);
     }
     public class TyreService : ITyreService
@@ -136,6 +140,65 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<ResoleDeliveryModel> SelectResoleDeliveryViewList(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tyre.Resole.NotDeliveredAndDelivered.Select]", parameters))
+            {
+                yield return GetResoleDeliveryModel(dr);
+            }
+        }
+
+        public IEnumerable<ResoleDeliveryTyreModel> SelectResoleDeliveryTyresList(int? ResoleID, int? DeliveryID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ResoleID", ResoleID),
+               new SqlParameter("@DeliveryID", DeliveryID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tyre.Resole.DeliveredAndNonDeliveredTyres.Select]", parameters))
+            {
+                yield return GetResoleDeliveryTyreModel(dr);
+            }
+        }
+
+        public int ResoleDeliveryUpdate(ResoleDeliveryModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", model.ID),
+               new SqlParameter("@ResoleID", model.ResoleID),
+               new SqlParameter("@PartyID", model.Party.PartyID),
+               new SqlParameter("@DeliveryDate", model.DeliveryDate),
+               new SqlParameter("@UsageCode", model.UsageCode),
+               new SqlParameter("@TaxIncluded", model.TaxIncluded),
+               new SqlParameter("@PID", model.PID),
+               new SqlParameter("@ResoleDeliveryTyres", model.ResoleDeliveryTyreList.Select(s=>new {
+                   ID =s.ID,
+                   DeliveryID = s.DeliveryID ,
+                   TyreID = s.TyreID ,
+                   Status = s.Status ,
+                   Amount = s.Amount ,
+                   Tax = s.Tax
+               }).ToList().ToDataTable()),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Delivery.Update]", parameters);
+        }
+
+        public int UndoResoleDelivery(int? DeliveryId, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DeliveryID", DeliveryId),
+               new SqlParameter("@UserID", UserID)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Delivery.Delete]", parameters);
+        }
+
         public int ResoleCancel(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -143,7 +206,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID)
             };
-            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Update]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Delete]", parameters);
 
         }
 
@@ -360,13 +423,49 @@ namespace ArmsServices.DataServices
             {
                 ID = dr.GetInt32("ID"),
                 RequestedDate = dr.GetDateTime("RequestedDate"),
-                Party = new PartyModel() {PartyID = dr.GetInt32("Party") },
+                Party = new PartyModel() { PartyID = dr.GetInt32("Party") },
+                DeliveryID = dr.GetInt32("DeliveryID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
                     TimeStampField = dr.GetDateTime("MountedOn"),
                     UserID = dr.GetString("UserID"),
                 },
+            };
+        }
+
+        private ResoleDeliveryModel GetResoleDeliveryModel(IDataRecord dr)
+        {
+            return new ResoleDeliveryModel()
+            {
+                ID = dr.GetInt32("ID"),
+                ResoleID = dr.GetInt32("ResoleID"),
+                Party = new PartyModel() { PartyID = dr.GetInt32("Party") },
+                RequestedDate = dr.GetDateTime("RequestedDate"),
+                DeliveryDate = dr.GetDateTime("DeliveryDate"),
+                TaxIncluded = dr.GetBoolean("TaxIncluded"),
+                UsageCode = dr.GetString("UsageCode"),
+                PID = dr.GetInt32("PID"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("DeliveryDate") == null ? dr.GetDateTime("RequestedDate") : dr.GetDateTime("DeliveryDate"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+
+        private ResoleDeliveryTyreModel GetResoleDeliveryTyreModel(IDataRecord dr)
+        {
+            return new ResoleDeliveryTyreModel()
+            {
+                ID = dr.GetInt32("ID"),
+                TyreID = dr.GetInt32("TyreID"),
+                DeliveryID = dr.GetInt32("DeliveryID"),
+                Status = dr.GetBoolean("Status"),
+                Amount = dr.GetDecimal("Amount"),
+                Tax = dr.GetDecimal("Tax"),
+                
             };
         }
 
