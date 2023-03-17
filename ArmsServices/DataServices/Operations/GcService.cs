@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
         List<GcSetModel> SelectByTrip(long? TripID);
         List<GcSetModel> SelectUnAssigned(int? BranchID);
         List<GcSetModel> SelectToUnload(long? TripID);
+        List<GcSetModel> SelectToDispatch(long? TripID);
         List<GcSetModel> SelectPending(long? TripID);
         GcSetModel SelectByID(long? GcSetID);
         IEnumerable<GcTypeModel> SelectGcTypes();
@@ -106,6 +107,16 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
+
+        public List<GcSetModel> SelectToDispatch(long? TripID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "Dispatchable"),
+               new SqlParameter("@TripID", TripID)
+            };
+            return GetList(parameters);
+        }
         public List<GcSetModel> SelectUnAssigned(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -185,7 +196,11 @@ namespace ArmsServices.DataServices
                 ConsigneeName = dr.GetString("ConsigneeName"),
                 ConsignorID = dr.GetInt32("ConsignorID"),
                 ConsignorName = dr.GetString("ConsignorName"),
-                PaidBy = dr.GetByte("PaidBy"),                
+                PaidBy = dr.GetByte("PaidBy"),               
+                LoadEndEventID = dr.GetInt64("LoadEndEventID"),
+                LoadStartEventID = dr.GetInt64("LoadStartEventID"),
+                UnloadEndEventID = dr.GetInt64("UnloadEndEventID"),
+                UnloadStartEventID = dr.GetInt64("UnloadStartEventID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

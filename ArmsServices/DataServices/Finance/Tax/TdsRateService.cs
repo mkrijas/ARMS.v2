@@ -146,8 +146,7 @@ namespace ArmsServices.DataServices
             {
                 new SqlParameter("@Operation", "GetTaxRate"),
                new SqlParameter("@PartyID", PartyID),
-               new SqlParameter("@AccountID", AccountID),    
-               
+               new SqlParameter("@AccountID", AccountID),  
             };
 
             decimal? result = null;

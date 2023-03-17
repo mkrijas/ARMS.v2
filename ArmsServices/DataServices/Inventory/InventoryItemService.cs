@@ -19,6 +19,7 @@ namespace ArmsServices.DataServices
         IEnumerable<InventoryItemModel> SearchByItemCode(string itemCode);
         IEnumerable<InventoryItemModel> SearchByDescription(string itemDescription);
         IEnumerable<InventoryItemModel> SearchByHsn(string HsnCode);        
+
     }
     public class InventoryItemService : IInventoryItemService
     {
@@ -53,6 +54,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+
 
         public IEnumerable<InventoryItemModel> SearchByHsn(string HsnCode)
         {
@@ -154,6 +157,12 @@ namespace ArmsServices.DataServices
                 InventoryItemCode = dr.GetString("InventoryItemCode"),
                 InventoryItemID = dr.GetInt32("InventoryItemID"),
                 ItemDecription = dr.GetString("ItemDescription"),
+                Group = new InventoryGroupModel()
+                {
+                    MappedConsumptionHead = dr.GetInt32("MappedConsumptionHead"),
+                    MappedPurchaseHead = dr.GetInt32("MappedPurchaseHead"),
+                    MappedNonInventoryPurchaseHead = dr.GetInt32("MappedNonInventoryPurchaseHead"),
+                },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

@@ -1,63 +1,67 @@
-﻿
-@inject MudBlazor.ISnackbar snackbar
+﻿@inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @inject ITripFuelService Iservice
-@inject IInventoryItemService IsInvService
+@inject IInventoryItemService InvService
 @inject IDimensionService dimensionIservice
 @inject ICostCenterService costIservice
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject IPartyService partyService
+@inject IGstItemService gstItemService
+@inject ITdsRateService tdsService
+@inject ITaxPurchaseService taxPurchase
+@using  Microsoft.Extensions.Configuration
+@inject IConfiguration config
+
+
+<EditForm id="formfuel" Model="@Tmodel" OnValidSubmit="OnValidSubmit">
+    <ObjectGraphDataAnnotationsValidator />
+    <ValidationSummary />
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
-            Create Trip Fueling
+            Fueling
         </MudText>
     </TitleContent>
     <DialogContent>
-         <MudContainer Style="min-height:300px;max-height:800px;">
-            @*<EditForm id="formtdsRate" Model="@Tmodel" OnValidSubmit="OnValidSubmit">
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />*@
-              
-                     <MudGrid Spacing="4">
-                    <MudItem xs="12" md="3">
-                            <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="Tmodel.EntryDate" />
+        <MudContainer Style="min-height:300px;max-height:800px;">
+           
+                <MudGrid Spacing="3">                   
+
+                    <MudItem xs="12" md="4">
+                        <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Normal" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="Tmodel.EntryDate" />
                     </MudItem>
-                    <MudItem xs="12" md="3">
-                        <MudSelect Label="Select Item " @bind-Value="Tmodel.FuelItemID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in Ac)
-                            {
-                                <MudSelectItem Value="@ditem.InventoryItemID">@ditem.InventoryItemCode</MudSelectItem>
-                            }
-                        </MudSelect>
+                    <MudItem xs="12" md="4">
+                        <InventoryItemSelector Value="invItem" ValueChanged="FuelItemSelected" ItemGroup="@FuelGroupID"></InventoryItemSelector>
+                     
                     </MudItem>
-                      <MudItem xs="12" md="3">
-                            <MudTextField @bind-Value="Tmodel.Quantity" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.Quantity)"></MudTextField>
-                      </MudItem>
-                    <MudItem xs="12" md="3">
-                        <MudTextField @bind-Value="Tmodel.RatePerLitre" TextChanged="totalAmt" Label="Rate Per Liter" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.RatePerLitre)"></MudTextField>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="Tmodel.Quantity" TextChanged="(()=> Tmodel.Amount = Tmodel.RatePerLitre * Tmodel.Quantity)" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => Tmodel.Quantity)"></MudTextField>
                     </MudItem>
-                     </MudGrid>
-                      <MudGrid Spacing="3">
-                        <MudItem xs="12" md="4">
-                        <MudCheckBox @bind-Checked="@Tmodel.IsPurchase"  Color="Color.Primary" Label="Is Purchase" ></MudCheckBox>
-                            </MudItem>
-                        
-             
-          
-             
                    
-                          @if (Tmodel.IsPurchase == true)
+                    @if (Tmodel.IsPurchase)
                     {
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.h4" Class="mt-4">Invoice Details</MudText>
+                            <MudDivider DividerType="DividerType.Middle" Class="my-6" />
+                        </MudItem>   
+
                         <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="Tmodel.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.InvoiceNo)"></MudTextField>
+                            <PartySelector @bind-Value="Tmodel.PurchaseModel.PartyInfo"></PartySelector>
                         </MudItem>
                         <MudItem xs="12" md="4">
-                            <PartySelector @bind-Value="Tmodel.PartyBranch"></PartySelector>
+                            <MudTextField @bind-Value="Tmodel.PurchaseModel.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => Tmodel.PurchaseModel.InvoiceNo)"></MudTextField>
                         </MudItem>
                         <MudItem xs="12" md="4">
-                            <MudSelect Label="Select CostCenter" @bind-Value="Tmodel.Costcenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            <MudDatePicker Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Normal" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="Tmodel.PurchaseModel.InvoiceDate" />
+                        </MudItem>
+                        
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="Tmodel.RatePerLitre" TextChanged="(()=> Tmodel.Amount = Tmodel.RatePerLitre * Tmodel.Quantity)" Label="Rate Per Liter" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => Tmodel.RatePerLitre)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudSelect Label="Select Cost Center" @bind-Value="Tmodel.PurchaseModel.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                                 @foreach (var ditem in costCenter)
                                 {
                                     <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
@@ -65,84 +69,147 @@
                             </MudSelect>
                         </MudItem>
                         <MudItem xs="12" md="4">
-                            <MudSelect Label="Select Dimension" @bind-Value="Tmodel.Dimension" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            <MudSelect Label="Select Dimension" @bind-Value="Tmodel.PurchaseModel.Dimension" T="int?" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                                 @foreach (var ditem in dimension)
                                 {
                                     <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
                                 }
                             </MudSelect>
                         </MudItem>
-                  
                         <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="Tmodel.TotalAmount" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.TotalAmount)" ReadOnly="true"></MudTextField>
+                            <MudTextField @bind-Value="Tmodel.Amount" TextChanged="(()=>  Tmodel.RatePerLitre  = Tmodel.Amount / Tmodel.Quantity)" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => Tmodel.Amount)" ></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="8">
+                            <MudTextField @bind-Value="Tmodel.PurchaseModel.Narration"   Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => Tmodel.PurchaseModel.Narration)" ></MudTextField>
                         </MudItem>
                     }
-                    </MudGrid>
+                </MudGrid>
            
-           
-            @* </EditForm>*@
-             </MudContainer>
+        </MudContainer>
     </DialogContent>
     <DialogActions>
-
-        <MudButton OnClick="Submit" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-
-
+        <MudCheckBox @bind-Checked="@Tmodel.IsPurchase" Color="Color.Primary" Label="Is Purchase?"></MudCheckBox>
+        <MudButton form="formfuel" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
         <MudButton @onclick="Cancel" Variant="Variant.Filled" Color="Color.Primary">Cancel</MudButton>
 
     </DialogActions>
 </MudDialog>
-
+</EditForm>
 
 @code {
     [Parameter]
     public TripFuelModel Tmodel { get; set; }
     private List<CostCenterModel> costCenter = new();
-    private List<DimensionModel> dimension = new();
-    private List<InventoryItemModel> Ac = new();
-    public bool ? IsPur  = null;
-    public string IsPurView = "invisible";
+    private List<DimensionModel> dimension = new();    
+    //public bool? IsPur = null;
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    // public bool? isInv  = null;
-    private async void Submit()
-    {
+
+    private InventoryItemModel invItem;
+    private int? FuelGroupID;
+
+
+    private async void OnValidSubmit()
+    {   
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        Tmodel.BranchID = brancID;
-        Tmodel.UserInfo.UserID = user.Identity.Name;
-      
-        //model.MappedCoaID = SelectedAccount.CoaID;
+        int branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        Tmodel.PurchaseModel.BranchID = branchID;
+        Tmodel.PurchaseModel.UserInfo.UserID = user.Identity.Name;
+
+        TaxPurchaseItemModel item = Tmodel.PurchaseModel.Items.FirstOrDefault();
+        if(item == null)
+        {
+            item = new TaxPurchaseItemModel();
+            Tmodel.PurchaseModel.Items.Add(item);
+        }  
+
+        item.ItemQty = Tmodel.Quantity;
+        item.ItemID = Tmodel.FuelItemID;
+
+        if (Tmodel.IsPurchase)
+        {                      
+            Tmodel.PurchaseModel.NonStoreInventory = true;
+            item.ItemRate = Tmodel.RatePerLitre;
+            item.Amount = Tmodel.Amount;            
+            item.CoaID = invItem.Group.MappedNonInventoryPurchaseHead;
+
+            item.GstRate = gstItemService.SelectByItem(Tmodel.FuelItemID ?? 0).FirstOrDefault().TaxRate;
+
+            if (item.GstRate != null && item.GstRate != 0)
+            {
+                if (partyService.IsLocal(Tmodel.PurchaseModel.PartyInfo.PartyID, branchID))
+                {
+
+                    item.CGST = item.Amount * item.GstRate / 200;
+                    item.SGST = item.Amount * item.GstRate / 200;
+                }
+                else
+                {
+                    item.IGST = item.Amount * item.GstRate / 100;
+                }
+            }
+
+            var tdsRate = tdsService.GetTdsRate(Tmodel.PurchaseModel.PartyInfo.PartyID ?? 0, item.CoaID ?? 0);
+            item.TDS = item.Amount * tdsRate/ 100;
+
+            try
+            {
+                Tmodel.PurchaseModel = taxPurchase.Update(Tmodel.PurchaseModel);
+            }
+            catch(Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+                return;
+            }
+        }      
+
         try
         {
-
-            Iservice.Update(Tmodel);
-            Tmodel = new();
+            Tmodel = Iservice.Update(Tmodel);
             snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close(Tmodel);
             Tmodel = new();
-
         }
         catch (Exception ex)
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            snackbar.Add(ex.Message, Severity.Error);
         }
-        MudDialog.Close();
+
     }
-    protected override async Task  OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        //IsPurView = "invisible";
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
-        //Ac = IsInvService.SelectByID(0).ToList();
-        Ac = IsInvService.SearchByDescription(string.Empty).ToList();
+        invItem = InvService.SelectByID(Tmodel.FuelItemID);
+        FuelGroupID = int.Parse(config.GetSection("Data")["FuelItemGroup"]);
     }
-    private void totalAmt()
-    {
-        Tmodel.TotalAmount = (Tmodel.RatePerLitre * Tmodel.Quantity);
-    }
+
+
     private void Cancel()
     {
         MudDialog.Close();
+    }
+
+    void FuelItemSelected(InventoryItemModel item)
+    {
+        invItem = item;
+        Tmodel.FuelItemID = item?.InventoryItemID;
+    }
+
+    void ShowTaxInfo()
+    {
+        var item = Tmodel.PurchaseModel.Items[0];
+        GstModel gst = new GstModel()
+            {
+                Cgst = item.CGST,
+                Igst = item.IGST,
+                Sgst = item.SGST,
+                TDS = item.TDS,
+                GstRate = item.GstRate
+                
+            };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("tax", gst);
+        var dialog = DialogService.Show<TaxRatedialog>( "Tax Details", parms);
     }
 }

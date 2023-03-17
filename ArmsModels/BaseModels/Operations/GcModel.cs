@@ -38,6 +38,10 @@ namespace ArmsModels.BaseModels
         public virtual decimal? SetUnloadQuantity { get; set; }
         public virtual decimal? TotalFreight { get; set; }
         public decimal? TotalBillQuantity { get; set; }
+        public long? LoadStartEventID { get; set; }
+        public long? LoadEndEventID { get; set; }
+        public long? UnloadStartEventID { get; set; }
+        public long? UnloadEndEventID { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
 
         [ValidateComplexType]

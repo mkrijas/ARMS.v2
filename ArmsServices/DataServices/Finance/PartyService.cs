@@ -15,8 +15,7 @@ namespace ArmsServices.DataServices
         PartyModel SelectByID(int? ID);
         int Delete(int? PartyID, string UserID);
         IEnumerable<PartyModel> Select(int? PartyID);
-        IEnumerable<PartyModel> SelectByCode(string PartyCode,string NatureOfBusiness);
-        bool IsCgst(int BranchID, int PartyID);
+        IEnumerable<PartyModel> SelectByCode(string PartyCode,string NatureOfBusiness);     
         IEnumerable<ContactModel> GetContacts(int? PartyID);
         IEnumerable<PartyModel> GetCustomers(string Code);
         IEnumerable<PartyModel> GetVendors(string Code);
@@ -31,6 +30,8 @@ namespace ArmsServices.DataServices
         int? GetRenterRentCoaID(int? RenterID);
         int? GetRenterDepositCoaID(int? RenterID);
         int? GetRenterOtherCoaID(int? RenterID);
+        bool IsLocal(int? PartyID, int? BranchID);
+
     }
 
     public class PartyService : IPartyService
@@ -42,9 +43,12 @@ namespace ArmsServices.DataServices
         IVendorPostingGroupService _vendor;
         ICustomerPostingGroupService _customer;
         IRenterPostingGroupService _renter;
+        IBranchService _branch;
 
         public PartyService(IDbService iservice, IAddressService addressService, 
-            IBankAccountService bankAccountService, IContactService contactService, IVendorPostingGroupService vendor, ICustomerPostingGroupService customer, IRenterPostingGroupService renter)
+            IBankAccountService bankAccountService, IContactService contactService, 
+            IVendorPostingGroupService vendor, ICustomerPostingGroupService customer, 
+            IRenterPostingGroupService renter, IBranchService branch)
         {
             Iservice = iservice;
             _addressService = addressService;
@@ -53,6 +57,7 @@ namespace ArmsServices.DataServices
             _vendor = vendor;
             _customer = customer;
             _renter = renter;
+            _branch = branch;
         }
 
 
@@ -97,6 +102,8 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+
+
         public PartyModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -139,17 +146,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public bool IsCgst(int BranchID, int PartyID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@PartyID", PartyID),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@IsCgst", BranchID){Direction = ParameterDirection.Output},
-            };
-            Iservice.ExecuteNonQuery("[usp.Finance.Taxes.Gst.IsCgst]", parameters);
-            return bool.Parse(parameters[2].Value.ToString());
-        }
+       
 
         private PartyModel GetModel(IDataRecord reader)
         {
@@ -314,6 +311,15 @@ namespace ArmsServices.DataServices
         public int? GetRenterOtherCoaID(int? RenterID)
         {
             return _renter.GetPostingGroup(RenterID).Other.CoaID;
+        }
+
+        public bool IsLocal(int? PartyID, int? BranchID)
+        {            
+            var branchModel =   _branch.SelectByID(BranchID);
+            var partyModel = SelectByID(PartyID);
+            string branchState = branchModel.GstNo?.Substring(0, 2);
+            string partyState = partyModel.GstNo?.Substring(0, 2);
+            return branchState != null && partyState != null && branchState == partyState; // branchState.Equals(partyState);
         }
     }
 }

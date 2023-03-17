@@ -1,19 +1,20 @@
-﻿
-@inject ITruckService Itruck
+﻿@inject ITruckService Itruck
 
-@if(IsLoaded)
+@if (IsLoaded)
 {
-    <MudAutocomplete Class="@Class" Disabled="@IsDisabled"  T="TruckModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Truck" @bind-Value="Value" ResetValueOnEmptyText="true"
-         Clearable="true"        SearchFunc="SearchTruck" ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
+    <MudAutocomplete SelectValueOnTab Clearable ResetValueOnEmptyText Strict T="TruckModel"
+                 Variant="@VariantParameter" Margin="@MarginParameter" Label="Select Truck"
+                 @bind-Value="Value" SearchFunc="SearchTruck" Class="@Class" Disabled="@IsDisabled"
+                 ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
 
 }
 else
 {
-   <MudText> Loading..... </MudText> 
+    <MudText> Loading..... </MudText>
 }
 
 @code {
-    private List<TruckModel> TruckList = new();    
+    private List<TruckModel> TruckList = new();
 
     [Parameter]
     public TruckModel Value
@@ -33,29 +34,52 @@ else
     [Parameter]
     public bool IsDisabled { get; set; } = false;
 
+
     [Parameter]
     public string Class { get; set; }
 
     [Parameter]
-    public int? BranchID { get; set; } = null;
+    public int? BranchID { get; set; }
+
+
+    [Parameter]
+    public List<int?> UnAssignedTruckIds { get; set; } = null;
 
     private TruckModel _value;
     private bool IsLoaded = false;
-
+    [Parameter]
+    public MudBlazor.Variant VariantParameter { get; set; } = MudBlazor.Variant.Outlined;
+    [Parameter]
+    public MudBlazor.Margin MarginParameter { get; set; } = MudBlazor.Margin.Dense;
 
     private async Task<IEnumerable<TruckModel>> SearchTruck(string searchString)
     {
         await Task.Delay(3);
-
         return TruckList.Where(x => x.RegNo.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
     }
 
 
     protected override void OnInitialized()
     {
-        TruckList = Itruck.SelectByBranch(BranchID).ToList();
+        if (UnAssignedTruckIds == null || UnAssignedTruckIds.Count() == 0)
+        {
+            TruckList = Itruck.SelectByBranch(BranchID).ToList();
+        }
+        else
+        {
+            TruckList = Itruck.SelectByBranch(BranchID).Where(d => UnAssignedTruckIds.Any(s => s == d.TruckID)).ToList();
+        }
         IsLoaded = true;
-        if(IsDisabled == null)
+
+        if (VariantParameter == null)
+        {
+            VariantParameter = MudBlazor.Variant.Outlined;
+        }
+        if (MarginParameter == null)
+        {
+            MarginParameter = MudBlazor.Margin.Dense;
+        }
+        if (IsDisabled == null)
         {
             IsDisabled = false;
         }

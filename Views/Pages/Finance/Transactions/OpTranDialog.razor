@@ -61,61 +61,42 @@
                     </MudSelect>
 
                 </MudItem><MudItem xs="12" md="6">
-                    <MudAutocomplete T="AccountRuleDefinitionModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Accounts" @bind-Value="accountRuleDefinition" ResetValueOnEmptyText="true"
-                                     Clearable="true" SearchFunc="SearchAccounts" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
+                    <PaymentCodeSelector  @bind-Value="accountRuleDefinition" PaymentMode="Cash" LabelName="Cash a/c"></PaymentCodeSelector>
 
                 </MudItem>
 
                 <MudItem xs="12" md="12">
 
                     <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
-
-
                         <thead>
-
                             <tr>
-
-
-
-                                <th colspan="3">UsageCode</th>
+                                <th >UsageCode</th>
                                 <th>Reference</th>
                                 <th>Amount</th>
                                 <th>Quantity</th>
                                 <th>Unit</th>
-
                                 <th></th>
-
-
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var item in model.Transactions)
                             {
                                 <tr>
-
-
-                                    <td colspan="3">@item.ExpenseUsageCode</td>
+                                    <td >@item.ExpenseUsageCode</td>
                                     <td>@item.Reference</td>
                                     <td>@item.Amount</td>
                                     <td>@item.Quantity</td>
                                     <td>@item.Unit</td>
-
-
                                     <td>
-
                                         <MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-
                                     </td>
-
                                 </tr>
                             }
                             @if (!IsReadOnly)
                             {
                                 <tr>
-
-                                    <td colspan="3">
-
-                                        <UsageCodeSelector @bind-Value=gstusge></UsageCodeSelector>
+                                    <td >
+                                        <UsageCodeSelector  @bind-Value="@gstusge"></UsageCodeSelector>
                                     </td>
                                     <td>
                                         <MudTextField @bind-Value="opTranSubModel.Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Reference)"></MudTextField>
@@ -132,14 +113,17 @@
                                         <MudTextField @bind-Value="opTranSubModel.Unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Unit)"></MudTextField>
 
                                     </td>
-
                                     <td>
-
                                         <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
 
                                     </td>
                                 </tr>
                             }
+                            <tr>
+                                <td colspan="2">Total</td>
+                                 <td >@model.TotalAmount</td>
+                                <td colspan="2"></td>
+                            </tr>
                         </tbody>
                     </MudSimpleTable>
 
@@ -211,8 +195,9 @@
         }
         else
         {
-            accountRuleDefinition.CoaID = model.CreditCoaID;
-            accountRuleDefinition.ArdCode = model.PaymentArdCode;
+            accountRuleDefinition.CoaID = model.CreditCoaID;            
+            accountRuleDefinition.ArdCode = model.PaymentArdCode;            
+
             model.Transactions = Iservice.GetExpenses(model.OpTranID).ToList();
         }
 
@@ -237,7 +222,7 @@
     }
     private async Task<IEnumerable<AccountRuleDefinitionModel>> SearchAccounts(string searchString)
     {
-        await Task.Delay(5);
+        await Task.Delay(3);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -256,15 +241,21 @@
 
         model.TotalAmount = model.TotalAmount + (opTranSubModel.Amount * opTranSubModel.Quantity);
         opTranSubModel = new();
-
-
+        Total();
     }
     public void DeleteExpenses(OpTranSubModel i)
     {
         int rowIndex = model.Transactions.IndexOf(i);
         model.TotalAmount = model.TotalAmount - (i.Amount * i.Quantity);
         model.Transactions.RemoveAt(rowIndex);
+        Total();
     }
+
+    private void Total()
+    {
+        model.TotalAmount = model.Transactions.Sum(x => x.Amount);
+    }
+
     private async Task Submit()
     {
 
@@ -276,7 +267,7 @@
         model.BranchID = int.Parse(brancIDString);
         model.PaymentArdCode = accountRuleDefinition.ArdCode;
         model.CreditCoaID = accountRuleDefinition.CoaID;
-        model.NatureOfTransaction = "Oprations";
+        model.NatureOfTransaction = "Operations";
 
         try
         {

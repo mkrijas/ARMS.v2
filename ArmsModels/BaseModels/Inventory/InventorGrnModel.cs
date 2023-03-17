@@ -49,7 +49,9 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
             Entries = new();            
-        }  
+        }
+
+        public int? InvTranID { get; set; }
         public int? StoreID { get; set; }
         [Required]
         public DateTime? EntryDate { get; set; }       

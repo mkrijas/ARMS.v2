@@ -20,34 +20,43 @@
 @using Pages.Operations.Gc
 @using Pages.FMS.Breakdown
 
-<div class=opthead>
-    <h6>Operations</h6>
-</div>
+
 <MudGrid Spacing="4">
 
     <MudItem xs="12">
         <TruckSelector Class="bg-white" Value="SelectedTruck" ValueChanged="OnTruckSelected" />
     </MudItem>
-    <MudItem xs="12">
+
+
+    <MudItem xs="12" Class="d-flex">
         @if (CurrentTrip != null)
         {
-            <MudText hidden="@HideStatus" Class="subbutn" Style="display:inline-block"><MudIcon Icon="@Icons.Material.Filled.ModeOfTravel" Title="Trip Number" Color="Color.Primary" /> @(CurrentTrip?.TripPrefix + CurrentTrip?.TripNumber)</MudText>
+            <MudText hidden="@HideStatus" Typo="Typo.h4" Class="mr-5"><MudIcon Icon="@Icons.Material.Filled.ModeOfTravel" Title="Trip Number" Color="Color.Primary" /> @(CurrentTrip?.TripPrefix + CurrentTrip?.TripNumber)</MudText>
         }
 
         @if (SelectedTruck != null && AssignedDriver == null)
         {
-            <MudText Class="subbutn" Style="display:inline-block"><MudIcon Icon="@Icons.Material.Outlined.AssignmentTurnedIn" Title="Driver" Color="Color.Warning" /> UNASSAIGNED</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Error"><MudIcon Icon="@Icons.Material.Outlined.AirlineSeatReclineNormal" Title="Driver" /> UNASSAIGNED</MudText>
         }
         else if (SelectedTruck != null && AssignedDriver != null)
         {
-            <MudText Typo="Typo.h4" Style="display:inline-block"><MudIcon Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Title="Driver" Color="Color.Success" /> @AssignedDriver.DriverName</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Success"><MudIcon Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Title="Driver" /> @AssignedDriver.DriverName</MudText>
+        }
+        <MudSpacer></MudSpacer>
+        @if (HideControls && SelectedTruck != null)
+        {
+            <MudText Typo="Typo.h4" Color="Color.Error">@EventType.EventStatusText</MudText>
+        }
+        else if (!HideControls)
+        {
+            <MudText Typo="Typo.h4" Color="Color.Primary"> @CurrentEvent?.OriginName - @CurrentEvent?.DestinationName</MudText>
         }
 
     </MudItem>
 
-    @if (SelectedTruck != null)
+    @if (!HideControls)
     {
-        <MudItem xs="12" md="12" hidden="@HideControls">
+        <MudItem xs="12" md="12">
             <MudButtonGroup Color="Color.Surface" Variant="Variant.Filled">
                 <MudButton StartIcon="@Icons.Material.Filled.AddTask" OnClick="UpdateEvent" IconColor="Color.Default">@EventButtonLabel</MudButton>
                 @if (CurrentEvent?.EventTypeID == 2)
@@ -57,20 +66,23 @@
                 <MudButton StartIcon="@Icons.Material.Outlined.PersonAddAlt1" OnClick="AssignDriver" IconColor="Color.Primary">@AssignDriverLabel</MudButton>
                 <MudButton StartIcon="@Icons.Material.Filled.ReportProblem" OnClick="ReportBreakDown" IconColor="Color.Secondary">Breakdown/Accident</MudButton>
 
-
-                @*@if (CurrentTrip != null)
-            {
-            <MudButton StartIcon="@Icons.Material.Outlined.Cancel" OnClick="CancelTrip" IconColor="Color.Error">Cancel Trip</MudButton>
-            }*@
-                @*<MudButton StartIcon="@Icons.Material.Outlined.Money" OnClick="AddTransaction" IconColor="Color.Primary">Inc/Exp</MudButton>*@
+                @if (CurrentTrip != null && !CurrentTrip.Closed)
+                {
+                    <MudButton StartIcon="@Icons.Material.Outlined.Cancel" OnClick="CancelTrip" IconColor="Color.Error">Cancel Trip</MudButton>
+                }
+            @if (CurrentTrip != null)
+                {
+                    <MudButton StartIcon="@Icons.Material.Outlined.Details" OnClick="OpenTripCard" IconColor="Color.Primary">View Details</MudButton>
+                }
             </MudButtonGroup>
         </MudItem>
     }
+
 </MudGrid>
 
 @if (SelectedTruck != null)
 {
-    <TripManagerView Trip="CurrentTrip" @ref="TripManagerViewRef" OnTripStatusUpdated="@TripStatusUpdated"></TripManagerView>
+    <TripViewComponent Trip="CurrentTrip" @ref="TripViewRef" OnTripStatusUpdated="@TripStatusUpdated"></TripViewComponent>
 }
 
 
@@ -78,7 +90,7 @@
     [Parameter]
     public TruckModel SelectedTruck { get; set; }
 
-    TripManagerView TripManagerViewRef;
+    TripViewComponent TripViewRef;
 
     private DriverModel AssignedDriver { get; set; }
     private EventModel CurrentEvent { get; set; }
@@ -90,7 +102,7 @@
     string EventButtonLabel;
     string AssignDriverLabel;
 
-    private bool HideControls { get; set; } = false;
+    private bool HideControls { get; set; } = true;
     public bool HideStatus { get; set; } = true;
     private bool DisableEventButton { get; set; } = false;
     private bool DisableCancelButton { get; set; } = true;
@@ -106,6 +118,13 @@
     {
     }
 
+    private void OpenTripCard()
+    {
+        var parameters = new DialogParameters();        
+        parameters.Add("Trip", CurrentTrip);        
+        var result = DialogService.Show<TripDetailsCard>(CurrentTrip.TripPrefix + CurrentTrip.TripNumber.ToString()+ " Details", parameters,new DialogOptions{MaxWidth= MaxWidth.Large});
+    }
+
     private async Task UpdateEvent()
     {
         if (!IsFit())
@@ -114,39 +133,65 @@
         }
 
         var parameters = new DialogParameters();
-        parameters.Add("Truck", SelectedTruck);        
-        parameters.Add("AssignedDriver", AssignedDriver);       
+        parameters.Add("Truck", SelectedTruck);
+        parameters.Add("AssignedDriver", AssignedDriver);
 
         if (EventButtonLabel == "Start New Trip")
         {
             var dialog = DialogService.Show<NewTripView>("Start Trip", parameters);
             var result = await dialog.Result;
-            //CurrentTrip = (TripModel)result.Data;
-            //if (!result.Canceled)
-            //{
-            //    TripManagerViewRef.IsLoading();
-            //    truckStatusUpdated();
-            //}
+
+            if (!result.Canceled)
+            {
+                CurrentTrip = (TripModel)result.Data;
+                await TripViewRef.RefreshEvents();
+                truckStatusUpdated(Ievent.GetCurrentEvent(SelectedTruck.TruckID));
+            }
         }
         else
         {
             parameters.Add("CurrentTrip", CurrentTrip);
             var dialog = DialogService.Show<UpdateEventView>("Update Event", parameters);
             var result = await dialog.Result;
-            var data = result.Data;
-            //if (!result.Canceled)
-            //{
-            //    TripManagerViewRef.IsLoading();
-            //    truckStatusUpdated();
-            //}
+
+            CurrentEvent = (EventModel)result.Data;
+
+            if (!result.Canceled)
+            {               
+                await TripViewRef.RefreshEvents();
+                truckStatusUpdated(CurrentEvent);
+            }
         }
 
     }
 
-    private void CancelTrip()
+    private async Task CancelTrip()
     {
+        int pendingGcs = Igc.SelectPending(CurrentTrip?.TripID).Count();
+        string txt = "";
+        if (pendingGcs != 0)
+        {
+            txt = pendingGcs + " Unfinished GCs found.Do you want to Remove those GCs from this Truck";
+        }
+        else
+        {
+            txt = "Do you confirm the cancellation?";
+        }
 
+        bool? yesno = await DialogService.ShowMessageBox(
+          "Cancel Trip",
+           txt,
+          yesText: "Cancel Trip!", cancelText: "Don't Cancel");
+        if (yesno == null)
+        {
+            return;
+        }
+        var authState = await auth.GetAuthenticationStateAsync();
+        Itrip.Cancel(CurrentTrip.TripID, authState.User.Identity.Name);
+        StateHasChanged();
     }
+
+
 
     private async Task ReportBreakDown()
     {
@@ -154,8 +199,8 @@
         if (pendingGcs != 0)
         {
             bool? yesno = await DialogService.ShowMessageBox(
-           "Warning",
-           pendingGcs + " Unfinished GCs found.Do you want to Cancel those GCs",
+           "Breakdown",
+           pendingGcs + " Unfinished GCs found.Do you want to Remove those GCs from this Truck",
            yesText: "Proceed!", cancelText: "Cancel");
             if (yesno == null)
             {
@@ -172,7 +217,7 @@
         var Data = await result.Result;
         var ev = Data.Data;
         if (!Data.Canceled)
-        {            
+        {
             truckStatusUpdated(Ievent.GetCurrentEvent(SelectedTruck.TruckID));
         }
 
@@ -202,7 +247,7 @@
         var result = DialogService.Show<GcSelectDialog>("Load Consignment", parameters, maxWidth);
         var Data = await result.Result;
         var ev = Data.Data;
-        TripManagerViewRef.LoadGcs();
+        TripViewRef.LoadGcs();
     }
 
 
@@ -212,7 +257,16 @@
         if (model != null)
         {
             CurrentTrip = Itrip.Select(Itruck.GetCurrentTrip(model.TruckID));
+            if (CurrentTrip != null)
+            {
+                CurrentTrip.Closed = Itrip.IsClosed(CurrentTrip.TripID);
+            }
             truckStatusUpdated(Ievent.GetCurrentEvent(model.TruckID));
+        }
+        else
+        {
+            CurrentTrip = null;
+            truckStatusUpdated(null);
         }
     }
 
@@ -229,7 +283,7 @@
     }
 
     protected void TripStatusUpdated(EventModel em)
-    {        
+    {
         truckStatusUpdated(em);
     }
 
@@ -237,7 +291,7 @@
     private void truckStatusUpdated(EventModel ev)
     {
         HideControls = true;
-        HideStatus = true;        
+        HideStatus = true;
         EventType = null;
         CurrentEvent = ev;
 
@@ -245,7 +299,7 @@
         {
             int? DriverID = Itruck.GetAssignedDriver(SelectedTruck.TruckID);
             AssignedDriver = DriverID == null ? null : Idriver.SelectByID(DriverID.Value);
-            AssignDriverLabel = AssignedDriver == null ? "Assign Driver" : "Replace Driver";            
+            AssignDriverLabel = AssignedDriver == null ? "Assign Driver" : "Replace Driver";
 
             // Set text to show
             if (ev != null)
