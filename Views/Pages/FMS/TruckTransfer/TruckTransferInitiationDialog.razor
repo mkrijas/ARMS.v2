@@ -1,0 +1,126 @@
+﻿@inject AuthenticationStateProvider auth
+@inject ITruckTransferService Iservice
+@inject IBranchService Ibranchservice
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        @if (model.TruckTransferInitiationID == null || model.TruckTransferInitiationID == 0)
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Truck Transfer Initiation.
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Truck Transfer Initiation.
+            </MudText>
+        }
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+
+                <MudItem xs="12" md="12">
+                    <TruckSelector Value="model.Truck"UnAssignedTruckIds="UnAssignedTruckIds"  VariantParameter="Variant.Outlined" MarginParameter="Margin.Normal" BranchID="branchID" ValueChanged="TruckSelected" />
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudSelect Label="Destination Branch"  Variant="Variant.Outlined" Margin="Margin.Normal" @bind-Value="model.DestinationBranchID" T="int?" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" Required>
+                        @foreach (BranchModel ditem in DestinationBranchList)
+                        {
+                            <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="12" Class="mb-6">
+                    <MudTextField @bind-Value="model.StartKM" Label="StartKM" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.StartKM)" Required></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="12" Class="mb-6">
+                    <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Remarks)"></MudTextField>
+                </MudItem>
+
+            </EditForm>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public TruckTransferInitiationModel model { get; set; } = new();
+
+
+    private List<BranchModel> DestinationBranchList = new();
+
+
+    private List<int?> UnAssignedTruckIds = new();
+    protected override void OnInitialized()
+    {
+        branchID = model?.InitiationBranchID??0;
+        DestinationBranchList = Ibranchservice.Select().Where(d=>d.BranchID != branchID).ToList();
+        UnAssignedTruckIds = Iservice.getUnAssignrdTruckIds(model?.InitiationBranch?.BranchID??0).ToList();
+    }
+
+    private int branchID { get; set; } = 0;
+
+    protected override void OnParametersSet()
+    {
+    }
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public async Task Submit()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if(model.Truck==null || model.Truck.TruckID == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Please, Select truck.", yesText: "OK");
+
+            return;
+        }
+        if (model != null)
+        {
+
+            if(model.DestinationBranch == null)
+            {
+                model.DestinationBranch = new();
+            }
+            model.DestinationBranch.BranchID = model.DestinationBranchID;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Update(model);
+                Snackbar.Add("Transfered succesfully",Severity.Success);
+
+            }
+            catch(Exception ex)
+            {
+                Snackbar.Add(ex.Message,Severity.Error);
+            }
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+    
+    private async Task TruckSelected(TruckModel obj)
+    {
+        model.Truck = obj;
+    }
+
+}
+
