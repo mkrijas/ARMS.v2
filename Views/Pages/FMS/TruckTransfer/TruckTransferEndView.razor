@@ -1,4 +1,4 @@
-﻿@page "/TruckTransferInitiationView"
+﻿@page "/TruckTransferEndView"
 
 @inject ITruckTransferService Iservice
 @inject MudBlazor.ISnackbar snackbar
@@ -11,25 +11,22 @@
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Truck Transfer Initiation View.</MudText>
-                <MudTooltip Text="New Asset Request">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEdit(new TruckTransferInitiationModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip>
-                <MudSpacer></MudSpacer>
 
-            </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.Truck.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.DestinationBranch.BranchName)" InitialDirection="SortDirection.Ascending">Destination Branch</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.StartKM)" InitialDirection="SortDirection.Ascending">Start KM</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.Remarks)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferEndModel, object>(x=> x.Truck.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferEndModel, object>(x=> x.InitiationBranch.BranchName)" InitialDirection="SortDirection.Ascending">Initiation Branch</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferEndModel, object>(x=> x.TransferStatus)" InitialDirection="SortDirection.Ascending">Transfer Status</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferEndModel, object>(x=> x.StartKM)" InitialDirection="SortDirection.Ascending">Start KM</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferEndModel, object>(x=> x.EndKM)" InitialDirection="SortDirection.Ascending">End KM</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferEndModel, object>(x=> x.Remarks)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Truck">@context.Truck.RegNo</MudTd>
-                <MudTd DataLabel="Destination Branch">@context.DestinationBranch.BranchName</MudTd>
+                <MudTd DataLabel="Initiation Branch">@context.InitiationBranch.BranchName</MudTd>
+                <MudTd DataLabel="Transfer Status">@context.TransferStatus</MudTd>
                 <MudTd DataLabel="Start KM">@context.StartKM</MudTd>
+                <MudTd DataLabel="End KM">@context.EndKM</MudTd>
                 <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
                 <MudTd DataLabel="">
                     <MudTooltip Text="Edit">
@@ -39,6 +36,7 @@
                         <MudIconButton @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
                 </MudTd>
+
             </RowTemplate>
 
             <PagerContent>
@@ -51,9 +49,9 @@
 @code {
 
 
-    private TruckTransferInitiationModel model = new();
+    private TruckTransferEndModel model = new();
 
-    private List<TruckTransferInitiationModel> collection = new();
+    private List<TruckTransferEndModel> collection = new();
 
     string state = "Message box hasn't been opened yet";
     protected override void OnParametersSet()
@@ -62,25 +60,26 @@
         GetAll();
 
     }
-    private async Task OpenDialogEdit(TruckTransferInitiationModel TruckTransferInitiation)
+
+    private async Task OpenDialogEdit(TruckTransferEndModel TruckTransferEnd)
     {
 
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        TruckTransferInitiation.UserInfo = new();
-        if (TruckTransferInitiation.UserInfo != null)
+        TruckTransferEnd.UserInfo = new();
+        if (TruckTransferEnd.UserInfo != null)
         {
-            TruckTransferInitiation.UserInfo.UserID = user.Identity.Name;
+            TruckTransferEnd.UserInfo.UserID = user.Identity.Name;
         }
-        TruckTransferInitiation.InitiationBranchID = int.Parse(brancIDString);
+        TruckTransferEnd.InitiationBranchID = int.Parse(brancIDString);
 
 
-        var model = new DialogParameters { ["model"] = TruckTransferInitiation };
+        var model = new DialogParameters { ["model"] = TruckTransferEnd };
 
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<TruckTransferInitiationDialog>("Simple Dialog", model, options);
+        var dialog = DialogService.Show<TruckTransferEndDialog>("Simple Dialog", model, options);
 
         var result = await dialog.Result;
 
@@ -90,8 +89,13 @@
             GetAll();
         }
     }
-    private async Task OpenDialogDelete(TruckTransferInitiationModel TruckTransferInitiation)
+    private async Task OpenDialogDelete(TruckTransferEndModel TruckTransferEnd)
     {
+        if(TruckTransferEnd.TruckTransferEndID == null || TruckTransferEnd.TruckTransferEndID == 0)
+        {
+            snackbar.Add("Truck Not Received.",Severity.Error);
+            return;
+        }
 
         bool? result = await DialogService.ShowMessageBox(
             "Warning",
@@ -103,11 +107,11 @@
 
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
-            TruckTransferInitiation.UserInfo = new();
-            if (TruckTransferInitiation.UserInfo != null)
+            TruckTransferEnd.UserInfo = new();
+            if (TruckTransferEnd.UserInfo != null)
             {
-                TruckTransferInitiation.UserInfo.UserID = user.Identity.Name;
-                Iservice.DeleteInitiation(TruckTransferInitiation.TruckTransferInitiationID, TruckTransferInitiation.UserInfo.UserID);
+                TruckTransferEnd.UserInfo.UserID = user.Identity.Name;
+                Iservice.DeleteEnd(TruckTransferEnd.TruckTransferEndID, TruckTransferEnd.UserInfo.UserID);
             }
             GetAll();
         }
@@ -132,10 +136,18 @@
         {
             model.UserInfo.UserID = user.Identity.Name;
         }
-        model.InitiationBranchID = int.Parse(brancIDString);
+        model.DestinationBranchID = int.Parse(brancIDString);
 
-        foreach (var item in Iservice.SelectPendingByBranchInitiation(model.InitiationBranchID))
+        foreach (var item in Iservice.SelectPendingByBranchEnd(model.DestinationBranchID))
         {
+            if(item.TruckTransferEndID == null || item.TruckTransferEndID == 0)
+            {
+                item.TransferStatus = "Transfer Not Completed";
+            }
+            else
+            {
+                item.TransferStatus = "Transfer Completed";
+            }
             collection.Add(item);
         }
 
@@ -143,3 +155,4 @@
     }
 
 }
+
