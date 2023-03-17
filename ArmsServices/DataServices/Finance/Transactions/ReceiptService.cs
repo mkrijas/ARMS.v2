@@ -227,6 +227,7 @@ namespace ArmsServices.DataServices
                 Narration = dr.GetString("Narration"),
                 InterBranchTranID = dr.GetInt32("InterBranchTranID"),
                 IsInterBranch = dr.GetBoolean("IsInterBranch"),
+                OtherBranch=dr.GetInt32("OtherBranch"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),

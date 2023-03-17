@@ -35,7 +35,7 @@
             <MudGrid Spacing="4">
 
                 <MudItem xs="12" md="4">
-                    <MudSelect Label="Select Party" ReadOnly="IsReadOnly" @bind-Value="nbusiness" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    <MudSelect Label="Select Party" ReadOnly="IsReadOnly" @bind-Value="@nbusiness" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                         <MudSelectItem Value="@("Supplier")" />
                         <MudSelectItem Value="@("Customer")" />
                         <MudSelectItem Value="@("Renter")" />
@@ -59,14 +59,14 @@
 
                 </MudItem>
                 <MudItem xs="12" md="5">
-                    <MudSelect Label="Select Branch" ReadOnly="IsReadOnly" @bind-Value="OtherBranch" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    <MudSelect Label="Crediting Branch" ReadOnly="IsReadOnly" @bind-Value="model.OtherBranch" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                         @foreach (var ditem in branches)
                         {
                             <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>  <MudItem xs="12" md="5">
-                    <MudSelect Label="Select Transaction Type" ReadOnly="IsReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    <MudSelect Label="Select Transaction Type" ReadOnly="IsReadOnly" @bind-Value="model.InterBranchTranID" SelectedValuesChanged="CheckInterbranchMapping" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                         @foreach (var ditem in transactionTypeList)
                         {
                             <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
@@ -117,7 +117,7 @@
                         }
                         <MudItem xs="12" md="12">
 
-                            <PaymentCodeSelector @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
+                            <PaymentCodeSelector IsReadonly="IsReadOnly" @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
 
 
                         </MudItem>
@@ -202,7 +202,7 @@
 </MudDialog>
 @code {
     [Parameter]
-    public ReceiptModel model { get; set; }
+    public ReceiptModel model { get; set; } = new();
     [Parameter]
     public bool IsReadOnly { get; set; }
     [Parameter]
@@ -215,7 +215,7 @@
     public int? OtherBranch;
     private List<InterBranchTransactionTypeModel> transactionTypeList = new();
     private List<BranchModel> branches = new();
-
+    public InterBranchAccountMappingModel InterBrMappingList { get; set; }
     private AccountRuleDefinitionModel accountRuleDefinitionModel = new();
 
     private List<CostCenterModel> costCenter = new();
@@ -230,7 +230,12 @@
             nbusiness = model.ReceiptType;
             model.Bills = Iservice.GetBills(model.ReceiptID).ToList();
             model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
-
+            accountRuleDefinitionModel.BankTools = model.ReceiptTool;
+            accountRuleDefinitionModel.BankCharges=model.BankCharges;
+            accountRuleDefinitionModel.paymentMode=model.ReceiptMode;
+           // accountRuleDefinitionModel.ArdCode = model.ReceiptCoaID;
+            accountRuleDefinitionModel.Title = model.ReceiptArdCode;
+            
             Isbill = true;
         }
         costCenter = costIservice.Select().ToList();
@@ -244,6 +249,16 @@
     {
         MudDialog.Cancel();
     }
+    private async Task CheckInterbranchMapping()
+    {
+        InterBrMappingList = intermappingIservice.Select(OtherBranch, model.InterBranchTranID);
+        if(InterBrMappingList==null)
+        {
+            snackbar.Add("Crediting branch is not mapped !", Severity.Warning);
+            return;
+        }
+    }
+
     private async Task nTransactionchanged(string nt)
     {
         model.NatureOfTransaction = nt;
@@ -382,7 +397,7 @@
         model.ReceiptType = nbusiness;
         model.UserInfo.UserID = user.Identity.Name;
         model.BranchID = brancID;
-        model.OtherBranch = OtherBranch;
+       // model.OtherBranch = OtherBranch;
         model.IsInterBranch = true;
         try
         {
