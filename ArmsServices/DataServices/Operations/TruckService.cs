@@ -14,7 +14,8 @@ namespace ArmsServices.DataServices
         TruckModel Update(TruckModel model);
         int Delete(int? TruckID, string UserID);
         IEnumerable<TruckModel> Select(int? TruckID);
-        IEnumerable<TruckModel> SelectByBranch(int? BranchID);
+        IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer = "All");
+
         TruckModel SelectByID(int? ID);
         TruckRegistrationModel GetRegistration(int? TruckID);
         TruckRegistrationModel GetRegistration(string RegNo);
@@ -244,11 +245,12 @@ namespace ArmsServices.DataServices
             return TripID;
         }
 
-        public IEnumerable<TruckModel> SelectByBranch(int? BranchID)
+        public IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer = "All")
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@BranchID", BranchID)
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", Filer),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Truck.Select]", parameters))

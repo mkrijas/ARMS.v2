@@ -46,6 +46,11 @@ namespace ArmsServices
         {
             return GetFieldValue(dr, name, false);
         }
+        public static bool? GetBooleanNullable(this IDataRecord dr, string name)
+        {
+            return GetFieldValue<bool?>(dr, name, null);
+        }
+
         public static decimal? GetDecimal(this IDataRecord dr, string name)
         {
             return GetFieldValue<decimal?>(dr, name, null);

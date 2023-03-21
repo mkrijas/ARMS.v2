@@ -27,10 +27,10 @@
                 <ValidationSummary />
 
                 <MudItem xs="12" md="12">
-                    <TruckSelector Value="model.Truck"UnAssignedTruckIds="UnAssignedTruckIds"  VariantParameter="Variant.Outlined" MarginParameter="Margin.Normal" BranchID="branchID" ValueChanged="TruckSelected" />
+                    <TruckSelector Value="model.Truck" Filter="@filter" VariantParameter="Variant.Outlined" MarginParameter="Margin.Normal" BranchID="branchID" ValueChanged="TruckSelected" />
                 </MudItem>
                 <MudItem xs="12" md="12">
-                    <MudSelect Label="Destination Branch"  Variant="Variant.Outlined" Margin="Margin.Normal" @bind-Value="model.DestinationBranchID" T="int?" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" Required>
+                    <MudSelect Label="Destination Branch" Variant="Variant.Outlined" Margin="Margin.Normal" @bind-Value="model.DestinationBranch.BranchID" T="int?" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" Required>
                         @foreach (BranchModel ditem in DestinationBranchList)
                         {
                             <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
@@ -38,7 +38,7 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="12" Class="mb-6">
-                    <MudTextField @bind-Value="model.StartKM" Label="StartKM" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.StartKM)" Required></MudTextField>
+                    <MudTextField @bind-Value="model.TruckEvent.EventReading" Label="StartKM" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TruckEvent.EventReading)" Required></MudTextField>
                 </MudItem>
                 <MudItem xs="12" md="12" Class="mb-6">
                     <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Remarks)"></MudTextField>
@@ -65,11 +65,12 @@
 
 
     private List<int?> UnAssignedTruckIds = new();
+    private string filter { get; set; } = "UnAssigned";
     protected override void OnInitialized()
     {
-        branchID = model?.InitiationBranchID??0;
-        DestinationBranchList = Ibranchservice.Select().Where(d=>d.BranchID != branchID).ToList();
-        UnAssignedTruckIds = Iservice.getUnAssignrdTruckIds(model?.InitiationBranch?.BranchID??0).ToList();
+        filter = "UnAssigned";
+        branchID = model?.InitiationBranch?.BranchID ?? 0;
+        DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != branchID).ToList();
     }
 
     private int branchID { get; set; } = 0;
@@ -85,7 +86,7 @@
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        if(model.Truck==null || model.Truck.TruckID == 0)
+        if (model.Truck == null || model.Truck.TruckID == 0)
         {
             bool? result = await DialogService.ShowMessageBox(
             "Warning",
@@ -96,27 +97,34 @@
         if (model != null)
         {
 
-            if(model.DestinationBranch == null)
+            if (model.DestinationBranch == null)
             {
                 model.DestinationBranch = new();
             }
-            model.DestinationBranch.BranchID = model.DestinationBranchID;
-            model.UserInfo.UserID = user.Identity.Name;
+            if (model.TruckEvent == null)
+            {
+                model.TruckEvent = new();
+            }
+            if (model.TruckEvent.UserInfo == null)
+            {
+                model.TruckEvent.UserInfo = new();
+            }
+            model.TruckEvent.UserInfo.UserID = user.Identity.Name;
             try
             {
-                Iservice.UpdateInitiation(model);
-                Snackbar.Add("Transfered succesfully",Severity.Success);
+                Iservice.UpdateOutgoing(model);
+                Snackbar.Add("Transfered succesfully", Severity.Success);
 
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Snackbar.Add(ex.Message,Severity.Error);
+                Snackbar.Add(ex.Message, Severity.Error);
             }
         }
 
         MudDialog.Close(DialogResult.Ok(true));
     }
-    
+
     private async Task TruckSelected(TruckModel obj)
     {
         model.Truck = obj;
