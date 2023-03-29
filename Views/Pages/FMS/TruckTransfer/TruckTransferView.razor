@@ -1,21 +1,48 @@
 ﻿@page "/TruckTransferView"
 
+@using ArmsModels.BaseModels.General
+@using ArmsServices.DataServices.General
+@using Microsoft.AspNetCore.SignalR.Client;
+@using Views.Data
+
 @inject ITruckTransferService Iservice
+@inject IPushNotificationService IpushNotificationService
 @inject MudBlazor.ISnackbar snackbar
 
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject IBranchService Ibranchservice
+@inject NavigationManager NavigationManager
 
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+@*            <div id="noti_Container">
+                <div class="ikrNoti_Counter">@currentNotificationMessages.Count()</div>
+                <div class="ikrNoti_Button" style="background:#2E467C;" @onclick="NotificationHideShow"></div>
+                <div class="ikrNotifications" style="display:@BoxCss !important" @onclick="NotificationHideShow">
+                    <h3>Notification(<span class="notiCounterOnHead">@currentNotificationMessages.Count()</span>)</h3>
+                    <div class="ikrNotificationItems">
+                        @foreach (var nmObj in @currentNotificationMessages)
+                        {
+                            <div class="ikrSingleNotiDiv" notiId="@nmObj.MSgId">
+                                <h4 class="ikrNotiFromPropName">Sender:@nmObj.InitiateBranch.BranchName</h4>
+                                <h5 class="ikrNotificationTitle">@nmObj.MessageTitle</h5>
+                                <div class="ikrNotificationBody">@nmObj.MessageBody</div>
+                                <div class="ikrNotiCreatedDate">@nmObj.MsgDatest</div>
+                            </div>
+                        }
+                    </div>
+                    <div class="ikrSeeAll"><a href="#">See All</a></div>
+                </div>
+            </div>*@
             <MudTabPanel Text="Truck Transfer Outgoing">
                 <MudTable Items="@collectionOutGoing" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="modelOutGoing">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">Truck Transfer Outgoing View.</MudText>
-                        <MudTooltip Text="New Asset Request">
+                        <MudTooltip Text="New Truck Transfer">
                             <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEditOutGoing(new TruckTransferInitiationModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                         </MudTooltip>
                         <MudSpacer></MudSpacer>
@@ -33,7 +60,7 @@
                         <MudTd DataLabel="Truck">@context.Truck.RegNo</MudTd>
                         <MudTd DataLabel="Destination Branch">@context.DestinationBranch.BranchName</MudTd>
                         <MudTd DataLabel="Start KM">@context.TruckEvent.EventReading</MudTd>
-                        <MudTd DataLabel="Start KM">@context.TruckTransferEndModel.StatusText</MudTd>
+                        <MudTd DataLabel="Status">@context.TruckTransferEndModel.StatusText</MudTd>
                         <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
                         <MudTd DataLabel="">
                             <MudTooltip Text="Edit">
@@ -89,17 +116,92 @@
 
 
 @code {
+    int CurrentBranchId = 0;
+
+    private List<BranchModel> BranchList = new();
 
     protected override async Task OnInitializedAsync()
     {
+        BranchList = Ibranchservice.Select().ToList();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        CurrentBranchId = int.Parse(brancIDString);
+
+        hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
+        hubConnection.On<BranchModel, BranchModel, string, string, int, string>("ReceiveMessage", (InitiateBranch, ReceivedBranch, MessageTitle, MessageBody, RedirectedTo, MsgDatest) =>
+        {
+            allNotificationMessages.Add(new PushNotificationModel()
+                {
+                    MSgId = allNotificationMessages.Count() + 1,
+                    MessageID = 0,
+                    InitiateBranch = InitiateBranch,
+                    ReceivedBranch = ReceivedBranch,
+                    MessageTitle = MessageTitle,
+                    MessageBody = MessageBody,
+                    RedirectedTo = RedirectedTo,
+                    MsgDateString = MsgDatest
+                });
+            currentNotificationMessages = allNotificationMessages.Where(s => (s.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+            InvokeAsync(() => StateHasChanged());
+        });
+        await hubConnection.StartAsync();
+
         await GetAllOutGoing();
         await GetAllIncoming();
     }
 
-    
+    #region SignaIR Notification
+
+    private List<PushNotificationModel> allNotificationMessages = new List<PushNotificationModel>();
+    private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    private HubConnection hubConnection;
+    private string BoxCss = "none";
+
+    private async Task Send()
+    {
+        PushNotificationModel PushNotificationMessage = new()
+            {
+                InitiateBranch = notificationMessage.InitiateBranch,
+                ReceivedBranch = notificationMessage.ReceivedBranch,
+                MessageTitle = notificationMessage.MessageTitle,
+                MessageBody = notificationMessage.MessageBody,
+                ExpiredBy = 7,
+            };
+
+        var result = IpushNotificationService.UpdatePushNotification(PushNotificationMessage);
+
+        await hubConnection.SendAsync("SendMessages",
+        result.MessageID,
+        notificationMessage.InitiateBranch,
+        notificationMessage.ReceivedBranch,
+        notificationMessage.MessageTitle,
+        notificationMessage.MessageBody,
+        0,
+        notificationMessage.MsgDatest);
+
+
+        notificationMessage.InitiateBranch = new();
+        notificationMessage.ReceivedBranch = new();
+        notificationMessage.MessageTitle = "";
+        notificationMessage.MessageBody = "";
+    }
+
+    public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+
+    private void NotificationHideShow()
+    {
+        if (BoxCss == "none") BoxCss = "block";
+        else BoxCss = "none";
+    }
+
+    #endregion
+
     private async Task GetAll()
     {
-        
+
         await GetAllOutGoing();
         await GetAllIncoming();
     }
@@ -156,6 +258,19 @@
         var isCancelled = result.Cancelled;
         if (!isCancelled)
         {
+            if (IsConnected)
+            {
+
+                var ReturnData = (TruckTransferInitiationModel)result.Data;
+                notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiationBranch?.BranchID ?? 0)) ?? null;
+                notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
+                notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered to this branch.";
+                notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " to this branch on " + (DateTime.Now).ToString() + ".";
+                notificationMessage.RedirectedTo = 0;
+                notificationMessage.MsgDate = DateTime.Now;
+                await Send();
+            }
+
             GetAll();
         }
     }
@@ -262,11 +377,11 @@
         {
             TruckTransferEnd.TruckTransferEndModel.TruckEvent.UserInfo.UserID = user.Identity.Name;
         }
-        if (TruckTransferEnd.InitiationBranch == null)
+        if (TruckTransferEnd.DestinationBranch == null)
         {
-            TruckTransferEnd.InitiationBranch = new();
+            TruckTransferEnd.DestinationBranch = new();
         }
-        TruckTransferEnd.InitiationBranch.BranchID = int.Parse(brancIDString);
+        TruckTransferEnd.DestinationBranch.BranchID = int.Parse(brancIDString);
 
 
         var modelIncoming = new DialogParameters { ["model"] = TruckTransferEnd };
@@ -277,8 +392,25 @@
         var result = await dialog.Result;
 
         var isCancelled = result.Cancelled;
+
         if (!isCancelled)
         {
+            if (IsConnected)
+            {
+                var ReturnData = (TruckTransferInitiationModel)result.Data;
+                if (ReturnData.IstruckReject == 1)
+                {
+
+                    notificationMessage.InitiateBranch =BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
+                    notificationMessage.ReceivedBranch =  BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiationBranch?.BranchID ?? 0)) ?? null;
+                    notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected.";
+                    notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " on " + (DateTime.Now).ToString() + ".";
+                    notificationMessage.RedirectedTo = 0;
+                    notificationMessage.MsgDate = DateTime.Now;
+                    await Send();
+                }
+            }
+
             GetAll();
         }
     }

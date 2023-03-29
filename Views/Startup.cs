@@ -2,6 +2,7 @@ using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
 using ArmsServices.DataServices.FMS;
+using ArmsServices.DataServices.General;
 using ArmsServices.DataServices.Operations;
 using Blazored.SessionStorage;
 using Microsoft.AspNetCore.Authentication;
@@ -23,6 +24,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Views.Data;
 
 namespace Views
 {
@@ -54,6 +56,7 @@ namespace Views
             services.AddBlazorContextMenu();
             services.AddBlazoredSessionStorage();
 
+            services.AddSignalRCore();
 
 
             services.AddAuthorization(config =>
@@ -91,6 +94,7 @@ namespace Views
             services.AddScoped<IOpTranService, OpTranService>();
             services.AddScoped<IAssetDocumentService, AssetDocumentService>();
             services.AddScoped<IExpenseMappingServices, ExpenseMappingServices>();
+            services.AddScoped<IPushNotificationService, PushNotificationService>();
             
                  services.AddScoped<ITripFuelService, TripFuelService>();
 
@@ -221,6 +225,7 @@ namespace Views
                 endpoints.MapControllers();
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
+                endpoints.MapHub<ChatHub>("/chatHub");
             });
         }
     }

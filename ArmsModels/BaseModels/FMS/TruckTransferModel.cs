@@ -11,6 +11,7 @@ namespace ArmsModels.BaseModels
         public EventModel TruckEvent { get; set; }
         public string Remarks { get; set; }
         public TruckTransferEndModel TruckTransferEndModel { get; set; }
+        public int IstruckReject { get; set; } = 0;
     }
     public class TruckTransferEndModel
     {
