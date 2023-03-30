@@ -10,9 +10,9 @@ namespace ArmsModels.BaseModels
     public class TruckModel
     {
         public TruckModel()
-        {
-            UserInfo = new SharedModels.UserInfoModel();
+        {            
             CurrentRegistration = new TruckRegistrationModel();
+            UserInfo = new SharedModels.UserInfoModel();
             CurrentEvent = new();
         }
 
@@ -48,7 +48,14 @@ namespace ArmsModels.BaseModels
         public TruckRegistrationModel CurrentRegistration { get; set; }
         [Required]
         public int? AssetID { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }
+        SharedModels.UserInfoModel _userInfo;
+        public SharedModels.UserInfoModel UserInfo { get { return _userInfo; } set {
+                _userInfo = value;
+                
+                CurrentRegistration.UserInfo = _userInfo;
+
+
+            } }
 
    
     }

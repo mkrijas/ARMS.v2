@@ -70,46 +70,42 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.Run(() => GetAll());
+        GetAll();
         TruckTypes = Itrucktype.Select(0).ToList();
         Branches = Ibranch.Select().ToList();
     }
 
     private void GetAll()
     {
-        collection.Clear();
-        foreach (var item in Iservice.Select(0))
-        {
-            collection.Add(item);
-        }
+        collection = Iservice.Select(0).ToList();        
     }
 
-    private async void OnValidSubmit(EditContext context)
-    {
+    //private async void OnValidSubmit(EditContext context)
+    //{
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
-        {
-            model = Iservice.Update(model);
+    //    var authprov = await auth.GetAuthenticationStateAsync();
+    //    var user = authprov.User;
+    //    model.UserInfo.UserID = user.Identity.Name;
+    //    try
+    //    {
+    //        model = Iservice.Update(model);
 
-            snackbar.Add("Saved Successfully", Severity.Success);
-            if (collection.Exists(x => x.TruckID == model.TruckID))
-            {
-                collection[collection.FindIndex(x => x.TruckID == model.TruckID)] = model;
-            }
-            else
-            {
-                collection.Add(model);
-            }
-            model = new TruckModel();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-    }
+    //        snackbar.Add("Saved Successfully", Severity.Success);
+    //        if (collection.Exists(x => x.TruckID == model.TruckID))
+    //        {
+    //            collection[collection.FindIndex(x => x.TruckID == model.TruckID)] = model;
+    //        }
+    //        else
+    //        {
+    //            collection.Add(model);
+    //        }
+    //        model = new TruckModel();
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        snackbar.Add(ex.Message, Severity.Warning);
+    //    }
+    //}
 
     private void TruckMountDetails(int? id)
     {
@@ -129,7 +125,7 @@
 
     }
 
-    private void Edit(int? id)
+    private async void Edit(int? id)
     {
         model = new();
         DialogOptions options = new DialogOptions()
@@ -143,7 +139,22 @@
         }
         DialogParameters parms = new();
         parms.Add("EditModel", model);
-        DialogService.Show<Truckdilog>("ADD/EDIT", parms, options);
+        var dialog =   DialogService.Show<Truckdilog>("ADD/EDIT", parms, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            var data = (TruckModel)result.Data;
+            if (id == null)
+            {
+                collection.Add(data);
+            }
+            else
+            {
+                var index = collection.FindIndex(x => x.TruckID == data.TruckID);
+                collection[index] = data;
+            }
+        }
+
 
     }
     private void Delete(int? id)
@@ -156,7 +167,7 @@
 
     private bool search(TruckModel Truck)
     {
-        if (Truck.RegNo != null && Truck.RegNo.Contains(searchTruck, StringComparison.OrdinalIgnoreCase))
+        if (Truck?.RegNo != null && Truck.RegNo.Contains(searchTruck, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }

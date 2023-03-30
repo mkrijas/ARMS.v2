@@ -55,21 +55,21 @@ namespace ArmsServices.DataServices
             };
 
             model.CurrentRegistration.UserInfo = model.UserInfo;
-
+            TruckModel cmodel = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Truck.Update]", parameters))
             {
-                model = GetModel(dr);               
+                 cmodel = GetModel(dr);               
             }
-            model.CurrentRegistration.TruckID = model.TruckID;
+            model.CurrentRegistration.TruckID = cmodel.TruckID;
             if (create)
             {
                 int reg = ChangeRegistration(model.CurrentRegistration);
                 if (reg > 0)
                 {
-                    model.RegNo = model.CurrentRegistration.RegNo;
+                    cmodel.RegNo = model.CurrentRegistration.RegNo;
                 }
             }
-            return model;
+            return cmodel;
         }
         public int Delete(int? TruckID,string UserID)
         {
@@ -113,7 +113,7 @@ namespace ArmsServices.DataServices
 
         private TruckModel GetModel(IDataRecord reader)
         {
-            return new TruckModel
+            return new TruckModel()
             {
                 RegNo = reader.GetString("RegNo"),
                 HomeBranchID = reader.GetInt32("HomeBranchID"),
