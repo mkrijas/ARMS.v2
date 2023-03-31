@@ -13,12 +13,14 @@ namespace ArmsServices.DataServices
     {       
         TruckModel Update(TruckModel model);
         int UpdateRegistration(TruckRegistrationModel model);
+        int? ValidateRegistrationDate(TruckRegistrationModel model);
         int Delete(int? TruckID, string UserID);
         IEnumerable<TruckModel> Select(int? TruckID);
         IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer = "All");
 
         TruckModel SelectByID(int? ID);
         TruckRegistrationModel GetRegistration(int? TruckID);
+        IEnumerable<TruckRegistrationModel> GetRegistrationList(int? TruckID);
         TruckRegistrationModel GetRegistration(string RegNo);
         int Sold(int? TruckID, DateTime? SoldDate);
         int ChangeRegistration(TruckRegistrationModel model);        
@@ -84,6 +86,21 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Truck.Registration.Update]", parameters);
+        }
+        public int? ValidateRegistrationDate(TruckRegistrationModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", model.TruckID),
+               new SqlParameter("@EffectFrom", model.EffectFrom),
+               new SqlParameter("@EffectTo", model.EffectTo)
+            };
+            int? result = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Registration.Date.Validation]", parameters))
+            {
+                result = dr.GetInt32("ConflictNo");
+            }
+            return result;
         }
         public int Delete(int? TruckID,string UserID)
         {
@@ -201,6 +218,20 @@ namespace ArmsServices.DataServices
                 model = GetRegModel(dr);
             }
             return model;
+        }
+
+        public IEnumerable< TruckRegistrationModel> GetRegistrationList(int? TruckID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@String", TruckID.ToString()),
+               new SqlParameter("@Operation", "SelectByTruckID"),
+            };
+            TruckRegistrationModel model = new TruckRegistrationModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Registration.Select]", parameters))
+            {
+                yield return GetRegModel(dr);
+            }
         }
 
         public TruckRegistrationModel GetRegistration(string RegNo)

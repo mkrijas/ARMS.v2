@@ -86,23 +86,39 @@
 
     private async void OnValidSubmit(EditContext context)
     {
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        CurrentRegistration.UserInfo.UserID = user.Identity.Name;
-        try
+        if(CurrentRegistration.EffectTo == null || CurrentRegistration.EffectFrom == null)
+            {
+                snackbar.Add("Valid from date and valid to date should select.", Severity.Error);
+                return;
+            }
+        if(CurrentRegistration.EffectTo>=CurrentRegistration.EffectFrom)
         {
-            int result = Iservice.UpdateRegistration(CurrentRegistration);
+            int? dateInvalidCount = Iservice.ValidateRegistrationDate(CurrentRegistration);
+            if(dateInvalidCount > 0)
+            {
+                snackbar.Add("Can not save because date is merging on another date.", Severity.Error);
+                return;
+            }
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            CurrentRegistration.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                int result = Iservice.UpdateRegistration(CurrentRegistration);
 
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(CurrentRegistration);
-            CurrentRegistration = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(CurrentRegistration);
+                CurrentRegistration = new();
 
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            snackbar.Add("Valid up to date should be greater valid from.", Severity.Error);
         }
-
     }
 }
