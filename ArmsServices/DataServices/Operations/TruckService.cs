@@ -12,6 +12,7 @@ namespace ArmsServices.DataServices
     public interface ITruckService
     {       
         TruckModel Update(TruckModel model);
+        int UpdateRegistration(TruckRegistrationModel model);
         int Delete(int? TruckID, string UserID);
         IEnumerable<TruckModel> Select(int? TruckID);
         IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer = "All");
@@ -70,6 +71,19 @@ namespace ArmsServices.DataServices
                 }
             }
             return cmodel;
+        }
+        public int UpdateRegistration(TruckRegistrationModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", model.TruckID),
+               new SqlParameter("@RegNo", model.RegNo),
+               new SqlParameter("@RC", model.RC),
+               new SqlParameter("@EffectFrom", model.EffectFrom),
+               new SqlParameter("@EffectTo", model.EffectTo),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Truck.Registration.Update]", parameters);
         }
         public int Delete(int? TruckID,string UserID)
         {
@@ -261,6 +275,14 @@ namespace ArmsServices.DataServices
                     TruckID = dr.GetInt32("TruckID"),                   
                     TruckTypeID = dr.GetInt16("TruckTypeID"),
                     TruckType = dr.GetString("TruckType"),
+                    CurrentRegistration = new()
+                    {
+                        RegID = dr.GetInt32("RegID"),
+                        RegNo = dr.GetString("RegNo"),
+                        RC = dr.GetString("RC"),
+                        EffectFrom = dr.GetDateTime("EffectFrom"),
+                        EffectTo = dr.GetDateTime("EffectTo"),
+                    },
                     CurrentEvent = new EventModel()
                     {
                         BranchID = dr.GetInt32("BranchID"),

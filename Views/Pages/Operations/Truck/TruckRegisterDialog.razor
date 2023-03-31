@@ -1,0 +1,108 @@
+﻿@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@inject ITruckService Iservice
+@attribute [Authorize]
+
+@using System.Globalization
+<MudDialog>
+    <DialogContent>
+        <div style="max-height:500px;overflow-y:scroll">
+            <MudContainer>
+                <EditForm id="truckForm" Model="@CurrentRegistration" OnValidSubmit="OnValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="CurrentRegistration.RegNo" Class=dropstyle Margin=Margin.Normal Label="Registered Number" Variant="Variant.Outlined" For="@(() => CurrentRegistration.RegNo)"></MudTextField>
+                        </MudItem>
+
+                        <MudItem xs="6">
+                            <MudDatePicker Margin="Margin.Normal" Variant="Variant.Outlined" Label="valid from" DisableToolbar="true" Editable="true" @bind-Date="CurrentRegistration.EffectFrom" HelperText="Enter Date" Culture="@CultureInfo.GetCultureInfo("en-IN")" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudDatePicker Margin="Margin.Normal" Variant="Variant.Outlined" Label="Valid up to" DisableToolbar="true" Editable="true" @bind-Date="CurrentRegistration.EffectTo" HelperText="Enter Date" Culture="@CultureInfo.GetCultureInfo("en-IN")" />
+                        </MudItem>
+                        <MudItem xs="6"  Class="align-center">
+                            <MyFileUpload  FolderName="Truck/RC" FileName="@Guid.NewGuid().ToString()" Label="Click to upload RC File" @bind-FilePath="CurrentRegistration.RC"></MyFileUpload>
+                            @if (!string.IsNullOrEmpty(CurrentRegistration.RC))
+                            {
+                                @*<MudTooltip Text="Download Adhaar">*@
+
+                                <a href="@CurrentRegistration.RC" download="RC">
+                                    <MudText Typo="Typo.h6" Color="Color.Primary">
+                                        RC
+                                        <MudIcon Icon="@Icons.Material.Filled.Download" Title="Download" />
+                                    </MudText>
+                                </a>
+
+
+                                @*</MudTooltip>*@
+                            }
+                        </MudItem>
+                        <MudItem xs="12" md="12" Class="d-flex align-center">
+                            @if (string.IsNullOrEmpty(CurrentRegistration.RC))
+                            {
+                                <MudItem xs="12" md="12">
+                                    <MudImage Fluid ObjectFit="ObjectFit.Cover" Src="/ArmsStaticFiles/Truck/RC.webp" Alt="PHOTO" />
+                                </MudItem>
+                            }
+                            else
+                            {
+                                <MudItem xs="12" md="12">
+                                    @*<iframe class="mt-1 mr-1 ml-1" src="@CurrentRegistration.DriverImage" height="500" alt="PHOTO" />*@
+                                    <MudImage Fluid ObjectFit="ObjectFit.Cover" Src="@CurrentRegistration.RC" Alt="PHOTO" />
+                                </MudItem>
+                            }
+                        </MudItem>
+@*
+                        <MudItem xs="3" md="3" Class="d-flex align-center">
+
+                        </MudItem>*@
+                    </MudGrid>
+                </EditForm>
+            </MudContainer>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton form="truckForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Truck</MudButton>
+
+    </DialogActions>
+
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public TruckRegistrationModel CurrentRegistration { get; set; } = new();
+
+
+
+    protected override void OnInitialized()
+    {
+
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        CurrentRegistration.UserInfo.UserID = user.Identity.Name;
+        try
+        {
+            int result = Iservice.UpdateRegistration(CurrentRegistration);
+
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close(CurrentRegistration);
+            CurrentRegistration = new();
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+    }
+}
