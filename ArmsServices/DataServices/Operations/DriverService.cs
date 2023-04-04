@@ -49,6 +49,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AdhaarNo", model.AdhaarNo),
                new SqlParameter("@AdhaarImage", model.AdhaarImage),  
                new SqlParameter("@AddressID", model.Address.AddressID),
+               new SqlParameter("@AdditionalInfo", model.AdditionalInfo),
+               new SqlParameter("@Mobile", model.Mobile),
+               new SqlParameter("@Email", model.Email),
                new SqlParameter("@DriverAgentID", model.DriverAgentID),
                new SqlParameter("@FestivalBonus", model.FestivalBonus),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -111,7 +114,9 @@ namespace ArmsServices.DataServices
                 AdhaarImage = reader.GetString("AdhaarImage"),                          
                 FestivalBonus = reader.GetString("FestivalBonus"),
                 DriverID = reader.GetInt32("DriverID"),
+                AdditionalInfo =  reader.GetString("AdditionalInfo"),
                 Mobile =  reader.GetString("Mobile"),
+                Email =  reader.GetString("Email"),
                 AddressID = reader.GetInt32("AddressID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

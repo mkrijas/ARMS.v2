@@ -1,0 +1,90 @@
+﻿@using ArmsModels.BaseModels
+@using Microsoft.AspNetCore.Components.Forms
+@using MudBlazor
+@inject IDriverLicenceService Iservice
+
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+
+
+
+<EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Add/Edit Driving Licence</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+
+        <MudGrid>
+            <MudItem xs="12" md="6" xl="6">
+                <MudSelect @bind-Value="@model.LicenceType" Label="Type" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.LicenceType)" OffsetY="true" AdornmentColor="Color.Secondary">
+                    <MudSelectItem Value="@("Heavy")">Heavy</MudSelectItem>
+                    <MudSelectItem Value="@("Light")">Light</MudSelectItem>
+                    <MudSelectItem Value="@("TwoWheeler")">TwoWheeler</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6" xl="6">
+                <MudTextField @bind-Value="@model.LicenceNo" Label="DL No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.LicenceNo)"></MudTextField>
+            </MudItem>
+            <MudItem xs="12" md="6" xl="6">
+                <MudDatePicker  PickerVariant="PickerVariant.Dialog"  @bind-Date="@model.DLExpiryDate" Label="DL Expiry Date" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.DLExpiryDate)" Editable="true"></MudDatePicker>
+            </MudItem>
+            <MudItem xs="12" md="6" xl="6">
+                <MudTextField @bind-Value="@model.BadgeNo" Label="Badge No" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.BadgeNo)"></MudTextField>
+            </MudItem>
+            <MudItem xs="12" md="6" xl="6">
+                <MudDatePicker  PickerVariant="PickerVariant.Dialog"  @bind-Date="@model.BadgeExpiryDate" Label="Badge Expiry Date" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.BadgeExpiryDate)" Editable="true"></MudDatePicker>
+            </MudItem>
+
+        </MudGrid>
+        <br />
+        <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+    </MudCardContent>
+</EditForm>
+
+@code {
+    
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public DriverLicenceModel model { get; set; }
+
+    public EditContext Result { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        if (model == null)
+        {
+            model = new();
+        }
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        //try
+        //{
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        model.UserInfo.UserID = user.Identity.Name;
+
+        try
+        {
+            model = Iservice.Update(model);
+
+            snackbar.Add("Saved Successfully", Severity.Success);
+
+            model = new();
+             MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+}
