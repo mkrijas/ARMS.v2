@@ -14,7 +14,13 @@ function getHTTPObject() {
     return false;
 }
 
+function IFrameHightSetter() {
+    let frame = document.getElementById("PreviewClaim");
+    let scrollHeight = frame?.contentWindow?.document?.body?.scrollHeight;
+    frame.style.height = (scrollHeight ?? '3000') + 'px';
+    return false;
 
+}
 
 function runReport(url) {
     var http = getHTTPObject();
