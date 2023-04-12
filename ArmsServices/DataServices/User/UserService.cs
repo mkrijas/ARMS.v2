@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
     public interface IUserService
     {
         IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID);
+        IEnumerable<UserBranchRoleModel> GetAllBranchesNRoles(string UserID);
         int SetBranchesNRoles(List<UserBranchRoleModel> lst,string UserID);
         int DeleteBranchesNRoles(UserBranchRoleModel model,string UserID);
         UserBranchRoleModel GetCurrentBranchRole(string UserID);
@@ -409,6 +410,22 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+        public IEnumerable<UserBranchRoleModel> GetAllBranchesNRoles(string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.AllBranches.BranchRole.Select]", parameters))
+            {
+                yield return new UserBranchRoleModel
+                {
+                    User = new UserModel() { UserID = dr.GetString("UserID") },
+                    Branch = new BranchModel() { BranchID = dr.GetInt32("BranchID"), BranchName = dr.GetString("BranchName") },
+                    Role = new RoleModel() { RoleID = dr.GetString("RoleID"), RoleNo = dr.GetInt32("UserRoleID") },
+                };
+            }
+        }
 
         public int SetBranchesNRoles(List<UserBranchRoleModel> lst, string UserID)
         {
@@ -422,6 +439,7 @@ namespace ArmsServices.DataServices
                 row["User"] = item.User.UserID;
                 row["Branch"] = item.Branch.BranchID;
                 row["Role"] = item.Role.RoleID;
+                dt.Rows.Add(row);
             }
 
             List<SqlParameter> parameters = new List<SqlParameter>
