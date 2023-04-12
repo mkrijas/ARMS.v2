@@ -54,7 +54,7 @@ namespace Views.Pages.UserAccount
             public string UserID { get; set; }
 
             [Required]
-            [StringLength(20, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 3)]
+            [StringLength(256, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 3)]
             [EmailAddress]
             [Display(Name = "Email")]
             public string Email { get; set; }
@@ -76,7 +76,7 @@ namespace Views.Pages.UserAccount
             public string ConfirmPassword { get; set; }
         }
 
-        public async Task OnGetAsync(string returnUrl = null)
+        public async Task OnGetAsync(string returnUrl = "~/UserAccount/Login")
         {
             ReturnUrl = returnUrl;
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
