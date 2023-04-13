@@ -122,9 +122,9 @@ namespace ArmsServices.DataServices
                     Gst = new()
                     {
                         GstRate = dr.GetDecimal("GstRate"),
-                        Cgst = dr.GetDecimal("Cgst"),
-                        Sgst = dr.GetDecimal("Sgst"),
-                        Igst = dr.GetDecimal("Igst"),
+                        CGST = dr.GetDecimal("Cgst"),
+                        SGST = dr.GetDecimal("Sgst"),
+                        IGST = dr.GetDecimal("Igst"),
                     },
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
@@ -279,9 +279,9 @@ namespace ArmsServices.DataServices
                 Gst = new GstModel()
                 {
                     GstRate = dr.GetDecimal("GstRate"),
-                    Cgst = dr.GetDecimal("Cgst"),
-                    Sgst = dr.GetDecimal("Sgst"),
-                    Igst = dr.GetDecimal("Igst"),
+                    CGST = dr.GetDecimal("Cgst"),
+                    SGST = dr.GetDecimal("Sgst"),
+                    IGST = dr.GetDecimal("Igst"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -319,9 +319,9 @@ namespace ArmsServices.DataServices
                 Gst = new()
                 {
                     GstRate = dr.GetDecimal("GstRate"),
-                    Cgst = dr.GetDecimal("Cgst"),
-                    Sgst = dr.GetDecimal("Sgst"),
-                    Igst = dr.GetDecimal("Igst"),
+                    CGST = dr.GetDecimal("Cgst"),
+                    SGST = dr.GetDecimal("Sgst"),
+                    IGST = dr.GetDecimal("Igst"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -380,9 +380,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@GstRate", model.Gst.GstRate),
-               new SqlParameter("@Cgst", model.Gst.Cgst),
-               new SqlParameter("@Sgst", model.Gst.Sgst),
-               new SqlParameter("@Igst", model.Gst.Igst),
+               new SqlParameter("@Cgst", model.Gst.CGST),
+               new SqlParameter("@Sgst", model.Gst.SGST),
+               new SqlParameter("@Igst", model.Gst.IGST),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             int? ID = null;
@@ -534,9 +534,9 @@ namespace ArmsServices.DataServices
                 return new GstModel()
                 {
                     GstRate = dr.GetDecimal("GstRate"),
-                    Cgst = dr.GetDecimal("Cgst"),
-                    Sgst = dr.GetDecimal("Cgst"),
-                    Igst = dr.GetDecimal("Igst"),
+                    CGST = dr.GetDecimal("Cgst"),
+                    SGST = dr.GetDecimal("Cgst"),
+                    IGST = dr.GetDecimal("Igst"),
                 };
             }
             return new GstModel();

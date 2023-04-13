@@ -16,7 +16,7 @@ namespace ArmsServices.DataServices
         IEnumerable<DataAuthorizationModel> SelectByDocument(int? DocTypeID, int? DocumentID);
         IEnumerable<DataAuthorizationModel> SelectByDocument(string DocType, int? DocumentID);
         int Delete(int? ID, string UserID);
-        IEnumerable<DataAuthorizationStatusModel> GetAuthStatus(int? DocTypeID, int? DocumentID);
+        IEnumerable<DataAuthorizationModel> GetAuthStatus(int? DocTypeID, int? DocumentID);
     }
     public class DataAuthorizationService : IDataAuthorizationService
     {
@@ -39,7 +39,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.User.DataAuthorization.Delete]", parameters);
         }
 
-        public IEnumerable<DataAuthorizationStatusModel> GetAuthStatus(int? DocTypeID, int? DocumentID)
+        public IEnumerable<DataAuthorizationModel> GetAuthStatus(int? DocTypeID, int? DocumentID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -53,7 +53,7 @@ namespace ArmsServices.DataServices
 
             foreach (var item in DS)
             {
-                yield return new DataAuthorizationStatusModel()
+                yield return new DataAuthorizationModel()
                 {
                     AuthLevelID = item.AuthLevelID,
                     AuthType = item.AuthorizeType,

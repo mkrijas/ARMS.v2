@@ -9,39 +9,50 @@ namespace ArmsModels.BaseModels
 {
     public class SundryPaymentModel:TransactionBaseModel
     {
-        public int? SundryPaymentID { get; set; }
+        public int? SundryPaymentID { get; set; }        
         public bool  deferredExpenditure { get; set; } = false;
-        
+        [RequiredIfTrue(nameof(deferredExpenditure))]
         public DateTime ? beginDate { get; set; }
-      
+        [RequiredIfTrue(nameof(deferredExpenditure))]
         public DateTime ? EndDate { get; set; }
-
+        
+        public string Reference { get; set; }
+        
+        [ValidateComplexType]
+        [MustContain(ErrorMessage = "No particulars added for payment!")]
+        public List<SundryPaymentEntryModel> Entries { get; set; } = new();
         [Required]
-        public string PaymentMode { get; set; }
-        public string PaymentTool { get; set; }
+        public string PaymentMode { get; set; }        
         [Required]
         public string PaymentArdCode { get; set; }
         [Required]
         public int? PaymentCoaID { get; set; }
+        [RequiredIf("PaymentMode","Bank")]
+        public string PaymentTool { get; set; }
+        [RequiredIf("PaymentMode", "Bank")]
         public decimal? BankCharges { get; set; }
         public virtual string AccountName { get; set; }
-        public string Reference { get; set; }
+        [Required]
         public string PayeeName { get; set; }
+        [Required]
         public string PayeeContactNo { get; set; }
-        public List<SundryPaymentEntryModel> Entries { get; set; } = new();
     }
 
     public class SundryPaymentEntryModel
     {
         public long? ID { get; set; }
         public int? ParentID { get; set; }
-        public int? BranchID { get; set; }
+        [Required]
+        public int? BranchID { get; set; }        
         [Required]
         public string UsageCode { get; set; }
         [Required]
         public int? CoaID { get; set; }
         [Required]
         public decimal? Amount { get; set; }
-        public string Rederence { get; set; }
+        public string Reference { get; set; }
     }
+
+
+
 }

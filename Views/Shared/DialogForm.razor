@@ -1,0 +1,116 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using Views.Pages.Finance.Transactions
+
+<MudDialog>
+    <TitleContent>        
+        <MudText  Align="Align.Start" Typo="Typo.h6"> @Title</MudText>   
+        <div class = "d-flex">
+        <MudText Align="Align.Start" Color="Color.Primary">@(model.DocumentNumber??"New*")</MudText> - 
+        <MudText Align="Align.Start" Color="Color.Success">@model.AuthStatus</MudText>
+        </div>
+               
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="dialogInset">  
+            @FormContent        
+        
+         @if (IsReadOnly)
+            {
+                <MudDivider DividerType="DividerType.FullWidth"></MudDivider>
+                <MudText Align="Align.Center" Typo="Typo.h6" Class="mt-5">Verification Status</MudText>
+                <MudDivider DividerType="DividerType.Middle"></MudDivider>
+                @VerificationStatus
+                @if (model.MID != null)
+                {
+                    <MudDivider DividerType="DividerType.FullWidth"></MudDivider>
+                    <MudText Align="Align.Center" Typo="Typo.h6" Class="mt-5">Financial Accounts Entries</MudText>
+                    <MudDivider DividerType="DividerType.Middle"></MudDivider>
+                    <AccountInfoDialog MID="@model.MID"></AccountInfoDialog>
+                }
+            }
+        </MudContainer>
+
+
+    </DialogContent>
+    <DialogActions>      
+        <MudText Align="Align.Start" Class="pl-3">Total : <b>@model.TotalAmount</b></MudText>
+        <MudSpacer></MudSpacer>
+        @if (IsReadOnly)
+        {
+                <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Close</MudButton>
+        }
+        else
+        {
+            <MudButton form="@formID" Variant="Variant.Filled" ButtonType="ButtonType.Submit" Color="Color.Success">Submit</MudButton>
+            <MudButton @onclick="Cancel" Variant="Variant.Filled" Color="Color.Primary">Cancel</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .dialogInset
+    {
+        margin-top: 10px;
+        padding: 20px;
+        max-height: 450px; 
+        overflow-y: scroll;
+        overflow-x:hidden;
+        box-shadow: inset 2px 1px 2px #CCC;
+    }
+   
+</style>
+
+@code {
+
+    [CascadingParameter] 
+    MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string Title { get; set; }   
+
+    [Parameter] 
+    public string formID { get; set; }   
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+    [Parameter]
+    public TransactionBaseModel model { get; set; }
+
+    [Parameter]
+    public RenderFragment FormContent { get; set; }
+    [Parameter]
+    public RenderFragment VerificationStatus { get; set; }
+
+
+
+    void Cancel() => MudDialog.Cancel();
+    private ValidationMessageStore messageStore;
+
+    public void Close(object obj)
+    {
+        MudDialog.Close(obj);
+    }
+     
+
+
+
+    public bool validate(object obj, EditContext editContext)
+    {   
+        messageStore?.Clear();
+        messageStore = new(editContext);        
+        var context = new ValidationContext(obj, serviceProvider: null, items: null);
+        var validationResults = new List<ValidationResult>();
+        bool isValid = Validator.TryValidateObject(obj, context, validationResults, true);
+        if (!isValid)
+        {
+            foreach (var i in validationResults)
+            {
+                messageStore.Add(() => i.MemberNames, i.ErrorMessage);
+            }
+            editContext.NotifyValidationStateChanged();
+            return false;
+        }
+        messageStore.Clear();
+        return true;
+    }
+
+}

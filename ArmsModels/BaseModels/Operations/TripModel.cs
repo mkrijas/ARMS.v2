@@ -46,7 +46,7 @@ namespace ArmsModels.BaseModels
     }
     public class TripFuelModel
     {
-        DateTime? docdate;
+        DateTime? docdate = DateTime.Today;
         decimal? amount;
 
         public long? TripFuelID { get; set; }

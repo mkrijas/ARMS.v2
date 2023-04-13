@@ -1,0 +1,168 @@
+﻿@inject IChartOfAccountService accountService
+@inject AuthenticationStateProvider auth
+@inject TruckDataArrayModel data
+
+@if (IsLoaded)
+{
+        <MudElement  Class="d-flex flex-grow-1 gap-4">
+            @if (ShowMode)
+            {
+                <MudSelect Label="Mode" Class="flex-auto" Value="@PaymentMode" ValueChanged="Modechanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    <MudSelectItem Value="@("Bank")" />
+                <MudSelectItem Value="@("Cash")" />
+                </MudSelect>     
+            }
+            <MudAutocomplete Class="flex-auto" T="PaymentCodeModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="@LabelName"  Value="@_ardCode" ValueChanged="CodeSeleceted" ResetValueOnEmptyText="true"
+                  Clearable="true" SearchFunc="SearchAccounts"  ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.ArdCode)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
+       
+        @if (PaymentMode == "Bank")
+        {
+                <MudSelect Class="flex-shrink-0" Style="min-width:200px;" T="string"  Label="Payment Mode" @bind-Value="@BankTools"  ReadOnly="@Readonly" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    @foreach (var item in data.BankTools)
+                    {
+                        <MudSelectItem Value="@item">@item</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudTextField Class="flex-none" T="decimal?" @bind-Value="@BankCharges"  ReadOnly="@Readonly" Label="BankCharges" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                           
+        }
+             </MudElement>   
+}
+else
+{
+    <MudText> Loading..... </MudText>
+}
+@code {
+
+    [Parameter]
+    public PaymentCodeModel Value
+    {
+        get => _value;
+        set
+        {            
+            _value = value;                
+            ValueChanged.InvokeAsync(value);            
+        }
+    }
+
+    [Parameter]
+    public EventCallback<PaymentCodeModel> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool Readonly { get; set; } = false;    
+
+    [Parameter]
+    public string Class { get; set; }
+
+    [Parameter]
+    public string LabelName { get; set; } = "Select";
+
+    [Parameter]
+    public string PaymentMode { 
+        get 
+        { return _paymentMode; }
+        set
+        {
+            _paymentMode = value;
+            PaymentModeChanged.InvokeAsync(value);
+        } 
+    }
+    [Parameter]
+    public EventCallback<string> PaymentModeChanged { get; set; }
+
+    [Parameter]
+    public PaymentCodeModel ArdCode
+    {
+        get => _ardCode;
+        set
+        {
+            _ardCode = value;
+            ArdCodeChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<PaymentCodeModel> ArdCodeChanged { get; set; }
+
+    [Parameter]
+    public decimal? BankCharges { get; set; }
+    [Parameter]
+    public string BankTools { get; set; }
+
+
+    bool ShowMode = false;
+
+    string _paymentMode;
+    PaymentCodeModel _ardCode;
+    private List<PaymentCodeModel> paymentCodes = new();
+
+
+    private PaymentCodeModel _value;
+
+    private bool IsLoaded = false;
+
+    private async Task<IEnumerable<PaymentCodeModel>> SearchAccounts(string searchString)
+    {
+        await Task.Delay(5);
+        return paymentCodes.Where(x => (x.ArdCode).Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+
+    }
+    public async Task Modechanged(string mode)
+    {
+        PaymentMode = mode;        
+        _ardCode = null;
+        await getAll();
+    }
+    void CodeSeleceted(PaymentCodeModel pc)
+    {        
+        Value = pc;
+        ArdCode = pc;
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(PaymentMode == null)
+        {
+            ShowMode = true;
+            if (Value != null && Value.paymentMode != null)
+            {
+                PaymentMode = Value.paymentMode;
+            }
+            else
+            {
+                PaymentMode = "Bank";
+            } 
+        }
+        _ardCode = Value;
+        await getAll();
+    }
+    public async Task getAll()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int branchID = int.Parse(brancIDString);
+        paymentCodes = accountService.GetPaymentCodes(branchID,PaymentMode).ToList();
+        IsLoaded = true;       
+    }
+
+
+    //void BankChargesChanged(decimal? bc)
+    //{
+    //    BankCharges = bc;
+    //    if (Value != null)
+    //    {
+    //        Value.BankCharges = bc;
+    //    }
+    //}
+
+    //void BankToolsChanged(string bt)
+    //{
+    //    BankTools = bt;
+    //    if (Value != null)
+    //    {
+    //        Value.BankTools = bt;
+    //    }
+    //}
+}
+
+

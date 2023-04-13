@@ -3,146 +3,84 @@
 @inject IDialogService DialogService
 @attribute [Authorize]
 
-  
-         @*   <MudContainer Style="max-height: 450px; overflow-y: scroll">*@
-                <MudGrid>
-                    <MudItem xs="12" md="12">
-                        <h6>DataAuthorization Status</h6>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true"  @bind-place="model">
 
 
-                          @*  <ToolBarContent>
-                              <h6> <MudText> </MudText></h6> 
+<MudContainer>
 
 
+<MudGrid>
+    <MudItem xs="8">
+        <b> Verification Type</b>
+    </MudItem>
+    <MudItem xs="4">
+        <b>   Verified By</b>
+    </MudItem>   
+    @foreach (var item in collection)
+    {
+        Color color = item.IsCompleted ? Color.Success : Color.Error;
+        <MudItem xs="8">
+            <MudText Color="@color"> @item.AuthType     </MudText>
+        </MudItem>       
+        <MudItem xs="4">
+           
+                @if (!Authorized && authlevelID != null && item.AuthLevelID == authlevelID)
+                {
+                    <MudTooltip Text="Pending for Verification">
+                        <MudFab @onclick="@(()=> OpenDialog(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                }
+                else if (!Authorized && authlevelID != null && item.AuthLevelID > authlevelID)
+                {
+                        <MudText Color="@color"> Pending </MudText>
+                }
+                else
+                {
+                    <MudText Color="@color"> @item.UserInfo?.UserID </MudText>
+                }
+            
+        </MudItem>
+    }
 
-                                <MudSpacer></MudSpacer>
-
-                            </ToolBarContent>*@
-                            <HeaderContent>
-                                <MudTh><MudTableSortLabel SortBy="new Func<DataAuthorizationStatusModel, object>(x=> x.AuthType)" InitialDirection="SortDirection.Ascending">AuthType</MudTableSortLabel></MudTh>
-                                <MudTh><MudTableSortLabel SortBy="new Func<DataAuthorizationStatusModel, object>(x=> x.IsCompleted)" InitialDirection="SortDirection.Ascending">IsCompleted</MudTableSortLabel></MudTh>
-                                <MudTh><MudTableSortLabel SortBy="new Func<DataAuthorizationStatusModel, object>(x=> x.UserInfo.UserID)" InitialDirection="SortDirection.Ascending">Verify By</MudTableSortLabel></MudTh>
-                                <MudTh>Actions</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-
-                                <MudTd DataLabel="DocumentNumber">@context.AuthType</MudTd>
-                                <MudTd DataLabel="PaymentMode">@context.IsCompleted</MudTd>
-                                <MudTd DataLabel="TotalAmount">@context.UserInfo?.UserID</MudTd>
-                                <MudTd DataLabel="">
-                                  
-                                    @* <MudTooltip Text="View authentication Status">
-                                    <MudFab @onclick="@(()=> authentication(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
-                                    </MudTooltip>*@
-                                    @if (!ISCompleted)
-                    {
-                        @if (authlevelID != null)
-                        {
-                            @if (@context.AuthLevelID == authlevelID)
-                            {
-                                <MudTooltip Text="Pending for Verification">
-                                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
-                                </MudTooltip>
-                            }
-                            @if (@context.AuthLevelID != authlevelID)
-                            {
-
-                                <MudFab @onclick="@(()=> OpenDialog(context))" Disabled="true" Color="Color.Primary" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
-
-                            }
-                        }
-                    }
-                </MudTd>
-                            </RowTemplate>
-
-                            <PagerContent>
-                                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                                @*  <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>*@
-
-                            </PagerContent>
-                        </MudTable>
-                    </MudItem>
-
-
-
-
-
-
-                </MudGrid>
-        @*    </MudContainer>*@
-      
-
-
+</MudGrid>
+</MudContainer>
 @code {
     [Parameter]
     public int? DocTypeID { get; set; }
     [Parameter]
     public int? DocumentID { get; set; }
-    protected bool IsApprove { get; set; }
     [Parameter]
-    public EventCallback<DataApprovedStatus> OnApprove { get; set; }
-
-
-    private DataAuthorizationStatusModel model = new DataAuthorizationStatusModel();
+    public EventCallback<DataApprovedStatus> OnApprove { get; set; }    
     public int? authlevelID;
-    public bool ISCompleted=false;
-    private List<DataAuthorizationStatusModel> collection = new List<DataAuthorizationStatusModel>();
-    private List<DataAuthorizationStatusModel> collection1 = new List<DataAuthorizationStatusModel>();
+    public bool Authorized = false;
+    private List<DataAuthorizationModel> collection = new List<DataAuthorizationModel>();
 
     protected override void OnInitialized()
     {
-
         GetAll();
     }
     private void GetAll()
     {
-
-        collection = Iservice.GetAuthStatus(DocTypeID, DocumentID).OrderBy(x=> x.AuthLevelID).ToList();
-        collection1 = collection.Where(x => x.IsCompleted==false).ToList();
-        if (collection1.Count > 0)
-        {
-            authlevelID = collection1.Min(x => x.AuthLevelID.Value);
-        }
-        if(authlevelID==99)
-        {
-            foreach(var item in collection.Where(x => x.AuthLevelID==99))
-            {
-                ISCompleted = item.IsCompleted;
-            }
-            
-        }
-
-        
+        collection = Iservice.GetAuthStatus(DocTypeID, DocumentID).OrderBy(x => x.AuthLevelID).ToList();
+        authlevelID = collection.Where(x => x.IsCompleted == false).Min(y => y.AuthLevelID);
+        Authorized = collection.Any(x => x.AuthLevelID == 99 && x.IsCompleted);
     }
-    public async Task OpenDialog(DataAuthorizationStatusModel statusModel)
+
+    public async Task OpenDialog(DataAuthorizationModel statusModel)
     {
-
-        DataAuthorizationModel dataAuthorizationModel = new();
-        dataAuthorizationModel.AuthLevelID = statusModel.AuthLevelID;
-        dataAuthorizationModel.DocTypeID = statusModel.DocTypeID;
-        dataAuthorizationModel.DocumentID = statusModel.DocumentID;
-
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", dataAuthorizationModel);
-        var dialog = DialogService.Show<AutherizationVerificationDialog>(dataAuthorizationModel.ID == null ? "ADD" : "EDIT", parms);
+        parms.Add("model", statusModel);
+        var dialog = DialogService.Show<AutherizationVerificationDialog>(statusModel?.ID == null ? "ADD" : "EDIT", parms);
         var result = await dialog.Result;
         DataApprovedStatus aprd = new DataApprovedStatus();
-        if (!result.Cancelled)
+        if (!result.Canceled)
         {
-            aprd = (DataApprovedStatus)result.Data; 
-            if(aprd.IsApprove)
+            aprd = (DataApprovedStatus)result.Data;
+            if (aprd.IsApprove)
             {
-                 await OnApprove.InvokeAsync(aprd);
+                await OnApprove.InvokeAsync(aprd);
             }
             GetAll();
-
-
         }
-        GetAll();
-
     }
 
 }

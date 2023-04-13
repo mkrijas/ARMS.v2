@@ -77,7 +77,7 @@ namespace ArmsServices.DataServices
                     CoaID = dr.GetInt32("CoaID"),
                     UsageCode = dr.GetString("UsageCode"),
                     Amount = dr.GetDecimal("Amount"),
-                    Rederence = dr.GetString("Reference")
+                    Reference = dr.GetString("Reference")
                 };
             }
         }

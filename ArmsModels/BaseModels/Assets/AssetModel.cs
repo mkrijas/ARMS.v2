@@ -34,27 +34,27 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(8)]
         public string HsnCode { get; set; }
-        [RequiredIf("IsComplex == false")]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public DateTime? WarrentyDate { get; set; }
         [Required]
         public PartyModel VendorInfo { get; set; }
-        [RequiredIf("IsComplex == false")]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public string DepreciationBookCode { get; set; }// Income Tax,Company Act
-        [RequiredIf("IsComplex == false")]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public string DepreciationMethod { get; set; }// Straigt Line,Diminishing Balance,Sum of Years Digits 
-        [RequiredIf("IsComplex == false")]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public decimal? RateOfDepreciation { get; set; }
-        [RequiredIf("IsComplex == false")]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public DateTime? DepreciationStartingDate { get; set; }
-        [RequiredIf("IsComplex == false")]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public DateTime? DepreciationEndingDate { get; set; }
-        [RequiredIf("IsComplex == false")]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public decimal? BookValue { get; set; }
         public decimal? CurrentValue { get; set; }
         public decimal? TotalValue { get; set; }
-        [RequiredIf("IsComplex == false")]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public decimal? SpanOfYear { get; set; }
-        [RequiredIf("IsComplex == false")]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public decimal? SalvageValue { get; set; }        
         public virtual decimal? DepreciableValue
         {
@@ -63,7 +63,7 @@ namespace ArmsModels.BaseModels
                 return BookValue - SalvageValue;
             }
         }
-        [RequiredIf("IsComplex == false")]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public DateTime? ProjectedDisposalDate { get; set; }
         public bool Scrap { get; set; } = false;
         public string Status { get; set; }//Scrap,Dismantled,Sold,Revaluated        

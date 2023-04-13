@@ -107,6 +107,7 @@ namespace ArmsServices.DataServices
                     PID = dr.GetInt32("PID"),
                     TDS = dr.GetDecimal("TDS"),
                     TpiID = dr.GetInt64("TpiID"),
+                    ItemDescription = dr.GetString("ItemDescription"),
                 };
             }
         }

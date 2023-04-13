@@ -1,314 +1,197 @@
-﻿@inject ISundryPaymentService Iservice
-@using Microsoft.Extensions.Configuration
-@using ArmsModels.BaseModels.Finance.Transactions
-@inject IOutstandingBillsService OBIservice
-@inject ICostCenterService costIservice
-@inject TruckDataArrayModel data
-@inject IChartOfAccountService accountService
-@inject IDimensionService dimensionIservice
-@inject IConfiguration configuration
-@inject NavigationManager uriHelper;
+﻿@attribute [Authorize]
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
-@attribute [Authorize]
-@inject IDialogService DialogService
 
+@inject ISundryPaymentService Iservice
 
-<MudDialog>
-    <TitleContent>
-        <h3>Sundry Payment</h3>
-        @if (IsView)
-        {
-            <MudText Color="Color.Error">@model.AuthStatus</MudText>
-        }
-
-    </TitleContent>
-
-    <DialogContent>
-        <MudPaper>
-            <MudContainer Style="max-height: 450px; overflow-y: scroll">
-                <MudGrid>
-                  @*  <div class="d-flex flex-grow-1 gap-3">*@
-
-                       @* <MudPaper Class="flex-1 d-flex py-8 mud-theme-Transperant" Elevation="1" >*@
-                            <MudItem xs="4" md="4">
-                                <MudCheckBox Label="Is DeferredExpenditure?" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@model.deferredExpenditure" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
-
-                            </MudItem>
-                            @if (model.deferredExpenditure)
-
+<DialogForm @ref="@dialogForm" IsReadOnly="@IsReadOnly" Title="Sundry Payment"  formID="sundryPaymentForm" model="@model" >
+    <FormContent>
+        <EditForm id="sundryPaymentForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+            <ObjectGraphDataAnnotationsValidator />
+            <ValidationSummary />
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudDatePicker ReadOnly="IsReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.PayeeName" Label="PayeeName" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayeeName)"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.PayeeContactNo" Label="PayeeContactNo" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayeeContactNo)"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <PaymentAccountSelector @bind-PaymentMode="@model.PaymentMode"
+                                            @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID"
+                                            @bind-BankCharges="@model.BankCharges" @bind-BankTool="@model.PaymentTool" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@IsReadOnly" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@IsReadOnly" />
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                </MudItem>
+                <MudItem xs="4" md="4">
+                    <MudCheckBox Label="Is DeferredExpenditure?" @bind-Checked="@model.deferredExpenditure" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                </MudItem>
+                @if (model.deferredExpenditure)
+                {
+                    <MudItem xs="4" md="4">
+                        <MudDatePicker ReadOnly="IsReadOnly" Label="Begin Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.beginDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="4" md="4">
+                        <MudDatePicker ReadOnly="IsReadOnly" Label="End Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EndDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                }
+                <MudItem xs="12">
+                    <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+                        <thead>
+                            <tr>
+                                <th>UsageCode</th>
+                                <th>Amount</th>
+                                <th>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in model.Entries)
                             {
-                                <MudItem xs="4" md="4">
-                                    <MudDatePicker ReadOnly="IsReadOnly" Label="Begin Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.beginDate" DateFormat="dd/MM/yyyy" />
-
-                                </MudItem>
-                                <MudItem xs="4" md="4">
-                                    <MudDatePicker ReadOnly="IsReadOnly" Label="End Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EndDate" DateFormat="dd/MM/yyyy" />
-
-                                </MudItem>
-                            }
-                      @*  </MudPaper>*@
-
-            @*        </div>*@
-
-                        
-                   
-                    
-                    <MudItem xs="12" md="12">
-
-                        <PaymentCodeSelector @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
-                    </MudItem>
-
-                    <MudItem xs="12" md="4">
-                        <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
-
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.PayeeName" Label="PayeeName" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayeeName)"></MudTextField>
-
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.PayeeContactNo" Label="PayeeContactNo" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayeeContactNo)"></MudTextField>
-
-                    </MudItem>
-
-                    <MudItem xs="12" md="4">
-
-                        <MudDatePicker ReadOnly="IsReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
-
-
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-
-                        <MudSelect ReadOnly="IsReadOnly" Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in costCenter)
-                            {
-                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
-                            }
-                        </MudSelect>
-
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-
-                        <MudSelect ReadOnly="IsReadOnly" Label="Select Dimension" @bind-Value="model.Dimension" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in dimension)
-                            {
-                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
-                            }
-                        </MudSelect>
-
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField ReadOnly="IsReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-
-                    </MudItem>
-
-                    <MudItem xs="12">
-                        <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
-
-
-                            <thead>
                                 <tr>
-
-
-
-
-                                    <th>UsageCode</th>
-                                    <th>Amount</th>
-                                    <th>Reference</th>
-
-
-
-
-
+                                    <td>@item.UsageCode</td>
+                                    <td>@item.Amount</td>
+                                    <td>@item.Reference</td>
+                                    <td></td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in model.Entries)
-                                {
-                                    <tr>
+                            }
+                            @if (!IsReadOnly)
+                            {
+                                <tr>
+                                    <td>
+                                        <UsageCodeSelector Value=gstusge ValueChanged="UsageCodeChanged"></UsageCodeSelector>
+                                        <ValidationMessage For="(()=>spe.UsageCode)"></ValidationMessage>
+                                    </td>
+                                    <td>
+                                        <MudTextField @bind-Value="spe.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Amount)"></MudTextField>
 
-
-
-                                        <td>@item.UsageCode</td>
-                                        <td>@item.Amount</td>
-                                        <td>@item.Rederence</td>
-                                        <td></td>
-
-
-
-                                    </tr>
-                                }
-                                @if (!IsReadOnly)
-                                {
-                                    <tr>
-                                        <td>
-
-                                            <UsageCodeSelector @bind-Value=gstusge></UsageCodeSelector>
-
-                                        </td>
-                                        <td>
-                                            <MudTextField @bind-Value="spe.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Amount)"></MudTextField>
-
-                                        </td>
-                                        <td>
-                                            <MudTextField @bind-Value="spe.Rederence" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Rederence)"></MudTextField>
-
-                                        </td>
-                                        <td>
-                                            <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
-
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </MudSimpleTable>
-                    </MudItem>
-                    <MudItem xs="12">
-                        @if ((IsReadOnly) && (!IsView))
-                        {
-                            <AutherizationStatusComponent DocTypeID="11" DocumentID="model.SundryPaymentID" OnApprove="IsApproveData"></AutherizationStatusComponent>
-
-                        }
-
-                    </MudItem>
-
-
-
-
-                </MudGrid>
-            </MudContainer>
-        </MudPaper>
-    </DialogContent>
-    <DialogActions>
-        <h6>Total:@model.TotalAmount</h6>
-        @if (!IsReadOnly)
-        {
-            <MudButton @onclick="CreatePaymentMemo" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
-
-            <MudButton @onclick="Cancel" Variant="Variant.Filled" Color="Color.Primary">Cancel</MudButton>
-        }
-        @if (IsReadOnly)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Close</MudButton>
-
-        }
-    </DialogActions>
-</MudDialog>
+                                    </td>
+                                    <td>
+                                        <MudTextField @bind-Value="spe.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Reference)"></MudTextField>
+                                    </td>
+                                    <td>
+                                        <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </MudItem>
+            </MudGrid>
+        </EditForm>       
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocumentID="model.SundryPaymentID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
 
 @code {
+
     [Parameter]
     public SundryPaymentModel model { get; set; }
     [Parameter]
     public bool IsReadOnly { get; set; }
-    [Parameter]
-    public bool IsView { get; set; }
 
-    private SundryPaymentEntryModel spe = new SundryPaymentEntryModel();
-    private List<CostCenterModel> costCenter = new();
-    private List<DimensionModel> dimension = new();
+    private SundryPaymentEntryModel spe { get; set; } = new();
+    private GstUsageCodeModel gstusge = new();
 
-    public GstUsageCodeModel gstusge = new();
-    private AccountRuleDefinitionModel accountRuleDefinitionModel = new();
     private int? branchID = null;
     private string UserID = null;
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
+    private EditContext editContext;
 
-    public void statechange()
-    {
-        StateHasChanged();
-    }
+    DialogForm dialogForm;
+    int DocTypeID =11;
+
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         UserID = user.Identity.Name;
-        if (model.SundryPaymentID == null)
+
+        if (model == null)
         {
-            model.TotalAmount = 0;
+            model = new()
+                {
+                    BranchID = branchID,
+                    UserInfo = new() { UserID = UserID, },
+                    NatureOfTransaction = "Sundry Payment",
+                    TotalAmount = 0,
+                };
         }
         else
         {
-
             model.Entries = Iservice.GetEntries(model.SundryPaymentID).ToList();
-            accountRuleDefinitionModel.CoaID = model.PaymentCoaID;
-            accountRuleDefinitionModel.ArdCode = model.PaymentArdCode;
-            accountRuleDefinitionModel.paymentMode = model.PaymentMode;
-            accountRuleDefinitionModel.BankTools = model.PaymentTool;
-            accountRuleDefinitionModel.BankCharges = model.BankCharges;
         }
-
-        costCenter = costIservice.Select().ToList();
-        dimension = dimensionIservice.Select().ToList();
     }
 
-    async Task ApprovedChanged(bool value)
+
+    protected override void OnParametersSet()
     {
-        model.deferredExpenditure = value;
+        editContext = new EditContext(model);
+        // editContext.OnValidationRequested += OnValidationRequestedAsync;
     }
-    protected void IsApproveData(DataApprovedStatus aprvd)
+
+    void UsageCodeChanged(GstUsageCodeModel uc)
+    {
+        gstusge = uc;
+        spe.UsageCode = uc?.UsageCode;
+        spe.CoaID = uc?.CoaID;
+    }
+
+    protected void ApproveEntry(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
         {
-
             model.UserInfo.UserID = UserID;
-            Iservice.Approve(model.SundryPaymentID, model.UserInfo.UserID, aprvd.Remarks);
-            snackbar.Add("Approved Successfully", Severity.Success);
+            try
+            {
+                Iservice.Approve(model.SundryPaymentID, model.UserInfo.UserID, aprvd.Remarks);
+                snackbar.Add("Approved Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
         }
-
     }
 
     public void AddItems()
     {
-
-        spe.UsageCode = gstusge.UsageCode;
-        spe.CoaID = gstusge.CoaID;
         spe.BranchID = branchID;
-        model.TotalAmount = model.TotalAmount + spe.Amount;
-        model.Entries.Add(spe);
-        spe = new();
-
+        if (dialogForm.validate(spe, editContext))
+        {
+            model.Entries.Add(spe);
+            model.TotalAmount = model.Entries.Sum(x => x.Amount) + model.BankCharges??0;
+            spe = new();
+        }
     }
-    public void Cancel()
-    {
-        MudDialog.Cancel();
-    }
-    public void CreatePaymentMemo()
 
-
+    public void OnValidSubmit(EditContext context)
     {
         try
         {
-            if (model.deferredExpenditure == true && (model.beginDate == null || model.EndDate == null))
-            {
-                snackbar.Add("Date Field required !", Severity.Warning);
-                return;
-            }
-            model.PaymentCoaID = accountRuleDefinitionModel.CoaID;
-            model.PaymentArdCode = accountRuleDefinitionModel.ArdCode;
-            model.PaymentMode = accountRuleDefinitionModel.paymentMode;
-            model.PaymentTool = accountRuleDefinitionModel.BankTools;
-            model.BankCharges = accountRuleDefinitionModel.BankCharges;
-            model.PaymentMode = accountRuleDefinitionModel.paymentMode;
-            model.NatureOfTransaction = "Payment";
-            model.BranchID = branchID;
-            model.UserInfo.UserID = UserID;
-            Iservice.Update(model);
-            //model = new SundryPaymentModel();
-            model = new();
+            model = Iservice.Update(model);
             snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close();
-           
+            dialogForm.Close(model);
+
         }
         catch (Exception ex)
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            snackbar.Add(ex.Message, Severity.Error);
         }
-
-
     }
-
-
 }

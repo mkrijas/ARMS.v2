@@ -14,8 +14,8 @@ namespace ArmsModels.BaseModels
         }
         public int? MID { get; set; }
         [Required]
-        public DateTime? DocumentDate { get; set; }
-        public string DocumentNumber { get; set; }
+        public DateTime? DocumentDate { get; set; } = DateTime.Today;
+        public string DocumentNumber { get; set; } = "New";
         [Required]
         public string NatureOfTransaction { get; set; } //Deposit,Purchase,Payment,Receipt,Prepayment,BankCharges,Main,Depreciation,CWIP,Capitalization
         [Required]
@@ -47,29 +47,21 @@ namespace ArmsModels.BaseModels
 
 
     public class AccountInfoViewSubModel
-    {
-        private decimal? _amount;
+    {        
         public string AccountName { get; set; }
         public string BranchName { get; set; }
-        public decimal? Amount {
-            get { return _amount; }
-            set
-            {
-                _amount = Math.Abs(value??0);
-               drcr = value < 0 ? "cr" : "dr";
-            }
-        }
-        public string drcr { get; set; }
+        public decimal? Amount {  get; set; }
+        public string drcr { get { return Amount != null && Amount < 0 ? "Cr" : "Dr"; } }
         public string Reference { get; set; }
     }
 
     public class GstModel
     {        
         public virtual decimal? GstRate { get; set; }
-        public decimal? Cgst { get; set; }
-        public decimal? Sgst { get; set; }
-        public decimal? Igst { get; set; }
-        public decimal ? TDS { get; set; }
+        public decimal? CGST { get; set; } = 0;
+        public decimal? SGST { get; set; } = 0;
+        public decimal? IGST { get; set; } = 0;
+        public decimal? TDS { get; set; } = 0;
     }
 
     public class ChequeModel
@@ -79,5 +71,6 @@ namespace ArmsModels.BaseModels
         public DateTime? ChequeDate { get; set; }
         public int? BankID { get; set; }
     }    
+      
 
     }

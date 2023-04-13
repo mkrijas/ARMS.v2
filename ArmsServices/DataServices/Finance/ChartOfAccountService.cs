@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
         void AddBranch(CoaBranchAvailabilityModel model);
         void RemoveBranch(CoaBranchAvailabilityModel model);
         IEnumerable<CoaBranchAvailabilityModel> GetSubledgersInBranch(int? BranchID, string filterText);
-        IEnumerable<AccountRuleDefinitionModel> GetPaymentCodes(int? BranchID, string PaymentMode);
+        IEnumerable<PaymentCodeModel> GetPaymentCodes(int? BranchID, string PaymentMode);
 
 
     }
@@ -229,7 +229,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<AccountRuleDefinitionModel> GetPaymentCodes(int? BranchID, string PaymentMode)
+        public IEnumerable<PaymentCodeModel> GetPaymentCodes(int? BranchID, string PaymentMode)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -240,7 +240,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.PaymentCodes.Select]", parameters))
             {
-                yield return new AccountRuleDefinitionModel()
+                yield return new PaymentCodeModel()
                 {
                     ID = dr.GetInt32("ID"),
                     CoaID = dr.GetInt32("CoaID"),
