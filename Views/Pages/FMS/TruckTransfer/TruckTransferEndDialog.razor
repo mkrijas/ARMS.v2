@@ -6,37 +6,30 @@
 
 <MudDialog>
     <TitleContent>
-        @if (model.TruckTransferEndID == null || model.TruckTransferEndID == 0)
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Truck Transfer End.
-            </MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Truck Transfer End.
-            </MudText>
-        }
+
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Accep Or Reject Truck.
+        </MudText>
+
     </TitleContent>
     <DialogContent>
 
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Accept">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
 
                 <MudItem xs="12" md="12">
-                      <MudTextField @bind-Value="model.Truck.RegNo" Label="Truck" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Truck.RegNo)" Disabled></MudTextField>
+                    <MudTextField @bind-Value="model.Truck.RegNo" Label="Truck" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Truck.RegNo)" Disabled></MudTextField>
                 </MudItem>
                 <MudItem xs="12" md="12">
                     <MudTextField @bind-Value="model.InitiationBranch.BranchName" Label="Initiation Branch" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.InitiationBranch.BranchName)" Disabled></MudTextField>
                 </MudItem>
                 <MudItem xs="12" md="12" Class="mb-6">
-                    <MudTextField @bind-Value="model.EndKM" Label="EndKM" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.EndKM)" Required></MudTextField>
+                    <MudTextField @bind-Value="model.TruckTransferEndModel.TruckEvent.EventReading" Label="EndKM" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.TruckTransferEndModel.TruckEvent.EventReading)" Required></MudTextField>
                 </MudItem>
                 <MudItem xs="12" md="12" Class="mb-6">
-                    <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Remarks)"></MudTextField>
+                    <MudTextField @bind-Value="model.TruckTransferEndModel.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Normal" For="@(() => model.Remarks)"></MudTextField>
                 </MudItem>
 
             </EditForm>
@@ -44,7 +37,8 @@
 
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Reached Branch</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Accept" Class="px-12">Accept Truck</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reject" Class="px-12">Reject Truck</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -53,14 +47,12 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter]
-    public TruckTransferEndModel model { get; set; } = new();
-
-
+    public TruckTransferInitiationModel model { get; set; } = new();
 
 
     protected override void OnInitialized()
     {
-        branchID = model?.DestinationBranchID??0;
+        branchID = model?.DestinationBranch?.BranchID ?? 0;
     }
 
     private int branchID { get; set; } = 0;
@@ -72,11 +64,11 @@
     {
         MudDialog.Cancel();
     }
-    public async Task Submit()
+    public async Task Accept()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        if(model.Truck==null || model.Truck.TruckID == 0)
+        if (model.Truck == null || model.Truck.TruckID == 0)
         {
             bool? result = await DialogService.ShowMessageBox(
             "Warning",
@@ -86,21 +78,56 @@
         }
         if (model != null)
         {
-
-            model.UserInfo.UserID = user.Identity.Name;
+            model.IstruckReject = 0;
+            model.TruckTransferEndModel.TruckEvent.UserInfo.UserID = user.Identity.Name;
             try
             {
-                Iservice.UpdateEnd(model);
-                Snackbar.Add("Transfered succesfully",Severity.Success);
+                model.TruckTransferEndModel.TransferStatus = true;
+                Iservice.UpdateStatus(model);
+                Snackbar.Add("Transfered succesfully", Severity.Success);
 
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Snackbar.Add(ex.Message,Severity.Error);
+                Snackbar.Add(ex.Message, Severity.Error);
             }
         }
 
-        MudDialog.Close(DialogResult.Ok(true));
+         MudDialog.Close(model);
+    }
+
+    public async Task Reject()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model.Truck == null || model.Truck.TruckID == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Please, Select truck.", yesText: "OK");
+
+            return;
+        }
+        if (model != null)
+        {
+            
+            model.IstruckReject = 1;
+            model.TruckTransferEndModel.TruckEvent.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                
+                model.TruckTransferEndModel.TransferStatus = false;
+                Iservice.UpdateStatus(model);
+                Snackbar.Add("Transfered succesfully", Severity.Success);
+
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+
+        MudDialog.Close(model);
     }
 
 }

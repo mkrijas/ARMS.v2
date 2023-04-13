@@ -8,15 +8,12 @@ namespace ArmsServices.DataServices
     public interface ITruckTransferService
     {
 
-        TruckTransferInitiationModel UpdateInitiation(TruckTransferInitiationModel model);
-        IEnumerable<TruckTransferInitiationModel> SelectPendingByBranchInitiation(int? Branch);
-        int DeleteInitiation(int? ID, string UserID);
-        IEnumerable<int?> getUnAssignrdTruckIds(int? BranchID);
+        TruckTransferInitiationModel UpdateOutgoing(TruckTransferInitiationModel model);
+        IEnumerable<TruckTransferInitiationModel> SelectOutgoingTrucks(int? Branch);
+        int DeleteInitiation(int? ID, long? EventID, string UserID);
 
-
-        TruckTransferEndModel UpdateEnd(TruckTransferEndModel model);
-        IEnumerable<TruckTransferEndModel> SelectPendingByBranchEnd(int? Branch);
-        int DeleteEnd(int? ID, string UserID);
+        TruckTransferInitiationModel UpdateStatus(TruckTransferInitiationModel model);
+        IEnumerable<TruckTransferInitiationModel> SelectIncomingTrucks(int? Branch);
     }
 
     public class TruckTransferService : ITruckTransferService
@@ -28,183 +25,162 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int DeleteInitiation(int? ID, string UserID)
+        public int DeleteInitiation(int? ID, long? EventID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
+               new SqlParameter("@EventID", EventID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.FMS.Truck.Transfer.Initiation.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.FMS.Truck.Transfer.Delete]", parameters);
         }
 
 
-        public IEnumerable<TruckTransferInitiationModel> SelectPendingByBranchInitiation(int? BranchID)
+        public IEnumerable<TruckTransferInitiationModel> SelectOutgoingTrucks(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByBranch"),
+               new SqlParameter("@Operation", "Outgoing"),
                new SqlParameter("@ID", BranchID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Truck.Transfer.Initiation.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Truck.Transfer.Select]", parameters))
             {
-                yield return GetModelInitiation(dr);
+                yield return GetModel(dr);
             }
         }
 
 
 
 
-        public TruckTransferInitiationModel UpdateInitiation(TruckTransferInitiationModel model)
+        public TruckTransferInitiationModel UpdateOutgoing(TruckTransferInitiationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
 
                new SqlParameter("@TruckTransferInitiationID", model.TruckTransferInitiationID),
                new SqlParameter("@TruckID", model.Truck.TruckID),
-               new SqlParameter("@InitiationBranchID", model.InitiationBranchID),
+               new SqlParameter("@InitiationBranchID", model.InitiationBranch.BranchID),
                new SqlParameter("@DestinationBranchID", model.DestinationBranch.BranchID),
-               new SqlParameter("@StartKM", model.StartKM),
+               new SqlParameter("@EventReading", model.TruckEvent.EventReading),
                new SqlParameter("@Remarks", model.Remarks),
-               new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@UserID", model.TruckEvent.UserInfo.UserID),
+               new SqlParameter("@EventID", model.TruckEvent.TruckEventID),
                new SqlParameter("@RecordStatus", 3),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Truck.Transfer.Initiation.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Truck.Transfer.Update]", parameters))
             {
-                return GetModelInitiation(dr);
+                return GetModel(dr);
             }
             return null;
         }
 
-        public IEnumerable<int?> getUnAssignrdTruckIds(int? BranchID)
-        {
-
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-                new SqlParameter("@BranchID", BranchID),
-            };
-
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Truck.UnAssigned.TruckIds]", parameters))
-            {
-                yield return dr.GetInt32("TruckID");
-            }
-            yield return null;
-        }
 
 
-
-        public int DeleteEnd(int? ID, string UserID)
+        public IEnumerable<TruckTransferInitiationModel> SelectIncomingTrucks(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID),
-               new SqlParameter("@UserID", UserID),
-            };
-            return Iservice.ExecuteNonQuery("[usp.FMS.Truck.Transfer.End.Delete]", parameters);
-        }
-
-
-        public IEnumerable<TruckTransferEndModel> SelectPendingByBranchEnd(int? BranchID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByBranch"),
+               new SqlParameter("@Operation", "ByIncoming"),
                new SqlParameter("@ID", BranchID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Truck.Transfer.End.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Truck.Transfer.Select]", parameters))
             {
-                yield return GetModelEnd(dr);
+                yield return GetModel(dr);
             }
         }
 
 
 
 
-        public TruckTransferEndModel UpdateEnd(TruckTransferEndModel model)
+        public TruckTransferInitiationModel UpdateStatus(TruckTransferInitiationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
 
-               new SqlParameter("@TruckTransferEndID", model.TruckTransferEndID),
+               new SqlParameter("@TruckTransferEndID", model.TruckTransferEndModel.TruckTransferEndID),
                new SqlParameter("@TruckTransferInitiationID", model.TruckTransferInitiationID),
                new SqlParameter("@TruckID", model.Truck.TruckID),
-               new SqlParameter("@DestinationBranchID", model.DestinationBranchID),
-               new SqlParameter("@EndKM", model.EndKM),
-               new SqlParameter("@Remarks", model.Remarks),
-               new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@InitiationBranchID", model.InitiationBranch.BranchID),
+               new SqlParameter("@BranchID", model.DestinationBranch.BranchID),
+               new SqlParameter("@EventReading", model.TruckTransferEndModel.TruckEvent.EventReading),
+               new SqlParameter("@Remarks", model.TruckTransferEndModel.Remarks),
+               new SqlParameter("@UserID", model.TruckTransferEndModel.TruckEvent.UserInfo.UserID),
                new SqlParameter("@RecordStatus", 3),
+               new SqlParameter("@Status", model.TruckTransferEndModel.TransferStatus),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Truck.Transfer.End.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Truck.Transfer.Status.Update]", parameters))
             {
-                return GetModelEnd(dr);
+                return GetModel(dr);
             }
             return null;
         }
 
 
-        private TruckTransferInitiationModel GetModelInitiation(IDataRecord dr)
+        private TruckTransferInitiationModel GetModel(IDataRecord dr)
         {
             return new TruckTransferInitiationModel
             {
                 TruckTransferInitiationID = dr.GetInt32("TruckTransferInitiationID"),
-                InitiationBranchID = dr.GetInt32("InitiationBranchID"),
-                DestinationBranchID = dr.GetInt32("DestinationBranchID"),
+                InitiationBranch = new BranchModel()
+                {
+                    BranchID = dr.GetInt32("InitiationBranchID"),
+                    BranchName = dr.GetString("InitiationBranchName"),
+
+                },
                 DestinationBranch = new BranchModel()
                 {
                     BranchID = dr.GetInt32("DestinationBranchID"),
                     BranchName = dr.GetString("DestinationBranchName"),
                 },
-                StartKM = dr.GetDecimal("StartKM"),
+                TruckEvent = new EventModel()
+                {
+                    TruckEventID = dr.GetInt64("EventID"),
+                     
+                    EventReading = dr.GetInt64("EventReading"),
+                    EventTime = dr.GetDateTime("EventTime"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserId"),
+                    },
+                },
+                TruckTransferEndModel = new TruckTransferEndModel()
+                {
+
+                    TruckTransferEndID = dr.GetInt32("TruckTransferEndID"),
+                    TransferStatus = dr.GetBooleanNullable("TransferStatus"),
+                   
+
+                    TruckEvent = new EventModel()
+                    {
+                        TruckEventID = dr.GetInt64("EventEndID"),
+                        EventReading = dr.GetInt64("EndKM"),
+                        EventTime = dr.GetDateTime("EventTime"),
+                        BranchName = dr.GetString("OrginBranchName"),
+                        BranchID = dr.GetInt32("OrginBranchID"),
+                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                        {
+                            RecordStatus = dr.GetByte("RecordStatus"),
+                            TimeStampField = dr.GetDateTime("TimeStamp"),
+                            UserID = dr.GetString("UserId"),
+                        },
+                    },
+                },
                 Remarks = dr.GetString("Remarks"),
                 Truck = new TruckModel()
                 {
                     TruckID = dr.GetInt32("TruckID"),
                     RegNo = dr.GetString("RegNo"),
                 },
-                UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                {
-                    RecordStatus = dr.GetByte("RecordStatus"),
-                    TimeStampField = dr.GetDateTime("TimeStamp"),
-                    UserID = dr.GetString("UserId"),
-                },
             };
         }
 
-
-        private TruckTransferEndModel GetModelEnd(IDataRecord dr)
-        {
-            return new TruckTransferEndModel
-            {
-                TruckTransferEndID = dr.GetInt32("TruckTransferEndID"),
-                TruckTransferInitiationID = dr.GetInt32("TruckTransferInitiationID"),
-                InitiationBranchID = dr.GetInt32("InitiationBranchID"),
-                DestinationBranchID = dr.GetInt32("DestinationBranchID"),
-                TransferStatus = dr.GetString("TransferStatus"),
-                InitiationBranch = new BranchModel()
-                {
-                    BranchID = dr.GetInt32("InitiationBranchID"),
-                    BranchName = dr.GetString("InitiationBranchName"),
-                },
-                EndKM = dr.GetDecimal("EndKM"),
-                StartKM = dr.GetDecimal("StartKM"),
-                Remarks = dr.GetString("Remarks"),
-                Truck = new TruckModel()
-                {
-                    TruckID = dr.GetInt32("TruckID"),
-                    RegNo = dr.GetString("RegNo"),
-                },
-                UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                {
-                    RecordStatus = dr.GetByte("RecordStatus"),
-                    TimeStampField = dr.GetDateTime("TimeStamp"),
-                    UserID = dr.GetString("UserId"),
-                },
-            };
-        }
 
     }
 }

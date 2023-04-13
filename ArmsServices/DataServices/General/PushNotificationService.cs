@@ -1,0 +1,111 @@
+﻿using ArmsModels.BaseModels.General;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+
+namespace ArmsServices.DataServices.General
+{
+    public interface IPushNotificationService
+    {
+        PushNotificationModel UpdatePushNotification(PushNotificationModel model);
+        IEnumerable<PushNotificationModel> SelectUnAknowledgedAndNonTimeElapsedNotifications(int? ID);
+        int AknowledgedSelectedItems(string MessageIDs, string UserID);
+        int AknowledgedCurrentItem(int? MessageID, string UserID);
+    }
+    public class PushNotificationService : IPushNotificationService
+    {
+        IDbService Iservice;
+
+        public PushNotificationService(IDbService iservice)
+        {
+            Iservice = iservice;
+        }
+
+        public PushNotificationModel UpdatePushNotification(PushNotificationModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@MessageID", null),
+               new SqlParameter("@InitiateBranchID", model?.InitiateBranch?.BranchID?? 0),
+               new SqlParameter("@ReceivedBranchID", model?.ReceivedBranch?.BranchID?? 0),
+               new SqlParameter("@MessageTitle", model.MessageTitle),
+               new SqlParameter("@MessageBody", model.MessageBody),
+               new SqlParameter("@Aknowledged", null),
+               new SqlParameter("@AknowledgedBy", null),
+               new SqlParameter("@RedirectedTo", model.RedirectedTo),
+               new SqlParameter("@DocumentID", model.DocumentID),
+               new SqlParameter("@ExpiredBy", model.ExpiredBy),
+               new SqlParameter("@RecordStatus", model.RecordStatus)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.Notification.Update]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+        public IEnumerable<PushNotificationModel> SelectUnAknowledgedAndNonTimeElapsedNotifications(int? ID)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "ByBranch"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.Notification.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+        public int AknowledgedSelectedItems(string MessageIDs, string UserID)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@MessageIDs", MessageIDs),
+               new SqlParameter("@Aknowledged", 1),
+               new SqlParameter("@AknowledgedBy", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.General.Notification.Aknowledge]", parameters);
+
+        }
+        public int AknowledgedCurrentItem(int? MessageID, string UserID)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@MessageIDs", MessageID.Value.ToString()),
+               new SqlParameter("@Aknowledged", 1),
+               new SqlParameter("@AknowledgedBy", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.General.Notification.Aknowledge]", parameters);
+
+        }
+
+        private PushNotificationModel GetModel(IDataRecord dr)
+        {
+            return new PushNotificationModel
+            {
+                MessageID = dr.GetInt32("MessageID"),
+                InitiateBranch = new ArmsModels.BaseModels.BranchModel()
+                {
+                    BranchID = dr.GetInt32("InitiateBranchID"),
+                    BranchName = dr.GetString("InitiateBranchName"),
+                },
+                ReceivedBranch = new ArmsModels.BaseModels.BranchModel()
+                {
+                    BranchID = dr.GetInt32("ReceivedBranchID"),
+                    BranchName = dr.GetString("ReceivedBranchName"),
+                },
+                MessageTitle = dr.GetString("MessageTitle"),
+                MessageBody = dr.GetString("MessageBody"),
+                Aknowledged = dr.GetBoolean("Aknowledged"),
+                AknowledgedBy = dr.GetString("AknowledgedBy"),
+                RedirectedTo = dr.GetInt32("RedirectedTo"),
+                DocumentID = dr.GetInt32("DocumentID"),
+                ExpiredBy = dr.GetInt32("ExpiredBy"),
+                RecordStatus = dr.GetByte("RecordStatus"),
+                MsgDate = dr.GetDateTime("Timestamp")
+            };
+        }
+    }
+}

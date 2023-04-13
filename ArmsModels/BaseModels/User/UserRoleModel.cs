@@ -28,6 +28,8 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
+        public bool IsSelected { get; set; }
+        public bool IsDisabled { get; set; }
         public UserModel User { get; set; }
         public BranchModel Branch { get; set; }
         public RoleModel Role { get; set; }

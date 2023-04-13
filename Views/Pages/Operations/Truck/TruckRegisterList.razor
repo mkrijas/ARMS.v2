@@ -1,0 +1,98 @@
+﻿@page "/TruckRegisterList"
+@page "/TruckRegisterList/{SelectedTruckId}"
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+@inject ITruckService ItruckService
+
+<MudPaper Class="pl-5" Elevation="4">
+   
+        <MudGrid Spacing="7">
+            <MudItem xs="10" md="10" >
+                <TruckSelector @bind-Value="SelectedTruck" />
+            </MudItem>
+            <MudItem xs="2" md="2">
+                <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" ButtonType="ButtonType.Submit">Fetch</MudButton>
+            </MudItem>
+        </MudGrid>
+</MudPaper>
+<br />
+<br />
+<MudTable Items="@collection" Elevation="8"  @bind-Truck="model">
+
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<TruckRegistrationModel, object>(x=> x.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
+        <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckRegistrationModel, object>(x=> x.EffectFrom)" InitialDirection="SortDirection.Ascending">Valid From</MudTableSortLabel></MudTh></MudTh>
+        <MudTh><MudTh><MudTableSortLabel SortBy="new Func<TruckRegistrationModel, object>(x=> x.EffectTo)" InitialDirection="SortDirection.Ascending">Valid To</MudTableSortLabel></MudTh></MudTh>
+        
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Truck">@context.RegNo</MudTd>
+        <MudTd DataLabel="Valid From">@context.EffectFrom.Value.ToString("dd/MM/yyyy")</MudTd>
+        <MudTd DataLabel="Valid To">@context.EffectTo.Value.ToString("dd/MM/yyyy")</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+    </PagerContent>
+</MudTable>
+
+@*   <MudGrid  Class="mt-5">
+    @foreach (var item in collection)
+    {
+        <MudItem sm="12"   xl="4" lg="6">
+            <TripDetailsCard Trip="item" ></TripDetailsCard>
+         </MudItem>
+    }
+</MudGrid>*@
+   
+
+
+@code {
+
+
+    private TruckRegistrationModel  model = new TruckRegistrationModel();
+
+    [Parameter]
+    public TruckModel SelectedTruck { get; set; }
+
+    [Parameter]
+    public string SelectedTruckId { get; set; } = null;
+
+
+
+    private List<TruckModel> TruckList = new List<TruckModel>();
+
+
+    protected async override Task OnParametersSetAsync()
+    {
+        if(!string.IsNullOrWhiteSpace( SelectedTruckId))
+        {
+        int TruckId = 0; 
+        Int32.TryParse(SelectedTruckId,out TruckId);
+            var authState = await auth.GetAuthenticationStateAsync();
+            var branch = int.Parse(authState.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+            TruckList = ItruckService.SelectByBranch(branch).ToList();
+            if(TruckList != null && TruckList.Any(s => s.TruckID == TruckId))
+            {
+                SelectedTruck = TruckList.FirstOrDefault(s => s.TruckID == TruckId);
+                fetch();
+            }
+        }
+    }
+
+    private List<TruckRegistrationModel> collection = new List<TruckRegistrationModel>();
+    public async Task fetch()
+    {
+        collection = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int branchID = int.Parse(brancIDString);     
+         foreach (var item in ItruckService.GetRegistrationList(SelectedTruck?.TruckID??0).OrderBy(s=>s.EffectTo).ToList())
+        {
+            collection.Add(item);
+            this.StateHasChanged();
+        }
+
+    }
+}
+

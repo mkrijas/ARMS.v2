@@ -94,7 +94,7 @@ namespace ArmsServices.DataServices
                 AddressID = dr.GetInt32("AddressID"),
                 BranchName = dr.GetString("BranchName"),
                 BranchCode = dr.GetString("BranchCode"),
-                Coa = new ChartOfAccountModel() { CoaID = dr.GetInt32("Coa") },
+                Coa = new ChartOfAccountModel() { CoaID = dr.GetInt32("CoaID") },
                 BranchID = dr.GetInt32("BranchID"),
                 Operate = dr.GetBoolean("Operate"),
                 PlaceID = dr.GetInt32("PlaceID"),

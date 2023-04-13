@@ -16,13 +16,16 @@ namespace ArmsServices.DataServices
     public interface IUserService
     {
         IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID);
+        IEnumerable<UserBranchRoleModel> GetAllBranchesNRoles(string UserID);
         int SetBranchesNRoles(List<UserBranchRoleModel> lst,string UserID);
         int DeleteBranchesNRoles(UserBranchRoleModel model,string UserID);
+        int DeleteUser(string UserID, string DeletedBy);
         UserBranchRoleModel GetCurrentBranchRole(string UserID);
         int SetCurrentBranchRole(UserBranchRoleModel model);
         IEnumerable<UserModel> Select(string UserID);
+        IEnumerable<UserModel> SelectDeleted(string UserID);
 
-     
+
     }
 
    
@@ -383,6 +386,19 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+        public IEnumerable<UserModel> SelectDeleted(string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@operation", "Deleted"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.UserSelect]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
         public int DeleteBranchesNRoles(UserBranchRoleModel model, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -392,6 +408,15 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@DeletedBy", UserID),
             }; 
             return Iservice.ExecuteNonQuery("[usp.user.BranchRole.Delete]", parameters);
+        }
+        public int DeleteUser(string UserID, string DeletedBy)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", UserID),
+                //new SqlParameter("@DeletedBy", DeletedBy),
+            }; 
+            return Iservice.ExecuteNonQuery("[usp.User.UserDelete]", parameters);
         }
         public IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID)
         {
@@ -409,6 +434,22 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+        public IEnumerable<UserBranchRoleModel> GetAllBranchesNRoles(string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.AllBranches.BranchRole.Select]", parameters))
+            {
+                yield return new UserBranchRoleModel
+                {
+                    User = new UserModel() { UserID = dr.GetString("UserID") },
+                    Branch = new BranchModel() { BranchID = dr.GetInt32("BranchID"), BranchName = dr.GetString("BranchName") },
+                    Role = new RoleModel() { RoleID = dr.GetString("RoleID"), RoleNo = dr.GetInt32("UserRoleID") },
+                };
+            }
+        }
 
         public int SetBranchesNRoles(List<UserBranchRoleModel> lst, string UserID)
         {
@@ -422,6 +463,7 @@ namespace ArmsServices.DataServices
                 row["User"] = item.User.UserID;
                 row["Branch"] = item.Branch.BranchID;
                 row["Role"] = item.Role.RoleID;
+                dt.Rows.Add(row);
             }
 
             List<SqlParameter> parameters = new List<SqlParameter>

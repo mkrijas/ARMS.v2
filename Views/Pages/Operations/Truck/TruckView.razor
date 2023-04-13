@@ -12,6 +12,7 @@
 
 @using System.Globalization
 @using Views.Pages.Inventory
+@inject NavigationManager UriHelper;
 
 
 
@@ -45,9 +46,16 @@
         <MudTd DataLabel="BodyType">@context.BodyType</MudTd>
         <MudTd DataLabel="ManufacturedYear">@context.ManufacturedYear</MudTd>
         <MudTd DataLabel="">
-            <MudFab style="font-size:5px" @onclick="@(()=> Edit(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" /><MudFab @onclick="@(()=> Delete(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab style="font-size:5px" @onclick="@(()=> Edit(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=> Delete(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
             <MudTooltip Text="Mount Details">
                 <MudFab @onclick="@(()=> TruckMountDetails(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.TableView" Size="Size.Small" IconSize="Size.Small" />
+            </MudTooltip>
+            <MudTooltip Text="Update Register Number">
+                <MudFab @onclick="@(()=> UpdateRegisterNumber(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Update" Size="Size.Small" IconSize="Size.Small" />
+            </MudTooltip>
+            <MudTooltip Text="Register Number List">
+                <MudFab @onclick="@(()=> RegisterNumberList(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.List" Size="Size.Small" IconSize="Size.Small" />
             </MudTooltip>
         </MudTd>
     </RowTemplate>
@@ -66,50 +74,46 @@
     private List<TruckModel> collection = new List<TruckModel>();
     private List<TruckTypeModel> TruckTypes = new List<TruckTypeModel>();
     private List<BranchModel> Branches = new List<BranchModel>();
-
+    public string TruckRegisterListurl = "/TruckRegisterList";
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.Run(() => GetAll());
+        await GetAll();
         TruckTypes = Itrucktype.Select(0).ToList();
         Branches = Ibranch.Select().ToList();
     }
 
-    private void GetAll()
+    private async Task GetAll()
     {
-        collection.Clear();
-        foreach (var item in Iservice.Select(0))
-        {
-            collection.Add(item);
-        }
+        collection = Iservice.Select(0).ToList();
     }
 
-    private async void OnValidSubmit(EditContext context)
-    {
+    //private async void OnValidSubmit(EditContext context)
+    //{
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
-        {
-            model = Iservice.Update(model);
+    //    var authprov = await auth.GetAuthenticationStateAsync();
+    //    var user = authprov.User;
+    //    model.UserInfo.UserID = user.Identity.Name;
+    //    try
+    //    {
+    //        model = Iservice.Update(model);
 
-            snackbar.Add("Saved Successfully", Severity.Success);
-            if (collection.Exists(x => x.TruckID == model.TruckID))
-            {
-                collection[collection.FindIndex(x => x.TruckID == model.TruckID)] = model;
-            }
-            else
-            {
-                collection.Add(model);
-            }
-            model = new TruckModel();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-    }
+    //        snackbar.Add("Saved Successfully", Severity.Success);
+    //        if (collection.Exists(x => x.TruckID == model.TruckID))
+    //        {
+    //            collection[collection.FindIndex(x => x.TruckID == model.TruckID)] = model;
+    //        }
+    //        else
+    //        {
+    //            collection.Add(model);
+    //        }
+    //        model = new TruckModel();
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        snackbar.Add(ex.Message, Severity.Warning);
+    //    }
+    //}
 
     private void TruckMountDetails(int? id)
     {
@@ -129,7 +133,45 @@
 
     }
 
-    private void Edit(int? id)
+    private async Task UpdateRegisterNumber(int? id)
+    {
+        TruckRegistrationModel CurrentRegistration = new();
+        DialogOptions options = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Large,
+            };
+        if (id != null)
+        {
+            CurrentRegistration = Iservice.GetRegistration(id);
+        }
+        DialogParameters parms = new();
+        parms.Add("CurrentRegistration", CurrentRegistration);
+
+        var dialog = DialogService.Show<TruckRegisterDialog>("ADD/EDIT", parms, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            collection.Clear();
+            await GetAll();
+        }
+
+    }
+
+    private async Task RegisterNumberList(TruckModel truck)
+    {        
+        DialogOptions options = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Large,
+            };
+        DialogParameters parms = new();
+        parms.Add("Truck", truck);
+        var truckIdstring = (truck?.TruckID ?? 0).ToString();
+        UriHelper.NavigateTo($"TruckRegisterList/{truckIdstring}");
+    }
+
+
+
+    private async Task Edit(int? id)
     {
         model = new();
         DialogOptions options = new DialogOptions()
@@ -143,7 +185,22 @@
         }
         DialogParameters parms = new();
         parms.Add("EditModel", model);
-        DialogService.Show<Truckdilog>("ADD/EDIT", parms, options);
+        var dialog =   DialogService.Show<Truckdilog>("ADD/EDIT", parms, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            var data = (TruckModel)result.Data;
+            if (id == null)
+            {
+                collection.Add(data);
+            }
+            else
+            {
+                var index = collection.FindIndex(x => x.TruckID == data.TruckID);
+                collection[index] = data;
+            }
+        }
+
 
     }
     private void Delete(int? id)
@@ -156,7 +213,7 @@
 
     private bool search(TruckModel Truck)
     {
-        if (Truck.RegNo != null && Truck.RegNo.Contains(searchTruck, StringComparison.OrdinalIgnoreCase))
+        if (Truck?.RegNo != null && Truck.RegNo.Contains(searchTruck, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
