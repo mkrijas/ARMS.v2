@@ -11,6 +11,7 @@
 @using System.Globalization
 @using System.Security.Claims
 @using System.Threading
+@using System.Linq
 
 <MudGrid>
     <MudItem xs="12">
@@ -24,7 +25,7 @@
                 <MudTd DataLabel="Value"> 
                 @foreach(var item in @context.ClaimValues) 
                     {
-                     <MudCheckBox CheckedChanged="@((bool val) => Roleupdate(val,context.ClaimType,item))"   Class="mr-2" Checked="@rolemngr.GetClaimsAsync(ClaimModel).Result.Any(x=> x.Type == @context.ClaimType && x.Value == item)" Label="@item"  Color="Color.Primary"></MudCheckBox>                     
+                     <MudCheckBox CheckedChanged="@((bool val) => Roleupdate(val,context.ClaimType,item))"   Class="mr-2" Checked="@UserClaimList.Any(x=> x.Type == @context.ClaimType && x.Value == item)" Label="@item"  Color="Color.Primary"></MudCheckBox>                     
                     }
                 </MudTd>
             </RowTemplate>
@@ -36,11 +37,11 @@
 </MudGrid>
 
 @code {
-      [Parameter]
-    public RoleModel ClaimModel{ get; set; }
-  
-    private RoleModel model = new RoleModel();
+    [Parameter]
+    public RoleModel RoleModel{ get; set; }
 
+    private RoleModel model = new RoleModel();
+    public IList<Claim> UserClaimList { get; set; }
     private string searchTruck = "";
     private string id = "";
     private UserModel usmodel= new UserModel();
@@ -60,6 +61,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        UserClaimList = await rolemngr.GetClaimsAsync(RoleModel);
         await Task.Run(() => GetAll());
         GetClaim();
     }
@@ -111,18 +113,33 @@
     { 
         Claim claim = new Claim(Claimtype, claimvalue);
 
-        if(val==true)
+        try
         {
 
-            rolemngr.AddClaimAsync(ClaimModel,claim);
-            snackbar.Add("Claim Added", Severity.Success);
-           
+            if(val==true)
+            {
+
+                rolemngr.AddClaimAsync(RoleModel,claim);
+                UserClaimList.Add(claim);
+
+                //snackbar.Add("Claim Added", Severity.Success);
+
+            }
+            else
+            {
+                rolemngr.RemoveClaimAsync(RoleModel, claim);
+                UserClaimList.Remove(UserClaimList.FirstOrDefault(s=>s.Type == claim.Type && s.Value == claim.Value ));
+                //UserClaimList =  UserClaimList.Except(x => x.ValueType == claim.ValueType).ToList();
+
+
+                //snackbar.Add("Claim Removed", Severity.Success);
+
+            }
         }
-        else
+
+        catch(Exception ex)
         {
-            rolemngr.RemoveClaimAsync(ClaimModel, claim);
-            snackbar.Add("Claim Removed", Severity.Success);
-        
+            snackbar.Add(ex.Message, Severity.Error);
         }
     }
 
