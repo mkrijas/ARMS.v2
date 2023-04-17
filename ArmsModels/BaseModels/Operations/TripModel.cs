@@ -37,7 +37,7 @@ namespace ArmsModels.BaseModels
         public string TripNumber { get; set; }
         public string Truck { get; set; }
         public string Driver { get; set; }
-        public string Mileage { get; set; }
+        public decimal? Mileage { get; set; }
         public int? RunKM { get; set; }
         public decimal? Fuel { get; set; }
         public decimal? Freight { get; set; }

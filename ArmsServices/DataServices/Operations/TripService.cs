@@ -184,6 +184,7 @@ namespace ArmsServices.DataServices
             };            
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
             {
+                decimal mileage = Math.Round((reader.GetDecimal("Mileage") != null ? (decimal)reader.GetDecimal("Mileage") : 0), 2);
                return new TripInfoModel()
                 {
                     Driver = reader.GetString("Driver"),
@@ -193,7 +194,7 @@ namespace ArmsServices.DataServices
                     TripNumber = (reader.GetInt64("TripNumber")).ToString(),
                     Truck = reader.GetString("Truck"),
                     Gcs = reader.GetString("Gcs"),
-                    Mileage = reader.GetString("Mileage"),
+                    Mileage = (mileage != 0? mileage : null),
                     Expenses = reader.GetDecimal("Expenses"),
                     Freight = reader.GetDecimal("Freight"),
                 };
