@@ -82,9 +82,9 @@ namespace Views.Pages.UserAccount
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         }
 
-        public async Task<IActionResult> OnPostAsync(string returnUrl = null)
+        public async Task<IActionResult> OnPostAsync(string returnUrl = "~/UserAccount/Login")
         {
-            returnUrl ??= Url.Content("~/");
+            returnUrl ??= Url.Content("~/UserAccount/Login");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
@@ -122,7 +122,7 @@ namespace Views.Pages.UserAccount
                         //}
                         //else
                         //{
-                        await _signInManager.SignInAsync(user, isPersistent: false);
+                        //await _signInManager.SignInAsync(user, isPersistent: false);
                         return LocalRedirect(returnUrl);
                         //}
                     }
