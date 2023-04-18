@@ -167,6 +167,8 @@ namespace Views
             //------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
+            //------------General-------------------
+            services.AddScoped<IConfigTable, ConfigTable>();
 
             //--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
