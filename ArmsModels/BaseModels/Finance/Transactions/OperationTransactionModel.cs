@@ -36,7 +36,8 @@ namespace ArmsModels.BaseModels
         public long? OpTranSubID { get; set; }
         public long? OpTranID { get; set; } 
         [Required]
-        public string ExpenseUsageCode { get; set; }  
+        public string ExpenseUsageCode { get; set; }
+        public int? CoaID { get; set; }
         public string Reference { get; set; }        
         [Required]
         [Range(1, double.MaxValue, ErrorMessage = "Must have Non-Zero Value {1}")]

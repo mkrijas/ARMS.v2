@@ -40,25 +40,31 @@ namespace ArmsModels.BaseModels
             _userInfo = new SharedModels.UserInfoModel();
         }
         SharedModels.UserInfoModel _userInfo;
+
+
         public int? ID { get; set; }
-        public BankPostingGroupModel PostingGroup { get; set; } = new BankPostingGroupModel();
+        [Required]
+        public BankPostingGroupModel PostingGroup { get; set; }
+        [Required]
+        [ValidateComplexType]
         public BankAccountModel BankAccountInfo { get; set; } = new BankAccountModel();
+        [ValidateComplexType]
         public AddressModel AddressInfo { get; set; } = new AddressModel();
+        [ValidateComplexType]
         public ContactModel ContactInfo { get; set; } = new ContactModel();
+        [Required]
         public int? BranchID { get; set; }
         [Required]
-        [StringLength(8, MinimumLength = 8, ErrorMessage = "Must have 8 characters")]
+        [StringLength(8, MinimumLength = 8, ErrorMessage = "Bank Code Must be 8 characters long")]
         public string BankCode { get; set; }
         public bool IsGstRegistered { get; set; } = false;
-
+        [RequiredIfTrue("IsGstRegistered")]
         [StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
         public string GstNo { get; set; }
         public SharedModels.UserInfoModel UserInfo
         {
             get
-            {
-                return _userInfo;
-            }
+            {                return _userInfo;            }
             set
             {
                 _userInfo = value;
@@ -76,7 +82,9 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
         public int? ID { get; set; }
+        [Required]
         public string Title { get; set; }
+        [Required]
         public ChartOfAccountModel BankAccount { get; set; }
         public ChartOfAccountModel BankCharges { get; set; }
         public ChartOfAccountModel ProcessingFee { get; set; }

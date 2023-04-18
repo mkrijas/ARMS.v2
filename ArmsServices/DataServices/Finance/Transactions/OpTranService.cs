@@ -126,7 +126,8 @@ namespace ArmsServices.DataServices
             {
                 yield return new OpTranSubModel()
                 {                  
-                    ExpenseUsageCode = dr.GetString("ExpenseUsageCode"),                     
+                    ExpenseUsageCode = dr.GetString("ExpenseUsageCode"),  
+                    CoaID = dr.GetInt32("CoaID"),
                     OpTranID = dr.GetInt64("OpTranID"),                    
                     OpTranSubID = dr.GetInt64("OpTranSubID"),
                     Amount = dr.GetDecimal("Amount"),

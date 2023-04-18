@@ -193,7 +193,7 @@ namespace ArmsServices.DataServices
                     TripNumber = (reader.GetInt64("TripNumber")).ToString(),
                     Truck = reader.GetString("Truck"),
                     Gcs = reader.GetString("Gcs"),
-                    Mileage = reader.GetString("Mileage"),
+                    Mileage = reader.GetDecimal("Mileage"),
                     Expenses = reader.GetDecimal("Expenses"),
                     Freight = reader.GetDecimal("Freight"),
                 };
