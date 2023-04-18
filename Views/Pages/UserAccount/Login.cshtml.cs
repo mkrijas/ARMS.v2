@@ -56,7 +56,7 @@ namespace Views.Pages.UserAccount
             public bool RememberMe { get; set; }
         }
 
-        public async Task OnGetAsync(string returnUrl = null)
+        public async Task OnGetAsync(string returnUrl = "~/UserAccount/Login")
         {
             if (!string.IsNullOrEmpty(ErrorMessage))
             {
@@ -105,6 +105,7 @@ namespace Views.Pages.UserAccount
                 }
                 else
                 {
+
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     return Page();
                 }                

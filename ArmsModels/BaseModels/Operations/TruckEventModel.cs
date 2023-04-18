@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,14 +14,22 @@ namespace ArmsModels.BaseModels
         }
 
         public long? TruckEventID { get; set; }
-        public byte? EventTypeID { get; set; }  
+        [Required]
+        public byte? EventTypeID { get; set; }
+        [Required]
         public byte? NextEventTypeID { get; set; }
+        [Required]
         public DateTime? EventTime { get; set; } = DateTime.Now;
+        [Required]
         public long? EventReading { get; set; }
+        [Required]
         public int? BranchID { get; set; }
         public string BranchName { get; set; }
+        [Required]
         public int? OriginID { get; set; }
+        [Required]
         public int? DestinationID { get; set; }
+        [Required]
         public int? TruckID { get; set; }
         public int? DriverID { get; set; }
         public long? TripID { get; set; }

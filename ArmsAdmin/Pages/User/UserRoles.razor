@@ -33,8 +33,8 @@
                 <MudTd DataLabel="Role No">@context.RoleNo</MudTd>
                 <MudTd DataLabel="Role Desc">@context.RoleDesc</MudTd>
                  <MudTd DataLabel="">
-                    <MudFab style="font-size:5px" @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" /><MudFab @onclick="@(()=> Delete(context.RoleNo))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                                                   <MudButton Variant="Variant.Filled" @onclick="@(()=>ClaimDilogue(context.RoleID))" Color="Color.Secondary">Claims</MudButton>
+                    <MudFab style="font-size:5px" @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" /><MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                                   <MudButton Variant="Variant.Filled" @onclick="@(()=>ClaimDilogue(context))" Color="Color.Secondary">Claims</MudButton>
 
                     </MudTd>
             </RowTemplate>
@@ -58,7 +58,7 @@
     public string csroleid { get; set; } = "";
     public bool checkbox { get; set; } = false;
 
-      [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     void Cancel() => MudDialog.Cancel();
     class roleClaimView
     {        
@@ -69,18 +69,21 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.Run(() => GetAll());
-        GetClaim();
+        await GetAll();
+        await GetClaim();
     }
 
-    private void GetAll()
+    private async Task GetAll()
     {
-        
+        if(collection!= null)
+        {
+            collection.Clear();
+        }
         collection = Irole.Select(null).ToList();
 
     }
 
-    private void GetClaim()
+    private async Task GetClaim()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         clamelist= Irole.GetAllClaims(ctc.Token).Result.ToList();
@@ -94,15 +97,50 @@
         }
 
     }
-    private void Edit(RoleModel editModel)
+
+    private async Task OpenDialog()
     {
 
+        DialogParameters parms = new DialogParameters();
+        parms.Add("EditModel", new RoleModel());
+        var dialog = DialogService.Show<UserAddDilog>("Add Roles",parms);
+        var result = await dialog.Result;
+        // you can check if the modal was cancelled
+        var isCancelled = result.Cancelled;
+
+         await GetAll();
+         await GetClaim();
+        
     }
-    private void Delete(int? id)
+    private async Task Edit(RoleModel editModel)
     {
 
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        DialogParameters parms = new DialogParameters();
+        parms.Add("EditModel", editModel);
+        var dialog = DialogService.Show<UserAddDilog>("Add Roles",parms);
+        var result = await dialog.Result;
+        // you can check if the modal was cancelled
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            await GetAll();
+            await GetClaim();
+        }
+    }
+    private async Task Delete(RoleModel editModel)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+    "Warning",
+    "Are you sure you want to delete this entry?",
+    yesText: "Delete!", cancelText: "Cancel");
+        var state = result == null ? "Cancelled" : "Deleted!";
+        if (state == "Deleted!")
+        {
+            await rolemngr.DeleteAsync(editModel);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            await GetAll();
+            await GetClaim();
+        }
     }
 
 
@@ -115,19 +153,10 @@
         else if (roles.RoleID == null) return true;
         return false;
     }
-
-    private void OpenDialog()
-    {
-
-        DialogParameters parms = new DialogParameters();
-        parms.Add("EditModel", new RoleModel());
-
-        DialogService.Show<UserAddDilog>("Add Roles",parms);
-    }
-    private void ClaimDilogue( String RoleId)
+    private void ClaimDilogue(RoleModel editModel)
     {
          DialogParameters parms = new DialogParameters();
-        parms.Add("ClaimModel", new RoleModel());
+        parms.Add("RoleModel", editModel);
 
         DialogService.Show<ClaimDilogue>("Add Claims",parms);
     }
@@ -135,7 +164,7 @@
     {
         csroleid = rid;
     }
-    private void Roleupdate(bool val,String Claimtype,String claimvalue)
+    private async Task Roleupdate(bool val,String Claimtype,String claimvalue)
     { 
         Claim claim = new Claim(Claimtype, claimvalue);
         model.RoleID = csroleid;
@@ -145,13 +174,13 @@
 
             rolemngr.AddClaimAsync(model,claim);
             snackbar.Add("Claim Added", Severity.Success);
-            GetAll();
+            await GetAll();
         }
         else
         {
             rolemngr.RemoveClaimAsync(model, claim);
             snackbar.Add("Claim Removed", Severity.Success);
-            GetAll();
+            await GetAll();
         }
     }
 

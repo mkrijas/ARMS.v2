@@ -47,7 +47,7 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudSelect Label="Select Action" T="byte?" Value="model.EventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" ValueChanged="EventSelected">
+                        <MudSelect Label="Select Action" T="byte?" Value="model.EventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" ValueChanged="EventSelected" Disabled="@(IsDisableSelectAction)">
                             @foreach (var item in EventTypes)
                             {
                                 <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
@@ -55,8 +55,8 @@
                         </MudSelect>
                     </MudItem>
 
-                    <MudItem xs="12" md="6" >
-                        <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label=@(SelectedEvent.IsStationary?"Place":"Origin") @bind-Value="Origin" ResetValueOnEmptyText="true" Clearable="true"
+                    <MudItem xs="12" md="6">
+                        <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label=@(SelectedEvent.IsStationary?"Place":"Origin") Value="@OriginPlace" ValueChanged="@((e)=> {OriginPlace = e; model.OriginID = e.PlaceID;model.DestinationID = SelectedEvent.IsStationary ? model.OriginID : model.DestinationID;})" ResetValueOnEmptyText="true" Clearable="true"
                                      SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true"></MudAutocomplete>
                     </MudItem>
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
@@ -69,7 +69,7 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
-                        <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label="Destination" @bind-Value="Destination" ResetValueOnEmptyText="true" Clearable="true"
+                        <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label="Destination" Value="Destination" ValueChanged="((e)=> {Destination =e ; model.DestinationID =e.PlaceID;})" ResetValueOnEmptyText="true" Clearable="true"
                                      SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                     </MudItem>
 
@@ -92,7 +92,7 @@
                         @*<MyDateTimePicker Label="Event" @bind-Value="model.EventTime"></MyDateTimePicker>*@
                     </MudItem>
 
-                   
+
 
                 </MudGrid>
             </EditForm>
@@ -111,24 +111,21 @@
     [Parameter] public TruckModel Truck { get; set; }
     [Parameter] public DriverModel AssignedDriver { get; set; }
     [Parameter] public TripModel CurrentTrip { get; set; }
+    [Parameter] public EventModel model { get; set; } = new();
+
+    bool IsDisableSelectAction { get; set; } = false;
     private EventModel PreEvent { get; set; }
-
-    [Parameter]
-    public EventModel model { get; set; } = new();
-
-
-
     private bool IsLoading = false;
     private string ButtonLabel = "Select an Event";
 
     bool isSubmitting;
 
-    private PlaceModel Origin = new();
+    private PlaceModel OriginPlace = new();
     private PlaceModel Destination = new();
     private long? KmReading;
 
     private List<PlaceModel> places = new();
-    private List<EventTypeModel> EventTypes;    
+    private List<EventTypeModel> EventTypes;
     private EventTypeModel SelectedEvent = new();
 
     private List<GcSetModel> GCsToUnload = new();
@@ -141,12 +138,19 @@
 
 
     protected async override Task OnInitializedAsync()
-    {        
+    {
         EventTypes = Ievent.GetEventTypes().Where(x => x.EventTypeID != 1 && x.IsTripRelated).ToList();
-        places = Iplace.Select(0).ToList();         
-        PreEvent =  model.TruckEventID == null?Ievent.GetCurrentEvent(Truck.TruckID):Ievent.GetPreviousEvent(model.TruckEventID);
+        places = Iplace.Select(0).ToList();
+        PreEvent = model.TruckEventID == null ? Ievent.GetCurrentEvent(Truck.TruckID) : Ievent.GetPreviousEvent(model.TruckEventID);
+
         int? OriginID = null, DestinationID = null;
 
+        var postEvent = EventTypes.FirstOrDefault(s => s.EventTypeID == PreEvent.EventTypeID)?.LimitPostEvent;
+        if (postEvent != null && model.TruckEventID == null)
+        {
+            EventSelected(postEvent);
+            IsDisableSelectAction = true;
+        }
         if (Truck == null)
         {
             Truck = Itruck.SelectByID(CurrentTrip.TruckID);
@@ -167,8 +171,18 @@
             DestinationID = model.DestinationID;
             SelectedEvent = Ievent.GetEventType(model.EventTypeID);
         }
+        var authprov = await auth.GetAuthenticationStateAsync();
 
-        Origin = OriginID == null ? null : await Iplace.SelectByID(OriginID.Value);
+        if (!int.TryParse(authprov.User.Claims.First(c => c.Type == "BranchID")?.Value, out int BranchID))
+        {
+            snackbar.Add("Branch is Not Selected", Severity.Warning);
+            return;
+        }
+        model.BranchID = BranchID;
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+        OriginPlace = OriginID == null ? null : await Iplace.SelectByID(OriginID.Value);
+        model.OriginID = OriginID;
+        model.DestinationID = DestinationID;
         Destination = DestinationID == null ? null : await Iplace.SelectByID(DestinationID.Value);
 
     }
@@ -186,10 +200,10 @@
     private async Task OnValidSubmit(EditContext context)
     {
 
-        List<GcSetModel> gcSetList =  Igc.SelectToUnload(model.TripID);
-        if(gcSetList != null && gcSetList.Count() != 0)
+        List<GcSetModel> gcSetList = Igc.SelectToUnload(model.TripID);
+        if (gcSetList != null && gcSetList.Count() != 0)
         {
-            if(gcSetList.Any() && model.EventTypeID == 6)
+            if (gcSetList.Any() && model.EventTypeID == 6)
             {
                 snackbar.Add("The trip is not unloaded", Severity.Warning);
                 return;
@@ -201,13 +215,8 @@
         isSubmitting = true;
         try
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            int BranchID = 0;
-            if (!int.TryParse(authprov.User.Claims.First(c => c.Type == "BranchID")?.Value, out BranchID))
-            {
-                snackbar.Add("Branch is Not Selected", Severity.Warning);
-                return;
-            }
+
+
 
             if (model.TruckEventID == null && SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
             {
@@ -215,11 +224,10 @@
                 return;
             }
 
-            model.BranchID = BranchID;
-            model.DestinationID = SelectedEvent.IsStationary ? Origin.PlaceID : Destination.PlaceID;
-            model.OriginID = Origin.PlaceID;
+
+
             model.EventTypeID = SelectedEvent.EventTypeID;
-            model.UserInfo.UserID = authprov.User.Identity.Name;
+
 
             if (!ValidateEvent(model))
             {
@@ -241,7 +249,7 @@
                         Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
                     }
                 }
-            }            
+            }
             MudDialog.Close(DialogResult.Ok(model));
 
         }
@@ -256,9 +264,9 @@
     }
 
     private bool ValidateEvent(EventModel ev)
-    {        
-        EventModel NextEvent = new();                    
-        NextEvent = Ievent.GetNextEvent(ev.TruckEventID);        
+    {
+        EventModel NextEvent = new();
+        NextEvent = Ievent.GetNextEvent(ev.TruckEventID);
 
         if (PreEvent != null && model.EventTime < PreEvent.EventTime)
         {
@@ -276,11 +284,11 @@
             snackbar.Add("Cannot enter an event twice in a row", Severity.Warning);
             return false;
         }
-        else 
-        if(model.EventTypeID == 3)
+        else
+        if (model.EventTypeID == 3)
         {
-            var gcs =  Igc.SelectToDispatch(CurrentTrip.TripID);
-            if(!gcs.Any())
+            var gcs = Igc.SelectToDispatch(CurrentTrip.TripID);
+            if (!gcs.Any())
             {
                 snackbar.Add("No Gcs to Dispatch", Severity.Warning);
                 return false;
@@ -296,10 +304,11 @@
 
     private void EventSelected(byte? e)
     {
-        SelectedEvent = Ievent.GetEventType(e);
+        SelectedEvent = Ievent.GetEventType(e);  
         model.EventTypeID = e;
         if (SelectedEvent.EventTypeName != null)
         {
+            model.DestinationID = SelectedEvent.IsStationary ? model.OriginID : model.DestinationID;
             model.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == e).DefaultNextEventTypeID;
             ButtonLabel = SelectedEvent.EventTypeName;
             if (SelectedEvent.EventTypeID == 4)
@@ -309,5 +318,5 @@
         }
         else
             ButtonLabel = "Select an Event";
-    }   
+    }
 }
