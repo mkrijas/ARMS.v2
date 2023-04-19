@@ -8,10 +8,13 @@ namespace ArmsModels.BaseModels
     public class TyreModel
     {
         public int? TyreID { get; set; }
+        [Required]
         public string TyreSerialNumber { get; set; }
         public int? BranchID { get; set; }
         public string Make { get; set; } // Hint: MRF , CEAT
+        [Required]
         public int? InventoryItemID { get; set; }
+        [Required]
         public long? InventoryBatchID { get; set; }
         [Required]
         public string TyreType { get; set; } // Front/ Back/ All-Position

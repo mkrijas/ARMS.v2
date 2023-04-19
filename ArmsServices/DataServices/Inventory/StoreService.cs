@@ -90,8 +90,13 @@ namespace ArmsServices.DataServices
         }
 
         public IEnumerable<StoreModel> Select()
-        { 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Select]", null))
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByID"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
