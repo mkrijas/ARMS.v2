@@ -12,24 +12,24 @@
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Elevation="10" Filter="new Func<AssetDocumentTypeModel, bool>(search)" @bind-DocumentTypeModel="model">
-          
-               <ToolBarContent>
+
+            <ToolBarContent>
                 <MudText Typo="Typo.h6">Document</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="OpenDialog"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(0))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
                 <MudSpacer></MudSpacer>
-             <MudTextField @bind-Value="searchDocumentType" Placeholder="Search DocumentTypes... "
+                <MudTextField @bind-Value="searchDocumentType" Placeholder="Search DocumentTypes... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentTypeModel, object>(x=> x.DocumentTypeName)" InitialDirection="SortDirection.Ascending">Document Type</MudTableSortLabel></MudTh>                
+                <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentTypeModel, object>(x=> x.DocumentTypeName)" InitialDirection="SortDirection.Ascending">Document Type</MudTableSortLabel></MudTh>
                 <MudTh><MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentTypeModel, object>(x=> x.WarnBefore)" InitialDirection="SortDirection.Ascending">WarnBefore</MudTableSortLabel></MudTh></MudTh>
                 <MudTh><MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentTypeModel, object>(x=> x.BlockAfter)" InitialDirection="SortDirection.Ascending">BlockAfter</MudTableSortLabel></MudTh></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="DocumentTypeName">@context.DocumentTypeName</MudTd>                
+                <MudTd DataLabel="DocumentTypeName">@context.DocumentTypeName</MudTd>
                 <MudTd DataLabel="WarnBefore">@context.WarnBefore</MudTd>
                 <MudTd DataLabel="BlockAfter">@context.BlockAfter</MudTd>
                 <MudTd DataLabel="">
@@ -42,16 +42,16 @@
             </PagerContent>
         </MudTable>
     </MudItem>
-    
+
 
 </MudGrid>
 @code {
 
-    private AssetDocumentTypeModel model = new ();
+    private AssetDocumentTypeModel model = new();
 
     private string searchDocumentType = "";
     private List<AssetDocumentTypeModel>
-    collection = new ();
+    collection = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -60,51 +60,70 @@
 
     private void GetAll()
     {
+        if (collection != null)
+        {
+            collection.Clear();
+        }
         foreach (var item in Iservice.GetDocumentTypes())
         {
             collection.Add(item);
         }
     }
 
-    private async void OnValidSubmit(EditContext context)
-    {
-        //try
-        //{
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
-        {
-            model = Iservice.UpdateDocumentType(model);
 
-            snackbar.Add("Saved Successfully", Severity.Success);
-            if (collection.Exists(x => x.DocumentTypeID == model.DocumentTypeID))
-            {
-                collection[collection.FindIndex(x => x.DocumentTypeID == model.DocumentTypeID)] = model;
-            }
-            else
-            {
-                collection.Add(model);
-            }
-            model = new ();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-    }
-
-    private void Edit(int? id)
+    private async Task Edit(int? id)
     {
-        model = collection.First(x=> x.DocumentTypeID == id);
+        if (id == null || id != null && id == 0)
+        {
+            model = new();
+        }
+        else
+        {
+            model = collection.First(x => x.DocumentTypeID == id);
+
+        }
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model);
-        DialogService.Show<DocumentDilog>("ADD TRUCK",parms);
+
+        var dialog = DialogService.Show<DocumentDilog>("ADD TRUCK", parms);
+
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+            AssetDocumentTypeModel UpatedModel = (AssetDocumentTypeModel)result.Data;
+            if (UpatedModel != null)
+            {
+
+                if (collection.Exists(x => x.DocumentTypeID == UpatedModel.DocumentTypeID))
+                {
+                    collection[collection.FindIndex(x => x.DocumentTypeID == UpatedModel.DocumentTypeID)] = UpatedModel;
+                }
+                else
+                {
+                    collection.Add(UpatedModel);
+                }
+                UpatedModel = new();
+            }
+        }
     }
-    private void Delete(int? id)
+    private async Task Delete(int? id)
     {
-        Iservice.Delete(id, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        int result = Iservice.DeleteType(id, user.Identity.Name);
+
+        if (result != -1)
+        {
+            if (collection != null && collection.Any(s => s.DocumentTypeID == id))
+            {
+                collection.Remove(collection.FirstOrDefault(s => s.DocumentTypeID == id));
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        }
     }
 
 
@@ -116,12 +135,12 @@
         }
         return false;
     }
-        private void OpenDialog()
+    private void OpenDialog()
     {
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model);
-        DialogService.Show<DocumentDilog>("Add Document",parms);
+        DialogService.Show<DocumentDilog>("Add Document", parms);
     }
 }
 
