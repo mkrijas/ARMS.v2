@@ -15,7 +15,7 @@
 
         <ToolBarContent>
             <MudText Typo="Typo.h6">TruckTypes</MudText>
-            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="TruckDilog" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(()=>Edit(new TruckTypeModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
 
             <MudSpacer></MudSpacer>
             <MudTextField @bind-Value="searchTruckType" Placeholder="Search TruckTypes... "
@@ -63,6 +63,10 @@
 
     private void GetAll()
     {
+        if (collection != null)
+        {
+            collection.Clear();
+        }
         foreach (var item in Iservice.Select(0))
         {
             collection.Add(item);
@@ -97,17 +101,48 @@
         }
     }
 
-    private void Edit(TruckTypeModel TypeModel)
+    private async Task Edit(TruckTypeModel TypeModel)
     {
         DialogParameters tparms = new();
         tparms.Add("TypeModel", TypeModel);
-        DialogService.Show<TruckTypeDiloge>("ADD/EDIT", tparms);
+
+        var dialog = DialogService.Show<TruckTypeDiloge>("ADD/EDIT", tparms);
+
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+            TruckTypeModel UpatedModel = (TruckTypeModel)result.Data;
+            if (UpatedModel != null)
+            {
+
+                if (collection.Exists(x => x.TruckTypeID == UpatedModel.TruckTypeID))
+                {
+                    collection[collection.FindIndex(x => x.TruckTypeID == UpatedModel.TruckTypeID)] = UpatedModel;
+                }
+                else
+                {
+                    collection.Add(UpatedModel);
+                }
+                UpatedModel = new TruckTypeModel();
+            }
+        }
     }
     private void Delete(short? id)
     {
-        Iservice.Delete(id, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
+        int result = Iservice.Delete(id, "Rijas");
+       
         StateHasChanged();
+        if (result != -1)
+        {
+            if (collection != null && collection.Any(s => s.TruckTypeID == id))
+            {
+                collection.Remove(collection.FirstOrDefault(s => s.TruckTypeID == id));
+                 snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        }
     }
 
     private async Task SelectTyrePosition(TruckTypeModel TypeModel)
