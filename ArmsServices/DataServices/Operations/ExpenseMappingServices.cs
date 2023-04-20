@@ -84,7 +84,7 @@ namespace ArmsServices.DataServices
                 ExpenseTitle = dr.GetString("ExpenseTitle"),
                 ExpenseCode = dr.GetString("ExpenseCode"),
                 Area =  dr.GetString("Area"),
-                MappedCoaID = new ChartOfAccountModel() { CoaID = dr.GetInt32("CoaID") },
+                MappedCoaID = new ChartOfAccountModel() { CoaID = dr.GetInt32("MappedCoaID") },
                 //MappedCoaID = new ChartOfAccountModel() { AccountName = dr.GetString("AccountName") },
                 //MappedCoaID.CoaID = dr.GetInt32("MappedCoaID"),
                 AccountName = dr.GetString("AccountName"),
