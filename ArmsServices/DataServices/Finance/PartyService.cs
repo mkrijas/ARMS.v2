@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Reflection;
 
 
 namespace ArmsServices.DataServices
@@ -31,6 +32,7 @@ namespace ArmsServices.DataServices
         int? GetRenterDepositCoaID(int? RenterID);
         int? GetRenterOtherCoaID(int? RenterID);
         bool IsLocal(int? PartyID, int? BranchID);
+        int? GetPartyCoaID(int? PartyID, string BusinessNature, string NatureOfTransaction);
 
     }
 
@@ -320,6 +322,51 @@ namespace ArmsServices.DataServices
             string branchState = branchModel.GstNo?.Substring(0, 2);
             string partyState = partyModel.GstNo?.Substring(0, 2);
             return branchState != null && partyState != null && branchState == partyState; // branchState.Equals(partyState);
+        }
+
+
+
+        public int? GetPartyCoaID(int? PartyID,string BusinessNature,string NatureOfTransaction)
+        {
+            if (BusinessNature == "Supplier")
+            {
+                switch (NatureOfTransaction)
+                {
+                    case "Deposit":
+                        return GetVendorDepositCoaID(PartyID);
+                    case "Reciept":
+                        return GetVendorPayableCoaID(PartyID);
+                    case "Prepayment":
+                        return GetVendorPrepaymentCoaID(PartyID);
+                }
+            }
+
+            if (BusinessNature == "Customer")
+            {
+                switch (NatureOfTransaction)
+                {
+                    case "Deposit":
+                        return GetCustomerDepositCoaID(PartyID);
+                    case "Reciept":
+                        return GetCustomerReceivableCoaID(PartyID);
+                    case "Prepayment":
+                        return GetCustomerPrepaymentCoaID(PartyID);
+                }
+            }
+
+            if (BusinessNature == "Renter")
+            {
+                switch (NatureOfTransaction)
+                {
+                    case "Deposit":
+                        return GetRenterRentCoaID(PartyID);
+                    case "Reciept":
+                        return GetRenterDepositCoaID(PartyID);
+                    case "Prepayment":
+                        return GetRenterOtherCoaID(PartyID);
+                }
+            }
+            return null;
         }
     }
 }

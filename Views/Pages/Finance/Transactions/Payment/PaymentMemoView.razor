@@ -1,5 +1,6 @@
 ﻿@page "/PaymentMemoView"
 @inject IPaymentService Iservice
+@inject IPaymentInitiatedService IinitiateService
 @inject IOutstandingBillsService OBIservice
 @inject ICostCenterService costIservice
 @inject IDimensionService dimensionIservice
@@ -27,23 +28,21 @@
 
 <MudGrid Spacing="4">
    <MudItem xs="12">
-        <MudTable Items="@collection"   Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model" T="PartyPaymentMemoModel">
+        <MudTable Items="@collection"   Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model" T="PaymentMemoModel">
            
              <ToolBarContent>
                 <MudText Typo="Typo.h6">Payment Memo</MudText>
                 <MudTooltip Text="New Payment Memo">
-                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogpayment(model,false,false))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogpayment(new PaymentMemoModel(),false))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-
-
                 <MudSpacer></MudSpacer>  
                 <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
                 
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<PartyPaymentMemoModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PartyPaymentMemoModel, object>(x=> x.PartyInfo.TradeName)" InitialDirection="SortDirection.Ascending">Party Name</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PartyPaymentMemoModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.PartyInfo.TradeName)" InitialDirection="SortDirection.Ascending">Party Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
 
                 <MudTh>Actions</MudTh>
             </HeaderContent>
@@ -55,31 +54,28 @@
                     @if (@context.AuthLevelId == null)
                     {
                         <MudTooltip Text="Edit">
-                            <MudFab @onclick="@(()=> OpenDialogpayment(context,false,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                            <MudFab @onclick="@(()=> OpenDialogpayment(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
                     }
                     @if (@context.AuthLevelId != 99)
                     {
                         <MudTooltip Text="Verify">
-                            <MudFab @onclick="@(()=> OpenDialogpayment(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                            <MudFab @onclick="@(()=> OpenDialogpayment(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
                     }
-                     @if (@context.AuthLevelId == 99 && context.PaymentInitiatedID==null)
+                     @if (@context.AuthLevelId == 99 && context.PaymentStatus == 0 )
                     {
                         <MudTooltip Text="Initiate PaymentMemo">
-                            <MudFab @onclick="@(()=> selected(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Payment" Size="Size.Small" IconSize="Size.Small" />
+                            <MudFab @onclick="@(()=> Initiate(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Payment" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
                     }
                     <MudTooltip Text="view">
-                   <MudFab @onclick="@(()=> OpenDialogpayment(context,true,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip> 
-                    
+                   <MudFab @onclick="@(()=> OpenDialogpayment(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>                     
                </MudTd>
             </RowTemplate>
-
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-
             </PagerContent>
         </MudTable>
 @*    </MudItem> <MudItem xs="12"md="9"></MudItem><MudItem xs="12"md="3">
@@ -92,8 +88,8 @@
 
 @code {
     //private MudTable<PartyPaymentMemoModel> mudTable;
-    private PartyPaymentMemoModel model = new PartyPaymentMemoModel();
-    private List<PartyPaymentMemoModel> collection = new List<PartyPaymentMemoModel>(); 
+    private PaymentMemoModel model = new PaymentMemoModel();
+    private List<PaymentMemoModel> collection = new List<PaymentMemoModel>(); 
     public bool IsApproved { get; set; } = false;
 
     //private HashSet<PartyPaymentMemoModel> selectedItems1= new HashSet<PartyPaymentMemoModel>();
@@ -120,11 +116,11 @@
     {
         if (val)
         {
-            collection = Iservice.Select(branchID).Where(x => x.PaymentInitiatedID != null).ToList();
+            collection = Iservice.Select(branchID).Where(x => x.PaymentStatus > 0).ToList();
         }
         else
         {
-            collection = Iservice.Select(branchID).Where(x => x.PaymentInitiatedID == null).ToList();
+            collection = Iservice.Select(branchID).Where(x => x.PaymentStatus == 0).ToList();
         }
     }
     //private string SelectedRowClassFunc(PartyPaymentMemoModel paymnetmodel, int rowNumber)
@@ -147,34 +143,36 @@
     //    }
 
     //}
-    public async Task OpenDialogpayment(PartyPaymentMemoModel ppm, bool ReadOnly, bool View)
+    public async Task OpenDialogpayment(PaymentMemoModel ppm, bool ReadOnly)
     {
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model", ppm);
-        parms.Add("IsReadOnly", ReadOnly);
-        parms.Add("IsView", View);
-
-        if (View)
+        parms.Add("ReadOnly", ReadOnly); 
+        //if (View)
+        //{
+        //    //var dialog = DialogService.Show<PaymentMemoInitateFinishDetails>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+        //    //var result = await dialog.Result;
+        //}
+        //else
+        //{
+        var dialog = DialogService.Show<PaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+        var result = await dialog.Result;
+        if(!result.Canceled)
         {
-            var dialog = DialogService.Show<PaymentMemoInitateFinishDetails>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
-            var result = await dialog.Result;
+            GetAll(IsApproved);
         }
-        else
-        {
-            var dialog = DialogService.Show<PaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
-            var result = await dialog.Result;
-        }
-        GetAll(IsApproved);
+        //}
+        
     }
 
-    private void Delete(PartyPaymentMemoModel tx)
+    private void Delete(PaymentMemoModel tx)
     {
         Iservice.Delete(tx.PaymentMemoID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
         GetAll(IsApproved);
     }
-    private async Task selected(PartyPaymentMemoModel ppm)
+    private async Task Initiate(PaymentMemoModel ppm)
     {
         PaymentInitiatedModel pim = new PaymentInitiatedModel();
         pim.PaymentMemoID = ppm.PaymentMemoID;
@@ -188,7 +186,7 @@
                 return;
             }
 
-            pim.PaymentMemos.Add(ppm);
+            
             //pim.PaymentMemos = selectedItems1.ToList();
             //foreach (var item in pim.PaymentMemos)
             //{
@@ -199,17 +197,17 @@
             DialogParameters parms = new DialogParameters();
             parms.Add("model", pim);
             parms.Add("model1", ppm);
-            var dialog = DialogService.Show<PaymentInitialMemo>("Payment", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
-            var result = await dialog.Result;
+            //var dialog = DialogService.Show<PaymentInitialMemo>("Payment", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+            //var result = await dialog.Result;
 
-            if (!result.Canceled)
-            {
-                PaymentInitiatedModel UpatedModel = (PaymentInitiatedModel)result.Data;
+            //if (!result.Canceled)
+            //{
+            //    PaymentInitiatedModel UpatedModel = (PaymentInitiatedModel)result.Data;
 
-                UpatedModel.UserInfo.UserID = UserID;
-                UpatedModel.BranchID = branchID;
-                Iservice.InitiatePayment(UpatedModel);
-            }
+            //    UpatedModel.UserInfo.UserID = UserID;
+            //    UpatedModel.BranchID = branchID;
+            //    IinitiateService.Update(UpatedModel);
+            //}
         }
         else
         {

@@ -7,12 +7,15 @@ using Microsoft.Extensions.Configuration;
 
 namespace ArmsModels.BaseModels
 {
-    public class PartyPaymentMemoModel : TransactionBaseModel
+    public class PaymentMemoModel : TransactionBaseModel
     {
         public int? PaymentMemoID { get; set; }
-        public int? PaymentInitiatedID { get; set; }
-        public PartyModel PartyInfo { get; set; }
-
+        [Required]
+        public string BusinessNature { get; set;} // "Suppier,Customer,Renter"
+        [Required]
+        public PartyModel PartyInfo { get; set; }        
+        public int? PartyCoaID { get; set; }
+        [Required]
         public byte? PaymentStatus { get; set; } = 0; // 0 - generated; 1 - initiated; 2 - completed;
         public List<BillsPaidModel> Bills { get; set; } = new();
     }
@@ -68,61 +71,31 @@ namespace ArmsModels.BaseModels
         public virtual DateTime? InvoiceDate { get; set; }       
     }
 
-    public class PaymentInitiatedModel : PartyPaymentMemoModel
-    {
-        public PaymentInitiatedModel()
-        {
-            UserInfo = new SharedModels.UserInfoModel();
-            PaymentMemos = new List<PartyPaymentMemoModel>();
-        }
-        public int? PiID { get; set; }
+    public class PaymentInitiatedModel : PaymentMemoModel
+    {       
+        public int? PaymentInitiatedID { get; set; }
+        [Required]
         public DateTime? DueOn { get; set; }
-        //public int? BranchID { get; set; }
-       // public int? AuthLevelId { get; set; }
-        //public string AuthStatus { get; set; }
-        public DateTime? DocDate { get; set; }
-        public string DocNumber { get; set; }
-        //public decimal? TotalAmount { get; set; }
-        public  int ? pfID {get;set;}
-        public List<PartyPaymentMemoModel> PaymentMemos { get; set; }
-        //public SharedModels.UserInfoModel UserInfo { get; set; }
+        [Required]
+        public DateTime? InitiatedDocumentDate { get; set; }        
     }
-
-
 
     public class PaymentFinishModel :PaymentInitiatedModel
-    {
-        public PaymentFinishModel()
-        {
-            UserInfo = new SharedModels.UserInfoModel();
-
-        }
-        public int? PfID { get; set; }
-      //  public int? PiID { get; set; }       
+    {       
+        public int? PaymentFinalizeID { get; set; }
+        [Required]
+        public DateTime? PaymentDocumentDate { get; set; }
+        public string PaymentDocumentNumber { get; set; }
+        [Required]
         public string PaymentMode { get; set; }  // Bank,Cash   
         public string PaymentTool { get; set; }  // Cheque,DD
+        [Required]
         public string PaymentArdCode { get; set; }
         public decimal? BankCharges { get; set; }
-        public int? PaymentCoaID { get; set; }
-      //  public DateTime? DocumentDate { get; set; }
         [Required]
-        //public int? BranchID { get; set; }
-        //public int? AuthLevelId { get; set; }
-        //public string AuthStatus { get; set; }
-        //public decimal? TotalAmount { get; set; }
-        //public string Narration { get; set; }
-        //public SharedModels.UserInfoModel UserInfo { get; set; }
-        public List<PaymentEntryModel> Payments { get; set; }
+        public int? PaymentCoaID { get; set; }
+        [Required]
+        public DateTime? EffectiveDate { get; set; } = DateTime.Today;       
     }
 
-
-    public class PaymentEntryModel 
-    {
-        public int? PeID { get; set; }
-        public int? PaymentMemoID { get; set; }
-        public virtual string DocumentNumber { get; set; }
-        public string Reference { get; set; }
-        public DateTime? EffectiveDate { get; set; }
-        public decimal? Amount { get; set; }
-    }
 }

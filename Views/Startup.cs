@@ -49,8 +49,6 @@ namespace Views
             //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
             
             services.AddHttpClient();
-
-
             // 3rd party 
             services.AddMudServices();
             services.AddBlazorContextMenu();
@@ -143,9 +141,10 @@ namespace Views
 
             //------------FINANCE TRANSACTIONS-------------------
             services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();
-
             services.AddScoped<IAccountInfoService, AccountInfoService>();
             services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<IPaymentInitiatedService, PaymentInitiatedService>();
+            services.AddScoped<IPaymentFinalizeService, PaymentFinalizeService>();
             services.AddScoped<IOutstandingBillsService, OutstandingBillsService>();
             services.AddScoped<ISundryPaymentService, SundryPaymentService>();
             services.AddScoped<ISundryReceiptService, SundryReceiptService>();
@@ -181,9 +180,7 @@ namespace Views
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-
-            
+        {            
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

@@ -38,7 +38,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Remarks", remarks)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Reciept.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Receipt.Approve]", parameters);
         }
 
         public int Delete(int? ID, string UserID)
@@ -82,7 +82,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Status", 2)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Reciept.Reverse]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Receipt.Reverse]", parameters);
         }
 
         public IEnumerable<ReceiptModel> Select(int? BranchID)
@@ -168,10 +168,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ReceiptID", model.ReceiptID),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@OtherBranch", model.OtherBranch),
+               new SqlParameter("@OtherBranch", model.OtherBranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
-               new SqlParameter("@DocNumber", model.DocumentNumber),               
-               new SqlParameter("@ReceiptType", model.ReceiptType),
+               new SqlParameter("@DocNumber", model.DocumentNumber),
                new SqlParameter("@BankCharges", model.BankCharges),
                new SqlParameter("@ReceiptMode", model.ReceiptMode),
                new SqlParameter("@ReceiptTool", model.ReceiptTool),
@@ -205,8 +204,7 @@ namespace ArmsServices.DataServices
             return new ReceiptModel
             {
                 ReceiptID = dr.GetInt32("ReceiptID"),
-                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
-                ReceiptType = dr.GetString("ReceiptType"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
                 BranchID = dr.GetInt32("BranchID"),               
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
@@ -227,7 +225,7 @@ namespace ArmsServices.DataServices
                 Narration = dr.GetString("Narration"),
                 InterBranchTranID = dr.GetInt32("InterBranchTranID"),
                 IsInterBranch = dr.GetBoolean("IsInterBranch"),
-                OtherBranch=dr.GetInt32("OtherBranch"),
+                OtherBranchID=dr.GetInt32("OtherBranch"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),

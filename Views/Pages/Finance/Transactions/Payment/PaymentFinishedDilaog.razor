@@ -25,9 +25,9 @@
 
         <EditForm id="formtfinishmemo" Model="@model" OnValidSubmit="OnValidSubmit">
             <MudPaper>
-                <MudContainer Style="max-height:450px; overflow-y: scroll">
+                <MudContainer Style="max-height:450px; overflow-y: scroll" >                   
                     <PaymentMemoInitateFinishDetails model="pm" IsReadOnly="true" IsView="true"></PaymentMemoInitateFinishDetails>
-
+                   
                     <MudText Class="m-2">
                         <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
                         Finalaize Payment Memo
@@ -36,28 +36,23 @@
                     <MudGrid Spacing="4">
 
                         <MudItem xs="12" md="12">
-                            <PaymentCodeSelector IsReadonly="IsReadOnly" @bind-Value="accountRuleDefinitionModel" LabelName="Select Accounts"></PaymentCodeSelector>
-
-
+                            <PaymentAccountSelector @bind-PaymentMode="@model.PaymentMode"
+                                                    @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID"
+                                                    @bind-BankCharges="@model.BankCharges" @bind-BankTool="@model.PaymentTool" />
                         </MudItem>
+                       
                         <MudItem xs="6" md="6">
                             <MudDatePicker @bind-Date="model.DocumentDate" ReadOnly="IsReadOnly" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)"></MudDatePicker>
 
                         </MudItem>
                         <MudItem xs="6" md="6">
-
-
                             <MudTextField @bind-Value="model.Narration" ReadOnly="IsReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
 
                         </MudItem>
-
-
-
-
                         <MudItem xs="12">
                             @if ((IsReadOnly) && (!IsView))
                             {
-                                <AutherizationStatusComponent DocTypeID="8" DocumentID="model.PfID" OnApprove="IsApproveData"></AutherizationStatusComponent>
+                                <AutherizationStatusComponent DocTypeID="8" DocumentID="model.PaymentFinalizeID" OnApprove="IsApproveData"></AutherizationStatusComponent>
 
                             }
                         </MudItem>
@@ -85,10 +80,10 @@
     public bool IsReadOnly { get; set; }
     [Parameter]
     public bool IsView { get; set; }
-    PartyPaymentMemoModel pm = new PartyPaymentMemoModel();
+    PaymentMemoModel pm = new PaymentMemoModel();
     public string customstr { get; set; } = "Bank";
     private ChartOfAccountModel SelectedAccount = null;
-    private List<PaymentEntryModel> paymentEntry = new List<PaymentEntryModel>();
+    
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private PaymentCodeModel accountRuleDefinitionModel = new();
     private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
@@ -157,12 +152,12 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        List<PartyPaymentMemoModel> ppmm = new List<PartyPaymentMemoModel>();
+        List<PaymentMemoModel> ppmm = new List<PaymentMemoModel>();
 
         List<PaymentFinishModel> pfm = new List<PaymentFinishModel>();
-        if (model.PfID != null)
+        if (model.PaymentFinalizeID != null)
         {
-            pfm = Iservice.SelectFinished(brancID, model.PfID).ToList();
+            pfm = Iservice.SelectFinished(brancID, model.PaymentFinalizeID).ToList();
             foreach (var item in pfm)
             {
                 PaymentFinishModel f = new ();
@@ -177,7 +172,7 @@
         }
 
 
-        ppmm = Iservice.Select(model.PiID.Value, brancID).ToList();
+        ppmm = Iservice.Select(model.PaymentInitiatedID.Value, brancID).ToList();
         // model.Payments = new();
         foreach (var item in ppmm)
         {
@@ -248,7 +243,7 @@
                 var authprov = await auth.GetAuthenticationStateAsync();
                 var user = authprov.User;
                 model.UserInfo.UserID = user.Identity.Name;
-                Iservice.FinalMemmoApprove(model.PfID, model.UserInfo.UserID, aprvd.Remarks);
+                Iservice.FinalMemmoApprove(model.PaymentFinalizeID, model.UserInfo.UserID, aprvd.Remarks);
                 snackbar.Add("Approved Successfully", Severity.Success);
                 MudDialog.Close();
             }

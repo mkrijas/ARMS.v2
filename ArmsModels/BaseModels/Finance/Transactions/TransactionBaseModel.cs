@@ -29,7 +29,7 @@ namespace ArmsModels.BaseModels
         public string AuthStatus { get; set; }
         public bool IsInterBranch { get; set; }=false;
         public int? InterBranchTranID { get; set; } = null;
-        public int ? OtherBranch { get;set; }
+        public int ? OtherBranchID { get;set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 

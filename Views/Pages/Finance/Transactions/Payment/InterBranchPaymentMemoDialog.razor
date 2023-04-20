@@ -1,7 +1,10 @@
-﻿@*@page "/PaymentMemo"*@
+﻿@using Views.Pages.Finance.Transactions
+@*@page "/PaymentMemo"*@
 @inject IPaymentService Iservice
 @inject IOutstandingBillsService OBIservice
 @inject ICostCenterService costIservice
+@inject IInterBranchTransactionService intermappingIservice
+@inject IBranchService branchIservice
 @inject IDimensionService dimensionIservice
 @inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
@@ -11,7 +14,6 @@
 
 
 <MudDialog>
-    
     <TitleContent>
         @if (Dialog)
         {
@@ -23,21 +25,36 @@
             {
                 <MudText Color="Color.Error">@model.AuthStatus</MudText>
             }
+
         }
-        
     </TitleContent>
     <DialogContent>
-        <MudContainer >
+        <MudContainer Style="max-height: 450px; overflow-y: scroll">
             <MudGrid Spacing="4">
-                <MudItem xs="12" md="4">
-                    <MudSelect Label="Select Party" ReadOnly="IsReadOnly" @bind-Value="nbusiness" T="string" SelectedValuesChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                         <MudSelectItem Value="@("Supplier")" />
+                <MudItem xs="12" md="6">
+                    <MudSelect Label="Select Party" ReadOnly="IsReadOnly" @bind-Value="nbusiness" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        <MudSelectItem Value="@("Supplier")" />
                         <MudSelectItem Value="@("Customer")" />
                         <MudSelectItem Value="@("Renter")" />
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="6">
                     <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="@nbusiness"></PartySelector>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect Label="Select Branch" ReadOnly="IsReadOnly" @bind-Value="model.OtherBranch" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        @foreach (var ditem in branches)
+                        {
+                            <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>  <MudItem xs="12" md="4">
+                    <MudSelect Label="Select Transaction Type" ReadOnly="IsReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        @foreach (var ditem in transactionTypeList)
+                        {
+                            <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <MudSelect Label="NatureOfBusiness" ReadOnly="IsReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionchanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
@@ -45,7 +62,7 @@
                         <MudSelectItem Value="@("Payment")" />
                         <MudSelectItem Value="@("Prepayment")" />
                     </MudSelect>
-                </MudItem>                
+                </MudItem>
             </MudGrid>
             <MudPaper>
                 <MudContainer>
@@ -147,130 +164,123 @@
         }
     </DialogActions>
 </MudDialog>
-
 @code {
 
     [Parameter]
-    public PartyPaymentMemoModel model { get; set; }
+    public PaymentMemoModel model { get; set; }
     [Parameter]
     public bool IsReadOnly { get; set; }
     [Parameter]
     public bool IsView { get; set; }
     [Parameter]
-    public bool Dialog { get; set; }=true;
-   
-    
+    public bool Dialog { get; set; } = true;
+
+    private List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
+
     private bool Isbill = false;
     public string nbusiness = "Supplier";
-    private int? branchID = null;
-    private string UserID = null;
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
-
-    protected override async Task OnInitializedAsync()
+    public int? OtherBranch;
+    private List<InterBranchTransactionTypeModel> transactionTypeList = new();
+    private List<BranchModel> branches = new();
+    protected override void OnInitialized()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        var user = authprov.User;
-        UserID = user.Identity.Name;
         if (model.PaymentMemoID != null)
         {
-            
-            model.NatureOfTransaction = "Payment Memo";
+
             model.Bills = Iservice.GetBills(model.PaymentMemoID.Value).ToList();
             if (model.Bills.Count > 0)
             {
                 Isbill = true;
             }
-        }        
-        GetAll();
+        }
+
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();
+        branches = branchIservice.Select().ToList();
+        transactionTypeList = intermappingIservice.GetTypes().ToList();
     }
     private void Cancel()
     {
         MudDialog.Cancel();
     }
-    protected void IsApproveData(DataApprovedStatus aprvd)
+    protected async Task IsApproveData(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
         {
-            
-            model.UserInfo.UserID = UserID;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
             Iservice.Approve(model.PaymentMemoID, model.UserInfo.UserID, aprvd.Remarks);
             snackbar.Add("Approved Successfully", Severity.Success);
         }
 
     }
-    private void GetAll()
-    {
-        List<OutstandingBillsModel> collection = new List<OutstandingBillsModel>();
-       
-        if (model?.PartyInfo?.PartyID != null)
-        {
-            collection = OBIservice.SelectByParty(model.PartyInfo.PartyID, branchID).ToList();
-        }
-    }
 
-    private void GetTaxPurchase()
-    {
-        GetAll();
-    }
 
-    private void CreatePaymentMemo()
+    private async Task CreatePaymentMemo()
     {
-       
-        model.UserInfo.UserID = UserID;
-        model.BranchID = branchID;
-
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        model.BranchID = brancID;
+        model.IsInterBranch = true;
         model.PaymentStatus = 0;
+
         Iservice.Update(model);
-        uriHelper.NavigateTo("/PaymentMemoView");
+        uriHelper.NavigateTo("/InterBranchPaymentMemoView");
     }
     private void calcTotalAmt()
-    {        
-      model.TotalAmount = model.Bills.Sum(x => x.PayAmount);
-    }
-    private void nbusinesschanged()
     {
-        StateHasChanged();
+        model.TotalAmount = model.Bills.Sum(x => x.PayAmount);
     }
+
     private async Task nTransactionchanged(string nt)
     {
         model.NatureOfTransaction = nt;
+
         if (nt != "Payment")
         {
-          
+
             Isbill = false;
         }
         else
         {
-           
+
             Isbill = true;
             await OpenOtstandingBills();
         }
     }
     private async Task OpenOtstandingBills()
     {
-    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-    List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
 
-        
+        if (OtherBranch == null)
+        {
+            snackbar.Add("Please Select Branch", Severity.Info);
+            return;
+        }
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
         DialogParameters parms = new DialogParameters();
         parms.Add("PartyID", model.PartyInfo.PartyID);
-        parms.Add("BranchID", branchID);
+        parms.Add("BranchID", OtherBranch);
         var dialog = DialogService.Show<OutstandingBillView>("Outstanding Bill", parms, maxWidth);
         var result = await dialog.Result;
 
         if (!result.Canceled)
         {
             SelectedItems = (List<OutstandingBillsModel>)result.Data;
-           
+
             if (SelectedItems != null)
             {
-               
+
                 foreach (var item in SelectedItems)
                 {
                     BillsPaidModel bpm = new BillsPaidModel();
@@ -286,5 +296,5 @@
         }
 
     }
-    
+
 }

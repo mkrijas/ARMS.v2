@@ -10,20 +10,23 @@ namespace ArmsModels.BaseModels
     public class ReceiptModel : TransactionBaseModel
     {
         public int? ReceiptID { get; set; }
+        [Required]
+        public string BusinessNature { get; set; }
+        [Required]
         public PartyModel PartyInfo { get; set; }
-        public int? PartyCoaID { get; set; }
-        public string ReceiptType { get; set; }  // Advance/Deposit/Settlement        
-        public string ReceiptMode { get; set; }  // Cash/Bank
-        public string ReceiptTool { get; set; }  // (Cheque/NEFT)
+        public int? PartyCoaID { get; set; }        
+        [Required]                                        
+        public string ReceiptMode { get; set; }  // Cash/Bank        
+        [Required]
         public string ReceiptArdCode { get; set; }
-        public decimal? BankCharges { get; set; }
+        [Required]
         public int? ReceiptCoaID { get; set; }  //ac cash ac
+        public string ReceiptTool { get; set; }  // (Cheque/NEFT)
+        public decimal? BankCharges { get; set; }        
         public string Reference { get; set; }
+        [Required]
         public DateTime? EffectiveDate { get; set; }
-        public bool IsRealized { get; set; }
-        public string remarks { get; set; }
-     
-       
+        public bool IsRealized { get; set; }        
         public List<BillsReceiptModel> Bills { get; set; } = new();
 
     }
