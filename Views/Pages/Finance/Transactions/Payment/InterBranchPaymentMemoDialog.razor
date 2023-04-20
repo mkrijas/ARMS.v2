@@ -1,11 +1,14 @@
-﻿@using Views.Pages.Finance.Transactions
-@*@page "/PaymentMemo"*@
-@inject IPaymentService Iservice
-@inject IOutstandingBillsService OBIservice
+﻿@using ArmsServices.DataServices.General
+
+@inject IConfigTable IConfig
+@inject IReceiptService Iservice
+@inject IPartyService partyIservice
+@inject IOutstandingBillsService OutstandingIservice
 @inject ICostCenterService costIservice
 @inject IInterBranchTransactionService intermappingIservice
 @inject IBranchService branchIservice
 @inject IDimensionService dimensionIservice
+@inject IChartOfAccountService accountService
 @inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -292,6 +295,98 @@
                     bpm.PayAmount = -item.OutstandingAmount;
                     model.Bills.Add(bpm);
                 }
+
+            }
+
+
+        }
+
+    }
+
+
+    public void CreateReceipt()
+    {
+        model.ReceiptCoaID = Convert.ToInt32(IConfig.GetByDefaultCashCoaID().ValueString);
+
+
+
+
+
+        model.ReceiptMode = accountRuleDefinitionModel.paymentMode;
+        model.ReceiptCoaID = accountRuleDefinitionModel.CoaID;
+        model.ReceiptArdCode = accountRuleDefinitionModel.ArdCode;
+        model.ReceiptTool = accountRuleDefinitionModel.BankTools;
+        model.BankCharges = accountRuleDefinitionModel.BankCharges;
+        if (nbusiness == "Supplier")
+        {
+            if (model.NatureOfTransaction == "Deposit")
+            {
+                model.PartyCoaID = partyIservice.GetVendorDepositCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction == "Reciept")
+            {
+                model.PartyCoaID = partyIservice.GetVendorPayableCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction == "Prepayment")
+            {
+                model.PartyCoaID = partyIservice.GetVendorPrepaymentCoaID(model.PartyInfo.PartyID);
+            }
+
+        }
+        if (nbusiness == "Customer")
+        {
+            if (model.NatureOfTransaction == "Reciept")
+            {
+                model.PartyCoaID = partyIservice.GetCustomerReceivableCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction == "Deposit")
+            {
+                model.PartyCoaID = partyIservice.GetCustomerDepositCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction == "Prepayment")
+            {
+                model.PartyCoaID = partyIservice.GetCustomerPrepaymentCoaID(model.PartyInfo.PartyID);
+            }
+        }
+        if (nbusiness == "Renter")
+        {
+
+            if (model.NatureOfTransaction == "Reciept")
+            {
+                model.PartyCoaID = partyIservice.GetRenterRentCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction == "Deposit")
+            {
+                model.PartyCoaID = partyIservice.GetRenterDepositCoaID(model.PartyInfo.PartyID);
+            }
+            if (model.NatureOfTransaction == "Prepayment")
+            {
+                model.PartyCoaID = partyIservice.GetRenterOtherCoaID(model.PartyInfo.PartyID);
+            }
+        }
+        model.ReceiptType = nbusiness;
+        model.UserInfo.UserID = UserID;
+        model.BranchID = branchID;
+        Iservice.Update(model);
+        snackbar.Add("Saved Successfully", Severity.Success);
+        MudDialog.Close();
+    }
+
+    protected void IsApproveData(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+
+
+            model.UserInfo.UserID = UserID;
+            try
+            {
+                Iservice.Approve(model.ReceiptID, model.UserInfo.UserID, aprvd.Remarks);
+                snackbar.Add("Approved Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
             }
         }
 

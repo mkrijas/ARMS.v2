@@ -14,7 +14,7 @@
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" >
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Add New Tyre</MudText>
                 <MudTooltip Text="New Tyre">
@@ -41,15 +41,15 @@
                 <MudTd DataLabel="Tubeless">@context.Tubeless</MudTd>
                 <MudTd DataLabel="Actions">
                     <MudTooltip Text="Edit">
-                        <MudIconButton @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small"/>
+                        <MudIconButton @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
                     </MudTooltip>
                     <MudTooltip Text="Remove">
                         <MudIconButton @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" />
                     </MudTooltip>
                     @{
-                        var Ismounted = context.TyrePosition != null; 
+                        var Ismounted = context.TyrePosition != null;
                         string txt = Ismounted ? "UnMount" : "Mount";
-                        string icon  = Ismounted ? Icons.Material.Filled.Download :Icons.Material.Filled.Upload  ;
+                        string icon = Ismounted ? Icons.Material.Filled.Download : Icons.Material.Filled.Upload;
                     }
 
                     <MudTooltip Text="@txt">
@@ -142,8 +142,8 @@
                 await GetAll();
                 snackbar.Add("Deleted Successfully", Severity.Success);
             }
-            catch(Exception ex)
-            {                
+            catch (Exception ex)
+            {
                 snackbar.Add(ex.Message, Severity.Error);
             }
 
@@ -152,7 +152,7 @@
     }
 
 
-    private void TyreMountOrUnmount(TyreModel model)
+    private async Task TyreMountOrUnmount(TyreModel model)
     {
 
         DialogOptions options = new DialogOptions()
@@ -170,14 +170,33 @@
 
             DialogParameters parms = new();
             parms.Add("SelectedTyre", model);
-            DialogService.Show<TyreUnMountDialog>("UnMount", parms, options);
+            var dialog = DialogService.Show<TyreUnMountDialog>("UnMount", parms, options);
+
+            var result = await dialog.Result;
+
+            // you can check if the modal was cancelled
+            var isCancelled = result.Canceled;
+            if (!isCancelled)
+            {
+                await GetAll();
+            }
         }
         else
         {
 
             DialogParameters parms = new();
             parms.Add("SelectedTyre", model);
-            DialogService.Show<TyreMountDialog>("Mount", parms, options);
+
+            var dialog = DialogService.Show<TyreMountDialog>("Mount", parms, options);
+
+            var result = await dialog.Result;
+
+            // you can check if the modal was cancelled
+            var isCancelled = result.Canceled;
+            if (!isCancelled)
+            {
+                await GetAll();
+            }
         }
 
     }
@@ -194,8 +213,8 @@
         collection = new();
 
         var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User; 
-        UserID = user.Identity.Name;        
+        var user = authprov.User;
+        UserID = user.Identity.Name;
         var BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         collection = ITyreservice.SelectByBranch(BranchID).ToList();
     }

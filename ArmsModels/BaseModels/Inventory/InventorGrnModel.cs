@@ -20,7 +20,8 @@ namespace ArmsModels.BaseModels
         public int? GrnID { get; set; }
         public string GrnNo { get; }        
         public int? POID { get; set; }      
-        public bool Invoiced { get; }       
+        public bool Invoiced { get; }
+        public StoreModel Store { get; set; }
     }
 
 
@@ -39,6 +40,7 @@ namespace ArmsModels.BaseModels
         public int? PRID { get; set; }
         public int? QuoteID { get; set; }
         public bool GrnCreated { get; }
+        public StoreModel Store { get; set; }
     }
 
 

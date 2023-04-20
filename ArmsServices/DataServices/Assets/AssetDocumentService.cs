@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         int SaveFilePath(string link, int? id);
         AssetDocumentModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
+        int DeleteType(int? ID, string UserID);
         int Remove(AssetDocumentModel model);
         IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate,DateTime? endDate);
         IEnumerable<AssetDocumentModel> SelectWithPast(int? AssetID);
@@ -105,6 +106,16 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.Delete]", parameters);
+        }
+
+        public int DeleteType(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentTypeID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Asset.Document.Type.Delete]", parameters);
         }
 
 
