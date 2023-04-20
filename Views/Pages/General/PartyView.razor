@@ -17,7 +17,7 @@
           
             <ToolBarContent>
                 <MudText Typo="Typo.h6">List of Customers and Vendors</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="OpenDialog"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="(()=>Edit(new PartyModel()))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 
                 <MudSpacer></MudSpacer>
 
@@ -41,10 +41,10 @@
                 <MudTd DataLabel="PartyType">@context.TradeName</MudTd>
        
                 <MudTd DataLabel="">
-                    @*<MudFab Label="Gst" OnClick="@(() => nav.NavigateTo("gst/"+context.PartyID.ToString()))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddBusiness" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab Label="Gst" OnClick="@(() => nav.NavigateTo("gst/"+context.PartyID.ToString()))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddBusiness" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Delete(context.PartyID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                *@</MudTd>
+                </MudTd>
             </RowTemplate>
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
@@ -68,7 +68,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-         GetAll();
+        GetAll();
     }
 
     private void GetAll()
@@ -120,17 +120,53 @@
         }
     }
 
-    private void Edit(PartyModel model)
+    private async Task Edit(PartyModel model)
     {
-         DialogParameters parms = new DialogParameters();
+        DialogParameters parms = new DialogParameters();
         parms.Add("model", model);
-        DialogService.Show<PartyDilog>("ADD PARTY",parms,maxWidth);
+
+
+        var dialog = DialogService.Show<PartyDilog>("ADD PARTY",parms,maxWidth);
+
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+            PartyModel UpatedModel = (PartyModel)result.Data;
+            if (UpatedModel != null)
+            {
+
+                if (collection.Exists(x => x.PartyID == UpatedModel.PartyID))
+                {
+                    collection[collection.FindIndex(x => x.PartyID == UpatedModel.PartyID)] = UpatedModel;
+                }
+                else
+                {
+                    collection.Add(UpatedModel);
+                }
+                UpatedModel = new();
+            }
+            model = new();
+        }
     }
-    private async void Delete(int? id)
+    private async Task Delete(int? id)
     {
-        Iservice.Delete(id, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        
+        var authprov = await auth.GetAuthenticationStateAsync();
+        int result = Iservice.Delete(id, authprov.User.Identity.Name);
+        
+        if (result != -1)
+        {
+            if (collection != null && collection.Any(s => s.PartyID == id))
+            {
+                collection.Remove(collection.FirstOrDefault(s => s.PartyID == id));
+                 snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        }
+        //snackbar.Add("Deleted Successfully", Severity.Success);
+        //GetAll();
     }
 
 

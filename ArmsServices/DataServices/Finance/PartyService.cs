@@ -21,7 +21,7 @@ namespace ArmsServices.DataServices
         IEnumerable<PartyModel> GetCustomers(string Code);
         IEnumerable<PartyModel> GetVendors(string Code);
         IEnumerable<PartyModel> GetRenters(string Code);
-        int AddContact(int? PartyID, ContactModel contact);
+        int AddContact(int? PartyID, ContactModel contact,string ContactID);
         int? GetVendorPayableCoaID(int? VendorID);
         int? GetVendorDepositCoaID(int? VendorID);
         int? GetVendorPrepaymentCoaID(int? VendorID);
@@ -69,7 +69,8 @@ namespace ArmsServices.DataServices
             model.BankAccount.UserInfo = model.UserInfo;
             model.BankAccount = _bankAccountService.Update(model.BankAccount);
             model.Address = addressModel;
-
+            var ContactList = model.Contacts;
+            var UserId = model.UserInfo.UserID;
             List<SqlParameter> parameters = new List<SqlParameter>
                 {
                    new SqlParameter("@PartyID", model.PartyID),
@@ -87,11 +88,11 @@ namespace ArmsServices.DataServices
                    new SqlParameter("@IcPartnerCode", model.IcPartnerCode),
                    new SqlParameter("@InterCompany", model.InterCompany),
                    new SqlParameter("@PanAvailable", model.PanAvailable),
-                   new SqlParameter("@PartyCode", model.PartyCode),
+                   //new SqlParameter("@PartyCode", model.PartyCode),
                    new SqlParameter("@PaymentMode", model.PaymentMode),
-                   new SqlParameter("@VenderPostingID", model.VendorPostingGroup.VendorPostingGroupID),
-                   new SqlParameter("@CustomerPostingID", model.CustomerPostingGroup.CustomerPostingGroupID),
-                   new SqlParameter("@RentPostingID", model.RenterPostingGroup.RenterPostingGroupID),
+                   new SqlParameter("@VenderPostingID", model.VendorPostingGroup?.VendorPostingGroupID??null),
+                   new SqlParameter("@CustomerPostingID", model.CustomerPostingGroup?.CustomerPostingGroupID??null),
+                   new SqlParameter("@RentPostingID", model.RenterPostingGroup?.RenterPostingGroupID??null),
                    new SqlParameter("@RegName", model.RegName),
                    new SqlParameter("@TanNo", model.TanNo),
                    new SqlParameter("@TdsApplicable", model.TdsApplicable),
@@ -100,6 +101,10 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Update]", parameters))
             {
                 model = GetModel(reader);
+            }
+            foreach (var item in ContactList)
+            {
+                AddContact(model.PartyID, item, UserId);
             }
             return model;
         }
@@ -204,11 +209,11 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PartyID", PartyID),
-               new SqlParameter("@Operation", "GetContacts"),
+               new SqlParameter("@ID", PartyID),
+               new SqlParameter("@Operation", "SelectByParty"),
             };
 
-            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Contacts.Select]", parameters))
             {
                 yield return _contactService.SelectByID(reader.GetInt32("ContactID"));
             }
@@ -259,13 +264,15 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int AddContact(int? PartyID, ContactModel contact)
+        public int AddContact(int? PartyID, ContactModel contact,string UserId)
         {
+            contact.UserInfo.UserID = UserId;
             contact = _contactService.Update(contact);            
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PartyID", PartyID),
-               new SqlParameter("@contactID", contact?.ContactID??0)               
+               new SqlParameter("@ContactID", contact?.ContactID??0)    ,
+               new SqlParameter("@UserID", UserId)            
             };
             return Iservice.ExecuteNonQuery("[usp.Entity.Party.Contacts.Update]", parameters);            
         }

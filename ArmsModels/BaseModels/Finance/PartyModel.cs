@@ -13,8 +13,6 @@ namespace ArmsModels.BaseModels
         {                   
         }
         public int? PartyID { get; set; } = 0;
-        [Required]
-        [StringLength(maximumLength: 8)]
         public string PartyCode { get; set; }        
 
         [Required]
@@ -31,7 +29,8 @@ namespace ArmsModels.BaseModels
         public string NatureOfBusiness { get; set; } //Supplier/Customer/Renter 
         public virtual string AssesseeType { get; set; }
         [Required]
-        public bool PanAvailable { get; set; }        
+        public bool PanAvailable { get; set; }
+        [RequiredIfTrue("PanAvailable")]
         [StringLength(10,MinimumLength =10,ErrorMessage = "PAN must be 10 digits!")]
         public string PAN { get; set; }        
         [Required]
@@ -47,9 +46,12 @@ namespace ArmsModels.BaseModels
         public int? CreditPeriod { get; set; } // Days
         public decimal? CreditLimit { get; set; }
         public string PaymentMode { get; set; } // Bank/Cash
-        public VendorPostingGroupModel VendorPostingGroup { get; set; } = new();
-        public CustomerPostingGroupModel CustomerPostingGroup { get; set; } = new();
-        public RenterPostingGroupModel RenterPostingGroup { get; set; } = new();
+        [RequiredIf("NatureOfBusiness", "Supplier")]
+        public VendorPostingGroupModel VendorPostingGroup { get; set; }
+        [RequiredIf("NatureOfBusiness", "Customer")]
+        public CustomerPostingGroupModel CustomerPostingGroup { get; set; }
+        [RequiredIf("NatureOfBusiness", "Renter")]
+        public RenterPostingGroupModel RenterPostingGroup { get; set; }
         [Required]
         public bool InterCompany { get; set; }
         public string IcPartnerCode { get; set; }
