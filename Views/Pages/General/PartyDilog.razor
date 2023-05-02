@@ -9,7 +9,8 @@
 @inject AuthenticationStateProvider auth
 @inject NavigationManager nav
 
-
+@inject IBankAccountService bankAccountService
+@inject IAddressService addressService
 
 <MudDialog>
     <TitleContent>
@@ -25,7 +26,7 @@
                 <ValidationSummary />
                 <MudGrid Spacing="2">
                     <MudItem xs="12" md="12">
-                        <MudRadioGroup @bind-SelectedOption="model.NatureOfBusiness" >
+                        <MudRadioGroup @bind-SelectedOption="model.NatureOfBusiness">
                             <MudRadio Option="@("Supplier")" Color="Color.Primary">Supplier</MudRadio>
                             <MudRadio Option="@("Customer")" Color="Color.Primary">Customer</MudRadio>
                             <MudRadio Option="@("Renter")" Color="Color.Primary">Renter</MudRadio>
@@ -38,7 +39,7 @@
                                 <br />
                                 <MudGrid Spacing="2">
                                     <MudItem xs="12" md="6">
-                                        <MudTextField @bind-Value="model.PartyCode" Label="PartyCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PartyCode)"></MudTextField>
+                                        <MudTextField @bind-Value="model.PartyCode" Label="PartyCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PartyCode)" Disabled></MudTextField>
 
                                     </MudItem>
                                     <MudItem xs="12" md="6">
@@ -53,7 +54,7 @@
                                         <MudCheckBox @bind-Checked="model.PanAvailable" Color="Color.Primary" Dense="true">Is PanAvailable</MudCheckBox>
 
                                     </MudItem>
-                                    
+
                                     @if (model.PanAvailable == true)
                                     {
                                         <MudItem xs="12" md="6">
@@ -72,7 +73,8 @@
                                 <MudGrid>
                                     <MudItem xs="12" md="6">
                                         <MudCheckBox @bind-Checked="model.TdsApplicable" Color="Color.Primary" Dense="true">Is TdsApplicable</MudCheckBox>
-                                    </MudItem> <MudItem xs="12" md="6">
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
                                         <MudSelect Label="Select Gst Type" @bind-Value="model.GstType" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                                             @foreach (var ditem in GstType)
                                             {
@@ -111,7 +113,7 @@
                                 <br />
                                 <MudGrid>
                                     <MudItem xs="12" md="6">
-                                        <MudTextField @bind-Value="model.CreditPeriod" Label="CreditPeriod(In Days)" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.CreditPeriod)" InputMode="InputMode.numeric" InputType="InputType.Number"  />
+                                        <MudTextField @bind-Value="model.CreditPeriod" Label="CreditPeriod(In Days)" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.CreditPeriod)" InputMode="InputMode.numeric" InputType="InputType.Number" />
                                     </MudItem>
                                     <MudItem xs="12" md="6">
                                         <MudTextField @bind-Value="model.CreditLimit" Label="CreditLimit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.CreditLimit)" InputType="InputType.Number" />
@@ -377,16 +379,17 @@
         {
 
             Iservice.Update(model);
-            model = new();
             snackbar.Add("Saved Successfully", Severity.Success);
-
+            MudDialog.Close(model);
+            model = new();
 
         }
         catch (Exception ex)
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
-        // MudDialog.Close();
+
+
     }
 
 
@@ -397,6 +400,18 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if(VendorList != null)
+        {
+            VendorList.Clear();
+        }
+        if(CustomerList != null)
+        {
+            CustomerList.Clear();
+        }
+        if(RenterList != null)
+        {
+            RenterList.Clear();
+        }
         VendorList = vendorService.Select().ToList();
         CustomerList = customerService.Select().ToList();
         RenterList = renterService.Select().ToList();
@@ -404,6 +419,27 @@
         {
             model.NatureOfBusiness = "Supplier";
             model.PanAvailable = false;
+        }
+        if (model.BankAccount != null && model.BankAccount.BankAccountID != null && model.BankAccount.BankAccountID != 0)
+        {
+            model.BankAccount = bankAccountService.SelectByID(model.BankAccount.BankAccountID ?? 0);
+        }
+        if (model.Address != null && model.Address.AddressID != null && model.Address.AddressID != 0)
+        {
+            model.Address = addressService.SelectByID(model.Address.AddressID);
+        }
+        if(VendorList != null && VendorList.Count() != 0 && model.VendorPostingGroup != null && model.VendorPostingGroup.VendorPostingGroupID != null&& model.VendorPostingGroup.VendorPostingGroupID != 0)
+        {
+            if (VendorList.Any(s => s.VendorPostingGroupID == model.VendorPostingGroup.VendorPostingGroupID))
+                model.VendorPostingGroup = VendorList.FirstOrDefault(s => s.VendorPostingGroupID == model.VendorPostingGroup.VendorPostingGroupID);
+        }
+        if(model.PartyID != null && model.PartyID != 0)
+        {
+            if(Contactlist!= null)
+            {
+                Contactlist.Clear();
+            }
+            Contactlist = Iservice.GetContacts(model.PartyID).ToList();
         }
     }
     public void DeleteContact(ContactModel cm)
