@@ -7,12 +7,8 @@ using System.ComponentModel.DataAnnotations;
 namespace ArmsModels.BaseModels
 {  
 
-    public class ConsolidatedDraftBillModel
-    {
-        public ConsolidatedDraftBillModel()
-        {
-            UserInfo = new();
-        }
+    public class ConsolidatedDraftBillModel : TransactionBaseModel
+    {       
         public int? DraftBillID { get; set; }
         [Required]
         public OrderModel Order { get; set; }
@@ -20,17 +16,8 @@ namespace ArmsModels.BaseModels
         public TariffTypeModel TariffType { get; set; }        
 
         [ValidateComplexType]
-        public List<GcTariffModel> BookedGCs { get; set; }               
-        [Required]
-        public DateTime? DocumentDate { get; set; }
-        public string DocumentNumber { get; set; }
-        [Required]
-        public int? BranchID { get; set; }
-        public int? AuthLevelId { get; set; }
-        public string AuthStatus { get; set; }
-        public decimal? TotalAmount { get; set; }      
-        public string Narration { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }        
+        public List<GcTariffModel> BookedGCs { get; set; }              
+              
     }
 
     public class ProformaInvoiceModel : TransactionBaseModel
@@ -38,7 +25,7 @@ namespace ArmsModels.BaseModels
         public int? ProformaInvoiceID { get; set; }        
         public int? DraftBillID { get; set; }
         public int? OrderID { get; set; }
-     
+        public decimal? FreightAmount { get; set; }
         public PartyModel Party { get; set; }
         public int? PartyCoa { get; set; }
         public TariffTypeModel TariffType { get; set; }        

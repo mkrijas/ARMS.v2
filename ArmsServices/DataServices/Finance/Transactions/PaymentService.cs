@@ -184,8 +184,6 @@ namespace ArmsServices.DataServices
             }
         }
 
-
-
         public PaymentMemoModel Update(PaymentMemoModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -197,6 +195,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BusinessNature", model.BusinessNature),
                new SqlParameter("@DocDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),
+               new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@Bills", model.Bills.ToDataTable()),
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),

@@ -1,5 +1,5 @@
-﻿@page "/PaymentFinishMemoView"
-@inject IPaymentInitiatedService Iservice
+﻿@page "/PaymentsListView"
+@inject IPaymentFinalizeService Iservice
 @inject IPaymentService ImemoService
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -10,42 +10,32 @@
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
-
             <ToolBarContent>
-                <MudText Typo="Typo.h6">Initiated Payments</MudText>
-                @*  <MudTooltip Text="New Payment Memos">
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="openPaymentMemos" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
-                </MudTooltip>
-                <MudButton @onclick="openpurchaseorder" @onclick="@(()=> OpenDialog(model))" Variant="Variant.Filled" Color="Color.Primary">Purchase Order</MudButton>
-                *@
-                <MudSpacer></MudSpacer>
-                @* <MudTextField @bind-Value="searchMemos" Placeholder="Search ... "
-                Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                IconSize="Size.Medium" Class="mt-0"></MudTextField>*@
+                <MudText Typo="Typo.h6">Completed Payments</MudText>               
+                <MudSpacer></MudSpacer>               
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentInitiatedModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocNumber</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentInitiatedModel, object>(x=> x.DueOn)" InitialDirection="SortDirection.Ascending">DueDate</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentInitiatedModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocDate</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PaymentInitiatedModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PaymentInitiatedModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PaymentInitiatedModel, object>(x=> x.PartyInfo.TradeName)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>                
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentInitiatedModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
+                 <MudTd DataLabel="PaymentStatus">@context.DocumentDate?.ToShortDateString()</MudTd>
                 <MudTd DataLabel="PaymentMemoID">@context.DocumentNumber</MudTd>
-                <MudTd DataLabel="PaymentStatus">@context.DueOn?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="PaymentStatus">@context.DocumentDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="PaymentStatus">@context.PartyInfo?.TradeName</MudTd>               
                 <MudTd DataLabel="PaymentMemoID">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
                     <MudTooltip Text="View">
-                        <MudFab @onclick="@(()=> ViewMemo(context))" Color="Color.Primary" Title="View Memo" Icon="@Icons.Material.Filled.Fullscreen" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> View(context))" Color="Color.Primary" Title="View" Icon="@Icons.Material.Filled.Fullscreen" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
-                    <MudTooltip Text="Reject">
-                        <MudFab @onclick="@(()=> Reverse(context))" Color="Color.Error" Icon="@Icons.Material.Filled.MoveDown" Size="Size.Small" IconSize="Size.Small" />
+                    <MudTooltip Text="Delete">
+                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.MoveDown" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
-                    <MudTooltip Text="Payment">
+                   @* <MudTooltip Text="Payment">
                         <MudFab @onclick="@(()=> OpenDialog(context,false))" Color="Color.Success" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>
+                    </MudTooltip>*@
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -59,7 +49,7 @@
 
 @code {
 
-    private List<PaymentInitiatedModel> collection = new List<PaymentInitiatedModel>();
+    private List<PaymentFinishModel> collection = new List<PaymentFinishModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
 
     int BranchID; string UserID;
@@ -74,24 +64,29 @@
 
     private void GetAll()
     {
-        collection = Iservice.PendingForCompletion(BranchID).ToList();
+        collection = Iservice.Select(BranchID,null).ToList();
     }
 
-    void Reverse(PaymentInitiatedModel pi)
+
+    void Delete(PaymentFinishModel pi)
     {
-        Iservice.Reverse(pi.PaymentInitiatedID, UserID);
+        //Iservice.Delete(pi.PaymentInitiatedID, UserID);
         GetAll();
     }
 
-    public void ViewMemo(PaymentInitiatedModel pim)
+
+    public void View(PaymentFinishModel model)
     {
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", ImemoService.SelectByID(pim.PaymentMemoID));
+        parms.Add("model", model);
         parms.Add("ReadOnly", true);
-        var dialog = DialogService.Show<PaymentMemoDialog>("Memo", parms, maxWidth);
+        var dialog = DialogService.Show<PaymentFinishDilaog>("Payment", parms, maxWidth);
     }
 
-    private async Task OpenDialog(PaymentInitiatedModel tds, bool ReadOnly)
+
+
+
+    private async Task OpenDialog(PaymentFinishModel tds, bool ReadOnly)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;       

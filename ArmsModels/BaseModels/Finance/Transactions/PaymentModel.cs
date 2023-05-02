@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Configuration;
+using System.Reflection;
+using System.Runtime.ConstrainedExecution;
 
 namespace ArmsModels.BaseModels
 {
@@ -15,6 +17,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public PartyModel PartyInfo { get; set; }        
         public int? PartyCoaID { get; set; }
+        public string Reference { get; set; }
         [Required]
         public byte? PaymentStatus { get; set; } = 0; // 0 - generated; 1 - initiated; 2 - completed;
         public List<BillsPaidModel> Bills { get; set; } = new();
@@ -72,20 +75,60 @@ namespace ArmsModels.BaseModels
     }
 
     public class PaymentInitiatedModel : PaymentMemoModel
-    {       
+    {  
+        public PaymentInitiatedModel(PaymentMemoModel ToCopy)
+        {            
+                Type type = typeof(PaymentMemoModel);
+               
+                foreach (System.Reflection.PropertyInfo pi in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+                {
+                    object Value = type.GetProperty(pi.Name).GetValue(ToCopy, null);
+                if (Value != null)
+                    this.GetType().GetProperty(pi.Name).SetValue(this, Value, null);                                 
+                } 
+        }
+
+        public PaymentInitiatedModel()
+        {
+
+        }
         public int? PaymentInitiatedID { get; set; }
         [Required]
         public DateTime? DueOn { get; set; }
         [Required]
-        public DateTime? InitiatedDocumentDate { get; set; }        
+        public DateTime? InitiatedDocumentDate { get; set; } = DateTime.Today;        
     }
 
     public class PaymentFinishModel :PaymentInitiatedModel
     {       
-        public int? PaymentFinalizeID { get; set; }
-        [Required]
-        public DateTime? PaymentDocumentDate { get; set; }
-        public string PaymentDocumentNumber { get; set; }
+        public PaymentFinishModel()
+        {
+
+        }
+        public PaymentFinishModel(PaymentMemoModel ToCopy)
+        {
+            Type type = typeof(PaymentMemoModel);
+
+            foreach (System.Reflection.PropertyInfo pi in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            {
+                object Value = type.GetProperty(pi.Name).GetValue(ToCopy, null);
+                if (Value != null)
+                this.GetType().GetProperty(pi.Name).SetValue(this, Value, null);
+            }
+        }
+        public PaymentFinishModel(PaymentInitiatedModel ToCopy)
+        {
+            Type type = typeof(PaymentMemoModel);
+
+            foreach (System.Reflection.PropertyInfo pi in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            {
+                object Value = type.GetProperty(pi.Name).GetValue(ToCopy, null);
+                if (Value != null)
+                    this.GetType().GetProperty(pi.Name).SetValue(this, Value, null);
+            }
+        }
+
+        public int? PaymentFinalizeID { get; set; }       
         [Required]
         public string PaymentMode { get; set; }  // Bank,Cash   
         public string PaymentTool { get; set; }  // Cheque,DD

@@ -10,7 +10,8 @@ namespace ArmsServices.DataServices
     {
         IEnumerable<PaymentInitiatedModel> PendingForCompletion(int? BranchID);
         int? Update(PaymentInitiatedModel model);
-        IEnumerable<PaymentInitiatedModel> Select(int? BranchID);        
+        int? Reverse(int? ID, string UserID);
+        IEnumerable<PaymentInitiatedModel> Select(int? BranchID);   
         IEnumerable<PaymentInitiatedModel> SelectInitiatedBetween(int? BranchID, DateTime Begin, DateTime End);
     }
 
@@ -21,7 +22,6 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-
         public int? Update(PaymentInitiatedModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -48,23 +48,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", BranchID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Initiate.Select]", parameters))
             {
-                yield return new PaymentInitiatedModel()
-                {
-                    BranchID = dr.GetInt32("BranchID"),
-                    DueOn = dr.GetDateTime("DueOn"),
-                    DocumentNumber = dr.GetString("DocNumber"),
-                    DocumentDate = dr.GetDateTime("DocDate"),
-                    TotalAmount = dr.GetDecimal("TotalAmount"),
-                    PaymentInitiatedID = dr.GetInt32("PiID"),
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                    {
-                        RecordStatus = dr.GetByte("RecordStatus"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        UserID = dr.GetString("UserID"),
-                    },
-                };
+                yield return GetModel(dr);
             }
         }       
         public IEnumerable<PaymentInitiatedModel> Select(int? BranchID)
@@ -75,26 +61,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", BranchID),
             };
 
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Initiate.Select]", parameters))
             {
-                yield return new PaymentInitiatedModel()
-                {
-                    BranchID = dr.GetInt32("BranchID"),
-                    DueOn = dr.GetDateTime("DueOn"),
-                    PaymentInitiatedID = dr.GetInt32("PiID"),
-                    DocumentNumber = dr.GetString("DocNumber"),
-                    AuthLevelId = dr.GetInt32("AuthLevelId"),
-                    AuthStatus = dr.GetString("AuthStatus"),
-                    DocumentDate = dr.GetDateTime("DocDate"),
-                    TotalAmount = dr.GetDecimal("TotalAmount"),
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                    {
-                        RecordStatus = dr.GetByte("RecordStatus"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        UserID = dr.GetString("UserID"),
-                    },
-                };
+                yield return GetModel(dr);
             }
         }
         
@@ -110,23 +79,39 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Initiate.Select]", parameters))
             {
-                yield return new PaymentInitiatedModel()
-                {
-                    BranchID = dr.GetInt32("BranchID"),
-                    DueOn = dr.GetDateTime("DueOn"),
-                    PaymentInitiatedID = dr.GetInt32("PiID"),
-                    DocumentNumber = dr.GetString("DocNumber"),
-                    DocumentDate = dr.GetDateTime("DocDate"),
-                    TotalAmount = dr.GetDecimal("TotalAmount"),
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                    {
-                        RecordStatus = dr.GetByte("RecordStatus"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        UserID = dr.GetString("UserID"),
-                    },
-                };
+                yield return GetModel(dr);
             }
         }
 
+        PaymentInitiatedModel GetModel(IDataRecord dr)
+        {
+            return new PaymentInitiatedModel()
+            {
+                BranchID = dr.GetInt32("BranchID"),
+                DueOn = dr.GetDateTime("DueOn"),
+                PaymentInitiatedID = dr.GetInt32("PaymentInitiatedID"),
+                PaymentMemoID = dr.GetInt32("PaymentMemoID"),
+                DocumentNumber = dr.GetString("InitiatedDocumentNumber"),
+                InitiatedDocumentDate = dr.GetDateTime("InitiatedDocumentDate"),
+                TotalAmount = dr.GetDecimal("TotalAmount"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+
+        public int? Reverse(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Initiate.Reverse]", parameters);
+            
+        }
     }
 }

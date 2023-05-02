@@ -11,7 +11,6 @@ namespace ArmsServices
 {
     public interface IDbService
     {
-
         IAsyncEnumerable<IDataRecord> GetDataReaderAsync(string procedureName, List<SqlParameter> parameters);
         Task<int> ExecuteNonQueryAsync(string procedureName, List<SqlParameter> parameters);
         IEnumerable<IDataRecord> GetDataReader(string procedureName, List<SqlParameter> parameters);
@@ -50,6 +49,7 @@ namespace ArmsServices
             }            
         }
 
+
         public async Task<int> ExecuteNonQueryAsync(string procedureName, List<SqlParameter> parameters)
         {          
                 using (SqlConnection connection = new SqlConnection(this.ConnectionString))
@@ -64,15 +64,13 @@ namespace ArmsServices
                     }
                     await connection.OpenAsync();
                     return await cmd.ExecuteNonQueryAsync();
-                }
-            
+                }            
         }
 
         public IEnumerable<IDataRecord> GetDataReader(string procedureName, List<SqlParameter> parameters)
         {
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))
-            {
-                
+            {                
                 connection.Open();
                 using (SqlCommand cmd = new SqlCommand(procedureName, connection))
                 {
@@ -92,6 +90,7 @@ namespace ArmsServices
                 }
             }
         }
+
         public int ExecuteNonQuery(string procedureName, List<SqlParameter> parameters)
         {
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))

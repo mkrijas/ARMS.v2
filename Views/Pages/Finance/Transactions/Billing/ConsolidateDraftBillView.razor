@@ -1,8 +1,5 @@
-﻿@page "/ProformaInvoiceDialog"
+﻿@page "/ConsolidatedBills"
 @inject IFreightBillingService Iservice
-@inject IDimensionService dimensionIservice
-@inject ICostCenterService costIservice
-@inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
@@ -22,53 +19,38 @@
             }
 </style>
 
-<h3>Consolidate Draft Bill</h3>
-
-
-
-
+<h3>Consolidated Bills</h3>
 <MudGrid Spacing="4">
     <MudItem xs="12">
-
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model" T="ConsolidatedDraftBillModel">
-
-
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<ConsolidatedDraftBillModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<ConsolidatedDraftBillModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<ConsolidatedDraftBillModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
-
-
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
                 <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> OpenDialogView(context))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
-
-                    <MudTooltip Text="Create Proforma Invoice">
-                        <MudFab @onclick="@(()=> OpenDialogproformainvoice(context))" Color="Color.Success" Icon="@Icons.Material.Filled.CreditCard" Size="Size.Small" IconSize="Size.Small" />
+                    ReverseConsolidatedDraftBill
+                    <MudFab @onclick="@(()=> Reverse(context))" Color="Color.Error" title="Reverse" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> OpenConsolidatedBill(context))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+                    @if (context.AuthLevelId == 99)
+                    {
+                        <MudTooltip Text="Create Proforma Invoice">
+                            <MudFab @onclick="@(()=> CreateProformaInvoice(context))" Color="Color.Success" Icon="@Icons.Material.Filled.CreditCard" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
-
+                    }
                 </MudTd>
-
-
-
             </RowTemplate>
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-
             </PagerContent>
         </MudTable>
     </MudItem>
-
 </MudGrid>
-<br />
-<br />
-
-
 
 @code {
 
@@ -79,26 +61,15 @@
 
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
-    private async Task OpenDialogView(ConsolidatedDraftBillModel tds)
+    private async Task OpenConsolidatedBill(ConsolidatedDraftBillModel obj)
     {
-
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds);
-        parms.Add("IsReadOnly", true);
-        parms.Add("IsView", true);
-        var dialog = DialogService.Show<ConsolidateDraftBillDialog>(tds.DraftBillID == null ? "ADD" : "EDIT", parms, maxWidth);
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
-        {
-
-            GetConsolidatedDraftBill();
-
-
-        }
+        parms.Add("model", obj);
+        parms.Add("ReadOnly", true);        
+        var dialog = DialogService.Show<ConsolidateDraftBillDialog>(obj.DraftBillID == null ? "ADD" : "EDIT", parms, maxWidth);
+        var result = await dialog.Result;        
+        GetConsolidatedDraftBill();        
     }
-
-
 
 
     protected override async Task OnInitializedAsync()
@@ -113,41 +84,45 @@
 
     public void GetConsolidatedDraftBill()
     {
-
-
         collection = Iservice.SelectPendingConsolidatedDraftBillList(0, branchID).ToList();
-
-
     }
 
-    public async Task OpenDialogproformainvoice(ConsolidatedDraftBillModel cdm)
+    void Reverse(ConsolidatedDraftBillModel db)
     {
+        Iservice.ReverseConsolidatedDraftBill(db.DraftBillID, UserID);
+        GetConsolidatedDraftBill();
+    }
 
-        ProformaInvoiceModel pfm = new ProformaInvoiceModel();
-        pfm.BranchID = branchID;
-        pfm.TotalAmount = cdm.TotalAmount;
-        pfm.DraftBillID = cdm.DraftBillID;
-        pfm.OrderID = cdm.Order.OrderID;
-        pfm.TariffType = cdm.TariffType;
-        pfm.Gst = Iservice.GetGstRate(pfm.DraftBillID);
+    public async Task CreateProformaInvoice(ConsolidatedDraftBillModel cdm)
+    {
+        var gst = Iservice.GetGstRate(cdm.DraftBillID);
 
-        pfm.UserInfo.UserID = UserID;
+            ProformaInvoiceModel pfm = new ProformaInvoiceModel()
+            {
+                BranchID = branchID,
+                FreightAmount = cdm.TotalAmount,
+                DraftBillID = cdm.DraftBillID,
+                OrderID = cdm.Order.OrderID,
+                TariffType = cdm.TariffType,
+                Gst =   gst,       
+                TotalAmount = cdm.TotalAmount + gst.TotalGst,
+                UserInfo = new() { UserID = UserID },                          
+            };
+                      
+
         DialogParameters parms = new DialogParameters();
         parms.Add("model", pfm);
-        parms.Add("IsReadOnly", false);
-        parms.Add("IsView", false);
-        var dialog = DialogService.Show<ProformaInvoceDialog>("ProformaInvoce", parms, maxWidth);
+        parms.Add("ReadOnly", false);        
+        var dialog = DialogService.Show<ProformaInvoceDialog>("Proforma Invoce", parms, maxWidth);
         var result = await dialog.Result;
-
         if (!result.Canceled)
         {
             ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;
-
             Iservice.UpdateProformaInvoice(UpatedModel);
             snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
+            GetConsolidatedDraftBill();
         }
-        GetConsolidatedDraftBill();
-
+        
     }
 
 }

@@ -12,136 +12,101 @@
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
-
             <ToolBarContent>
                 <MudText Typo="Typo.h6">ProformaInvoice</MudText>
-
-
-
                 <MudSpacer></MudSpacer>
                 <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
-
             </ToolBarContent>
-
-
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
-
-
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
                 <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
-
                 <MudTd DataLabel="">
-
-                    <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Primary" title="View" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
-
+                    <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Primary" title="View" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                     @if (@context.AuthLevelId == null)
                     {
                         <MudFab @onclick="@(()=> Reverse(context))" Color="Color.Error" title="Reverse" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />
-
-                        <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> OpenDialog(context,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     }
                     @if (@context.AuthLevelId != 99)
                     {
-                        <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Success" title="verify" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Success" title="verify" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
                     }
-
-
-
                 </MudTd>
-
-
             </RowTemplate>
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
                 <MudItem xs="12" md="9"> </MudItem><MudItem xs="12" md="3">
-
                 </MudItem>
             </PagerContent>
         </MudTable>
     </MudItem>
 </MudGrid>
 
-
-<br />
-
-
 @code {
     private ProformaInvoiceModel model = new ProformaInvoiceModel();
     private List<ProformaInvoiceModel> collection = new List<ProformaInvoiceModel>();
 
-    public bool IsApproved { get; set; } = false;
-    protected override void OnInitialized()
-    {
+    private bool IsApproved { get; set; } = false;
+    int BranchID;
+    string UserID;
 
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;        
+        BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = User.Identity.Name;
         GetPerfomaInvoice(IsApproved);
     }
     void ApprovedChanged(bool value)
     {
-
         IsApproved = value;
         GetPerfomaInvoice(IsApproved);
-
     }
-    public async Task OpenDialog(ProformaInvoiceModel pfm, bool ReadOnly, bool View)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        var user = authprov.User;
+    public async Task OpenDialog(ProformaInvoiceModel pfm, bool ReadOnly)
+    {        
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-
         pfm.Gst = Iservice.GetGstRate(pfm.DraftBillID);
-
-        pfm.UserInfo.UserID = user.Identity.Name;
+        pfm.UserInfo.UserID = UserID;
         DialogParameters parms = new DialogParameters();
         parms.Add("model", pfm);
-        parms.Add("IsReadOnly", ReadOnly);
-        parms.Add("IsView", View);
-        var dialog = DialogService.Show<ProformaInvoceDialog>("ProformaInvoce", parms, maxWidth);
+        parms.Add("ReadOnly", ReadOnly);        
+        var dialog = DialogService.Show<ProformaInvoceDialog>("Proforma Invoce", parms, maxWidth);
         var result = await dialog.Result;
-
         if (!result.Canceled)
         {
             ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;
-
             Iservice.UpdateProformaInvoice(UpatedModel);
             snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
         }
         GetPerfomaInvoice(IsApproved);
-
     }
 
     public void GetPerfomaInvoice(bool val)
     {
-
-
-
         if (val)
         {
-            collection = Iservice.SelectPendingProformaInvoiceList(0).Where(x => x.AuthLevelId == 99).ToList();
-
+            collection = Iservice.SelectProformaInvoiceList(0).Where(x => x.AuthLevelId == 99).ToList();
         }
         else
         {
-            collection = Iservice.SelectPendingProformaInvoiceList(0).Where(x => x.AuthLevelId != 99).ToList();
-
+            collection = Iservice.SelectPendingProformaInvoiceList().Where(x => x.AuthLevelId != 99).ToList();
         }
-
     }
 
     public void Reverse(ProformaInvoiceModel pim)
-    {
-        Iservice.ReverseProformaInvoice(pim.ProformaInvoiceID, "Rijas", "remarks");
-        snackbar.Add("Update Successfully", Severity.Success);
+    {        
+        Iservice.ReverseProformaInvoice(pim.ProformaInvoiceID, UserID);
+        snackbar.Add("Updated Successfully", Severity.Success);
         GetPerfomaInvoice(IsApproved);
     }
 

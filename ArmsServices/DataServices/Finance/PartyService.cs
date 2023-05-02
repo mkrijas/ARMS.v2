@@ -334,7 +334,7 @@ namespace ArmsServices.DataServices
                 {
                     case "Deposit":
                         return GetVendorDepositCoaID(PartyID);
-                    case "Reciept":
+                    case "Payment":
                         return GetVendorPayableCoaID(PartyID);
                     case "Prepayment":
                         return GetVendorPrepaymentCoaID(PartyID);
@@ -360,7 +360,7 @@ namespace ArmsServices.DataServices
                 {
                     case "Deposit":
                         return GetRenterRentCoaID(PartyID);
-                    case "Reciept":
+                    case "Rent":
                         return GetRenterDepositCoaID(PartyID);
                     case "Prepayment":
                         return GetRenterOtherCoaID(PartyID);

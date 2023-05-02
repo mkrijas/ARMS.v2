@@ -1,0 +1,152 @@
+﻿@page "/FreightBooking"
+@inject IFreightBillingService Iservice
+@inject IOrderService orderIservice
+@inject ITariffService tariffIservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+
+<MudPaper Class="p-4">
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudSelect Label="Select Order" @bind-Value="@SelectedOrder" T="OrderModel" ToStringFunc="@((p) => p?.OrderName)" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                @foreach (var ditem in Orders)
+                {
+                    <MudSelectItem Value="@ditem">@ditem.OrderName</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudSelect Label="Select Tariff" @bind-Value="SelectedTariffType" T="TariffTypeModel" ToStringFunc="@((p) => p?.TariffTypeName)" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                @foreach (var item in TariffTypes)
+                {
+                    <MudSelectItem Value="@item">@item.TariffTypeName</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudDateRangePicker Label="Select Period" @bind-DateRange="@dateRange" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy"></MudDateRangePicker>
+            
+        </MudItem>
+        <MudItem xs="12" md="1" Class="d-flex align-center">
+            <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Fetch</MudButton>
+        </MudItem>
+        @if (collection.Any())
+        {
+            <MudItem Class="">
+                <MudButton OnClick="Create" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Create Consolidate Draft Bill</MudButton>
+            </MudItem>
+        }
+    </MudGrid>
+</MudPaper>
+<br />
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" @bind-SelectedItems="selectedItems1" MultiSelection="true" Dense="true" Hover="true" Striped="true" Elevation="10" >
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillNumber)" InitialDirection="SortDirection.Ascending">BillNumber</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillDate)" InitialDirection="SortDirection.Ascending">BillDate</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.InvoiceDate)" InitialDirection="SortDirection.Ascending">InvoiceDate</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.ConsigneeName)" InitialDirection="SortDirection.Ascending">ConsigneeName</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillQuantity)" InitialDirection="SortDirection.Ascending">BillQuantity</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Freight</MudTableSortLabel></MudTh>
+
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="BillNumber">@context.BillNumber</MudTd>
+                <MudTd DataLabel="BillDate">@context.BillDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="InvoiceDate">@context.InvoiceDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="ConsigneeName">@context.ConsigneeName</MudTd>
+                <MudTd DataLabel="BillQuantity">@context.BillQuantity</MudTd>
+                <MudTd DataLabel="Amount">@context.Amount</MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+
+</MudGrid>
+<br />
+
+
+@code {
+
+
+    
+    private List<GcTariffModel> collection = new List<GcTariffModel>();
+
+    private List<OrderModel> Orders = new();
+    private OrderModel SelectedOrder = new();    
+
+    private List<TariffTypeModel> TariffTypes = new();
+    private TariffTypeModel SelectedTariffType = new();
+
+    private HashSet<GcTariffModel> selectedItems1 = new HashSet<GcTariffModel>();
+
+    DateRange dateRange;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Orders = await orderIservice.Select(0).ToListAsync();
+        TariffTypes = tariffIservice.SelectTariffTypes("All").ToList();
+    }
+    public void fetch()
+    {
+        GetTariffData();
+    }
+    public void GetTariffData()
+    {       
+        collection = Iservice.GetPending(SelectedOrder.OrderID, SelectedTariffType.TariffTypeID, dateRange.Start, dateRange.End).ToList();
+    }
+    private async Task Create()
+    {
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        if (selectedItems1.Count > 0)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            int brancID = int.Parse(brancIDString);
+            var user = authprov.User;
+            ConsolidatedDraftBillModel cdm = new()
+                {
+                    UserInfo = new() { UserID = user.Identity.Name },
+                    BranchID = brancID,
+                    NatureOfTransaction = "Billing",
+                    BookedGCs = selectedItems1.ToList(),
+                    Order = SelectedOrder,
+                    TariffType = SelectedTariffType,
+                    DocumentDate = System.DateTime.Now,
+                    TotalAmount = selectedItems1.Sum(x=> x.Amount)
+                };
+            
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", cdm);
+            parms.Add("ReadOnly", false);            
+            var dialog = DialogService.Show<ConsolidateDraftBillDialog>("ConsolidateDraftBill", parms, maxWidth);
+            var result = await dialog.Result;
+
+            if (!result.Canceled)
+            {
+                ConsolidatedDraftBillModel UpatedModel = (ConsolidatedDraftBillModel)result.Data;
+                Iservice.UpdateConsolidatedDraftBill(UpatedModel);
+                snackbar.Add("Created Successfully ", Severity.Success);//value = "visible";
+            }
+            GetTariffData();
+        }
+        else
+        {
+            snackbar.Add("Please select consignments to bill!", Severity.Error);
+
+        }
+    }
+
+
+
+
+}

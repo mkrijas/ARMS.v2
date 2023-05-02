@@ -62,6 +62,8 @@ namespace ArmsModels.BaseModels
         public decimal? SGST { get; set; } = 0;
         public decimal? IGST { get; set; } = 0;
         public decimal? TDS { get; set; } = 0;
+
+        public virtual decimal? TotalGst { get { return (CGST??0) + (SGST??0) + (IGST??0);  }  }
     }
 
     public class ChequeModel

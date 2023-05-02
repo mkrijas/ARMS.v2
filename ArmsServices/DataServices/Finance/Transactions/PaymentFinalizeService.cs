@@ -28,18 +28,18 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PaymentFinalizeID", model.PaymentFinalizeID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
-               new SqlParameter("@TotalAmount", model.TotalAmount),
-               new SqlParameter("@BankCharges", model.BankCharges),
+               new SqlParameter("@TotalAmount", model.TotalAmount),               
                new SqlParameter("@CoaID", model.PaymentCoaID),
                new SqlParameter("@PaymentArdCode", model.PaymentArdCode),
                new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@PaymentTool", model.PaymentTool),
+               new SqlParameter("@BankCharges", model.BankCharges),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Finish]", parameters))
             {
-                model.PaymentFinalizeID = dr.GetInt32("PcID");
+                model.PaymentFinalizeID = dr.GetInt32("PFID");
             }
             return model.PaymentFinalizeID;
         }
@@ -85,8 +85,6 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Finish.Approve]", parameters);
         }
 
-
-
         PaymentFinishModel GetModel(IDataRecord dr)
         {
             return new PaymentFinishModel()
@@ -95,19 +93,22 @@ namespace ArmsServices.DataServices
                 PaymentMemoID = dr.GetInt32("PaymentMemoID"),
                 PaymentFinalizeID = dr.GetInt32("PaymentFinalizeID"),
                 PaymentInitiatedID = dr.GetInt32("PaymentInitiatedID"),
-                DueOn = dr.GetDateTime("DueOn"),
-                PaymentDocumentNumber = dr.GetString("PaymentDocumentNumber"),
+                DueOn = dr.GetDateTime("DueOn"),                
                 PaymentStatus = dr.GetByte("PaymentStatus"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 EffectiveDate = dr.GetDateTime("EffectiveDate"),
-                InitiatedDocumentDate = dr.GetDateTime("InitiatedDocumentDate"),
-                PaymentDocumentDate = dr.GetDateTime("PaymentDocumentDate"),
+                InitiatedDocumentDate = dr.GetDateTime("InitiatedDocumentDate"),                
                 PartyInfo = new PartyModel() { PartyID = dr.GetInt32("PartyID"), TradeName = dr.GetString("TradeName") },
                 MID = dr.GetInt32("MID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),
-                PaymentArdCode = dr.GetString("PaymentArdCode"),
+                BusinessNature = dr.GetString("BusinessNature"),
+                PartyCoaID = dr.GetInt32("PartyCoaID"),
+                OtherBranchID = dr.GetInt32("OtherBranchID"),
+                IsInterBranch = dr.GetBoolean(""),
+                InterBranchTranID = dr.GetInt32("InterBranchTranID"),
+                PaymentArdCode = dr.GetString("ArdCode"),
                 PaymentCoaID = dr.GetInt32("CoaID"),
                 BankCharges = dr.GetDecimal("BankCharges"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
