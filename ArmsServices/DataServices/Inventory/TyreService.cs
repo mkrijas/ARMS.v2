@@ -514,7 +514,7 @@ namespace ArmsServices.DataServices
             return new TyreTypeAndPositionMappingModel()
             {
                 ID = dr.GetInt32("ID"),
-                TruckTypeID = dr.GetInt32("TruckTypeID"),
+                TruckTypeID = dr.GetInt16("TruckTypeID"),
                 PositionIDs = dr.GetString("PositionIDs"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
