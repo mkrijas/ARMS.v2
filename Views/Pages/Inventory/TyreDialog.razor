@@ -1,8 +1,10 @@
 ﻿@using ArmsModels.BaseModels.General
+@using ArmsServices.DataServices.General
 @inject AuthenticationStateProvider auth
 @inject ITyreService Iservice
 @inject IInventoryItemService IInventoryservice
 @inject IStoreService IStoreservice
+@inject IConfigTable IconfigTable
 
 <MudDialog>
     <TitleContent>
@@ -33,7 +35,7 @@
                     <MudTextField @bind-Value="model.Make" Label="Make" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Make)"></MudTextField>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <InventoryItemSelector Value="SelectedInvetoryItem" LabelName="Inventory Item" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))"></InventoryItemSelector>
+                    <InventoryItemSelector Value="SelectedInvetoryItem" LabelName="Inventory Item" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" ItemGroup="ItemGroup"></InventoryItemSelector>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
                     <MudSelect T="LinkableBatchModel" Label="Batch" ToStringFunc="@converter" Value="@SelectedBatch" ValueChanged="((e)=>SetBatch(e))" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true">
@@ -57,13 +59,13 @@
                 <MudItem xs="11" md="11">
                     <MudCheckBox @bind-Checked="@model.Tubeless" Label="Tubeless"></MudCheckBox>
                 </MudItem>
-                
+
             </EditForm>
         </MudContainer>
 
     </DialogContent>
     <DialogActions>
-        <MudButton  form="formTyre" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
+        <MudButton form="formTyre" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -80,23 +82,23 @@
         "Back",
         "All-Position"
     };
-
+    public int? ItemGroup { get; set; } = 0;
     List<InventoryItemModel> InvetoryItemList = new();
     InventoryItemModel SelectedInvetoryItem = new();
     LinkableBatchModel SelectedBatch = new();
 
     List<LinkableBatchModel> BatchList = new();
 
-    Func<LinkableBatchModel,string> converter = p => p?.GrnNo;
+    Func<LinkableBatchModel, string> converter = p => p?.GrnNo;
     protected override void OnInitialized()
     {
         InvetoryItemList = IInventoryservice.SelectListByID(null).ToList();
-        if(model != null && model.InventoryItemID != null)
+        if (model != null && model.InventoryItemID != null)
         {
             SelectedInvetoryItem = InvetoryItemList.FirstOrDefault(x => x.InventoryItemID == model.InventoryItemID);
             SelectedBatch = IStoreservice.GetBatchDetails(model.InventoryBatchID);
         }
-
+        ItemGroup =Int32.Parse(IconfigTable.GetByInventoryTyreGroupID().ValueString);
     }
     private void SetBatch(LinkableBatchModel obj)
     {
@@ -124,7 +126,7 @@
                 model.InventoryBatchID = SelectedBatch.BatchID;
             }
             TyreModel result = Iservice.Update(model);
-        MudDialog.Close(result);
+            MudDialog.Close(result);
 
         }
 
