@@ -38,7 +38,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TdsRateID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.TDS.Rates.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.finance.taxes.TDS.Rates.Delete]", parameters);
         }
 
         public IEnumerable<TdsRateModel> SelectByIDT(int? ID)

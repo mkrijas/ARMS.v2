@@ -20,6 +20,7 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         public decimal? MinBalance { get; set; }
         public decimal? MaxBalance { get; set; }
+        public bool? IsDisabled { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }
