@@ -32,7 +32,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TdsAccountMappedID", ID),
+               new SqlParameter("@TdsTLID", ID),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Taxes.TDS.ThresholdLimits.Delete]", parameters);
