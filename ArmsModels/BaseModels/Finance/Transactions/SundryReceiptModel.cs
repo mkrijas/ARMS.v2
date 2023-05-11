@@ -16,8 +16,12 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         [Required]
         public int? ReceiptCoaID { get; set; }        
         public string Reference { get; set; }
+        [Required]
         public string PayerName { get; set; }
+        [Required]
         public string PayerContactNo { get; set; }
+        [Required]
+        [ValidateComplexType]
         public List<SundryReceiptEntryModel> Entries { get; set; } = new();
     }
 
@@ -26,6 +30,7 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public long? ID { get; set; }
         public int? ParentID { get; set; }
         public int? BranchID { get; set; }
+        [Required]
         public string UsageCode { get; set; }
         [Required]
         public int? CoaID { get; set; }        

@@ -1,0 +1,276 @@
+﻿@using ArmsServices.DataServices.General
+
+@inject IConfigTable IConfig
+@inject IPaymentService Iservice
+@inject IPartyService partyService
+@inject IOutstandingBillsService OBIservice
+@inject IInterBranchTransactionService intermappingIservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="InterBranch Payment Memo" formID="ibpaymentform" model="@model">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm id="ibpaymentform" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudSelect Label="Select Party" ReadOnly="ReadOnly" Value="@model.BusinessNature" T="string" ValueChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            <MudSelectItem Value="@("Supplier")" />
+                            <MudSelectItem Value="@("Customer")" />
+                            <MudSelectItem Value="@("Renter")" />
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" NatureOfBusiness="@model.BusinessNature"></PartySelector>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                       <BranchSelector Value="@OtherBranch" ValueChanged="@OtherBranchChanged" Except="@model.BranchID"></BranchSelector>
+                    </MudItem>  <MudItem xs="12" md="4">
+                        <MudSelect Label="Select Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in transactionTypeList)
+                            {
+                                <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect Label="NatureOfBusiness" ReadOnly="ReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @if (model.PartyInfo != null)
+                            {
+                                <MudSelectItem Value="@("Deposit")" />
+                                <MudSelectItem Value="@("Payment")" />
+                                <MudSelectItem Value="@("Prepayment")" />
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    @if (model.Bills.Any())
+                    {
+                        <MudItem xs="12">
+                            <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Elevation="0">
+                                <thead>
+                                    <tr>
+                                        <th>Invoice info</th>
+                                        <th>Branch</th>
+                                        <th>OutstandingAmount</th>
+                                        <th>PayAmount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in model.Bills)
+                                    {
+                                        <tr>
+                                            <td>@item.InvoiceNumber - @item.InvoiceDate?.ToShortDateString()</td>
+                                            <td>@item.BranchName</td>
+                                            <td>@item.OutstandingAmount</td>
+                                            <td> <MudTextField T="decimal?" @bind-Value="item.PayAmount" TextChanged="SetTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
+
+                                        </tr>
+                                    }
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td>Total:@model.TotalAmount</td>
+                                    </tr>
+                                </tbody>
+                            </MudSimpleTable>
+                        </MudItem>
+                    }
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocumentID="model.PaymentMemoID" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
+
+@code {
+
+    [Parameter]
+    public PaymentMemoModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    [Parameter]
+    public bool Dialog { get; set; } = true;
+
+    private List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
+
+    private int? branchID = null;
+    private string UserID = null;
+    private EditContext editContext;
+    DialogForm dialogForm;
+    int DocTypeID = 7;
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    public BranchModel OtherBranch;
+    private List<InterBranchTransactionTypeModel> transactionTypeList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);        
+        UserID = User.Identity.Name;
+
+        if (model.PaymentMemoID != null)
+        {
+            model.Bills = Iservice.GetBills(model.PaymentMemoID.Value).ToList();            
+        }
+        else
+        {
+            model.BranchID = branchID;
+            model.BusinessNature = "Supplier";
+        }
+        GetBills();        
+        transactionTypeList = intermappingIservice.GetTypes().ToList();
+    }
+
+    protected override void OnParametersSet()
+    {
+        editContext = new EditContext(model);
+    }
+
+
+
+    private async Task OpenOutstandingBills()
+    {
+        DialogOptions Doptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("PartyID", model.PartyInfo.PartyID);
+        parms.Add("BranchID", model.OtherBranchID);
+        var dialog = DialogService.Show<OutstandingBillView>("Outstanding Bill", parms, Doptions);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
+            SelectedItems = (List<OutstandingBillsModel>)result.Data;
+            model.Bills.Clear();
+            foreach (var item in SelectedItems)
+            {
+                model.Bills.Add(new BillsPaidModel()
+                    {
+                        MID = item.MID,
+                        BranchName = item.BranchName,
+                        InvoiceDate = item.ReferenceDocDate,
+                        InvoiceNumber = item.ReferenceDocNo,
+                        OutstandingAmount = item.OutstandingAmount,
+                        PayAmount = -(item.OutstandingAmount)
+                    });
+            }
+            model.Reference = string.Join(",", SelectedItems.Select(x => x.ReferenceDocNo));
+        }
+        if (!model.Bills.Any())
+        {
+            model.NatureOfTransaction = null;
+        }
+    }
+
+
+    private void OnValidSubmit(EditContext context)
+    {
+        try
+        {
+            model.UserInfo.UserID = UserID;
+            model.PartyCoaID = partyService.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
+            if (model.PartyCoaID == null)
+            {
+                throw new Exception("Party Account is not mapped!");
+            }
+            model = Iservice.Update(model);
+            dialogForm.Close(model);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    protected void Approve(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+            model.UserInfo.UserID = UserID;
+            try
+            {
+                Iservice.Approve(model.PaymentMemoID, model.UserInfo.UserID, aprvd.Remarks);
+                snackbar.Add("Approved Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+
+
+    private void GetBills()
+    {
+        List<OutstandingBillsModel> collection = new List<OutstandingBillsModel>();
+
+        if (model?.PartyInfo?.PartyID != null)
+        {
+            collection = OBIservice.SelectByParty(model.PartyInfo.PartyID, branchID).ToList();
+        }
+    }
+
+
+    private void SetTotalAmt()
+    {
+        model.TotalAmount = (model.Bills.Sum(x => x.PayAmount) ?? 0);
+    }
+
+    async Task OtherBranchChanged(BranchModel branch)
+    {
+        model.OtherBranchID = branch.BranchID;
+        model.Bills = new();
+        await nbusinesschanged(null);
+    }
+
+    async Task nbusinesschanged(string val)
+    {
+        model.BusinessNature = val;
+        await PartyChanged(null);
+    }
+    async Task PartyChanged(PartyModel party)
+    {
+        model.PartyInfo = party;
+        await nTransactionChanged(null);
+    }
+    private async Task nTransactionChanged(string nt)
+    {       
+        model.NatureOfTransaction = nt;
+        if (nt == "Payment")
+        {
+            if(model.OtherBranchID == null)
+            {
+                snackbar.Add("Select branch!", Severity.Error);
+                model.NatureOfTransaction = null;
+            }
+            else
+            await OpenOutstandingBills();
+        }
+        else
+        {
+            model.Bills.Clear();
+        }
+    }
+
+}

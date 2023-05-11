@@ -20,6 +20,7 @@ namespace ArmsModels.BaseModels
         public string NatureOfTransaction { get; set; } //Deposit,Purchase,Payment,Receipt,Prepayment,BankCharges,Main,Depreciation,CWIP,Capitalization
         [Required]
         public int? BranchID { get; set; }
+        [Required]
         public decimal? TotalAmount { get; set; }
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
@@ -29,6 +30,7 @@ namespace ArmsModels.BaseModels
         public string AuthStatus { get; set; }
         public bool IsInterBranch { get; set; }=false;
         public int? InterBranchTranID { get; set; } = null;
+        [RequiredIfTrue("IsInterBranch") ]
         public int ? OtherBranchID { get;set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }

@@ -99,7 +99,7 @@ namespace ArmsServices.DataServices
 
                     TariffType = new TariffTypeModel()
                     {
-                        TariffTypeID = (short?)dr.GetInt32("TariffTypeID"),
+                        TariffTypeID = dr.GetInt16("TariffTypeID"),
                         UsageCode = dr.GetString("UsageCode"),
                     },
                     Reference = dr.GetString("Reference"),
@@ -155,7 +155,7 @@ namespace ArmsServices.DataServices
 
                     TariffType = new TariffTypeModel()
                     {
-                        TariffTypeID = (short?)dr.GetInt32("TariffTypeID"),
+                        TariffTypeID = dr.GetInt16("TariffTypeID"),
                         UsageCode = dr.GetString("UsageCode"),
                     },
                     Reference = dr.GetString("Reference"),

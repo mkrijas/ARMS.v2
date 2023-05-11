@@ -1,8 +1,6 @@
 ﻿@page "/DrCrNoteView"
 @inject IDrCrNoteService Iservice
-@inject IDimensionService dimensionIservice
-@inject ICostCenterService costIservice
-@inject NavigationManager uriHelper;
+
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
@@ -15,11 +13,10 @@
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
 
             <ToolBarContent>
-                <MudText Typo="Typo.h6">DrCrNote</MudText>
-                <MudTooltip Text="New DrCrNote">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model,false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudText Typo="Typo.h6">Debit Note/ Credit Note</MudText>
+                <MudTooltip Text="New Document">
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-
                 <MudSpacer></MudSpacer>
                 <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
 
@@ -30,39 +27,29 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<DrCrNoteModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DrCrNoteModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
 
-
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
                 <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
-
                 <MudTd DataLabel="">
-
-                    <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Primary" title="View" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Primary" title="View" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                     @if (@context.AuthLevelId == null)
                     {
-                        <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> OpenDialog(context,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                         <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
 
                     }
-
                     @if (@context.AuthLevelId != 99)
                     {
-                        <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" title="Verify" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Warning" title="Verify" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
 
                     }
-
                 </MudTd>
-
-
             </RowTemplate>
             <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                <MudItem xs="12" md="9"> </MudItem><MudItem xs="12" md="3">
-
-                </MudItem>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />               
             </PagerContent>
         </MudTable>
     </MudItem>
@@ -83,46 +70,40 @@
     protected override void OnInitialized()
     {
 
-        GetPerfomaInvoice(IsApproved);
+        GetAll(IsApproved);
     }
     void ApprovedChanged(bool value)
     {
 
         IsApproved = value;
-        GetPerfomaInvoice(IsApproved);
+        GetAll(IsApproved);
 
     }
-    private async Task OpenDialog(DrCrNoteModel tds, bool ReadOnly, bool View)
+    private async Task OpenDialog(DrCrNoteModel tds, bool ReadOnly)
     {
 
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true,ClassBackground="blur" };
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds);
-        parms.Add("ReadOnly", ReadOnly);
-        parms.Add("IsView", View);
+        parms.Add("ReadOnly", ReadOnly);       
         var dialog = DialogService.Show<DrCrNoteDialog>(tds.DrCrNoteID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
 
-        GetPerfomaInvoice(IsApproved);
+        GetAll(IsApproved);
     }
 
 
 
-    public void GetPerfomaInvoice(bool val)
+    public void GetAll(bool val)
     {
-
-
-
         if (val)
         {
             collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
-
         }
         else
         {
             collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
-
         }
 
 
@@ -131,7 +112,7 @@
     {
         Iservice.Delete(tx.DrCrNoteID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetPerfomaInvoice(IsApproved);
+        GetAll(IsApproved);
     }
 
 }

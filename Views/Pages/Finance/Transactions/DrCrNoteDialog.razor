@@ -1,249 +1,72 @@
-﻿@*@page "/DrCrNoteDialog"*@
+﻿@attribute [Authorize]
 @inject IDrCrNoteService Iservice
 @inject IPartyService partyIservice
-@inject ITaxPurchaseService TaxIservice
-@inject IInventoryItemService itemIservice
-@inject IDimensionService dimensionIservice
-@inject IGstItemService gstitemIservice
-@inject IInventoryGroupService inventoryGroupIservice
-@inject IGstUsageIDService usageIservice
-@inject ITdsRateService tdsIService
-@inject IBranchService branchIservice
-@inject ICostCenterService costIservice
-@inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
-@attribute [Authorize]
 @inject IDialogService DialogService
 
-
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
-            DrCrNote
-        </MudText>
-        @if (IsView)
-        {
-            <MudText Color="Color.Error">@model.AuthStatus</MudText>
-        }
-    </TitleContent>
-    <DialogContent>
-        <MudContainer Style="min-height: 450px; max-height: 450px; overflow-y: scroll">
-            <MudGrid Spacing="4">
-                <MudItem xs="12" md="2">
-
-                    <MudSwitch ReadOnly="ReadOnly" @bind-Checked="drCrType" Color="Color.Primary" Converter="@(new CustomStringToBoolConverter())"> @(drCrType)</MudSwitch>
-
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudSelect Label="Select Party" ReadOnly="ReadOnly" @bind-Value="nbusiness" T="string" SelectedValuesChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                        <MudSelectItem Value="@("Supplier")" />
-                        <MudSelectItem Value="@("Customer")" />
-
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    @if (nbusiness == "Supplier")
-                    {
-                        <PartySelector @bind-Value="model.Party" NatureOfBusiness="@nbusiness"></PartySelector>
-
-                    }
-                    @if (nbusiness == "Customer")
-                    {
-                        <PartySelector @bind-Value="model.Party" NatureOfBusiness="@nbusiness"></PartySelector>
-
-                    }
-                </MudItem>
-                @if (!ReadOnly)
-                {
-                    <MudItem xs="12" md="2">
-                        <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Fetch</MudButton>
-
-                    </MudItem>
-                }
-                @if (Isvisible)
-                {
-
-                    <MudItem xs="12" md="6">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.ReasonCode" Label="ReasonCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ReasonCode)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-
-                        <MudDatePicker ReadOnly="ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
-
-
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-
-                        <MudSelect ReadOnly="ReadOnly" Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in costCenter)
-                            {
-                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
-                            }
-                        </MudSelect>
-
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-
-                        <MudSelect ReadOnly="ReadOnly" Label="Select Dimension" @bind-Value="model.Dimension" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in dimension)
-                            {
-                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
-                            }
-                        </MudSelect>
-
-                    </MudItem>
-
-                    <MudItem xs="12" md="12">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <h6>Expenses</h6>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
-
-
-                            <thead>
-
-                                <tr>
-
-
-                                    <th width="200px">UsageID</th>
-
-                                    <th>Amount</th>
-                                    <th>SGST</th>
-                                    <th>CGST</th>
-                                    <th>IGST</th>
-                                    <th>TDS</th>
-                                    <th>Bill</th>
-                                    <th></th>
-
-
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in model.Particulars)
-                                {
-                                    <tr>
-
-
-                                        <td>@item.UsageCode</td>
-
-                                        <td>@item.Amount</td>
-                                        <td>@item.SGST</td>
-                                        <td>@item.CGST</td>
-                                        <td>@item.IGST</td>
-                                        <td>@item.TDS</td>
-                                        <td>@item.BillReference</td>
-                                        <td>
-                                        </td>
-
-                                    </tr>
-                                }
-
-
-                            </tbody>
-                        </MudSimpleTable>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <h6>TaxPurchaseItems</h6>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
-
-
-                            <thead>
-
-                                <tr>
-
-
-                                    <th width="200px">ItemID</th>
-                                    <th>ItemRate</th>
-                                    <th>ItemQty</th>
-
-                                    <th>Amount</th>
-                                    <th>SGST</th>
-                                    <th>CGST</th>
-                                    <th>IGST</th>
-                                    <th>TDS</th>
-
-                                    <th></th>
-
-
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in model.Items)
-                                {
-                                    <tr>
-
-
-                                        <td style="width:200px">@(itm.First(x=> x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
-                                        <td>@item.ItemRate</td>
-                                        <td>@item.ItemQty</td>
-
-                                        <td>@item.Amount</td>
-
-                                        <td>@item.SGST</td>
-                                        <td>@item.CGST</td>
-                                        <td>@item.IGST</td>
-                                        <td>@item.TDS</td>
-
-                                        <td>
-                                        </td>
-
-                                    </tr>
-                                }
-
-
-                            </tbody>
-                        </MudSimpleTable>
-                    </MudItem>
-                }
-
-                <MudItem xs="12">
-                    @if ((ReadOnly) && (!IsView))
-                    {
-                        <AutherizationStatusComponent DocTypeID="5" DocumentID="model.DrCrNoteID" OnApprove="IsApproveData"></AutherizationStatusComponent>
-
-                    }
-
-                </MudItem>
-
-
-
-
-
-            </MudGrid>
-        </MudContainer>
-    </DialogContent>
-
-
-    <DialogActions>
-        <b>Total:@model.TotalAmount</b>
-
-        @if (!ReadOnly)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Cancel</MudButton>
-
-            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" ButtonType="ButtonType.Submit">Submit</MudButton>
-        }
-        @if (ReadOnly)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="Cancel">Close</MudButton>
-
-        }
-    </DialogActions>
-</MudDialog>
-
-
-
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Debit Note/ Credit Note" formID="sundryPaymentForm" model="@model">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm id="sundryPaymentForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12">
+                        <h6>Transaction Type</h6>
+                        <MudRadioGroup @bind-SelectedOption="@model.DrCrType" >
+                            <MudRadio Option="@("Debit")" Color="Color.Primary">Debit Note</MudRadio>
+                            <MudRadio Option="@("Credit")" Color="Color.Secondary">Credit Note</MudRadio>                                                    
+                        </MudRadioGroup>                       
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudSelect Label="Nature Of Party" ReadOnly="ReadOnly" Value="model.BusinessNature" T="string" ValueChanged="BusinessNatureChanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            <MudSelectItem Disabled Value="@("Select")" />
+                             <MudSelectItem Value="@("Supplier")" />
+                             <MudSelectItem Value="@("Customer")" />
+                             <MudSelectItem Value="@("Renter")" />
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="5">
+                            <PartySelector Value="model.Party" ValueChanged="PartyChanged" NatureOfBusiness="@model.BusinessNature"></PartySelector>
+                        </MudItem>
+                    
+                        <MudItem xs="12" md="4">
+                        <MudTextField OnAdornmentClick="fetch" ReadOnly="@true" Value="model.OriginalTranDocNumber" Label="Against" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.FileOpen"></MudTextField>
+                        </MudItem>
+                                       
+                        <MudItem xs="12" md="6">
+                            <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField ReadOnly="ReadOnly" @bind-Value="model.ReasonCode" Label="ReasonCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ReasonCode)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" md="12">
+                            <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <ExpenseListView OnExpenseAdded="AddExpense" OnDelete="SetTotal" BranchID="@BranchID" PartyInfo="@model.Party" Local="@Local" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <ItemsListView OnItemAdded="AddItems" OnDelete="SetTotal" BranchID="@BranchID" PartyInfo="@model.Party" Local="@Local" ItemList="@model.Items" ReadOnly="@ReadOnly" />
+                        </MudItem>                    
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocumentID="model.DrCrNoteID" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
 
 @code {
 
@@ -251,216 +74,75 @@
     public DrCrNoteModel model { get; set; }
     [Parameter]
     public bool ReadOnly { get; set; }
-    [Parameter]
-    public bool IsView { get; set; }
-    public string drCrType { get; set; } = "Credit";
-    private string nbusiness = "Customer";
-    public bool Isvisible = false;
-    private List<InventoryItemModel> itm = new();
 
-    private TaxPurchaseExpenseModel txexpense = new TaxPurchaseExpenseModel();
-    private TaxPurchaseItemModel TaxItemModel = new TaxPurchaseItemModel();
-    public GstUsageCodeModel SelectedItems = new();
-
-    private List<CostCenterModel> costCenter = new();
-    private List<DimensionModel> dimension = new();
-    private List<GstUsageCodeModel> usageID = new();
-    private int? branchID = null;
+    private int? BranchID = null;
     private string UserID = null;
+    EditContext editContext;
+    DialogForm dialogForm;
+    int DocTypeID = 5;
+    bool Local;
 
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
 
-    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-    private void Cancel()
-    {
-        MudDialog.Cancel();
-    }
-    private void nbusinesschanged()
-    {
-        StateHasChanged();
-    }
+
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
-        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        var user = authprov.User;
-        UserID = user.Identity.Name;
-        costCenter = costIservice.Select().ToList();
-        dimension = dimensionIservice.Select().ToList();
-        usageID = usageIservice.Select(DateTime.Now).ToList();
-        itm = itemIservice.SearchByDescription(string.Empty).ToList();
+        var User = authprov.User;
+        BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = User.Identity.Name;       
         if (model.DrCrNoteID != null)
         {
-            Isvisible = true;
             model.Particulars = Iservice.GetExpenses(model.DrCrNoteID).ToList();
             model.Items = Iservice.GetItems(model.DrCrNoteID).ToList();
-            drCrType = model.DrCrType;
-        }
-    }
-
-
-
-    public class CustomStringToBoolConverter : BoolConverter<string>
-    {
-
-        public CustomStringToBoolConverter()
-        {
-            SetFunc = OnSet;
-            GetFunc = OnGet;
-        }
-
-        private string TrueString = "Credit";
-        private string FalseString = "Debit";
-        private string NullString = "Error";
-
-        private string OnGet(bool? value)
-        {
-            try
-            {
-                return (value == true) ? TrueString : FalseString;
-            }
-            catch (Exception e)
-            {
-                UpdateGetError("Conversion error: " + e.Message);
-                return NullString;
-            }
-        }
-
-        private bool? OnSet(string arg)
-        {
-            if (arg == null)
-                return null;
-            try
-            {
-                if (arg == TrueString)
-                    return true;
-                if (arg == FalseString)
-                    return false;
-                else
-                    return null;
-            }
-            catch (FormatException e)
-            {
-                UpdateSetError("Conversion error: " + e.Message);
-                return null;
-            }
-        }
-
-    }
-
-
-
-    private void taxRates()
-    {
-
-        if (SelectedItems.UsageCode != null)
-        {
-            if (model.Party == null)
-            {
-                snackbar.Add("select party", Severity.Success);
-                return;
-            }
-
-            decimal? taxRate = (decimal)usageIservice.GetGstRate(txexpense.UsageCode, DateTime.Now);
-            decimal? tdsRate = (decimal)tdsIService.GetTdsRate(model.Party.PartyID.Value, txexpense.CoaID.Value);
-
-
-            BranchModel br = branchIservice.SelectByID(branchID);
-
-            string partyGstNo = (model.Party.GstNo).Substring(0, 2);
-            string branchGstNo = (br.GstNo).Substring(0, 2);
-
-            if (partyGstNo == branchGstNo)
-            {
-                txexpense.IGST = (txexpense.Amount * taxRate) / 100;
-            }
-            else
-            {
-                taxRate = taxRate / 2;
-                txexpense.SGST = (txexpense.Amount * taxRate) / 100;
-                txexpense.CGST = (txexpense.Amount * taxRate) / 100;
-            }
-            txexpense.TDS = (txexpense.Amount * tdsRate) / 100;
-        }
-
-    }
-
-    public void AddItems()
-    {
-
-
-        txexpense.BranchID = branchID;
-
-        model.Particulars.Add(txexpense);
-
-        decimal tvalue = 0;
-        if (txexpense.IGST == null)
-        {
-            tvalue = txexpense.SGST.Value + txexpense.CGST.Value;
         }
         else
         {
-            tvalue = txexpense.IGST.Value;
+            model.BranchID = BranchID;
+            model.NatureOfTransaction = "DrCrNote";
         }
-        model.TotalAmount = model.TotalAmount + txexpense.Amount +
-                               tvalue;
-
-        txexpense = new();
-
     }
 
-
-    private void calcAmount()
+    protected override void OnParametersSet()
     {
-
-
-        if (TaxItemModel.ItemQty == null)
+        if (editContext == null)
         {
-            TaxItemModel.ItemQty = 0;
+            editContext = new EditContext(model);
         }
-        if (TaxItemModel.ItemRate == null)
-        {
-            TaxItemModel.ItemRate = 0;
-        }
-        TaxItemModel.Amount = TaxItemModel.ItemQty * TaxItemModel.ItemRate;
-        if (TaxItemModel.Amount != 0)
-        {
-
-            GstItemModel gstItem = gstitemIservice.SelectByItem(TaxItemModel.ItemID.Value, DateTime.Now);
-            decimal? taxRate = gstItem.TaxRate;
-            decimal? tdsRate = (decimal)tdsIService.GetTdsRate(model.Party.PartyID.Value, TaxItemModel.CoaID.Value);
-
-
-            BranchModel br = branchIservice.SelectByID(branchID);
-
-            string partyGstNo = (model.Party.GstNo).Substring(0, 2);
-            string branchGstNo = (br.GstNo).Substring(0, 2);
-
-            if (partyGstNo == branchGstNo)
-            {
-
-                TaxItemModel.IGST = (TaxItemModel.Amount * taxRate) / 100;
-
-            }
-            else
-            {
-                taxRate = taxRate / 2;
-                TaxItemModel.SGST = (TaxItemModel.Amount * taxRate) / 100;
-                TaxItemModel.CGST = (TaxItemModel.Amount * taxRate) / 100;
-
-            }
-
-            TaxItemModel.TDS = (TaxItemModel.Amount * tdsRate) / 100;
-
-        }
-
-
     }
 
+    void SetTotal()
+    {
+        model.TotalAmount = (model.Particulars.Sum(x => x.Amount) ?? 0) + (model.Items.Sum(y => y.Amount) ?? 0);
+    }
 
+    void PartyChanged(PartyModel party)
+    {
+        if (model.Party?.PartyID != party?.PartyID)
+        {
+            model.Party = party;
+            if (party != null)
+            {
+                Local = partyIservice.IsLocal(model.Party.PartyID, BranchID);
+            }
+            else { Local = false; }
 
-    protected void IsApproveData(DataApprovedStatus aprvd)
+        }
+    }
+
+    void AddExpense(TaxPurchaseExpenseModel expenseModel)
+    {
+        model.Particulars.Add(expenseModel);
+        SetTotal();
+    }
+
+    void AddItems(TaxPurchaseItemModel ItemModel)
+    {
+        model.Items.Add(ItemModel);
+        SetTotal();
+    }
+
+    protected void Approve(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
         {
@@ -469,166 +151,86 @@
             Iservice.Approve(model.DrCrNoteID, model.UserInfo.UserID, aprvd.Remarks);
             snackbar.Add("Approved Successfully", Severity.Success);
         }
-
     }
-    public void AddTaxItems()
+
+    void BusinessNatureChanged(string bn)
     {
-
-
-
-
-
-        model.Items.Add(TaxItemModel);
-        decimal tvalue = 0;
-        try
+        if (model.BusinessNature != bn)
         {
-            if (TaxItemModel.IGST == null)
-            {
-                tvalue = TaxItemModel.SGST.Value + TaxItemModel.CGST.Value;
-            }
-            else
-            {
-                tvalue = TaxItemModel.IGST.Value;
-            }
+            model.BusinessNature = bn;
+            PartyChanged(null);
         }
-        catch (Exception)
-        { }
-        model.TotalAmount = model.TotalAmount + TaxItemModel.Amount +
-                               tvalue;
-        TaxItemModel = new();
+    }   
 
-    }
-    private void Submit()
+    private void OnValidSubmit(EditContext context)
     {
-        if (!Isvisible)
+        if(model.Particulars.Count == 0 && model.Items.Count == 0)    
         {
-            snackbar.Add("Please Feth the Bill", Severity.Success);
+            snackbar.Add("Please Add Particulars or Items!", Severity.Error);
             return;
         }
 
-        model.DrCrType = drCrType;
-        if (model.PartyCoaID == null)
+        if (model.BusinessNature == "Supplier")
         {
-            if (nbusiness == "Supplier")
-            {
-                model.PartyCoaID = partyIservice.GetVendorPayableCoaID(model.Party.PartyID);
-                model.NatureOfTransaction = "Payable";
-            }
-            else
-            {
-                model.PartyCoaID = partyIservice.GetCustomerReceivableCoaID(model.Party.PartyID);
-                model.NatureOfTransaction = "Receivable";
-            }
+            model.PartyCoaID = partyIservice.GetVendorPayableCoaID(model.Party.PartyID);            
+        }
+        else
+        {
+            model.PartyCoaID = partyIservice.GetCustomerReceivableCoaID(model.Party.PartyID);            
         }
 
-        model.BranchID = branchID;
+        model.BranchID = BranchID;
         model.UserInfo.UserID = UserID;
 
         try
         {
-
             Iservice.Update(model);
             model = new();
-            snackbar.Add("Saved Successfully", Severity.Success);
-            model = new DrCrNoteModel();
-
+            snackbar.Add("Saved Successfully", Severity.Success);            
         }
         catch (Exception ex)
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            snackbar.Add(ex.Message, Severity.Error);
         }
 
-        MudDialog.Close();
-
+        dialogForm.Close(model);
     }
+
+
+
     public async Task fetch()
     {
+        if(string.IsNullOrEmpty(model.DrCrType))
+        {
+            snackbar.Add("Select Document Type!", Severity.Error);
+            return;
+        }
+        else if (model.Party?.PartyID == null)
+        {
+            snackbar.Add("Select Party!", Severity.Error);
+            return;
+        }
         DialogParameters parms = new DialogParameters();
         parms.Add("PartyID", model.Party.PartyID);
-        parms.Add("CrDrType", drCrType);
-        var dialog = DialogService.Show<DrCrBillInfo>("BillInfo", parms, maxWidth);
+        parms.Add("CrDrType", model.DrCrType);        
+        var dialog = DialogService.Show<DrCrBillInfo>("BillInfo", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
         var result = await dialog.Result;
-        List<BillInfoModel> Bill = new List<BillInfoModel>();
+        BillInfoModel Bill = new ();
         if (!result.Canceled)
         {
-
-            Bill = (List<BillInfoModel>)result.Data;
-
-
+            Bill = (BillInfoModel)result.Data;
             int PID = 0;
-            if (SelectedItems != null)
-            {
-
-                Isvisible = true;
-                foreach (var item in Bill)
-                {
-                    model.OriginalTranDocDate = item.DocumentDate;
-                    model.OriginalTransactionID = item.BillID;
-                    model.OriginalTranDocNumber = item.DocumentNumber;
-                    model.TotalAmount = item.TotalAmount;
-                    PID = item.PID.Value;
-
-
-                }
-
-            }
-            model.Items = TaxIservice.GetItems(PID).ToList();
-            model.Particulars = TaxIservice.GetExpenses(PID).ToList();
-
-
-
+            if (Bill != null)
+            {                
+                model.OriginalTranDocDate = Bill.DocumentDate;
+                model.OriginalTransactionID = Bill.BillID;
+                model.OriginalTranDocNumber = Bill.DocumentNumber;
+                model.TotalAmount = Bill.TotalAmount;
+                PID = Bill.PID.Value;
+                model.Items = Bill.Items;
+                model.Particulars = Bill.Particulars;
+            }            
         }
     }
 
-
-    private void DeleteExpenses(TaxPurchaseExpenseModel i)
-    {
-        decimal gstrate = 0;
-        if (i.IGST == null)
-        {
-            i.IGST = 0;
-        }
-        if (i.SGST == null)
-        {
-            i.SGST = 0;
-        }
-        if (i.CGST == null)
-        {
-            i.CGST = 0;
-        }
-
-        gstrate = (i.CGST.Value) + (i.SGST.Value) + (i.IGST.Value) + (i.TDS.Value);
-        decimal total = i.Amount.Value + gstrate;
-
-        model.TotalAmount = model.TotalAmount - total;
-        int rowIndex = model.Particulars.IndexOf(i);
-        model.Particulars.RemoveAt(rowIndex);
-    }
-
-    private void DeleteItem(TaxPurchaseItemModel i)
-    {
-        decimal gstrate = 0;
-        if (i.IGST == null)
-        {
-            i.IGST = 0;
-        }
-        if (i.SGST == null)
-        {
-            i.SGST = 0;
-        }
-        if (i.CGST == null)
-        {
-            i.CGST = 0;
-        }
-
-        gstrate = (i.CGST.Value) + (i.SGST.Value) + (i.IGST.Value) + (i.TDS.Value);
-
-
-        decimal total = i.Amount.Value + gstrate;
-
-        model.TotalAmount = model.TotalAmount - total;
-
-        int rowIndex = model.Items.IndexOf(i);
-        model.Items.RemoveAt(rowIndex);
-    }
-}
+  } 

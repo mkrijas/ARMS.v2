@@ -1,0 +1,162 @@
+﻿@inject ISaleService Iservice
+@inject IPartyService partyIservice
+@inject IInventoryItemService itemIservice
+@inject IGstItemService gstitemIservice
+
+@inject IInventoryGroupService inventoryGroupIservice
+
+@inject IGstUsageIDService usageIservice
+@inject IInventoryGrnService grnIservice
+@inject IBranchService branchIservice
+@inject MudBlazor.ISnackbar snackbar
+@inject ITdsRateService tdsIService
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+@inject IJSRuntime JsRuntime
+
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sales"  formID="saleForm" model="@model" >
+    <FormContent>
+         <MudPaper Class="p-3" >
+            <EditForm id="saleForm" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">                   
+                    <MudItem xs="12" md="8">
+                        <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Customer"></PartySelector>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudDatePicker Label="Document Date" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="model.AdditionalTCS" ReadOnly="ReadOnly" Label="Additional TDS" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdditionalTCS)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>                   
+                    <MudItem xs="12">
+                        <ExpenseListView OnExpenseAdded="AddExpense" OnDelete="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <ItemsListView OnItemAdded="AddItems" OnDelete="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" ItemList="@model.Items" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocumentID="model.SID" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
+
+@code {
+    [Parameter]
+    public SaleModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; } = false;
+
+    private int? branchID = null;
+    private string UserID = null;
+    private bool Local;
+
+    private EditContext editContext;
+
+    DialogForm dialogForm;
+    int DocTypeID = 13;
+
+    public GstUsageCodeModel gstusge = new();
+    private GstModel taxModel = new GstModel();
+
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };      
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = user.Identity.Name;
+
+        if (model?.SID != null)
+        {
+            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
+            model.Particulars = Iservice.GetParticulars(model.SID).ToList();
+            model.Items = Iservice.GetItems(model.SID).ToList();
+        }
+        else
+        {
+            model.NatureOfTransaction = "Sale";
+            model.BranchID = branchID;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (editContext == null)
+        {
+            editContext = new EditContext(model);
+        }
+    }
+
+    void SetTotal()
+    {
+        model.TotalAmount = (model.Particulars.Sum(x => x.Amount) ?? 0) + (model.Items.Sum(y => y.Amount) ?? 0);
+    }
+
+    void PartyChanged(PartyModel party)
+    {
+        model.PartyInfo = party;
+        if (party != null)
+        {
+            Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
+        }
+        else { Local = false; }
+    }
+
+    async Task AddExpense(TaxPurchaseExpenseModel expenseModel)
+    {
+        model.Particulars.Add(expenseModel);
+        SetTotal();
+    }
+
+    async Task AddItems(TaxPurchaseItemModel ItemModel)
+    {
+        model.Items.Add(ItemModel);
+        SetTotal();
+    }
+
+
+    protected async Task Approve(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {          
+            Iservice.Approve(model.SID,UserID, aprvd.Remarks);
+            snackbar.Add("Approved Successfully", Severity.Success);
+        }
+    }
+
+    
+    private void OnValidSubmit(EditContext context)
+    { 
+        try
+        {
+            model.UserInfo.UserID = UserID;
+            Iservice.Update(model);
+            model = new();
+            snackbar.Add("Saved Successfully", Severity.Success);
+            dialogForm.Close(model);
+            model = new();            
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+        
+    }
+}

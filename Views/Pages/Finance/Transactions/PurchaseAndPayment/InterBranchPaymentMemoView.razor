@@ -1,14 +1,13 @@
-﻿@page "/PaymentMemoView"
+﻿@page "/InterBranchPaymentMemoView"
 @inject IPaymentService Iservice
 @inject IPaymentInitiatedService IinitiateService
 @inject IOutstandingBillsService OBIservice
-@inject ICostCenterService costIservice
-@inject IDimensionService dimensionIservice
-@inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+
+
 
 
 <style>
@@ -27,20 +26,21 @@
 
 
 <MudGrid Spacing="4">
-   <MudItem xs="12">
-        <MudTable Items="@collection"   Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model" T="PaymentMemoModel">
-           
-             <ToolBarContent>
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model" T="PaymentMemoModel">
+
+            <ToolBarContent>
                 <MudText Typo="Typo.h6">Payment Memo</MudText>
                 <MudTooltip Text="New Payment Memo">
-                <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogpayment(new PaymentMemoModel(),false))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogpayment(new PaymentMemoModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-                <MudSpacer></MudSpacer>  
+                <MudSpacer></MudSpacer>
                 <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
-                
+
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.OtherBranchID)" InitialDirection="SortDirection.Ascending">Branch</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.PartyInfo.TradeName)" InitialDirection="SortDirection.Ascending">Party Name</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">TotalAmount</MudTableSortLabel></MudTh>
 
@@ -48,6 +48,7 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="Branch">@context.OtherBranchID</MudTd>
                 <MudTd DataLabel="PartyName">@context.PartyInfo.TradeName</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
@@ -63,40 +64,156 @@
                             <MudFab @onclick="@(()=> OpenDialogpayment(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
                     }
-                     @if (@context.AuthLevelId == 99 && context.PaymentStatus == 0 )
+                    @if (@context.AuthLevelId == 99 && context.PaymentStatus == 0)
                     {
                         <MudTooltip Text="Initiate PaymentMemo">
                             <MudFab @onclick="@(()=> Initiate(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Payment" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>
+                        </MudTooltip>
                     }
                     <MudTooltip Text="view">
-                   <MudFab @onclick="@(()=> OpenDialogpayment(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>                     
-               </MudTd>
+                        <MudFab @onclick="@(()=> OpenDialogpayment(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                </MudTd>
             </RowTemplate>
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
             </PagerContent>
         </MudTable>
-@*    </MudItem> <MudItem xs="12"md="9"></MudItem><MudItem xs="12"md="3">
-         <MudButton OnClick="selected" Variant="Variant.Filled" Color="Color.Success" 
-         ButtonType="ButtonType.Submit">Initiate PaymentMemo</MudButton>  *@         
     </MudItem>
 </MudGrid>
 
-  
+
+
 
 @code {
-    //private MudTable<PartyPaymentMemoModel> mudTable;
-    private PaymentMemoModel model = new PaymentMemoModel();
+
+    //private PaymentMemoModel model = new PaymentMemoModel();
+
+    //private List<PaymentMemoModel> collection = new List<PaymentMemoModel>();
+    //private List<BillsPaidModel> pmnList = new List<BillsPaidModel>();
+
+  
+
+    //public bool IsApproved { get; set; } = false;
+    //private int? branchID = null;
+    //private string UserID = null;
+    //protected override async Task OnInitializedAsync()
+    //{
+    //    model = new();
+    //    var authprov = await auth.GetAuthenticationStateAsync();
+    //    branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+    //    var user = authprov.User;
+    //    UserID = user.Identity.Name;
+    //    GetAll(IsApproved);
+    //}
+    //void ApprovedChanged(bool value)
+    //{
+
+    //    IsApproved = value;
+    //    GetAll(IsApproved);
+
+    //}
+
+    //private void GetAll(bool val)
+    //{
+
+
+    //    if (val)
+    //    {
+    //        collection = Iservice.SelectInterBranch(branchID).Where( x => x.PaymentStatus != 0).ToList();
+
+    //    }
+    //    else
+    //    {
+    //        collection = Iservice.SelectInterBranch(branchID).Where(x =>  x.PaymentStatus == 0).ToList();
+
+    //    }
+
+    //}
+    //public async Task OpenDialogpayment(PaymentMemoModel ppm, bool ReadOnly)
+    //{
+    //    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+    //    DialogParameters parms = new DialogParameters();
+    //    parms.Add("model", ppm);
+    //    parms.Add("IsReadOnly", ReadOnly);        
+       
+    //    var dialog = DialogService.Show<InterBranchPaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, maxWidth);
+    //    var result = await dialog.Result;  
+
+    //    GetAll(IsApproved);
+    //}
+
+    //private void Delete(PaymentMemoModel tx)
+    //{
+    //    Iservice.Delete(tx.PaymentMemoID, "Rijas");
+    //    snackbar.Add("Deleted Successfully", Severity.Success);
+    //    GetAll(IsApproved);
+    //}
+
+    //private async Task selected(PaymentMemoModel ppm)
+    //{
+    //    PaymentInitiatedModel pim = new PaymentInitiatedModel();
+    //    if (ppm.PaymentMemoID != null)
+    //    {
+    //        //foreach (var item in selectedItems1)
+    //        //{
+    //        if (ppm.AuthLevelId != 99)
+    //        {
+    //            snackbar.Add("Unverified cannot be selected", Severity.Warning);
+    //            return;
+    //        }
+    //        //}
+
+    //        pim.PaymentMemos.Add(ppm);
+    //        foreach (var item in pim.PaymentMemos)
+    //        {
+    //            foreach (var item1 in Iservice.GetBills(item.PaymentMemoID))
+    //            {
+    //                pmnList.Add(item1);
+    //            }
+
+    //            item.Bills = pmnList;
+    //            item.PaymentStatus = 1;
+    //        }
+    //        pim.DueOn = null;
+    //        DialogParameters parms = new DialogParameters();
+    //        parms.Add("model", pim);
+    //        parms.Add("model1", ppm);
+    //        var dialog = DialogService.Show<PaymentInitialMemo>("Payment", parms);
+    //        var result = await dialog.Result;
+
+    //        if (!result.Cancelled)
+    //        {
+    //            PaymentInitiatedModel UpatedModel = (PaymentInitiatedModel)result.Data;
+    //            var authprov = await auth.GetAuthenticationStateAsync();
+    //            //var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+    //            //int brancID = int.Parse(brancIDString);
+    //            //var user = authprov.User;
+    //            UpatedModel.UserInfo.UserID = UserID;
+    //            UpatedModel.BranchID = branchID;
+    //            Iservice.InitiatePayment(UpatedModel);
+    //            GetAll(IsApproved);
+    //        }
+    //    }
+    //    else
+    //    {
+    //        snackbar.Add("Please Select Memo", Severity.Success);
+    //        return;
+    //    }
+
+
+
+
+    //}
+
+   private PaymentMemoModel model = new PaymentMemoModel();
     private List<PaymentMemoModel> collection = new List<PaymentMemoModel>(); 
     public bool IsApproved { get; set; } = false;
 
-    //private HashSet<PartyPaymentMemoModel> selectedItems1= new HashSet<PartyPaymentMemoModel>();
-    //private PartyPaymentMemoModel selectedItems1 = null;
+   
     private int? branchID = null;
     private string UserID = null;
-    // private int selectedRowNumber = -1;
+    
     void ApprovedChanged(bool value)
     {
         IsApproved = value;
@@ -116,39 +233,20 @@
     {
         if (val)
         {
-            collection = Iservice.Select(branchID).Where(x => x.PaymentStatus > 0).ToList();
+            collection = Iservice.SelectInterBranch(branchID).Where(x => x.PaymentStatus > 0).ToList();
         }
         else
         {
-            collection = Iservice.Select(branchID).Where(x => x.PaymentStatus == 0).ToList();
+            collection = Iservice.SelectInterBranch(branchID).Where(x => x.PaymentStatus == 0).ToList();
         }
     }
-    //private string SelectedRowClassFunc(PartyPaymentMemoModel paymnetmodel, int rowNumber)
-    //{
-    //    if (selectedRowNumber == rowNumber)
-    //    {
-    //        selectedRowNumber = -1;
-
-    //        return string.Empty;
-    //    }
-    //    else if (mudTable.SelectedItem != null && mudTable.SelectedItem.Equals(paymnetmodel))
-    //    {
-    //        selectedRowNumber = rowNumber;
-
-    //        return "selected";
-    //    }
-    //    else
-    //    {
-    //        return string.Empty;
-    //    }
-
-    //}
+  
     public async Task OpenDialogpayment(PaymentMemoModel ppm, bool ReadOnly)
     {
         DialogParameters parms = new DialogParameters();
         parms.Add("model", ppm);
         parms.Add("ReadOnly", ReadOnly);         
-        var dialog = DialogService.Show<PaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+        var dialog = DialogService.Show<InterBranchPaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
         if(!result.Canceled)
         {
@@ -199,88 +297,4 @@
             return;
         }        
     }
-    //private async Task selected(PartyPaymentMemoModel ppm, bool ReadOnly, bool View)
-    //{
-    //    PaymentInitiatedModel pim = new PaymentInitiatedModel();
-
-    //    if (selectedItems1.PaymentMemoID!= null )
-    //    {
-
-    //        if (selectedItems1.AuthLevelId != 99)
-    //        {
-    //            snackbar.Add(selectedItems1.DocumentNumber + "is Approved!", Severity.Warning);
-    //            return;
-    //        }
-
-    //        pim.PaymentMemos.Add(selectedItems1);
-    //        //pim.PaymentMemos = selectedItems1.ToList();
-    //        //foreach (var item in pim.PaymentMemos)
-    //        //{
-    //        selectedItems1.Bills = Iservice.GetBills(selectedItems1.PaymentMemoID).ToList();
-    //        selectedItems1.PaymentStatus = 1;
-    //        //}
-            
-    //        DialogParameters parms = new DialogParameters();
-    //        parms.Add("model", pim);
-    //        var dialog = DialogService.Show<PaymentInitialMemo>("Payment", parms);
-    //        var result = await dialog.Result;
-
-    //        if(!result.Canceled)
-    //        {   
-    //            PaymentInitiatedModel UpatedModel = (PaymentInitiatedModel)result.Data; 
-                
-    //            UpatedModel.UserInfo.UserID = UserID;
-    //            UpatedModel.BranchID = branchID;
-    //            Iservice.InitiatePayment(UpatedModel);              
-    //        }
-    //    }
-    //    else
-    //    {
-    //        snackbar.Add("Please Select Memo", Severity.Success);
-    //        return;
-    //    }
-    //     GetAll(IsApproved);    
-    //}
-    //private async Task selected()
-    //{
-    //    PaymentInitiatedModel pim = new PaymentInitiatedModel();
-
-    //    if (selectedItems1.Count > 0)
-    //    {
-    //        foreach (var item in selectedItems1)
-    //        {
-    //            if (item.AuthLevelId != 99)
-    //            {
-    //                snackbar.Add(item.DocumentNumber + "is Approved!", Severity.Warning);
-    //                return;
-    //            }
-    //        }
-    //        pim.PaymentMemos = selectedItems1.ToList();
-    //        foreach (var item in pim.PaymentMemos)
-    //        {
-    //            item.Bills = Iservice.GetBills(item.PaymentMemoID).ToList();
-    //            item.PaymentStatus = 1;
-    //        }
-
-    //        DialogParameters parms = new DialogParameters();
-    //        parms.Add("model", pim);
-    //        var dialog = DialogService.Show<PaymentInitialMemo>("Payment", parms);
-    //        var result = await dialog.Result;
-
-    //        if (!result.Canceled)
-    //        {
-    //            PaymentInitiatedModel UpatedModel = (PaymentInitiatedModel)result.Data;
-
-    //            UpatedModel.UserInfo.UserID = UserID;
-    //            UpatedModel.BranchID = branchID;
-    //            Iservice.InitiatePayment(UpatedModel);
-    //        }
-    //    }
-    //    else
-    //    {
-    //        snackbar.Add("Please Select Memo", Severity.Success);
-    //        return;
-    //    }
-    //    GetAll(IsApproved);
-    //}
-}
+    }

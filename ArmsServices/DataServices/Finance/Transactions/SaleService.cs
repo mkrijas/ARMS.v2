@@ -18,8 +18,8 @@ namespace ArmsServices.DataServices
         IEnumerable<SaleModel> Select();
         IEnumerable<SaleModel> SelectByParty(int? PartyID);
         IEnumerable<SaleModel> SelectByPeriod(DateTime? begin,DateTime? end);
-        IEnumerable<SaleExpenseModel> GetParticulars(int? SID);
-        IEnumerable<SaleItemModel> GetItems(int? PID);
+        IEnumerable<TaxPurchaseExpenseModel> GetParticulars(int? SID);
+        IEnumerable<TaxPurchaseItemModel> GetItems(int? PID);
         int Approve(int? SID, string UserID,string Remarks);
         int Reverse(int? SID, string UserID);
     }
@@ -55,7 +55,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Delete]", parameters);
         }
 
-        public IEnumerable<SaleExpenseModel> GetParticulars(int? SID)
+        public IEnumerable<TaxPurchaseExpenseModel> GetParticulars(int? SID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -65,7 +65,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
             {
-                yield return new SaleExpenseModel()
+                yield return new TaxPurchaseExpenseModel()
                 {
                     Amount = dr.GetDecimal("Amount"),
                     CGST = dr.GetDecimal("CGST"),
@@ -73,7 +73,7 @@ namespace ArmsServices.DataServices
                     SGST = dr.GetDecimal("SGST"),                   
                     CoaID = dr.GetInt32("CoaID"),                 
                     PID = dr.GetInt32("PID"),
-                    TCS = dr.GetDecimal("TCS"),
+                    TDS = dr.GetDecimal("TCS"),
                     GstRate= dr.GetDecimal("GstRate"),
                     BillReference = dr.GetString("BillReference"),
                     BranchID = dr.GetInt32("BranchID"),
@@ -83,7 +83,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<SaleItemModel> GetItems(int? PID)
+        public IEnumerable<TaxPurchaseItemModel> GetItems(int? PID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -93,7 +93,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
             {
-                yield return new SaleItemModel()
+                yield return new TaxPurchaseItemModel()
                 {
                     Amount = dr.GetDecimal("Amount"),
                     CGST = dr.GetDecimal("CGST"),
@@ -105,7 +105,7 @@ namespace ArmsServices.DataServices
                     ItemQty = dr.GetDecimal("ItemQty"),
                     ItemRate = dr.GetDecimal("ItemRate"),
                     PID = dr.GetInt32("SID"),
-                    TCS = dr.GetDecimal("TCS"),
+                    TDS = dr.GetDecimal("TCS"),
                     TpiID = dr.GetInt64("SiID"),
                 };
             }

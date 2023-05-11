@@ -20,18 +20,30 @@ namespace ArmsServices.DataServices
         IEnumerable<DrCrNoteModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? ID);
         IEnumerable<TaxPurchaseItemModel> GetItems(int? ID);
-        IEnumerable<BillInfoModel> GetBillInfo(int? BranchID,string DrCrType,int? PartyBranchID,string  DocumentNumberSearchKey);
+        IEnumerable<BillInfoModel> GetBillInfo(int? BranchID,string DrCrType,int? PartyID,string  DocumentNumberSearchKey);
+        IEnumerable<TaxPurchaseExpenseModel> GetBillInfoParticulars(int? ID, string BillType);
+        IEnumerable<TaxPurchaseItemModel> GetBillInfoItems(int? ID, string BillType);
         int Approve(int? ID, string UserID,string Remarks);
         int Reverse(int? ID, string UserID,string Remarks);
     }
 
+
+
+
     public class DrCrNoteService : IDrCrNoteService
     {
         IDbService Iservice;
+        ITaxPurchaseService ItaxPurchase;
+        ISaleService Isales;
+        IFreightBillingService Ibilling;
 
-        public DrCrNoteService(IDbService iservice)
+        public DrCrNoteService(IDbService iservice, ITaxPurchaseService taxPurchase,
+        ISaleService sales,  IFreightBillingService billing )
         {
             Iservice = iservice;
+            ItaxPurchase = taxPurchase;
+            Isales = sales;
+            Ibilling = billing;
         }
 
         public int Approve(int? ID, string UserID, string Remarks)
@@ -52,32 +64,58 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
-
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Delete]", parameters);
         }
 
-        public IEnumerable<BillInfoModel> GetBillInfo(int? BranchID,string DrCrType, int? PartyBranchID, string DocumentNumberSearchKey)
+        public IEnumerable<BillInfoModel> GetBillInfo(int? BranchID,string DrCrType, int? PartyID, string DocumentNumberSearchKey)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@Operation", "GetBillInfo"),
-               new SqlParameter("@PartyBranchID", PartyBranchID),
+               new SqlParameter("@PartyID", PartyID),
                new SqlParameter("@DrCrType", DrCrType),
                new SqlParameter("@DocumentNumberSearchKey", DocumentNumberSearchKey),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BillInfo.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.BillInfo.Select]", parameters))
             {
                 yield return new BillInfoModel()
                 {
                     TotalAmount = dr.GetDecimal("TotalAmount"),
                     PID = dr.GetInt32("PID"),
+                    BillType = dr.GetString("BillType"),
                     BillID = dr.GetInt32("ID"),                  
                     DocumentNumber = dr.GetString("DocumentNumber"),
                     DocumentDate = dr.GetDateTime("DocumentDate")
                 };
+            }
+        }
+
+        public IEnumerable<TaxPurchaseExpenseModel> GetBillInfoParticulars(int? ID, string BillType)
+        {
+            switch (BillType)
+            {
+                case "Purchase":
+                    return ItaxPurchase.GetExpenses(ID);                    
+                case "Sales":
+                    return Isales.GetParticulars(ID);
+                default:
+                    return null;                    
+            }
+        }
+
+        public IEnumerable<TaxPurchaseItemModel> GetBillInfoItems(int? ID, string BillType)
+        {
+            switch (BillType)
+            {
+                case "Purchase":
+                    return ItaxPurchase.GetItems(ID);
+                case "Sales":
+                    return Isales.GetItems(ID);
+                default:
+                    return null;
             }
         }
 

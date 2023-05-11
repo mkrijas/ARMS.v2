@@ -90,13 +90,9 @@
         branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
         UserID = user.Identity.Name;
 
-        model.BranchID = branchID;
-        model.UserInfo.UserID = UserID;
 
-        //model.NonStoreInventory = model.GRNID == null;
 
         //List<InventoryItemEntryModel> iitem = new();
-
         //if (model.PID == null && model.GRNID != null)
         //{
         //    model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
@@ -118,9 +114,15 @@
 
         if (model.PID != null)
         {
-            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
+            //model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
             model.Expenses = Iservice.GetExpenses(model.PID).ToList();
             model.Items = Iservice.GetItems(model.PID).ToList();
+        }
+        else
+        {
+            model.NatureOfTransaction = "TaxPurchase";
+            model.BranchID = branchID;            
+            model.NonStoreInventory = model.GRNID == null;
         }
     }
 
@@ -131,7 +133,6 @@
             editContext = new EditContext(model);
         }
     }
-
 
     void SetTotal()
     {   
@@ -150,22 +151,21 @@
 
     async Task AddExpense(TaxPurchaseExpenseModel expenseModel)
     {      
-            model.Expenses.Add(expenseModel);   
-            SetTotal();
+        model.Expenses.Add(expenseModel);   
+        SetTotal();
     }
 
     async Task AddItems(TaxPurchaseItemModel ItemModel)
     {        
-            model.Items.Add(ItemModel);
-            SetTotal();
+        model.Items.Add(ItemModel);
+        SetTotal();
     }
 
     protected void ApproveEntry(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
-        {
-            model.UserInfo.UserID = UserID;
-            Iservice.Approve(model.PID, model.UserInfo.UserID, aprvd.Remarks);
+        {            
+            Iservice.Approve(model.PID, UserID, aprvd.Remarks);
             snackbar.Add("Approved Successfully", Severity.Success);
         }
     }  
@@ -174,38 +174,16 @@
     {        
         try
         {
+            model.UserInfo.UserID = UserID;
             Iservice.Update(model);
-            model = new();
             snackbar.Add("Saved Successfully", Severity.Success);
             dialogForm.Close(model);
+            model = new();            
         }
         catch (Exception ex)
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            snackbar.Add(ex.Message, Severity.Error);
         }
     }
-
-    //public class CustomStringToBoolConverter : BoolConverter<string>
-    //{
-    //    public CustomStringToBoolConverter()
-    //    {
-    //        SetFunc = OnSet;
-    //        GetFunc = OnGet;
-    //    }
-    //    private string TrueString = "Cash";
-    //    private string FalseString = "Credit";
-    //    private string NullString = "Error";
-    //    private string OnGet(bool? value)
-    //    {
-    //        try { return (value == true) ? TrueString : FalseString; }
-    //        catch (Exception e) { UpdateGetError("Conversion error: " + e.Message); return NullString; }
-    //    }
-
-    //    private bool? OnSet(string arg)
-    //    {
-    //        if (arg == null) return null;
-    //        try { if (arg == TrueString) return true; else if (arg == FalseString) return false; else return null; }
-    //        catch (FormatException e) { UpdateSetError("Conversion error: " + e.Message); return null; }
-    //    }
-    //}
+    
 }

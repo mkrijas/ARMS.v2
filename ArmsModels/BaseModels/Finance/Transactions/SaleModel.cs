@@ -13,49 +13,10 @@ namespace ArmsModels.BaseModels
         [Required]
         public bool IsCredit { get; set; } = true;
 
-        public decimal? AdditionalTCS { get; set; } 
-
-       
-        public List<SaleExpenseModel> Particulars { get; set; } = new();
+        public decimal? AdditionalTCS { get; set; }
         [ValidateComplexType]
-        public List<SaleItemModel> Items { get; set; } = new();
+        public List<TaxPurchaseExpenseModel> Particulars { get; set; } = new();
+        [ValidateComplexType]
+        public List<TaxPurchaseItemModel> Items { get; set; } = new();
     }    
-
-    public class SaleExpenseModel
-    {
-        public long? TpeID { get; set; }
-        public int? PID { get; set; }
-        public decimal? GstRate { get; set; }
-        [Required]
-        public int? BranchID { get; set; }
-        [Required]
-        public string UsageCode { get; set; }
-        public int? CoaID { get; set; }
-        [Required]
-        public decimal? Amount { get; set; }
-        public decimal? SGST { get; set; }
-        public decimal? CGST { get; set; }
-        public decimal? IGST { get; set; }
-        public decimal? TCS { get; set; }
-        public string BillReference { get; set; }
-       
-    }
-
-    public class SaleItemModel
-    {
-        public long? TpiID { get; set; }
-        public int? PID { get; set; }
-        public decimal ? GstRate { get; set; }
-        public int? ItemID { get; set; }
-        public decimal? ItemRate { get; set; }
-        public decimal? ItemQty { get; set; }
-        public int? CoaID { get; set; }
-        public decimal? Amount { get; set; }
-        public decimal? SGST { get; set; }
-        public decimal? CGST { get; set; }
-        public decimal? IGST { get; set; }
-        public decimal? TCS { get; set; }
-    }
-
-   
 }
