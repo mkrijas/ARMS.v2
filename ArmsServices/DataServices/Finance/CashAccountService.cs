@@ -13,9 +13,11 @@ namespace ArmsServices.DataServices
     {
         CashAccountModel Update(CashAccountModel model);
         int Delete(int? CashAccountID, string UserID);
+        int DisableAccount(bool? IsDisable, int? CashAccountID, string UserID);
         IEnumerable<CashAccountModel> Select();
         CashAccountModel SelectByID(int ID);
         IEnumerable<CashAccountModel> SelectByBranch(int BranchID);
+        IEnumerable<CashAccountModel> SelectByBranchALL(int BranchID);
     }
 
     public class CashAccountService : ICashAccountService
@@ -55,6 +57,16 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.CashAccount.Delete]", parameters);
         }
+        public int DisableAccount(bool? IsDisable ,int? CashAccountID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@IsDisable", IsDisable),
+               new SqlParameter("@CashAccountID", CashAccountID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.CashAccount.Disable]", parameters);
+        }
         public IEnumerable<CashAccountModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -80,7 +92,8 @@ namespace ArmsServices.DataServices
                 Coa = new ChartOfAccountModel() { AccountName = dr.GetString("AccountName"),CoaID = dr.GetInt32("CoaID") },
                 MinBalance = dr.GetDecimal("MinBalance"),
                 MaxBalance = dr.GetDecimal("MaxBalance"),
-                Title = dr.GetString("Title"),                
+                Title = dr.GetString("Title"),  
+                IsDisabled = (dr.GetByte("RecordStatus") == 1 ? true : false),  
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -98,12 +111,27 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByBranch"),
             };
 
-            
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.CashAccount.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
-            
+
+        }
+        public IEnumerable<CashAccountModel> SelectByBranchALL(int BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "ByBranchAll"),
+            };
+
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.CashAccount.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+
         }
 
         public CashAccountModel SelectByID(int ID)

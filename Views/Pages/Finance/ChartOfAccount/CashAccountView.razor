@@ -38,7 +38,7 @@
                 <MudTd DataLabel="BankCode">@context.MaxBalance</MudTd>
                 <MudTd DataLabel="">
                     <MudTooltip Text="Disable">
-                        @*<MudSwitch @bind-Checked="@context.IsDisabled" Color="Color.Primary" CheckedChanged="@(DisableAccount(e))">Disable</MudSwitch>*@
+                        <MudSwitch Checked="@context.IsDisabled" Color="Color.Primary" T="bool?" CheckedChanged="@((e) => DisableAccount(e,context.CashAccountID))"></MudSwitch>
                     </MudTooltip>
                 </MudTd>
                 <MudTd DataLabel="">
@@ -77,7 +77,7 @@
     {
         var authState = await auth.GetAuthenticationStateAsync();
         var branch = int.Parse(authState.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
-        collection = Iservice.SelectByBranch(branch).ToList();
+        collection = Iservice.SelectByBranchALL(branch).ToList();
     }
     public async Task OpenDialog(CashAccountModel Cam)
     {
@@ -92,11 +92,32 @@
             await GetAll();
         }
     }
-    
-    public void DisableAccount(ChangeEventArgs e)
+
+    public async Task DisableAccount(bool? IsDisabled, int? CashAccountID)
     {
-        //var authState = await auth.GetAuthenticationStateAsync();
-        //var branch = int.Parse(authState.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
-        //collection = Iservice.SelectByBranch(branch).ToList();
+        if (collection.Any(s => s.CashAccountID == CashAccountID))
+        {
+            
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User.Identity.Name;
+            int result = Iservice.DisableAccount(IsDisabled, CashAccountID, user);
+            if (result != -1)
+            {
+                collection.First(s => s.CashAccountID == CashAccountID).IsDisabled = IsDisabled;
+                if (IsDisabled == true)
+                {
+                    snackbar.Add("Disabled " + collection.First(s => s.CashAccountID == CashAccountID).Title + " Succesfully.", Severity.Success);
+                }
+                else
+                {
+                    snackbar.Add("Enabled " + collection.First(s => s.CashAccountID == CashAccountID).Title + " Succesfully.", Severity.Success);
+                }
+            }
+            else
+            {
+                snackbar.Add("error occurred while disabling.", Severity.Error);
+            }
+        }
+
     }
 }
