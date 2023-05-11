@@ -19,7 +19,7 @@ namespace ArmsServices.DataServices
         IEnumerable<GstUsageCodeModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);
         IEnumerable<GstUsageCodeModel> SelectBySAC(string SAC, DateTime? entryDate);
         IEnumerable<GstUsageCodeModel> FilterByText(string FilterText, DateTime? entryDate);
-        int Delete(string ID, string UserID);
+        int Delete(int? ID, string UserID);
         IEnumerable<GstUsageCodeModel> Select(DateTime? entryDate);
         IEnumerable<GstRateModel> GetGstRates();      
         IEnumerable<GstUsageCodeModel> SelectByTaxRateAccount(int? rateId, int? acID);
@@ -35,7 +35,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }      
 
-        public int Delete(string ID, string UserID)
+        public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
