@@ -14,6 +14,7 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(maximumLength: 25)]
         public string Description { get; set; }
+        [Required(ErrorMessage = "The Account field is required.")]
         public int? CoaID { get; set; }
         public virtual string CoaDescreption { get; set; }
         [Required]
@@ -23,6 +24,7 @@ namespace ArmsModels.BaseModels
         public virtual decimal? TaxRate { get; set; }
 
         [StringLength(maximumLength: 6)]
+        [Required]
         public string SAC { get; set; }
         [Required]
         public DateTime? PeriodFrom { get; set; }

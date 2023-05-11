@@ -135,7 +135,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InventoryGroupID", model.InventoryGroupID),
                new SqlParameter("@ItemDescription",model.ItemDecription),
                new SqlParameter("@InventoryItemID",model.InventoryItemID),
-               new SqlParameter("@InventoryItemCode",model.InventoryItemCode),
+              // new SqlParameter("@InventoryItemCode",model.InventoryItemCode),
                new SqlParameter("@HsnCode",model.HsnCode),
                new SqlParameter("@UserID",model.UserInfo.UserID),
             };

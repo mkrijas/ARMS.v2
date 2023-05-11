@@ -41,7 +41,7 @@ namespace ArmsModels.BaseModels
     public class TyreTypeAndPositionMappingModel
     {
         public int? ID { get; set; }
-        public int? TruckTypeID { get; set; }
+        public short? TruckTypeID { get; set; }
         public string PositionIDs { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }

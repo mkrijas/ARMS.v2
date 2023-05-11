@@ -1,5 +1,6 @@
 ﻿@using ArmsModels.BaseModels.General
 @using System.ComponentModel.DataAnnotations
+@inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @inject ITyreService IServices
 
@@ -33,14 +34,14 @@
                     <MudSelect T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Tyre Position" @bind-Value="@SelectedTyrePosition.PositionID">
                         @foreach (TyrePositionModel TyrePosition in TyrePositionListForMountAndUnMount)
                         {
-                            <MudSelectItem Value="@TyrePosition.PositionID">@TyrePosition.Side</MudSelectItem>
+                            <MudSelectItem Value="@TyrePosition.PositionID">@TyrePosition.Description</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
                     <MudTextField @bind-Value="@MountedKM" Label="Mount KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @MountedKM)"></MudTextField>
                 </MudItem>
-@*                <MudItem xs="11" md="11" Class="mb-6">
+                @*<MudItem xs="11" md="11" Class="mb-6">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Mount" Class="px-12">Mount</MudButton>
                 </MudItem>*@
             </EditForm>
@@ -117,6 +118,10 @@
             {
                 model.TruckID = SelectedTruck.TruckID;
             }
+            if(TyrePositionListForMountAndUnMount != null && TyrePositionListForMountAndUnMount.Count() != 0)
+            {
+                TyrePositionListForMountAndUnMount.Clear();
+            }
             TyrePositionListForMountAndUnMount = IServices.GetTyrePositionListUsingTruckTypeId(SelectedTruck.TruckTypeID).ToList();
 
         }
@@ -144,7 +149,15 @@
             model.MountedKM = MountedKM;
             model.MountedOn = DateTime.Now;
             model.UserInfo.UserID = user.Identity.Name;
-            IServices.Mount(model);
+            try
+            {
+                IServices.Mount(model);
+
+            }
+            catch(Exception ex)
+            {
+              snackbar.Add(ex.Message, Severity.Error);  
+            }
         }
 
         MudDialog.Close(DialogResult.Ok(true));

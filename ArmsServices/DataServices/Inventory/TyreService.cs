@@ -49,7 +49,7 @@ namespace ArmsServices.DataServices
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TyreID", ID),
+               new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Delete]", parameters);
@@ -401,7 +401,7 @@ namespace ArmsServices.DataServices
                 TyreSerialNumber = dr.GetString("TyreSerialNumber"),
                 TyreID = dr.GetInt32("TyreID"),
                 BranchID = dr.GetInt32("BranchID"),
-                InventoryBatchID = dr.GetInt32("InventoryBatchID"),
+                InventoryBatchID = dr.GetInt64("InventoryBatchID"),
                 InventoryItemID = dr.GetInt32("InventoryItemID"),
                 Make = dr.GetString("make"),
                 Tubeless = dr.GetBoolean("Tubeless"),
@@ -514,7 +514,7 @@ namespace ArmsServices.DataServices
             return new TyreTypeAndPositionMappingModel()
             {
                 ID = dr.GetInt32("ID"),
-                TruckTypeID = dr.GetInt32("TruckTypeID"),
+                TruckTypeID = dr.GetInt16("TruckTypeID"),
                 PositionIDs = dr.GetString("PositionIDs"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

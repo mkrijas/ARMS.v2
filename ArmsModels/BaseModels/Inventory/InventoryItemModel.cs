@@ -17,8 +17,6 @@ namespace ArmsModels.BaseModels
         public int? InventoryItemID { get; set; }
         [Required]
         public int? InventoryGroupID { get; set; }
-        [Required]
-        [StringLength(10)]
         public string InventoryItemCode { get; set; }
         [Required]
         public string ItemDecription { get; set; }
