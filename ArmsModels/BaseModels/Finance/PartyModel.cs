@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
+using System.Reflection;
 
 namespace ArmsModels.BaseModels
 {
-    public class PartyModel
+    public class PartyModel : ICloneable
     {
         private string _tradeName;
         public PartyModel()
@@ -64,6 +66,12 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         public List<ContactModel> Contacts { get; set; } = new();
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<PartyModel>(Json);
+        }
     } 
 
     public class VendorPostingGroupModel
