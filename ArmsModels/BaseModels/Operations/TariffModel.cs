@@ -1,5 +1,6 @@
 ﻿using ArmsModels.SharedModels;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -47,7 +48,7 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; }
     }
 
-    public class TariffTypeModel
+    public class TariffTypeModel : ICloneable
     {
         public TariffTypeModel()
         {
@@ -64,6 +65,12 @@ namespace ArmsModels.BaseModels
         public int? TariffSign { get; set; } = 1;
         public string Area { get; set; }        
         public UserInfoModel UserInfo { get; set; }
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<TariffTypeModel>(Json);
+        }
     }
 
     

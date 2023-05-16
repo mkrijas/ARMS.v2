@@ -66,8 +66,11 @@ namespace ArmsServices.DataServices
         public PartyModel Update(PartyModel model)
         {
             AddressModel addressModel = _addressService.Update(model.Address);
-            model.BankAccount.UserInfo = model.UserInfo;
-            model.BankAccount = _bankAccountService.Update(model.BankAccount);
+            if(model.BankAccount != null)
+            {
+                model.BankAccount.UserInfo = model.UserInfo;
+                model.BankAccount = _bankAccountService.Update(model.BankAccount);
+            }
             model.Address = addressModel;
             var ContactList = model.Contacts;
             var UserId = model.UserInfo.UserID;

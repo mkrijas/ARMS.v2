@@ -242,7 +242,7 @@ namespace ArmsServices.DataServices
                 Unit = dr.GetString("Unit"),
                 AllowMultiple = dr.GetBoolean("AllowMultiple"),
                 TariffSign = dr.GetInt32("TariffSign"),                
-                UsageCode = dr.GetString("UsageCode"),
+                UsageCode = dr.GetString("UsageID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
