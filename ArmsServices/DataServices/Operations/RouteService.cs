@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
     {       
         Task<RouteModel> Update(RouteModel model);
         Task<RouteModel> SelectByID(int? ID);
-        Task<int> Delete(int? RouteID, string UserID);
+        int Delete(int? RouteID, string UserID);
         IAsyncEnumerable<RouteModel> Select(int? RouteID);
         IAsyncEnumerable<RouteModel> SelectByOrder(int? OrderID);
     }
@@ -63,14 +63,14 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<int> Delete(int? RouteID,string UserID)
+        public int Delete(int? RouteID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@RouteID", RouteID),               
                new SqlParameter("@UserID", UserID),
             };            
-            return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Route.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Gc.Route.Delete]", parameters);
         }
         public async IAsyncEnumerable<RouteModel> Select(int? RouteID)
         {
