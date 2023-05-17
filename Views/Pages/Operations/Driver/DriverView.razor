@@ -5,6 +5,7 @@
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
+@inject IPartyService Iparty
 
 @using System.IO
 @using System.Security.AccessControl
@@ -18,7 +19,7 @@
         <MudTable Items="@collection" Elevation="10" Filter="new Func<DriverModel, bool>(search)">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Drivers</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="Add" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="(()=>Edit(0))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 
                 <MudSpacer></MudSpacer>
              <MudTextField @bind-Value="searchDriver" Placeholder="Search Drivers... "
@@ -115,7 +116,7 @@
     private DriverModel DriverToLeave = new();
     private DateTime? ExpectedReturn;
     private string ReasonToLeave;
-
+    private List<PartyModel> PartyList = new();
     private async void BeginLeave(DriverModel dtl)
     {
         DriverToLeave = dtl;
@@ -157,12 +158,20 @@
 
     protected override void OnInitialized()
     {      
+        PartyList = Iparty.Select(0).ToList();
         GetAll();
     }
 
     private void GetAll()
     {
-        collection = Iservice.Select().ToList();      
+        collection = Iservice.Select().ToList();  
+        foreach (var item in collection)
+        {
+            if(item.DriverAgent != null && PartyList != null && PartyList.Any(s=>s.PartyID == item.DriverAgentID))
+            {
+                item.DriverAgent = PartyList.FirstOrDefault(s => s.PartyID == item.DriverAgent.PartyID);
+            }
+        }
     }
 
     private async Task Add()
@@ -182,14 +191,32 @@
     private async Task Edit(int? id)
     {
         var parameters = new DialogParameters();
-        parameters.Add("model", collection.FirstOrDefault(x => x.DriverID == id));        
+        parameters.Add("model",id != 0 ? collection.FirstOrDefault(x => x.DriverID == id):new DriverModel());        
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<DriverDialog>("Edit Driver", parameters, maxWidth);
+        var dialog = DialogService.Show<DriverDialog>("Add/Edit Driver", parameters, maxWidth);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
             DriverModel editedModel = (DriverModel)result.Data;  
-            collection[collection.FindIndex(x => x.DriverID == editedModel.DriverID)] = editedModel;
+            if(collection.Exists(x => x.DriverID == editedModel.DriverID))
+            {
+
+                collection[collection.FindIndex(x => x.DriverID == editedModel.DriverID)] = editedModel;
+
+                if( editedModel.DriverAgent != null  && PartyList != null && PartyList.Any(s=>s.PartyID == editedModel.DriverAgent.PartyID))
+                {
+                    editedModel.DriverAgent = PartyList.FirstOrDefault(s => s.PartyID == editedModel.DriverAgent.PartyID);
+                }
+            }
+            else
+            {
+                collection.Add(editedModel);
+                
+                if( editedModel.DriverAgent != null  && PartyList != null && PartyList.Any(s=>s.PartyID == editedModel.DriverAgent.PartyID))
+                {
+                    editedModel.DriverAgent = PartyList.FirstOrDefault(s => s.PartyID == editedModel.DriverAgent.PartyID);
+                }
+            }
 
         }
         else
