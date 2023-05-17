@@ -128,7 +128,7 @@ namespace ArmsServices.DataServices
                 {                  
                     ExpenseUsageCode = dr.GetString("ExpenseUsageCode"),  
                     CoaID = dr.GetInt32("CoaID"),
-                    OpTranID = dr.GetInt64("OpTranID"),                    
+                    OpTranID = dr.GetInt32("OpTranID"),                    
                     OpTranSubID = dr.GetInt64("OpTranSubID"),
                     Amount = dr.GetDecimal("Amount"),
                     Quantity = dr.GetDecimal("Quantity"),
