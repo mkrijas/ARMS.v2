@@ -65,7 +65,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Delete]", parameters);
         }
 
         public IEnumerable<BillInfoModel> GetBillInfo(int? BranchID,string DrCrType, int? PartyID, string DocumentNumberSearchKey)
@@ -163,6 +163,7 @@ namespace ArmsServices.DataServices
                     IGST = dr.GetDecimal("IGST"),
                     SGST = dr.GetDecimal("SGST"),
                     ItemID = dr.GetInt32("ItemID"),
+                    ItemDescription = dr.GetString("ItemDescription"),
                     CoaID = dr.GetInt32("CoaID"),
                     ItemQty = dr.GetDecimal("ItemQty"),
                     ItemRate = dr.GetDecimal("ItemRate"),

@@ -14,7 +14,7 @@
            
                <ToolBarContent>
                 <MudText Typo="Typo.h6">Tariffs</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="OpenDialog"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="(()=>Edit(new TariffTypeModel()))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 
                 <MudSpacer></MudSpacer>
 
@@ -69,43 +69,60 @@
         collection = Iservice.SelectTariffTypes("All").ToList();       
     }
 
-    //private async Task OnValidSubmit(EditContext context)
-    //{
-    //    var authprov = await auth.GetAuthenticationStateAsync();
-    //    model.UserInfo.UserID = authprov.User.Identity.Name;
-
-    //    try
-    //    {
-    //        model = Iservice.UpdateTariffType(model);
-    //        snackbar.Add("Saved Successfully", Severity.Success);            
-    //        model = new();
-    //        GetAll();
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        snackbar.Add(ex.Message, Severity.Warning);
-    //    }
-    //}
-
     private async Task Edit(TariffTypeModel model)
     {
          DialogParameters parms = new DialogParameters();
-        parms.Add("model",model);
+        parms.Add("model",model.Clone());
         
         var dialog = DialogService.Show<TarrifTypeDilog>("Edit",parms);
 
         var result = await dialog.Result;
 
         // you can check if the modal was cancelled
-        var isCancelled = result.Cancelled;
+        var isCancelled = result.Canceled;
         if (!isCancelled)
         {
-            await GetAll();
+            TariffTypeModel UpatedModel = (TariffTypeModel)result.Data;
+            if (UpatedModel != null)
+            {
+                if (collection.Exists(x => x.TariffTypeID == UpatedModel.TariffTypeID))
+                {
+                    collection[collection.FindIndex(x => x.TariffTypeID == UpatedModel.TariffTypeID)] = UpatedModel;
+                }
+                else
+                {
+                    collection.Add(UpatedModel);
+                }
+
+            }
+
+            model = new();
         }
+        // you can check if the modal was cancelled
+        //var isCancelled = result.Cancelled;
+        //if (!isCancelled)
+        //{
+        //    await GetAll();
+        //}
 
     }
-    private void Delete(int? id)
+    private async Task Delete(int? id)
     {
+        
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        int result = Iservice.Delete(id, user.Identity.Name);
+        
+        if (result != -1)
+        {
+            if (collection != null && collection.Any(s => s.TariffTypeID == id))
+            {
+                collection.Remove(collection.FirstOrDefault(s => s.TariffTypeID == id));
+                 snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        }
+
         //await Iservice.Delete(id, "Rijas");
         //snackbar.Add("Deleted Successfully", Severity.Success);
         //await GetAll();

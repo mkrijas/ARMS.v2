@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
-    public class GstUsageCodeModel
+    public class GstUsageCodeModel:ICloneable
     {
         public GstUsageCodeModel()
         {
@@ -31,6 +32,12 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? PeriodTo { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<GstUsageCodeModel>(Json);
+        }
 
     }
 

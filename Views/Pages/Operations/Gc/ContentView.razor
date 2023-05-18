@@ -7,23 +7,23 @@
 
 
 <MudGrid Spacing="4">
-     <MudItem xs="12" md="12">
-        <MudTable Items="@collection" Elevation="5" Filter="new Func<ContentModel, bool>(search)" @bind-place="model">
+    <MudItem xs="12" md="12">
+        <MudTable Items="@collection" Elevation="5" Filter="new Func<ContentModel, bool>(search)" @bind-model="model">
             <ToolBarContent>
-              <MudTextField @bind-Value="searchContent" Placeholder="Search here"
+                <MudTextField @bind-Value="searchContent" Placeholder="Search here"
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium"></MudTextField>
             </ToolBarContent>
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Content</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="OpenDialog"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(() => Edit(new ContentModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
                 <MudSpacer></MudSpacer>
 
-               <MudTextField @bind-Value="searchContent" Placeholder="Search here"
+                <MudTextField @bind-Value="searchContent" Placeholder="Search here"
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium"></MudTextField>
-          </ToolBarContent>
+            </ToolBarContent>
 
 
             <HeaderContent>
@@ -32,22 +32,22 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<ContentModel, object>(x=> x.SecondaryUnit)" InitialDirection="SortDirection.Ascending">Secondary Unit</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<ContentModel, object>(x=> x.UnitRatio)" InitialDirection="SortDirection.Ascending">Unit Ratio</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
-</HeaderContent>
-            <RowTemplate >
+            </HeaderContent>
+            <RowTemplate>
                 <MudTd DataLabel="Content">@context.ContentName</MudTd>
                 <MudTd DataLabel="Primary Unit">@context.PrimaryUnit</MudTd>
                 <MudTd DataLabel="Secondary Unit">@context.SecondaryUnit</MudTd>
                 <MudTd DataLabel="Unit Ratio">@context.UnitRatio</MudTd>
                 <MudTd DataLabel="">
                     <MudFab style="font-size:5px" @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context.ContentID))" Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.ContentID))" Color="Color.Primary" Icon="@Icons.Material.Outlined.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
             </PagerContent>
         </MudTable>
-   </MudItem>
+    </MudItem>
 </MudGrid>
 
 
@@ -65,9 +65,9 @@
     private string searchContent = "";
 
     protected override async Task OnInitializedAsync()
-    {       
+    {
         await GetAll();
-    }   
+    }
 
     private async Task GetAll()
     {
@@ -77,7 +77,7 @@
         }
     }
 
-    private async void OnValidSubmit(EditContext context)
+    private async Task OnValidSubmit(EditContext context)
     {
 
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -106,17 +106,53 @@
         }
     }
 
-    private void Edit(ContentModel model)
+    private async Task Edit(ContentModel model)
     {
         DialogParameters parms = new DialogParameters();
-        parms.Add("model",model);
-        DialogService.Show<Contentedit>("Edit",parms);
+        parms.Add("model", model);
+        var dialog = DialogService.Show<Contentedit>("Edit", parms);
+
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+            ContentModel UpatedModel = (ContentModel)result.Data;
+            if (UpatedModel != null)
+            {
+                if (collection.Exists(x => x.ContentID == UpatedModel.ContentID))
+                {
+                    collection[collection.FindIndex(x => x.ContentID == UpatedModel.ContentID)] = UpatedModel;
+                }
+                else
+                {
+                    collection.Add(UpatedModel);
+                }
+
+            }
+
+            model = new();
+        }
     }
-    private async void Delete(int? id)
+    private async Task Delete(int? id)
     {
-        await Iservice.Delete(id, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        await GetAll();
+        
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        int result = await Iservice.Delete(id, user.Identity.Name);
+        
+        if (result != -1)
+        {
+            if (collection != null && collection.Any(s => s.ContentID == id))
+            {
+                collection.Remove(collection.FirstOrDefault(s => s.ContentID == id));
+                 snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        }
+        //snackbar.Add("Deleted Successfully", Severity.Success);
+        //await GetAll();
     }
 
     private bool search(ContentModel model)
@@ -127,12 +163,12 @@
         }
         return false;
     }
-      private void OpenDialog()
+    private void OpenDialog()
     {
-        
+
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model);
-         DialogService.Show<Contentedit>("ADD CONTENT",parms);
+        DialogService.Show<Contentedit>("ADD CONTENT", parms);
     }
 }
 

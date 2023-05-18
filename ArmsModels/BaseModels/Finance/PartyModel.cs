@@ -36,10 +36,11 @@ namespace ArmsModels.BaseModels
         [StringLength(10,MinimumLength =10,ErrorMessage = "PAN must be 10 digits!")]
         public string PAN { get; set; }        
         [Required]
-        public bool TdsApplicable { get; set; } 
+        public bool TdsApplicable { get; set; }
         public string GstType { get; set; }// Registered,UnRegistered,Export,Deemed Export,Exempted,SEZ
+        [RequiredIf("GstType", "Registered")]
         public string GstRegType { get; set; }  // GSTIN,UID,GID
-        
+        [RequiredIf("GstType", "Registered")]
         [StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
         public string GstNo { get; set; }
         [Required]
@@ -61,7 +62,8 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         public AddressModel Address { get; set; } = new();
         [ValidateComplexType]
-        public BankAccountModel BankAccount { get; set; } = new();
+        [RequiredIf("PaymentMode", "Bank")]
+        public BankAccountModel BankAccount { get; set; }
 
         [ValidateComplexType]
         public List<ContactModel> Contacts { get; set; } = new();

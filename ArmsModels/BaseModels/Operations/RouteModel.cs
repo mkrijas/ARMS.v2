@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class RouteModel
+    public class RouteModel:ICloneable
     {
         public RouteModel()
         {
@@ -35,5 +36,11 @@ namespace ArmsModels.BaseModels
         public byte? TollBooths { get; set; }        
         public SharedModels.UserInfoModel UserInfo { get; set; }
 
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<RouteModel>(Json);
+        }
     }
 }

@@ -6,58 +6,61 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject NavigationManager UriHelper
-   
- <MudDialog>
-    <TitleContent><h3>Add/Edit Order</h3>      
-        </TitleContent>
-     <DialogContent>
-            <EditForm id="orderForm" Model="@model" OnValidSubmit="OnValidSubmit">
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary/> 
-                    <MudGrid >
-                        <MudItem xs="12" md="12">
-                            <MudTextField @bind-Value="model.OrderName" Label="Order Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.OrderName)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="12">                             
-                         <PartySelector @bind-Value="model.Party" NatureOfBusiness="Customer"></PartySelector>
-         
-         </MudItem>
-                        <MudItem xs="12" md="12">
-                            <MudSelect Label="Content" T="short?" @bind-Value="@model.ContentID"   Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" AdornmentColor="Color.Secondary">
-                                @foreach (var item in contents)
-                                {
-                                    <MudSelectItem Value="@item.ContentID">@item.ContentName</MudSelectItem>
-                                }
-                            </MudSelect>
-                        </MudItem>
-                        <MudItem xs="12" md="12">
-                            <MudTextField   @bind-Value="model.OrderQuantity" Label="Order Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.OrderQuantity)"
-                                          Adornment="Adornment.End" AdornmentText="@model?.Content?.PrimaryUnit" AdornmentColor="Color.Dark"  ></MudTextField>
-                        </MudItem>
-                    </MudGrid>     
-            </EditForm>      
+
+<MudDialog>
+    <TitleContent>
+        <h3>Add/Edit Order</h3>
+    </TitleContent>
+    <DialogContent>
+        <EditForm id="orderForm" Model="@model" OnValidSubmit="OnValidSubmit">
+            <ObjectGraphDataAnnotationsValidator />
+            <ValidationSummary />
+            <MudGrid>
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="model.OrderName" Label="Order Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.OrderName)"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <PartySelector @bind-Value="model.Party" NatureOfBusiness="Customer"></PartySelector>
+
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudSelect Label="Content" T="short?" Value="@model.ContentID" ValueChanged="SetContentObject" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" AdornmentColor="Color.Secondary">
+                        @foreach (var item in contents)
+                        {
+                            <MudSelectItem Value="@item.ContentID">@item.ContentName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="model.OrderQuantity" Label="Order Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.OrderQuantity)"
+                                  Adornment="Adornment.End" AdornmentText="@model?.Content?.PrimaryUnit" AdornmentColor="Color.Dark"></MudTextField>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
     </DialogContent>
     <DialogActions>
         <MudButton form="orderForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
         <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Default" ButtonType="ButtonType.Button">Cancel</MudButton>
     </DialogActions>
-    </MudDialog>
+</MudDialog>
 @code {
     [Parameter]
     public OrderModel model { get; set; }
-    private List<OrderModel> collection = new List<OrderModel>();    
+    private List<OrderModel> collection = new List<OrderModel>();
     private List<ContentModel> contents = new List<ContentModel>();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private string searchString = "";
     private string unit = "";
 
     protected override async Task OnInitializedAsync()
-    {       
+    {
         await foreach (var item in Icontent.Select(0))
         {
             contents.Add(item);
         }
         await GetAll();
+        if(model != null)
+        SetContentObject(model.ContentID);
     }
 
 
@@ -76,7 +79,12 @@
     }
 
 
-
+    private void SetContentObject(short? ContentID)
+    {
+        model.ContentID = ContentID;
+        if (contents != null && contents.Any(s => s.ContentID == ContentID))
+            model.Content = contents.FirstOrDefault(s => s.ContentID == ContentID);
+    }
     private void OnValidSubmit(EditContext context)
     {
         if (model.Party?.PartyID == 0)
@@ -84,7 +92,7 @@
             snackbar.Add("Client is not selected", Severity.Error);
             return;
         }
-        model.ClientID = model.Party.PartyID;   
+        model.ClientID = model.Party.PartyID;
         MudDialog.Close(model);
     }
 
