@@ -13,6 +13,7 @@ namespace ArmsServices.DataServices
         DriverModel Update(DriverModel model);
         int Delete(int? DriverID, string UserID);
         IEnumerable<DriverModel> Select();
+        IEnumerable<DriverModel> SelectByBranch(int BranchID);
         DriverModel SelectByID(int? DriverID);
         int UpdateBranch(int? DriverID, int? BranchID, bool availStatus, string userID);
         IEnumerable<int> GetAssignedBranches(int? DriverID);
@@ -76,7 +77,8 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DriverID", 0)
+               new SqlParameter("@DriverID", 0),
+               new SqlParameter("@Operation", "ByID"),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
@@ -85,11 +87,26 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<DriverModel> SelectByBranch(int BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "ByBranch"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public DriverModel SelectByID(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DriverID", DriverID)
+               new SqlParameter("@DriverID", DriverID),
+               new SqlParameter("@Operation", "ByID"),
             };
 
             DriverModel model = new DriverModel();
@@ -118,6 +135,8 @@ namespace ArmsServices.DataServices
                 Mobile =  reader.GetString("Mobile"),
                 Email =  reader.GetString("Email"),
                 AddressID = reader.GetInt32("AddressID"),
+                HasValidLicense = reader.GetBoolean("HasValidLicense"),
+                TruckID = reader.GetInt32("TruckID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = reader.GetByte("RecordStatus"),
@@ -131,7 +150,6 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-
                new SqlParameter("@DriverID", DriverID),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@availStatus", availStatus),

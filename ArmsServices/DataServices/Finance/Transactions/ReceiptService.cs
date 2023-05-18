@@ -166,6 +166,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ReceiptID", model.ReceiptID),
+               new SqlParameter("@BusinessNature", model.BusinessNature),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@OtherBranch", model.OtherBranchID),
@@ -204,6 +205,7 @@ namespace ArmsServices.DataServices
             return new ReceiptModel
             {
                 ReceiptID = dr.GetInt32("ReceiptID"),
+                BusinessNature = dr.GetString("BusinessNature"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
                 BranchID = dr.GetInt32("BranchID"),               
                 DocumentDate = dr.GetDateTime("DocumentDate"),

@@ -14,7 +14,8 @@ namespace ArmsServices.DataServices
         int MoveAsset(int? AssetID,int? ParentAssetID,string Mode, string UserID);
         AssetModel SelectByID(int? ID);
         int? Scrap(int? AssetID, string UserID);
-        IEnumerable<AssetModel> SelectByBranch(int BranchID,bool scrap);        
+        IEnumerable<AssetModel> SelectByBranch(int BranchID,bool scrap);
+        IEnumerable<AssetModel> SelectBySubClass(int BranchID, int? SubClassID);
         IEnumerable<AssetModel> GetAttachedAssets(int? ParentAssetID);
         int? UpdateStatus(AssetStatusUpdateModel model); 
         AssetStatusUpdateModel GetCurrentStatus(int? AssetID);
@@ -197,6 +198,20 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<AssetModel> SelectBySubClass(int BranchID, int? SubClassID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "BySubClass"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@SubClassID", SubClassID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
         public IEnumerable<AssetModel> GetAttachedAssets(int? ParentAssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -345,7 +360,9 @@ namespace ArmsServices.DataServices
         public int? GetRevaluationReserveCoaID(int? AssetID)
         {
             return _asset.GetPostingGroup(AssetID).RevaluationReserve.CoaID;
-        }       
+        }
+
+      
     }
 }
    

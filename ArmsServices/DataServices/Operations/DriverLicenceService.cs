@@ -9,7 +9,8 @@ namespace ArmsServices.DataServices
 {
     public interface IDriverLicenceService
     {
-        IEnumerable<DriverLicenceModel> Select(int? DriverID);        
+        IEnumerable<DriverLicenceModel> Select(int? DriverID);
+        DriverLicenceModel GetActiveHeavyLicense(int? DriverID);
         DriverLicenceModel SelectByID(int? LicenceID);
         DriverLicenceModel Update(DriverLicenceModel model);
         int Delete(int? LicenceID,string UserID);
@@ -34,6 +35,20 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Licence.Delete]", parameters);
         }
 
+        public DriverLicenceModel GetActiveHeavyLicense(int? DriverID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DriverID", DriverID),
+               new SqlParameter("@Operation","ActiveHeavy")
+            };            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Licence.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
+
         public int SaveFilePath(string link, int? id)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -48,7 +63,8 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DriverID", DriverID)
+               new SqlParameter("@DriverID", DriverID),
+               new SqlParameter("@Operation","ByID")
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Licence.Select]", parameters))
@@ -61,7 +77,8 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@LicenceID", LicenceID)
+               new SqlParameter("@LicenceID", LicenceID),
+               new SqlParameter("@Operation","ByID")
             };
 
             DriverLicenceModel model = new DriverLicenceModel();

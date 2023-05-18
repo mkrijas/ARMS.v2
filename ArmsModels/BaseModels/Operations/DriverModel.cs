@@ -39,6 +39,8 @@ namespace ArmsModels.BaseModels
         public AddressModel Address { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
         public List<ContactModel> Contacts { get; set; }
+        public bool HasValidLicense { get; set; }
+        public int? TruckID { get; set; }
     }
     public class DriverFaultModel
     {

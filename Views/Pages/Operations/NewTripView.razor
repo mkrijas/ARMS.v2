@@ -43,11 +43,9 @@
                     <MudAutocomplete T="PlaceModel" Label="Origin" @bind-Value="Origin" ResetValueOnEmptyText="true"
                                      SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                 </MudItem>
-
                 <MudItem xs="12" md="6">
                     <MudTextField @bind-Value="KmReading" Label="Audometer Reading" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                 </MudItem>
-
                 @if (!startWithLoading)
                 {
                     <MudItem xs="12" md="6">
@@ -55,7 +53,6 @@
                                      SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                     </MudItem>
                 }
-
                 <MudItem xs="12" md="6">
                     <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="currentEvent.NextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
                         @foreach (var item in EventTypes)
@@ -114,10 +111,12 @@
         EventTypes = Ievent.GetEventTypes().ToList();
         lastEvent = Ievent.GetCurrentEvent(Truck.TruckID);
 
-        if (lastEvent != null && EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 1))
+        if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 1))
         {
-            lastEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
+            currentEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
         }
+
+
         KmReading = lastEvent?.EventReading;
         int? OriginID = lastEvent?.DestinationID;
         Origin = OriginID == null ? null : await Iplace.SelectByID(OriginID.Value);
@@ -135,22 +134,25 @@
 
     private void EventSelected()
     {
-
-        if (!startWithLoading)
+        if (EventTypes != null && EventTypes.Count() != 0)
         {
-            if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 2))
+            if (!startWithLoading)
             {
-                lastEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 2).DefaultNextEventTypeID;
+                if (EventTypes.Any(x => x.EventTypeID == 2))
+                {
+                    currentEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 2).DefaultNextEventTypeID;
+                }
             }
-        }
-        else
-        {
-            if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 1))
+            else
             {
-                lastEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
+                if (EventTypes.Any(x => x.EventTypeID == 1))
+                {
+                    currentEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
+                }
             }
         }
     }
+
     private async Task OnValidSubmit(EditContext context)
     {
         if (isSubmitting)
@@ -183,8 +185,7 @@
             currentEvent.EventTypeID = 1;
             currentEvent.TripID = model.TripID;
             currentEvent.TruckID = model.TruckID;
-            currentEvent.UserInfo.UserID = model.UserInfo.UserID;
-            currentEvent.NextEventTypeID = lastEvent?.NextEventTypeID??0;
+            currentEvent.UserInfo.UserID = model.UserInfo.UserID;            
             currentEvent = Ievent.Update(currentEvent);
 
             #endregion

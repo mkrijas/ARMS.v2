@@ -4,6 +4,8 @@
 @attribute [Authorize]
 
 @using System.Globalization
+
+
 <MudDialog>
     <DialogContent>
         <div style="max-height:500px;overflow-y:scroll">
@@ -13,7 +15,7 @@
                     <ValidationSummary />
                     <MudGrid>
                         <MudItem xs="12">
-                            <MudTextField @bind-Value="CurrentRegistration.RegNo" Class=dropstyle Margin=Margin.Normal Label="Registered Number" Variant="Variant.Outlined" For="@(() => CurrentRegistration.RegNo)"></MudTextField>
+                            <MudTextField Immediate="true" Value="CurrentRegistration.RegNo" T="string" ValueChanged="RegNoUpdated" Class="ToUpperCase dropstyle" Margin=Margin.Normal Label="Registered Number" Variant="Variant.Outlined" For="@(() => CurrentRegistration.RegNo)"></MudTextField>
                         </MudItem>
 
                         <MudItem xs="6">
@@ -75,13 +77,15 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter]
-    public TruckRegistrationModel CurrentRegistration { get; set; } = new();
-
-
-
+    public TruckRegistrationModel CurrentRegistration { get; set; }
     protected override void OnInitialized()
     {
 
+    }
+
+    void RegNoUpdated(string val)
+    {
+        CurrentRegistration.RegNo = val.ToUpper();       
     }
 
     private async void OnValidSubmit(EditContext context)
@@ -91,12 +95,13 @@
                 snackbar.Add("Valid from date and valid to date should select.", Severity.Error);
                 return;
             }
+
         if(CurrentRegistration.EffectTo>=CurrentRegistration.EffectFrom)
         {
             int? dateInvalidCount = Iservice.ValidateRegistrationDate(CurrentRegistration);
             if(dateInvalidCount > 0)
             {
-                snackbar.Add("Can not save because date is merging on another date.", Severity.Error);
+                snackbar.Add("Can not save because date is overlaping on another Registration.", Severity.Error);
                 return;
             }
             var authprov = await auth.GetAuthenticationStateAsync();
@@ -105,11 +110,8 @@
             try
             {
                 int result = Iservice.UpdateRegistration(CurrentRegistration);
-
                 snackbar.Add("Saved Successfully", Severity.Success);
-                MudDialog.Close(CurrentRegistration);
-                CurrentRegistration = new();
-
+                MudDialog.Close(result); 
             }
             catch (Exception ex)
             {

@@ -1,6 +1,7 @@
 ﻿using ArmsModels.SharedModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Reflection.Metadata;
 
 namespace ArmsModels.BaseModels
@@ -28,10 +29,15 @@ namespace ArmsModels.BaseModels
         public string AttachedDocument { get; set; }
         public int? RequestID { get; set; }
         public int? DocumentID { get; set; }
-        public AssetDocumentTypeModel DocumentType { get; set; } = new AssetDocumentTypeModel();
+        [Required]
+        public AssetDocumentTypeModel DocumentType { get; set; }
+        [Required]
         public AssetModel Asset { get; set; } = new();
-        public DateTime? InvoiceDate { get; set; }        
+        [Required]
+        public DateTime? InvoiceDate { get; set; }
+        [Required]
         public DateTime? StartDate { get; set; }
+        [Required]
         public DateTime? EndDate { get; set; }
         public int? NotificationID { get; set; }
         public UserInfoModel UserInfo { get; set; }       

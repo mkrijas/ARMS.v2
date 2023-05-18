@@ -8,16 +8,13 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
-
-
 @using System.Globalization
 @using Views.Pages.Inventory
 @inject NavigationManager UriHelper;
 
 
 
-<MudTable Items="@collection" Elevation="8" Filter="new Func<TruckModel, bool>(search)" @bind-Truck="model">
-
+<MudTable Items="@collection" RowClassFunc="RowClassFunc" Elevation="8" Filter="new Func<TruckModel, bool>(search)" @bind-Truck="model">
 
     <ToolBarContent>
         <MudText Typo="Typo.h6">Truck</MudText>
@@ -39,8 +36,8 @@
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Truck">@context.RegNo</MudTd>
-        <MudTd DataLabel="TruckType">@context.TruckType</MudTd>
+        <MudTd DataLabel="Truck">@context.RegNo  @if(!context.CurrentRegistration.IsValid) {<MudText Typo="Typo.caption">(Expired)</MudText> } </MudTd>
+            <MudTd DataLabel="TruckType">@context.TruckType</MudTd>
         <MudTd DataLabel="FuelType">@context.FuelType</MudTd>
         <MudTd DataLabel="FuelTankCapacity">@context.FuelTankCapacity</MudTd>
         <MudTd DataLabel="BodyType">@context.BodyType</MudTd>
@@ -48,13 +45,10 @@
         <MudTd DataLabel="">
             <MudFab style="font-size:5px" @onclick="@(()=> Edit(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
             <MudFab @onclick="@(()=> Delete(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-            <MudTooltip Text="Mount Details">
+            <MudTooltip Text="Tyre Info">
                 <MudFab @onclick="@(()=> TruckMountDetails(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.TableView" Size="Size.Small" IconSize="Size.Small" />
-            </MudTooltip>
-            <MudTooltip Text="Update Register Number">
-                <MudFab @onclick="@(()=> UpdateRegisterNumber(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Update" Size="Size.Small" IconSize="Size.Small" />
-            </MudTooltip>
-            <MudTooltip Text="Register Number List">
+            </MudTooltip>           
+            <MudTooltip Text="Registration Info">
                 <MudFab @onclick="@(()=> RegisterNumberList(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.List" Size="Size.Small" IconSize="Size.Small" />
             </MudTooltip>
         </MudTd>
@@ -76,44 +70,31 @@
     private List<BranchModel> Branches = new List<BranchModel>();
     public string TruckRegisterListurl = "/TruckRegisterList";
 
+    int BranchID = 0;
+
     protected override async Task OnInitializedAsync()
-    {
-        await GetAll();
+    {        
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
         TruckTypes = Itrucktype.Select(0).ToList();
         Branches = Ibranch.Select().ToList();
+        GetAll();
     }
 
-    private async Task GetAll()
+    private void GetAll()
     {
-        collection = Iservice.Select(0).ToList();
+        collection = Iservice.SelectByBranch(BranchID).ToList();
     }
 
-    //private async void OnValidSubmit(EditContext context)
-    //{
-
-    //    var authprov = await auth.GetAuthenticationStateAsync();
-    //    var user = authprov.User;
-    //    model.UserInfo.UserID = user.Identity.Name;
-    //    try
-    //    {
-    //        model = Iservice.Update(model);
-
-    //        snackbar.Add("Saved Successfully", Severity.Success);
-    //        if (collection.Exists(x => x.TruckID == model.TruckID))
-    //        {
-    //            collection[collection.FindIndex(x => x.TruckID == model.TruckID)] = model;
-    //        }
-    //        else
-    //        {
-    //            collection.Add(model);
-    //        }
-    //        model = new TruckModel();
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        snackbar.Add(ex.Message, Severity.Warning);
-    //    }
-    //}
+    private string RowClassFunc(TruckModel truck, Int32 index)
+    {
+        if(!truck.CurrentRegistration.IsValid)
+        {
+            return "InvalidRow";
+        } 
+        return string.Empty;
+    }
 
     private void TruckMountDetails(int? id)
     {
@@ -133,43 +114,13 @@
 
     }
 
-    private async Task UpdateRegisterNumber(int? id)
-    {
-        TruckRegistrationModel CurrentRegistration = new();
-        DialogOptions options = new DialogOptions()
-            {
-                MaxWidth = MaxWidth.Large,
-            };
-        if (id != null)
-        {
-            CurrentRegistration = Iservice.GetRegistration(id);
-        }
-        DialogParameters parms = new();
-        parms.Add("CurrentRegistration", CurrentRegistration);
-
-        var dialog = DialogService.Show<TruckRegisterDialog>("ADD/EDIT", parms, options);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            collection.Clear();
-            await GetAll();
-        }
-
-    }
+    
 
     private async Task RegisterNumberList(TruckModel truck)
-    {        
-        DialogOptions options = new DialogOptions()
-            {
-                MaxWidth = MaxWidth.Large,
-            };
-        DialogParameters parms = new();
-        parms.Add("Truck", truck);
+    {  
         var truckIdstring = (truck?.TruckID ?? 0).ToString();
         UriHelper.NavigateTo($"TruckRegisterList/{truckIdstring}");
     }
-
-
 
     private async Task Edit(int? id)
     {
@@ -193,16 +144,12 @@
             if (id == null)
             {
                 collection.Add(data);
-            }
-            else
-            {
-                var index = collection.FindIndex(x => x.TruckID == data.TruckID);
-                collection[index] = data;
-            }
+            }            
         }
-
-
     }
+
+
+
     private void Delete(int? id)
     {
         Iservice.Delete(id, "Rijas");

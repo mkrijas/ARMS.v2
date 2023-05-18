@@ -55,6 +55,9 @@
 
     private List<DriverModel> drivers;
 
+    string UserID;
+    int BranchID;
+
     private void Cancel()
     {
         MudDialog.Cancel();
@@ -62,8 +65,8 @@
 
     private async Task RemoveDriver()
     {
-        var authprov = await auth.GetAuthenticationStateAsync(); 
-        int result = Iservice.UpdateDriver(Truck.TruckID, AssignedDriver.DriverID, false, authprov.User.Identity.Name);
+
+        int result = Iservice.UpdateDriver(Truck.TruckID, AssignedDriver.DriverID, false, UserID);
         DriverModel nullDriver = null;
         MudDialog.Close(DialogResult.Ok(nullDriver));
     }
@@ -71,15 +74,15 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
         var driverID = Iservice.GetAssignedDriver(Truck.TruckID);
         if (driverID != null)
             AssignedDriver = Idriver.SelectByID(driverID.Value);
 
-        drivers = new();
-        foreach (var item in Idriver.Select())
-        {
-            drivers.Add(item);
-        }
+        drivers = Idriver.SelectByBranch(BranchID).Where(x => x.HasValidLicense && x.TruckID == null).ToList();
+
     }
 
 

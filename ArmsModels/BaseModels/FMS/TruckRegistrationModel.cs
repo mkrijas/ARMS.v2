@@ -17,7 +17,8 @@ namespace ArmsModels.BaseModels
         public DateTime? EffectTo { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
-        public string RC { get; set; }  //Url of RC doc      
+        public string RC { get; set; }  //Url of RC doc
+        public bool IsValid { get { return DateTime.Today <= EffectTo && DateTime.Today >= EffectFrom; } }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
 
         

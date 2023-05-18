@@ -13,6 +13,7 @@ namespace ArmsServices.DataServices.General
         ConfigModel GetByFinanceCashGroupID();
         ConfigModel GetByInventoryFuelGroupID();
         ConfigModel GetByInventoryTyreGroupID();
+        ConfigModel GetAssetSubclassForTrucks();
         IEnumerable<ConfigModel> GetAll();
     }
     public class ConfigTable: IConfigTable
@@ -103,6 +104,7 @@ namespace ArmsServices.DataServices.General
             return null;
         }
 
+       
 
         public IEnumerable<ConfigModel> GetAll()
         {
@@ -123,6 +125,20 @@ namespace ArmsServices.DataServices.General
                 KeyString = dr.GetString("KeyString"),
                 ValueString = dr.GetString("ValueString"),
             };
+        }
+
+        public ConfigModel GetAssetSubclassForTrucks()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@KeyString", "AssetSubClassTrucks"),
+               new SqlParameter("@Operation", "ByID")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
         }
     }
 }

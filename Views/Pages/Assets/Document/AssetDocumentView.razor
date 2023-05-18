@@ -11,15 +11,18 @@
 
 
 
-<AssetSelector Value="Asset" ValueChanged="AssetSelected" Class="mx-5 my-5 bg-white" />
+<MudPaper Class="p-2 my-4 d-flex align-center">
+    <AssetSelector Value="Asset" ValueChanged="AssetSelected" BranchID="@BranchID" Class="mx-5 my-5 bg-white" />
+    @if (Asset != null)
+    {
+        <MudIconButton OnClick="@(()=> Edit(new AssetDocumentModel()))" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Medium" Title="Add New" />
+    }
+</MudPaper>
 
 
 
 <MudText Typo="Typo.h6">Active Documents</MudText>
-@if (Asset != null)
-{
-    <MudFab OnClick="@(()=> Edit(new AssetDocumentModel()))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" />
-}
+
 <MudGrid Spacing="2">
     @foreach (var item in collection)
     {
@@ -55,10 +58,10 @@
             <ValidationSummary />
             <MudGrid Spacing="2">
                 <MudItem xs="6">
-                    <MudSelect T="int?" Value="@model.DocumentType.DocumentTypeID" ValueChanged="DocumentSelected" Label="Type" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentType.DocumentTypeID)" OffsetY="true" AdornmentColor="Color.Secondary">
+                    <MudSelect T="AssetDocumentTypeModel" @bind-Value="@model.DocumentType" Label="Type" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentType)" OffsetY="true" AdornmentColor="Color.Secondary">
                         @foreach (var item in Dtypes)
                         {
-                            <MudSelectItem Value="@item.DocumentTypeID">@item.DocumentTypeName</MudSelectItem>
+                            <MudSelectItem Value="@item">@item.DocumentTypeName</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
@@ -77,9 +80,9 @@
     </DialogContent>
     <DialogActions>
         <MudButton form="Docform" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
-        @if (model.DocumentType.DocumentTypeID != null)
+        @if (model.DocumentID != null)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(model.DocumentID))">Delete</MudButton>
+            <MudButton  Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(model.DocumentID))">Delete</MudButton>
         }
     </DialogActions>
 </MudDialog>
@@ -91,18 +94,25 @@
     [Parameter] public AssetModel Asset { get; set; }
 
     private AssetDocumentModel model = new();
-
     private List<AssetDocumentModel> collection = new();
-    private List<AssetDocumentTypeModel> Dtypes = new();
-    private AssetDocumentTypeModel SelectedType = new();
+    private List<AssetDocumentTypeModel> Dtypes = new();   
 
     private IBrowserFile DocImage;
 
+    string UserID;
+    int BranchID;
+
     private bool visible;
+
     private DialogOptions dialogOptions = new() { FullWidth = true };
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+
         Dtypes = Iservice.GetDocumentTypes().ToList();
         GetAll();
     }
@@ -111,44 +121,28 @@
     {
         collection = Iservice.SelectByAsset(Asset?.AssetID).ToList();
     }
-
-
-    private void DocumentSelected(int? id)
-    {
-        model.DocumentType.DocumentTypeID = id;
-        SelectedType = Dtypes.FirstOrDefault(x => x.DocumentTypeID == id);
-    }
+   
 
     private async void OnValidSubmit(EditContext context)
-    {
-        //try
-        //{
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        model.Asset = Asset;
-
+    {       
+        model.UserInfo.UserID = UserID;        
         var validationOls = Iservice.ValidatePeriod(model).ToList();
-
         if (validationOls.Any(x => x.DocumentID != model.DocumentID))
         {
             snackbar.Add("Document Period cannot overlap! Please check the period ", Severity.Warning);
             return;
         }
-
         try
         {
             model = Iservice.Update(model);
-
             snackbar.Add("Saved Successfully", Severity.Success);
-
             GetAll();
             model = new();
             visible = false;
         }
         catch (Exception ex)
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            snackbar.Add(ex.Message, Severity.Error);
         }
     }
 
@@ -166,10 +160,8 @@
     }
 
     private async Task Remove(AssetDocumentModel model)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
+    {       
+        model.UserInfo.UserID = UserID;
         Iservice.Remove(model);
         snackbar.Add("Removed " + model.DocumentType.DocumentTypeName + " From " + Asset.Description, Severity.Success);
         GetAll();
@@ -178,7 +170,7 @@
     private void AssetSelected(AssetModel selectedAsset)
     {
         Asset = selectedAsset;
-        model = new();
+        model = new(){Asset = selectedAsset};
         GetAll();
     }
 

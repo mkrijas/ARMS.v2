@@ -15,12 +15,12 @@
 
 <MudGrid Spacing="4">
     <MudItem xs="12" md="12">
-        <MudTable Items="@collection" Elevation="10" Filter="new Func<DriverModel, bool>(search)">
+        <MudTable Items="@collection" RowClassFunc="RowClassFunc" Elevation="10" Filter="new Func<DriverModel, bool>(search)">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Drivers</MudText>
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="Add" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 
-                <MudSpacer></MudSpacer>
+             <MudSpacer></MudSpacer>
              <MudTextField @bind-Value="searchDriver" Placeholder="Search Drivers... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -35,7 +35,11 @@
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Driver">@context.DriverName</MudTd>  
+                <MudTd DataLabel="Driver">  <MudText Typo="Typo.h6">@context.DriverName </MudText> 
+                    @if (!context.HasValidLicense)
+                    {
+                        <MudText Typo="Typo.caption">(Invalid License)</MudText>
+                    } </MudTd>
                 <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
                 <MudTd DataLabel="PartyName">@context.DriverAgent.TradeName</MudTd>
                 <MudTd DataLabel="DOB">@(DateTime.Today.Year - context.DateOfBirth.Value.Year +(DateTime.Today.DayOfYear < context.DateOfBirth.Value.DayOfYear?-1:0))</MudTd>
@@ -94,9 +98,7 @@
         <MudTextField @bind-Value="ReasonToLeave" Label="Reason for Leave" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
 
     </MessageContent>
-
     <YesButton>
-
         <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.KeyboardArrowDown">Enter Leave</MudButton>
 
     </YesButton>
@@ -115,6 +117,9 @@
     private DriverModel DriverToLeave = new();
     private DateTime? ExpectedReturn;
     private string ReasonToLeave;
+
+    string UserID;
+    int BranchID;
 
     private async void BeginLeave(DriverModel dtl)
     {
@@ -142,6 +147,15 @@
         }
     }
 
+    private string RowClassFunc(DriverModel driver, Int32 index)
+    {
+        if (!driver.HasValidLicense)
+        {
+            return "InvalidRow";
+        }
+        return string.Empty;
+    }
+
     private async Task EndLeave(int? DriverID)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -155,14 +169,18 @@
         }
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {      
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+        UserID = authprov.User.Identity.Name;
         GetAll();
     }
 
     private void GetAll()
     {
-        collection = Iservice.Select().ToList();      
+        collection = Iservice.SelectByBranch(BranchID).ToList();      
     }
 
     private async Task Add()
@@ -200,8 +218,8 @@
 
     private async void Delete(int? id)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        int result = Iservice.Delete(id, authprov.User.Identity.Name);
+        
+        int result = Iservice.Delete(id, UserID);
         snackbar.Add("Deleted Successfully", Severity.Success);     
         GetAll();
     }

@@ -78,7 +78,8 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TruckID", model.TruckID),
+                new SqlParameter("@RegID", model.RegID),
+               new SqlParameter("@TruckID", model.TruckID),               
                new SqlParameter("@RegNo", model.RegNo),
                new SqlParameter("@RC", model.RC),
                new SqlParameter("@EffectFrom", model.EffectFrom),
@@ -91,6 +92,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@RegID", model.RegID),
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@EffectFrom", model.EffectFrom),
                new SqlParameter("@EffectTo", model.EffectTo)
@@ -135,6 +137,7 @@ namespace ArmsServices.DataServices
             {               
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@RegNo", model.RegNo),
+               new SqlParameter("@RC", model.RC),
                new SqlParameter("@EffectFrom", model.EffectFrom),
                new SqlParameter("@EffectTo", model.EffectTo),              
                new SqlParameter("@UserID", model.UserInfo.UserID),

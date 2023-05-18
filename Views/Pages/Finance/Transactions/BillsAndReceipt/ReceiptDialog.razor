@@ -20,23 +20,23 @@
             <ValidationSummary />
             <MudGrid>
                 <MudItem xs="12" md="4">
-                    <MudSelect Label="Select Party" @bind-Value="@model.BusinessNature" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    <MudSelect Label="Select Party Type" Value="@model.BusinessNature" ValueChanged="BusinessNatureChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                         <MudSelectItem Value="@("Supplier")" />
                         <MudSelectItem Value="@("Customer")" />
                         <MudSelectItem Value="@("Renter")" />
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="@model.BusinessNature"/>
+                    <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" NatureOfBusiness="@model.BusinessNature" For="(() => model.PartyInfo)"/>
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <MudSelect Label="NatureOfBusiness" ReadOnly="ReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionchanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    <MudSelect Label="Nature Of Receipt" ReadOnly="ReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionchanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                         <MudSelectItem Value="@("Deposit")" />
                         <MudSelectItem Value="@("Reciept")" />
                         <MudSelectItem Value="@("Prepayment")" />
                     </MudSelect>
                 </MudItem>
-                @if (Isbill)
+                @if (model.Bills.Any())
                 {
                     <MudItem xs="12">
                         <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
@@ -70,18 +70,12 @@
                                             @bind-ArdCode="@model.ReceiptArdCode" @bind-CoaID="@model.ReceiptCoaID"
                                             @bind-BankCharges="@model.BankCharges" @bind-BankTool="@model.ReceiptTool" />
                 </MudItem>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="6">
                     <MudDatePicker ReadOnly="ReadOnly" Label="Effective Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EffectiveDate" DateFormat="dd/MM/yyyy" />
                 </MudItem>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="6">
                     <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
-                </MudItem>
-                @if (!Isbill)
-                {
-                    <MudItem xs="12" md="4">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.TotalAmount" Label="TotalAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
-                    </MudItem>
-                }
+                </MudItem>                
                 <MudItem xs="12" md="3">
                     <MudDatePicker ReadOnly="ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                 </MudItem>
@@ -115,7 +109,7 @@
     public bool ReadOnly { get; set; }
 
 
-    bool Isbill = false;
+    //bool Isbill = false;
     private int? branchID = null;
     private string UserID = null;
 
@@ -135,12 +129,7 @@
         if (model.ReceiptID != null)
         {            
             model.Bills = Iservice.GetBills(model.ReceiptID).ToList();
-            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);            
-
-            if (model.Bills.Count != 0)
-            {
-                Isbill = true;
-            }
+            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
         }
         else
             model.BranchID = branchID;
@@ -151,16 +140,27 @@
         editContext = new EditContext(model);
     }
 
+    async Task BusinessNatureChanged(string bn)
+    {
+        model.BusinessNature = bn;
+        await PartyChanged(null);
+    }
+
+    async Task PartyChanged(PartyModel party)
+    {
+        model.PartyInfo = party;
+        await nTransactionchanged(null);
+    }
+
     private async Task nTransactionchanged(string nt)
     {
         model.NatureOfTransaction = nt;
         if (nt != "Reciept")
         {
-            Isbill = false;
+            model.Bills.Clear();
         }
         else
-        {
-            Isbill = true;
+        {            
             await OpenOutstandingBills();
         }
     }
@@ -205,7 +205,7 @@
             model.PartyCoaID = partyIservice.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
             if (model.PartyCoaID == null)
             {
-                throw new Exception("Party Account is not mapped!");
+                throw new Exception("Party Account is not mapped for "+model.NatureOfTransaction+"!");
             }
             model.UserInfo.UserID = UserID;
             Iservice.Update(model);
