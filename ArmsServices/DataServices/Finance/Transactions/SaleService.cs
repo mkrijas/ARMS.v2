@@ -96,6 +96,7 @@ namespace ArmsServices.DataServices
                 yield return new TaxPurchaseItemModel()
                 {
                     Amount = dr.GetDecimal("Amount"),
+                    ItemDescription = dr.GetString("ItemDescription"),
                     CGST = dr.GetDecimal("CGST"),
                     IGST = dr.GetDecimal("IGST"),
                     SGST = dr.GetDecimal("SGST"),
