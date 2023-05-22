@@ -24,7 +24,7 @@ namespace ArmsModels.BaseModels
         public int? PlaceID { get; set; }
         [Required]
         public int? OrderID { get; set; }
-        public bool Consignor { get; set; }
+        public bool Consignor { get; set; } = false;
         public int? AddressID { get; set; }
         public string OrderName { get; set; }
         [ValidateComplexType]

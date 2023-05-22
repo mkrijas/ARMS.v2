@@ -10,40 +10,34 @@
 @inject IDialogService DialogService
 
 
-<div style="background-color:#1469c0;padding:1%;padding-top:1%;  color:#fff;"><div style="float:left;padding-top:1%"><h6>Tarrif</h6></div><div style="float:right;"><MudButton @onclick="OpenDialog" StartIcon="@Icons.Material.Outlined.Add" Variant="Variant.Filled" Style="background:none;color:#fff;">
-  Add newTarrif
-</MudButton></div>
-<br />
-<br />
-</div>
-<MudGrid Spacing="4">
-
+<MudGrid >
     <MudItem xs="12" md="12">
-        <MudTable Items="@collection" Elevation="10" Filter="new Func<TariffModel, bool>(search)" @bind-model="model">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<TariffModel, bool>(search)">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">@Order.OrderName Tariffs</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" OnClick="@(() => Edit(new TariffModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchString" Placeholder="Search Tariffs... "
+                <MudTextField @bind-Value="searchString" Placeholder="Search Tariffs..."
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffTypeName)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Formula)" InitialDirection="SortDirection.Ascending">Formula</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.RouteName)" InitialDirection="SortDirection.Ascending">Route</MudTableSortLabel></MudTh>                
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffType.TariffTypeName)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Formula.Formula)" InitialDirection="SortDirection.Ascending">Formula</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Route.RouteName)" InitialDirection="SortDirection.Ascending">Route</MudTableSortLabel></MudTh>                
                 <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TruckAxles)" InitialDirection="SortDirection.Ascending">Axles</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffRate)" InitialDirection="SortDirection.Ascending">Rate</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Type">@context.TariffTypeName</MudTd>
-                <MudTd DataLabel="Formula">@context.Formula</MudTd>
-                <MudTd DataLabel="Route">@context.RouteName</MudTd>                
+                <MudTd DataLabel="Type">@context.TariffType.TariffTypeName</MudTd>
+                <MudTd DataLabel="Formula">@context.Formula.Formula</MudTd>
+                <MudTd DataLabel="Route">@context.Route.RouteName</MudTd>                
                 <MudTd DataLabel="Axles">@context.TruckAxles</MudTd>
                 <MudTd DataLabel="Rate">@context.TariffRate</MudTd>
                 <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> Edit(context.TariffID.Value))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context.TariffID.Value))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -60,22 +54,16 @@
 
     [Parameter]
     public int OrderID { get; set; }
-    #region Declared Properties
-
-    private TariffModel model = new();
+    #region Declared Properties  
 
     private string searchString = "";
 
     private OrderModel Order = new();
-    private RouteModel Route = new();
-    private TariffFormulaModel Formula = new();
-    private TariffTypeModel TariffType = new();
+    
 
     private List<TariffModel> collection = new ();
 
-    private List<TariffFormulaModel> Formulas = new ();
-    private List<TariffTypeModel> TariffTypes = new ();
-    private List<RouteModel> Routes = new ();
+   
 
     #endregion
 
@@ -83,97 +71,28 @@
     protected override async Task OnInitializedAsync()
     {
         if(OrderID != 0)
-            Order = await Iorder.SelectByID(OrderID);
-
-        Routes.Add(new RouteModel()
-        {
-            RouteID = null,
-            RouteName = "Any"
-        });
-        await foreach (var item in Iroute.Select(0))
-        {
-            Routes.Add(item);
-        }
-
-        foreach (var item in Iservice.SelectFormulas())
-        {
-            Formulas.Add(item);
-        }       
-        TariffTypes = Iservice.SelectTariffTypes("Operation").ToList();
+            Order = await Iorder.SelectByID(OrderID);      
 
         GetAll();
-    }
-
-    private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString)
-    {
-        return await Task.FromResult(Routes.Where(x => x.RouteName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
-    private async Task<IEnumerable<TariffTypeModel>> SearchTariffTypes(string searchString)
-    {
-        return await Task.FromResult(TariffTypes.Where(x => x.TariffTypeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
-
-    private async Task<IEnumerable<TariffFormulaModel>> SearchFormulas(string searchString)
-    {
-        return await Task.FromResult(Formulas.Where(x => x.Formula.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
-
+    }    
 
     private void GetAll()
     {
-        collection = new ();
-        foreach (var route in Iservice.SelectByOrder(OrderID))
-        {
-            collection.Add(route);
-        }
+        collection = Iservice.SelectByOrder(OrderID).ToList();      
     }
 
-    private async Task OnValidSubmit(EditContext context)
-    {
-        //     if (!Routes.Select(x => x.RouteName).Contains(Route.RouteName))
-        //{
-        //    snackbar.Add("Invalid Route", Severity.Error);
-        //    return;
-        //}
 
-        model.OrderID = Order.OrderID;
-        model.RouteID = Route?.RouteID;
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        model.UserInfo.UserID = authprov.User.Identity.Name;
-        try
-        {
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            if (collection.Exists(x => x.TariffID == model.TariffID))
-            {
-                collection[collection.FindIndex(x => x.TariffID == model.TariffID)] = model;
-            }
-            else
-            {
-                collection.Add(model);
-            }
-            model = new TariffModel();            
-            Route = new RouteModel();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-    }
-
-    private void Edit(int? id)
-    {
-        model = collection.FirstOrDefault(x => x.TariffID == id);
-        Route = Routes.FirstOrDefault(x => x.RouteID == model.RouteID);
+    private void Edit(TariffModel editModel)
+    {     
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", new TariffModel());
-        DialogService.Show<TarrifDilog>("ADD PLACE",parms);
+        parms.Add("model", editModel);
+        parms.Add("Order", Order);
+        DialogService.Show<TarrifDilog>("Add/Edit Tariffs",parms,new DialogOptions(){MaxWidth=MaxWidth.Large});
 
     }
-    private void Delete(int? id)
+    private void Delete(TariffModel deleteModel)
     {
-        Iservice.Delete(id, "Rijas");
+        Iservice.Delete(deleteModel.TariffID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
         GetAll();
     }
@@ -182,25 +101,15 @@
     private bool search(TariffModel model)
     {
         if (
-            model.OrderName != null && model.OrderName.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            model.Order != null && model.Order.OrderName.Contains(searchString, StringComparison.OrdinalIgnoreCase)
             ||
-            model.RouteName != null && model.RouteName.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            model.Route != null && model.Route.RouteName.Contains(searchString, StringComparison.OrdinalIgnoreCase)
             )
         {
             return true;
         }
         return false;
-    }
-    private void OpenDialog()
-    {
-
-        DialogParameters parms = new DialogParameters();
-        model.OrderID = OrderID;
-        model.OrderID = Order.OrderID;
-        parms.Add("model", model);
-
-        DialogService.Show<TarrifDilog>("ADD PLACE",parms);
-    }
+    }   
 }
 
 

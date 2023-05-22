@@ -15,23 +15,33 @@ namespace ArmsModels.BaseModels
         {            
             UserInfo = new UserInfoModel();
         }
-        public int? TariffID { get; set; }        
-        public int? OrderID { get; set; }        
-        public int? RouteID { get; set; }
+        public int? TariffID { get; set; }
         [Required]
-        public short? TariffTypeID { get; set; }
+        public OrderModel Order { get; set; }
         [Required]
-        public short? TariffFormulaID { get; set; }
+        public RouteModel Route { get; set; }
+        [Required]
+        public TariffTypeModel TariffType { get; set; }
+        [Required]
+        public TariffFormulaModel Formula { get; set; }
         public int? TariffSign { get; set; }
         [Required]
         public decimal? TariffRate { get; set; }
         public byte? TruckAxles { get; set; }
-        public virtual string OrderName { get; set; }
-        public virtual string RouteName { get; set; }
-        public virtual string Formula { get; set; }
-        public virtual string TariffTypeName { get; set; }
-        public virtual string Unit { get; set; }
-        public string UsageId { get; set; }
+        //[Required]
+        //public int? OrderID { get; set; }
+        //[Required]
+        //public int? RouteID { get; set; }
+        //[Required]
+        //public short? TariffTypeID { get; set; }
+        //[Required]
+        //public short? TariffFormulaID { get; set; }
+
+        //public virtual string OrderName { get; set; }
+        //public virtual string RouteName { get; set; }
+        //public virtual string Formula { get; set; }
+        //public virtual string TariffTypeName { get; set; }
+        public virtual string Unit { get; set; }       
         public UserInfoModel UserInfo { get; set; }
     }
 

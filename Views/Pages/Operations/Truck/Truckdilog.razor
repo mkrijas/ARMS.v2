@@ -1,7 +1,6 @@
 ﻿@page "/truckadd"
 
 @inject TruckDataArrayModel data
-
 @inject IConfigTable config
 @inject ITruckService Iservice
 @inject ITruckTypeService Itrucktype
@@ -10,6 +9,8 @@
 @inject AuthenticationStateProvider auth
 @inject IAssetService Iasset
 @attribute [Authorize]
+
+
 
 @using System.Globalization
 <MudDialog>
@@ -24,7 +25,7 @@
                                 <MudTextField @bind-Value="EditModel.CurrentRegistration.RegNo" Class=dropstyle Margin=Margin.Normal Label="Registered Number" Variant="Variant.Outlined" For="@(() => EditModel.CurrentRegistration.RegNo)" Disabled=@(EditModel.TruckID == null?false:true)></MudTextField>
                             </MudItem>
                             <MudItem xs="6">
-                                <MudSelect Variant="Variant.Outlined" Label="Home Branch" @bind-Value="EditModel.HomeBranchID" Margin=Margin.Normal OffsetY="true" AdornmentColor="Color.Secondary">
+                                <MudSelect ReadOnly Disabled Variant="Variant.Outlined" Label="Home Branch" @bind-Value="EditModel.HomeBranchID" Margin=Margin.Normal OffsetY="true" AdornmentColor="Color.Secondary">
                                     @foreach (var item in Branches)
                                     {
                                         <MudSelectItem Value="@item.BranchID">@item.BranchName</MudSelectItem>
@@ -108,19 +109,29 @@
 
     private List<TruckTypeModel> TruckTypes = new List<TruckTypeModel>();
     private List<BranchModel> Branches = new List<BranchModel>();
-
     public AssetModel SelectedAsset { get; set; } = new();
     int? AssetSubClassID;
+    int BranchID;
+    string UserID;
 
 
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {        
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        UserID = User.Identity.Name;
+        if (EditModel.HomeBranchID == null)
+        {
+            EditModel.HomeBranchID = BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        }
+
         ConfigModel  cModel =  config.GetAssetSubclassForTrucks();
         AssetSubClassID = int.Parse(cModel.ValueString);
 
         TruckTypes = Itrucktype.Select(0).ToList();
-        Branches = Ibranch.Select().ToList();
+        Branches = Ibranch.Select().ToList();       
+
         if ((EditModel.AssetID??0) != 0)
             SelectedAsset = Iasset.SelectByID(EditModel.AssetID);
         else
@@ -133,11 +144,8 @@
     }
 
     private async void OnValidSubmit(EditContext context)
-    {
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        EditModel.UserInfo.UserID = user.Identity.Name;
+    {               
+        EditModel.UserInfo.UserID = UserID;
         EditModel.AssetID = SelectedAsset.AssetID;
         try
         {

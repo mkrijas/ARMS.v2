@@ -9,16 +9,21 @@
 
 
 
-<MudCard>
-    <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Add/Edit  @(model.Consignor?"Consignor":"Consignee")
+            <MudRadioGroup @bind-SelectedOption="model.Consignor">
+                <MudRadio Option="true" Color="Color.Primary" Dense="true">Consignor</MudRadio>
+                <MudRadio Option="false" Color="Color.Secondary" Dense="false">Consignee</MudRadio>
+            </MudRadioGroup>
+        @*    <MudSwitch @bind-Checked="customstr" Color="Color.Error" Converter="@(new CustomStringToBoolConverter())"> <MudText Typo="Typo.h6">Add/Edit @(customstr)</MudText></MudSwitch>*@
+            </MudText>
+    </TitleContent>
+    <DialogContent>
+    <EditForm id="ConsigneeForm" Model="@model" OnValidSubmit="OnValidSubmit">
         <ObjectGraphDataAnnotationsValidator />
-        <ValidationSummary />
-        <MudCardHeader>
-            <CardHeaderContent>
-                <MudSwitch @bind-Checked="customstr" Color="Color.Error" Converter="@(new CustomStringToBoolConverter())"> <MudText Typo="Typo.h6">Add/Edit @(customstr)</MudText></MudSwitch>
-            </CardHeaderContent>
-        </MudCardHeader>
-        <MudCardContent>
+        <ValidationSummary />      
             <MudTabs>
                 <MudTabPanel Text="Info" Class="p-3">
                     <MudGrid>
@@ -33,7 +38,7 @@
                                              SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudAutocomplete T="OrderModel" Label="Order" Value="Order" ValueChanged="OrderSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
+                            <MudAutocomplete ReadOnly Disabled T="OrderModel" Label="Order" Value="Order" ValueChanged="OrderSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
                                              SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
                         </MudItem>
                     </MudGrid>
@@ -42,13 +47,13 @@
                     <AddressView Address="model.Address" HideLabel HidePlace="true"></AddressView>
                 </MudTabPanel>
             </MudTabs>
-        </MudCardContent>
-        <MudCardActions>
-            <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save @customstr</MudButton>
-        </MudCardActions>
     </EditForm>
+        </DialogContent>
+        <DialogActions>
+            <MudButton form="ConsigneeForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save @customstr</MudButton>
+        </DialogActions>
+    </MudDialog>
 
-</MudCard>
 
     @code {
 
@@ -72,12 +77,13 @@
         places = Iplace.Select(0).ToList();
         orders = await Iorder.Select(0).ToListAsync();
 
-
         CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
         customstr = cs.GetFunc(model.Consignor);
 
         Place = places.FirstOrDefault(x => x.PlaceID == model.PlaceID);
-        Order = orders.FirstOrDefault(y => y.OrderID == model.OrderID);
+        if(Order == null)
+            Order = orders.FirstOrDefault(y => y.OrderID == model.OrderID);
+        model.OrderID = Order.OrderID;
     }
 
     private void PlaceSelected(PlaceModel _place)
@@ -157,10 +163,9 @@
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        model.OrderID = Order.OrderID;
-        CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
-        model.Consignor = cs.SetFunc(customstr).Value;
+        model.UserInfo.UserID = user.Identity.Name;        
+        //CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
+        //model.Consignor = cs.SetFunc(customstr).Value;
 
         MudDialog.Close(model);
     }

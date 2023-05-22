@@ -19,24 +19,16 @@ namespace Views.Pages.Operations.Gc
         [Inject] IRouteService Iroute { get; set; }
         [Inject] IOrderService Iorder { get; set; }
         [Inject] IConsigneeService Iconsignee { get; set; }
-
         [Inject] MudBlazor.ISnackbar snackbar { get; set; }
         [Inject] AuthenticationStateProvider auth { get; set; }
+
+
         [CascadingParameter] MudDialogInstance MudDialog { get; set; }
         [Parameter] public GcSetModel model { get; set; } = new GcSetModel();
         [Parameter] public OrderModel Order { get; set; }
-
-
-
-
-        private void Cancel()
-        {
-            MudDialog.Cancel();
-        }
+       
 
         private bool IsLoading = false;
-
-
         private RouteModel Route = new();
         private ConsigneeModel Consignor = new();
         private ConsigneeModel Consignee = new();
@@ -60,8 +52,7 @@ namespace Views.Pages.Operations.Gc
         protected override async Task OnParametersSetAsync()
         {           
             IsLoading = true;  
-            Order = Order ?? Orders.FirstOrDefault(x => x.OrderID == model.OrderID) ?? Orders.FirstOrDefault();
-            
+            Order = Order == null?Orders.FirstOrDefault(x => x.OrderID == model.OrderID):Order;            
             await OrderSelected(Order);
 
             if (model.GcSetID != null)
@@ -77,7 +68,10 @@ namespace Views.Pages.Operations.Gc
             IsLoading = false;
         }
 
-       
+        private void Cancel()
+        {
+            MudDialog.Cancel();
+        }
 
         private void GetFreight(GcSetModel GcSet)
         {

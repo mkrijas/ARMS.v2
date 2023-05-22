@@ -167,14 +167,13 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@OrderID", model.OrderID),
-               new SqlParameter("@RouteID", model.RouteID),
-               new SqlParameter("@TariffFormulaID", model.TariffFormulaID),
+               new SqlParameter("@OrderID", model.Order.OrderID),
+               new SqlParameter("@RouteID", model.Route.RouteID),
+               new SqlParameter("@TariffFormulaID", model.Formula.FormulaID),
                new SqlParameter("@TariffID", model.TariffID),              
                new SqlParameter("@TariffRate", model.TariffRate),               
-               new SqlParameter("@TariffTypeID", model.TariffTypeID),
-               new SqlParameter("@TruckAxles", model.TruckAxles),
-               new SqlParameter("@UsageID", model.UsageId),
+               new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
+               new SqlParameter("@TruckAxles", model.TruckAxles),              
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.Update]", parameters))
@@ -208,19 +207,34 @@ namespace ArmsServices.DataServices
         {
             return new TariffModel
             {
-                OrderID = dr.GetInt32("OrderID"),
-                RouteID = dr.GetInt32("RouteID"),                
-                TariffFormulaID = dr.GetInt16("TariffFormulaID"),
+                Order = new() 
+                { 
+                    OrderID = dr.GetInt32("OrderID"), 
+                    OrderName = dr.GetString("OrderName"),
+                },
+                Route = new()
+                {
+                    RouteID = dr.GetInt32("RouteID"),
+                    RouteName = dr.GetString("RouteName"),
+                },
+                TariffType = new()
+                {
+                    TariffTypeID = dr.GetInt16("TariffTypeID"),
+                    TariffTypeName = dr.GetString("TariffTypeName"),
+                },
+                Formula  = new()
+                {
+                    FormulaID = dr.GetInt16("TariffFormulaID"),
+                    Formula = dr.GetString("Formula"),
+                },                   
                 TariffID = dr.GetInt32("TariffID"),                
-                TariffRate = dr.GetDecimal("TariffRate"),
-                TariffTypeID = dr.GetInt16("TariffTypeID"), 
-                UsageId= dr.GetString("UsageID"),
+                TariffRate = dr.GetDecimal("TariffRate"),                                
                 TariffSign = dr.GetInt32("TariffSign"),
                 TruckAxles = dr.GetByte("TruckAxles"),
-                Formula = dr.GetString("Formula"),
-                OrderName = dr.GetString("OrderName"),
-                RouteName = dr.GetString("RouteName"),
-                TariffTypeName = dr.GetString("TariffTypeName"),
+                
+                
+                
+                
                 Unit = dr.GetString("Unit"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -269,31 +283,22 @@ namespace ArmsServices.DataServices
 
         public decimal? GetTariffAmount(GcSetModel GcSet, TariffModel Tariff)
         {
-            RouteModel route = Task.Run(() => Iroute.SelectByID(GcSet.RouteID)).Result;
-            decimal? tariffAmount = null;
-            if (Tariff?.TariffFormulaID == 1)
+            RouteModel route = Task.Run(() => Iroute.SelectByID(GcSet.RouteID)).Result;   
+            decimal? distance = route.Distance;
+            decimal? Qty = Convert.ToDecimal(GcSet.Gcs.Sum(x => x.BillQuantity));
+
+            switch (Tariff?.Formula?.FormulaID)
             {
-                decimal? distance = route.Distance;
-                tariffAmount = distance / Tariff.TariffRate;
-            }
-            else
-            if (Tariff?.TariffFormulaID == 2)
-            {
-                decimal? distance = route.Distance;
-                tariffAmount =distance* Tariff.TariffRate;
-            }
-            else
-            if (Tariff?.TariffFormulaID == 3)
-            {
-                decimal? Qty = Convert.ToDecimal(GcSet.Gcs.Sum(x=> x.BillQuantity));
-                tariffAmount = Qty * Tariff.TariffRate;
-            }
-            else
-            if (Tariff?.TariffFormulaID == 4)
-            {                
-                tariffAmount = Tariff.TariffRate;
-            }
-            return tariffAmount;
+                case 1:                    
+                    return distance / Tariff.TariffRate;
+                case 2:                    
+                    return distance * Tariff.TariffRate;
+                case 3:
+                    return Qty * Tariff.TariffRate;
+                case 4:
+                    return Tariff.TariffRate;
+                default: return null;
+            }           
         }
 
 
