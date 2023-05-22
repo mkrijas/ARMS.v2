@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
         IEnumerable<AssetModel> SelectByBranch(int BranchID,bool scrap);
         IEnumerable<AssetModel> SelectBySubClass(int BranchID, int? SubClassID);
         IEnumerable<AssetModel> GetAttachedAssets(int? ParentAssetID);
+        IEnumerable<AssetModel> SelectLinkedAssetsOnTruck();
         int? UpdateStatus(AssetStatusUpdateModel model); 
         AssetStatusUpdateModel GetCurrentStatus(int? AssetID);
         IEnumerable<AssetStatusUpdateModel> GetStatusHistory(int? AssetID);
@@ -216,8 +217,21 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", null),
+               new SqlParameter("@Operation", "BYParent"),
                new SqlParameter("@AssetID", ParentAssetID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<AssetModel> SelectLinkedAssetsOnTruck()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "LinkedAssets")
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Select]", parameters))

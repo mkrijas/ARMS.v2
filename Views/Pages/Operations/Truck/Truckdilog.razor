@@ -85,7 +85,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="6">
-                            <AssetSelector Class="dropstyle mt-1" Label="Link Asset" Value="SelectedAsset" ValueChanged="AssetSelected" BranchID="EditModel.HomeBranchID??0" SubClassID="AssetSubClassID">
+                            <AssetSelector Class="dropstyle mt-1" Label="Link Asset" Value="SelectedAsset" PassedListAssets="PassedListAssets" ValueChanged="AssetSelected" BranchID="EditModel.HomeBranchID??0" SubClassID="AssetSubClassID">
                                 </AssetSelector>
                             </MudItem>
                         </MudGrid>                        
@@ -113,9 +113,10 @@
     int? AssetSubClassID;
 
 
+    public List<AssetModel> PassedListAssets = new();
 
     protected override void OnInitialized()
-    {        
+    {
         ConfigModel  cModel =  config.GetAssetSubclassForTrucks();
         AssetSubClassID = int.Parse(cModel.ValueString);
 
@@ -125,6 +126,10 @@
             SelectedAsset = Iasset.SelectByID(EditModel.AssetID);
         else
             SelectedAsset = null;
+
+        int selectesAssetId = SelectedAsset?.AssetID ?? 0;
+        PassedListAssets = Iasset.SelectLinkedAssetsOnTruck().Where(s=>s.AssetID != selectesAssetId ).ToList();
+
     }   
     private void AssetSelected(AssetModel asset)
     {
@@ -138,6 +143,11 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         EditModel.UserInfo.UserID = user.Identity.Name;
+        if(SelectedAsset == null ||  SelectedAsset.AssetID == 0)
+        {
+            snackbar.Add("Please select Link Asset.", Severity.Error);
+            return;
+        }
         EditModel.AssetID = SelectedAsset.AssetID;
         try
         {
