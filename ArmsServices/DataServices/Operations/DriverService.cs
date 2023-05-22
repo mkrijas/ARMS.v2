@@ -123,7 +123,7 @@ namespace ArmsServices.DataServices
             {
                 DriverName = reader.GetString("DriverName"),                
                 DriverAgentID = reader.GetInt32("DriverAgentID"),
-                DriverAgent = new PartyModel() {PartyID = reader.GetInt32("DriverAgentID"), TradeName = reader.GetString("TradeName") },
+                DriverAgent = new PartyModel() {PartyID = reader.GetInt32("DriverAgentID"), TradeName = reader.GetString("PartyName") },
                 HomeBranchID = reader.GetInt32("HomeBranchID"),
                 DriverImage = reader.GetString("DriverImage"),
                 DateOfBirth = reader.GetDateTime("DateOfBirth"),
