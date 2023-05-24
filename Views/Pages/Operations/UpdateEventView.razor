@@ -84,7 +84,7 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined"></MudTextField>
+                        <MudNumericField HideSpinButtons @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined"></MudNumericField>
                     </MudItem>
                     <MudItem xs="12" md="6">
                         @*<input type="datetime-local" @bind-value="@model.EventTime"  />*@
@@ -145,12 +145,6 @@
 
         int? OriginID = null, DestinationID = null;
 
-        var postEvent = EventTypes.FirstOrDefault(s => s.EventTypeID == PreEvent.EventTypeID)?.LimitPostEvent;
-        if (postEvent != null && model.TruckEventID == null)
-        {
-            EventSelected(postEvent);
-            IsDisableSelectAction = true;
-        }
         if (Truck == null)
         {
             Truck = Itruck.SelectByID(CurrentTrip.TruckID);
@@ -162,7 +156,7 @@
             KmReading = model.EventReading ?? PreEvent?.EventReading;
             OriginID = model.OriginID ?? PreEvent?.DestinationID;
             model.DriverID = model.DriverID ?? AssignedDriver?.DriverID;
-            model.TripID = model.TripID ?? CurrentTrip.TripID;
+            model.TripID = model.TripID ?? CurrentTrip?.TripID;
             model.TruckID = model.TruckID ?? Truck.TruckID;
         }
         else
@@ -184,7 +178,24 @@
         model.OriginID = OriginID;
         model.DestinationID = DestinationID;
         Destination = DestinationID == null ? null : await Iplace.SelectByID(DestinationID.Value);
+        
 
+        if (model.TruckEventID == null)
+        {
+            var limitPostEvent = EventTypes.FirstOrDefault(s => s.EventTypeID == PreEvent.EventTypeID)?.LimitPostEvent;
+            var postEvent = EventTypes.FirstOrDefault(s => s.EventTypeID == PreEvent.EventTypeID)?.DefaultNextEventTypeID;
+            if (limitPostEvent != null)
+            {
+                IsDisableSelectAction = true;
+                EventSelected(limitPostEvent);
+            }
+            else if (postEvent != null)
+            {
+                EventSelected(postEvent);
+            }
+
+
+        }
     }
 
     protected override async Task OnParametersSetAsync()
@@ -304,7 +315,7 @@
 
     private void EventSelected(byte? e)
     {
-        SelectedEvent = Ievent.GetEventType(e);  
+        SelectedEvent = Ievent.GetEventType(e);
         model.EventTypeID = e;
         if (SelectedEvent.EventTypeName != null)
         {
