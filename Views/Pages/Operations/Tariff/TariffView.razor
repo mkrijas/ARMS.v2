@@ -10,7 +10,7 @@
 @inject IDialogService DialogService
 
 
-<MudGrid >
+<MudGrid>
     <MudItem xs="12" md="12">
         <MudTable Items="@collection" Elevation="10" Filter="new Func<TariffModel, bool>(search)">
             <ToolBarContent>
@@ -24,7 +24,7 @@
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffType.TariffTypeName)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Formula.Formula)" InitialDirection="SortDirection.Ascending">Formula</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Route.RouteName)" InitialDirection="SortDirection.Ascending">Route</MudTableSortLabel></MudTh>                
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.Route.RouteName)" InitialDirection="SortDirection.Ascending">Route</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TruckAxles)" InitialDirection="SortDirection.Ascending">Axles</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TariffModel, object>(x=> x.TariffRate)" InitialDirection="SortDirection.Ascending">Rate</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
@@ -32,7 +32,7 @@
             <RowTemplate>
                 <MudTd DataLabel="Type">@context.TariffType.TariffTypeName</MudTd>
                 <MudTd DataLabel="Formula">@context.Formula.Formula</MudTd>
-                <MudTd DataLabel="Route">@context.Route.RouteName</MudTd>                
+                <MudTd DataLabel="Route">@context.Route.RouteName</MudTd>
                 <MudTd DataLabel="Axles">@context.TruckAxles</MudTd>
                 <MudTd DataLabel="Rate">@context.TariffRate</MudTd>
                 <MudTd DataLabel="">
@@ -54,47 +54,85 @@
 
     [Parameter]
     public int OrderID { get; set; }
-    #region Declared Properties  
+    #region Declared Properties
 
     private string searchString = "";
 
     private OrderModel Order = new();
-    
 
-    private List<TariffModel> collection = new ();
 
-   
+    private List<TariffModel> collection = new();
+
+
 
     #endregion
 
 
     protected override async Task OnInitializedAsync()
     {
-        if(OrderID != 0)
-            Order = await Iorder.SelectByID(OrderID);      
+        if (OrderID != 0)
+            Order = await Iorder.SelectByID(OrderID);
 
         GetAll();
-    }    
+    }
 
     private void GetAll()
     {
-        collection = Iservice.SelectByOrder(OrderID).ToList();      
+        collection = Iservice.SelectByOrder(OrderID).ToList();
     }
 
 
-    private void Edit(TariffModel editModel)
-    {     
+    private async Task Edit(TariffModel editModel)
+    {
         DialogParameters parms = new DialogParameters();
         parms.Add("model", editModel);
         parms.Add("Order", Order);
-        DialogService.Show<TarrifDilog>("Add/Edit Tariffs",parms,new DialogOptions(){MaxWidth=MaxWidth.Large});
+
+        var dialog = DialogService.Show<TarrifDilog>("Add/Edit Tariffs", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            TariffModel UpdatedModel = (TariffModel)result.Data;
+            if (UpdatedModel != null)
+            {
+
+                if (collection.Exists(x => x.TariffID == UpdatedModel.TariffID))
+                {
+                    collection[collection.FindIndex(x => x.TariffID == UpdatedModel.TariffID)] = UpdatedModel;
+                }
+                else
+                {
+                    collection.Add(UpdatedModel);
+                }
+                UpdatedModel = new();
+            }
+
+        }
 
     }
-    private void Delete(TariffModel deleteModel)
+    private async Task Delete(TariffModel deleteModel)
     {
-        Iservice.Delete(deleteModel.TariffID, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+
+        if (deleteModel != null)
+        {
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            int result = Iservice.Delete(deleteModel.TariffID, user.Identity.Name);
+
+            if (result != -1)
+            {
+                if (collection != null && collection.Any(s => s.TariffID == deleteModel.TariffID))
+                {
+                    collection.Remove(collection.FirstOrDefault(s => s.TariffID == deleteModel.TariffID));
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
+            }
+        }
+
+        //snackbar.Add("Deleted Successfully", Severity.Success);
+        //GetAll();
     }
 
 
@@ -109,7 +147,7 @@
             return true;
         }
         return false;
-    }   
+    }
 }
 
 
