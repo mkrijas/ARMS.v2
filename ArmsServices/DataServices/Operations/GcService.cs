@@ -52,7 +52,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PaidBy", model.PaidBy),               
                new SqlParameter("@Gcs", model.Gcs.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-            };            
+            };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.GcSet.Update]", parameters))
             {
                 return GetModel(dr);

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ArmsServices
@@ -69,6 +70,8 @@ namespace ArmsServices
 
         public IEnumerable<IDataRecord> GetDataReader(string procedureName, List<SqlParameter> parameters)
         {
+            StringBuilder errorMessages = new StringBuilder();
+
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))
             {                
                 connection.Open();
@@ -79,32 +82,33 @@ namespace ArmsServices
                     {
                         cmd.Parameters.AddRange(parameters.ToArray());
                     }
-                    SqlDataReader dr = null;
-                    dr = cmd.ExecuteReader(CommandBehavior.CloseConnection);
-                    
+                    SqlDataReader dr = null;                   
+                        dr = cmd.ExecuteReader(CommandBehavior.CloseConnection);                   
                     while (dr.Read())
                     {
                         yield return dr;
                     }
                     dr.Close();
                 }
-            }
+            }            
         }
 
         public int ExecuteNonQuery(string procedureName, List<SqlParameter> parameters)
         {
+            StringBuilder errorMessages = new StringBuilder();
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))
             {
-                SqlCommand cmd = connection.CreateCommand();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = procedureName;                
+               
+                    SqlCommand cmd = connection.CreateCommand();
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandText = procedureName;
 
-                if (parameters != null && parameters.Count > 0)
-                {
-                    cmd.Parameters.AddRange(parameters.ToArray());
-                }
-                connection.Open();
-                return cmd.ExecuteNonQuery();               
+                    if (parameters != null && parameters.Count > 0)
+                    {
+                        cmd.Parameters.AddRange(parameters.ToArray());
+                    }
+                    connection.Open();
+                    return cmd.ExecuteNonQuery();
             }
         }
     }

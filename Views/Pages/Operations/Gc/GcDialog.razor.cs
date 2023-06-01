@@ -109,17 +109,13 @@ namespace Views.Pages.Operations.Gc
             model.UserInfo.UserID = authprov.User.Identity.Name;
             model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
-            foreach (var item in model.Gcs)
-            {
-                item.UserInfo.UserID = authprov.User.Identity.Name;
-                model.UserInfo.UserID= authprov.User.Identity.Name;
-            }
+            model.Gcs.ForEach(x => x.UserInfo = model.UserInfo);            
+
             try
             {
                 model = Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
                 MudDialog.Close(DialogResult.Ok(model));
-
                 model = new GcSetModel();
                 Route = new RouteModel();
                 Consignor = new ConsigneeModel();
@@ -128,8 +124,8 @@ namespace Views.Pages.Operations.Gc
             }
             catch (Exception ex)
             {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+                snackbar.Add(ex.Message, Severity.Error);
+            }            
         }
 
         private async Task OrderSelected(OrderModel obj)
