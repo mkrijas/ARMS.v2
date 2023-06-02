@@ -15,8 +15,9 @@ namespace ArmsServices.DataServices
         ChartOfAccountModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<ChartOfAccountModel> SelectChildren(int? CoaID);
-        IEnumerable<ChartOfAccountModel> SelectBase(); 
+        IEnumerable<ChartOfAccountModel> SelectBase();
         IEnumerable<ChartOfAccountModel> FilterSubLedgers(string filterText);
+        IEnumerable<ChartOfAccountModel> AllLedgers();
         IEnumerable<ChartOfAccountModel> SelectByGroup(int? GroupID);
         IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID);
         void AddBranch(CoaBranchAvailabilityModel model);
@@ -27,8 +28,8 @@ namespace ArmsServices.DataServices
 
     }
     public class ChartOfAccountService : IChartOfAccountService
-    {    
-    IDbService Iservice;
+    {
+        IDbService Iservice;
 
         public ChartOfAccountService(IDbService iservice)
         {
@@ -64,7 +65,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "children"),
-               new SqlParameter("@CoaID",CoaID),              
+               new SqlParameter("@CoaID",CoaID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
@@ -76,7 +77,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "Base"),               
+               new SqlParameter("@Operation", "Base"),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
@@ -112,7 +113,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@SummaryAccount", model.SummaryAccount),
                new SqlParameter("@AccountType", model.AccountType),
                new SqlParameter("@PeriodFrom", model.PeriodFrom),
-               new SqlParameter("@PeriodTo", model.PeriodTo),               
+               new SqlParameter("@PeriodTo", model.PeriodTo),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -161,12 +162,25 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<ChartOfAccountModel> AllLedgers()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "All"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByAccount"),
-               new SqlParameter("@CoaID", CoaID),               
+               new SqlParameter("@CoaID", CoaID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.BranchAvailability.Select]", parameters))
@@ -187,13 +201,13 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@CoaID", model.CoaID),              
+               new SqlParameter("@CoaID", model.CoaID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-           Iservice.ExecuteNonQuery("[usp.Finance.Coa.BranchAvailability.Update]", parameters);
-            
-            
+            Iservice.ExecuteNonQuery("[usp.Finance.Coa.BranchAvailability.Update]", parameters);
+
+
         }
 
         public void RemoveBranch(CoaBranchAvailabilityModel model)
@@ -221,10 +235,10 @@ namespace ArmsServices.DataServices
             {
                 yield return new CoaBranchAvailabilityModel()
                 {
-                    ID = dr.GetInt32 ("ID"),
+                    ID = dr.GetInt32("ID"),
                     CoaID = dr.GetInt32("CoaID"),
                     BranchID = dr.GetInt32("BranchID"),
-                    AccountName = dr.GetString("AccountName"),                    
+                    AccountName = dr.GetString("AccountName"),
                 };
             }
         }
