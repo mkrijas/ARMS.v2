@@ -1,44 +1,32 @@
-﻿@inject IDialogService DialogService
-@inject AuthenticationStateProvider auth
-@inject IUserService _user
+﻿
 @using System.Security.Claims
+@using Pages.UserAccount
+
 @inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
 @inherits LayoutComponentBase
 
 <CascadingValue Value="this">
     <div class="page">
-
         <MudLayout>
             <MudAppBar Elevation="1">
                 <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-                  <div class="px-6 py-6 logo">
-                                <a class="navbar-brand" href=""><img src="images/logoarms.png" @*style="margin-bottom:1%;" width="160px" *@ /></a>
-                                @*<MudText Typo="Typo.subtitle2" Class="text-black-50 mt-2" Style="align-self:center"></MudText>*@
-                  </div>
+                <div class="py-2 px-2 logo">
+                   <img src="images/logoarms.png" />
+                </div>  
                 <MudSpacer />
-
                 <AuthorizeView>
                     <Authorized>
-                        <MudButton style="color:#fff" StartIcon="@Icons.Material.Outlined.AccountTree"
-                                   DisableElevation="true" OnClick="@(async ()=> await changeBranch(@context.User.Identity.Name))">
-                            @context.User.Claims.FirstOrDefault(x => x.Type == "BranchName")?.Value
-                        </MudButton>
+                        <MudText Typo="Typo.subtitle2">@context.User.Claims.FirstOrDefault(x => x.Type == "BranchName")?.Value</MudText>
                     </Authorized>
                 </AuthorizeView>
-                <AuthorizeView>
-                    <Authorized>
-                        <PushNotificationComponent>
-                        </PushNotificationComponent>
-                    </Authorized>
-                </AuthorizeView>
-                <LoginDisplay />
+                <LoginDisplay /> 
             </MudAppBar>
             <AuthorizeView>
                 <Authorized>
                     <MudDrawer @bind-Open="@open" Elevation="1" Width="300px" Variant="@DrawerVariant.Temporary">
-                        <MudDrawerHeader>   
-                           <MudText Typo="Typo.h6">ARMS</MudText>
+                        <MudDrawerHeader>
+                            <MudText Typo="Typo.h6">@context.User.Claims.FirstOrDefault(x => x.Type == "BranchName")?.Value</MudText>
                         </MudDrawerHeader>
                         <Views.Shared.NavMenu />
                     </MudDrawer>
@@ -79,41 +67,9 @@
     {
         open = !open;
     }
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            if (authprov.User.Identity.IsAuthenticated)
-            {
-                if (!authprov.User.HasClaim(x => x.Type == "BranchName"))
-                {
-                    await changeBranch(authprov.User.Identity.Name);
-                }
+    
 
-            }
-        }
-    }
-
-    async Task changeBranch(string UserID)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
-        bool BranchSeleceted = int.TryParse(User.Claims.First(x => x.Type == "BranchID").Value,out int BranchID);
-        
-        DialogOptions options = new DialogOptions() { CloseButton = BranchSeleceted };
-        DialogParameters parameters = new DialogParameters();
-        parameters.Add("UserID", UserID);
-
-        var dialog = DialogService.Show<ChooseBranch>("Select A Branch", parameters, options);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            UserBranchRoleModel BranchRole = (UserBranchRoleModel)result.Data;
-            _user.SetCurrentBranchRole(BranchRole);
-            uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
-        }
-    }
+    
 
 }
 
