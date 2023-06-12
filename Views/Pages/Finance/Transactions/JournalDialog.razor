@@ -1,0 +1,99 @@
+﻿@inject IJournalService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Journal" formID="journalForm" model="@model">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm id="journalForm" OnValidSubmit="OnValidSubmit" Model="model">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudDatePicker Label="DocumentDate" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <CoaSelector @bind-Value="model.Debit" LabelName="Debit Ac" ReadOnly="ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <CoaSelector @bind-Value="model.Credit" LabelName="Credit Ac" ReadOnly="ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocumentID="model.JournalID" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
+
+@code {
+    [Parameter]
+    public JournalModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+
+    private int? branchID = null;
+    private string UserID = null;
+
+    private EditContext editContext;
+
+    DialogForm dialogForm;
+    int DocTypeID = 18;
+
+    protected void Approve(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+
+            model.UserInfo.UserID = UserID;
+            Iservice.Approve(model.JournalID, model.UserInfo.UserID, aprvd.Remarks);
+            snackbar.Add("Approved Successfully", Severity.Success);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = User.Identity.Name;
+        model.BranchID =  branchID;
+        model.NatureOfTransaction = "Journal";
+    }
+
+    public void OnValidSubmit()
+    {
+
+        model.UserInfo.UserID = UserID;
+        try
+        {
+            Iservice.Update(model);
+            model = new();
+            snackbar.Add("Saved Successfully", Severity.Success);
+            dialogForm.Close(model);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+       
+    }
+
+}
