@@ -1,0 +1,112 @@
+﻿@page "/JournalView"
+@inject IJournalService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Journal</MudText>
+                <MudTooltip Text="New Journal">
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new JournalModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+                <MudSpacer></MudSpacer>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedToggled(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<JournalModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<JournalModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<JournalModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<JournalModel, object>(x=> x.Debit.AccountName)" InitialDirection="SortDirection.Ascending">Debit</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<JournalModel, object>(x=> x.Credit.AccountName)" InitialDirection="SortDirection.Ascending">Credit</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
+                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
+                <MudTd DataLabel="Debit">@context.Debit.AccountName</MudTd>
+                <MudTd DataLabel="Credit">@context.Credit.AccountName</MudTd>
+                <MudTd DataLabel="">
+                    <MudTooltip Text="View">
+                        <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    @if (@context.AuthLevelId == null)
+                    {
+                        <MudTooltip Text="Edit">
+                            <MudFab @onclick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    }
+                    @if (@context.AuthLevelId != 99)
+                    {
+                        <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                    }
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+    
+    public bool IsApproved { get; set; } = false;
+    private List<JournalModel> collection = new List<JournalModel>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll(IsApproved);
+    }
+
+    private async Task GetAll(bool val)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        collection = new List<JournalModel>();
+
+        if (val)
+        {
+            collection = Iservice.Select(brancID).Where(x => x.AuthLevelId == 99).ToList();
+        }
+        else
+        {
+            collection = Iservice.Select(brancID).Where(x => x.AuthLevelId != 99).ToList();
+        }
+    }
+
+    async Task ApprovedToggled(bool value)
+    {
+        IsApproved = value;
+        await GetAll(IsApproved);
+    }
+    private async Task Delete(JournalModel tx)
+    {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        Iservice.Delete(tx.JournalID, user.Identity.Name);
+        snackbar.Add("Deleted Successfully", Severity.Success);
+        await GetAll(IsApproved);
+    }
+
+
+    private async Task OpenDialog(JournalModel JournalModel, bool ReadOnly)
+    {
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", JournalModel);
+        parms.Add("ReadOnly", ReadOnly);
+        var dialog = DialogService.Show<JournalDialog>(JournalModel.JournalID == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var result = await dialog.Result;
+        await GetAll(IsApproved);
+    }
+
+}

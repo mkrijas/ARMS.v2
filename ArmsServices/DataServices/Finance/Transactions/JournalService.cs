@@ -18,7 +18,7 @@ namespace ArmsServices.DataServices
         JournalModel Update(JournalModel model);
         JournalModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
-        IEnumerable<JournalModel> Select();       
+        IEnumerable<JournalModel> Select(int? BranchID);       
         IEnumerable<JournalModel> SelectByPeriod(DateTime? begin, DateTime? end);       
         int Approve(int? ID, string UserID, string Remarks);
         int Reverse(int? ID, string UserID, string Remarks);
@@ -68,11 +68,12 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Journal.Reverse]", parameters);
         }
 
-        public IEnumerable<JournalModel> Select()
+        public IEnumerable<JournalModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
+               new SqlParameter("@BranchID", BranchID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Journal.Select]", parameters))
@@ -171,4 +172,4 @@ namespace ArmsServices.DataServices
     }
 }
 
-}
+

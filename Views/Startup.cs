@@ -153,7 +153,8 @@ namespace Views
             services.AddScoped<IReceiptService, ReceiptService>();
             services.AddScoped<IDrCrNoteService, DrCrNoteService>();
             services.AddScoped<ISaleService, SaleService>();
-           
+            services.AddScoped<IJournalService, JournalService>();
+
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();
             services.AddScoped<IBankAccountOwnService, BankAccountOwnService>();
