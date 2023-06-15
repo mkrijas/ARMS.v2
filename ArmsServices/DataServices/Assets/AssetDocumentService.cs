@@ -17,13 +17,13 @@ namespace ArmsServices.DataServices
         int Delete(int? ID, string UserID);
         int DeleteType(int? ID, string UserID);
         int Remove(AssetDocumentModel model);
-        IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate,DateTime? endDate);
+        IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate, DateTime? endDate);
         IEnumerable<AssetDocumentModel> SelectWithPast(int? AssetID);
         IEnumerable<AssetDocumentModel> SelectByAsset(int? AssetID);
         IEnumerable<AssetDocumentTypeModel> GetDocumentTypes();
         AssetDocumentTypeModel UpdateDocumentType(AssetDocumentTypeModel model);
         IEnumerable<AssetDocumentModel> ValidatePeriod(AssetDocumentModel model);
-        bool IsValid(AssetDocumentModel model,DateTime? DateToCheck);
+        bool IsValid(AssetDocumentModel model, DateTime? DateToCheck);
 
 
     }
@@ -40,13 +40,13 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AttachedDocument", model.AttachedDocument),
-               new SqlParameter("@EndDate", model.EndDate),               
+               new SqlParameter("@EndDate", model.EndDate),
                new SqlParameter("@DocumentID", model.DocumentID),
                new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
-               new SqlParameter("@StartDate", model.StartDate),                       
+               new SqlParameter("@StartDate", model.StartDate),
                new SqlParameter("@AssetID", model.Asset.AssetID),
                new SqlParameter("@ReferenceDate", model.InvoiceDate),
-               new SqlParameter("@NotificationID", model.NotificationID),              
+               new SqlParameter("@NotificationID", model.NotificationID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Update]", parameters))
@@ -61,7 +61,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ValidatePeriod"),
-               new SqlParameter("@EndDate", model.EndDate),               
+               new SqlParameter("@EndDate", model.EndDate),
                new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
                new SqlParameter("@StartDate", model.StartDate),
                new SqlParameter("@AssetID", model.Asset.AssetID),
@@ -159,7 +159,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable <AssetDocumentModel> SelectByAsset(int? AssetID)
+        public IEnumerable<AssetDocumentModel> SelectByAsset(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -177,7 +177,7 @@ namespace ArmsServices.DataServices
             return new AssetDocumentModel
             {
                 AttachedDocument = dr.GetString("AttachedDocument"),
-                EndDate = dr.GetDateTime("EndDate"),                
+                EndDate = dr.GetDateTime("EndDate"),
                 DocumentID = dr.GetInt32("DocumentID"),
                 DocumentType = new AssetDocumentTypeModel()
                 {
@@ -185,12 +185,12 @@ namespace ArmsServices.DataServices
                     DocumentTypeName = dr.GetString("DocumentTypeName"),
                 },
                 InvoiceDate = dr.GetDateTime("ReferenceDate"),
-                StartDate = dr.GetDateTime("StartDate"),     
+                StartDate = dr.GetDateTime("StartDate"),
                 Asset = new AssetModel()
                 {
                     AssetID = dr.GetInt32("AssetID"),
                 },
-                NotificationID = dr.GetInt32("NotificationID"),    
+                NotificationID = dr.GetInt32("NotificationID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -201,14 +201,22 @@ namespace ArmsServices.DataServices
         }
 
         public IEnumerable<AssetDocumentTypeModel> GetDocumentTypes()
-        {           
+        {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentType.Select]", null))
             {
-                yield return new AssetDocumentTypeModel() {                 
-                DocumentTypeName = dr.GetString("DocumentTypeName"),
-                BlockAfter = dr.GetInt32("BlockAfter"),                
-                DocumentTypeID = dr.GetInt32("DocumentTypeID"),
-                WarnBefore = dr.GetInt32("WarnBefore"),
+                yield return new AssetDocumentTypeModel()
+                {
+                    DocumentTypeName = dr.GetString("DocumentTypeName"),
+                    BlockAfter = dr.GetInt32("BlockAfter"),
+                    DocumentTypeID = dr.GetInt32("DocumentTypeID"),
+                    WarnBefore = dr.GetInt32("WarnBefore"),
+                    UsageCode = new()
+                    {
+                        Id = dr.GetInt32("UsageID"),
+                        Area = dr.GetString("Area"),
+                        Description = dr.GetString("Description"),
+                        UsageCode=dr.GetString("UsageCode")
+                    },
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = dr.GetByte("RecordStatus"),
@@ -222,21 +230,29 @@ namespace ArmsServices.DataServices
         public AssetDocumentTypeModel UpdateDocumentType(AssetDocumentTypeModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-            {               
-               new SqlParameter("@BlockAfter", model.BlockAfter),              
+            {
+               new SqlParameter("@BlockAfter", model.BlockAfter),
                new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
                new SqlParameter("@DocumentTypeName", model.DocumentTypeName),
-               new SqlParameter("@WarnBefore", model.WarnBefore),                       
+               new SqlParameter("@WarnBefore", model.WarnBefore),
+               new SqlParameter("@UsageID", model.UsageCode.Id),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentType.Update]", parameters))
             {
                 model = new AssetDocumentTypeModel()
-                {                   
+                {
                     DocumentTypeName = dr.GetString("DocumentTypeName"),
-                    BlockAfter = dr.GetInt32("BlockAfter"),                   
+                    BlockAfter = dr.GetInt32("BlockAfter"),
                     DocumentTypeID = dr.GetInt32("DocumentTypeID"),
                     WarnBefore = dr.GetInt32("WarnBefore"),
+                    UsageCode = new()
+                    {
+                        Id = dr.GetInt32("UsageID"),
+                        Area = dr.GetString("Area"),
+                        Description = dr.GetString("Description"),
+                        UsageCode = dr.GetString("UsageCode")
+                    },
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = dr.GetByte("RecordStatus"),
