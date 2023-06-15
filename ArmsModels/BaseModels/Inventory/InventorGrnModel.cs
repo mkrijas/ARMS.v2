@@ -56,7 +56,8 @@ namespace ArmsModels.BaseModels
         public int? InvTranID { get; set; }
         public int? StoreID { get; set; }
         [Required]
-        public DateTime? EntryDate { get; set; }       
+        public DateTime? EntryDate { get; set; }
+        public bool Direction { get; set; } = true; // True for Inward, False for Outward;
         [Required]
         public int? PartyID { get; set; }
         public string PartyCode { get; set; }

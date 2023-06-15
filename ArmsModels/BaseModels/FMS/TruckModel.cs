@@ -77,4 +77,14 @@ namespace ArmsModels.BaseModels
         public string[] NatureOfTransaction { get { return Configuration.GetSection(Data).GetSection("NatureOfTransaction").Get<string[]>(); } }
 
     }
+
+
+    public class TruckStatusModel
+    {
+        public string Truck { get; set; }
+        public int? DisplayOrder { get; set; }
+        public string StatusText { get; set; }
+        public int? NoOfTrucks { get; set; }
+        public string LoadStatus { get; set; }
+    }
 }
