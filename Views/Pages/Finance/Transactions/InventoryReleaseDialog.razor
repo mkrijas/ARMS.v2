@@ -1,0 +1,204 @@
+﻿@using ArmsModels.BaseModels.Finance.Transactions;
+@using ArmsServices.DataServices.Finance.Transactions;
+@attribute [Authorize]
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+
+@inject ITaxVoucherService Iservice
+@inject IAssetDocumentService IDocumentService
+@inject IGstUsageIDService usageService
+@inject IDialogService DialogService
+@inject ITdsRateService tdsService
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Tax Voucher" formID="taxVoucherForm" model="@model">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm id="taxVoucherForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect Label="Select Document Type" T="AssetDocumentTypeModel" Value="model.DocumentType" ValueChanged="OnChangeDocumentType" ToStringFunc="@(e => e == null ? null : $"{e.DocumentTypeName}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in DocumentTypeList)
+                            {
+                                <MudSelectItem Value="@ditem">@ditem.DocumentTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                    
+                    <MudItem xs="12" md="12">
+                        <TruckSelector @bind-Value="@model.Truck"></TruckSelector>
+                    </MudItem>
+
+                    <MudItem xs="12" md="12">
+                        <StoreSelector @bind-Value="@model.Store"></StoreSelector>
+                    </MudItem>
+
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="model.TotalAmount" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)" Disabled></MudTextField>
+                    </MudItem>
+
+                    <MudItem xs="12">
+
+                        <h6><u>Items</u></h6>
+
+                        <MudGrid Justify="Justify.Center">
+                            <MudItem xs="4" Class="d-flex align-center"><span> <strong> <u>Asset</u></strong> </span></MudItem>
+                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Amount</u></strong> </span></MudItem>
+                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Reference</u></strong> </span></MudItem>
+                            <MudItem xs="2"></MudItem>
+                            @foreach (var item in model.Items)
+                            {
+                                <MudItem xs="4"> @item.Asset.Description </MudItem>
+                                <MudItem xs="3"> @item.Amount </MudItem>
+                                <MudItem xs="4"> @item.Reference </MudItem>
+                                <MudItem xs="1" Class="d-flex">
+                                    @if (!ReadOnly)
+                                    {
+                                        <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteSubList(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+
+                                    }
+                                </MudItem>
+                            }
+                            @if (!ReadOnly)
+                            {
+                                <MudItem xs="4"><AssetSelector @bind-Value="TaxVoucherSub.Asset" PassedListAssets="@(model.Items.Select(s=>s.Asset).ToList())" BranchID="branchID.Value" /></MudItem>
+                                <MudItem xs="3"><MudNumericField HideSpinButtons Label="Item Rate" @bind-Value="@TaxVoucherSub.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField></MudItem>
+                                <MudItem xs="4"><MudTextField ReadOnly="ReadOnly" @bind-Value="@TaxVoucherSub.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudItem>
+                                <MudItem xs="1" Class="d-flex align-center"><MudIconButton Title="Add" OnClick="AddSubList" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" /></MudItem>
+                            }
+                        </MudGrid>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+</DialogForm>
+
+@code {
+
+    [Parameter]
+    public InventoryReleaseModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    private List<GstUsageCodeModel> usageList = new();
+
+    private TaxVoucherSubModel TaxVoucherSub { get; set; } = new();
+    private GstUsageCodeModel gstusge = new();
+
+    public string Area { get; set; } = null;
+    public bool Local { get; set; } = true;
+
+    private int? branchID = null;
+    private string UserID = null;
+
+    public int SubAssetModel { get; set; }
+    public List<TaxVoucherSubModel> SubList { get; set; }
+
+    private List<AssetDocumentTypeModel> DocumentTypeList = new();
+
+    private EditContext editContext;
+
+    DialogForm dialogForm;
+    int DocTypeID = 19;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+
+        if (model == null)
+        {
+            model = new()
+                {
+                    BranchID = branchID,
+                    UserInfo = new() { UserID = UserID, },
+                    TotalAmount = 0,
+                    NatureOfTransaction = "Tax Voucher"
+                };
+        }
+        else
+        {
+            model.Items = Iservice.GetSub(model.RID).ToList();
+        }
+
+        DocumentTypeList = IDocumentService.GetDocumentTypes().ToList();
+        usageList = usageService.SelectByArea(Area, System.DateTime.Now).ToList();
+    }
+
+    protected override void OnParametersSet()
+    {
+        editContext = new EditContext(model);
+        // editContext.OnValidationRequested += OnValidationRequestedAsync;
+    }
+
+    public void AddSubList()
+    {
+        if (TaxVoucherSub.Asset == null)
+        {
+            snackbar.Add("Please select Asset", Severity.Error);
+            return;
+        }
+        if (dialogForm.validate(TaxVoucherSub, editContext))
+        {
+            model.Items.Add(TaxVoucherSub);
+            model.TotalAmount = model.Items.Sum(x => x.Amount);
+            TaxVoucherSub = new();
+        }
+    }
+
+    public void OnChangeDocumentType(AssetDocumentTypeModel obj)
+    {
+        model.DocumentType = obj;
+        AddTax();
+
+    }
+
+    public void OnChangeTruck(TruckModel obj)
+    {
+        model.Truck = obj;
+
+    }
+    public void OnValidSubmit(EditContext context)
+    {
+        try
+        {
+            model = Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            dialogForm.Close(model);
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+
+    private void DeleteSubList(TaxVoucherSubModel TaxVoucherSub)
+    {
+        if (model.TaxVoucherSubList.Exists(x => x.TaxVoucherSubID == TaxVoucherSub.TaxVoucherSubID))
+        {
+            int rowIndex = model.TaxVoucherSubList.IndexOf(TaxVoucherSub);
+            model.TaxVoucherSubList.RemoveAt(rowIndex);
+            model.TotalAmount = model.TaxVoucherSubList.Sum(x => x.Amount);
+            AddTax();
+        }
+    }
+
+    void SubElementSelected(AssetModel Asset)
+    {
+        TaxVoucherSub.Asset = Asset;
+    }
+
+}

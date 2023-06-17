@@ -16,11 +16,12 @@ namespace ArmsModels.BaseModels
 
         public int? RID { get; set; }
         public int? RequestID { get; set; }// Optional
-
-        public int? StoreID { get; set; }
+        public StoreModel Store { get; set; }
+        public int? JobcardID { get; set; } // Optional ,  Active Jobcards
+        public TruckModel Truck { get; set; } //Optional
 
         [ValidateComplexType]
-        public List<InventoryItemEntryModel> Items { get; set; } = new();        
+        public List<InventoryItemEntryModel> Items { get; set; } = new();
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
@@ -33,6 +34,7 @@ namespace ArmsModels.BaseModels
     public class InventoryRequestModel
     {
         public int? RequestID { get; set; }// Primary
+        public DateTime RequestDate { get; set; }
         public int? JobcardID { get; set; } // Optional ,  Active Jobcards
         public int? TruckID { get; set; } //Optional
         public int? StoreID { get; set; }// Mandatory
