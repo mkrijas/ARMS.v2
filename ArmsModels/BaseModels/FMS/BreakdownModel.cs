@@ -19,7 +19,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string BreakdownType { get; set; }
         [Required]
-        public DateTime? BreakdownTime { get; set; }
+        public DateTime? BreakdownTime { get; set; } = DateTime.Now;
         [Required]
         public int? TruckID { get; set; }
         public bool IsClaimInitiated { get; set; }
