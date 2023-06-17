@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
-using ArmsModels.SharedModels
+using ArmsModels.SharedModels;
 
 namespace ArmsModels.BaseModels
 {
