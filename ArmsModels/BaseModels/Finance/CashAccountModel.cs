@@ -10,9 +10,7 @@ namespace ArmsModels.BaseModels
     {
         public int? CashAccountID { get; set; }
         [Required]
-        public string Title { get; set; }
-        [Required]
-        [StringLength(8)]
+        public string Title { get; set; }        
         public string CashCode { get; set; }
         [Required]
         public ChartOfAccountModel Coa { get; set; } = new();
