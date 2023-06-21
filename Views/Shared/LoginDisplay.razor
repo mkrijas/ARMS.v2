@@ -1,26 +1,83 @@
 ﻿@inject NavigationManager uriHelper;
+@inject IDialogService DialogService
+@inject AuthenticationStateProvider auth
+@inject IUserService _user
+
 
 <AuthorizeView>
-    <Authorized>        
-       <MudButton Style="color:white" @onclick=Adminlog>Admin </MudButton>
-        <a href="Identity/Account/Manage">
-            <MudIcon Icon="@Icons.Material.Outlined.AccountCircle" Title="Favorite" />
-            @context.User.Identity.Name!
-            </a>
-        <form method="post" action="UserAccount/LogOut">
-            <button type="submit" class="nav-link btn btn-link">Log out</button>          
-        </form>
+    <Authorized>
+        <MudMenu ActivationEvent="@MouseEvent.MouseOver" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            <ActivatorContent>
+                <MudChip Icon="@Icons.Material.Outlined.AccountCircle" Color="Color.Primary">
+                    <MudText Typo="Typo.subtitle2">@context.User.Identity.Name!</MudText>
+                </MudChip>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem OnClick="@(async ()=> await changeBranch(@context.User.Identity.Name))">Change Branch</MudMenuItem>
+                
+                <MudMenuItem OnClick="@Adminlog">Admin</MudMenuItem>
+                <MudMenuItem >
+                    <form id="form1" method="post" name="Logout" action="/Identity/Account/Manage">
+                        <button type="submit">Manage</button>
+                    </form>
+                </MudMenuItem>       
+                <MudDivider></MudDivider>
+                <MudMenuItem>
+                    <form id="form1" method="post" name="Logout" action="UserAccount/Logout">
+                        <button type="submit">SignOut</button>
+                    </form>                    
+                </MudMenuItem>
+            </ChildContent>
+        </MudMenu>
     </Authorized>
     <NotAuthorized>
-        <a href="UserAccount/Register">Register</a>
-        <a sty href="UserAccount/Login">Log in</a>
-
+        <a href="UserAccount/Register" style="color:snow"><MudText Class="mr-3" Color="Color.Surface">Register</MudText></a>
+        <a href="UserAccount/Login" style="color:snow"><MudText Class="mr-3" Color="Color.Surface"> Log in</MudText></a>
     </NotAuthorized>
 </AuthorizeView>
 
-@code{
-      private void Adminlog()
-    {       
-            uriHelper.NavigateTo("/admin");  
+@code {
+    
+
+
+    private void Adminlog()
+    {
+        uriHelper.NavigateTo("/admin");
     }
+
+    async Task changeBranch(string UserID)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        bool BranchSeleceted = int.TryParse(User.Claims.First(x => x.Type == "BranchID").Value, out int BranchID);
+
+        DialogOptions options = new DialogOptions() { CloseButton = BranchSeleceted };
+        DialogParameters parameters = new DialogParameters();
+        parameters.Add("UserID", UserID);
+
+        var dialog = DialogService.Show<ChooseBranch>("Select A Branch", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            UserBranchRoleModel BranchRole = (UserBranchRoleModel)result.Data;
+            _user.SetCurrentBranchRole(BranchRole);
+            uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            if (authprov.User.Identity.IsAuthenticated)
+            {
+                if (!authprov.User.HasClaim(x => x.Type == "BranchName"))
+                {
+                    await changeBranch(authprov.User.Identity.Name);
+                }
+            }
+        }
+    }
+    
+
 }

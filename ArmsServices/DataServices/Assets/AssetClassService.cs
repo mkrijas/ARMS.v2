@@ -11,9 +11,9 @@ namespace ArmsServices.DataServices
     public interface IAssetClassService
     {
         AssetClassModel UpdateClass(AssetClassModel model);
-        AssetClassModel UpdateSubClass(AssetClassModel model);
-        IEnumerable<AssetClassModel> SelectSubClasses(int? ID);
-        IEnumerable<AssetClassModel> SelectSubClassesByClass(int? ID);
+        AssetSubClassModel UpdateSubClass(AssetSubClassModel model);
+        IEnumerable<AssetSubClassModel> SelectSubClasses(int? ID);
+        IEnumerable<AssetSubClassModel> SelectSubClassesByClass(int? ID);
         IEnumerable<AssetClassModel> SelectClasses();
         int DeleteClass(int? AssetClassID, string UserID);
         int DeleteSubClass(int? AssetSubClassID, string UserID);
@@ -60,7 +60,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<AssetClassModel> SelectSubClasses(int? ID)
+        public IEnumerable<AssetSubClassModel> SelectSubClasses(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -74,12 +74,12 @@ namespace ArmsServices.DataServices
             }
             
         }
-        public IEnumerable<AssetClassModel> SelectSubClassesByClass(int? ID)
+        public IEnumerable<AssetSubClassModel> SelectSubClassesByClass(int? ClassID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID),
-               new SqlParameter("@Operation", "SelectByParty")
+               new SqlParameter("@ID", ClassID),
+               new SqlParameter("@Operation", "SelectByClass")
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetSubClass.Select]", parameters))
@@ -106,7 +106,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
-        public AssetClassModel UpdateSubClass(AssetClassModel model)
+        public AssetSubClassModel UpdateSubClass(AssetSubClassModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -118,7 +118,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetSubClass.Update]", parameters))
             {
-                return GetAssetClass(dr);
+                return GetAssetSubClass(dr);
             }
             return null;
         }
@@ -128,8 +128,7 @@ namespace ArmsServices.DataServices
             return new AssetClassModel
             {
                 AssetClassID = dr.GetInt32("AssetClassID"),
-                AssetClassName = dr.GetString("AssetClasssName"),
-                AssetSubClassID = dr.GetInt32("AssetClassID"),
+                AssetClassName = dr.GetString("AssetClasssName"),                
                 PostingGroupID = dr.GetInt32("PostingGroupID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -140,14 +139,13 @@ namespace ArmsServices.DataServices
             };
         }
 
-        private AssetClassModel GetAssetSubClass(IDataRecord dr)
+        private AssetSubClassModel GetAssetSubClass(IDataRecord dr)
         {
-            return new AssetClassModel
+            return new AssetSubClassModel
             {
-                AssetClassID = dr.GetInt32("AssetClassID"),
+                AssetSubClassID = dr.GetInt32("ID"),                
                 AssetSubclass = dr.GetString("AsstSubClassName"),
-                AssetClassName= dr.GetString("AssetClasssName"),
-                AssetSubClassID = dr.GetInt32("ID"),
+                AssetClassID = dr.GetInt32("AssetClassID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

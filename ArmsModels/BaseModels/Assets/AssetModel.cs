@@ -26,7 +26,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public AssetClassModel AssetClass { get; set; } // Building,Vehicle,Computer etc
         [Required]
-        public AssetClassModel SubClass { get; set; } // Printers,Chair,Engine etc
+        public AssetSubClassModel SubClass { get; set; } // Printers,Chair,Engine etc
         [Required]
         public int? BranchID { get; set; }
         [Required]
@@ -84,17 +84,20 @@ namespace ArmsModels.BaseModels
 
     public class AssetClassModel
     {
-        public int? AssetClassID { get; set; }
-        
-        public string AssetClassName { get; set; }
-       
+        public int? AssetClassID { get; set; }        
+        public string AssetClassName { get; set; }       
         public int? PostingGroupID { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
+
+    }
+    public class AssetSubClassModel
+    {
         public int? AssetSubClassID { get; set; }
         public virtual string AssetSubclass { get; set; }
+        public int? AssetClassID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
-
-public class AssetStatusUpdateModel
+        public class AssetStatusUpdateModel
 {
     public int? StatusUpdateID { get; set; }
     [Required]

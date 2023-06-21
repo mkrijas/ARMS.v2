@@ -27,6 +27,9 @@ namespace ArmsServices.DataServices
         int UpdateDriver(int? TruckID, int? DriverID,bool AssignedStatus,string UserID);
         int? GetAssignedDriver(int? TruckID);
         long? GetCurrentTrip(int? TruckID);
+        IEnumerable<TruckStatusModel> GetTruckStatus(int? BranchID);
+
+
     }
 
     public class TruckService : ITruckService
@@ -340,6 +343,27 @@ namespace ArmsServices.DataServices
                         TimeStampField = dr.GetDateTime("TimeStamp"),
                         UserID = dr.GetString("UserID"),
                     },
+                };
+            }
+        }
+
+        public IEnumerable<TruckStatusModel> GetTruckStatus(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "Summary"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[rpt.Operation.Trucks.CurrentStatus]", parameters))
+            {
+                yield return new TruckStatusModel()
+                {
+                    DisplayOrder = dr.GetInt32("DisplayOrder"),
+                    LoadStatus = dr.GetString("LoadStatus"),
+                    NoOfTrucks = dr.GetInt32("NoOfTrucks"),
+                    StatusText = dr.GetString("EventStatusText"),
+                    Truck = dr.GetString("Truck"),
                 };
             }
         }

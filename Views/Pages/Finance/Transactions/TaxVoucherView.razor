@@ -1,0 +1,112 @@
+﻿@page "/TaxVoucherView"
+@using ArmsModels.BaseModels.Finance.Transactions;
+@using ArmsServices.DataServices.Finance.Transactions;
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using MudBlazor;
+@using Views.Pages.Finance.Transactions;
+
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+
+@inject ITaxVoucherService Iservice
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Tax Voucher </MudText>
+                <MudTooltip Text="New Tax Voucher">
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+                <MudSpacer></MudSpacer>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedToggled(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
+                @*<MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherModel, object>(x=> x.PaymentMode)" InitialDirection="SortDirection.Ascending">Payment Route</MudTableSortLabel></MudTh>*@
+                <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
+                @*<MudTd DataLabel="PaymentMode">@context.PaymentMode</MudTd>*@
+                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
+                <MudTd DataLabel="">
+                    @if (@context.AuthLevelId == null)
+                    {
+                        <MudTooltip Text="Edit">
+                            <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    }
+                    @if (@context.AuthLevelId != 99)
+                    {
+                        <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                    }
+                    <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+@code {
+    public bool IsApproved { get; set; } = false;
+    private List<TaxVoucherModel> collection = new List<TaxVoucherModel>();
+    protected override void OnInitialized()
+    {
+        GetAll(IsApproved);
+    }
+    void ApprovedToggled(bool value)
+    {
+        IsApproved = value;
+        GetAll(IsApproved);
+    }
+    private void GetAll(bool val)
+    {
+        if (val)
+        {
+            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
+        }
+        else
+        {
+            collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
+        }
+    }
+    private async Task Delete(TaxVoucherModel tx)
+    {
+        try
+        {
+
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            Iservice.Delete(tx.TaxVoucherID, user.Identity.Name);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            GetAll(IsApproved);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OpenDialog(TaxVoucherModel model, bool ReadOnly = false)
+    {
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", model);
+        parms.Add("ReadOnly", ReadOnly);
+        var dialog = DialogService.Show<TaxVoucherDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var result = await dialog.Result;
+        GetAll(IsApproved);
+    }
+}
+

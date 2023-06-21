@@ -45,3 +45,10 @@ function focusElement (id) {
     const element = document.getElementById(id);
     element.focus();
 }
+
+
+window.BlazorHelpers = {
+    RedirectTo: function (path) {
+       $.post(path);
+    }
+};

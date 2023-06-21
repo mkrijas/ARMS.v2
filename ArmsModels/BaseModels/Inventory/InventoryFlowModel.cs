@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 
-namespace ArmsModels.BaseModels.Inventory
+namespace ArmsModels.BaseModels
 {  
     public class InventoryflowModel : InventoryBaseModel
     {
@@ -14,8 +14,7 @@ namespace ArmsModels.BaseModels.Inventory
         {
             InvTranNo = _invtranNo;           
         }
-        public int? GrnID { get; set; }
-        public int? InvTranID { get; set; }
+        public int? GrnID { get; set; } 
         public string InvTranNo { get; }          
     }
 

@@ -31,6 +31,7 @@ namespace ArmsModels.BaseModels
         public TariffTypeModel TariffType { get; set; }        
         public string Reference { get; set; }
         public GstModel Gst { get; set; } = new();
+        public List<GcTariffModel> BookedGCs { get; set; }
     }
 
     public class BillingModel : ProformaInvoiceModel

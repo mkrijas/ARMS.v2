@@ -70,8 +70,9 @@ namespace ArmsServices.DataServices
                 },
                 SubClass = new()
                 {
-                    AssetClassID = dr.GetInt32("AssetSubClassID"),
-                    AssetClassName = dr.GetString("AssetSubClassName"),
+                    AssetSubClassID = dr.GetInt32("AssetSubClassID"),
+                    AssetSubclass = dr.GetString("AssetSubClassName"),
+                    AssetClassID = dr.GetInt32("AssetClassID"),
                 },
                 AssetCode = dr.GetString("AssetCode"),
                 IsComplex = dr.GetBoolean("IsComplex"),

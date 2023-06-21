@@ -1,6 +1,7 @@
 using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
+using ArmsServices.DataServices.Finance.Transactions;
 using ArmsServices.DataServices.FMS;
 using ArmsServices.DataServices.General;
 using ArmsServices.DataServices.Operations;
@@ -138,6 +139,7 @@ namespace Views
             services.AddScoped<IDimensionService, DimensionService>();
             services.AddScoped<IInterBranchTransactionService, InterBranchTransactionService>();
             services.AddScoped<IRoutineCheckListMasterService, RoutineCheckListMasterService>();
+            services.AddScoped<ITaxVoucherService, TaxVoucherService>();
 
             //------------FINANCE TRANSACTIONS-------------------
             services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();

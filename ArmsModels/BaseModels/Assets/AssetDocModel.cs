@@ -54,6 +54,7 @@ namespace ArmsModels.BaseModels
         public string DocumentTypeName { get; set; }
         public int? WarnBefore { get; set; }
         public int? BlockAfter { get; set; }
+        public GstUsageCodeModel UsageCode { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
 
