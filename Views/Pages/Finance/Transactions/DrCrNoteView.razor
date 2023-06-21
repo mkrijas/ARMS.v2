@@ -18,7 +18,17 @@
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Dr/Cr..." Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                              @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
 
             </ToolBarContent>
 
@@ -65,20 +75,49 @@
     private List<DrCrNoteModel> collection = new List<DrCrNoteModel>();
 
     public bool IsApproved { get; set; } = false;
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
 
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
 
     protected override void OnInitialized()
     {
 
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
+
     void ApprovedChanged(bool value)
     {
 
         IsApproved = value;
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
 
     }
+
+    private async Task ReloadTable()
+    {
+        GetAll(IsApproved, NumberOfRecords);
+    }
+
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
+    }
+
     private async Task OpenDialog(DrCrNoteModel tds, bool ReadOnly)
     {
 
@@ -90,29 +129,30 @@
         var dialog = DialogService.Show<DrCrNoteDialog>(tds.DrCrNoteID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
 
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
 
 
-    public void GetAll(bool val)
+    public void GetAll(bool val, int numberOfRecords)
     {
+        int NumberOfRecords = numberOfRecords;
+        collection = new List<DrCrNoteModel>();
+
         if (val)
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
+            collection = Iservice.SelectByApproved(NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
+            collection = Iservice.SelectByUnapproved(NumberOfRecords, searchTerm).ToList();
         }
-
-
     }
     private void Delete(DrCrNoteModel tx)
     {
         Iservice.Delete(tx.DrCrNoteID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
 }

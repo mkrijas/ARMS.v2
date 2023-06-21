@@ -12,7 +12,17 @@
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Completed Payments</MudText>               
-                <MudSpacer></MudSpacer>               
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Payments..." Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                              @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentInitiatedModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Date</MudTableSortLabel></MudTh>
@@ -52,26 +62,56 @@
     private List<PaymentFinishModel> collection = new List<PaymentFinishModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
 
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
+
     int BranchID; string UserID;
+
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
+    }
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
+
+    private async Task ReloadTable()
+    {
+        GetAll(NumberOfRecords);
+    }
 
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = authprov.User.Identity.Name;
-        GetAll();
+        GetAll(NumberOfRecords);
     }
 
-    private void GetAll()
+    private void GetAll(int numberOfRecords)
     {
-        collection = Iservice.Select(BranchID,null).ToList();
+        int NumberOfRecords = numberOfRecords;
+        collection = Iservice.Select(BranchID, null, NumberOfRecords, searchTerm).ToList();
     }
 
 
     void Delete(PaymentFinishModel pi)
     {
         //Iservice.Delete(pi.PaymentInitiatedID, UserID);
-        GetAll();
+        GetAll(NumberOfRecords);
     }
 
 
@@ -103,7 +143,7 @@
         var result = await dialog.Result;
         if (!result.Canceled)
         {
-            GetAll();
+            GetAll(NumberOfRecords);
         }
     }
 }

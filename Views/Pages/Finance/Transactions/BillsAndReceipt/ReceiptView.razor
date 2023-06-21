@@ -18,7 +18,17 @@
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Receipt..." Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                              @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
 
             </ToolBarContent>
 
@@ -75,30 +85,62 @@
     private List<ReceiptModel> collection = new List<ReceiptModel>();
 
     public bool IsApproved { get; set; } = false;
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        await GetReceiptBill(IsApproved);
+        await GetReceiptBill(IsApproved, NumberOfRecords);
     }
 
     async Task ApprovedChanged(bool value)
     {
         IsApproved = value;
-        await GetReceiptBill(IsApproved);
+        await GetReceiptBill(IsApproved, NumberOfRecords);
 
     }
-    public async Task GetReceiptBill(bool val)
+
+    private async Task ReloadTable()
+    {
+        await GetReceiptBill(IsApproved, NumberOfRecords);
+    }
+
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
+    }
+
+    public async Task GetReceiptBill(bool val, int numberOfRecords)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
+        int NumberOfRecords = numberOfRecords;
+        collection = new List<ReceiptModel>();
+
         if (val)
         {
-            collection = Iservice.Select(brancID).Where(x => x.AuthLevelId == 99).ToList();
+            collection = Iservice.SelectByApproved(brancID, NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.Select(brancID).Where(x => x.AuthLevelId != 99).ToList();
+            collection = Iservice.SelectByUnapproved(brancID, NumberOfRecords, searchTerm).ToList();
         }
     }
 
@@ -112,13 +154,13 @@
         parms.Add("ReadOnly", ReadOnly);        
         var dialog = DialogService.Show<ReceiptDialog>(rModel.ReceiptID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
-        await GetReceiptBill(IsApproved);
+        await GetReceiptBill(IsApproved, NumberOfRecords);
     }
 
     private async Task Delete(ReceiptModel tx)
     {
         Iservice.Delete(tx.ReceiptID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        await GetReceiptBill(IsApproved);
+        await GetReceiptBill(IsApproved, NumberOfRecords);
     }
 }

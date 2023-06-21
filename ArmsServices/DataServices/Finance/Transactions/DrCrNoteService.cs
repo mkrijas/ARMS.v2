@@ -16,6 +16,9 @@ namespace ArmsServices.DataServices
         DrCrNoteModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<DrCrNoteModel> Select();
+        IEnumerable<DrCrNoteModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
+        IEnumerable<DrCrNoteModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
+
         IEnumerable<DrCrNoteModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<DrCrNoteModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? ID);
@@ -191,6 +194,36 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.DrCrNote.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<DrCrNoteModel> SelectByApproved(int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "ByApproved"),
+                new SqlParameter("@numberOfRecords", NumberOfRecords), 
+                new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.DrCrNote.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<DrCrNoteModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "ByUnapproved"),
+                new SqlParameter("@numberOfRecords", NumberOfRecords), 
+                new SqlParameter("@searchTerm", searchTerm)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.DrCrNote.Select]", parameters))

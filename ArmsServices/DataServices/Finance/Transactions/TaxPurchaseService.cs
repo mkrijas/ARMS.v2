@@ -6,6 +6,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Reflection;
 
 
 namespace ArmsServices.DataServices
@@ -16,6 +17,8 @@ namespace ArmsServices.DataServices
         TaxPurchaseModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<TaxPurchaseModel> Select();
+        IEnumerable<TaxPurchaseModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
+        IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
         IEnumerable<TaxPurchaseModel> SelectByParty(int? PartyID,int? PartyBranchID);
         IEnumerable<TaxPurchaseModel> SelectByPeriod(DateTime? begin,DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? PID);
@@ -139,7 +142,38 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
-        }      
+        }
+
+        public IEnumerable<TaxPurchaseModel> SelectByApproved(int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm)
+        
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
 
         public TaxPurchaseModel SelectByID(int? ID)
         {

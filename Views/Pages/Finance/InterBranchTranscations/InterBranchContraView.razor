@@ -1,4 +1,5 @@
-﻿@page "/InterBranchContraView"
+﻿
+@page "/InterBranchContraView"
 @using ArmsModels.BaseModels.Finance.Transactions
 @inject IContraService Iservice
 @inject ICostCenterService costIservice
@@ -22,7 +23,17 @@
 
 
                 <MudSpacer></MudSpacer>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Contra..." Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                              @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
 
             </ToolBarContent>
             <HeaderContent>
@@ -73,34 +84,62 @@
     private ContraModel model = new ContraModel();
     public bool IsApproved { get; set; } = false;
     private List<ContraModel> collection = new List<ContraModel>();
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
+
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
+    }
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
+
+    private async Task ReloadTable()
+    {
+        await GetAll(IsApproved, NumberOfRecords);
+    }
+
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        await GetAll(IsApproved);
+        await GetAll(IsApproved, NumberOfRecords);
     }
     async Task ApprovedChanged(bool value)
     {
 
         IsApproved = value;
-        await GetAll(IsApproved);
+        await GetAll(IsApproved, NumberOfRecords);
 
     }
-    private async Task GetAll(bool val)
+    private async Task GetAll(bool val, int numberOfRecords)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
+        int NumberOfRecords = numberOfRecords;
         collection = new List<ContraModel>();
 
         if (val)
         {
-            collection = Iservice.SelectInterBranch(brancID).Where(x => x.AuthLevelId == 99).ToList();
-
+            collection = Iservice.SelectInterBranchByApproved(brancID, NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.SelectInterBranch(brancID).Where(x => x.AuthLevelId != 99).ToList();
-
+            collection = Iservice.SelectInterBranchByUnapproved(brancID, NumberOfRecords, searchTerm).ToList();
         }
 
     }
@@ -108,7 +147,7 @@
     {
         Iservice.Delete(tx.ContraID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        await GetAll(IsApproved);
+        await GetAll(IsApproved, NumberOfRecords);
     }
     private async Task Approve(ContraModel tds)
     {
@@ -116,7 +155,7 @@
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
         Iservice.Approve(tds.ContraID, model.UserInfo.UserID, "");
-        await GetAll(IsApproved);
+        await GetAll(IsApproved, NumberOfRecords);
     }
 
     private async Task OpenDialog(ContraModel tds, bool ReadOnly, bool View)
@@ -132,7 +171,7 @@
         var result = await dialog.Result;
 
 
-        await GetAll(IsApproved);
+        await GetAll(IsApproved, NumberOfRecords);
     }
 
 }

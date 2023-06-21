@@ -23,8 +23,8 @@ namespace ArmsServices.DataServices
         int DeleteProformaInvoice(int? ID,string UserID, string Remarks);
         int ReverseConsolidatedDraftBill(int? ID, string UserID);
         IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID,int? BranchId);
-        IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList();
-        IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? ID);
+        IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? NumberOfRecords, string searchTerm);
+        IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? ID, int? NumberOfRecords, string searchTerm);
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID);
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateTime? begin, DateTime? end);
         IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID);
@@ -76,11 +76,14 @@ namespace ArmsServices.DataServices
                 };
             }
         }
-        public IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList()
+        public IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "PENDING"),                    
+               new SqlParameter("@Operation", "PENDING"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords), 
+               new SqlParameter("@searchTerm", searchTerm)
+
             }; 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
             {
@@ -131,12 +134,15 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? ID)
+        public IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? ID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
-               new SqlParameter("@ProformaInvoiceID", ID)
+               new SqlParameter("@ProformaInvoiceID", ID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
             {

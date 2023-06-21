@@ -16,6 +16,8 @@ namespace ArmsServices.DataServices
         OpTranModel Update(OpTranModel model);
         int Delete(long? ID, string UserID);
         IEnumerable<OpTranModel> SelectByTrip(long? TripID);
+        IEnumerable<OpTranModel> SelectByApprovedTrip(long? TripID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<OpTranModel> SelectByUnapprovedTrip(long? TripID, int? NumberOfRecords, string searchTerm);
         IEnumerable<OpTranModel> SelectByJobcard(int? JobcardID);
         OpTranModel SelectByID(long? ID);
         int Approve(int? ID, string UserID, string Remarks);
@@ -93,6 +95,38 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@TripID", TripID),
                new SqlParameter("@Operation", "ByTrip"),
+            };
+
+            foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<OpTranModel> SelectByApprovedTrip(long? TripID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripID", TripID),
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<OpTranModel> SelectByUnapprovedTrip(long? TripID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripID", TripID),
+               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
             };
 
             foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))

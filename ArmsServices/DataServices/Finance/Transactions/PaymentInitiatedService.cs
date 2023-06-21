@@ -8,7 +8,7 @@ namespace ArmsServices.DataServices
 {
     public interface IPaymentInitiatedService
     {
-        IEnumerable<PaymentInitiatedModel> PendingForCompletion(int? BranchID);
+        IEnumerable<PaymentInitiatedModel> PendingForCompletion(int? BranchID, string searchTerm);
         int? Update(PaymentInitiatedModel model);
         int? Reverse(int? ID, string UserID);
         IEnumerable<PaymentInitiatedModel> Select(int? BranchID);   
@@ -40,12 +40,14 @@ namespace ArmsServices.DataServices
             return model.PaymentInitiatedID;
         }
 
-        public IEnumerable<PaymentInitiatedModel> PendingForCompletion(int? BranchID)
+        public IEnumerable<PaymentInitiatedModel> PendingForCompletion(int? BranchID, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ToComplete"),
                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@searchTerm", searchTerm)
+
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Initiate.Select]", parameters))

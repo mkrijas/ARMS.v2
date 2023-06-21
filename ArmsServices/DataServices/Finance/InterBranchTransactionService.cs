@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
         InterBranchAccountMappingModel Update(InterBranchAccountMappingModel model);
         InterBranchAccountMappingModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
-        IEnumerable<InterBranchAccountMappingModel> Select();
+        IEnumerable<InterBranchAccountMappingModel> Select(int? NumberOfRecords, string searchTerm);
         InterBranchAccountMappingModel Select(int? BranchID,int? FundTypeID);
         IEnumerable<InterBranchTransactionTypeModel> GetTypes();
 
@@ -54,11 +54,13 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<InterBranchAccountMappingModel> Select()
+        public IEnumerable<InterBranchAccountMappingModel> Select(int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.InterBranchAccount.Select]", parameters))
             {

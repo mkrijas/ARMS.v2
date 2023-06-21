@@ -18,7 +18,17 @@
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new SundryReceiptModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Sundry Receipt..." Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                              @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<SundryReceiptModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
@@ -64,27 +74,58 @@
     
     public bool IsApproved { get; set; } = false;
     private List<SundryReceiptModel> collection = new List<SundryReceiptModel>();
-    protected override void OnInitialized()
-    {        
-        GetAll(IsApproved);
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
+
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
     }
 
-    private void GetAll(bool val)
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
+
+    private async Task ReloadTable()
+    {
+        GetAll(IsApproved, NumberOfRecords);
+    }
+
+    protected override void OnInitialized()
+    {        
+        GetAll(IsApproved, NumberOfRecords);
+    }
+
+    private void GetAll(bool val, int numberOfRecords)
+    {
+        int NumberOfRecords = numberOfRecords;
+
         if (val)
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
+            collection = Iservice.SelectByApproved(NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
+            collection = Iservice.SelectByUnapproved(NumberOfRecords, searchTerm).ToList();
         }
-
     }
+
     void ApprovedChanged(bool value)
     {
         IsApproved = value;
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
 
     }
 
@@ -97,7 +138,7 @@
         parms.Add("ReadOnly", ReadOnly);        
         var dialog = DialogService.Show<SundryReceiptDialog>(RModel.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
 
@@ -105,7 +146,7 @@
     {
         Iservice.Delete(tx.SundryReceiptID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
 }
