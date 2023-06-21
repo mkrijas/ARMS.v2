@@ -17,13 +17,15 @@ namespace ArmsModels.BaseModels
         public int? CoaID { get; set; }
         public int? ParentID { get; set; }
         public string AccountCode { get; set; }
-        public string AccountName { get; set; }        
+        [Required]
+        [StringLength(50, ErrorMessage = "LedgerName is required.")]
+        public string AccountName { get; set; }
         public string AccountDescription { get; set; }
         public string AccountType { get; set; }
         public bool SummaryAccount { get; set; }
         public DateTime? PeriodFrom { get; set; }
         public DateTime? PeriodTo { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; } 
+        public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
 
@@ -34,7 +36,8 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
         }
         private int? _id;
-        public int? ID {
+        public int? ID
+        {
             get
             {
                 return _id;
@@ -49,7 +52,7 @@ namespace ArmsModels.BaseModels
         public string AccountName { get; set; }
         public int? BranchID { get; set; }
         public string BranchName { get; set; }
-        public bool IsSelected {get;set;} 
+        public bool IsSelected { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
@@ -65,5 +68,5 @@ namespace ArmsModels.BaseModels
         public virtual string BankTools { get; set; }
     }
 
-   
+
 }
