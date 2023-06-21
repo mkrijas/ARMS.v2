@@ -15,6 +15,8 @@ namespace ArmsServices.DataServices
         SundryPaymentModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<SundryPaymentModel> Select();
+        IEnumerable<SundryPaymentModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
+        IEnumerable<SundryPaymentModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
         IEnumerable<SundryPaymentEntryModel> GetEntries(int? SID);
         int Approve(int? SundryPaymentID, string UserID, string Remarks);
         int Reverse(int? SundryPaymentID, string UserID, string Remarks);
@@ -47,6 +49,41 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
+
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryPayment.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<SundryPaymentModel> SelectByApproved(int? NumberOfRecords, string searchTerm)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords), 
+               new SqlParameter("@searchTerm", searchTerm)
+
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryPayment.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+
+        }
+
+        public IEnumerable<SundryPaymentModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
 
             };
 

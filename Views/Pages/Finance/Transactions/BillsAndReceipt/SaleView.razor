@@ -21,7 +21,17 @@
                 </MudTooltip>
 
                 <MudSpacer></MudSpacer>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Sale..." Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                              @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
 
             </ToolBarContent>
             <HeaderContent>
@@ -71,42 +81,68 @@
 
     private SaleModel model = new SaleModel();
     private List<SaleModel> collection = new List<SaleModel>();
-    private string searchTax = "";
+    
     public bool IsApproved { get; set; } = false;
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
 
     protected override void OnInitialized()
     {
         model = new();
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
     void ApprovedChanged(bool value)
     {
 
         IsApproved = value;
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
 
     }
-    private void GetAll(bool val)
+    private void GetAll(bool val, int numberOfRecords)
     {
+        int NumberOfRecords = numberOfRecords;
+        collection = new List<SaleModel>();
 
         if (val)
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
-
+            collection = Iservice.SelectByApproved(NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
-
+            collection = Iservice.SelectByUnapproved(NumberOfRecords, searchTerm).ToList();
         }
+    }
 
+    private async Task ReloadTable()
+    {
+        GetAll(IsApproved, NumberOfRecords);
+    }
 
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
     }
     private void Verified()
     {
 
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
 
     }
 
@@ -123,7 +159,7 @@
         var result = await dialog.Result;
         if (!result.Cancelled)
         {
-            GetAll(IsApproved);
+            GetAll(IsApproved, NumberOfRecords);
             //model = new();
         }
 
@@ -139,7 +175,7 @@
         var user = authprov.User;
         Iservice.Delete(tx.SID, user.Identity.Name);
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
 

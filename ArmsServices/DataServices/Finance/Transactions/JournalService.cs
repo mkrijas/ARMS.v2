@@ -18,7 +18,9 @@ namespace ArmsServices.DataServices
         JournalModel Update(JournalModel model);
         JournalModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
-        IEnumerable<JournalModel> Select(int? BranchID);       
+        IEnumerable<JournalModel> Select(int? BranchID);
+        IEnumerable<JournalModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<JournalModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<JournalModel> SelectByPeriod(DateTime? begin, DateTime? end);       
         int Approve(int? ID, string UserID, string Remarks);
         int Reverse(int? ID, string UserID, string Remarks);
@@ -81,6 +83,43 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        public IEnumerable<JournalModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "ByApproved"),
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Journal.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<JournalModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "ByUnapproved"),
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Journal.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+
+
 
         public JournalModel SelectByID(int? ID)
         {

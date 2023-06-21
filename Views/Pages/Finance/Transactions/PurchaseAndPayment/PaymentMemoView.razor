@@ -32,8 +32,18 @@
                 <MudTooltip Text="New Payment Memo">
                 <MudIconButton  Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogpayment(new PaymentMemoModel(),false))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-                <MudSpacer></MudSpacer>  
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Payment Memo..." Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                              @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
                 
             </ToolBarContent>
             <HeaderContent>
@@ -85,15 +95,42 @@
     private PaymentMemoModel model = new PaymentMemoModel();
     private List<PaymentMemoModel> collection = new List<PaymentMemoModel>(); 
     public bool IsApproved { get; set; } = false;
-
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
    
     private int? branchID = null;
     private string UserID = null;
     
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
+    }
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
+
+    private async Task ReloadTable()
+    {
+        GetAll(IsApproved, NumberOfRecords);
+    }
+
     void ApprovedChanged(bool value)
     {
         IsApproved = value;
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
     protected override async Task OnInitializedAsync()
     {
@@ -102,18 +139,20 @@
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         UserID = user.Identity.Name;
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
-    private  void GetAll(bool val)
+    private void GetAll(bool val, int numberOfRecords)
     {
+        int NumberOfRecords = numberOfRecords;
+
         if (val)
         {
-            collection = Iservice.Select(branchID).Where(x => x.PaymentStatus > 0).ToList();
+            collection = Iservice.SelectByApproved(branchID, NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.Select(branchID).Where(x => x.PaymentStatus == 0).ToList();
+            collection = Iservice.SelectByUnapproved(branchID, NumberOfRecords, searchTerm).ToList();
         }
     }
   
@@ -128,14 +167,14 @@
         {
            
         }
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
     private void Delete(PaymentMemoModel tx)
     {
         Iservice.Delete(tx.PaymentMemoID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
 
@@ -164,7 +203,7 @@
                 UpdatedModel.UserInfo.UserID = UserID;
                 UpdatedModel.BranchID = branchID;
                 IinitiateService.Update(UpdatedModel);
-                GetAll(IsApproved);
+                GetAll(IsApproved, NumberOfRecords);
             }
         }
         else

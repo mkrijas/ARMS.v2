@@ -11,11 +11,21 @@
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5" >
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Sundry Payment </MudText>
-                <MudTooltip Text="New Sundry Paymnet">
+                <MudTooltip Text="New Sundry Payment">
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedToggled(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Sundry..." Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                              @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedToggled(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
@@ -52,33 +62,67 @@
 @code {
     public bool IsApproved { get; set; } = false;
     private List<SundryPaymentModel> collection = new List<SundryPaymentModel>();
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
+
     protected override void OnInitialized()
     {       
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
+
     void ApprovedToggled(bool value)
     {
         IsApproved = value;
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
-    private void GetAll(bool val)
+
+    private void GetAll(bool val, int numberOfRecords)
     {
+        int NumberOfRecords = numberOfRecords;
+
         if (val)
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
+            collection = Iservice.SelectByApproved(NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
+            collection = Iservice.SelectByUnapproved(NumberOfRecords, searchTerm).ToList();
         }
     }
+
+    private async Task ReloadTable()
+    {
+        GetAll(IsApproved, NumberOfRecords);
+    }
+
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
+    }
+
     private void Delete(SundryPaymentModel tx)
     {
         try
         {
             Iservice.Delete(tx.SundryPaymentID, "Rijas");
             snackbar.Add("Deleted Successfully", Severity.Success);
-            GetAll(IsApproved);
+            GetAll(IsApproved, NumberOfRecords);
         }
         catch(Exception ex)
         {
@@ -94,6 +138,6 @@
         parms.Add("ReadOnly", ReadOnly);        
         var dialog = DialogService.Show<SundryPaymentDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 }

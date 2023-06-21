@@ -14,6 +14,8 @@ namespace ArmsServices.DataServices
         SundryReceiptModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<SundryReceiptModel> Select();
+        IEnumerable<SundryReceiptModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
+        IEnumerable<SundryReceiptModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
         IEnumerable<SundryReceiptEntryModel> GetEntries(int? SID);
         int Approve(int? SundryReceiptID, string UserID,string Remarks);
         int Reverse(int? SundryReceiptID, string UserID, string Remarks);
@@ -50,6 +52,36 @@ namespace ArmsServices.DataServices
                 {
                     yield return GetModel(dr);
                 }            
+        }
+
+        public IEnumerable<SundryReceiptModel> SelectByApproved(int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryReceipt.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<SundryReceiptModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryReceipt.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
 
         public IEnumerable<SundryReceiptEntryModel> GetEntries(int? SID)

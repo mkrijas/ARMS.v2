@@ -12,9 +12,14 @@ namespace ArmsServices.DataServices
     {
         ContraModel Update(ContraModel model);
         IEnumerable<ContraModel> SelectInterBranch(int? BranchID);
+        IEnumerable<ContraModel> SelectInterBranchByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<ContraModel> SelectInterBranchByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         ContraModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<ContraModel> Select(int? BranchID);
+        IEnumerable<ContraModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<ContraModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+
         int Approve(int? ID, string UserID, string Remarks);
         int Reverse(int? ID, string UserID, string Remarks);
 
@@ -53,6 +58,37 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        public IEnumerable<ContraModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords), 
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+        public IEnumerable<ContraModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByUnapproved"),
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@numberOfRecords", NumberOfRecords),
+                new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
         public IEnumerable<ContraModel> SelectInterBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -60,6 +96,40 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@InterBranch", true),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<ContraModel> SelectInterBranchByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@InterBranch", true),
+               new SqlParameter("@numberOfRecords", NumberOfRecords), 
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<ContraModel> SelectInterBranchByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@InterBranch", true),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Select]", parameters))

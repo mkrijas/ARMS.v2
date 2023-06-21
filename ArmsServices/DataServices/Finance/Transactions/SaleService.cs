@@ -16,6 +16,9 @@ namespace ArmsServices.DataServices
         SaleModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<SaleModel> Select();
+        IEnumerable<SaleModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
+        IEnumerable<SaleModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
+
         IEnumerable<SaleModel> SelectByParty(int? PartyID);
         IEnumerable<SaleModel> SelectByPeriod(DateTime? begin,DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetParticulars(int? SID);
@@ -134,7 +137,37 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
-        }      
+        }
+
+        public IEnumerable<SaleModel> SelectByApproved(int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<SaleModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
 
         public SaleModel SelectByID(int? ID)
         {

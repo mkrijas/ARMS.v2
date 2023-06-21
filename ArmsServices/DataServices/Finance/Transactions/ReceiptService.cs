@@ -14,7 +14,11 @@ namespace ArmsServices.DataServices
         ReceiptModel SelectByID(int? ReceiptID);
         int Delete(int? ID, string UserID);
         IEnumerable<ReceiptModel> Select(int? BranchID);
+        IEnumerable<ReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<ReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<ReceiptModel> SelectInterBranch(int? BranchID);
+        IEnumerable<ReceiptModel> SelectInterBranchByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<ReceiptModel> SelectInterBranchByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<ReceiptModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID);
         IEnumerable<ReceiptModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);
         IEnumerable<BillsReceiptModel> GetBills(int? ReceiptID);
@@ -99,6 +103,38 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<ReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Receipt.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<ReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Receipt.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public IEnumerable<ReceiptModel> SelectInterBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -106,6 +142,42 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@IsInterBranch", true),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Receipt.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<ReceiptModel> SelectInterBranchByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsInterBranch", true),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Receipt.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<ReceiptModel> SelectInterBranchByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsInterBranch", true),
+               new SqlParameter("@numberOfRecords", NumberOfRecords), 
+               new SqlParameter("@searchTerm", searchTerm)
+
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Receipt.Select]", parameters))

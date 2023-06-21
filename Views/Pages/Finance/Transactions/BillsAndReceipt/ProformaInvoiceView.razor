@@ -16,7 +16,17 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Proforma Invoices</MudText>
                 <MudSpacer></MudSpacer>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Proforma..." Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                              @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<ProformaInvoiceModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
@@ -55,9 +65,36 @@
     private List<ProformaInvoiceModel> collection = new List<ProformaInvoiceModel>();
 
     private bool IsApproved { get; set; } = false;
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
     int BranchID;
     string UserID;
 
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
+    }
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
+
+    private async Task ReloadTable()
+    {
+        GetPerfomaInvoice(IsApproved, NumberOfRecords);
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -65,12 +102,12 @@
         var User = authprov.User;        
         BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = User.Identity.Name;
-        GetPerfomaInvoice(IsApproved);
+        GetPerfomaInvoice(IsApproved, NumberOfRecords);
     }
     void ApprovedChanged(bool value)
     {
         IsApproved = value;
-        GetPerfomaInvoice(IsApproved);
+        GetPerfomaInvoice(IsApproved, NumberOfRecords);
     }
     public async Task OpenDialog(ProformaInvoiceModel pfm, bool ReadOnly)
     {        
@@ -88,18 +125,20 @@
             Iservice.UpdateProformaInvoice(UpatedModel);
             snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
         }
-        GetPerfomaInvoice(IsApproved);
+        GetPerfomaInvoice(IsApproved, NumberOfRecords);
     }
 
-    public void GetPerfomaInvoice(bool val)
+    public void GetPerfomaInvoice(bool val, int numberOfRecords)
     {
+        int NumberOfRecords = numberOfRecords;
+
         if (val)
         {
-            collection = Iservice.SelectProformaInvoiceList(0).Where(x => x.AuthLevelId == 99).ToList();
+            collection = Iservice.SelectProformaInvoiceList(0, NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.SelectPendingProformaInvoiceList().Where(x => x.AuthLevelId != 99).ToList();
+            collection = Iservice.SelectPendingProformaInvoiceList(NumberOfRecords, searchTerm).ToList();
         }
     }
 
@@ -107,7 +146,7 @@
     {        
         Iservice.ReverseProformaInvoice(pim.ProformaInvoiceID, UserID);
         snackbar.Add("Updated Successfully", Severity.Success);
-        GetPerfomaInvoice(IsApproved);
+        GetPerfomaInvoice(IsApproved, NumberOfRecords);
     }
 
 }

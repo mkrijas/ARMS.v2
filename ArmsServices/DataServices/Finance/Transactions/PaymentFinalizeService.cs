@@ -9,7 +9,7 @@ namespace ArmsServices.DataServices
     public interface IPaymentFinalizeService
     {
         int Approve(int? PID, string UserID, string Remarks);
-        IEnumerable<PaymentFinishModel> Select(int? BranchID, int? FinalizeID);
+        IEnumerable<PaymentFinishModel> Select(int? BranchID, int? FinalizeID, int? NumberOfRecords, string searchTerm);
         IEnumerable<PaymentFinishModel> SelectByPeriod(int? BranchID, DateTime Begin, DateTime End);
         int? Update(PaymentFinishModel model);
     }
@@ -44,13 +44,16 @@ namespace ArmsServices.DataServices
             return model.PaymentFinalizeID;
         }
 
-        public IEnumerable<PaymentFinishModel> Select(int? BranchID, int? PfID)
+        public IEnumerable<PaymentFinishModel> Select(int? BranchID, int? PfID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
                new SqlParameter("@BranchID", BranchID),
-                 new SqlParameter("@PfID", PfID),
+               new SqlParameter("@PfID", PfID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Finish.Select]", parameters))

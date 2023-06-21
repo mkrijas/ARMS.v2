@@ -10,7 +10,7 @@
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<TaxPurchaseModel, bool>(search)" @bind-place="model">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
 
 
             <ToolBarContent>
@@ -23,11 +23,17 @@
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 
-                <MudTextField @bind-Value="searchTax" Placeholder="Search Tax... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0">
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Tax..." Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                              @onkeyup="HandleSearchKeyUp">
                 </MudTextField>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
 
             </ToolBarContent>
             <HeaderContent>
@@ -83,36 +89,62 @@
     private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     public bool IsApproved { get; set; } = false;
+    private int numberOfRecords = 100;
 
-    private string searchTax = "";
+    private string searchTerm = "";
+
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
+    }
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
+
+    private async Task ReloadTable()
+    {
+        GetAll(IsApproved, NumberOfRecords);
+    }
 
     protected override void OnInitialized()
     {
         model = new();
 
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
     void ApprovedChanged(bool value)
     {
 
         IsApproved = value;
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
 
     }
-    private void GetAll(bool val)
+    private void GetAll(bool val, int numberOfRecords)
     {
+
+        int NumberOfRecords = numberOfRecords;
 
         if (val)
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId == 99).ToList();
-
+            collection = Iservice.SelectByApproved(NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.Select().Where(x => x.AuthLevelId != 99).ToList();
-
+            collection = Iservice.SelectByUnapproved(NumberOfRecords, searchTerm).ToList();
         }
-
 
     }
 
@@ -124,7 +156,7 @@
         parms.Add("ReadOnly", ReadOnly);        
         var dialog = DialogService.Show<TaxPurchaseDialog>(tds.PID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
 
@@ -132,7 +164,7 @@
     {
         Iservice.Delete(tx.PID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
     private void GetAccountDetails(TaxPurchaseModel tpm)
@@ -151,21 +183,8 @@
 
         var dialog = DialogService.Show<InventoryGrnViewDialog>("GRN", parms, maxWidth);
         var result = await dialog.Result;
-        GetAll(IsApproved);
+        GetAll(IsApproved, NumberOfRecords);
 
     }
-
-    private bool search(TaxPurchaseModel tx)
-    {
-        if (tx.InvoiceNo != null && tx.InvoiceNo.Contains(searchTax, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-        else if (tx.InvoiceNo == null)
-            return true;
-        return false;
-    }
-
-
 
 }
