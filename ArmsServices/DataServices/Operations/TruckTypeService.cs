@@ -29,8 +29,9 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@TruckTypeID", model.TruckTypeID),
+               new SqlParameter("@TruckTypeID", model.TruckTypeID),
                new SqlParameter("@TruckType", model.TruckType),
+               new SqlParameter("@BSType", model.BSType),
                new SqlParameter("@Axles", model.Axles),
                new SqlParameter("@GrossWeight", model.GrossWeight),
                new SqlParameter("@UnladenWeight", model.UnladenWeight),
@@ -87,6 +88,7 @@ namespace ArmsServices.DataServices
             {
                 TruckTypeID = reader.GetInt16("TruckTypeID"),
                 TruckType = reader.GetString("TruckType"),
+                BSType = reader.GetString("BSType"),
                 Axles = reader.GetByte("Axles"),
                 GrossWeight = reader.GetDecimal("GrossWeight"),
                 UnladenWeight = reader.GetDecimal("UnladenWeight"),

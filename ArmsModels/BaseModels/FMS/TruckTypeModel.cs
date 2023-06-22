@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,6 +18,8 @@ namespace ArmsModels.BaseModels
         [Required][StringLength(maximumLength:50)]
         public string TruckType { get; set; }
         [Required]
+        public string BSType { get; set; }
+        [Required]
         public decimal? UnladenWeight { get; set; }
         [Required]
         public decimal? GrossWeight { get; set; }
@@ -24,6 +27,7 @@ namespace ArmsModels.BaseModels
         public byte? Axles { get; set; }
         [Required]
         public byte? wheels { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }      
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+
     }
 }
