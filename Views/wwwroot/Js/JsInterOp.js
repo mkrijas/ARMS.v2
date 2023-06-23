@@ -56,11 +56,6 @@ window.BlazorHelpers = {
 
 
 
-//////////////////////////////////////////////
-
-
-
-
 let element = document.getElementById("treeviewitem")
 console.log(element);
 
@@ -69,14 +64,11 @@ async function getElementCoordinates(item, targetBox) {
     var element = document.getElementById(item);
     var targetElement = document.getElementById(targetBox);
 
-    console.log(element);
     if (element) {
         var rect = element.getBoundingClientRect();
         var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
         targetElement.style.left = 450 + "px";
         targetElement.style.top = (((rect.top - 245) < 96) ? 96 : ((rect.top - 245) + scrollTop)) + "px";
-
-        console.log("rect.top = " + rect.top + "  Target Position = " + targetElement.style.top);
         return {
             x: rect.left,
             y: rect.top,
@@ -84,8 +76,3 @@ async function getElementCoordinates(item, targetBox) {
     }
     return null;
 };
-
-
-
-
-//////////////////////////////////////////////
