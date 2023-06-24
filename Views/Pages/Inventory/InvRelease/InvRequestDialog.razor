@@ -1,27 +1,30 @@
 ﻿@using ArmsModels.BaseModels.Finance.Transactions;
 @using ArmsServices.DataServices.Finance.Transactions;
+@using ArmsServices.DataServices.Inventory;
 @attribute [Authorize]
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
-
-@inject IInventoryReleaseService Iservice
+@inject IInventoryRequestService Iservice
 @inject IJobcardService IJobcardService
 @inject IDialogService DialogService
 @inject IInventoryItemService itemIservice
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Inventory Release" formID="inventoryReleaseForm" model="@model">
-    <FormContent>
-        <MudPaper Class="p-3">
-            <EditForm id="inventoryReleaseForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+<MudDialog>  
+    <DialogContent>
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="inventoryRequestForm" Model="@model" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
-                    <MudItem xs="12" md="6">
-                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="model.RequestNumber" Label="Request Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RequestNumber)" Disabled></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.RequestDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
 
                     <MudItem xs="12" md="4">
-                        <MudSelect Label="Select Job Card" T="JobcardModel" Value="model.Jobcard" ValueChanged="OnChangeJobcard" ToStringFunc="@(e => e == null ? null : $"{e.JobcardNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        <MudSelect Label="Select Job Card" T="JobcardModel" Value="model.Jobcard" ValueChanged="OnChangeJobcard" ToStringFunc="@(e => e == null ? null : $"{e.JobcardNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" Disabled="@IsDisableEntries">
                             @foreach (var ditem in JobcardList)
                             {
                                 <MudSelectItem Value="@ditem">@ditem.JobcardNumber</MudSelectItem>
@@ -30,7 +33,7 @@
                     </MudItem>
 
                     <MudItem xs="12" md="12">
-                        <TruckSelector @bind-Value="@model.Truck" BranchID="@branchID"></TruckSelector>
+                        <TruckSelector @bind-Value="@model.Truck" BranchID="@branchID" IsDisabled="@IsDisableEntries"></TruckSelector>
                     </MudItem>
 
                     <MudItem xs="12" md="12">
@@ -38,8 +41,8 @@
                     </MudItem>
 
 
-                    <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="model.TotalAmount" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)" Disabled></MudTextField>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.Remarks" Label="Total Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                     </MudItem>
 
                     <MudItem xs="12">
@@ -47,15 +50,16 @@
                         <h6><u>Items</u></h6>
 
                         <MudGrid Justify="Justify.Center">
-                            <MudItem xs="4" Class="d-flex align-center"><span> <strong> <u>Asset</u></strong> </span></MudItem>
-                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Amount</u></strong> </span></MudItem>
-                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Reference</u></strong> </span></MudItem>
+                            <MudItem xs="5" Class="d-flex align-center"><span> <strong> <u>Asset</u></strong> </span></MudItem>
+                            <MudItem xs="5" Class="d-flex align-center"><span><strong><u>Quantity</u></strong> </span></MudItem>
                             <MudItem xs="2"></MudItem>
                             @foreach (var item in model.Items)
                             {
-                                <MudItem xs="4"> @(ItemList.First(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode) </MudItem>
-                                <MudItem xs="3"> @item.ItemQty </MudItem>
-                                <MudItem xs="4"> @item.ItemRate </MudItem>
+                                <MudItem xs="5"> @(ItemList.First(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode) </MudItem>
+                                <MudItem xs="5"> @item.ItemQty </MudItem>
+
+                                <MudItem xs="1" Class="d-flex">
+                                </MudItem>
                                 <MudItem xs="1" Class="d-flex">
                                     @if (!ReadOnly)
                                     {
@@ -66,14 +70,13 @@
                             }
                             @if (!ReadOnly)
                             {
-                                <MudItem xs="4">
+                                <MudItem xs="5">
                                     <InventoryItemSelector Value="SelectedItems" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" />
                                 </MudItem>
-                                <MudItem xs="3">
+                                <MudItem xs="5">
                                     <MudTextField @bind-Value="Entrymodel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField>
                                 </MudItem>
-                                <MudItem xs="4">
-                                    <MudTextField @bind-Value="Entrymodel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemRate)"></MudTextField>
+                                <MudItem xs="1">
                                 </MudItem>
                                 <MudItem xs="1" Class="d-flex align-center"><MudFab OnClick="AddSubList" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" /></MudItem>
                             }
@@ -81,14 +84,19 @@
                     </MudItem>
                 </MudGrid>
             </EditForm>
-        </MudPaper>
-    </FormContent>
-</DialogForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>       
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="inventoryRequestForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+
+    </DialogActions>
+</MudDialog>
 
 @code {
 
     [Parameter]
-    public InventoryReleaseModel model { get; set; }
+    public InventoryRequestModel model { get; set; }
     [Parameter]
     public bool ReadOnly { get; set; }
 
@@ -104,10 +112,18 @@
     private List<InventoryItemModel> ItemList = new();
 
     private List<JobcardModel> JobcardList = new();
-   
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public JobcardModel JobCard { get; set; } = null;
+    [Parameter]
+    public bool IsDisableEntries { get; set; } = false;
+    [Parameter]
+    public TruckModel SelectedTruck { get; set; } = null;
+
     public InventoryItemModel SelectedItems = new();
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
-
     private EditContext editContext;
 
     DialogForm dialogForm;
@@ -115,25 +131,35 @@
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
-        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         UserID = user.Identity.Name;
+        if(model.UserInfo == null)
+        {
+            model.UserInfo = new(); 
+        }
+        model.UserInfo.UserID = UserID;
+        if (JobCard != null)
+        {
+            model.Jobcard = JobCard;
+        }
 
         if (model == null)
         {
             model = new()
                 {
-                    BranchID = branchID,
+                    //BranchID = branchID,
                     UserInfo = new() { UserID = UserID, },
-                    TotalAmount = 0,
-                    NatureOfTransaction = "Inventory Release"
                 };
         }
         else
         {
-            model.Items = Iservice.GetSub(model.RID).ToList();
+            model.Items = Iservice.GetSub(model.RequestID).ToList();
         }
-
+        if(SelectedTruck!=null && SelectedTruck.TruckID != 0)
+        {
+            model.Truck = SelectedTruck;
+        }
         ItemList = itemIservice.SearchByDescription(string.Empty).ToList();
         JobcardList = IJobcardService.SelectByBranch(branchID, true).ToList();
     }
@@ -150,32 +176,32 @@
         Entrymodel.ItemID = SelectedItems.InventoryItemID;
 
 
-        if (Entrymodel.ItemID == null || Entrymodel.ItemRate == null || Entrymodel.ItemQty == null)
+        if (Entrymodel.ItemID == null  || Entrymodel.ItemQty == null)
         {
             snackbar.Add("Please fill in all Fields", Severity.Success);
             return;
         }
-        
+
         model.Items.Add(Entrymodel);
 
-        decimal total = ((Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value));
-        model.TotalAmount = model.TotalAmount + total;
+        //decimal total = ((Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value));
+        //model.TotalAmount = model.TotalAmount + total;
         Entrymodel = new();
 
         SelectedItems = null;
         SelectedItems = new();
     }
-    
-    
+
+
     protected void getitemCode(InventoryItemModel item)
     {
 
 
         if (item != null)
         {
-            if(SelectedItems!= null && SelectedItems.InventoryItemID == null)
+            if (SelectedItems != null && SelectedItems.InventoryItemID == null)
             {
-                SelectedItems = item;             
+                SelectedItems = item;
             }
             else
             {
@@ -200,9 +226,14 @@
     {
         try
         {
+            if (model.Items.Count() == 0)
+            {
+                snackbar.Add("Add at least one item.", Severity.Error);
+                return;
+            }
             model = Iservice.Update(model);
             snackbar.Add("Saved Successfully", Severity.Success);
-            dialogForm.Close(model);
+            MudDialog.Close(model);
 
         }
         catch (Exception ex)
@@ -216,11 +247,14 @@
     {
         if (model.Items.Exists(x => x.ItemID == ItemDetails.ItemID))
         {
-            decimal total = (((ItemDetails.ItemQty.Value) * (ItemDetails.ItemRate.Value)));
             int rowIndex = model.Items.IndexOf(ItemDetails);
             model.Items.RemoveAt(rowIndex);
-            model.TotalAmount = model.TotalAmount - total;
         }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
     }
 
 }
