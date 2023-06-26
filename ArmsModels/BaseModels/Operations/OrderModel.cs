@@ -25,7 +25,6 @@ namespace ArmsModels.BaseModels
         public int? ConsignorID { get; set; }
         public bool IsLimitedQuantity { get; set; }
         [RequiredIfTrue("IsLimitedQuantity")]
-        [Range(1, int.MaxValue, ErrorMessage = "Specify the Quantity")]
         public decimal? OrderQuantity { get; set; } 
         public ContentModel Content { get; set; }
         public PartyModel Party { get; set; }        
