@@ -117,7 +117,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PeriodTo", model.PeriodTo),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Update]", parameters))
             {
                 model = GetModel(dr);
