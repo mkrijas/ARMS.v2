@@ -31,13 +31,14 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@OrderID", model.OrderID),
-               new SqlParameter("@OrderName", model.OrderName),
-               new SqlParameter("@ClientID", model.ClientID),
-               new SqlParameter("@ConsignorID", model.ConsignorID),
-               new SqlParameter("@ContentID", model.ContentID),
-               new SqlParameter("@OrderQuantity", model.OrderQuantity),
-               new SqlParameter("@UserID", model.UserInfo.UserID),
+                new SqlParameter("@OrderID", model.OrderID),
+                new SqlParameter("@OrderName", model.OrderName),
+                new SqlParameter("@ClientID", model.ClientID),
+                new SqlParameter("@ConsignorID", model.ConsignorID),
+                new SqlParameter("@ContentID", model.ContentID),
+                new SqlParameter("@OrderQuantity", model.OrderQuantity),
+                new SqlParameter("@IsLimitedQuantity", model.IsLimitedQuantity),
+                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.gc.Order.Update]", parameters))
             {
@@ -114,6 +115,7 @@ namespace ArmsServices.DataServices
                 OrderID = dr.GetInt32("OrderID"),
                 GstNo= dr.GetString("GstNo"),
                 OrderName = dr.GetString("OrderName"),
+                IsLimitedQuantity = dr.GetBoolean("IsLimitedQuantity"),
                 OrderQuantity = dr.GetDecimal("OrderQuantity"),
                 Party = new PartyModel
                 {

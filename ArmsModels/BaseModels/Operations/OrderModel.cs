@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Serialization;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -21,8 +22,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public short? ContentID { get; set; } 
         public string? GstNo { get; set; }
-        public int? ConsignorID { get; set; } 
-        [Required]
+        public int? ConsignorID { get; set; }
+        public bool IsLimitedQuantity { get; set; }
+        [RequiredIfTrue("IsLimitedQuantity")]
         public decimal? OrderQuantity { get; set; } 
         public ContentModel Content { get; set; }
         public PartyModel Party { get; set; }        
