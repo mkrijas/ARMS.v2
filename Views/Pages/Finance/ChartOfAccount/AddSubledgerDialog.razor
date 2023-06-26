@@ -2,13 +2,29 @@
 
     <DialogContent>
         <EditForm id="CoaForm" Model="@model" OnValidSubmit="Submit">
+
             <DataAnnotationsValidator />
+            <ValidationSummary></ValidationSummary>
+
             <MudTextField @bind-Value="@model.AccountCode" Label="Ledger Code" Variant="Variant.Outlined" Margin="Margin.Normal" ReadOnly="@(model.CoaID != null ? true : false)" Disabled />
             <ValidationMessage For="@(()=>model.AccountCode)" />
             <MudTextField @bind-Value="@model.AccountName" Label="Ledger Name" Variant="Variant.Outlined" Margin="Margin.Normal" Required="true" RequiredError="LedgerName is required!" />
             <ValidationMessage For="@(()=>model.AccountName)" />
             <MudTextField @bind-Value="@model.AccountDescription" Label="Description" Variant="Variant.Outlined" Margin="Margin.Normal" />
-            <MudDateRangePicker TransformOrigin="Origin.CenterLeft" Editable="true" Label="Custom start month" StartMonth="@(new DateTime(DateTime.Now.Year - 1,4,1))" @bind-DateRange="_dateRange" />
+            <ValidationMessage For="@(()=>model.AccountDescription)" />
+            <MudGrid Style="padding:2px">
+                <MudItem Style="padding-top:24px" xs="12" md="5">
+                    <MudCheckBox T="bool" Checked="@model.LimitToPeriod" CheckedChanged="CheckChanged" Label="Enable Date" Color="Color.Primary" ></MudCheckBox>
+                </MudItem>
+                @if (@model.LimitToPeriod == true)
+                {
+                    <MudItem xs="12" md="7">
+                        <MudDateRangePicker TransformOrigin="Origin.CenterLeft" Editable="true" Label="Custom start month" StartMonth="@(new DateTime(DateTime.Now.Year - 1,4,1))" DateRange="@_dateRange" DateRangeChanged="DateChanged" Disabled="@(!model.LimitToPeriod)" />
+                </MudItem>
+                }
+            </MudGrid>
+            <ValidationMessage For="@(()=>model.PeriodFrom)" />
+            <ValidationMessage For="@(()=>model.PeriodFrom)" />
 
         </EditForm>
     </DialogContent>
@@ -25,6 +41,42 @@
 
     private DateRange _dateRange { get; set; }
 
+    protected override void OnInitialized()
+    {
+        if(model.PeriodFrom != null)
+            _dateRange = new DateRange(model.PeriodFrom, model.PeriodTo);
+    }
+
+    void DateChanged(DateRange dates)
+    {
+        _dateRange = dates;
+        if (_dateRange != null)
+        {
+            model.PeriodFrom = _dateRange.Start;
+            model.PeriodTo = _dateRange.End;
+        }
+        else
+        {
+            model.PeriodFrom = null;
+            model.PeriodTo = null;
+        }
+    }
+
+    void CheckChanged(bool Checked)
+    {
+        if (!Checked)
+        {
+            _dateRange = null;
+            model.PeriodFrom = null;
+            model.PeriodTo = null;
+            model.LimitToPeriod = false;
+        }
+        else
+        {
+            model.LimitToPeriod = true;
+        }
+    }
+
 
     void Cancel()
     {
@@ -32,6 +84,11 @@
     }
     void Submit()
     {
+        if(!model.LimitToPeriod)
+        {
+            model.PeriodFrom = null;
+            model.PeriodTo = null;
+        }
         MudDialog.Close(model);
     }
 
