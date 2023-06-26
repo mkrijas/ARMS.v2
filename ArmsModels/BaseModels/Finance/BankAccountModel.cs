@@ -55,8 +55,8 @@ namespace ArmsModels.BaseModels
         public ContactModel ContactInfo { get; set; } = new ContactModel();
         [Required]
         public int? BranchID { get; set; }
-        [Required]
-        [StringLength(8, MinimumLength = 8, ErrorMessage = "Bank Code Must be 8 characters long")]
+        //[Required]
+        //[StringLength(8, MinimumLength = 8, ErrorMessage = "Bank Code Must be 8 characters long")]
         public string BankCode { get; set; }
         public bool IsGstRegistered { get; set; } = false;
         [RequiredIfTrue("IsGstRegistered")]
