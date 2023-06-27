@@ -77,6 +77,7 @@ namespace ArmsModels.BaseModels
         public long? ItemEntryID { get; set; }        
         [Required]
         public int? ItemID { get; set; }
+        public virtual string ItemDescription { get; set; }
         [Required]
         public decimal? ItemQty { get; set; }        
         public decimal? ItemRate { get; set; }
