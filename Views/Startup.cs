@@ -4,6 +4,7 @@ using ArmsServices.DataServices;
 using ArmsServices.DataServices.Finance.Transactions;
 using ArmsServices.DataServices.FMS;
 using ArmsServices.DataServices.General;
+using ArmsServices.DataServices.Inventory;
 using ArmsServices.DataServices.Operations;
 using Blazored.SessionStorage;
 using Microsoft.AspNetCore.Authentication;
@@ -119,6 +120,7 @@ namespace Views
             services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
             services.AddScoped<IInventoryGrnService, InventoryGrnService>();
             services.AddScoped<ITyreService, TyreService>();
+            services.AddScoped<IInventoryRequestService, InventoryRequestService>();
             //------------DATA AUTHENTICATION-------------------
             services.AddScoped<IDataAuthorizationSettingsService, DataAuthorizationSettingsService>();
             services.AddScoped<IDataAuthorizationService, DataAuthorizationService>();
@@ -154,6 +156,7 @@ namespace Views
             services.AddScoped<IDrCrNoteService, DrCrNoteService>();
             services.AddScoped<ISaleService, SaleService>();
             services.AddScoped<IJournalService, JournalService>();
+            services.AddScoped<IInventoryReleaseService, InventoryReleaseService>();
 
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();

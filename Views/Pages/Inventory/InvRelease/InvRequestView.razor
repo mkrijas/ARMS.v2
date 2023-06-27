@@ -1,0 +1,102 @@
+﻿@page "/InventoryRequestView"
+@using ArmsModels.BaseModels.Finance.Transactions;
+@using ArmsServices.DataServices.Finance.Transactions;
+@using ArmsServices.DataServices.Inventory;
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using MudBlazor;
+@using Views.Pages.Finance.Transactions;
+
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IInventoryRequestService Iservice
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Inventory Release </MudText>
+                <MudTooltip Text="New Inventory Release">
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+                <MudSpacer></MudSpacer>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<InventoryRequestModel, object>(x=> x.RequestDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<InventoryRequestModel, object>(x=> x.Store.StoreName)" InitialDirection="SortDirection.Ascending">Store Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<InventoryRequestModel, object>(x=> x.Jobcard.JobcardNumber)" InitialDirection="SortDirection.Ascending">Jobcard Number</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<InventoryRequestModel, object>(x=> x.Truck.RegNo)" InitialDirection="SortDirection.Ascending">Truck Reg No</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.RequestDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="Store Name">@context.Store.StoreName</MudTd>
+                <MudTd DataLabel="Jobcard Number">@context.Jobcard.JobcardNumber</MudTd>
+                <MudTd DataLabel="Truck Reg No">@context.Truck.RegNo</MudTd>
+                <MudTd DataLabel="">
+                    <MudTooltip Text="Edit">
+                        <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+@code {
+    public bool IsApproved { get; set; } = false;
+    private List<InventoryRequestModel> collection = new List<InventoryRequestModel>();
+    protected override void OnInitialized()
+    {
+        GetAll();
+    }
+    void ApprovedToggled(bool value)
+    {
+        IsApproved = value;
+        GetAll();
+    }
+    private void GetAll()
+    {
+
+            collection = Iservice.Select().ToList();
+
+    }
+    private async Task Delete(InventoryRequestModel tx)
+    {
+        try
+        {
+
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            Iservice.Delete(tx.RequestID, user.Identity.Name);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            GetAll();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OpenDialog(InventoryRequestModel model)
+    {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", model);
+        parms.Add("branchID", branchID);
+        var dialog = DialogService.Show<InventoryReleaseDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var result = await dialog.Result;
+        GetAll();
+    }
+}
+

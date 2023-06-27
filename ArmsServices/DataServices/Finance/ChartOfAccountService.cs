@@ -112,11 +112,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ParentID", model.ParentID),
                new SqlParameter("@SummaryAccount", model.SummaryAccount),
                new SqlParameter("@AccountType", model.AccountType),
+               new SqlParameter("@LimitToPeriod",model.LimitToPeriod),
                new SqlParameter("@PeriodFrom", model.PeriodFrom),
                new SqlParameter("@PeriodTo", model.PeriodTo),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Update]", parameters))
             {
                 model = GetModel(dr);
@@ -133,6 +133,7 @@ namespace ArmsServices.DataServices
                 AccountDescription = dr.GetString("AccountDescription"),
                 AccountName = dr.GetString("AccountName"),
                 AccountCode = dr.GetString("AccountCode"),
+                LimitToPeriod = dr.GetBoolean("LimitToPeriod"),
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),
                 PeriodTo = dr.GetDateTime("PeriodTo"),
                 AccountType = dr.GetString("AccountType"),
