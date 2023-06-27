@@ -13,6 +13,13 @@
 
 @inject IInventoryReleaseService Iservice
 
+<div class="opthead"><h6>Select Job Card </h6></div>
+<MudPaper Class="p-2" Elevation="0">
+    <div class="d-flex">
+        <StoreSelector Value="SelectedStore" ValueChanged="StoreChanged" BranchID="@branchID.Value"></StoreSelector>
+    </div>
+</MudPaper>
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
@@ -51,20 +58,35 @@
 @code {
     public bool IsApproved { get; set; } = false;
     private List<InventoryReleaseModel> collection = new List<InventoryReleaseModel>();
-    protected override void OnInitialized()
+    public List<int?> RequestIds { get; set; } = new();
+    public int? branchID { get; set; }
+    public StoreModel SelectedStore { get; set; } = new();
+    protected override async Task OnInitializedAsync()
     {
-        GetAll();
-    }
-    void ApprovedToggled(bool value)
-    {
-        IsApproved = value;
-        GetAll();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
     }
     private void GetAll()
     {
+        if (SelectedStore != null && SelectedStore.StoreID != 0)
+        {
+            collection = Iservice.SelectByStoreID(SelectedStore.StoreID).ToList();
 
-            collection = Iservice.Select().ToList();
-        
+        }
+        else
+        {
+            if (collection != null)
+            {
+                collection.Clear();
+            }
+        }
+
+    }
+    private void StoreChanged(StoreModel obj)
+    {
+        SelectedStore = obj;
+        GetAll();
     }
     private async Task Delete(InventoryReleaseModel tx)
     {
@@ -89,11 +111,21 @@
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        if (RequestIds == null)
+        {
+            RequestIds = new();
+        }
+        if (RequestIds != null && RequestIds.Count() != 0)
+        {
+            RequestIds.Clear();
+        }
+        RequestIds = collection.Select(s => s.RequestID).Where(d => d != null).ToList();
 
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model);
         parms.Add("branchID", branchID);
+        parms.Add("RequestIds", RequestIds);
         var dialog = DialogService.Show<InventoryReleaseDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         GetAll();

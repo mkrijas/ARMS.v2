@@ -1,5 +1,6 @@
 ﻿@using ArmsModels.BaseModels.Finance.Transactions;
 @using ArmsServices.DataServices.Finance.Transactions;
+@using ArmsServices.DataServices.Inventory;
 @attribute [Authorize]
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -8,6 +9,9 @@
 @inject IJobcardService IJobcardService
 @inject IDialogService DialogService
 @inject IInventoryItemService itemIservice
+@inject IInventoryRequestService IInventoryRequestservice
+@inject ITruckService Itruck
+@inject IStoreService storeIservice
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Inventory Release" formID="inventoryReleaseForm" model="@model">
     <FormContent>
@@ -16,12 +20,21 @@
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
-                    <MudItem xs="12" md="6">
+                    <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
 
                     <MudItem xs="12" md="4">
-                        <MudSelect Label="Select Job Card" T="JobcardModel" Value="model.Jobcard" ValueChanged="OnChangeJobcard" ToStringFunc="@(e => e == null ? null : $"{e.JobcardNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        <MudSelect Label="Select Request" T="InventoryRequestModel" Value="SelectInventoryRequest" ValueChanged="OnChangeSelectedInventoryRequest" ToStringFunc="@(e => e == null ? null : $"{e.RequestNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in InventoryRequestList)
+                            {
+                                <MudSelectItem Value="@ditem">@ditem.RequestNumber</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="4">
+                        <MudSelect Label="Select Job Card" T="JobcardModel" Value="model.Jobcard" ValueChanged="OnChangeJobcard" ToStringFunc="@(e => e == null ? null : $"{e.JobcardNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" Disabled>
                             @foreach (var ditem in JobcardList)
                             {
                                 <MudSelectItem Value="@ditem">@ditem.JobcardNumber</MudSelectItem>
@@ -30,16 +43,15 @@
                     </MudItem>
 
                     <MudItem xs="12" md="12">
-                        <TruckSelector @bind-Value="@model.Truck" BranchID="@branchID"></TruckSelector>
+                        <TruckSelector @bind-Value="@model.Truck" BranchID="@branchID" IsDisabled="@IsDisableTruck"></TruckSelector>
                     </MudItem>
 
                     <MudItem xs="12" md="12">
-                        <StoreSelector @bind-Value="@model.Store" BranchID="@branchID.Value"></StoreSelector>
+                        <StoreSelector @bind-Value="@model.Store" BranchID="@branchID.Value" IsDisabled="@IsDisableStore"></StoreSelector>
                     </MudItem>
 
-
-                    <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="model.TotalAmount" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)" Disabled></MudTextField>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="@model.Narration" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                     </MudItem>
 
                     <MudItem xs="12">
@@ -47,35 +59,16 @@
                         <h6><u>Items</u></h6>
 
                         <MudGrid Justify="Justify.Center">
-                            <MudItem xs="4" Class="d-flex align-center"><span> <strong> <u>Asset</u></strong> </span></MudItem>
-                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Amount</u></strong> </span></MudItem>
-                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Reference</u></strong> </span></MudItem>
-                            <MudItem xs="2"></MudItem>
-                            @foreach (var item in model.Items)
+                            <MudItem xs="3" Class="d-flex align-center"><span> <strong> <u>Asset</u></strong> </span></MudItem>
+                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Requst Quatity</u></strong> </span></MudItem>
+                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Available Quatity</u></strong> </span></MudItem>
+                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Release Quatity</u></strong> </span></MudItem>
+                            @foreach (var item in InventoryRequestSubList)
                             {
-                                <MudItem xs="4"> @(ItemList.First(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode) </MudItem>
-                                <MudItem xs="3"> @item.ItemQty </MudItem>
-                                <MudItem xs="4"> @item.ItemRate </MudItem>
-                                <MudItem xs="1" Class="d-flex">
-                                    @if (!ReadOnly)
-                                    {
-                                        <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteItem(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-
-                                    }
-                                </MudItem>
-                            }
-                            @if (!ReadOnly)
-                            {
-                                <MudItem xs="4">
-                                    <InventoryItemSelector Value="SelectedItems" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" />
-                                </MudItem>
-                                <MudItem xs="3">
-                                    <MudTextField @bind-Value="Entrymodel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField>
-                                </MudItem>
-                                <MudItem xs="4">
-                                    <MudTextField @bind-Value="Entrymodel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemRate)"></MudTextField>
-                                </MudItem>
-                                <MudItem xs="1" Class="d-flex align-center"><MudFab OnClick="AddSubList" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" /></MudItem>
+                                <MudItem xs="3"> @(ItemList.First(x => x.InventoryItemID == item.ItemID)?.ItemDecription) </MudItem>
+                                <MudItem xs="3"> @item.RequestQty </MudItem>
+                                <MudItem xs="3"> @item.AvailableQty </MudItem>
+                                <MudItem xs="3"> <MudTextField @bind-Value="item.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.RequestQty)"></MudTextField> </MudItem>
                             }
                         </MudGrid>
                     </MudItem>
@@ -92,19 +85,29 @@
     [Parameter]
     public bool ReadOnly { get; set; }
 
+    public bool IsDisableTruck { get; set; } = false;
+    public bool IsDisableStore { get; set; } = false;
+
     private GstUsageCodeModel gstusge = new();
 
     public string Area { get; set; } = null;
     public bool Local { get; set; } = true;
     [Parameter]
     public int? branchID { get; set; }
+    [Parameter]
+    public List<int?> RequestIds { get; set; } = new();
     private string UserID = null;
 
     public int SubAssetModel { get; set; }
     private List<InventoryItemModel> ItemList = new();
-
+    private List<InventoryRequestModel> InventoryRequestList = new List<InventoryRequestModel>();
+    public InventoryRequestModel SelectInventoryRequest { get; set; }
     private List<JobcardModel> JobcardList = new();
-   
+    private List<TruckModel> TruckList = new();
+    private List<StoreModel> StoreList = new();
+    private List<InventoryReleaseSubViewModel> InventoryRequestSubList = new List<InventoryReleaseSubViewModel>();
+
+
     public InventoryItemModel SelectedItems = new();
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
 
@@ -118,7 +121,6 @@
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         UserID = user.Identity.Name;
-
         if (model == null)
         {
             model = new()
@@ -131,11 +133,40 @@
         }
         else
         {
-            model.Items = Iservice.GetSub(model.RID).ToList();
+
+            model.BranchID = branchID;
+            model.TotalAmount = 0;
+            model.NatureOfTransaction = "Inventory Release";
+            model.UserInfo = new() { UserID = UserID, };
         }
 
         ItemList = itemIservice.SearchByDescription(string.Empty).ToList();
         JobcardList = IJobcardService.SelectByBranch(branchID, true).ToList();
+
+        InventoryRequestList = IInventoryRequestservice.Select().Where(d => !(RequestIds != null && RequestIds.Any(g => g == d.RequestID && g != model.RequestID))).ToList();
+
+        TruckList = Itruck.SelectByBranch(branchID, null).ToList();
+        StoreList = storeIservice.SelectByBranch(branchID.Value).ToList();
+        if (model.RequestID != null && model.RequestID != 0 && InventoryRequestList.Any(s => s.RequestID == model.RequestID))
+        {
+            SelectInventoryRequest = InventoryRequestList.FirstOrDefault(s => s.RequestID == model.RequestID);
+        }
+
+        if(model.Truck != null && model.Truck.TruckID != 0)
+        {
+            IsDisableTruck = true;            
+        }
+        if (model.Store != null && model.Store.StoreID != 0 && model.RequestID != null && model.RequestID != 0)
+        {
+
+            if (InventoryRequestSubList != null)
+            {
+                InventoryRequestSubList.Clear();
+            }
+
+            InventoryRequestSubList = Iservice.GetRequstSub(model.RequestID, model.Store.StoreID).ToList();
+            IsDisableStore = true;
+        }
     }
 
     protected override void OnParametersSet()
@@ -152,10 +183,10 @@
 
         if (Entrymodel.ItemID == null || Entrymodel.ItemRate == null || Entrymodel.ItemQty == null)
         {
-            snackbar.Add("Please fill in all Fields", Severity.Success);
+            snackbar.Add("Please fill in all fields.", Severity.Success);
             return;
         }
-        
+
         model.Items.Add(Entrymodel);
 
         decimal total = ((Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value));
@@ -165,17 +196,17 @@
         SelectedItems = null;
         SelectedItems = new();
     }
-    
-    
+
+
     protected void getitemCode(InventoryItemModel item)
     {
 
 
         if (item != null)
         {
-            if(SelectedItems!= null && SelectedItems.InventoryItemID == null)
+            if (SelectedItems != null && SelectedItems.InventoryItemID == null)
             {
-                SelectedItems = item;             
+                SelectedItems = item;
             }
             else
             {
@@ -191,6 +222,56 @@
 
     }
 
+    public void OnChangeSelectedInventoryRequest(InventoryRequestModel obj)
+    {
+        SelectInventoryRequest = obj;
+        model.RequestID = obj?.RequestID ?? null;
+        if (obj != null)
+        {
+            if (JobcardList != null && obj.Jobcard != null && JobcardList.Any(s => s.JobcardID == obj.Jobcard.JobcardID))
+            {
+                model.Jobcard = JobcardList.FirstOrDefault(s => s.JobcardID == obj.Jobcard.JobcardID);
+            }
+
+            if (TruckList != null && obj.Truck != null && TruckList.Any(s => s.TruckID == obj.Truck.TruckID))
+            {
+                model.Truck = TruckList.FirstOrDefault(s => s.TruckID == obj.Truck.TruckID);
+                IsDisableTruck = true;
+            }
+            else
+            {
+                IsDisableTruck = false;
+            }
+
+            if (StoreList != null && obj.Store != null && StoreList.Any(s => s.StoreID == obj.Store.StoreID))
+            {
+                model.Store = StoreList.FirstOrDefault(s => s.StoreID == obj.Store.StoreID);
+                IsDisableStore = true;
+                model.Narration = "Release from inventory " + obj.Store.StoreName;
+            }
+            else
+            {
+                IsDisableStore = false;
+            }
+            if (InventoryRequestSubList != null)
+            {
+                InventoryRequestSubList.Clear();
+            }
+
+            if (obj.Store != null)
+            {
+                InventoryRequestSubList = Iservice.GetRequstSub(obj.RequestID, obj.Store.StoreID).ToList();
+
+            }
+
+        }
+        else
+        {
+            IsDisableTruck = false;
+            IsDisableStore = false;
+        }
+    }
+
     public void OnChangeTruck(TruckModel obj)
     {
         model.Truck = obj;
@@ -200,6 +281,40 @@
     {
         try
         {
+            if (InventoryRequestSubList == null || InventoryRequestSubList.Count() == 0)
+            {
+                snackbar.Add("No items in the request", Severity.Error);
+                return;
+            }
+
+            if (model.Items == null)
+            {
+                model.Items = new();
+            }
+            else if (model.Items.Count() != 0)
+            {
+                model.Items.Clear();
+            }
+            foreach (var item in InventoryRequestSubList)
+            {
+                if (item.ItemQty > item.AvailableQty || item.ItemQty > item.RequestQty || item.ItemQty < 0)
+                {
+
+                    snackbar.Add(("You enterd invalid Qty in " + item.ItemDescription + "."), Severity.Error);
+                    model.Items.Clear();
+                    return;
+                }
+                if (item != null && item.ItemID != 0 && item.ItemQty > 0)
+                {
+                    model.Items.Add(new InventoryItemEntryModel()
+                        {
+                            ItemEntryID = item.ItemEntryID,
+                            ItemID = item.ItemID,
+                            ItemQty = item.ItemQty
+                        });
+
+                }
+            }
             model = Iservice.Update(model);
             snackbar.Add("Saved Successfully", Severity.Success);
             dialogForm.Close(model);

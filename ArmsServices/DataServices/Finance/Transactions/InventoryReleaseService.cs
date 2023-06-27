@@ -14,9 +14,10 @@ namespace ArmsServices.DataServices.Finance.Transactions
         InventoryReleaseModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<InventoryReleaseModel> Select();
+        public IEnumerable<InventoryReleaseModel> SelectByStoreID(int? StoreID);
         IEnumerable<InventoryReleaseModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<InventoryReleaseModel> SelectByPeriod(DateTime? begin, DateTime? end);
-        IEnumerable<InventoryItemEntryModel> GetSub(int? ID);
+        IEnumerable<InventoryReleaseSubViewModel> GetRequstSub(int? ID,int? StoreID);
     }
     public class InventoryReleaseService : IInventoryReleaseService
     {
@@ -38,23 +39,26 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.InventoryRelease.Delete]", parameters);
         }
 
-        public IEnumerable<InventoryItemEntryModel> GetSub(int? ID)
+        public IEnumerable<InventoryReleaseSubViewModel> GetRequstSub(int? ID, int? StoreID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "GetSub"),
                new SqlParameter("@ID", ID),
+               new SqlParameter("@StoreID", StoreID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InventoryRelease.Select]", parameters))
             {
-                yield return new InventoryItemEntryModel()
+                yield return new InventoryReleaseSubViewModel()
                 {
                     ItemEntryID = dr.GetInt32("ItemEntryID"),
                     //RID = dr.GetInt32("RID"),
                     ItemID = dr.GetInt32("ItemID"),
-                    ItemQty = dr.GetDecimal("ItemQty"),
-                    ItemRate = dr.GetDecimal("ItemRate"),
+                    ItemDescription = dr.GetString("ItemDescription"),
+                    AvailableQty = dr.GetDecimal("AvailableQty"),
+                    RequestQty = dr.GetDecimal("RequestQty"),
+                    ItemQty = dr.GetDecimal("ReleaseQty") == null ? dr.GetDecimal("RequestQty"): dr.GetDecimal("ReleaseQty"),
                 };
             }
         }
@@ -64,6 +68,20 @@ namespace ArmsServices.DataServices.Finance.Transactions
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InventoryRelease.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<InventoryReleaseModel> SelectByStoreID(int? StoreID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByStore"),
+               new SqlParameter("@StoreID", StoreID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InventoryRelease.Select]", parameters))
@@ -119,25 +137,29 @@ namespace ArmsServices.DataServices.Finance.Transactions
 
         public InventoryReleaseModel Update(InventoryReleaseModel model)
         {
-            List<InventoryItemEntryModel> ItemsListFormated = new();
-            foreach (var item in model.Items)
-            {
-                ItemsListFormated.Add(new()
-                {
-                    ItemEntryID = item.ItemEntryID,
-                    ItemID = item.ItemID,
-                    ItemRate = item.ItemRate,
-                    ItemQty = item.ItemQty
-                });
-            }
+            //List<InventoryItemEntryModel> ItemsListFormated = new();
+            //foreach (var item in model.Items)
+            //{
+            //    ItemsListFormated.Add(new()
+            //    {
+            //        ItemEntryID = item.ItemEntryID,
+            //        ItemID = item.ItemID,
+            //        ItemRate = item.ItemRate,
+            //        ItemQty = item.ItemQty
+            //    });
+            //}
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@RID", model.RID),
                new SqlParameter("@RequestID", model.RequestID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
-               new SqlParameter("@TotalAmount", model.TotalAmount),
-               new SqlParameter("@Items", ItemsListFormated?.ToDataTable()??null),
+               new SqlParameter("@StoreID", model.Store?.StoreID??0),
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@JobcardID", model.Jobcard?.JobcardID??0),
+               new SqlParameter("@TruckID", model.Truck?.TruckID??0),
+               new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@Items", model.Items?.ToDataTable()??null),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InventoryRelease.Update]", parameters))
@@ -163,13 +185,14 @@ namespace ArmsServices.DataServices.Finance.Transactions
                 Jobcard = new()
                 {
                     JobcardID = dr.GetInt32("JobcardID"),
-                    JobcardNumber = dr.GetString("JobcardNumber")
+                    JobcardNumber = dr.GetString("JobcardPrefix") +(dr.GetInt32("JobcardNumber")).ToString()
                 },
                 Truck = new()
                 {
                     TruckID = dr.GetInt32("TruckID"),
                     RegNo = dr.GetString("RegNo")
                 },
+                Narration = dr.GetString("Narration"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
