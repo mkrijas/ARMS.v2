@@ -57,8 +57,6 @@ namespace Views
             services.AddBlazoredSessionStorage();
 
             services.AddSignalRCore();
-
-
             services.AddAuthorization(config =>
             {
                 config.AddPolicy("Admin", policy => policy.RequireClaim("Admin"));
