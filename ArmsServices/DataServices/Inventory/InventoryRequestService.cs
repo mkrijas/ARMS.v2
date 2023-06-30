@@ -13,6 +13,7 @@ namespace ArmsServices.DataServices.Inventory
         int Delete(int? ID, string UserID);
         IEnumerable<InventoryRequestModel> Select();
         IEnumerable<InventoryRequestModel> SelectByTruckID(int? TruckID);
+        IEnumerable<InventoryRequestModel> SelectRequestReleaseByTruckID(int? TruckID);
         IEnumerable<InventoryRequestModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<InventoryRequestModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<InventoryItemEntryModel> GetSub(int? ID);
@@ -82,6 +83,20 @@ namespace ArmsServices.DataServices.Inventory
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Request.Select]", parameters))
             {
                 yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<InventoryRequestModel> SelectRequestReleaseByTruckID(int? TruckID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByTruckID"),
+               new SqlParameter("@ID", TruckID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Request.Release.Select]", parameters))
+            {
+                yield return GetModelRequestRelease(dr);
             }
         }
 
@@ -177,12 +192,52 @@ namespace ArmsServices.DataServices.Inventory
                 Jobcard = new()
                 {
                     JobcardID = dr.GetInt32("JobcardID"),
-                    JobcardNumber = (dr.GetInt32("JobcardNumber")).ToString()
+                    JobcardNumber = dr.GetString("JobcardPrefix") + (dr.GetInt32("JobcardNumber")).ToString()
                 },
                 Truck = new()
                 {
                     TruckID = dr.GetInt32("TruckID"),
                     RegNo = dr.GetString("RegNo")
+                },
+                Remarks = dr.GetString("Remarks"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+
+        private InventoryRequestModel GetModelRequestRelease(IDataRecord dr)
+        {
+            return new InventoryRequestModel
+            {
+                RequestID = dr.GetInt32("RequestID"),
+                RID = dr.GetInt32("RID"),
+                RequestDate = dr.GetDateTime("RequestDate"),
+                RequestNumber = dr.GetString("RequestNumber"),
+                Store = new()
+                {
+                    StoreID = dr.GetInt32("StoreID"),
+                    StoreName = dr.GetString("StoreName")
+                },
+                Jobcard = new()
+                {
+                    JobcardID = dr.GetInt32("JobcardID"),
+                    JobcardNumber = dr.GetString("JobcardPrefix") + (dr.GetInt32("JobcardNumber")).ToString()
+                },
+                Truck = new()
+                {
+                    TruckID = dr.GetInt32("TruckID"),
+                    RegNo = dr.GetString("RegNo")
+                },
+                ReleaseSubDetails = new InventoryReleaseSubViewModel()
+                {
+                     ItemID = dr.GetInt32("ItemID"),
+                     ItemDescription = dr.GetString("ItemDescription"),
+                     RequestQty = dr.GetDecimal("RequestQty"),
+                     ItemQty = dr.GetDecimal("ReleaseQty"),
                 },
                 Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
