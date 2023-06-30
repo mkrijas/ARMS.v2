@@ -15,6 +15,7 @@ namespace ArmsModels.BaseModels
         }
 
         public int? CoaID { get; set; }
+        [Required]
         public int? ParentID { get; set; }
         public string AccountCode { get; set; }
         [Required]
