@@ -15,7 +15,7 @@ namespace ArmsServices.DataServices
         TdsRateModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<TdsRateModel> SelectByIDT(int? ID);
-        IEnumerable<TdsRateModel> Select(int? AssesseeType,int? TdsNPID);
+        IEnumerable<TdsRateModel> Select(int? AssesseeType,int? TdsNPID, DateTime? EntryDate);
         IEnumerable<NatureOfPaymentModel> SelectTdsNP();
         IEnumerable<AssesseeTypeModel> SelectAssesseeTypes();
         decimal GetTdsRate(int? PartyID, int? AccountID);
@@ -55,13 +55,14 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<TdsRateModel> Select(int? AssesseeType, int? TdsNPID)
+        public IEnumerable<TdsRateModel> Select(int? AssesseeType, int? TdsNPID,DateTime? EntryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByNature"),
                new SqlParameter("AssesseeTypeID",AssesseeType),
                new SqlParameter("@TdsNPID",TdsNPID),
+               new SqlParameter("@EntryDate",EntryDate),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.taxes.TDS.Rates.Select]", parameters))
@@ -95,6 +96,19 @@ namespace ArmsServices.DataServices
 
         public IEnumerable<NatureOfPaymentModel> SelectTdsNP()
         {
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.NatureOfPayment.Select]", null))
+            {
+                yield return new NatureOfPaymentModel { NatureOfPayment = dr.GetString("NatureOfPayment"),TdsNPID = dr.GetInt32("TdsNPID") };
+            }
+        }
+
+        public IEnumerable<NatureOfPaymentModel> SelectTdsNPByID(int? TdsNPID)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TdsNPID", TdsNPID)
+            };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.NatureOfPayment.Select]", null))
             {
                 yield return new NatureOfPaymentModel { NatureOfPayment = dr.GetString("NatureOfPayment"),TdsNPID = dr.GetInt32("TdsNPID") };
