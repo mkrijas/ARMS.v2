@@ -65,6 +65,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? ItemID { get; set; }
         public virtual string ItemCode { get; }
+        public  string ItemDescription { get; set; }
+        public  string HsnCode { get; set; }
         [Required]
         public int? RID { get; set; }
 

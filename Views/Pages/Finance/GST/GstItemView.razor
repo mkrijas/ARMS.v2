@@ -11,32 +11,35 @@
 
 
 <MudGrid Spacing="4">
-   <MudItem xs="12">
-        <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true" Elevation="10" Filter="new Func<GstItemModel, bool>(search)" @bind-place="model">
-           
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<GstItemModel, bool>(search)" @bind-place="model">
 
-             <ToolBarContent>
+
+            <ToolBarContent>
                 <MudText Typo="Typo.h6">Gst Inventory Items</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchItem" Placeholder="Search Items... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudCheckBox Label="Show All" T="bool" CheckedChanged="GstItemToggled" Checked="@GstItemToggle" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.ItemCode)" InitialDirection="SortDirection.Ascending">ItemCode</MudTableSortLabel></MudTh>
-             <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.TaxRate)" InitialDirection="SortDirection.Ascending">TaxRate</MudTableSortLabel></MudTh>
-               <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.PeriodFrom)" InitialDirection="SortDirection.Ascending">PeriodFrom</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.PeriodTo)" InitialDirection="SortDirection.Ascending">PeriodTo</MudTableSortLabel></MudTh>
-              
+                <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.ItemCode)" InitialDirection="SortDirection.Ascending">Item Code</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.TaxRate)" InitialDirection="SortDirection.Ascending">Tax Rate</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.PeriodFrom)" InitialDirection="SortDirection.Ascending">Period From</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.PeriodTo)" InitialDirection="SortDirection.Ascending">Period To</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GstItemModel, object>(x=> x.HsnCode)" InitialDirection="SortDirection.Ascending">Hsn Code</MudTableSortLabel></MudTh>
+
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="ItemCode">@context.ItemCode</MudTd>
+                <MudTd DataLabel="ItemCode">@(context.ItemCode) (@(context.ItemDescription))</MudTd>
                 <MudTd DataLabel="TaxRate">@context.TaxRate</MudTd>
-                <MudTd DataLabel="PeriodFrom">@context.PeriodFrom</MudTd>
-                 <MudTd DataLabel="PeriodTo">@context.PeriodTo</MudTd>
+                <MudTd DataLabel="PeriodFrom">@context.PeriodFrom?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="PeriodTo">@context.PeriodTo?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="Hsn Code">@context.HsnCode</MudTd>
 
                 <MudTd DataLabel="">
                     <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
@@ -48,7 +51,7 @@
             </PagerContent>
         </MudTable>
     </MudItem>
-    </MudGrid>
+</MudGrid>
 
 
 
@@ -60,23 +63,13 @@
 
 
     private string searchItem = "";
+    public bool GstItemToggle { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        GetAll();
+        GstItemToggled(false);
     }
-
-    private  void GetAll()
-    {
-        collection = new List<GstItemModel>();
-        foreach (var item in Iservice.Select(DateTime.Now))
-        {
-            collection.Add(item);
-        }
-
-
-    }   
 
     private async Task OpenDialog(GstItemModel tds)
     {
@@ -84,13 +77,13 @@
         var user = authprov.User;
 
         DialogParameters parms = new DialogParameters();
-        parms.Add("model",tds);
-        var dialog =  DialogService.Show<GstItemDialog>(tds.HsnID == null?"ADD":"EDIT",parms);
+        parms.Add("model", tds);
+        var dialog = DialogService.Show<GstItemDialog>(tds.HsnID == null ? "ADD" : "EDIT", parms);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-            GstItemModel UpatedModel = (GstItemModel)result.Data;            
+        if (!result.Cancelled)
+        {
+            GstItemModel UpatedModel = (GstItemModel)result.Data;
             model.UserInfo.UserID = user.Identity.Name;
 
             try
@@ -100,7 +93,7 @@
                 model = new();
                 snackbar.Add("Saved Successfully", Severity.Success);
                 model = new GstItemModel();
-                GetAll();
+                GstItemToggled(GstItemToggle);
             }
             catch (Exception ex)
             {
@@ -109,25 +102,42 @@
 
         }
     }
-    
-    private void Delete(GstItemModel tds)
+
+    private async Task Delete(GstItemModel tds)
     {
-        Iservice.Delete(tds.HsnID.Value,"Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var result = Iservice.Delete(tds.HsnID.Value, user.Identity.Name);
+        if (result != -1)
+        {
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            GstItemToggled(GstItemToggle);
+
+        }
     }
 
     private bool search(GstItemModel tds)
     {
-     if (tds.ItemCode != null && tds.ItemCode.Contains(searchItem, StringComparison.OrdinalIgnoreCase))
+        if (tds.ItemCode != null && tds.ItemCode.Contains(searchItem, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
         else if (tds.ItemCode == null)
-        return true;
+            return true;
         return false;
     }
 
 
+
+    private void GstItemToggled(bool Toggle)
+    {
+        if (collection != null)
+        {
+            collection.Clear();
+        }
+        GstItemToggle = Toggle;
+        DateTime? dtm = Toggle ? null : DateTime.Today;
+        collection = Iservice.SelectByDate(dtm).ToList();
+    }
 
 }
