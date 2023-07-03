@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Reflection;
 
 
 namespace ArmsServices.DataServices
@@ -14,12 +15,13 @@ namespace ArmsServices.DataServices
         GstItemModel Update(GstItemModel model);
         GstItemModel SelectByID(int ID);
         GstItemModel SelectByItem(int ItemID, DateTime? entryDate);
-        IEnumerable<GstItemModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);        
+        IEnumerable<GstItemModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);
         IEnumerable<GstItemModel> FilterByText(string FilterText, DateTime? entryDate);
         int Delete(int ID, string UserID);
         IEnumerable<GstItemModel> SelectByItem(int ItemID);
         IEnumerable<GstItemModel> Select(DateTime? entryDate);
         IEnumerable<GstItemModel> SelectByDate(DateTime? entryDate);
+        IEnumerable<GstInOutModel> GetInOut();
 
 
 
@@ -57,7 +59,7 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
-        }        
+        }
 
         public IEnumerable<GstItemModel> Select(DateTime? entryDate)
         {
@@ -131,7 +133,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-               
+
 
         public IEnumerable<GstItemModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate)
         {
@@ -156,7 +158,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ItemID", model.ItemID),
                new SqlParameter("@PeriodFrom", model.PeriodFrom),
                new SqlParameter("@PeriodTo", model.PeriodTo),
-               new SqlParameter("@RID", model.RID),              
+               new SqlParameter("@RID", model.RID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.HSN.Update]", parameters))
@@ -165,7 +167,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-      
+
 
 
         private GstItemModel GetModel(IDataRecord dr)
@@ -177,8 +179,8 @@ namespace ArmsServices.DataServices
                 ItemDescription = dr.GetString("ItemDescription"),
                 HsnCode = dr.GetString("HsnCode"),
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),
-                PeriodTo = dr.GetDateTime("PeriodTo"),                         
-                RID = dr.GetInt32("RID"),                        
+                PeriodTo = dr.GetDateTime("PeriodTo"),
+                RID = dr.GetInt32("RID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -186,6 +188,23 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },
             };
+        }
+
+
+
+
+        public IEnumerable<GstInOutModel> GetInOut()
+        {
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.Master.Select]", null))
+            {
+                yield return new GstInOutModel
+                {
+                    GstTypeID = dr.GetInt32("GstTypeID"),
+                    GstType = dr.GetString("GstType"),
+                    InputAccount = dr.GetString("InputAccount"),
+                    OutputAccount = dr.GetString("OutputAccount"),
+                };
+            }
         }
     }
 }
