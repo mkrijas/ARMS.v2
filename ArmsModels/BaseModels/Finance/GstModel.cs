@@ -19,12 +19,12 @@ namespace ArmsModels.BaseModels
         public int? CoaID { get; set; }
         public virtual string CoaDescreption { get; set; }
         [Required]
-        public string Area { get; set; } // Operation,Maintenance,All
+        public string Area { get; set; } = "All"; // Operation,Maintenance,All
         [Required]
         public int? RID { get; set; }
         public virtual decimal? TaxRate { get; set; }
 
-        [StringLength(maximumLength: 6)]
+        [StringLength(maximumLength: 8)]
         [Required]
         public string SAC { get; set; }
         [Required]
