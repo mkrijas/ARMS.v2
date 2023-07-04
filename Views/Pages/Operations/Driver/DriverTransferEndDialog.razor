@@ -1,0 +1,134 @@
+﻿@inject AuthenticationStateProvider auth
+@inject IDriverTransferService Iservice
+@inject IBranchService Ibranchservice
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Accept Or Reject Driver.
+        </MudText>
+
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Accept">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="12">
+                        <MudTextField Value="model.Driver.DriverName" Label="Driver" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Driver.DriverName)" Disabled></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="model.InitiatedBranch.BranchName" Label="Initiated Branch" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InitiatedBranch.BranchName)" Disabled></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="End Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DriverTransferEndModel.TransferEndDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.DriverTransferEndModel.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Accept" Class="px-12">Accept Driver</MudButton>
+        @if (model.DriverTransferEndModel.TransferStatus == null)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reject" Class="px-12">Reject Driver</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public DriverTransferInitiationModel model { get; set; } = new();
+
+
+    protected override void OnInitialized()
+    {
+        branchID = model?.DestinationBranch?.BranchID ?? 0;
+    }
+
+    private int branchID { get; set; } = 0;
+
+   
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public async Task Accept()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model.Driver == null || model.Driver.DriverID == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Please, Select driver.", yesText: "OK");
+
+            return;
+        }
+        if (model != null)
+        {
+            model.IsdriverReject = 0;
+            try
+            {
+                model.DriverTransferEndModel.TransferStatus = true;
+                Iservice.UpdateStatus(model);
+                Snackbar.Add("Transfered succesfully", Severity.Success);
+
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+
+        MudDialog.Close(model);
+    }
+
+    public async Task Reject()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model.Driver == null || model.Driver.DriverID == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Please, Select truck.", yesText: "OK");
+
+            return;
+        }
+        if (model != null)
+        {
+
+            model.IsdriverReject = 1;
+            try
+            {
+
+                model.DriverTransferEndModel.TransferStatus = false;
+                Iservice.UpdateStatus(model);
+                Snackbar.Add("Driver Transfer Rejected", Severity.Error);
+
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+
+        MudDialog.Close(model);
+    }
+
+}
+
+
