@@ -89,4 +89,35 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    public class DriverTransferInitiationModel
+    {
+        public int? DriverTransferID { get; set; }
+        public DriverModel Driver { get; set; }
+        public BranchModel InitiatedBranch { get; set; }
+        public BranchModel DestinationBranch { get; set; }
+        public DateTime? TransferInitiatedDate { get; set; } = DateTime.Now;
+        public string Remarks { get; set; }
+        public DriverTransferEndModel DriverTransferEndModel { get; set; }
+        public int IsdriverReject { get; set; } = 0;
+    }
+    public class DriverTransferEndModel
+    {
+        public int? DriverTransferEndID { get; set; }
+        public int? BranchID { get; set; }
+        public bool? TransferStatus { get; set; }
+        public DateTime? TransferEndDate { get; set; } = DateTime.Now;
+        public string Remarks { get; set; }
+        public string StatusText
+        {
+            get
+            {
+                if (TransferStatus == null)
+                    return "Being Transferred";
+                else if (TransferStatus.Value)
+                    return "Completed";
+                else
+                    return "Rejected";
+            }
+        }
+    }
 }

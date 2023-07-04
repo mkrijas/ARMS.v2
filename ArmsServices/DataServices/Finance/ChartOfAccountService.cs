@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
         IEnumerable<ChartOfAccountModel> SelectBase();
         IEnumerable<ChartOfAccountModel> FilterSubLedgers(string filterText);
         IEnumerable<ChartOfAccountModel> AllLedgers();
+        IEnumerable<ChartOfAccountModel> AllGroups();
         IEnumerable<ChartOfAccountModel> SelectByGroup(int? GroupID);
         IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID);
         void AddBranch(CoaBranchAvailabilityModel model);
@@ -173,6 +174,36 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+
+        //public IEnumerable<ChartOfAccountModel> AllGroups()
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@Operation", "AllGroups"),
+        //    };
+
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
+        //    {
+        //        yield return GetModel(dr);
+        //    }
+        //}
+
+
+        public IEnumerable<ChartOfAccountModel> AllGroups()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "allgroups"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+
 
         public IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID)
         {

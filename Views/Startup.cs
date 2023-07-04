@@ -77,6 +77,7 @@ namespace Views
             services.AddScoped<IDriverFaultService, DriverFaultService>();
             services.AddScoped<IDriverLeaveService, DriverLeaveService>();
             services.AddScoped<IDriverLicenceService, DriverLicenceService>();
+            services.AddScoped<IDriverTransferService, DriverTransferService>();
             services.AddScoped<IOrderService, OrderService>();
             //services.AddScoped<IStateService, StateService>();
             services.AddScoped<IDistrictService, DistrictService>();

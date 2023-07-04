@@ -312,6 +312,10 @@ namespace ArmsServices.DataServices
                     TruckID = dr.GetInt32("TruckID"),                   
                     TruckTypeID = dr.GetInt16("TruckTypeID"),
                     TruckType = dr.GetString("TruckType"),
+                    FuelType = dr.GetString("FuelType"),
+                    FuelTankCapacity = dr.GetDecimal("FuelTankCapacity"),
+                    BodyType = dr.GetString("BodyType"),
+                    ManufacturedYear = dr.GetInt16("ManufacturedYear"),
                     CurrentRegistration = new()
                     {
                         RegID = dr.GetInt32("RegID"),

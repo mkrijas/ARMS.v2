@@ -15,7 +15,7 @@ namespace ArmsServices.DataServices
         TdsThresholdLimitModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<TdsThresholdLimitModel> Select();
-        IEnumerable<TdsThresholdLimitModel> SelectByNP(int TdsNPID);
+        IEnumerable<TdsThresholdLimitModel> SelectByNP(int TdsNPID, DateTime? EntryDate);
      
     }
 
@@ -69,12 +69,13 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public IEnumerable<TdsThresholdLimitModel> SelectByNP(int TdsNPID)
+        public IEnumerable<TdsThresholdLimitModel> SelectByNP(int TdsNPID,DateTime? EntryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByNP"),
                new SqlParameter("@TdsNPID", TdsNPID),
+               new SqlParameter("@EntryDate", EntryDate),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.ThresholdLimits.Select]", parameters))
