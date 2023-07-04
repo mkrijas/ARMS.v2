@@ -4,13 +4,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
-    public class GstUsageCodeModel:ICloneable
+    public class GstUsageCodeModel : ICloneable
     {
         public GstUsageCodeModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
-        }        
-        public int? Id { get; set; }        
+        }
+        public int? Id { get; set; }
         public virtual string UsageCode { get; set; }
         [Required]
         [StringLength(maximumLength: 25)]
@@ -51,7 +51,7 @@ namespace ArmsModels.BaseModels
 
     public class GstItemModel
     {
-        public GstItemModel(string _itemCode,decimal? _taxRate)
+        public GstItemModel(string _itemCode, decimal? _taxRate)
         {
             ItemCode = _itemCode;
             TaxRate = _taxRate;
@@ -65,15 +65,26 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? ItemID { get; set; }
         public virtual string ItemCode { get; }
+        public string ItemDescription { get; set; }
+        public string HsnCode { get; set; }
         [Required]
         public int? RID { get; set; }
 
-        public virtual decimal? TaxRate { get; }        
+        public virtual decimal? TaxRate { get; }
         [Required]
         public DateTime? PeriodFrom { get; set; }
         [Required]
         public DateTime? PeriodTo { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
-   
+
+
+
+    public class GstInOutModel
+    {
+        public int? GstTypeID { get; set; }
+        public string GstType { get; set; }
+        public string InputAccount { get; set; }
+        public string OutputAccount { get; set; }
+    }
 }

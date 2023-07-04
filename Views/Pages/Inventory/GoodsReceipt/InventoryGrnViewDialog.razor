@@ -15,24 +15,17 @@
     <DialogContent>
         <MudGrid Spacing="4">
             <MudItem xs="12">
-                <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
-
-
-
+                <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="model">
                     <HeaderContent>
                         <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.GrnNo)" InitialDirection="SortDirection.Ascending">GrnNo</MudTableSortLabel></MudTh>
                         <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Ascending">EntryDate</MudTableSortLabel></MudTh>
                         <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.PartyName)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>
-
-
                         <MudTh>Actions</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="GrnNo">@context.GrnNo</MudTd>
                         <MudTd DataLabel="EntryDate">@context.EntryDate</MudTd>
                         <MudTd DataLabel="Party">@context.PartyName</MudTd>
-
-
                         <MudTd DataLabel="">
                             <MudTooltip Text="Reverse">
                                 <MudFab @onclick="@(()=> Reverse(context))" Color="Color.Error" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />
@@ -41,10 +34,8 @@
                                 <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Preview" Size="Size.Small" IconSize="Size.Small" />
                             </MudTooltip>
                             <MudTooltip Text="Convert to TaxPurchase">
-                                <MudFab @onclick="@(()=> Add(context))" Color="Color.Success" Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" IconSize="Size.Small" />
+                                <MudFab @onclick="@(()=> ToPurchase(context))" Color="Color.Success" Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" IconSize="Size.Small" />
                             </MudTooltip>
-
-
                         </MudTd>
                     </RowTemplate>
                     <PagerContent>
@@ -64,8 +55,6 @@
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-
-
     protected override async Task OnInitializedAsync()
     {
         model = new();
@@ -82,19 +71,15 @@
         {
             collection.Add(item);
         }
-
-
     }
     private async Task OpenDialog(InventoryGrnModel tds)
     {
-
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds);
         parms.Add("ReadOnly", true);
         parms.Add("IsView", true);
         var dialog = DialogService.Show<InventoryGrnDialog>("GRN", parms, maxWidth);
         var result = await dialog.Result;
-
         if (!result.Canceled)
         {
             await GetAll();
@@ -108,41 +93,43 @@
         model.UserInfo.UserID = user.Identity.Name;
         Iservice.Reverse(tds.GrnID.Value, model.UserInfo.UserID);
         MudDialog.Close(model);
-
-
     }
 
-    private async Task Add(InventoryGrnModel tds)
+    private async Task ToPurchase(InventoryGrnModel grn)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
+        TaxPurchaseModel tpm = new TaxPurchaseModel()
+        {
+                GRNID = grn.GrnID,                
+                PartyInfo = partyIservice.SelectByID(grn.PartyID),
+        };        
 
-        TaxPurchaseModel tpm = new TaxPurchaseModel();
-        tpm.GRNID = tds.GrnID;
-        tpm.TotalAmount = tds.TotalValue;
-        tpm.PartyInfo = partyIservice.SelectByID(tds.PartyID);
-
-
+        foreach (var item in Iservice.GetItemEntries(grn.GrnID.Value))
+        {
+            tpm.Items.Add(
+                new TaxPurchaseItemModel()
+                {
+                    ItemID = item.ItemID,
+                    ItemRate = item.ItemRate,
+                    ItemQty = item.ItemQty,
+                    Amount = item.ItemRate * item.ItemQty,
+                    ItemDescription = item.ItemDescription,                    
+                }
+            );
+        }
+        tpm.TotalAmount = tpm.Items.Sum(x => x.Amount);
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tpm);
-
-        var dialog = DialogService.Show<TaxPurchaseDialog>(tpm.GRNID == null ? "ADD" : "EDIT", parms, maxWidth);
+        var dialog = DialogService.Show<TaxPurchaseDialog>(tpm.PID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
-
         if (!result.Canceled)
         {
             await GetAll();
-        }
-        await GetAll();
+        }        
     }
 
-
-
-
-
-
-
-
+    
 }
 

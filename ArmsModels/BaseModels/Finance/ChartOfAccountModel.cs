@@ -15,6 +15,7 @@ namespace ArmsModels.BaseModels
         }
 
         public int? CoaID { get; set; }
+        [Required]
         public int? ParentID { get; set; }
         public string AccountCode { get; set; }
         [Required]
@@ -23,7 +24,10 @@ namespace ArmsModels.BaseModels
         public string AccountDescription { get; set; }
         public string AccountType { get; set; }
         public bool SummaryAccount { get; set; }
+        public bool LimitToPeriod { get; set; }
+        [RequiredIfTrue("LimitToPeriod", ErrorMessage = "Select the Start date")]
         public DateTime? PeriodFrom { get; set; }
+        [RequiredIfTrue("LimitToPeriod", ErrorMessage = "Select the End date")]
         public DateTime? PeriodTo { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }

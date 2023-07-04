@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
         IEnumerable<ChartOfAccountModel> SelectBase();
         IEnumerable<ChartOfAccountModel> FilterSubLedgers(string filterText);
         IEnumerable<ChartOfAccountModel> AllLedgers();
+        IEnumerable<ChartOfAccountModel> AllGroups();
         IEnumerable<ChartOfAccountModel> SelectByGroup(int? GroupID);
         IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID);
         void AddBranch(CoaBranchAvailabilityModel model);
@@ -112,11 +113,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ParentID", model.ParentID),
                new SqlParameter("@SummaryAccount", model.SummaryAccount),
                new SqlParameter("@AccountType", model.AccountType),
+               new SqlParameter("@LimitToPeriod",model.LimitToPeriod),
                new SqlParameter("@PeriodFrom", model.PeriodFrom),
                new SqlParameter("@PeriodTo", model.PeriodTo),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Update]", parameters))
             {
                 model = GetModel(dr);
@@ -133,6 +134,7 @@ namespace ArmsServices.DataServices
                 AccountDescription = dr.GetString("AccountDescription"),
                 AccountName = dr.GetString("AccountName"),
                 AccountCode = dr.GetString("AccountCode"),
+                LimitToPeriod = dr.GetBoolean("LimitToPeriod"),
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),
                 PeriodTo = dr.GetDateTime("PeriodTo"),
                 AccountType = dr.GetString("AccountType"),
@@ -174,6 +176,36 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+
+        //public IEnumerable<ChartOfAccountModel> AllGroups()
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@Operation", "AllGroups"),
+        //    };
+
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
+        //    {
+        //        yield return GetModel(dr);
+        //    }
+        //}
+
+
+        public IEnumerable<ChartOfAccountModel> AllGroups()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "allgroups"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+
 
         public IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID)
         {
