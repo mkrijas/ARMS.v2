@@ -72,7 +72,8 @@
                     <MudFab Label="DL" OnClick="@(() => nav.NavigateTo("dl/" + context.DriverID.ToString()))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.FileCopy" Size="Size.Small" IconSize="Size.Small" />
 
                     <MudFab @onclick="@(() => Edit(context.DriverID))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(() => Delete(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(() => Delete(context.DriverID))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(() => Transfer(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.SwapHoriz" Size="Size.Small" IconSize="Size.Small" />
 
                 </MudTd>
 
@@ -85,7 +86,6 @@
             </PagerContent>
 
         </MudTable>
-
     </MudItem>
 </MudGrid>
 
@@ -172,12 +172,16 @@
 
     protected override async Task OnInitializedAsync()
     {      
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        BranchID = int.Parse (user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
         GetAll();
     }
 
     private void GetAll()
     {
-        collection = Iservice.Select().ToList();      
+        collection = Iservice.SelectByBranch(BranchID).ToList();      
     }
 
     private async Task Add()
@@ -217,7 +221,7 @@
             else
             {
                 collection.Add(editedModel);
-                
+
                 //if( editedModel.DriverAgent != null  && PartyList != null && PartyList.Any(s=>s.PartyID == editedModel.DriverAgent.PartyID))
                 //{
                 //    editedModel.DriverAgent = PartyList.FirstOrDefault(s => s.PartyID == editedModel.DriverAgent.PartyID);
@@ -233,9 +237,22 @@
 
     private async void Delete(int? id)
     {
-        
+
         int result = Iservice.Delete(id, UserID);
         snackbar.Add("Deleted Successfully", Severity.Success);     
+        GetAll();
+    }
+
+    private async void Transfer(int? DriverID)
+    {
+        DriverTransferInitiationModel DriverTransfer = new();
+        var DriverData = collection.FirstOrDefault(x => x.DriverID == DriverID);
+        DriverTransfer.Driver = DriverData;
+        var parameters = new DialogParameters();
+        parameters.Add("model", DriverID != 0 ? DriverTransfer : new());
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = DialogService.Show<DriverTransferInitiationDialog>("Transfer Driver", parameters, maxWidth);
+        var result = await dialog.Result;
         GetAll();
     }
 
@@ -248,11 +265,5 @@
         return false;
     }
 
-
-
   
 }
-
-
-
-
