@@ -25,9 +25,11 @@ namespace ArmsServices.DataServices
         int BeginLeave(DriverLeaveModel LeaveModel);
         int EndLeave(int? DriverID,string UserID);
         public int? GetAssignedTruck(int? DriverID);
-        
+        IEnumerable<DriverModel> GetDriverByAdhaarNo(string AdhaarNo);
+
+
     }
-   
+
     public class DriverService : IDriverService
     {
         IDbService Iservice;
@@ -288,6 +290,19 @@ namespace ArmsServices.DataServices
                 }
             }
             return TruckID;
+        }
+
+        IEnumerable<DriverModel> IDriverService.GetDriverByAdhaarNo(string AdhaarNo)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AdhaarNo", AdhaarNo),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.GetAdhaar]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
     }
 }
