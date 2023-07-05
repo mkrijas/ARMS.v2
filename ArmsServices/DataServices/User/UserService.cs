@@ -271,6 +271,7 @@ namespace ArmsServices.DataServices
 
         public Task<IList<string>> GetRolesAsync(UserModel user, CancellationToken cancellationToken)
         {
+
             //to implement
             IList<string> strs = new List<string>() { "Admin", "Normal" };
             return Task.FromResult(strs);

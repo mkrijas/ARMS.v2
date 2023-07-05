@@ -68,7 +68,7 @@ async function getElementCoordinates(item, targetBox) {
         var rect = element.getBoundingClientRect();
         var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
         targetElement.style.left = 450 + "px";
-        targetElement.style.top = (((rect.top - 245) < 96) ? 96 : ((rect.top - 245) + scrollTop)) + "px";
+        targetElement.style.top = (((rect.top - 245) < 96) ? (scrollTop + 96) : ((rect.top - 245) + scrollTop)) + "px";
         return {
             x: rect.left,
             y: rect.top,

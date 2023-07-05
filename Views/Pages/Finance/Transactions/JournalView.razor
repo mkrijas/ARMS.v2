@@ -1,8 +1,12 @@
 ﻿@page "/JournalView"
+@using System.Threading;
+@using System.Security.Claims;
+@using ArmsModels.Shared;
 @inject IJournalService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
-@attribute [Authorize]
+@inject IRoleService<RoleModel> Irole
+@*@attribute [Authorize(Policy ="EditJournal")]*@
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4">
@@ -41,14 +45,25 @@
                 <MudTd DataLabel="Debit">@context.Debit.AccountName</MudTd>
                 <MudTd DataLabel="Credit">@context.Credit.AccountName</MudTd>
                 <MudTd DataLabel="">
+
                     <MudTooltip Text="View">
                         <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
+
+
                     @if (@context.AuthLevelId == null)
                     {
-                        <MudTooltip Text="Edit">
-                            <MudFab @onclick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip>
+
+                        <AuthorizeView Policy="EditJournal" Context="contextnew">
+                            <Authorized>
+                                <MudTooltip Text="Edit">
+                                    <MudFab @onclick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                                </MudTooltip>
+                            </Authorized>
+                            <NotAuthorized>
+
+                            </NotAuthorized>
+                        </AuthorizeView>
                         <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                     }
                     @if (@context.AuthLevelId != 99)
@@ -71,6 +86,11 @@
     private int numberOfRecords = 100;
     private string searchTerm = "";
 
+
+    private List<Claim> clamelist = new List<Claim>();
+    private List<RoleClaimsList> Claims = new();
+    IDictionary<int?, string> doctypes = null;
+
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
@@ -81,9 +101,25 @@
 
     protected override async Task OnInitializedAsync()
     {
+        GetClaims();
         await GetAll(IsApproved, NumberOfRecords);
     }
 
+
+    private void GetClaims()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        //clamelist = Irole.GetClaimsAsync(ctc.Token).Result.ToList();
+        //foreach (var claimName in clamelist.DistinctBy(x => x.Type).Select(y => y.Type))
+        //{
+        //    Claims.Add(new RoleClaimsList()
+        //        {
+        //            ClaimType = claimName,
+        //            ClaimValues = new(clamelist.Where(x => x.Type == claimName).Select(y => y.Value).ToList())
+        //        });
+        //}
+
+    }
     private async Task GetAll(bool val, int numberOfRecords)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -126,18 +162,20 @@
         }
     }
 
-
+    [Authorize(Policy = "DeleteJournal")]
     private async Task Delete(JournalModel tx)
     {
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        Iservice.Delete(tx.JournalID, user.Identity.Name);
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        await GetAll(IsApproved, NumberOfRecords);
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            Iservice.Delete(tx.JournalID, user.Identity.Name);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            await GetAll(IsApproved, NumberOfRecords);
+        
     }
 
-
+    //[Authorize(Policy = "EditJournal")]
     private async Task OpenDialog(JournalModel JournalModel, bool ReadOnly)
     {
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };

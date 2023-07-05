@@ -17,10 +17,13 @@ namespace ArmsServices.DataServices
     public class AddUserClaimsTransformation : IClaimsTransformation
     {
         private readonly IUserService _userService;
+        private RoleManager<RoleModel> _role;
+        
 
-        public AddUserClaimsTransformation(IUserService userService)
+        public AddUserClaimsTransformation(IUserService userService,RoleManager<RoleModel> role)
         {
             _userService = userService;
+            _role = role;
         }
 
         public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
@@ -42,19 +45,19 @@ namespace ArmsServices.DataServices
             if (userInfo?.User == null)
             {
                 return principal;
-            }            
+            }
 
-            foreach(var item in newIdentity.Claims.ToList())
-            {
-                if(item.Type == ClaimTypes.Role)
-                newIdentity.RemoveClaim(item);
-            }            
-            List<Claim> claims = new()
-            {                
-                new Claim("BranchID", userInfo.Branch.BranchID.ToString()),
-                new Claim("BranchName", userInfo.Branch.BranchName),
-                new Claim(newIdentity.RoleClaimType, userInfo.Role.RoleID)
-            };
+            //foreach (var item in newIdentity.Claims.ToList())
+            //{
+            //    if (item.Type == ClaimTypes.Role)
+            //        newIdentity.RemoveClaim(item);
+            //}
+
+            IList<Claim> claims = await _role.GetClaimsAsync(userInfo.Role);
+            claims.Add(new Claim("BranchID", userInfo.Branch.BranchID.ToString()));
+            claims.Add(new Claim("BranchName", userInfo.Branch.BranchName));
+            //claims.Add(new Claim(newIdentity.RoleClaimType, userInfo.Role.RoleID));
+            
             newIdentity.AddClaims(claims);
             return clone;
         }
