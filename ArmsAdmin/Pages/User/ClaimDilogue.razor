@@ -1,7 +1,7 @@
 ﻿@inject IUserService iservice
 @inject IRoleService<RoleModel> Irole
 @inject RoleManager<RoleModel> rolemngr
-
+@inject IDataAuthorizationSettingsService dataAuthSetting
 
 @inject UserManager<UserModel> Usmg
 @inject MudBlazor.ISnackbar snackbar
@@ -21,7 +21,7 @@
                 <MudTh>Rights</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Claim Type">@context.ClaimType</MudTd>
+                <MudTd DataLabel="Claim Type">@(doctypes.FirstOrDefault(s => s.Key.ToString() == context.ClaimType).Value)</MudTd>
                 <MudTd DataLabel="Value"> 
                 @foreach(var item in @context.ClaimValues) 
                     {
@@ -48,12 +48,13 @@
     private List<RoleModel> collection = new List<RoleModel>();
     private List<Claim> clamelist = new List<Claim>();
     public string csroleid { get; set; } = "";
-
+    IDictionary<int?, string> doctypes = null;
     public bool checkbox { get; set; } = false;
 
 
     class roleClaimView
     {        
+        public string DocType { get; set; }
         public string ClaimType { get; set; }
         public List<string> ClaimValues { get; set; } = new();
     }
@@ -61,6 +62,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        doctypes = dataAuthSetting.GetDocTypes();
         UserClaimList = await rolemngr.GetClaimsAsync(RoleModel);
         await Task.Run(() => GetAll());
         GetClaim();
@@ -77,12 +79,14 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         clamelist= Irole.GetAllClaims(ctc.Token).Result.ToList();
-        foreach(var claimName in clamelist.DistinctBy(x => x.Type).Select(y => y.Type))
+        
+        
+        foreach(var claimType in clamelist.DistinctBy(x => x.Type).Select(y => y.Type))
         {
             Claims.Add(new roleClaimView()
                 {
-                    ClaimType = claimName,
-                    ClaimValues = new(clamelist.Where(x => x.Type == claimName).Select(y => y.Value).ToList())
+                    ClaimType = claimType,
+                    ClaimValues = new(clamelist.Where(x => x.Type == claimType).Select(y => y.Value).ToList())
                 });
         }
 
