@@ -1,4 +1,6 @@
 ﻿using ArmsModels.BaseModels;
+using ArmsModels.Shared;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -17,15 +19,18 @@ namespace ArmsServices.DataServices
         Task<IList<T>> GetAllRoles(CancellationToken cancellationToken);
         Task<IList<Claim>> GetAllClaims(CancellationToken cancellationToken);
         Task<IList<Claim>> GetClaimsAsync(RoleModel role, CancellationToken cancellationToken = default);
+        Task<bool> HasClaim(string DocTypeID, string ClaimValue, CancellationToken cancellationToken = default);
         IEnumerable<RoleModel> Select(string RoleID);
     }
 
-    public class RoleStore : IRoleStore<RoleModel>,IRoleClaimStore<RoleModel>,IRoleService<RoleModel>
+    public class RoleStore : IRoleStore<RoleModel>, IRoleClaimStore<RoleModel>, IRoleService<RoleModel>
     {
         IDbService Iservice;
-        public RoleStore(IDbService iservice)
+        AuthenticationStateProvider auth;
+        public RoleStore(IDbService iservice,AuthenticationStateProvider _auth)
         {
             Iservice = iservice;
+            this.auth = _auth;
         }
 
         public async Task<IdentityResult> CreateAsync(RoleModel model, CancellationToken cancellationToken)
@@ -114,7 +119,7 @@ namespace ArmsServices.DataServices
                     RoleNo = dr.GetInt32("RoleNo"),
                     RoleID = dr.GetString("RoleID"),
                     RoleDesc = dr.GetString("RoleDesc")
-                };                
+                };
             }
             return role;
         }
@@ -147,12 +152,12 @@ namespace ArmsServices.DataServices
         }
 
         public Task<IList<Claim>> GetClaimsAsync(RoleModel role, CancellationToken cancellationToken = default)
-        {            
+        {
             cancellationToken.ThrowIfCancellationRequested();
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@RoleID", role.RoleID)               
+               new SqlParameter("@RoleID", role.RoleID)
             };
 
             IList<Claim> Claims = new List<Claim>();
@@ -161,6 +166,27 @@ namespace ArmsServices.DataServices
                 Claims.Add(new Claim(dr.GetString("ClaimType"), dr.GetString("ClaimValue")));
             };
             return Task.FromResult(Claims);
+        }
+
+        public async Task<bool> HasClaim( string DocTypeID, string ClaimValue, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var RoleID = authprov.User.Claims.First(x => x.Type == ClaimTypes.Role).Value;
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RoleID", RoleID)
+            };
+            
+            IList<Claim> Claims = new List<Claim>();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.RoleClaims.Select]", parameters))
+            {
+                Claims.Add(new Claim(dr.GetString("ClaimType"), dr.GetString("ClaimValue")));
+            };
+            
+            return Claims.Any(s => s.Type == DocTypeID && s.Value == ClaimValue); 
         }
 
         public Task AddClaimAsync(RoleModel role, Claim claim, CancellationToken cancellationToken = default)
@@ -200,7 +226,7 @@ namespace ArmsServices.DataServices
                 RoleID = reader.GetString("RoleID"),
                 RoleNo = reader.GetInt32("RoleNo"),
                 RoleDesc = reader.GetString("RoleDesc"),
-              
+
 
             };
         }
@@ -233,7 +259,7 @@ namespace ArmsServices.DataServices
 
         public Task<IList<Claim>> GetAllClaims(CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();           
+            cancellationToken.ThrowIfCancellationRequested();
 
             IList<Claim> Claims = new List<Claim>();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.ClaimsMaster.Select]", null))
