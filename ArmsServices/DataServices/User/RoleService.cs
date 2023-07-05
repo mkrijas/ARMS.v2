@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
     {
         Task<IList<T>> GetAllRoles(CancellationToken cancellationToken);
         Task<IList<Claim>> GetAllClaims(CancellationToken cancellationToken);
+        Task<IList<Claim>> GetClaimsAsync(RoleModel role, CancellationToken cancellationToken = default);
         IEnumerable<RoleModel> Select(string RoleID);
     }
 
