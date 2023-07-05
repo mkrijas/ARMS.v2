@@ -11,20 +11,21 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
         public int? Id { get; set; }
+        [Required(ErrorMessage = "Usage ID is required!")]
         public virtual string UsageCode { get; set; }
         [Required]
         [StringLength(maximumLength: 25)]
         public string Description { get; set; }
-        [Required(ErrorMessage = "The Account field is required.")]
+        [Required(ErrorMessage = "The Account field is required!")]
         public int? CoaID { get; set; }
         public virtual string CoaDescreption { get; set; }
         [Required]
-        public string Area { get; set; } // Operation,Maintenance,All
+        public string Area { get; set; } = "All"; // Operation,Maintenance,All
         [Required]
         public int? RID { get; set; }
         public virtual decimal? TaxRate { get; set; }
 
-        [StringLength(maximumLength: 6)]
+        [StringLength(maximumLength: 8)]
         [Required]
         public string SAC { get; set; }
         [Required]

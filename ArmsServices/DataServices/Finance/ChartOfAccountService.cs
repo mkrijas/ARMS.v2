@@ -125,8 +125,6 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
-
         private ChartOfAccountModel GetModel(IDataRecord dr)
         {
             return new ChartOfAccountModel
@@ -293,7 +291,6 @@ namespace ArmsServices.DataServices
                     ArdCode = dr.GetString("ArdCode"),
                     Title = dr.GetString("Title"),
                     paymentMode = PaymentMode,
-
                 };
             }
         }

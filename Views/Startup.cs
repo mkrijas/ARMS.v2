@@ -60,6 +60,8 @@ namespace Views
             services.AddAuthorization(config =>
             {
                 config.AddPolicy("Admin", policy => policy.RequireClaim("Admin"));
+                config.AddPolicy("EditJournal", policy => policy.RequireClaim("18","Edit"));
+                config.AddPolicy("DeleteJournal", policy => policy.RequireClaim("18", "Delete"));
             });
 
 
