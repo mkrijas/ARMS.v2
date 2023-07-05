@@ -20,7 +20,16 @@ namespace ArmsModels.BaseModels
         public byte? NextEventTypeID { get; set; }
         [Required]
         public DateTime? EventTime { get; set; } = DateTime.Now;
+
+
+        ///////////////
+        
         [Required]
+        [Notless("TruckID","EventTime")]
+
+        ///////////////
+        
+
         public long? EventReading { get; set; }
         [Required]
         public int? BranchID { get; set; }
