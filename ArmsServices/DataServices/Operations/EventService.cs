@@ -18,7 +18,11 @@ namespace ArmsServices.DataServices
         IEnumerable<EventModel> SelectByTrip(long? TripID);
         EventModel GetCurrentEvent(int? TruckID);
         EventModel GetPreviousEvent(long? EventID);
+
+        ///////////////
         EventModel GetPreviousEvent(int truckID,DateTime eventTime);
+        ///////////////
+        
         EventModel GetNextEvent(long? EventID);
         IEnumerable<EventTypeModel> GetEventTypes();
         EventTypeModel GetEventType(int? EventTypeID);
@@ -227,9 +231,12 @@ namespace ArmsServices.DataServices
 
 
         ///////////////
+        
         public EventModel GetPreviousEvent(int truckID, DateTime eventTime)
         {
             throw new NotImplementedException();
         }
+
+        ///////////////
     }
 }
