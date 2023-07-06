@@ -106,5 +106,42 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    public class ValidateAgeAttribute : ValidationAttribute
+    {
+        private readonly int _minimumAge;
+
+        public ValidateAgeAttribute(int minimumAge)
+        {
+            _minimumAge = minimumAge;
+        }
+
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            if (value is DateTime dateOfBirth)
+            {
+                var age = CalculateAge(dateOfBirth);
+                if (age < _minimumAge)
+                {
+                    var errorMessage = FormatErrorMessage(validationContext.DisplayName);
+                    return new ValidationResult(errorMessage);
+                }
+            }
+
+            return ValidationResult.Success;
+        }
+
+        private int CalculateAge(DateTime dateOfBirth)
+        {
+            var today = DateTime.Today;
+            var age = today.Year - dateOfBirth.Year;
+
+            // Check if the birthday has occurred this year
+            if (dateOfBirth.Date > today.AddYears(-age))
+                age--;
+
+            return age;
+        }
+    }
+
 
 }
