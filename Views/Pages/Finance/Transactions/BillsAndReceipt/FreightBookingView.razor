@@ -1,4 +1,6 @@
 ﻿@page "/FreightBooking"
+@using System.Threading;
+
 @inject IFreightBillingService Iservice
 @inject IOrderService orderIservice
 @inject ITariffService tariffIservice
@@ -7,6 +9,7 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject IRoleService<RoleModel> Irole
 @layout BillsLayout
 
 
@@ -30,7 +33,7 @@
         </MudItem>
         <MudItem xs="12" md="4">
             <MudDateRangePicker Label="Select Period" @bind-DateRange="@dateRange" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy"></MudDateRangePicker>
-            
+
         </MudItem>
         <MudItem xs="12" md="1" Class="d-flex align-center">
             <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Fetch</MudButton>
@@ -47,7 +50,7 @@
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" @bind-SelectedItems="selectedItems1" MultiSelection="true" Dense="true" Hover="true" Striped="true" Elevation="10" >
+        <MudTable Items="@collection" @bind-SelectedItems="selectedItems1" MultiSelection="true" Dense="true" Hover="true" Striped="true" Elevation="10">
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillNumber)" InitialDirection="SortDirection.Ascending">BillNumber</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillDate)" InitialDirection="SortDirection.Ascending">BillDate</MudTableSortLabel></MudTh>
@@ -78,11 +81,11 @@
 @code {
 
 
-    
+
     private List<GcTariffModel> collection = new List<GcTariffModel>();
 
     private List<OrderModel> Orders = new();
-    private OrderModel SelectedOrder = new();    
+    private OrderModel SelectedOrder = new();
 
     private List<TariffTypeModel> TariffTypes = new();
     private TariffTypeModel SelectedTariffType = new();
@@ -91,8 +94,17 @@
 
     DateRange dateRange;
 
+    public bool HasAuthoriseEditConsolidateDraftBill { get; set; } = false;
+    int ConsolidateDraftBillDocTypeID = 1;
+
     protected override async Task OnInitializedAsync()
     {
+
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEditConsolidateDraftBill = await Irole.HasClaim(ConsolidateDraftBillDocTypeID.ToString(), "Edit", ctc.Token);
+
+
         Orders = await orderIservice.Select(0).ToListAsync();
         TariffTypes = tariffIservice.SelectTariffTypes("All").ToList();
     }
@@ -101,47 +113,60 @@
         GetTariffData();
     }
     public void GetTariffData()
-    {       
+    {
         collection = Iservice.GetPending(SelectedOrder.OrderID, SelectedTariffType.TariffTypeID, dateRange.Start, dateRange.End).ToList();
     }
     private async Task Create()
     {
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        if (selectedItems1.Count > 0)
+        if (HasAuthoriseEditConsolidateDraftBill)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-            int brancID = int.Parse(brancIDString);
-            var user = authprov.User;
-            ConsolidatedDraftBillModel cdm = new()
-                {
-                    UserInfo = new() { UserID = user.Identity.Name },
-                    BranchID = brancID,
-                    NatureOfTransaction = "Billing",
-                    BookedGCs = selectedItems1.ToList(),
-                    Order = SelectedOrder,
-                    TariffType = SelectedTariffType,
-                    DocumentDate = System.DateTime.Now,
-                    TotalAmount = selectedItems1.Sum(x=> x.Amount)
-                };
-            
-            DialogParameters parms = new DialogParameters();
-            parms.Add("model", cdm);
-            parms.Add("ReadOnly", false);            
-            var dialog = DialogService.Show<ConsolidateDraftBillDialog>("ConsolidateDraftBill", parms, maxWidth);
-            var result = await dialog.Result;
 
-            if (!result.Canceled)
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            if (selectedItems1.Count > 0)
             {
-                ConsolidatedDraftBillModel UpatedModel = (ConsolidatedDraftBillModel)result.Data;
-                Iservice.UpdateConsolidatedDraftBill(UpatedModel);
-                snackbar.Add("Created Successfully ", Severity.Success);//value = "visible";
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+                int brancID = int.Parse(brancIDString);
+                var user = authprov.User;
+                ConsolidatedDraftBillModel cdm = new()
+                    {
+                        UserInfo = new() { UserID = user.Identity.Name },
+                        BranchID = brancID,
+                        NatureOfTransaction = "Billing",
+                        BookedGCs = selectedItems1.ToList(),
+                        Order = SelectedOrder,
+                        TariffType = SelectedTariffType,
+                        DocumentDate = System.DateTime.Now,
+                        TotalAmount = selectedItems1.Sum(x => x.Amount)
+                    };
+
+                DialogParameters parms = new DialogParameters();
+                parms.Add("model", cdm);
+                parms.Add("ReadOnly", false);
+                var dialog = DialogService.Show<ConsolidateDraftBillDialog>("ConsolidateDraftBill", parms, maxWidth);
+                var result = await dialog.Result;
+
+                if (!result.Canceled)
+                {
+                    ConsolidatedDraftBillModel UpatedModel = (ConsolidatedDraftBillModel)result.Data;
+                    Iservice.UpdateConsolidatedDraftBill(UpatedModel);
+                    snackbar.Add("Created Successfully ", Severity.Success);//value = "visible";
+                }
+                GetTariffData();
             }
-            GetTariffData();
+            else
+            {
+                snackbar.Add("Please select consignments to bill!", Severity.Error);
+
+            }
         }
         else
         {
-            snackbar.Add("Please select consignments to bill!", Severity.Error);
+
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
 
         }
     }

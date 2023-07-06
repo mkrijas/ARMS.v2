@@ -1,7 +1,9 @@
 ﻿@page "/ConsolidatedBills"
+@using System.Threading;
 @inject IFreightBillingService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 @layout BillsLayout
@@ -64,6 +66,17 @@
     private int? branchID = null;
     private string UserID = null;
 
+
+
+    public bool ConsolidatedBillsHasAuthoriseEdit { get; set; } = false;
+    public bool ConsolidatedBillsHasAuthoriseDelete { get; set; } = false;
+    public bool ConsolidatedBillsHasAuthoriseView { get; set; } = false;
+    public bool ProformaInvoiceHasAuthoriseEdit { get; set; } = false;
+
+
+    public int ConsolidatedBillsDocTypeID { get; set; } = 1;
+    public int ProformaInvoiceHasDocTypeID { get; set; } = 2;
+
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
     private async Task OpenConsolidatedBill(ConsolidatedDraftBillModel obj)
@@ -79,6 +92,13 @@
 
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        ConsolidatedBillsHasAuthoriseEdit = await Irole.HasClaim(ConsolidatedBillsDocTypeID.ToString(), "Edit", ctc.Token);
+        ConsolidatedBillsHasAuthoriseDelete = await Irole.HasClaim(ConsolidatedBillsDocTypeID.ToString(), "Delete", ctc.Token);
+        ConsolidatedBillsHasAuthoriseView = await Irole.HasClaim(ConsolidatedBillsDocTypeID.ToString(), "View", ctc.Token);
+        ProformaInvoiceHasAuthoriseEdit = await Irole.HasClaim(ProformaInvoiceHasDocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
@@ -92,10 +112,21 @@
         collection = Iservice.SelectPendingConsolidatedDraftBillList(0, branchID).ToList();
     }
 
-    void Reverse(ConsolidatedDraftBillModel db)
+    async Task Reverse(ConsolidatedDraftBillModel db)
     {
-        Iservice.ReverseConsolidatedDraftBill(db.DraftBillID, UserID);
-        GetConsolidatedDraftBill();
+        if (ConsolidatedBillsHasAuthoriseDelete)
+        {
+            Iservice.ReverseConsolidatedDraftBill(db.DraftBillID, UserID);
+            GetConsolidatedDraftBill();
+
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to reverse.");
+            
+        }
     }
 
     public async Task CreateProformaInvoice(ConsolidatedDraftBillModel cdm)
