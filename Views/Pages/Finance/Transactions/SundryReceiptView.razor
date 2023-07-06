@@ -1,4 +1,5 @@
 ﻿@page "/SundryReceiptView"
+@using System.Threading;
 @using ArmsModels.BaseModels.Finance.Transactions
 @inject ISundryReceiptService Iservice
 @inject ICostCenterService costIservice
@@ -6,6 +7,7 @@
 @inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 
@@ -71,11 +73,17 @@
 
 @code {
 
-    
+
     public bool IsApproved { get; set; } = false;
     private List<SundryReceiptModel> collection = new List<SundryReceiptModel>();
     private int numberOfRecords = 100;
     private string searchTerm = "";
+
+
+
+    public bool HasAuthoriseDelete { get; set; } = false;
+    public int DocTypeID = 12;
+
 
     private int NumberOfRecords
     {
@@ -104,7 +112,11 @@
     }
 
     protected override void OnInitialized()
-    {        
+    {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         GetAll(IsApproved, NumberOfRecords);
     }
 
@@ -135,7 +147,7 @@
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model", RModel);
-        parms.Add("ReadOnly", ReadOnly);        
+        parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<SundryReceiptDialog>(RModel.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         GetAll(IsApproved, NumberOfRecords);
@@ -144,9 +156,21 @@
 
     private void Delete(SundryReceiptModel tx)
     {
-        Iservice.Delete(tx.SundryReceiptID, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll(IsApproved, NumberOfRecords);
+
+        if (HasAuthoriseDelete)
+        {
+            Iservice.Delete(tx.SundryReceiptID, "Rijas");
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            GetAll(IsApproved, NumberOfRecords);
+
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to delete.");
+        }
     }
 
 }

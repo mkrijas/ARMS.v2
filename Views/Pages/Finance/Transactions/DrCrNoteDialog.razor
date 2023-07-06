@@ -1,8 +1,11 @@
-﻿@attribute [Authorize]
+﻿@using System.Threading;
+
+@attribute [Authorize]
 @inject IDrCrNoteService Iservice
 @inject IPartyService partyIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Debit Note/ Credit Note" formID="sundryPaymentForm" model="@model">
@@ -79,6 +82,8 @@
     private string UserID = null;
     EditContext editContext;
     DialogForm dialogForm;
+
+    public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 5;
     bool Local;
 
@@ -87,6 +92,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
@@ -164,6 +173,9 @@
 
     private void OnValidSubmit(EditContext context)
     {
+
+        if (HasAuthoriseEdit)
+        {
         if (model.Particulars.Count == 0 && model.Items.Count == 0)
         {
             snackbar.Add("Please Add Particulars or Items!", Severity.Error);
@@ -194,6 +206,16 @@
 
         dialogForm.Close(model);
         model = new();
+
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+
+        }
 
     }
 

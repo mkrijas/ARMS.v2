@@ -1,8 +1,10 @@
 ﻿@page "/PaymentsListView"
+@using System.Threading;
 @inject IPaymentFinalizeService Iservice
 @inject IPaymentService ImemoService
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 
@@ -67,6 +69,11 @@
 
     int BranchID; string UserID;
 
+    
+    public bool HasAuthoriseDelete { get; set; } = false;
+    public int DocTypeID { get; set; } = 8;
+
+
     private int NumberOfRecords
     {
         get => numberOfRecords;
@@ -95,6 +102,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = authprov.User.Identity.Name;
@@ -110,8 +121,21 @@
 
     void Delete(PaymentFinishModel pi)
     {
+
+
+        if (HasAuthoriseDelete)
+        {
         //Iservice.Delete(pi.PaymentInitiatedID, UserID);
         GetAll(NumberOfRecords);
+
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to delete.");
+        }
     }
 
 

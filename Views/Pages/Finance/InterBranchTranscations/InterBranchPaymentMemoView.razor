@@ -1,9 +1,11 @@
 ﻿@page "/InterBranchPaymentMemoView"
+@using System.Threading;
 @inject IPaymentService Iservice
 @inject IPaymentInitiatedService IinitiateService
 @inject IOutstandingBillsService OBIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 
@@ -104,7 +106,7 @@
     //private List<PaymentMemoModel> collection = new List<PaymentMemoModel>();
     //private List<BillsPaidModel> pmnList = new List<BillsPaidModel>();
 
-  
+
 
     //public bool IsApproved { get; set; } = false;
     //private int? branchID = null;
@@ -147,10 +149,10 @@
     //    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
     //    DialogParameters parms = new DialogParameters();
     //    parms.Add("model", ppm);
-    //    parms.Add("IsReadOnly", ReadOnly);        
-       
+    //    parms.Add("IsReadOnly", ReadOnly);
+
     //    var dialog = DialogService.Show<InterBranchPaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, maxWidth);
-    //    var result = await dialog.Result;  
+    //    var result = await dialog.Result;
 
     //    GetAll(IsApproved);
     //}
@@ -218,14 +220,19 @@
 
     //}
 
-   private PaymentMemoModel model = new PaymentMemoModel();
-    private List<PaymentMemoModel> collection = new List<PaymentMemoModel>(); 
+    private PaymentMemoModel model = new PaymentMemoModel();
+    private List<PaymentMemoModel> collection = new List<PaymentMemoModel>();
     public bool IsApproved { get; set; } = false;
     private int numberOfRecords = 100;
     private string searchTerm = "";
     private int? branchID = null;
     private string UserID = null;
-    
+
+
+    public bool HasAuthoriseDelete { get; set; } = false;
+    public int DocTypeID { get; set; } = 7;
+
+
     private int NumberOfRecords
     {
         get => numberOfRecords;
@@ -259,6 +266,11 @@
     }
     protected override async Task OnInitializedAsync()
     {
+
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         model = new();
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -280,32 +292,45 @@
             collection = Iservice.SelectInterBranchByUnapproved(branchID, NumberOfRecords, searchTerm).ToList();
         }
     }
-  
+
     public async Task OpenDialogpayment(PaymentMemoModel ppm, bool ReadOnly)
     {
         DialogParameters parms = new DialogParameters();
         parms.Add("model", ppm);
-        parms.Add("ReadOnly", ReadOnly);         
+        parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<InterBranchPaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
-        if(!result.Canceled)
+        if (!result.Canceled)
         {
-           
+
         }
         GetAll(IsApproved, NumberOfRecords);
     }
 
     private void Delete(PaymentMemoModel tx)
     {
-        Iservice.Delete(tx.PaymentMemoID, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll(IsApproved, NumberOfRecords);
+
+
+        if (HasAuthoriseDelete)
+        {
+            Iservice.Delete(tx.PaymentMemoID, "Rijas");
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            GetAll(IsApproved, NumberOfRecords);
+
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to delete.");
+        }
     }
 
 
     private async Task Initiate(PaymentMemoModel pm)
     {
-        PaymentInitiatedModel pi = new PaymentInitiatedModel(pm);        
+        PaymentInitiatedModel pi = new PaymentInitiatedModel(pm);
 
         if (pi.PaymentMemoID != null)
         {
@@ -313,12 +338,12 @@
             {
                 snackbar.Add(pm.DocumentNumber + "is Not Approved!", Severity.Error);
                 return;
-            }  
+            }
             pi.Bills = Iservice.GetBills(pi.PaymentMemoID).ToList();
-            pi.PaymentStatus = 1;           
+            pi.PaymentStatus = 1;
 
             DialogParameters parms = new DialogParameters();
-            parms.Add("PI", pi);            
+            parms.Add("PI", pi);
             var dialog = DialogService.Show<InitiatePaymentMemo>("Payment", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
             var result = await dialog.Result;
 
@@ -335,6 +360,6 @@
         {
             snackbar.Add("Please Select Memo", Severity.Success);
             return;
-        }        
+        }
     }
-    }
+}

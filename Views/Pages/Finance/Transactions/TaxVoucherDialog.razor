@@ -1,8 +1,10 @@
-﻿@using ArmsModels.BaseModels.Finance.Transactions;
+﻿@using System.Threading;
+@using ArmsModels.BaseModels.Finance.Transactions;
 @using ArmsServices.DataServices.Finance.Transactions;
 @attribute [Authorize]
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 
 @inject ITaxVoucherService Iservice
 @inject IAssetDocumentService IDocumentService
@@ -128,6 +130,11 @@
     public bool ReadOnly { get; set; }
     private List<GstUsageCodeModel> usageList = new();
 
+
+    public bool HasAuthoriseEdit { get; set; } = false;
+    int DocTypeID = 19;
+
+
     private TaxVoucherSubModel TaxVoucherSub { get; set; } = new();
     private GstUsageCodeModel gstusge = new();
 
@@ -149,6 +156,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
@@ -161,7 +171,7 @@
                     BranchID = branchID,
                     UserInfo = new() { UserID = UserID, },
                     TotalAmount = 0,
-                    NatureOfTransaction="Tax Voucher"
+                    NatureOfTransaction = "Tax Voucher"
                 };
         }
         else
@@ -231,7 +241,7 @@
     public void OnChangeIsAgentChecked(bool? obj)
     {
         model.IsAgent = obj;
-        if(!obj.Value)
+        if (!obj.Value)
         {
             model.Agent = new();
             model.CGST = null;
@@ -252,16 +262,28 @@
     }
     public void OnValidSubmit(EditContext context)
     {
-        try
+        if (HasAuthoriseEdit)
         {
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            dialogForm.Close(model);
+            try
+            {
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                dialogForm.Close(model);
+
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
 
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+
         }
     }
 
@@ -332,7 +354,7 @@
 
             decimal tdsRate = tdsService.GetTdsRate(model.Agent.PartyID, model.PaymentCoaID);
             model.TDS = Math.Round((model.TotalAmount.Value * tdsRate) / 100, 2);
-            model.TotalTax = (model.IGST?? 0) + (model.SGST??0) + (model.CGST??0) + (model.TDS??0);
+            model.TotalTax = (model.IGST ?? 0) + (model.SGST ?? 0) + (model.CGST ?? 0) + (model.TDS ?? 0);
 
             return true;
         }

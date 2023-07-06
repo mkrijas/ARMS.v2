@@ -1,4 +1,5 @@
 ﻿@page "/Receipt"
+@using System.Threading;
 @inject IReceiptService Iservice
 @inject IOutstandingBillsService OutstandingIservice
 @inject ICostCenterService costIservice
@@ -6,6 +7,7 @@
 @inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 
@@ -69,8 +71,8 @@
 
             </RowTemplate>
             <PagerContent>
-                <MudTablePager  PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                <MudItem xs="12" md="9"> </MudItem><MudItem xs="12" md="3" >
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                <MudItem xs="12" md="9"> </MudItem><MudItem xs="12" md="3">
                 </MudItem>
             </PagerContent>
         </MudTable>
@@ -88,6 +90,10 @@
     private int numberOfRecords = 100;
     private string searchTerm = "";
 
+
+    public bool HasAuthoriseDelete { get; set; } = false;
+    public int DocTypeID = 14;
+
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
@@ -98,6 +104,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         await GetReceiptBill(IsApproved, NumberOfRecords);
     }
 
@@ -151,7 +160,7 @@
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model", rModel);
-        parms.Add("ReadOnly", ReadOnly);        
+        parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<ReceiptDialog>(rModel.ReceiptID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
         await GetReceiptBill(IsApproved, NumberOfRecords);
@@ -159,8 +168,20 @@
 
     private async Task Delete(ReceiptModel tx)
     {
-        Iservice.Delete(tx.ReceiptID, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        await GetReceiptBill(IsApproved, NumberOfRecords);
+
+        if (HasAuthoriseDelete)
+        {
+            Iservice.Delete(tx.ReceiptID, "Rijas");
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            await GetReceiptBill(IsApproved, NumberOfRecords);
+
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to delete.");
+        }
     }
 }

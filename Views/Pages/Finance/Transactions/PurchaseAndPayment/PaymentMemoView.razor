@@ -1,9 +1,11 @@
 ﻿@page "/PaymentMemoView"
+@using System.Threading;
 @inject IPaymentService Iservice
 @inject IPaymentInitiatedService IinitiateService
 @inject IOutstandingBillsService OBIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 
@@ -113,6 +115,10 @@
             }
         }
     }
+    
+    public bool HasAuthoriseDelete { get; set; } = false;
+    public int DocTypeID { get; set; } = 7;
+
 
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
@@ -134,6 +140,11 @@
     }
     protected override async Task OnInitializedAsync()
     {
+        
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
+
         model = new();
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -172,9 +183,21 @@
 
     private void Delete(PaymentMemoModel tx)
     {
+
+        if (HasAuthoriseDelete)
+        {
         Iservice.Delete(tx.PaymentMemoID, "Rijas");
         snackbar.Add("Deleted Successfully", Severity.Success);
         GetAll(IsApproved, NumberOfRecords);
+
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to delete."); ;
+        }
     }
 
 
