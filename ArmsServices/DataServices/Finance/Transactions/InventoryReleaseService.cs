@@ -7,18 +7,6 @@ using System.Data;
 
 namespace ArmsServices.DataServices.Finance.Transactions
 {
-
-    public interface IInventoryReleaseService
-    {
-        InventoryReleaseModel Update(InventoryReleaseModel model);
-        InventoryReleaseModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<InventoryReleaseModel> Select();
-        public IEnumerable<InventoryReleaseModel> SelectByStoreID(int? StoreID);
-        IEnumerable<InventoryReleaseModel> SelectByParty(int? PartyID, int? PartyBranchID);
-        IEnumerable<InventoryReleaseModel> SelectByPeriod(DateTime? begin, DateTime? end);
-        IEnumerable<InventoryReleaseSubViewModel> GetRequstSub(int? ID,int? StoreID);
-    }
     public class InventoryReleaseService : IInventoryReleaseService
     {
         IDbService Iservice;
@@ -58,7 +46,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     ItemDescription = dr.GetString("ItemDescription"),
                     AvailableQty = dr.GetDecimal("AvailableQty"),
                     RequestQty = dr.GetDecimal("RequestQty"),
-                    ItemQty = dr.GetDecimal("ReleaseQty") == null ? dr.GetDecimal("RequestQty"): dr.GetDecimal("ReleaseQty"),
+                    ItemQty = dr.GetDecimal("ReleaseQty") == null ? dr.GetDecimal("RequestQty") : dr.GetDecimal("ReleaseQty"),
                 };
             }
         }
@@ -185,7 +173,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                 Jobcard = new()
                 {
                     JobcardID = dr.GetInt32("JobcardID"),
-                    JobcardNumber = dr.GetString("JobcardPrefix") +(dr.GetInt32("JobcardNumber")).ToString()
+                    JobcardNumber = dr.GetString("JobcardPrefix") + (dr.GetInt32("JobcardNumber")).ToString()
                 },
                 Truck = new()
                 {

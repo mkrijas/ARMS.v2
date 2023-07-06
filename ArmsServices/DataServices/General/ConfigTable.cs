@@ -5,23 +5,8 @@ using System.Data.SqlClient;
 
 namespace ArmsServices.DataServices.General
 {
-    public interface IConfigTable
+    public class ConfigTable : IConfigTable
     {
-        ConfigModel GetByID(string KeyString);
-        ConfigModel GetByDefaultCashCoaID();
-        ConfigModel GetByFinanceBankGroupID();
-        ConfigModel GetByFinanceCashGroupID();
-        ConfigModel GetByInventoryFuelGroupID();
-        ConfigModel GetByInventoryTyreGroupID();
-        ConfigModel GetAssetSubclassForTrucks();
-        ConfigModel GetBaseFinanceGroupId(string groupName);
-
-        IEnumerable<ConfigModel> GetAll();
-    }
-    public class ConfigTable: IConfigTable
-    {
-
-
         IDbService Iservice;
         public ConfigTable(IDbService iservice)
         {
@@ -106,7 +91,7 @@ namespace ArmsServices.DataServices.General
             return null;
         }
 
-       
+
 
         public IEnumerable<ConfigModel> GetAll()
         {
@@ -148,12 +133,12 @@ namespace ArmsServices.DataServices.General
             string KeyString;
             switch (groupName)
             {
-                case "Asset":KeyString = "AssetFinanceBaseGroupID";break;
-                case "Liability": KeyString = "LiabilityFinanceBaseGroupID";break;
-                case "Income": KeyString = "IncomeFinanceBaseGroupID";break;
+                case "Asset": KeyString = "AssetFinanceBaseGroupID"; break;
+                case "Liability": KeyString = "LiabilityFinanceBaseGroupID"; break;
+                case "Income": KeyString = "IncomeFinanceBaseGroupID"; break;
                 case "Expence": KeyString = "ExpenceFinanceBaseGroupID"; break;
                 case "Capital": KeyString = "CapitalFinanceBaseGroupID"; break;
-                default: KeyString=string.Empty; break;
+                default: KeyString = string.Empty; break;
             }
 
             List<SqlParameter> parameters = new List<SqlParameter>

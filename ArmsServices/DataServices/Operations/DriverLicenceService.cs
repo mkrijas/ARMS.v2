@@ -7,16 +7,6 @@ using System.Data;
 using System.Data.SqlClient;
 namespace ArmsServices.DataServices
 {
-    public interface IDriverLicenceService
-    {
-        IEnumerable<DriverLicenceModel> Select(int? DriverID);
-        DriverLicenceModel GetActiveHeavyLicense(int? DriverID);
-        DriverLicenceModel SelectByID(int? LicenceID);
-        DriverLicenceModel Update(DriverLicenceModel model);
-        int Delete(int? LicenceID,string UserID);
-        int SaveFilePath(string link, int? id);
-
-    }
     public class DriverLicenceService : IDriverLicenceService
     {
         IDbService Iservice;
@@ -25,7 +15,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Delete(int? LicenceID,string UserID)
+        public int Delete(int? LicenceID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -41,7 +31,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@DriverID", DriverID),
                new SqlParameter("@Operation","ActiveHeavy")
-            };            
+            };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Licence.Select]", parameters))
             {
                 return GetModel(dr);
@@ -101,7 +91,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DLImage", model.DLImage),
                new SqlParameter("@LicenceID", model.LicenceID),
                new SqlParameter("@LicenceNo", model.LicenceNo),
-               new SqlParameter("@LicenceType", model.LicenceType),      
+               new SqlParameter("@LicenceType", model.LicenceType),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Licence.Update]", parameters))

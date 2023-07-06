@@ -9,19 +9,6 @@ using ArmsModels.BaseModels.Finance.Transactions;
 
 namespace ArmsServices.DataServices
 {
-    public interface ISundryPaymentService
-    {
-        SundryPaymentModel Update(SundryPaymentModel model);
-        SundryPaymentModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<SundryPaymentModel> Select();
-        IEnumerable<SundryPaymentModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<SundryPaymentModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<SundryPaymentEntryModel> GetEntries(int? SID);
-        int Approve(int? SundryPaymentID, string UserID, string Remarks);
-        int Reverse(int? SundryPaymentID, string UserID, string Remarks);
-
-    }
     public class SundryPaymentService : ISundryPaymentService
     {
         IDbService Iservice;
@@ -64,7 +51,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByApproved"),
-               new SqlParameter("@numberOfRecords", NumberOfRecords), 
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
 
             };

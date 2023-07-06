@@ -8,25 +8,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IReceiptService
-    {
-        ReceiptModel Update(ReceiptModel model);
-        ReceiptModel SelectByID(int? ReceiptID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<ReceiptModel> Select(int? BranchID);
-        IEnumerable<ReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<ReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<ReceiptModel> SelectInterBranch(int? BranchID);
-        IEnumerable<ReceiptModel> SelectInterBranchByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<ReceiptModel> SelectInterBranchByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<ReceiptModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID);
-        IEnumerable<ReceiptModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);
-        IEnumerable<BillsReceiptModel> GetBills(int? ReceiptID);
-        int Approve(int? PID, string UserID,string remarks);
-        int Reverse(int? PID, string UserID);
-        //IEnumerable<PaymentEntryModel> GetPaymentEntries(int? PfID);
-    }
-
     public class ReceiptService : IReceiptService
     {
         IDbService Iservice;
@@ -34,7 +15,7 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-        public int Approve(int? PID, string UserID,string remarks)
+        public int Approve(int? PID, string UserID, string remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -70,7 +51,7 @@ namespace ArmsServices.DataServices
                     MID = dr.GetInt32("MID"),
                     BrID = dr.GetInt32("BpID"),
                     BranchID = dr.GetInt32("BranchID"),
-                    BranchName = dr.GetString("BranchName"),                  
+                    BranchName = dr.GetString("BranchName"),
                     InvoiceDate = dr.GetDateTime("ReferenceDocDate"),
                     InvoiceNumber = dr.GetString("ReferenceDocNo"),
                     ReceiptAmount = dr.GetDecimal("ReceiptAmount"),
@@ -175,7 +156,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByUnapproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@IsInterBranch", true),
-               new SqlParameter("@numberOfRecords", NumberOfRecords), 
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
 
             };
@@ -278,8 +259,8 @@ namespace ArmsServices.DataServices
             {
                 ReceiptID = dr.GetInt32("ReceiptID"),
                 BusinessNature = dr.GetString("BusinessNature"),
-                NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
-                BranchID = dr.GetInt32("BranchID"),               
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
+                BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),
@@ -290,7 +271,7 @@ namespace ArmsServices.DataServices
                 ReceiptCoaID = dr.GetInt32("ReceiptCoa"),
                 ReceiptArdCode = dr.GetString("ArdCode"),
                 IsRealized = dr.GetBoolean("IsRealized"),
-                BankCharges= dr.GetDecimal("BankCharges"),
+                BankCharges = dr.GetDecimal("BankCharges"),
                 Reference = dr.GetString("Referece"),
                 EffectiveDate = dr.GetDateTime("EffectiveDate"),
                 CostCenter = dr.GetInt32("CostCenter"),
@@ -299,11 +280,11 @@ namespace ArmsServices.DataServices
                 Narration = dr.GetString("Narration"),
                 InterBranchTranID = dr.GetInt32("InterBranchTranID"),
                 IsInterBranch = dr.GetBoolean("IsInterBranch"),
-                OtherBranchID=dr.GetInt32("OtherBranch"),
+                OtherBranchID = dr.GetInt32("OtherBranch"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
-                    TradeName = dr.GetString("PartyName")                    
+                    TradeName = dr.GetString("PartyName")
                 },
                 PartyCoaID = dr.GetInt32("PartyCoa"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

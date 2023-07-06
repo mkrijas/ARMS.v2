@@ -11,24 +11,9 @@ using System.Diagnostics;
 
 namespace ArmsServices.DataServices
 {
-    public interface IOpTranService
-    {
-        OpTranModel Update(OpTranModel model);
-        int Delete(long? ID, string UserID);
-        IEnumerable<OpTranModel> SelectByTrip(long? TripID);
-        IEnumerable<OpTranModel> SelectByApprovedTrip(long? TripID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<OpTranModel> SelectByUnapprovedTrip(long? TripID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<OpTranModel> SelectByJobcard(int? JobcardID);
-        OpTranModel SelectByID(long? ID);
-        int Approve(int? ID, string UserID, string Remarks);
-        int Reverse(int? ID, string UserID,string Remarks);
-        IEnumerable<OpTranSubModel> GetExpenses(long? TransactionID);
-    }
-
     public class OpTranService : IOpTranService
     {
         IDbService Iservice;
-
         public OpTranService(IDbService iservice)
         {
             Iservice = iservice;

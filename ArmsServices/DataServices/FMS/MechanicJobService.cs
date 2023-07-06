@@ -8,17 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IMechanicJobService
-    {
-        MechanicJobModel Update(MechanicJobModel model);
-        MechanicJobModel SelectByID(int? ID);
-        IEnumerable<MechanicJobModel> SelectByJob(int? JipID);
-        int Remove(int? MjID, string UserID);
-        IEnumerable<MechanicJobModel> Select(int? MjID);
-    }
-  
-
-public class MechanicJobService:IMechanicJobService
+    public class MechanicJobService : IMechanicJobService
     {
         IDbService Iservice;
 
@@ -106,7 +96,7 @@ public class MechanicJobService:IMechanicJobService
                 EndedOn = dr.GetDateTime("EndedOn"),
                 MechanicID = dr.GetInt32("MechanicID"),
                 MechanicName = dr.GetString("MechanicName"),
-                JipID = dr.GetInt32("JipID"),               
+                JipID = dr.GetInt32("JipID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

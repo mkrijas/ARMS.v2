@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
@@ -10,23 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface ISaleService
-    {
-        SaleModel Update(SaleModel model);
-        SaleModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<SaleModel> Select();
-        IEnumerable<SaleModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<SaleModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
-
-        IEnumerable<SaleModel> SelectByParty(int? PartyID);
-        IEnumerable<SaleModel> SelectByPeriod(DateTime? begin,DateTime? end);
-        IEnumerable<TaxPurchaseExpenseModel> GetParticulars(int? SID);
-        IEnumerable<TaxPurchaseItemModel> GetItems(int? PID);
-        int Approve(int? SID, string UserID,string Remarks);
-        int Reverse(int? SID, string UserID);
-    }
-
     public class SaleService : ISaleService
     {
         IDbService Iservice;
@@ -36,7 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Approve(int? SID, string UserID,string Remarks)
+        public int Approve(int? SID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -53,7 +35,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@SID", ID),
                new SqlParameter("@UserID", UserID),
-              
+
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Delete]", parameters);
         }
@@ -73,11 +55,11 @@ namespace ArmsServices.DataServices
                     Amount = dr.GetDecimal("Amount"),
                     CGST = dr.GetDecimal("CGST"),
                     IGST = dr.GetDecimal("IGST"),
-                    SGST = dr.GetDecimal("SGST"),                   
-                    CoaID = dr.GetInt32("CoaID"),                 
+                    SGST = dr.GetDecimal("SGST"),
+                    CoaID = dr.GetInt32("CoaID"),
                     PID = dr.GetInt32("PID"),
                     TDS = dr.GetDecimal("TCS"),
-                    GstRate= dr.GetDecimal("GstRate"),
+                    GstRate = dr.GetDecimal("GstRate"),
                     BillReference = dr.GetString("BillReference"),
                     BranchID = dr.GetInt32("BranchID"),
                     UsageCode = dr.GetString("UsageCode"),
@@ -105,7 +87,7 @@ namespace ArmsServices.DataServices
                     SGST = dr.GetDecimal("SGST"),
                     ItemID = dr.GetInt32("ItemID"),
                     CoaID = dr.GetInt32("CoaID"),
-                    GstRate= dr.GetDecimal("GstRate"),
+                    GstRate = dr.GetDecimal("GstRate"),
                     ItemQty = dr.GetDecimal("ItemQty"),
                     ItemRate = dr.GetDecimal("ItemRate"),
                     PID = dr.GetInt32("SID"),
@@ -182,14 +164,14 @@ namespace ArmsServices.DataServices
                 model = GetModel(dr);
             }
             return model;
-        }      
+        }
 
         public IEnumerable<SaleModel> SelectByParty(int? PartyID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByParty"),
-               new SqlParameter("@PartyID", PartyID),               
+               new SqlParameter("@PartyID", PartyID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
@@ -222,11 +204,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
-               new SqlParameter("@Particulars", model.Particulars.ToDataTable()),               
+               new SqlParameter("@Particulars", model.Particulars.ToDataTable()),
                new SqlParameter("@IsCredit", model.IsCredit),
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
-               new SqlParameter("@Items", model.Items.ToDataTable()),               
+               new SqlParameter("@Items", model.Items.ToDataTable()),
                new SqlParameter("@CustomerID", model.PartyInfo.PartyID),
                new SqlParameter("@CustomerCode", model.PartyInfo.PartyCode),
                new SqlParameter("@TotalAmount", model.TotalAmount),
@@ -247,7 +229,7 @@ namespace ArmsServices.DataServices
                 SID = dr.GetInt32("SID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 AdditionalTCS = dr.GetDecimal("AdditionalTCS"),
-                BranchID = dr.GetInt32("BranchID"),               
+                BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 IsCredit = dr.GetBoolean("IsCredit"),
@@ -259,7 +241,7 @@ namespace ArmsServices.DataServices
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
                 PartyInfo = new PartyModel()
-                {                    
+                {
                     PartyID = dr.GetInt32("CustomerID"),
                     TradeName = dr.GetString("TradeName"),
                     PartyCode = dr.GetString("CustomerCode"),

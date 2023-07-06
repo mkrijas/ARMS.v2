@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
@@ -11,14 +10,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IContactService
-    {
-        ContactModel Update(ContactModel model);
-        ContactModel SelectByID(int? ContactID);
-        int Delete(int? ContactID, string UserID);
-        IEnumerable<ContactModel> Select(int? RefKey,string  RefTable);
-
-    }
     public class ContactService : IContactService
     {
         IDbService Iservice;
@@ -38,7 +29,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RefTable", model.RefTable),
                new SqlParameter("@RefKey", model.RefKey),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-            }; 
+            };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Contacts.Update]", parameters))
             {
                 model = GetModel(dr);
@@ -67,7 +58,7 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Entity.Contacts.Delete]", parameters);
         }
-        public IEnumerable<ContactModel> Select(int? RefKey,string RefTable)
+        public IEnumerable<ContactModel> Select(int? RefKey, string RefTable)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -77,7 +68,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Contacts.Select]", parameters))
             {
-                yield return GetModel(dr);               
+                yield return GetModel(dr);
             }
         }
         private ContactModel GetModel(IDataRecord dr)

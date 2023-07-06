@@ -8,13 +8,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface ITyrePositionService
-    {        
-        IEnumerable<TyrePositionModel> Select(int? TruckType);
-        IEnumerable<TyrePositionModel> Select();
-        TyrePositionModel Update(TyrePositionModel model, int? TruckTypeID);
-        int Delete(int? ID, string UserID);
-    }
     public class TyrePositionService : ITyrePositionService
     {
         IDbService Iservice;
@@ -41,7 +34,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Side", model.Side),
                new SqlParameter("@Description", model.Description),
                new SqlParameter("@PositionID", model.PositionID),
-               new SqlParameter("@UserID", model.UserInfo.UserID),               
+               new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.TyrePosition.Update]", parameters))
             {
@@ -74,7 +67,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-       
+
         private TyrePositionModel GetModel(IDataRecord dr)
         {
             return new TyrePositionModel()

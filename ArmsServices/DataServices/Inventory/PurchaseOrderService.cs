@@ -8,19 +8,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-
-    public interface IPurchaseOrderService
-    {
-        PurchaseOrderModel Update(PurchaseOrderModel model);
-        PurchaseOrderModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);   
-        IEnumerable<PurchaseOrderModel> SelectPending(int BranchID);
-        IEnumerable<PurchaseOrderModel> PendingForGrn(int BranchID);
-        IEnumerable<PurchaseOrderModel> SelectByStore(int StoreID);
-        int Approve(int POID,string UserID, string Remarks);
-        int Reverse(int POID, string UserID);
-        IEnumerable<InventoryItemEntryModel> GetItemEntries(int POID);
-    }
     public class PurchaseOrderService : IPurchaseOrderService
     {
         IDbService Iservice;
@@ -29,7 +16,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Approve(int POID,string UserID, string Remarks)
+        public int Approve(int POID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -46,7 +33,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@POID", POID),
-               new SqlParameter("@UserID", UserID),               
+               new SqlParameter("@UserID", UserID),
                new SqlParameter("@Operation","Reverse")
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
@@ -89,7 +76,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@Operation", "All")
-            };            
+            };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -113,10 +100,10 @@ namespace ArmsServices.DataServices
         }
 
         public PurchaseOrderModel Update(PurchaseOrderModel model)
-        {            
+        {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@POID", model.POID),               
+               new SqlParameter("@POID", model.POID),
                new SqlParameter("@PONo",model.PONo),
                new SqlParameter("@QuoteID",model.QuoteID),
                new SqlParameter("@EntryDate",model.EntryDate),
@@ -139,12 +126,12 @@ namespace ArmsServices.DataServices
         private PurchaseOrderModel GetModel(IDataRecord dr)
         {
             return new PurchaseOrderModel(
-                dr.GetBoolean("GrnCreated"), 
+                dr.GetBoolean("GrnCreated"),
                 dr.GetString("PoNo"))
             {
-                POID = dr.GetInt32("POID"),               
+                POID = dr.GetInt32("POID"),
                 PRID = dr.GetInt32("PRID"),
-                QuoteID = dr.GetInt32("QuoteID"),                 
+                QuoteID = dr.GetInt32("QuoteID"),
                 EntryDate = dr.GetDateTime("EntryDate"),
                 PartyID = dr.GetInt32("PartyID"),
                 PartyName = dr.GetString("TradeName"),
@@ -189,6 +176,6 @@ namespace ArmsServices.DataServices
             }
         }
 
-        
+
     }
 }

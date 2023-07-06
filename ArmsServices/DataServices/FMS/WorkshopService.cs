@@ -8,20 +8,11 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IWorkshopService
-    {
-        WorkshopModel Update(WorkshopModel model);
-        WorkshopModel SelectByID(int? ID);
-        int Delete(int? WorkshopID, string UserID);
-        IEnumerable<WorkshopModel> Select(int? WorkshopID);
-    }
-
-
-public class WorkshopService:IWorkshopService
+    public class WorkshopService : IWorkshopService
     {
         IDbService Iservice; IAddressService Iaddress;
 
-        public WorkshopService(IDbService iservice,IAddressService iaddress)
+        public WorkshopService(IDbService iservice, IAddressService iaddress)
         {
             Iservice = iservice;
             Iaddress = iaddress;
@@ -65,7 +56,7 @@ public class WorkshopService:IWorkshopService
         }
 
         public WorkshopModel Update(WorkshopModel model)
-        {            
+        {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@WorkshopID", model.WorkshopID),
@@ -73,7 +64,7 @@ public class WorkshopService:IWorkshopService
                new SqlParameter("@PartyID", model.PartyID),
                new SqlParameter("@GstID", model.GstID),
                new SqlParameter("@WorkshopName", model.WorkshopName),
-               new SqlParameter("@WorkshopType", model.WorkshopType),              
+               new SqlParameter("@WorkshopType", model.WorkshopType),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -89,7 +80,7 @@ public class WorkshopService:IWorkshopService
             return new WorkshopModel
             {
                 WorkshopID = dr.GetInt32("WorkshopID"),
-                WorkshopName = dr.GetString("WorkshopName"),                
+                WorkshopName = dr.GetString("WorkshopName"),
                 WorkshopType = dr.GetString("WorkshopType"),
                 ContactNumber = dr.GetString("ContactNumber"),
                 PartyID = dr.GetInt32("PartyID"),

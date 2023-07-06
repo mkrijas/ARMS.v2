@@ -9,23 +9,12 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IOrderService
-    {
-        Task<OrderModel> Update(OrderModel model);
-        Task<OrderModel> SelectByID(int? ID);
-        IAsyncEnumerable<OrderModel> SelectByBranch(int? BranchID);
-        Task<int> Delete(int? OrderID, string UserID);
-        IAsyncEnumerable<OrderModel> Select(int? OrderID);
-        Task<int> BranchOrderUpdate(int? BranchID, int? OrderID, string UserID, string operation);
-
-    }
-
     public class OrderService : IOrderService
     {
-        IDbService Iservice;      
+        IDbService Iservice;
         public OrderService(IDbService iservice)
         {
-            Iservice = iservice;         
+            Iservice = iservice;
         }
         public async Task<OrderModel> Update(OrderModel model)
         {
@@ -94,7 +83,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public async Task<int> BranchOrderUpdate(int? BranchID,int? OrderID,string UserID,string operation)
+        public async Task<int> BranchOrderUpdate(int? BranchID, int? OrderID, string UserID, string operation)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -113,7 +102,7 @@ namespace ArmsServices.DataServices
                 ConsignorID = dr.GetInt32("ConsignorID"),
                 ContentID = dr.GetInt16("ContentID"),
                 OrderID = dr.GetInt32("OrderID"),
-                GstNo= dr.GetString("GstNo"),
+                GstNo = dr.GetString("GstNo"),
                 OrderName = dr.GetString("OrderName"),
                 IsLimitedQuantity = dr.GetBoolean("IsLimitedQuantity"),
                 OrderQuantity = dr.GetDecimal("OrderQuantity"),
@@ -143,5 +132,5 @@ namespace ArmsServices.DataServices
         }
     }
 
-    
+
 }

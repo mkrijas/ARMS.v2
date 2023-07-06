@@ -9,23 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface ITripService
-    {       
-        TripModel Update(TripModel model);
-        int Delete(long? TripID, string UserID);
-        TripModel Select(long? TripID);
-        TripModel SelectByTripNumber(string TripNumber);
-        int Cancel(long? TripID, string UserID);
-        int CloseTrip(long? TripID, int? BranchID,string UserID);
-        bool IsClosed(long? TripID);
-        bool IsSettled(long? TripID);
-        TripInfoModel GetTripInfo(long? TripID);
-        IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString);
-        IEnumerable<object> GetOutstandingBills(long? TripID);
-        IEnumerable<GcTariffModel> GetTariffs(long? TripID);
-
-    }
-
     public class TripService : ITripService
     {
         IDbService Iservice;
@@ -38,11 +21,11 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TripID", model.TripID),               
+               new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DriverID", model.DriverID),
                new SqlParameter("@TripDate", model.TripDate),
-               new SqlParameter("@TruckID", model.TruckID),                       
+               new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -52,13 +35,13 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int Delete(long? TripID,string UserID)
+        public int Delete(long? TripID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TripID", TripID),               
+               new SqlParameter("@TripID", TripID),
                new SqlParameter("@UserID", UserID),
-            };            
+            };
             return Iservice.ExecuteNonQuery("[usp.Operation.Trip.Delete]", parameters);
         }
         public TripModel Select(long? TripID)
@@ -79,7 +62,7 @@ namespace ArmsServices.DataServices
 
         private TripModel GetModel(IDataRecord reader)
         {
-           return new TripModel
+            return new TripModel
             {
                 BranchID = reader.GetInt32("BranchID"),
                 DriverID = reader.GetInt32("DriverID"),
@@ -111,7 +94,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Operation.Trip.Cancel]", parameters);
         }
 
-        int ITripService.CloseTrip(long? TripID,int? BranchID,string UserID)
+        int ITripService.CloseTrip(long? TripID, int? BranchID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -125,7 +108,7 @@ namespace ArmsServices.DataServices
 
         public bool IsClosed(long? TripID)
         {
-            
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripID", TripID),
@@ -135,7 +118,7 @@ namespace ArmsServices.DataServices
             SqlParameter result = new SqlParameter("@result", SqlDbType.Bit);
             result.Direction = ParameterDirection.Output;
             parameters.Add(result);
-             Iservice.ExecuteNonQuery("[usp.Operation.Trip.Query]", parameters);
+            Iservice.ExecuteNonQuery("[usp.Operation.Trip.Query]", parameters);
             return (bool)result.Value;
         }
 
@@ -181,9 +164,9 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@TripID", TripID),
                new SqlParameter("@Operation", "GetTripInfo"),
-            };            
+            };
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
-            {                
+            {
                 return new TripInfoModel()
                 {
                     Driver = reader.GetString("Driver"),
@@ -193,7 +176,7 @@ namespace ArmsServices.DataServices
                     TripNumber = (reader.GetInt64("TripNumber")).ToString(),
                     Truck = reader.GetString("Truck"),
                     Gcs = reader.GetString("Gcs"),
-                    Mileage = reader.GetDecimal("Mileage").HasValue?Math.Round(reader.GetDecimal("Mileage")??0):null,
+                    Mileage = reader.GetDecimal("Mileage").HasValue ? Math.Round(reader.GetDecimal("Mileage") ?? 0) : null,
                     Expenses = reader.GetDecimal("Expenses"),
                     Freight = reader.GetDecimal("Freight"),
                 };
@@ -209,18 +192,18 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@TruckID", TruckID),
                new SqlParameter("@Operation", "SearchTrip"),
-            };           
+            };
             await foreach (var reader in Iservice.GetDataReaderAsync("[usp.Operation.Trip.Select]", parameters))
-            {                
+            {
                 yield return GetModel(reader);
-            }            
+            }
         }
 
 
         public IEnumerable<GcTariffModel> GetTariffs(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-            {               
+            {
                new SqlParameter("@TripID", TripID),
                new SqlParameter("@Operation", "ByTrip"),
             };

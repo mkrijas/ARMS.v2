@@ -9,14 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface ITruckTypeService
-    {       
-        TruckTypeModel Update(TruckTypeModel model);
-        int Delete(int? TruckTypeID, string UserID);
-        TruckTypeModel SelectByID(short? TruckTypeID);
-        IEnumerable<TruckTypeModel> Select(short? TruckTypeID);
-    }
-
     public class TruckTypeService : ITruckTypeService
     {
         IDbService Iservice;
@@ -45,26 +37,26 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int Delete(int? TruckTypeID,string UserID)
+        public int Delete(int? TruckTypeID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TruckTypeID", TruckTypeID),               
+               new SqlParameter("@TruckTypeID", TruckTypeID),
                new SqlParameter("@UserID", UserID),
-            };            
+            };
             return Iservice.ExecuteNonQuery("[usp.Truck.Type.Delete]", parameters);
         }
         public IEnumerable<TruckTypeModel> Select(short? TruckTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TruckTypeID", TruckTypeID)               
+               new SqlParameter("@TruckTypeID", TruckTypeID)
             };
 
             foreach (IDataReader dr in Iservice.GetDataReader("[usp.Truck.Type.Select]", parameters))
             {
                 yield return GetModel(dr);
-            }           
+            }
         }
 
         public TruckTypeModel SelectByID(short? TruckTypeID)
@@ -82,9 +74,9 @@ namespace ArmsServices.DataServices
         }
 
 
-        private TruckTypeModel  GetModel(IDataRecord reader)
+        private TruckTypeModel GetModel(IDataRecord reader)
         {
-           return new TruckTypeModel
+            return new TruckTypeModel
             {
                 TruckTypeID = reader.GetInt16("TruckTypeID"),
                 TruckType = reader.GetString("TruckType"),

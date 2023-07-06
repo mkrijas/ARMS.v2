@@ -9,15 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IRenterPostingGroupService
-    {
-        RenterPostingGroupModel Update(RenterPostingGroupModel model);
-        RenterPostingGroupModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<RenterPostingGroupModel> Select();
-        RenterPostingGroupModel GetPostingGroup(int? RenterID);
-    }
-
     public class RenterPostingGroupService : IRenterPostingGroupService
     {
         IDbService Iservice;

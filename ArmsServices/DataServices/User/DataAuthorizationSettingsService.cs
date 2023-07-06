@@ -9,16 +9,6 @@ using System.Reflection.PortableExecutable;
 
 namespace ArmsServices.DataServices
 {
-
-    public interface IDataAuthorizationSettingsService
-    {
-        IEnumerable<DataAuthorizationTypeModel> GetAuthTypes();
-        IDictionary<int?, string> GetDocTypes();
-        IEnumerable<DataAuthorizationSettingsModel> Select(int? DocTypeID);
-        IEnumerable<DataAuthorizationSettingsModel> Select(string DocType);
-        int? Update(DataAuthorizationSettingsModel model);
-        int? Delete(int? ID);
-    }
     public class DataAuthorizationSettingsService : IDataAuthorizationSettingsService
     {
         IDbService Iservice;
@@ -30,15 +20,15 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID),              
+               new SqlParameter("@ID", ID),
             };
             return Iservice.ExecuteNonQuery("[usp.User.DataAuthorization.Settings.Delete]", parameters);
         }
 
         public IEnumerable<DataAuthorizationTypeModel> GetAuthTypes()
-        {           
+        {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Types.Select]", null))
-            {            
+            {
                 yield return new DataAuthorizationTypeModel()
                 {
                     AuthLevelID = dr.GetInt32("AuthLevelID"),
@@ -48,11 +38,11 @@ namespace ArmsServices.DataServices
         }
 
         public IDictionary<int?, string> GetDocTypes()
-        {            
+        {
             Dictionary<int?, string> DocTypes = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DocTypes.Select]", null))
             {
-                DocTypes.Add(dr.GetInt32("ID"), dr.GetString("Description"));                
+                DocTypes.Add(dr.GetInt32("ID"), dr.GetString("Description"));
             }
             return DocTypes;
         }
@@ -104,11 +94,11 @@ namespace ArmsServices.DataServices
                 AuthLevelID = dr.GetInt32("AuthLevelID"),
                 DocTypeID = dr.GetInt32("DocTypeID"),
                 RoleID = dr.GetString("RoleID"),
-                AuthorizeType=dr.GetString("AuthorzationType"),
-                DocType=dr.GetString("DocType")
+                AuthorizeType = dr.GetString("AuthorzationType"),
+                DocType = dr.GetString("DocType")
             };
         }
     }
 
-       
+
 }

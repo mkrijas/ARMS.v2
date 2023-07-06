@@ -113,7 +113,7 @@ namespace ArmsModels.BaseModels
     public class NotlessAttribute : RequiredAttribute
     {
         private string _truckIdName, _eventTimeName;
-        public NotlessAttribute(string truckIDName,string eventTimeName,Ieve)
+        public NotlessAttribute(string truckIDName,string eventTimeName)
         {
             _truckIdName = truckIDName;
             _eventTimeName = eventTimeName;

@@ -10,32 +10,6 @@ using System.Reflection;
 
 namespace ArmsServices.DataServices
 {
-    public interface IPartyService
-    {       
-        PartyModel Update(PartyModel model);
-        PartyModel SelectByID(int? ID);
-        int Delete(int? PartyID, string UserID);
-        IEnumerable<PartyModel> Select(int? PartyID);
-        IEnumerable<PartyModel> SelectByCode(string PartyCode,string NatureOfBusiness);     
-        IEnumerable<ContactModel> GetContacts(int? PartyID);
-        IEnumerable<PartyModel> GetCustomers(string Code);
-        IEnumerable<PartyModel> GetVendors(string Code);
-        IEnumerable<PartyModel> GetRenters(string Code);
-        int AddContact(int? PartyID, ContactModel contact,string ContactID);
-        int? GetVendorPayableCoaID(int? VendorID);
-        int? GetVendorDepositCoaID(int? VendorID);
-        int? GetVendorPrepaymentCoaID(int? VendorID);
-        int? GetCustomerReceivableCoaID(int? CustomerID);
-        int? GetCustomerDepositCoaID(int? CustomerID);
-        int? GetCustomerPrepaymentCoaID(int? CustomerID);
-        int? GetRenterRentCoaID(int? RenterID);
-        int? GetRenterDepositCoaID(int? RenterID);
-        int? GetRenterOtherCoaID(int? RenterID);
-        bool IsLocal(int? PartyID, int? BranchID);
-        int? GetPartyCoaID(int? PartyID, string BusinessNature, string NatureOfTransaction);
-
-    }
-
     public class PartyService : IPartyService
     {
         IDbService Iservice;
@@ -47,9 +21,9 @@ namespace ArmsServices.DataServices
         IRenterPostingGroupService _renter;
         IBranchService _branch;
 
-        public PartyService(IDbService iservice, IAddressService addressService, 
-            IBankAccountService bankAccountService, IContactService contactService, 
-            IVendorPostingGroupService vendor, ICustomerPostingGroupService customer, 
+        public PartyService(IDbService iservice, IAddressService addressService,
+            IBankAccountService bankAccountService, IContactService contactService,
+            IVendorPostingGroupService vendor, ICustomerPostingGroupService customer,
             IRenterPostingGroupService renter, IBranchService branch)
         {
             Iservice = iservice;
@@ -66,7 +40,7 @@ namespace ArmsServices.DataServices
         public PartyModel Update(PartyModel model)
         {
             AddressModel addressModel = _addressService.Update(model.Address);
-            if(model.BankAccount != null)
+            if (model.BankAccount != null)
             {
                 model.BankAccount.UserInfo = model.UserInfo;
                 model.BankAccount = _bankAccountService.Update(model.BankAccount);
@@ -122,7 +96,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByID"),
             };
             PartyModel model = new PartyModel();
-            foreach( IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                 model = GetModel(reader);
             }
@@ -130,13 +104,13 @@ namespace ArmsServices.DataServices
         }
 
 
-        public int Delete(int? PartyID,string UserID)
+        public int Delete(int? PartyID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PartyID", PartyID),               
+               new SqlParameter("@PartyID", PartyID),
                new SqlParameter("@UserID", UserID),
-            };            
+            };
             return Iservice.ExecuteNonQuery("[usp.Entity.Party.Delete]", parameters);
         }
 
@@ -152,11 +126,11 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
                 yield return GetModel(reader);
-               
+
             }
         }
 
-       
+
 
         private PartyModel GetModel(IDataRecord reader)
         {
@@ -169,7 +143,7 @@ namespace ArmsServices.DataServices
                 BankAccount = new BankAccountModel() { BankAccountID = reader.GetInt32("BankAccountID") },
                 CreditLimit = reader.GetInt32("CreditLimit"),
                 CreditPeriod = reader.GetInt32("CreditPeriod"),
-                GstNo=reader.GetString("GstNo"),
+                GstNo = reader.GetString("GstNo"),
                 GstRegType = reader.GetString("GstRegType"),
                 GstType = reader.GetString("GstType"),
                 IcPartnerCode = reader.GetString("IcPartnerCode"),
@@ -194,18 +168,18 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public IEnumerable<PartyModel> SelectByCode(String PartyCode,string NatureOfBusiness)
+        public IEnumerable<PartyModel> SelectByCode(String PartyCode, string NatureOfBusiness)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PartyCode", PartyCode),
                new SqlParameter("@Operation", "ByCode"),
                new SqlParameter("@NatureOfBusiness",NatureOfBusiness)
-            };            
+            };
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
             {
-               yield return GetModel(reader);
-            }            
+                yield return GetModel(reader);
+            }
         }
 
         public IEnumerable<ContactModel> GetContacts(int? PartyID)
@@ -267,17 +241,17 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int AddContact(int? PartyID, ContactModel contact,string UserId)
+        public int AddContact(int? PartyID, ContactModel contact, string UserId)
         {
             contact.UserInfo.UserID = UserId;
-            contact = _contactService.Update(contact);            
+            contact = _contactService.Update(contact);
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PartyID", PartyID),
                new SqlParameter("@ContactID", contact?.ContactID??0)    ,
-               new SqlParameter("@UserID", UserId)            
+               new SqlParameter("@UserID", UserId)
             };
-            return Iservice.ExecuteNonQuery("[usp.Entity.Party.Contacts.Update]", parameters);            
+            return Iservice.ExecuteNonQuery("[usp.Entity.Party.Contacts.Update]", parameters);
         }
 
         public int? GetVendorPayableCoaID(int? VendorID)
@@ -297,7 +271,7 @@ namespace ArmsServices.DataServices
 
         public int? GetCustomerReceivableCoaID(int? CustomerID)
         {
-            return _customer.GetPostingGroup(CustomerID)?.Receivable?.CoaID??null;
+            return _customer.GetPostingGroup(CustomerID)?.Receivable?.CoaID ?? null;
         }
 
         public int? GetCustomerDepositCoaID(int? CustomerID)
@@ -326,8 +300,8 @@ namespace ArmsServices.DataServices
         }
 
         public bool IsLocal(int? PartyID, int? BranchID)
-        {            
-            var branchModel =   _branch.SelectByID(BranchID);
+        {
+            var branchModel = _branch.SelectByID(BranchID);
             var partyModel = SelectByID(PartyID);
             string branchState = branchModel.GstNo?.Substring(0, 2);
             string partyState = partyModel.GstNo?.Substring(0, 2);
@@ -336,7 +310,7 @@ namespace ArmsServices.DataServices
 
 
 
-        public int? GetPartyCoaID(int? PartyID,string BusinessNature,string NatureOfTransaction)
+        public int? GetPartyCoaID(int? PartyID, string BusinessNature, string NatureOfTransaction)
         {
             if (BusinessNature == "Supplier")
             {

@@ -9,14 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IDistrictService
-    {       
-        DistrictModel Update(DistrictModel model);
-        int Delete(int? DistrictID, string UserID);
-        IEnumerable<DistrictModel> Select(int? DistrictID);
-        IEnumerable<StateModel> GetStates();
-    }
-
     public class DistrictService : IDistrictService
     {
         IDbService Iservice;
@@ -33,58 +25,58 @@ namespace ArmsServices.DataServices
                new SqlParameter("@StateID", model.StateID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.Districts.Update]", parameters))
-                {                    
-                        return new DistrictModel
-                        {
-                            DistrictID = dr.GetInt32("DistrictID"),
-                            DistrictName = dr.GetString("DistrictName"),
-                            StateID = dr.GetInt32("StateID"),
-                            UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                            {
-                                RecordStatus = dr.GetByte("RecordStatus"),
-                                TimeStampField = dr.GetDateTime("TimeStamp"),
-                                UserID = dr.GetString("UserID"),
-                            },
-                        };                    
-                }
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.Districts.Update]", parameters))
+            {
+                return new DistrictModel
+                {
+                    DistrictID = dr.GetInt32("DistrictID"),
+                    DistrictName = dr.GetString("DistrictName"),
+                    StateID = dr.GetInt32("StateID"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
+            }
             return null;
         }
-        public int Delete(int? DistrictID,string UserID)
+        public int Delete(int? DistrictID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DistrictID", DistrictID),               
+               new SqlParameter("@DistrictID", DistrictID),
                new SqlParameter("@UserID", UserID),
-            };            
+            };
             return Iservice.ExecuteNonQuery("[usp.Place.Districts.Delete]", parameters);
         }
         public IEnumerable<DistrictModel> Select(int? DistrictID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DistrictID", DistrictID)               
+               new SqlParameter("@DistrictID", DistrictID)
             };
 
-            foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Place.Districts.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.Districts.Select]", parameters))
             {
-                    yield return new DistrictModel
+                yield return new DistrictModel
+                {
+                    DistrictID = dr.GetInt32("DistrictID"),
+                    DistrictName = dr.GetString("DistrictName"),
+                    StateID = dr.GetInt32("StateID"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
-                        DistrictID = dr.GetInt32("DistrictID"),
-                        DistrictName = dr.GetString("DistrictName"),
-                        StateID = dr.GetInt32("StateID"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = dr.GetByte("RecordStatus"),
-                            TimeStampField = dr.GetDateTime("TimeStamp"),
-                            UserID = dr.GetString("UserID"),
-                        },
-                    };
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
             }
         }
 
         public IEnumerable<StateModel> GetStates()
-        { 
+        {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.States.Select]", null))
             {
                 yield return new StateModel()

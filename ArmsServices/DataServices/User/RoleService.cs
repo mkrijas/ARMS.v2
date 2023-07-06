@@ -12,15 +12,7 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IRoleService<T>
-    {
-        Task<IList<T>> GetAllRoles(CancellationToken cancellationToken);
-        Task<IList<Claim>> GetAllClaims(CancellationToken cancellationToken);
-        Task<IList<Claim>> GetClaimsAsync(RoleModel role, CancellationToken cancellationToken = default);
-        IEnumerable<RoleModel> Select(string RoleID);
-    }
-
-    public class RoleStore : IRoleStore<RoleModel>,IRoleClaimStore<RoleModel>,IRoleService<RoleModel>
+    public class RoleStore : IRoleStore<RoleModel>, IRoleClaimStore<RoleModel>, IRoleService<RoleModel>
     {
         IDbService Iservice;
         public RoleStore(IDbService iservice)
@@ -114,7 +106,7 @@ namespace ArmsServices.DataServices
                     RoleNo = dr.GetInt32("RoleNo"),
                     RoleID = dr.GetString("RoleID"),
                     RoleDesc = dr.GetString("RoleDesc")
-                };                
+                };
             }
             return role;
         }
@@ -147,12 +139,12 @@ namespace ArmsServices.DataServices
         }
 
         public Task<IList<Claim>> GetClaimsAsync(RoleModel role, CancellationToken cancellationToken = default)
-        {            
+        {
             cancellationToken.ThrowIfCancellationRequested();
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@RoleID", role.RoleID)               
+               new SqlParameter("@RoleID", role.RoleID)
             };
 
             IList<Claim> Claims = new List<Claim>();
@@ -200,7 +192,7 @@ namespace ArmsServices.DataServices
                 RoleID = reader.GetString("RoleID"),
                 RoleNo = reader.GetInt32("RoleNo"),
                 RoleDesc = reader.GetString("RoleDesc"),
-              
+
 
             };
         }
@@ -233,7 +225,7 @@ namespace ArmsServices.DataServices
 
         public Task<IList<Claim>> GetAllClaims(CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();           
+            cancellationToken.ThrowIfCancellationRequested();
 
             IList<Claim> Claims = new List<Claim>();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.ClaimsMaster.Select]", null))

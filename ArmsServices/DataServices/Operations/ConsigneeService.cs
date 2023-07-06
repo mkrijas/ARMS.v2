@@ -8,22 +8,12 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-
-    public interface IConsigneeService
-    {
-        Task<ConsigneeModel> Update(ConsigneeModel model);
-        Task<ConsigneeModel> SelectByID(int? ID);
-        Task<int> Delete(int? ConsigneeID, string UserID);
-        IAsyncEnumerable<ConsigneeModel> Select(int? ConsigneeID);
-        IAsyncEnumerable<ConsigneeModel> SelectByOrder(int? ID);
-    }
-
     public class ConsigneeService : IConsigneeService
     {
         IDbService Iservice;
         IAddressService Iaddress;
 
-        public ConsigneeService(IDbService iservice,IAddressService addressService)
+        public ConsigneeService(IDbService iservice, IAddressService addressService)
         {
             Iservice = iservice;
             Iaddress = addressService;
@@ -78,7 +68,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID),              
+               new SqlParameter("@ID", ID),
             };
             ConsigneeModel model = new ConsigneeModel();
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Consignee.Select]", parameters))
@@ -89,7 +79,7 @@ namespace ArmsServices.DataServices
         }
 
         public async IAsyncEnumerable<ConsigneeModel> SelectByOrder(int? ID)
-        {                         
+        {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),

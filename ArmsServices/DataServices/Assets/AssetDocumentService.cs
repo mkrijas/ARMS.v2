@@ -9,25 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IAssetDocumentService
-    {
-        AssetDocumentModel Update(AssetDocumentModel model);
-        int SaveFilePath(string link, int? id);
-        AssetDocumentModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        int DeleteType(int? ID, string UserID);
-        int Remove(AssetDocumentModel model);
-        IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate, DateTime? endDate);
-        IEnumerable<AssetDocumentModel> SelectWithPast(int? AssetID);
-        IEnumerable<AssetDocumentModel> SelectByAsset(int? AssetID);
-        IEnumerable<AssetDocumentTypeModel> GetDocumentTypes();
-        AssetDocumentTypeModel UpdateDocumentType(AssetDocumentTypeModel model);
-        IEnumerable<AssetDocumentModel> ValidatePeriod(AssetDocumentModel model);
-        bool IsValid(AssetDocumentModel model, DateTime? DateToCheck);
-
-
-    }
-
     public class AssetDocumentService : IAssetDocumentService
     {
         IDbService Iservice;

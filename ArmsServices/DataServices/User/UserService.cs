@@ -13,25 +13,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace ArmsServices.DataServices
 {
-    public interface IUserService
-    {
-        IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID);
-        IEnumerable<UserBranchRoleModel> GetAllBranchesNRoles(string UserID);
-        int SetBranchesNRoles(List<UserBranchRoleModel> lst,string UserID);
-        int DeleteBranchesNRoles(UserBranchRoleModel model,string UserID);
-        int DeleteUser(string UserID, string DeletedBy);
-        UserBranchRoleModel GetCurrentBranchRole(string UserID);
-        int SetCurrentBranchRole(UserBranchRoleModel model);
-        IEnumerable<UserModel> Select(string UserID);
-        IEnumerable<UserModel> SelectDeleted(string UserID);
-
-
-    }
-
-   
-
     public class UserStore : IUserStore<UserModel>, IUserEmailStore<UserModel>, IUserPhoneNumberStore<UserModel>,
-    IUserTwoFactorStore<UserModel>, IUserPasswordStore<UserModel>,IUserRoleStore<UserModel>, IUserClaimStore<UserModel>,IUserService
+    IUserTwoFactorStore<UserModel>, IUserPasswordStore<UserModel>, IUserRoleStore<UserModel>, IUserClaimStore<UserModel>, IUserService
     {
 
         IDbService Iservice;
@@ -39,7 +22,7 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-        
+
         public async Task<IdentityResult> CreateAsync(UserModel model, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -56,7 +39,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@operation", "Insert"),
             };
             await Iservice.ExecuteNonQueryAsync("[usp.user.UserUpdate]", parameters);
-                   
+
             return IdentityResult.Success;
         }
 
@@ -82,14 +65,14 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", userID),
                new SqlParameter("@operation", "FindByID"),
             };
-            
+
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.user.UserSelect]", parameters))
             {
                 return GetModel(dr);
             }
             return null;
         }
-       
+
         public async Task<UserModel> FindByNameAsync(string UserID, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -102,9 +85,9 @@ namespace ArmsServices.DataServices
             UserModel user = new UserModel();
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.user.UserSelect]", parameters))
             {
-               user = GetModel(dr);
+                user = GetModel(dr);
             }
-            return user.UserID== null?null:user;
+            return user.UserID == null ? null : user;
         }
 
         public Task<string> GetNormalizedUserNameAsync(UserModel user, CancellationToken cancellationToken)
@@ -149,7 +132,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@operation", "Update"),
             };
             await Iservice.ExecuteNonQueryAsync("[usp.user.UserUpdate]", parameters);
-                   
+
             return IdentityResult.Success;
         }
 
@@ -296,7 +279,7 @@ namespace ArmsServices.DataServices
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@UserID", user.UserID),               
+               new SqlParameter("@UserID", user.UserID),
             };
             IList<Claim> claims = new List<Claim>();
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.user.UserClaims.Select]", parameters))
@@ -312,13 +295,13 @@ namespace ArmsServices.DataServices
             DataTable dt = new();
             dt.Columns.Add("ClaimType");
             dt.Columns.Add("ClaimValue");
-            foreach(Claim claim in claims)
+            foreach (Claim claim in claims)
             {
                 DataRow row = dt.NewRow();
                 row["ClaimType"] = claim.Type;
                 row["ClaimValue"] = claim.Value;
                 dt.Rows.Add(row);
-            }            
+            }
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -338,7 +321,7 @@ namespace ArmsServices.DataServices
                 PhoneNumber = dr["PhoneNumber"].ToString(),
                 PhoneNumberConfirmed = bool.Parse(dr["PhoneNumberConfirmed"].ToString()),
                 Email = dr["Email"].ToString(),
-                EmailConfirmed = bool.Parse(dr["EmailConfirmed"].ToString()),                
+                EmailConfirmed = bool.Parse(dr["EmailConfirmed"].ToString()),
                 TwoFactorEnabled = bool.Parse(dr["TwoFactorEnabled"].ToString()),
                 RecordStatus = byte.Parse(dr["RecordStatus"].ToString()),
 
@@ -349,11 +332,11 @@ namespace ArmsServices.DataServices
             cancellationToken.ThrowIfCancellationRequested();
             DataTable dt = new();
             dt.Columns.Add("ClaimType");
-            dt.Columns.Add("ClaimValue");           
-                DataRow row = dt.NewRow();
-                row["ClaimType"] = newClaim.Type;
-                row["ClaimValue"] = newClaim.Value;
-                dt.Rows.Add(row);
+            dt.Columns.Add("ClaimValue");
+            DataRow row = dt.NewRow();
+            row["ClaimType"] = newClaim.Type;
+            row["ClaimValue"] = newClaim.Value;
+            dt.Rows.Add(row);
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -407,7 +390,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.User.UserID),
                new SqlParameter("@BranchID", model.Branch.BranchID),
                 new SqlParameter("@DeletedBy", UserID),
-            }; 
+            };
             return Iservice.ExecuteNonQuery("[usp.user.BranchRole.Delete]", parameters);
         }
         public int DeleteUser(string UserID, string DeletedBy)
@@ -416,7 +399,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@UserID", UserID),
                 //new SqlParameter("@DeletedBy", DeletedBy),
-            }; 
+            };
             return Iservice.ExecuteNonQuery("[usp.User.UserDelete]", parameters);
         }
         public IEnumerable<UserBranchRoleModel> GetBranchesNRoles(string UserID)

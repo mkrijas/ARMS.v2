@@ -9,15 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IRouteService
-    {       
-        Task<RouteModel> Update(RouteModel model);
-        Task<RouteModel> SelectByID(int? ID);
-        int Delete(int? RouteID, string UserID);
-        IAsyncEnumerable<RouteModel> Select(int? RouteID);
-        IAsyncEnumerable<RouteModel> SelectByOrder(int? OrderID);
-    }
-
     public class RouteService : IRouteService
     {
         IDbService Iservice;
@@ -47,7 +38,7 @@ namespace ArmsServices.DataServices
             {
                 model = await GetModel(dr);
             }
-                return model;
+            return model;
         }
         public async Task<RouteModel> SelectByID(int? ID)
         {
@@ -63,13 +54,13 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int Delete(int? RouteID,string UserID)
+        public int Delete(int? RouteID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@RouteID", RouteID),               
+               new SqlParameter("@RouteID", RouteID),
                new SqlParameter("@UserID", UserID),
-            };            
+            };
             return Iservice.ExecuteNonQuery("[usp.Gc.Route.Delete]", parameters);
         }
         public async IAsyncEnumerable<RouteModel> Select(int? RouteID)
@@ -79,7 +70,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", RouteID) ,
                new SqlParameter("@Operation", "ByRoute"),
             };
-            await foreach(IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Select]", parameters))
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Select]", parameters))
             {
                 yield return await GetModel(dr);
             }
