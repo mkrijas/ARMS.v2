@@ -9,15 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IAddressService
-    {       
-        AddressModel Update(AddressModel model);
-        AddressModel SelectByID(int? AddressID);
-        int Delete(int? AddressID, string UserID);
-        IEnumerable<AddressModel> Select(int? AddressID);
-
-    }
-
     public class AddressService : IAddressService
     {
         IDbService Iservice;
@@ -63,7 +54,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@AddressID", AddressID),               
+                new SqlParameter("@AddressID", AddressID),
             };
             AddressModel model = new AddressModel();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.AddressesSelect]", parameters))
@@ -87,40 +78,40 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int Delete(int? AddressID,string UserID)
+        public int Delete(int? AddressID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@AddressID", AddressID),               
+               new SqlParameter("@AddressID", AddressID),
                new SqlParameter("@UserID", UserID),
-            };            
+            };
             return Iservice.ExecuteNonQuery("[usp.Entity.AddressesDelete]", parameters);
         }
         public IEnumerable<AddressModel> Select(int? AddressID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@AddressID", AddressID)               
+               new SqlParameter("@AddressID", AddressID)
             };
 
-            foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Entity.AddressesSelect]", parameters))
-            {               
-                    yield return new AddressModel
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.AddressesSelect]", parameters))
+            {
+                yield return new AddressModel
+                {
+                    AddressID = dr.GetInt32("AddressID"),
+                    AddresseeName = dr.GetString("AddresseeName"),
+                    Building = dr.GetString("Building"),
+                    City = dr.GetString("City"),
+                    PinCode = dr.GetString("PinCode"),
+                    Place = dr.GetString("Place"),
+                    Street = dr.GetString("Street"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
-                        AddressID = dr.GetInt32("AddressID"),
-                        AddresseeName = dr.GetString("AddresseeName"),
-                        Building = dr.GetString("Building"),
-                        City = dr.GetString("City"),
-                        PinCode = dr.GetString("PinCode"),
-                        Place = dr.GetString("Place"),
-                        Street = dr.GetString("Street"),
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                        {
-                            RecordStatus = dr.GetByte("RecordStatus"),
-                            TimeStampField = dr.GetDateTime("TimeStamp"),
-                            UserID = dr.GetString("UserID"),
-                        },
-                    };
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
             }
         }
 

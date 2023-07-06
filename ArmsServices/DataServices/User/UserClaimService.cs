@@ -47,16 +47,16 @@ namespace ArmsServices.DataServices
                 return principal;
             }
 
-            //foreach (var item in newIdentity.Claims.ToList())
-            //{
-            //    if (item.Type == ClaimTypes.Role)
-            //        newIdentity.RemoveClaim(item);
-            //}
+            foreach (var item in newIdentity.Claims.ToList())
+            {
+                if (item.Type == ClaimTypes.Role)
+                    newIdentity.RemoveClaim(item);
+            }
 
-            IList<Claim> claims = await _role.GetClaimsAsync(userInfo.Role);
+            IList<Claim> claims = new List<Claim>();
             claims.Add(new Claim("BranchID", userInfo.Branch.BranchID.ToString()));
             claims.Add(new Claim("BranchName", userInfo.Branch.BranchName));
-            //claims.Add(new Claim(newIdentity.RoleClaimType, userInfo.Role.RoleID));
+            claims.Add(new Claim(newIdentity.RoleClaimType, userInfo.Role.RoleID));
             
             newIdentity.AddClaims(claims);
             return clone;

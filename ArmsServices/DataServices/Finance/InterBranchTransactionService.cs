@@ -8,16 +8,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IInterBranchTransactionService
-    {
-        InterBranchAccountMappingModel Update(InterBranchAccountMappingModel model);
-        InterBranchAccountMappingModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<InterBranchAccountMappingModel> Select(int? NumberOfRecords, string searchTerm);
-        InterBranchAccountMappingModel Select(int? BranchID,int? FundTypeID);
-        IEnumerable<InterBranchTransactionTypeModel> GetTypes();
-
-    }
     public class InterBranchTransactionService : IInterBranchTransactionService
     {
         IDbService Iservice;

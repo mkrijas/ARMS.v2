@@ -8,16 +8,6 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IJobInProgressService
-    {
-        JobInProgressModel Update(JobInProgressModel model);
-        JobInProgressModel SelectByID(int? ID);
-        int Delete(int? JipID, string UserID);
-        IEnumerable<JobInProgressModel> Select(int? JipID);
-        IEnumerable<JobInProgressModel> SelectByJobcard(int? JobcardID);
-    }
-
-
     public class JobInProgressService : IJobInProgressService
     {
         IDbService Iservice;

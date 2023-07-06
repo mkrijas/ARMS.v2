@@ -8,16 +8,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-
-    public interface IDataAuthorizationService
-    {
-        DataAuthorizationModel Update(DataAuthorizationModel model);
-        DataAuthorizationModel SelectByID(int? ID);
-        IEnumerable<DataAuthorizationModel> SelectByDocument(int? DocTypeID, int? DocumentID);
-        IEnumerable<DataAuthorizationModel> SelectByDocument(string DocType, int? DocumentID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<DataAuthorizationModel> GetAuthStatus(int? DocTypeID, int? DocumentID);
-    }
     public class DataAuthorizationService : IDataAuthorizationService
     {
         IDbService Iservice;
@@ -48,8 +38,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation","ByDocTypeID"),
             };
 
-            List<DataAuthorizationModel> DA = SelectByDocument(DocTypeID,DocumentID).ToList();
-            List<DataAuthorizationSettingsModel> DS =  _settings.Select(DocTypeID).ToList();
+            List<DataAuthorizationModel> DA = SelectByDocument(DocTypeID, DocumentID).ToList();
+            List<DataAuthorizationSettingsModel> DS = _settings.Select(DocTypeID).ToList();
 
             foreach (var item in DS)
             {
@@ -132,7 +122,7 @@ namespace ArmsServices.DataServices
                 ID = (int?)dr.GetInt64("ID"),
                 DocumentID = dr.GetInt32("DocumentID"),
                 DocTypeID = dr.GetInt32("DTid"),
-                AuthLevelID = dr.GetInt32("AuthLevelID"),     
+                AuthLevelID = dr.GetInt32("AuthLevelID"),
                 Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

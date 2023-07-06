@@ -9,17 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface ICostCenterService
-    {
-        CostCenterModel Update(CostCenterModel model);
-        CostCenterModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);        
-        IEnumerable<CostCenterModel> SelectByCategory(int? CategoryID);
-        IEnumerable<CostCenterModel> Select();
-        IEnumerable<CategoryModel> SelectCategory();
-        CategoryModel UpdateCategory(CategoryModel model);
-    }
-
     public class CostCenterService : ICostCenterService
     {
         IDbService Iservice;

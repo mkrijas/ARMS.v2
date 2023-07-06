@@ -7,14 +7,6 @@ using System.Data;
 using System.Data.SqlClient;
 namespace ArmsServices.DataServices
 {
-    public interface IDriverFaultService
-    {
-        IEnumerable<DriverFaultModel> Select(int? DriverID);
-        DriverFaultModel SelectByID(int? FaultID);
-        DriverFaultModel Update(DriverFaultModel model);
-        int Delete(int? FaultID, string UserID);
-
-    }
     public class DriverFaultService : IDriverFaultService
     {
         IDbService Iservice;
@@ -72,7 +64,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@FaultDate", model.FaultDate),
                new SqlParameter("@Severity", model.Severity),
                new SqlParameter("@Detail", model.Detail),
-               new SqlParameter("@BranchID", model.BranchID), 
+               new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Fault.Update]", parameters))
@@ -89,7 +81,7 @@ namespace ArmsServices.DataServices
                 FaultID = dr.GetInt32("FaultID"),
                 FaultDate = dr.GetDateTime("FaultDate"),
                 Severity = dr.GetByte("Severity"),
-                Detail = dr.GetString("Detail"),     
+                Detail = dr.GetString("Detail"),
                 BranchID = dr.GetInt32("BranchID"),
                 DriverID = dr.GetInt32("DriverID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

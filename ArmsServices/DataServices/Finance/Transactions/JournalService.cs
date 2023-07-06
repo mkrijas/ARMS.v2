@@ -1,7 +1,4 @@
-﻿
-
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
@@ -13,26 +10,12 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IJournalService
-    {
-        JournalModel Update(JournalModel model);
-        JournalModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<JournalModel> Select(int? BranchID);
-        IEnumerable<JournalModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<JournalModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<JournalModel> SelectByPeriod(DateTime? begin, DateTime? end);       
-        int Approve(int? ID, string UserID, string Remarks);
-        int Reverse(int? ID, string UserID, string Remarks);
-    }
-
-
     public class JournalService : IJournalService
     {
-        IDbService Iservice;       
+        IDbService Iservice;
         public JournalService(IDbService iservice)
         {
-            Iservice = iservice;          
+            Iservice = iservice;
         }
 
         public int Approve(int? ID, string UserID, string Remarks)
@@ -57,7 +40,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Journal.Delete]", parameters);
         }
 
-     
+
         public int Reverse(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -136,7 +119,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-       
+
         public IEnumerable<JournalModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -160,13 +143,13 @@ namespace ArmsServices.DataServices
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@DebitCoaID", model.Debit.CoaID),
                new SqlParameter("@CreditCoaID", model.Credit.CoaID),
-               new SqlParameter("@Reference", model.Reference),             
+               new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@MID", model.MID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
-               new SqlParameter("@DocumentNumber", model.DocumentNumber),               
+               new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),              
+               new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -183,9 +166,9 @@ namespace ArmsServices.DataServices
             return new JournalModel
             {
                 JournalID = dr.GetInt32("JournalID"),
-                
+
                 Reference = dr.GetString("Reference"),
-                Debit = new ChartOfAccountModel() { CoaID = dr.GetInt32("DebitCoaID"),AccountName =dr.GetString("Debit")},
+                Debit = new ChartOfAccountModel() { CoaID = dr.GetInt32("DebitCoaID"), AccountName = dr.GetString("Debit") },
                 Credit = new ChartOfAccountModel() { CoaID = dr.GetInt32("CreditCoaID"), AccountName = dr.GetString("Credit") },
                 BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
@@ -198,7 +181,7 @@ namespace ArmsServices.DataServices
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
-                Narration = dr.GetString("Narration"),              
+                Narration = dr.GetString("Narration"),
 
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

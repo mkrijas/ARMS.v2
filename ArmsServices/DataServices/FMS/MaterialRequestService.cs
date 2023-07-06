@@ -8,15 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IMaterialRequestService
-    {
-        MaterialRequestModel Update(MaterialRequestModel model);
-        MaterialRequestModel SelectByID(int? ID);
-        int Delete(int? MaterialRequestID, string UserID);
-        IEnumerable<MaterialRequestModel> Select(int? MaterialRequestID);
-    }
-
-public class MaterialRequestService
+    public class MaterialRequestService
     {
         IDbService Iservice;
 
@@ -71,7 +63,7 @@ public class MaterialRequestService
                new SqlParameter("@JobcardID", model.JobcardID),
                new SqlParameter("@MrDate", model.MrDate),
                new SqlParameter("@MrNumber", model.MrNumber),
-               new SqlParameter("@StoreID", model.StoreID),              
+               new SqlParameter("@StoreID", model.StoreID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -91,7 +83,7 @@ public class MaterialRequestService
                 JobcardID = dr.GetInt32("JobcardID"),
                 MrDate = dr.GetDateTime("MrDate"),
                 MrNumber = dr.GetString("MrNumber"),
-                StoreID = dr.GetInt32("StoreID"),                
+                StoreID = dr.GetInt32("StoreID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

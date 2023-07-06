@@ -5,17 +5,6 @@ using System.Data.SqlClient;
 
 namespace ArmsServices.DataServices
 {
-    public interface IDriverTransferService
-    {
-
-        DriverTransferInitiationModel UpdateOutgoing(DriverTransferInitiationModel model);
-        IEnumerable<DriverTransferInitiationModel> SelectOutgoingDrivers(int? Branch);
-        int DeleteInitiation(int? ID, int? BranchID, int? DriverID);
-
-        DriverTransferInitiationModel UpdateStatus(DriverTransferInitiationModel model);
-        IEnumerable<DriverTransferInitiationModel> SelectIncomingDrivers(int? Branch);
-    }
-
     public class DriverTransferService : IDriverTransferService
     {
         IDbService Iservice;
@@ -143,7 +132,7 @@ namespace ArmsServices.DataServices
                     TransferStatus = dr.GetBooleanNullable("TransferStatus"),
 
                     TransferEndDate = dr.GetDateTime("TransferEndDate"),
-                    
+
                 },
                 Remarks = dr.GetString("Remarks"),
                 Driver = new DriverModel()

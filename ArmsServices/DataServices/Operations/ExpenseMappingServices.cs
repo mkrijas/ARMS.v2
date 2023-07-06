@@ -9,18 +9,9 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IExpenseMappingServices
+    public class ExpenseMappingServices : IExpenseMappingServices
     {
-        IEnumerable<ExpenseMapping> Select();
-        IEnumerable<ExpenseMapping> SelectByArea(string Area);
-        ExpenseMapping Update(ExpenseMapping model);
-        ExpenseMapping SelectByID(int ID);
-
-        int Delete(int? ID, string UserID);
-    }
-        public class ExpenseMappingServices : IExpenseMappingServices
-    {
-        IDbService Iservice; 
+        IDbService Iservice;
         public ExpenseMappingServices(IDbService iservice)
         {
             Iservice = iservice;
@@ -83,7 +74,7 @@ namespace ArmsServices.DataServices
                 ExpenseID = dr.GetInt32("ExpenseID"),
                 ExpenseTitle = dr.GetString("ExpenseTitle"),
                 ExpenseCode = dr.GetString("ExpenseCode"),
-                Area =  dr.GetString("Area"),
+                Area = dr.GetString("Area"),
                 MappedCoaID = new ChartOfAccountModel() { CoaID = dr.GetInt32("MappedCoaID") },
                 //MappedCoaID = new ChartOfAccountModel() { AccountName = dr.GetString("AccountName") },
                 //MappedCoaID.CoaID = dr.GetInt32("MappedCoaID"),
@@ -111,5 +102,5 @@ namespace ArmsServices.DataServices
             return model;
         }
     }
-   
+
 }

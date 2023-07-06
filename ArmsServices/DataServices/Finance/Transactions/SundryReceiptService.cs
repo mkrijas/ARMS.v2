@@ -8,18 +8,6 @@ using ArmsModels.BaseModels.Finance.Transactions;
 
 namespace ArmsServices.DataServices
 {
-    public interface ISundryReceiptService
-    {
-        SundryReceiptModel Update(SundryReceiptModel model);
-        SundryReceiptModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<SundryReceiptModel> Select();
-        IEnumerable<SundryReceiptModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<SundryReceiptModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<SundryReceiptEntryModel> GetEntries(int? SID);
-        int Approve(int? SundryReceiptID, string UserID,string Remarks);
-        int Reverse(int? SundryReceiptID, string UserID, string Remarks);
-    }
     public class SundryReceiptService : ISundryReceiptService
     {
         IDbService Iservice;
@@ -42,16 +30,16 @@ namespace ArmsServices.DataServices
         }
 
         public IEnumerable<SundryReceiptModel> Select()
-        {            
+        {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
-              
+
             };
-                foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryReceipt.Select]", parameters))
-                {
-                    yield return GetModel(dr);
-                }            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryReceipt.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
 
         public IEnumerable<SundryReceiptModel> SelectByApproved(int? NumberOfRecords, string searchTerm)
@@ -95,14 +83,14 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryReceipt.Select]", parameters))
             {
                 yield return new SundryReceiptEntryModel()
-                {              
+                {
                     ID = dr.GetInt32("ID"),
                     ParentID = dr.GetInt32("ParentID"),
                     BranchID = dr.GetInt32("BranchID"),
                     CoaID = dr.GetInt32("CoaID"),
                     UsageCode = dr.GetString("UsageCode"),
                     Amount = dr.GetDecimal("Amount"),
-                    Rederence = dr.GetString("Reference")                   
+                    Rederence = dr.GetString("Reference")
                 };
             }
         }
@@ -121,7 +109,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public int Approve(int? SundryReceiptID, string UserID,string Remarks)
+        public int Approve(int? SundryReceiptID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -159,7 +147,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocNumber", model.DocumentNumber),
                new SqlParameter("@entries", model.Entries.ToDataTable()),
                new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),   
+               new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -176,15 +164,15 @@ namespace ArmsServices.DataServices
             {
                 SundryReceiptID = dr.GetInt32("SundryReceiptID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
-                ReceiptMode = dr.GetString("ReceiptMode"),          
-                ReceiptArdCode = dr.GetString("ArdCode"),                
+                ReceiptMode = dr.GetString("ReceiptMode"),
+                ReceiptArdCode = dr.GetString("ArdCode"),
                 PayerName = dr.GetString("PayerName"),
                 PayerContactNo = dr.GetString("PayerContactNo"),
-                ReceiptCoaID = dr.GetInt32("CoaID"),                
-                Reference=dr.GetString("Reference"),
+                ReceiptCoaID = dr.GetInt32("CoaID"),
+                Reference = dr.GetString("Reference"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
-                BranchID = dr.GetInt32("BranchID"),                
+                BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 MID = dr.GetInt32("MID"),
@@ -192,7 +180,7 @@ namespace ArmsServices.DataServices
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
-               
+
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

@@ -8,20 +8,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-
-    public interface IInventoryGrnService
-    {
-        InventoryGrnModel Update(InventoryGrnModel model);
-        InventoryGrnModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<InventoryGrnModel> SelectPending(int BranchID);
-        IEnumerable<InventoryGrnModel> PendingToInvoice(int BranchID);
-        IEnumerable<InventoryGrnModel> SelectByStore(int StoreID);
-        int Approve(int GrnID, string UserID, string Remarks);
-        int Reverse(int GrnID, string UserID);
-        IEnumerable<InventoryItemEntryModel> GetItemEntries(int GrnID);
-
-    }
     public class InventoryGrnService : IInventoryGrnService
     {
         IDbService Iservice;
@@ -109,7 +95,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@POID", model.POID),
                new SqlParameter("@GrnID",model.GrnID),
-               new SqlParameter("@GrnNo",model.GrnNo),               
+               new SqlParameter("@GrnNo",model.GrnNo),
                new SqlParameter("@EntryDate",model.EntryDate),
                new SqlParameter("@PartyID",model.PartyID),
                new SqlParameter("@TotalValue",model.TotalValue),
@@ -130,12 +116,12 @@ namespace ArmsServices.DataServices
 
         private InventoryGrnModel GetModel(IDataRecord dr)
         {
-            return new InventoryGrnModel(                
+            return new InventoryGrnModel(
                 dr.GetString("GrnNo"),
                 dr.GetBoolean("Invoiced"))
-                {
+            {
                 POID = dr.GetInt32("POID"),
-                GrnID = dr.GetInt32("GrnID"), 
+                GrnID = dr.GetInt32("GrnID"),
                 EntryDate = dr.GetDateTime("EntryDate"),
                 PartyID = dr.GetInt32("PartyBranchID"),
                 AuthLevelID = dr.GetInt32("AuthLevelId"),
@@ -144,7 +130,7 @@ namespace ArmsServices.DataServices
                 TotalValue = dr.GetDecimal("TotalValue"),
                 Reference = dr.GetString("Reference"),
                 Remarks = dr.GetString("Remarks"),
-                StoreID = dr.GetInt32("StoreID"),                
+                StoreID = dr.GetInt32("StoreID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -185,7 +171,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@GrnID", GrnID),
-               new SqlParameter("@UserID", UserID),               
+               new SqlParameter("@UserID", UserID),
                new SqlParameter("@Operation","Reverse")
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Approve]", parameters);

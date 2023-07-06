@@ -6,19 +6,7 @@ using System;
 
 namespace ArmsServices.DataServices.Inventory
 {
-    public interface IInventoryRequestService
-    {
-        InventoryRequestModel Update(InventoryRequestModel model);
-        InventoryRequestModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<InventoryRequestModel> Select();
-        IEnumerable<InventoryRequestModel> SelectByTruckID(int? TruckID);
-        IEnumerable<InventoryRequestModel> SelectRequestReleaseByTruckID(int? TruckID);
-        IEnumerable<InventoryRequestModel> SelectByParty(int? PartyID, int? PartyBranchID);
-        IEnumerable<InventoryRequestModel> SelectByPeriod(DateTime? begin, DateTime? end);
-        IEnumerable<InventoryItemEntryModel> GetSub(int? ID);
-    }
-    public class InventoryRequestService: IInventoryRequestService
+    public class InventoryRequestService : IInventoryRequestService
     {
         IDbService Iservice;
 
@@ -234,10 +222,10 @@ namespace ArmsServices.DataServices.Inventory
                 },
                 ReleaseSubDetails = new InventoryReleaseSubViewModel()
                 {
-                     ItemID = dr.GetInt32("ItemID"),
-                     ItemDescription = dr.GetString("ItemDescription"),
-                     RequestQty = dr.GetDecimal("RequestQty"),
-                     ItemQty = dr.GetDecimal("ReleaseQty"),
+                    ItemID = dr.GetInt32("ItemID"),
+                    ItemDescription = dr.GetString("ItemDescription"),
+                    RequestQty = dr.GetDecimal("RequestQty"),
+                    ItemQty = dr.GetDecimal("ReleaseQty"),
                 },
                 Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

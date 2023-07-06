@@ -9,20 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IEventService
-    {      
-        EventModel SelectByID(long? EventID);
-        EventModel Update(EventModel model);
-        int Delete(long? EventID, string UserID);
-        EventTypeModel GetNextPossibleEvent(int? TruckID);
-        IEnumerable<EventModel> SelectByTrip(long? TripID);
-        EventModel GetCurrentEvent(int? TruckID);
-        EventModel GetPreviousEvent(long? EventID);
-        EventModel GetNextEvent(long? EventID);
-        IEnumerable<EventTypeModel> GetEventTypes();
-        EventTypeModel GetEventType(int? EventTypeID);
-    }
-
     public class EventService : IEventService
     {
         IDbService Iservice;
@@ -46,12 +32,12 @@ namespace ArmsServices.DataServices
                new SqlParameter("@GcSetID", model.GcSetID),
                new SqlParameter("@OriginID", model.OriginID),
                new SqlParameter("@TripID", model.TripID),
-               new SqlParameter("@EventID", model.TruckEventID),               
+               new SqlParameter("@EventID", model.TruckEventID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-            };           
+            };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Update]", parameters))
-            {               
+            {
                 model = GetModel(dr);
             }
             return model;
@@ -70,20 +56,20 @@ namespace ArmsServices.DataServices
         {
             return new EventModel
             {
-              BranchID = dr.GetInt32("BranchID"),
-              DestinationID = dr.GetInt32("DestinationID"),
-              DriverID = dr.GetInt32("DriverID"),
-              EventReading = dr.GetInt64("EventReading"),
-              EventTime = dr.GetDateTime("EventTime"),
-              EventTypeID = dr.GetByte("EventTypeID"),
-              NextEventTypeID = dr.GetByte("DefaultNextEventTypeID"),
-              GcSetID = dr.GetInt64("GcSetID"),
-              OriginID= dr.GetInt32("OriginID"),
-              TripID= dr.GetInt64("TripID"),
-              TruckEventID= dr.GetInt64("EventID"),
-              TruckID= dr.GetInt32("TruckID"),
-              OriginName = dr.GetString("OriginName"),
-              DestinationName = dr.GetString("DestinationName"),
+                BranchID = dr.GetInt32("BranchID"),
+                DestinationID = dr.GetInt32("DestinationID"),
+                DriverID = dr.GetInt32("DriverID"),
+                EventReading = dr.GetInt64("EventReading"),
+                EventTime = dr.GetDateTime("EventTime"),
+                EventTypeID = dr.GetByte("EventTypeID"),
+                NextEventTypeID = dr.GetByte("DefaultNextEventTypeID"),
+                GcSetID = dr.GetInt64("GcSetID"),
+                OriginID = dr.GetInt32("OriginID"),
+                TripID = dr.GetInt64("TripID"),
+                TruckEventID = dr.GetInt64("EventID"),
+                TruckID = dr.GetInt32("TruckID"),
+                OriginName = dr.GetString("OriginName"),
+                DestinationName = dr.GetString("DestinationName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -112,7 +98,7 @@ namespace ArmsServices.DataServices
                 LimitPostEvent = dr.GetByte("LimitPostEvent"),
             };
         }
-        
+
         public EventModel SelectByID(long? EventID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -149,12 +135,12 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@TripID", TripID),
                new SqlParameter("@Operation", "SelectByTrip"),
-            };            
+            };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
-            
+
         }
 
         EventModel IEventService.GetCurrentEvent(int? TruckID)
@@ -204,17 +190,17 @@ namespace ArmsServices.DataServices
             return model;
         }
         IEnumerable<EventTypeModel> IEventService.GetEventTypes()
-        {      
+        {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Type.Select]", null))
             {
                 yield return GetEventType(dr);
-            }           
+            }
         }
         EventTypeModel IEventService.GetEventType(int? EventTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@EventTypeID", EventTypeID),               
+               new SqlParameter("@EventTypeID", EventTypeID),
             };
             EventTypeModel model = null;
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Type.Select]", parameters))
@@ -223,5 +209,15 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+
+        ///////////////
+
+        public EventModel GetPreviousEvent(int truckID, DateTime eventTime)
+        {
+            throw new NotImplementedException();
+        }
+
+        ///////////////
     }
 }

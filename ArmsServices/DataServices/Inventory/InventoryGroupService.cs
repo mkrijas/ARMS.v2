@@ -9,14 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-
-    public interface IInventoryGroupService
-    {
-        InventoryGroupModel Update(InventoryGroupModel model);
-        InventoryGroupModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);        
-        IEnumerable<InventoryGroupModel> SearchByName(string GroupName);        
-    }
     public class InventoryGroupService : IInventoryGroupService
     {
         IDbService Iservice;

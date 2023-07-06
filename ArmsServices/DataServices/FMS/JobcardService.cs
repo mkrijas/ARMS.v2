@@ -8,17 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IJobcardService
-    {
-        JobcardModel Update(JobcardModel model);
-        JobcardModel SelectByID(int? ID);
-        int Delete(int? JobcardID, string UserID);
-        IEnumerable<JobcardModel> Select(int? ID);
-        IEnumerable<JobcardModel> SelectByBranch(int? BranchID,bool Active = false);
-        IEnumerable<JobcardModel> SelectByTruck(int? TruckID, bool Active = false);
-    }
-
-    public class JobcardService:IJobcardService
+    public class JobcardService : IJobcardService
     {
         IDbService Iservice;
 
@@ -51,7 +41,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<JobcardModel> SelectByBranch(int? BranchID,bool Active = false)
+        public IEnumerable<JobcardModel> SelectByBranch(int? BranchID, bool Active = false)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -80,7 +70,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public IEnumerable<JobcardModel> SelectByTruck(int? TruckID,bool Active = false)
+        public IEnumerable<JobcardModel> SelectByTruck(int? TruckID, bool Active = false)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -99,9 +89,9 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@JobcardID", model.JobcardID),
-               new SqlParameter("@BranchID", model.BranchID),                
+               new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@BreakdownID", model.BreakdownID),
-               new SqlParameter("@CreatedOn", model.CreatedOn),                    
+               new SqlParameter("@CreatedOn", model.CreatedOn),
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -122,7 +112,7 @@ namespace ArmsServices.DataServices
                 BranchName = dr.GetString("BranchName"),
                 BreakdownID = dr.GetInt32("BreakdownID"),
                 CreatedOn = dr.GetDateTime("CreatedOn"),
-                JobcardNumber = dr.GetString("JobcardPrefix") + dr.GetInt32("JobcardNumber").ToString(),                
+                JobcardNumber = dr.GetString("JobcardPrefix") + dr.GetInt32("JobcardNumber").ToString(),
                 TruckID = dr.GetInt32("TruckID"),
                 RegNo = dr.GetString("RegNo"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

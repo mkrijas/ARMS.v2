@@ -9,23 +9,13 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IBranchService
-    {
-        BranchModel Update(BranchModel model);
-        BranchModel SelectByID(int? ID);
-        string GetBranchName(int? BranchID);
-        int Delete(int? AddressID, string UserID);
-        IEnumerable<BranchModel> Select();
-        int AddContact(int? BranchID, ContactModel contact);
-        IEnumerable<ContactModel> GetContacts(int? PartyID);
-    }
-    public class BranchService: IBranchService
+    public class BranchService : IBranchService
     {
         IDbService Iservice;
         IAddressService _addressService;
         IPlaceService _placeService;
         IContactService _contactService;
-        public BranchService(IDbService iservice,IAddressService addressService,IPlaceService placeService,IContactService contactService)
+        public BranchService(IDbService iservice, IAddressService addressService, IPlaceService placeService, IContactService contactService)
         {
             Iservice = iservice;
             _addressService = addressService;
@@ -69,7 +59,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public  int Delete(int? ID, string UserID)
+        public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -80,7 +70,7 @@ namespace ArmsServices.DataServices
         }
         public IEnumerable<BranchModel> Select()
         {
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Branch.Select]",null))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Branch.Select]", null))
             {
                 yield return GetModel(dr);
             }
@@ -99,7 +89,7 @@ namespace ArmsServices.DataServices
                 Operate = dr.GetBoolean("Operate"),
                 PlaceID = dr.GetInt32("PlaceID"),
                 GstNo = dr.GetString("GstNo"),
-                UpwardBranchID = dr.GetInt32("UpwardBranchID"),                
+                UpwardBranchID = dr.GetInt32("UpwardBranchID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

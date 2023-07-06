@@ -8,15 +8,6 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IBreakdownService
-    {
-        BreakdownModel Update(BreakdownModel model);
-        BreakdownModel SelectByID(int? ID);
-        int Delete(int? BreakdownID, string UserID);
-        IEnumerable<BreakdownModel> Select();
-        IEnumerable<BreakdownModel> SelectPending(int BranchID);
-    }
-
     public class BreakdownService : IBreakdownService
     {
         IDbService Iservice;
@@ -80,7 +71,7 @@ namespace ArmsServices.DataServices
         }
 
         public BreakdownModel Update(BreakdownModel model)
-        {    
+        {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BreakdownID", model.BreakdownID),
@@ -95,7 +86,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Breakdown.Update]", parameters))
             {
-                model =  GetModel(dr);
+                model = GetModel(dr);
             }
             return model;
         }
@@ -123,6 +114,5 @@ namespace ArmsServices.DataServices
         }
     }
 }
-   
 
-     
+

@@ -8,17 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IJobcardWorkshopService
-    {
-        JobcardWorkshopModel Update(JobcardWorkshopModel model);
-        JobcardWorkshopModel SelectByID(int? ID);
-        int Delete(int? JwID, string UserID);
-        IEnumerable<JobcardWorkshopModel> Select(int? JwID);
-        IEnumerable<JobcardWorkshopModel> SelectByJobcard(int? ID);
-    }
-
-
-public class JobcardWorkshopService:IJobcardWorkshopService
+    public class JobcardWorkshopService : IJobcardWorkshopService
     {
         IDbService Iservice;
 
@@ -85,7 +75,7 @@ public class JobcardWorkshopService:IJobcardWorkshopService
                new SqlParameter("@EnteredOn", model.EnteredOn),
                new SqlParameter("@ExitOn", model.ExitOn),
                new SqlParameter("@JobCardID", model.JobCardID),
-               new SqlParameter("@WorkshopID", model.WorkshopID), 
+               new SqlParameter("@WorkshopID", model.WorkshopID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -104,7 +94,7 @@ public class JobcardWorkshopService:IJobcardWorkshopService
                 EnteredOn = dr.GetDateTime("EnteredOn"),
                 ExitOn = dr.GetDateTime("ExitOn"),
                 JobCardID = dr.GetInt32("JobCardID"),
-                WorkshopID = dr.GetInt32("WorkshopID"),    
+                WorkshopID = dr.GetInt32("WorkshopID"),
                 WorkshopName = dr.GetString("WorkshopName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

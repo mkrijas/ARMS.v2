@@ -9,31 +9,12 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IGcService
-    {
-        GcSetModel Update(GcSetModel model);
-        int Delete(long? GcID, string UserID);
-        List<GcSetModel> Select(int? BranchID);
-        List<GcSetModel> SelectByTrip(long? TripID);
-        List<GcSetModel> SelectUnAssigned(int? BranchID);
-        List<GcSetModel> SelectToUnload(long? TripID);
-        List<GcSetModel> SelectToDispatch(long? TripID);
-        List<GcSetModel> SelectPending(long? TripID);
-        GcSetModel SelectByID(long? GcSetID);
-        IEnumerable<GcTypeModel> SelectGcTypes();
-        int AppendToTrip(long? TripID, long? GcSetID, string UserID);
-        int BeginUnload(long? TripID, long? GcSetID);
-        int RemoveFromTrip(long? GcSetID, long? TripID, string UserID);
-        int UpdateEwayBill(EwayBillModel model);
-        decimal? GetFreight(int? OrderID,int? RouteID,int? Axles,decimal? Qty);
-    }
-
     public class GcService : IGcService
     {
         IDbService Iservice;
         ITariffService Itariff;
 
-        public GcService(IDbService iservice,ITariffService tariff)
+        public GcService(IDbService iservice, ITariffService tariff)
         {
             Iservice = iservice;
             Itariff = tariff;
@@ -49,14 +30,14 @@ namespace ArmsServices.DataServices
                new SqlParameter("@GcDate", model.GcDate??DateTime.Today),
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@RouteID", model.RouteID),
-               new SqlParameter("@PaidBy", model.PaidBy),               
+               new SqlParameter("@PaidBy", model.PaidBy),
                new SqlParameter("@Gcs", model.Gcs.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.GcSet.Update]", parameters))
             {
                 return GetModel(dr);
-            }           
+            }
             return null;
         }
 
@@ -186,17 +167,17 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 GcDate = dr.GetDateTime("GcDate"),
                 OrderID = dr.GetInt32("OrderID"),
-                TotalBillQuantity= dr.GetDecimal("BillQuantity"),
+                TotalBillQuantity = dr.GetDecimal("BillQuantity"),
                 //TotalFreight = dr.GetDecimal("Freight"),
                 OrderName = dr.GetString("OrderName"),
                 RouteID = dr.GetInt32("RouteID"),
-                RouteName = dr.GetString("RouteName") ,
+                RouteName = dr.GetString("RouteName"),
                 TripID = dr.GetInt64("TripID"),
                 ConsigneeID = dr.GetInt32("ConsigneeID"),
                 ConsigneeName = dr.GetString("ConsigneeName"),
                 ConsignorID = dr.GetInt32("ConsignorID"),
                 ConsignorName = dr.GetString("ConsignorName"),
-                PaidBy = dr.GetByte("PaidBy"),               
+                PaidBy = dr.GetByte("PaidBy"),
                 LoadEndEventID = dr.GetInt64("LoadEndEventID"),
                 LoadStartEventID = dr.GetInt64("LoadStartEventID"),
                 UnloadEndEventID = dr.GetInt64("UnloadEndEventID"),
@@ -257,7 +238,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@GcSetID", GcSetID),
-               new SqlParameter("@TripID", TripID),               
+               new SqlParameter("@TripID", TripID),
                new SqlParameter("@Operation", "BeginUnload"),
             };
             return Iservice.ExecuteNonQuery("[usp.GcSet.EventUpdate]", parameters);
@@ -301,6 +282,6 @@ namespace ArmsServices.DataServices
             return Freight;
         }
 
-     
+
     }
 }

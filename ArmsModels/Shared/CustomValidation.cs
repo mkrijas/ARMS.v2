@@ -144,4 +144,41 @@ namespace ArmsModels.BaseModels
     }
 
 
+    //////////////
+
+    [AttributeUsage(AttributeTargets.Property)]
+    public class NotlessAttribute : RequiredAttribute
+    {
+        private string _truckIdName, _eventTimeName;
+        public NotlessAttribute(string truckIDName,string eventTimeName)
+        {
+            _truckIdName = truckIDName;
+            _eventTimeName = eventTimeName;
+        }
+
+        protected override ValidationResult IsValid(object value, ValidationContext context)
+        {
+            object instance = context.ObjectInstance;
+            Type type = instance.GetType();
+            var truckID = type.GetProperty(_truckIdName).GetValue(instance, null);
+            var eventTime = type.GetProperty(_eventTimeName).GetValue(instance, null);
+            if(truckID != null && eventTime != null)
+            {
+
+            }
+
+
+
+
+            if (  value == null)
+            {
+
+
+                return new ValidationResult(ErrorMessage);
+            }
+            return ValidationResult.Success;
+        }
+    }
+
+    //////////////
 }
