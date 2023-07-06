@@ -70,7 +70,8 @@ namespace ArmsModels.BaseModels
         public virtual decimal? UnloadedQuantity { get; set; }
         public string PassNumber { get; set; }
         public virtual EwayBillModel EwayBill { get; set; }
-        public virtual decimal? Freight { get; set; }
+        public  decimal? Freight { get; set; }
+
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
