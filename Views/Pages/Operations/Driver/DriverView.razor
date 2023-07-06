@@ -72,8 +72,8 @@
                     <MudFab Label="DL" OnClick="@(() => nav.NavigateTo("dl/" + context.DriverID.ToString()))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.FileCopy" Size="Size.Small" IconSize="Size.Small" />
 
                     <MudFab @onclick="@(() => Edit(context.DriverID))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(() => Resign(context.DriverID))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(() => Transfer(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.SwapHoriz" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(() => Resign(context.DriverID))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small" IconSize="Size.Small" />
 
                 </MudTd>
 
@@ -235,13 +235,43 @@
         }
     }
 
-    private async void Resign(int? id)
+    private async Task Resign(int? driverId)
     {
+        var parameters = new DialogParameters();
 
-        int result = Iservice.Delete(id, UserID);
-        snackbar.Add("Deleted Successfully", Severity.Success);     
+        DriverResignModel model = new();
+        
+
+        model.Driver = collection.FirstOrDefault(x => x.DriverID == driverId);
+        
+        parameters.Add("model", model);
+        parameters.Add("driverId", driverId);
+        
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = DialogService.Show<DriverResignDialog>("Resign Driver", parameters, maxWidth);
+        var result = await dialog.Result;
+
+        // Check if the driver resigned successfully
+        if (result.Cancelled == false)
+        {
+            // Call the Delete service method
+            try
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(driverId, user.Identity.Name);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+
         GetAll();
     }
+
+
 
     private async void Transfer(int? DriverID)
     {
