@@ -5,17 +5,6 @@ using System.Data.SqlClient;
 
 namespace ArmsServices.DataServices
 {
-    public interface ITruckTransferService
-    {
-
-        TruckTransferInitiationModel UpdateOutgoing(TruckTransferInitiationModel model);
-        IEnumerable<TruckTransferInitiationModel> SelectOutgoingTrucks(int? Branch);
-        int DeleteInitiation(int? ID, long? EventID, string UserID);
-
-        TruckTransferInitiationModel UpdateStatus(TruckTransferInitiationModel model);
-        IEnumerable<TruckTransferInitiationModel> SelectIncomingTrucks(int? Branch);
-    }
-
     public class TruckTransferService : ITruckTransferService
     {
         IDbService Iservice;
@@ -140,7 +129,7 @@ namespace ArmsServices.DataServices
                 TruckEvent = new EventModel()
                 {
                     TruckEventID = dr.GetInt64("EventID"),
-                     
+
                     EventReading = dr.GetInt64("EventReading"),
                     EventTime = dr.GetDateTime("EventTime"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
@@ -155,7 +144,7 @@ namespace ArmsServices.DataServices
 
                     TruckTransferEndID = dr.GetInt32("TruckTransferEndID"),
                     TransferStatus = dr.GetBooleanNullable("TransferStatus"),
-                   
+
 
                     TruckEvent = new EventModel()
                     {

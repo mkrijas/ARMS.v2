@@ -9,32 +9,13 @@ using Microsoft.Extensions.Configuration;
 
 namespace ArmsServices.DataServices
 {
-    public interface ITariffService
-    {       
-        TariffModel Update(TariffModel model);
-        int Delete(int? ID, string UserID);
-        IEnumerable<TariffModel> Select();
-        IEnumerable<TariffModel> SelectByOrder(int? OrderID);
-        TariffModel SelectByID(int? ID);
-        IEnumerable<TariffFormulaModel> SelectFormulas();
-        TariffFormulaModel SelectFormulaByID(short? ID);
-        IEnumerable<TariffTypeModel> SelectTariffTypes(string Area);
-        TariffTypeModel SelectTariffTypeByID(short? ID);
-        TariffTypeModel UpdateTariffType(TariffTypeModel model);
-        string[] TariffGroups { get; }
-        IEnumerable<TariffModel> GetTariffs(string TariffGroup, int? OrderID, int? RouteID, int? Axles);
-        decimal? GetTariffAmount(GcSetModel GcSet,TariffModel Tariff);
-        IEnumerable<TariffModel> GeneratePendingTariffs(long? RefID);
-    }
-
-
     public class TariffService : ITariffService
     {
         IDbService Iservice;
         IConfiguration Configuration;
         private const string Data = "Data";
         private IRouteService Iroute;
-        public TariffService(IDbService iservice, IConfiguration configuration,IRouteService _IRoute)
+        public TariffService(IDbService iservice, IConfiguration configuration, IRouteService _IRoute)
         {
             Iservice = iservice;
             Configuration = configuration;
@@ -56,7 +37,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", 0),               
+               new SqlParameter("@ID", 0),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.Select]", parameters))
             {
@@ -80,7 +61,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID),              
+               new SqlParameter("@ID", ID),
             };
             TariffModel model = new TariffModel();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.Select]", parameters))
@@ -94,7 +75,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID),              
+               new SqlParameter("@ID", ID),
             };
             TariffFormulaModel model = new TariffFormulaModel();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TariffFormula.Select]", parameters))
@@ -118,7 +99,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", 0),               
+               new SqlParameter("@ID", 0),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TariffFormula.Select]", parameters))
             {
@@ -154,7 +135,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", 0),  
+               new SqlParameter("@ID", 0),
                new SqlParameter("@Area",Area)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TariffType.Select]", parameters))
@@ -170,15 +151,15 @@ namespace ArmsServices.DataServices
                new SqlParameter("@OrderID", model.Order.OrderID),
                new SqlParameter("@RouteID", model.Route.RouteID),
                new SqlParameter("@TariffFormulaID", model.Formula.FormulaID),
-               new SqlParameter("@TariffID", model.TariffID),              
-               new SqlParameter("@TariffRate", model.TariffRate),               
+               new SqlParameter("@TariffID", model.TariffID),
+               new SqlParameter("@TariffRate", model.TariffRate),
                new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
-               new SqlParameter("@TruckAxles", model.TruckAxles),              
+               new SqlParameter("@TruckAxles", model.TruckAxles),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.Update]", parameters))
             {
-                model =  GetModel(dr);
+                model = GetModel(dr);
             }
             return model;
         }
@@ -190,7 +171,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AllowMultiple", model.AllowMultiple),
                new SqlParameter("Area",model.Area),
                new SqlParameter("@UsageCode", model.UsageCode),
-               new SqlParameter("@TariffSign", model.TariffSign),               
+               new SqlParameter("@TariffSign", model.TariffSign),
                new SqlParameter("@TariffGroup", model.TariffGroup),
                new SqlParameter("@TariffTypeID", model.TariffTypeID),
                new SqlParameter("@TariffTypeName", model.TariffTypeName),
@@ -207,9 +188,9 @@ namespace ArmsServices.DataServices
         {
             return new TariffModel
             {
-                Order = new() 
-                { 
-                    OrderID = dr.GetInt32("OrderID"), 
+                Order = new()
+                {
+                    OrderID = dr.GetInt32("OrderID"),
                     OrderName = dr.GetString("OrderName"),
                 },
                 Route = new()
@@ -222,19 +203,19 @@ namespace ArmsServices.DataServices
                     TariffTypeID = dr.GetInt16("TariffTypeID"),
                     TariffTypeName = dr.GetString("TariffTypeName"),
                 },
-                Formula  = new()
+                Formula = new()
                 {
                     FormulaID = dr.GetInt16("TariffFormulaID"),
                     Formula = dr.GetString("Formula"),
-                },                   
-                TariffID = dr.GetInt32("TariffID"),                
-                TariffRate = dr.GetDecimal("TariffRate"),                                
+                },
+                TariffID = dr.GetInt32("TariffID"),
+                TariffRate = dr.GetDecimal("TariffRate"),
                 TariffSign = dr.GetInt32("TariffSign"),
                 TruckAxles = dr.GetByte("TruckAxles"),
-                
-                
-                
-                
+
+
+
+
                 Unit = dr.GetString("Unit"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -255,7 +236,7 @@ namespace ArmsServices.DataServices
                 Area = dr.GetString("Area"),
                 Unit = dr.GetString("Unit"),
                 AllowMultiple = dr.GetBoolean("AllowMultiple"),
-                TariffSign = dr.GetInt32("TariffSign"),                
+                TariffSign = dr.GetInt32("TariffSign"),
                 UsageCode = dr.GetString("UsageID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -283,22 +264,22 @@ namespace ArmsServices.DataServices
 
         public decimal? GetTariffAmount(GcSetModel GcSet, TariffModel Tariff)
         {
-            RouteModel route = Task.Run(() => Iroute.SelectByID(GcSet.RouteID)).Result;   
+            RouteModel route = Task.Run(() => Iroute.SelectByID(GcSet.RouteID)).Result;
             decimal? distance = route.Distance;
             decimal? Qty = Convert.ToDecimal(GcSet.Gcs.Sum(x => x.BillQuantity));
 
             switch (Tariff?.Formula?.FormulaID)
             {
-                case 1:                    
+                case 1:
                     return distance / Tariff.TariffRate;
-                case 2:                    
+                case 2:
                     return distance * Tariff.TariffRate;
                 case 3:
                     return Qty * Tariff.TariffRate;
                 case 4:
                     return Tariff.TariffRate;
                 default: return null;
-            }           
+            }
         }
 
 
@@ -307,12 +288,12 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@RefID", RefID),
-            };           
+            };
 
             foreach (var dr in Iservice.GetDataReader("[usp.Operation.Transaction.Generate]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
-    }   
+    }
 }

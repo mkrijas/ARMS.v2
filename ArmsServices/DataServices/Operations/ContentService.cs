@@ -9,14 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IContentService
-    {
-        Task<ContentModel> Update(ContentModel model);
-        Task<ContentModel> SelectByID(int? ID);
-        Task<int> Delete(int? ContentID, string UserID);
-        IAsyncEnumerable<ContentModel> Select(int? ContentID);
-    }
-
     public class ContentService : IContentService
     {
         IDbService Iservice;
@@ -34,7 +26,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PrimaryUnit", model.PrimaryUnit),
                new SqlParameter("@SecondaryUnit", model.SecondaryUnit),
                new SqlParameter("@UnitRatio", model.UnitRatio),
-             
+
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Content.Update]", parameters))
@@ -56,24 +48,24 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        public async Task<int> Delete(int? ContentID,string UserID)
+        public async Task<int> Delete(int? ContentID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ContentID", ContentID),               
+               new SqlParameter("@ContentID", ContentID),
                new SqlParameter("@UserID", UserID),
-            };            
+            };
             return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Content.Delete]", parameters);
         }
         public async IAsyncEnumerable<ContentModel> Select(int? ContentID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ContentID", ContentID)               
+               new SqlParameter("@ContentID", ContentID)
             };
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Content.Select]", parameters))
             {
-                yield return await GetModel(dr);      
+                yield return await GetModel(dr);
             }
         }
 

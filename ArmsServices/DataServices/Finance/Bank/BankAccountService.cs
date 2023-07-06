@@ -9,15 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IBankAccountService
-    {       
-        BankAccountModel Update(BankAccountModel model);
-        int Delete(int? BankAccountID, string UserID);
-        IEnumerable<BankAccountModel> Select();
-        BankAccountModel SelectByID(int ID);
-        BankAccountModel SelectByPartyBranch(int PartyBranchID);
-    }
-
     public class BankAccountService : IBankAccountService
     {
         IDbService Iservice;

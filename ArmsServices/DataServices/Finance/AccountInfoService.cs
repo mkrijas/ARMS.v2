@@ -9,12 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IAccountInfoService
-    {  
-        AccountInfoViewModel SelectByID(int? MID);
-        IEnumerable<AccountInfoViewSubModel> Entries(int? MID);
-    }
-
     public class AccountInfoService : IAccountInfoService
     {
         IDbService Iservice;

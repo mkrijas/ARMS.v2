@@ -8,15 +8,6 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IAssetDocumentRequestService
-    {
-        AssetDocumentRequestModel Update(AssetDocumentRequestModel model); 
-        IEnumerable<AssetDocumentRequestModel> SelectPendingByBranch(int? Branch);
-        IEnumerable<AssetModel> GetRequestedDocuments(int? RequestID);
-        AssetDocumentRequestModel SelectDocumentRequest(int? ID);
-        int Delete(int? ID, string UserID);        
-    }
-
     public class AssetDocumentRequestService : IAssetDocumentRequestService
     {
         IDbService Iservice;

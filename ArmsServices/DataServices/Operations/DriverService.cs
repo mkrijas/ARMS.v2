@@ -8,49 +8,27 @@ using System.Data.SqlClient;
 
 namespace ArmsServices.DataServices
 {
-    public interface IDriverService
-    {
-        DriverModel Update(DriverModel model);
-        int Delete(int? DriverID, string UserID);
-        IEnumerable<DriverModel> Select();
-        IEnumerable<DriverModel> SelectByBranch(int BranchID);
-        DriverModel SelectByID(int? DriverID);
-        int UpdateBranch(int? DriverID, int? BranchID, bool availStatus, string userID);
-        IEnumerable<int> GetAssignedBranches(int? DriverID);
-        DriverModel FindDriver(DriverModel model = null, DriverLicenceModel licence = null);
-        int AvailabilityStatus(int? DriverID);
-        int Join(int? DriverID, int? BranchID, DateTime? StartDate, string UserID);
-        int Resign(int? DriverID, string Remarks, string userID);
-        DriverLeaveModel GetLastLeave(int? DriverID);
-        int BeginLeave(DriverLeaveModel LeaveModel);
-        int EndLeave(int? DriverID,string UserID);
-        public int? GetAssignedTruck(int? DriverID);
-        IEnumerable<DriverModel> GetDriverByAdhaarNo(string AdhaarNo);
-
-
-    }
-
     public class DriverService : IDriverService
     {
         IDbService Iservice;
         IAddressService _addressService;
-        public DriverService(IDbService iservice,IAddressService Iaddress)
+        public DriverService(IDbService iservice, IAddressService Iaddress)
         {
             Iservice = iservice;
             _addressService = Iaddress;
         }
         public DriverModel Update(DriverModel model)
         {
-            model.Address =  _addressService.Update(model.Address);
+            model.Address = _addressService.Update(model.Address);
             List<SqlParameter> parameters = new List<SqlParameter>
-            {    
+            {
                new SqlParameter("@DriverID", model.DriverID),
                new SqlParameter("@DriverName", model.DriverName),
-               new SqlParameter("@HomeBranchID", model.HomeBranchID),               
+               new SqlParameter("@HomeBranchID", model.HomeBranchID),
                new SqlParameter("@DriverImage", model.DriverImage),
                new SqlParameter("@DateOfBirth", model.DateOfBirth),
                new SqlParameter("@AdhaarNo", model.AdhaarNo),
-               new SqlParameter("@AdhaarImage", model.AdhaarImage),  
+               new SqlParameter("@AdhaarImage", model.AdhaarImage),
                new SqlParameter("@AddressID", model.Address.AddressID),
                new SqlParameter("@AdditionalInfo", model.AdditionalInfo),
                new SqlParameter("@Mobile", model.Mobile),
@@ -59,12 +37,12 @@ namespace ArmsServices.DataServices
                new SqlParameter("@FestivalBonus", model.FestivalBonus),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            
-            foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Update]", parameters))
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Update]", parameters))
             {
                 model = GetModel(dr);
             }
-            return model;              
+            return model;
         }
         public int Delete(int? DriverID, string UserID)
         {
@@ -84,8 +62,8 @@ namespace ArmsServices.DataServices
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
-            {               
-                    yield return GetModel(dr);               
+            {
+                yield return GetModel(dr);
             }
         }
 
@@ -123,19 +101,19 @@ namespace ArmsServices.DataServices
         {
             return new DriverModel
             {
-                DriverName = reader.GetString("DriverName"),                
+                DriverName = reader.GetString("DriverName"),
                 DriverAgentID = reader.GetInt32("DriverAgentID"),
-                DriverAgent = new PartyModel() {PartyID = reader.GetInt32("DriverAgentID"), TradeName = reader.GetString("PartyName") },
+                DriverAgent = new PartyModel() { PartyID = reader.GetInt32("DriverAgentID"), TradeName = reader.GetString("PartyName") },
                 HomeBranchID = reader.GetInt32("HomeBranchID"),
                 DriverImage = reader.GetString("DriverImage"),
                 DateOfBirth = reader.GetDateTime("DateOfBirth"),
                 AdhaarNo = reader.GetString("AdhaarNo"),
-                AdhaarImage = reader.GetString("AdhaarImage"),                          
+                AdhaarImage = reader.GetString("AdhaarImage"),
                 FestivalBonus = reader.GetString("FestivalBonus"),
                 DriverID = reader.GetInt32("DriverID"),
-                AdditionalInfo =  reader.GetString("AdditionalInfo"),
-                Mobile =  reader.GetString("Mobile"),
-                Email =  reader.GetString("Email"),
+                AdditionalInfo = reader.GetString("AdditionalInfo"),
+                Mobile = reader.GetString("Mobile"),
+                Email = reader.GetString("Email"),
                 AddressID = reader.GetInt32("AddressID"),
                 HasValidLicense = reader.GetBoolean("HasValidLicense"),
                 TruckID = reader.GetInt32("TruckID"),
@@ -173,18 +151,18 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public DriverModel FindDriver(DriverModel model = null,DriverLicenceModel licence = null)
+        public DriverModel FindDriver(DriverModel model = null, DriverLicenceModel licence = null)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-            {               
-               new SqlParameter("@DriverName", model?.DriverName), 
-               new SqlParameter("@AdhaarNo", model?.AdhaarNo),               
+            {
+               new SqlParameter("@DriverName", model?.DriverName),
+               new SqlParameter("@AdhaarNo", model?.AdhaarNo),
                new SqlParameter("@LicenceNo", licence?.LicenceNo),
-               new SqlParameter("@BadgeNo", licence?.BadgeNo),              
+               new SqlParameter("@BadgeNo", licence?.BadgeNo),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Find]", parameters))
-            {                
+            {
                 model = GetModel(dr);
             }
             return model;
@@ -211,7 +189,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DriverID", DriverID),              
+               new SqlParameter("@DriverID", DriverID),
             };
 
             DriverLeaveModel model = null;
@@ -258,7 +236,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", LeaveModel.BranchID),
                new SqlParameter("@StartTime", LeaveModel.StartTime),
                new SqlParameter("@ExpectedReturn", LeaveModel.ExpectedReturn),
-               new SqlParameter("@Reason", LeaveModel.Reason),               
+               new SqlParameter("@Reason", LeaveModel.Reason),
                new SqlParameter("@UserID", LeaveModel.UserInfo.UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.Leave.Begin]", parameters);
@@ -268,7 +246,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DriverID", DriverID),               
+               new SqlParameter("@DriverID", DriverID),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.Leave.End]", parameters);

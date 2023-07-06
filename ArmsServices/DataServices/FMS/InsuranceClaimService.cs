@@ -8,19 +8,6 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IInsuranceClaimService
-    {
-        InsuranceClaimModel Update(InsuranceClaimModel model);
-        InsuranceClaimModel SelectByID(int? ID);
-        InsuranceClaimModel SelectByBreakdownID(int? ID);
-        int Delete(int? InsuranceClaimID, string UserID);
-        IEnumerable<InsuranceClaimModel> Select(int? InsuranceClaimID);
-        IEnumerable<InsuranceClaimEventMasterModel> GetEventList(int? limiter);
-        InsuranceClaimEventMasterModel UpdateEventList(InsuranceClaimEventMasterModel model);
-        InsuranceClaimEventStatusModel UpdateClaimEvent(InsuranceClaimEventStatusModel model);
-        IEnumerable<InsuranceClaimEventStatusModel> GetEventStatusList(int? InsuranceClaimID);
-    }
-
     public class InsuranceClaimService : IInsuranceClaimService
     {
         IDbService Iservice;
@@ -40,7 +27,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Delete]", parameters);
         }
 
-      
+
 
         public IEnumerable<InsuranceClaimModel> Select(int? InsuranceClaimID)
         {
@@ -98,7 +85,7 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.InsuranceClaim.EventMaster.Select]", parameters))
             {
                 yield return GetEventMasterModel(dr);
-            }           
+            }
         }
         public InsuranceClaimEventMasterModel UpdateEventList(InsuranceClaimEventMasterModel model)
         {
@@ -141,7 +128,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@InsuranceClaimID", InsuranceClaimID),              
+               new SqlParameter("@InsuranceClaimID", InsuranceClaimID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.InsuranceClaim.EventStatus.Select]", parameters))
@@ -157,7 +144,7 @@ namespace ArmsServices.DataServices
                 Images = dr.GetString("Images").Split(";").ToList(),
                 BreakdownID = dr.GetInt32("BreakdownID"),
                 InsuranceID = dr.GetInt32("InsuranceID"),
-                IsOpen = dr.GetBoolean("IsOpen"),   
+                IsOpen = dr.GetBoolean("IsOpen"),
                 Notes = dr.GetString("Notes"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -192,7 +179,7 @@ namespace ArmsServices.DataServices
             {
                 EventDate = dr.GetDateTime("EventDate"),
                 IcemID = dr.GetInt32("IcemID"),
-                IcesID = dr.GetInt32("IcesID"),  
+                IcesID = dr.GetInt32("IcesID"),
                 Title = dr.GetString("Title"),
                 InsuranceClaimID = dr.GetInt32("InsuranceClaimID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

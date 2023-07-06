@@ -9,14 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IPlaceService
-    {
-        Task<PlaceModel> Update(PlaceModel model);
-        Task<int> Delete(int? PlaceID, string UserID);
-        IEnumerable<PlaceModel> Select(int? PlaceID);
-        Task<PlaceModel> SelectByID(int? ID);
-    }
-
     public class PlaceService : IPlaceService
     {
         IDbService Iservice;
@@ -25,7 +17,7 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-        
+
         public async Task<PlaceModel> Update(PlaceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,28 +34,28 @@ namespace ArmsServices.DataServices
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.Places.Update]", parameters))
             {
                 model = GetModel(dr);
-            }             
+            }
             return model;
         }
-        public async Task<int> Delete(int? PlaceID,string UserID)
+        public async Task<int> Delete(int? PlaceID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PlaceID", PlaceID),               
+               new SqlParameter("@PlaceID", PlaceID),
                new SqlParameter("@UserID", UserID),
-            };            
+            };
             return await Iservice.ExecuteNonQueryAsync("[usp.Place.Places.Delete]", parameters);
         }
         public IEnumerable<PlaceModel> Select(int? PlaceID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PlaceID", PlaceID)               
+               new SqlParameter("@PlaceID", PlaceID)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.Places.Select]", parameters))
             {
-                yield return GetModel(dr);            
+                yield return GetModel(dr);
             }
         }
         public async Task<PlaceModel> SelectByID(int? ID)
@@ -75,7 +67,7 @@ namespace ArmsServices.DataServices
             PlaceModel model = new PlaceModel();
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.Places.Select]", parameters))
             {
-                 model = GetModel(dr);
+                model = GetModel(dr);
             }
             return model;
         }
@@ -103,6 +95,6 @@ namespace ArmsServices.DataServices
             };
         }
 
-        
+
     }
 }

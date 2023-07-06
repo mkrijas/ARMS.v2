@@ -6,16 +6,7 @@ using System;
 
 namespace ArmsServices.DataServices
 {
-    public interface IPaymentInitiatedService
-    {
-        IEnumerable<PaymentInitiatedModel> PendingForCompletion(int? BranchID, string searchTerm);
-        int? Update(PaymentInitiatedModel model);
-        int? Reverse(int? ID, string UserID);
-        IEnumerable<PaymentInitiatedModel> Select(int? BranchID);   
-        IEnumerable<PaymentInitiatedModel> SelectInitiatedBetween(int? BranchID, DateTime Begin, DateTime End);
-    }
-
-    public class PaymentInitiatedService: IPaymentInitiatedService
+    public class PaymentInitiatedService : IPaymentInitiatedService
     {
         IDbService Iservice;
         public PaymentInitiatedService(IDbService iservice)
@@ -54,7 +45,7 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
-        }       
+        }
         public IEnumerable<PaymentInitiatedModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -68,7 +59,7 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-        
+
         public IEnumerable<PaymentInitiatedModel> SelectInitiatedBetween(int? BranchID, DateTime Begin, DateTime End)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -113,7 +104,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Initiate.Reverse]", parameters);
-            
+
         }
     }
 }

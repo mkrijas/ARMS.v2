@@ -7,14 +7,6 @@ using System.Data;
 using System.Data.SqlClient;
 namespace ArmsServices.DataServices
 {
-    public interface IDriverLeaveService
-    {
-        IEnumerable<DriverLeaveModel> Select(int? DriverID);
-        DriverLeaveModel SelectByID(int? LeaveID);
-        DriverLeaveModel Update(DriverLeaveModel model);
-        int Delete(int? LeaveID, string UserID);
-        
-    }
     public class DriverLeaveService : IDriverLeaveService
     {
         IDbService Iservice;
@@ -33,7 +25,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Leave.Delete]", parameters);
         }
 
-       
+
         public IEnumerable<DriverLeaveModel> Select(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -73,7 +65,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@EndTime", model.EndTime),
                new SqlParameter("@ExpectedReturn", model.ExpectedReturn),
                new SqlParameter("@Reason", model.Reason),
-               new SqlParameter("@BranchID", model.BranchID),              
+               new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Leave.Update]", parameters))
@@ -91,7 +83,7 @@ namespace ArmsServices.DataServices
                 StartTime = dr.GetDateTime("StartTime"),
                 EndTime = dr.GetDateTime("EndTime"),
                 ExpectedReturn = dr.GetDateTime("ExpectedReturn"),
-                Reason = dr.GetString("Reason"),               
+                Reason = dr.GetString("Reason"),
                 DriverID = dr.GetInt32("DriverID"),
                 BranchID = dr.GetInt32("BranchID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

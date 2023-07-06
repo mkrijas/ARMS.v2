@@ -9,15 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IVendorPostingGroupService
-    {
-        VendorPostingGroupModel Update(VendorPostingGroupModel model);
-        VendorPostingGroupModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<VendorPostingGroupModel> Select();
-        VendorPostingGroupModel GetPostingGroup(int? VendorID);
-    }
-
     public class VendorPostingGroupService : IVendorPostingGroupService
     {
         IDbService Iservice;

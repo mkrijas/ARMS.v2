@@ -1,6 +1,9 @@
-﻿@inject IJournalService Iservice
+﻿@using System.Threading;
+@inject IJournalService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 @attribute [Authorize]
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Journal" formID="journalForm" model="@model">
@@ -52,10 +55,12 @@
     private int? branchID = null;
     private string UserID = null;
 
+    public bool HasAuthoriseEdit { get; set; } = false;
+    int DocTypeID = 18;
+
     private EditContext editContext;
 
     DialogForm dialogForm;
-    int DocTypeID = 18;
 
     protected void Approve(DataApprovedStatus aprvd)
     {
@@ -70,6 +75,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
@@ -78,20 +88,31 @@
         model.NatureOfTransaction = "Journal";
     }
 
-    public void OnValidSubmit()
+    public async Task OnValidSubmit()
     {
+        if (HasAuthoriseEdit)
+        {
+            model.UserInfo.UserID = UserID;
+            try
+            {
+                Iservice.Update(model);
+                model = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
+                dialogForm.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
 
-        model.UserInfo.UserID = UserID;
-        try
-        {
-            Iservice.Update(model);
-            model = new();
-            snackbar.Add("Saved Successfully", Severity.Success);
-            dialogForm.Close(model);
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+            
         }
        
     }

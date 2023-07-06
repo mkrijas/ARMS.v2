@@ -11,22 +11,6 @@ using System.Reflection;
 
 namespace ArmsServices.DataServices
 {
-    public interface ITaxPurchaseService
-    {
-        TaxPurchaseModel Update(TaxPurchaseModel model);
-        TaxPurchaseModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<TaxPurchaseModel> Select();
-        IEnumerable<TaxPurchaseModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<TaxPurchaseModel> SelectByParty(int? PartyID,int? PartyBranchID);
-        IEnumerable<TaxPurchaseModel> SelectByPeriod(DateTime? begin,DateTime? end);
-        IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? PID);
-        IEnumerable<TaxPurchaseItemModel> GetItems(int? PID);
-        int Approve(int? PID, string UserID, string Remarks);
-        int Reverse(int? PID, string UserID,string Remarks);
-    }
-
     public class TaxPurchaseService : ITaxPurchaseService
     {
         IDbService Iservice;
@@ -36,12 +20,12 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Approve(int? PID, string UserID,string Remark)
+        public int Approve(int? PID, string UserID, string Remark)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PID", PID),
-               new SqlParameter("@UserID", UserID),               
+               new SqlParameter("@UserID", UserID),
                new SqlParameter("@Remarks", Remark)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Approve]", parameters);
@@ -53,7 +37,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@PID", ID),
                new SqlParameter("@UserID", UserID),
-              
+
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Delete]", parameters);
         }
@@ -73,8 +57,8 @@ namespace ArmsServices.DataServices
                     Amount = dr.GetDecimal("Amount"),
                     CGST = dr.GetDecimal("CGST"),
                     IGST = dr.GetDecimal("IGST"),
-                    SGST = dr.GetDecimal("SGST"),                   
-                    CoaID = dr.GetInt32("CoaID"),                 
+                    SGST = dr.GetDecimal("SGST"),
+                    CoaID = dr.GetInt32("CoaID"),
                     PID = dr.GetInt32("PID"),
                     TDS = dr.GetDecimal("TDS"),
                     GstRate = dr.GetDecimal("GstRate"),
@@ -102,7 +86,7 @@ namespace ArmsServices.DataServices
                     CGST = dr.GetDecimal("CGST"),
                     IGST = dr.GetDecimal("IGST"),
                     SGST = dr.GetDecimal("SGST"),
-                    GstRate= dr.GetDecimal("GstRate"),
+                    GstRate = dr.GetDecimal("GstRate"),
                     ItemID = dr.GetInt32("ItemID"),
                     CoaID = dr.GetInt32("CoaID"),
                     ItemQty = dr.GetDecimal("ItemQty"),
@@ -115,7 +99,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Reverse(int? PID, string UserID,String Remarks)
+        public int Reverse(int? PID, string UserID, String Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -160,7 +144,7 @@ namespace ArmsServices.DataServices
         }
 
         public IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm)
-        
+
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -188,7 +172,7 @@ namespace ArmsServices.DataServices
                 model = GetModel(dr);
             }
             return model;
-        }      
+        }
 
         public IEnumerable<TaxPurchaseModel> SelectByParty(int? PartyID, int? PartyBranchID)
         {
@@ -256,9 +240,9 @@ namespace ArmsServices.DataServices
         {
             return new TaxPurchaseModel
             {
-                PID = dr.GetInt32("PID"),                
+                PID = dr.GetInt32("PID"),
                 AdditionalTDS = dr.GetDecimal("AdditionalTDS"),
-                BranchID = dr.GetInt32("BranchID"),               
+                BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 GRNID = dr.GetInt32("GRNID"),
@@ -274,7 +258,7 @@ namespace ArmsServices.DataServices
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
                 PartyInfo = new PartyModel()
-                {                    
+                {
                     PartyID = dr.GetInt32("PartyID"),
                     TradeName = dr.GetString("TradeName"),
                     PartyCode = dr.GetString("PartyCode"),

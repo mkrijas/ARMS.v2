@@ -1,9 +1,13 @@
 ﻿@page "/JournalView"
+@using System.Threading;
+@using System.Security.Claims;
+@using ArmsModels.Shared;
 @inject IJournalService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
-@attribute [Authorize(Policy ="EditJournal")]
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
+@inject IJSRuntime JsRuntime
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -16,7 +20,7 @@
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Journal..." Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
-                              @onkeyup="HandleSearchKeyUp">
+                @onkeyup="HandleSearchKeyUp">
                 </MudTextField>
                 <div class="tablefont">
                     <span style="margin-right: 10px;">Maximum Records: </span>
@@ -41,11 +45,15 @@
                 <MudTd DataLabel="Debit">@context.Debit.AccountName</MudTd>
                 <MudTd DataLabel="Credit">@context.Credit.AccountName</MudTd>
                 <MudTd DataLabel="">
+
                     <MudTooltip Text="View">
                         <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
+
+
                     @if (@context.AuthLevelId == null)
                     {
+
                         <MudTooltip Text="Edit">
                             <MudFab @onclick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
@@ -71,6 +79,16 @@
     private int numberOfRecords = 100;
     private string searchTerm = "";
 
+    public bool HasAuthoriseEdit { get; set; } = false;
+    public bool HasAuthoriseDelete { get; set; } = false;
+    public bool HasAuthoriseView { get; set; } = false;
+    public int DocTypeID { get; set; } = 18;
+
+
+    private List<Claim> clamelist = new List<Claim>();
+    private List<RoleClaimsList> Claims = new();
+    IDictionary<int?, string> doctypes = null;
+
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
@@ -81,8 +99,15 @@
 
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+        HasAuthoriseView = await Irole.HasClaim(DocTypeID.ToString(), "View", ctc.Token);
+
         await GetAll(IsApproved, NumberOfRecords);
     }
+
 
     private async Task GetAll(bool val, int numberOfRecords)
     {
@@ -126,20 +151,30 @@
         }
     }
 
-
     private async Task Delete(JournalModel tx)
     {
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        Iservice.Delete(tx.JournalID, user.Identity.Name);
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        await GetAll(IsApproved, NumberOfRecords);
-    }
+        if (HasAuthoriseDelete)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            Iservice.Delete(tx.JournalID, user.Identity.Name);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            await GetAll(IsApproved, NumberOfRecords);
 
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to delete.");
+        }
+    }
 
     private async Task OpenDialog(JournalModel JournalModel, bool ReadOnly)
     {
+
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", JournalModel);

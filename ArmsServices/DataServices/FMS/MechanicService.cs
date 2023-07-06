@@ -8,16 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IMechanicService
-    {
-        MechanicModel Update(MechanicModel model);
-        MechanicModel SelectByID(int? ID);
-        int Delete(int? MechanicID, string UserID);
-        IEnumerable<MechanicModel> Select();
-        IEnumerable<MechanicModel> SelectByWorkshop(int? WorkshopID);
-    }
-
-    public class MechanicService :IMechanicService
+    public class MechanicService : IMechanicService
     {
         IDbService Iservice;
 
@@ -39,7 +30,7 @@ namespace ArmsServices.DataServices
         public IEnumerable<MechanicModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-            {              
+            {
                 new SqlParameter("@Operation", "All"),
 
             };
@@ -85,7 +76,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@MechanicID", model.MechanicID),
                new SqlParameter("@MechanicName", model.MechanicName),
                new SqlParameter("@Remarks", model.Remarks),
-               new SqlParameter("@WorkshopID", model.WorkshopID),               
+               new SqlParameter("@WorkshopID", model.WorkshopID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -103,7 +94,7 @@ namespace ArmsServices.DataServices
                 MechanicID = dr.GetInt32("MechanicID"),
                 MechanicName = dr.GetString("MechanicName"),
                 Remarks = dr.GetString("Remarks"),
-                WorkshopID = dr.GetInt32("WorkshopID"),              
+                WorkshopID = dr.GetInt32("WorkshopID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

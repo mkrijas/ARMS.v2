@@ -9,15 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IBankPostingGroupService
-    {
-        BankPostingGroupModel Update(BankPostingGroupModel model);
-        BankPostingGroupModel SelectByID(int? ID);
-        BankPostingGroupModel SelectByBank(int? BankID);
-        int Delete(int? ID, string UserID);        
-        IEnumerable<BankPostingGroupModel> Select();        
-    }
-
     public class BankPostingGroupService : IBankPostingGroupService
     {
         IDbService Iservice;

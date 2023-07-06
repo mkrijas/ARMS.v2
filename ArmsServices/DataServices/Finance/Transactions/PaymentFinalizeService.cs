@@ -6,13 +6,6 @@ using System.Data;
 
 namespace ArmsServices.DataServices
 {
-    public interface IPaymentFinalizeService
-    {
-        int Approve(int? PID, string UserID, string Remarks);
-        IEnumerable<PaymentFinishModel> Select(int? BranchID, int? FinalizeID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<PaymentFinishModel> SelectByPeriod(int? BranchID, DateTime Begin, DateTime End);
-        int? Update(PaymentFinishModel model);
-    }
     public class PaymentFinalizeService : IPaymentFinalizeService
     {
         IDbService Iservice;

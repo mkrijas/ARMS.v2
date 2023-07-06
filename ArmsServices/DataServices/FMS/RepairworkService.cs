@@ -8,18 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IRepairJobService
-    {
-        RepairJobModel Update(RepairJobModel model);
-        RepairJobModel SelectByID(int? ID);
-        int Delete(int? RepairJobID, string UserID);
-        IEnumerable<RepairJobModel> Select(int? RepairJobID);
-    }
-
-
-
-
-    public class RepairJobService:IRepairJobService
+    public class RepairJobService : IRepairJobService
     {
 
         IDbService Iservice;
@@ -73,7 +62,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RepairJobID", model.RepairJobID),
                 new SqlParameter("@RepairJobTitle", model.RepairJobTitle),
                new SqlParameter("@Description", model.Description),
-               new SqlParameter("@MechanicalHours", model.MechanicalHours),                        
+               new SqlParameter("@MechanicalHours", model.MechanicalHours),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -91,7 +80,7 @@ namespace ArmsServices.DataServices
                 RepairJobID = dr.GetInt32("RepairJobID"),
                 RepairJobTitle = dr.GetString("RepairJobTitle"),
                 Description = dr.GetString("Description"),
-                MechanicalHours = dr.GetDecimal("MechanicalHours"),  
+                MechanicalHours = dr.GetDecimal("MechanicalHours"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

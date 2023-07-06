@@ -10,17 +10,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface ITdsAccountMappingService
-    {
-        TdsAccountMappingModel Update(TdsAccountMappingModel model);
-        TdsAccountMappingModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<TdsAccountMappingModel> Select();
-        IEnumerable<TdsAccountMappingModel> SelectByNP(int TdsNPID);
-        IEnumerable<TdsAccountMappingModel> SelectByAccount(int CoaID);
-
-    }
-
     public class TdsAccountMappingService : ITdsAccountMappingService
     {    
     IDbService Iservice;

@@ -9,15 +9,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface ITripFuelService
-    {
-        TripFuelModel Update(TripFuelModel model);
-        int Delete(int? TripFuelID, string UserID);
-        TripFuelModel Select(int? TripFuelID);
-        IEnumerable<TripFuelModel> SelectByTrip(long? TripID);
-
-    }
-
     public class TripFuelService : ITripFuelService
     {
         IDbService Iservice;
@@ -71,7 +62,7 @@ namespace ArmsServices.DataServices
 
         public TripFuelModel Update(TripFuelModel model)
         {
-            
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripFuelID", model.TripFuelID),
@@ -79,13 +70,13 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@BranchID", model.PurchaseModel.BranchID),
                new SqlParameter("@EntryDate", model.EntryDate),
-               new SqlParameter("@FuelItemID", model.FuelItemID),               
+               new SqlParameter("@FuelItemID", model.FuelItemID),
                new SqlParameter("@Quantity", model.Quantity),
                new SqlParameter("@UserID", model.PurchaseModel.UserInfo.UserID),
                new SqlParameter("@IsPurchase", model.IsPurchase),
                new SqlParameter("@PID", model.PurchaseModel.PID),
                new SqlParameter("@RatePerLitre", model.RatePerLitre),
-               new SqlParameter("@Amount", model.Amount), 
+               new SqlParameter("@Amount", model.Amount),
             };
 
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Fuel.Update]", parameters))
@@ -113,12 +104,12 @@ namespace ArmsServices.DataServices
                         UserID = reader.GetString("UserID"),
                     },
                 },
-                IsPurchase = reader.GetBoolean("IsPurchase"),                
+                IsPurchase = reader.GetBoolean("IsPurchase"),
                 Quantity = reader.GetDecimal("Quantity"),
                 RatePerLitre = reader.GetDecimal("RatePerLitre"),
                 Amount = reader.GetDecimal("Amount"),
                 TruckID = reader.GetInt32("TruckID"),
-                TripID = reader.GetInt64("TripID"),                
+                TripID = reader.GetInt64("TripID"),
             };
         }
     }

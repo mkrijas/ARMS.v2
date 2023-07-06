@@ -8,16 +8,6 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IPeriodicMaintenanceService
-    {
-        PeriodicMaintenanceInitiateModel Update(PeriodicMaintenanceInitiateModel model);
-        PeriodicMaintenanceInitiateModel SelectByID(int? ID);
-        int Delete(int? PMIID, string UserID);
-        IEnumerable<PeriodicMaintenanceInitiateModel> Select(int? PMIID);
-        PeriodicMaintenanceConcludeModel Conclude(PeriodicMaintenanceConcludeModel model);
-        IEnumerable<PeriodicMaintenanceInitiateModel> SelectByTruck(int? TruckID,int? RecordStatus);
-    }
-
     public class PeriodicMaintenanceService : IPeriodicMaintenanceService
     {
         IDbService Iservice;
@@ -34,7 +24,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PMIID", model.PMIID),
                new SqlParameter("@PMCID", model.PMCID),
                new SqlParameter("@Date", model.Date),
-               new SqlParameter("@Audometer", model.Audometer),               
+               new SqlParameter("@Audometer", model.Audometer),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -68,7 +58,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<PeriodicMaintenanceInitiateModel> SelectByTruck(int? TruckID,int? RecordStatus)
+        public IEnumerable<PeriodicMaintenanceInitiateModel> SelectByTruck(int? TruckID, int? RecordStatus)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

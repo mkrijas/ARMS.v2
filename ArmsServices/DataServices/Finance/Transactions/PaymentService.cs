@@ -8,28 +8,6 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IPaymentService
-    {
-        PaymentMemoModel Update(PaymentMemoModel model);
-        PaymentMemoModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
-        IEnumerable<PaymentMemoModel> Select(int? BranchID);
-        IEnumerable<PaymentMemoModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<PaymentMemoModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<PaymentMemoModel> SelectInterBranch(int? BranchID);
-        IEnumerable<PaymentMemoModel> SelectInterBranchByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<PaymentMemoModel> SelectInterBranchByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<PaymentMemoModel> SelectByParty(int? PartyID, int? BranchID);
-        IEnumerable<PaymentMemoModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);
-        IEnumerable<PaymentMemoModel> Select(int PaymentInitiatedID, int? BranchID);
-        IEnumerable<BillsPaidModel> GetBills(int? PID);
-        int Approve(int? PID, string UserID, string Remarks);
-        int Reverse(int? PID, string UserID, string Remarks);
-    }
-
-
-
-
     public class PaymentService : IPaymentService
     {
         IDbService Iservice;
@@ -119,7 +97,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByApproved"),
                new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@numberOfRecords", NumberOfRecords), 
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
             };
 
@@ -231,7 +209,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByParty"),
-               new SqlParameter("@PartyID", PartyID),              
+               new SqlParameter("@PartyID", PartyID),
                new SqlParameter("@BranchID", BranchID),
             };
 

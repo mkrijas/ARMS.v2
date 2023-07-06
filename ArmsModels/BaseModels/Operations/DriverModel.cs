@@ -24,6 +24,9 @@ namespace ArmsModels.BaseModels
         public int? HomeBranchID { get; set; }       
         public string DriverImage { get; set; }
         [Required]
+        [DataType(DataType.Date)]
+        [Display(Name = "Date of Birth")]
+        [ValidateAge(18, ErrorMessage = "Age must be 18 years or older.")]
         public DateTime? DateOfBirth { get; set; }
         [Required]
         public string AdhaarNo { get; set; }        

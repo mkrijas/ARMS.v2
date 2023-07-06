@@ -106,5 +106,79 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    public class ValidateAgeAttribute : ValidationAttribute
+    {
+        private readonly int _minimumAge;
 
+        public ValidateAgeAttribute(int minimumAge)
+        {
+            _minimumAge = minimumAge;
+        }
+
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            if (value is DateTime dateOfBirth)
+            {
+                var age = CalculateAge(dateOfBirth);
+                if (age < _minimumAge)
+                {
+                    var errorMessage = FormatErrorMessage(validationContext.DisplayName);
+                    return new ValidationResult(errorMessage);
+                }
+            }
+
+            return ValidationResult.Success;
+        }
+
+        private int CalculateAge(DateTime dateOfBirth)
+        {
+            var today = DateTime.Today;
+            var age = today.Year - dateOfBirth.Year;
+
+            // Check if the birthday has occurred this year
+            if (dateOfBirth.Date > today.AddYears(-age))
+                age--;
+
+            return age;
+        }
+    }
+
+
+    //////////////
+
+    [AttributeUsage(AttributeTargets.Property)]
+    public class NotlessAttribute : RequiredAttribute
+    {
+        private string _truckIdName, _eventTimeName;
+        public NotlessAttribute(string truckIDName,string eventTimeName)
+        {
+            _truckIdName = truckIDName;
+            _eventTimeName = eventTimeName;
+        }
+
+        protected override ValidationResult IsValid(object value, ValidationContext context)
+        {
+            object instance = context.ObjectInstance;
+            Type type = instance.GetType();
+            var truckID = type.GetProperty(_truckIdName).GetValue(instance, null);
+            var eventTime = type.GetProperty(_eventTimeName).GetValue(instance, null);
+            if(truckID != null && eventTime != null)
+            {
+
+            }
+
+
+
+
+            if (  value == null)
+            {
+
+
+                return new ValidationResult(ErrorMessage);
+            }
+            return ValidationResult.Success;
+        }
+    }
+
+    //////////////
 }
