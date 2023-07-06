@@ -1,4 +1,7 @@
-﻿@inject IFreightBillingService Iservice
+﻿@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
+@inject IFreightBillingService Iservice
 @inject IOrderService orderIservice
 @inject ITariffService tariffIservice
 @inject MudBlazor.ISnackbar snackbar
@@ -72,6 +75,9 @@
 
 
     DialogForm dialogForm;
+
+
+    public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 1;
 
 
@@ -81,6 +87,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
@@ -95,11 +106,23 @@
         }       
     }
 
-  
 
-    private void OnValidSubmit(EditContext context)
+
+    private async Task OnValidSubmit(EditContext context)
     {
-        dialogForm.Close(model);
+
+        if (HasAuthoriseEdit)
+        {
+            dialogForm.Close(model);
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+
+        }
     }
 
     protected void Approve(DataApprovedStatus aprvd)

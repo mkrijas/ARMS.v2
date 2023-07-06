@@ -1,8 +1,10 @@
-﻿@inject IFreightBillingService Iservice
+﻿@using System.Threading;
+@inject IFreightBillingService Iservice
 @inject IOrderService Iorder
 @inject IPartyService partyIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 
@@ -77,12 +79,18 @@
     private EditContext editContext;
 
     DialogForm dialogForm;
+
+    public bool ProformaInvoiceHasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 2;
 
     string tradeName;
 
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        ProformaInvoiceHasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         model.NatureOfTransaction = "Proforma Invoice";
         if (model.ProformaInvoiceID != null)
         {
@@ -96,7 +104,7 @@
         }
         tradeName = model.Party.TradeName;
     }
-    
+
     protected async Task Approve(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
@@ -109,10 +117,22 @@
         }
     }
 
-    private void OnValidSubmit(EditContext context)
+    private async Task OnValidSubmit(EditContext context)
     {
-        model.PartyCoa = partyIservice.GetCustomerReceivableCoaID(model.Party.PartyID.Value);
-        dialogForm.Close(model);
+        if (ProformaInvoiceHasAuthoriseEdit)
+        {
+
+            model.PartyCoa = partyIservice.GetCustomerReceivableCoaID(model.Party.PartyID.Value);
+            dialogForm.Close(model);
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+            
+        }
     }
 
 }
