@@ -75,7 +75,7 @@ namespace Views.Pages.Operations.Gc
 
         private void GetFreight(GcSetModel GcSet)
         {
-            GcSet.Gcs.ForEach(x => x.Freight = Iservice.GetFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity));
+            GcSet.Gcs.ForEach(x => x.Freight = Iservice.GetFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity,x.Freight));
         }
 
         private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
@@ -110,7 +110,7 @@ namespace Views.Pages.Operations.Gc
             model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
             model.Gcs.ForEach(x => x.UserInfo = model.UserInfo);            
-
+           
             try
             {
                 model = Iservice.Update(model);
@@ -188,9 +188,31 @@ namespace Views.Pages.Operations.Gc
         private void QtyChanged(decimal? Qty, GcModel gc)
         {
             gc.BillQuantity = Qty;
+            gc.Freight = null;
             GetFreight(model);
+            gc.EFreight = gc.Freight;
         }
+        private void FrChanged(decimal? Freight, GcModel gc)
+        {
+           // gc.Freight = Freight;
+            if (Freight < gc.EFreight)
+            {
+                gc.Freight = null;
+                snackbar.Add("The Freight should not be less than that master Freight", Severity.Warning);
+                
+            }
+            else
+            {
+                gc.Freight = Freight;
+            }
+           
 
+           
+          
+            GetFreight(model);
+            StateHasChanged();
+           
+        }
 
 
         private void AddMoreInvoice()
