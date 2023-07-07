@@ -308,7 +308,7 @@ namespace ArmsServices.DataServices
                 DateTime? startDate = dr.GetDateTime("StartDate");
                 DateTime? endDate = dr.GetDateTime("EndDate");
                 workPeriod = $"{startDate?.ToShortDateString()} - {endDate?.ToShortDateString()}";
-                break; // Assuming you only want the first work period
+                break;
             }
 
             return workPeriod;
