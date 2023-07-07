@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Views.Pages.Operations.Place;
 using static NuGet.Packaging.PackagingConstants;
 
 namespace Views.Pages.Operations.Gc
@@ -22,7 +23,7 @@ namespace Views.Pages.Operations.Gc
         [Inject] MudBlazor.ISnackbar snackbar { get; set; }
         [Inject] AuthenticationStateProvider auth { get; set; }
 
-
+        [Inject] IDialogService DialogService { get; set; }
         [CascadingParameter] MudDialogInstance MudDialog { get; set; }
         [Parameter] public GcSetModel model { get; set; } = new GcSetModel();
         [Parameter] public OrderModel Order { get; set; }
@@ -171,6 +172,23 @@ namespace Views.Pages.Operations.Gc
             Route = obj;
             model.RouteID = obj?.RouteID;
             GetFreight(model);
+        }
+     
+        private async Task AddConsignee_Consignor()
+        {
+
+            DialogParameters parms = new DialogParameters();
+            ConsigneeModel consigneeModel = new();
+            parms.Add("model", consigneeModel);
+            parms.Add("Order", Order);
+            var dialog = DialogService.Show<Consineedilog>("Add/Edit Consignee", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                Route = Routes.FirstOrDefault(x => x.RouteID == model.RouteID);
+                Consignor = Consignees.FirstOrDefault(x => x.ConsigneeID == model.ConsignorID);
+                Consignee = Consignees.FirstOrDefault(x => x.ConsigneeID == model.ConsigneeID);
+            }
         }
 
         private void ConsignorChanged(ConsigneeModel obj)
