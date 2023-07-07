@@ -13,38 +13,59 @@
 @using System.Threading
 @using System.Linq
 
-<MudGrid>
-    <MudItem xs="12">
-        <MudTable Items="@Claims">          
-            <HeaderContent>
-                <MudTh>Page</MudTh>                
-                <MudTh>Rights</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Claim Type">@(doctypes.FirstOrDefault(s => s.Key.ToString() == context.ClaimType).Value)</MudTd>
-                <MudTd DataLabel="Value"> 
-                @foreach(var item in @context.ClaimValues) 
-                    {
-                     <MudCheckBox CheckedChanged="@((bool val) => Roleupdate(val,context.ClaimType,item))"   Class="mr-2" Checked="@UserClaimList.Any(x=> x.Type == @context.ClaimType && x.Value == item)" Label="@item"  Color="Color.Primary"></MudCheckBox>                     
-                    }
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+<style>
+    .mud-table-container{overflow:revert;}
+
+</style>
+<MudDialog Class="my-dialogue pb-3">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Manage Permissions
+        </MudText>
+    </TitleContent>
+    <DialogContent >
+        <MudContainer Style="min-height:300px;max-height: 70vh; overflow-y:auto">
+            <MudTable Style="overflow-y:hidden" Class="mb-3" Items="@Claims" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<roleClaimView, bool>(search)" @bind-place="roleClaimModel">
+                <ToolBarContent>
+                    <MudSpacer></MudSpacer>
+                    <MudTextField @bind-Value="searchClaim" Placeholder="Search Claim... "
+                                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                                  IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>Page</MudTh>
+                    <MudTh>Permission</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Claim Type">@context.DocType</MudTd>
+                    <MudTd DataLabel="Value">
+                        @foreach (var item in @context.ClaimValues)
+                        {
+                            <MudCheckBox CheckedChanged="@((bool val) => Roleupdate(val,context.ClaimType,item))" Class="mr-2" Checked="@UserClaimList.Any(x=> x.Type == @context.ClaimType && x.Value == item)" Label="@item" Color="Color.Primary"></MudCheckBox>
+                        }
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                </PagerContent>
+            </MudTable>
+        </MudContainer>
+
+    </DialogContent>
+    
+</MudDialog>
 
 @code {
     [Parameter]
-    public RoleModel RoleModel{ get; set; }
+    public RoleModel RoleModel { get; set; }
 
     private RoleModel model = new RoleModel();
     public IList<Claim> UserClaimList { get; set; }
     private string searchTruck = "";
+    private string searchClaim = "";
     private string id = "";
-    private UserModel usmodel= new UserModel();
+    private UserModel usmodel = new UserModel();
     private List<RoleModel> collection = new List<RoleModel>();
     private List<Claim> clamelist = new List<Claim>();
     public string csroleid { get; set; } = "";
@@ -53,13 +74,13 @@
 
 
     class roleClaimView
-    {        
+    {
         public string DocType { get; set; }
         public string ClaimType { get; set; }
         public List<string> ClaimValues { get; set; } = new();
     }
     private List<roleClaimView> Claims = new();
-
+    roleClaimView roleClaimModel = new();
     protected override async Task OnInitializedAsync()
     {
         doctypes = dataAuthSetting.GetDocTypes();
@@ -78,13 +99,14 @@
     private void GetClaim()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        clamelist= Irole.GetAllClaims(ctc.Token).Result.ToList();
-        
-        
-        foreach(var claimType in clamelist.DistinctBy(x => x.Type).Select(y => y.Type))
+        clamelist = Irole.GetAllClaims(ctc.Token).Result.ToList();
+
+
+        foreach (var claimType in clamelist.DistinctBy(x => x.Type).Select(y => y.Type))
         {
             Claims.Add(new roleClaimView()
                 {
+                    DocType = doctypes.FirstOrDefault(s => s.Key.ToString() == claimType).Value,
                     ClaimType = claimType,
                     ClaimValues = new(clamelist.Where(x => x.Type == claimType).Select(y => y.Value).ToList())
                 });
@@ -113,17 +135,17 @@
         return false;
     }
 
-    private void Roleupdate(bool val,String Claimtype,String claimvalue)
-    { 
+    private void Roleupdate(bool val, String Claimtype, String claimvalue)
+    {
         Claim claim = new Claim(Claimtype, claimvalue);
 
         try
         {
 
-            if(val==true)
+            if (val == true)
             {
 
-                rolemngr.AddClaimAsync(RoleModel,claim);
+                rolemngr.AddClaimAsync(RoleModel, claim);
                 UserClaimList.Add(claim);
 
                 //snackbar.Add("Claim Added", Severity.Success);
@@ -132,7 +154,7 @@
             else
             {
                 rolemngr.RemoveClaimAsync(RoleModel, claim);
-                UserClaimList.Remove(UserClaimList.FirstOrDefault(s=>s.Type == claim.Type && s.Value == claim.Value ));
+                UserClaimList.Remove(UserClaimList.FirstOrDefault(s => s.Type == claim.Type && s.Value == claim.Value));
                 //UserClaimList =  UserClaimList.Except(x => x.ValueType == claim.ValueType).ToList();
 
 
@@ -141,10 +163,21 @@
             }
         }
 
-        catch(Exception ex)
+        catch (Exception ex)
         {
             snackbar.Add(ex.Message, Severity.Error);
         }
+    }
+
+    private bool search(roleClaimView roleClaim)
+    {
+        if (roleClaim.DocType != null && roleClaim.DocType.Contains(searchClaim, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (roleClaim.DocType == null)
+            return false;
+        return false;
     }
 
 }
