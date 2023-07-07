@@ -153,6 +153,7 @@ namespace ArmsServices.DataServices
                 set.SetGcNumber = set.SetGcNumber + (IsFirst ? gc.GcPrefix : ", ") + gc.GcNumber;
                 set.SetBillQuantity = set.SetBillQuantity + gc.BillQuantity;
                 set.SetUnloadQuantity = set.SetUnloadQuantity + gc.UnloadedQuantity;
+              
                 set.Gcs.Add(gc);
             }
 
@@ -205,6 +206,8 @@ namespace ArmsServices.DataServices
                 GcType = dr.GetInt16("GcType"),
                 GcTypeName = dr.HasColumn("GcTypeName") ? dr.GetString("GcTypeName") : null,
                 PassNumber = dr.GetString("PassNumber"),
+                Freight = dr.GetDecimal("Freight"),
+                EFreight = dr.GetDecimal("Freight"),
                 UnloadedQuantity = dr.GetDecimal("UnloadedQuantity"),
                 EwayBill = new EwayBillModel
                 {
@@ -268,18 +271,22 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Gc.EwayBill.Update]", parameters);
         }
-        public decimal? GetFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty)
+        public decimal? GetFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty, decimal? Frt)
         {
             decimal? Freight = 0;
-            if (OrderID > 0)
+            if (Frt == null)
             {
-                List<TariffModel> tariffs = Itariff.GetTariffs("FREIGHT", OrderID, RouteID, Axles).ToList();
-                foreach (TariffModel item in tariffs)
+                if (OrderID > 0)
                 {
-                    Freight += Qty * item.TariffRate;
+                    List<TariffModel> tariffs = Itariff.GetTariffs("FREIGHT", OrderID, RouteID, Axles).ToList();
+                    foreach (TariffModel item in tariffs)
+                    {
+                        Freight += Qty * item.TariffRate;
+                    }
                 }
+                return Freight;
             }
-            return Freight;
+            return Frt;
         }
 
 

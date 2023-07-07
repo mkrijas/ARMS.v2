@@ -36,6 +36,7 @@ namespace ArmsModels.BaseModels
         public virtual string SetBillNumber { get; set; }
         public virtual decimal? SetBillQuantity { get; set; }
         public virtual decimal? SetUnloadQuantity { get; set; }
+        
         public virtual decimal? TotalFreight { get { return Gcs.Sum(x => x.Freight); } }
         public decimal? TotalBillQuantity { get; set; }
         public long? LoadStartEventID { get; set; }
@@ -70,6 +71,10 @@ namespace ArmsModels.BaseModels
         public virtual decimal? UnloadedQuantity { get; set; }
         public string PassNumber { get; set; }
         public virtual EwayBillModel EwayBill { get; set; }
+        [Required]
+        public virtual decimal? EFreight { get; set; } = 200;
+        [Required]
+       
         public  decimal? Freight { get; set; }
 
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
