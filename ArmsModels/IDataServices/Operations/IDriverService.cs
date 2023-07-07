@@ -27,5 +27,6 @@ namespace ArmsServices.DataServices
         int EndLeave(int? DriverID, string UserID);
         public int? GetAssignedTruck(int? DriverID);
         IEnumerable<DriverModel> GetDriverByAdhaarNo(string AdhaarNo);
+        public string GetWorkPeriod(int? DriverID);
     }
 }
