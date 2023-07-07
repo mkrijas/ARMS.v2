@@ -293,5 +293,26 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        public string GetWorkPeriod(int? DriverID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@DriverID", DriverID)
+            };
+
+            string workPeriod = "Unknown";
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.WorkPeriod.Select]", parameters))
+            {
+                DateTime startDate = dr.GetDateTime(dr.GetOrdinal("StartDate"));
+                DateTime endDate = dr.GetDateTime(dr.GetOrdinal("EndDate"));
+                workPeriod = $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}";
+                break; // Assuming you only want the first work period
+            }
+
+            return workPeriod;
+        }
+
     }
 }
