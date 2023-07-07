@@ -305,9 +305,9 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.WorkPeriod.Select]", parameters))
             {
-                DateTime startDate = dr.GetDateTime(dr.GetOrdinal("StartDate"));
-                DateTime endDate = dr.GetDateTime(dr.GetOrdinal("EndDate"));
-                workPeriod = $"{startDate.ToShortDateString()} - {endDate.ToShortDateString()}";
+                DateTime? startDate = dr.GetDateTime("StartDate");
+                DateTime? endDate = dr.GetDateTime("EndDate");
+                workPeriod = $"{startDate?.ToShortDateString()} - {endDate?.ToShortDateString()}";
                 break; // Assuming you only want the first work period
             }
 
