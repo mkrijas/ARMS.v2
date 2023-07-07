@@ -1,0 +1,108 @@
+﻿@inject AuthenticationStateProvider auth
+@inject IDriverService Iservice
+@inject ITruckService Itruckservice
+@inject ITripService Itripservice
+@inject IBranchService Ibranchservice
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Driver Resign.
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="12">
+                        <MudTextField Value="model.Driver.DriverName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Resign</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public DriverResignModel model { get; set; } = new();
+    [Parameter]
+    public int? DriverID { get; set; }
+
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public async Task Submit()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        
+        // Check if the selected driver is assigned to a truck
+        int? assignedTruckID = Iservice.GetAssignedTruck(model.Driver?.DriverID);
+        if (assignedTruckID != null)
+        {
+            // Check if the assigned truck is on a trip
+            long? currentTripID = Itruckservice.GetCurrentTrip(assignedTruckID);
+            if (currentTripID != null)
+            {
+                // Check if the current trip is completed
+                bool isTripClosed = Itripservice.IsClosed(currentTripID);
+                if (!isTripClosed)
+                {
+                    bool? result = await DialogService.ShowMessageBox(
+                       "Warning",
+                       "The Driver is currently on a trip.",
+                       yesText: "OK");
+                    return;
+                    // Trip is completed, remove the driver from the truck
+                }
+
+            }
+            // Assigned truck is not on a trip, remove the driver from the truck
+            try
+            {
+                TruckModel truck = Itruckservice.SelectByID(assignedTruckID);
+                Itruckservice.UpdateDriver(assignedTruckID, model.Driver.DriverID, false, user.Identity.Name);
+                Snackbar.Add($"Driver removed from the truck {truck.RegNo}.", Severity.Warning);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+                return;
+            }
+
+        }
+
+        try
+        {
+            Iservice.Resign(DriverID, model.Remarks);
+            Snackbar.Add("Driver Resigned successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+
+        MudDialog.Close(model);
+    }
+
+}
+

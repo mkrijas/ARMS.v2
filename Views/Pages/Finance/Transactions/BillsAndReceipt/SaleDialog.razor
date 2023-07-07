@@ -1,4 +1,5 @@
-﻿@inject ISaleService Iservice
+﻿@using System.Threading;
+@inject ISaleService Iservice
 @inject IPartyService partyIservice
 @inject IInventoryItemService itemIservice
 @inject IGstItemService gstitemIservice
@@ -11,18 +12,19 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject ITdsRateService tdsIService
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 @inject IJSRuntime JsRuntime
 
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sales"  formID="saleForm" model="@model" >
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sales" formID="saleForm" model="@model">
     <FormContent>
-         <MudPaper Class="p-3" >
+        <MudPaper Class="p-3">
             <EditForm id="saleForm" Model="@model" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
-                <MudGrid Spacing="2">                   
+                <MudGrid Spacing="2">
                     <MudItem xs="12" md="8">
                         <PartySelector @bind-Value="model.PartyInfo" NatureOfBusiness="Customer"></PartySelector>
                     </MudItem>
@@ -40,7 +42,7 @@
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                    </MudItem>                   
+                    </MudItem>
                     <MudItem xs="12">
                         <ExpenseListView OnExpenseAdded="AddExpense" OnDelete="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
                     </MudItem>
@@ -69,15 +71,21 @@
     private EditContext editContext;
 
     DialogForm dialogForm;
+    public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 13;
 
     public GstUsageCodeModel gstusge = new();
     private GstModel taxModel = new GstModel();
 
-    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };      
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
@@ -135,27 +143,38 @@
     protected async Task Approve(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
-        {          
-            Iservice.Approve(model.SID,UserID, aprvd.Remarks);
+        {
+            Iservice.Approve(model.SID, UserID, aprvd.Remarks);
             snackbar.Add("Approved Successfully", Severity.Success);
         }
     }
 
-    
-    private void OnValidSubmit(EditContext context)
-    { 
-        try
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        if (HasAuthoriseEdit)
         {
-            model.UserInfo.UserID = UserID;
-            Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            dialogForm.Close(model);
-            model = new();            
+            try
+            {
+                model.UserInfo.UserID = UserID;
+                Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                dialogForm.Close(model);
+                model = new();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+
         }
-        
+
     }
 }

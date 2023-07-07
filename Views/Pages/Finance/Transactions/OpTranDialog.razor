@@ -1,4 +1,5 @@
-﻿@inject IOpTranService Iservice
+﻿@using System.Threading;
+@inject IOpTranService Iservice
 @inject ITripService tripIservice
 @inject ITripFuelService tripFuelIservice
 @inject ICostCenterService costIservice
@@ -9,6 +10,7 @@
 @inject IChartOfAccountService accountService
 @inject IBranchService brIservice
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 @inject IInventoryItemService itemIservice
@@ -16,91 +18,91 @@
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Trip Settlement" formID="Optranform" model="@model">
     <FormContent>
-         <MudPaper Class="p-3" >
-        <EditForm id="Optranform" EditContext="editContext" OnValidSubmit="Submit">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-            <MudGrid>
-                <MudItem xs="12" md="12">
-                    <h6>Transaction</h6>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudDatePicker ReadOnly="@ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
-                </MudItem><MudItem xs="12" md="6">
-                    <PaymentAccountSelector ReadOnly="@ReadOnly" @bind-PaymentMode="@model.PaymentMode" HideMode LabelName="Cash A/c"
-                                            @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.CreditCoaID" />
-                </MudItem>
-                <MudItem xs="12" md="12">
-                    <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
-                        <thead>
-                            <tr>
-                                <th>UsageCode</th>
-                                <th>Reference</th>
-                                <th>Amount</th>
-                                <th>Quantity</th>
-                                <th>Unit</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in model.Transactions)
-                            {
+        <MudPaper Class="p-3">
+            <EditForm id="Optranform" EditContext="editContext" OnValidSubmit="Submit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="12">
+                        <h6>Transaction</h6>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker ReadOnly="@ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
+                    </MudItem><MudItem xs="12" md="6">
+                        <PaymentAccountSelector ReadOnly="@ReadOnly" @bind-PaymentMode="@model.PaymentMode" HideMode LabelName="Cash A/c"
+                        @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.CreditCoaID" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+                            <thead>
                                 <tr>
-                                    <td>@item.ExpenseUsageCode</td>
-                                    <td>@item.Reference</td>
-                                    <td>@item.Amount</td>
-                                    <td>@item.Quantity</td>
-                                    <td>@item.Unit</td>
-                                    <td>
-                                        <MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                                    </td>
+                                    <th>UsageCode</th>
+                                    <th>Reference</th>
+                                    <th>Amount</th>
+                                    <th>Quantity</th>
+                                    <th>Unit</th>
+                                    <th></th>
                                 </tr>
-                            }
-                            @if (!ReadOnly)
-                            {
+                            </thead>
+                            <tbody>
+                                @foreach (var item in model.Transactions)
+                                {
+                                    <tr>
+                                        <td>@item.ExpenseUsageCode</td>
+                                        <td>@item.Reference</td>
+                                        <td>@item.Amount</td>
+                                        <td>@item.Quantity</td>
+                                        <td>@item.Unit</td>
+                                        <td>
+                                            <MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                        </td>
+                                    </tr>
+                                }
+                                @if (!ReadOnly)
+                                {
+                                    <tr>
+                                        <td>
+                                            <UsageCodeSelector Value="@gstusge" ValueChanged="UsageCodeChanged"></UsageCodeSelector>
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="opTranSubModel.Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Reference)"></MudTextField>
+
+                                        </td>
+                                        <td>
+                                            <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Amount)"></MudNumericField>
+                                        </td>
+                                        <td>
+                                            <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Quantity)"></MudNumericField>
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="opTranSubModel.Unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Unit)"></MudTextField>
+
+                                        </td>
+                                        <td>
+                                            <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+                                        </td>
+                                    </tr>
+                                }
                                 <tr>
-                                    <td>
-                                        <UsageCodeSelector Value="@gstusge" ValueChanged="UsageCodeChanged"></UsageCodeSelector>
-                                    </td>
-                                    <td>
-                                        <MudTextField @bind-Value="opTranSubModel.Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Reference)"></MudTextField>
-
-                                    </td>
-                                    <td>
-                                        <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Amount)"></MudNumericField>
-                                    </td>
-                                    <td>
-                                        <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Quantity)"></MudNumericField>
-                                    </td>
-                                    <td>
-                                        <MudTextField @bind-Value="opTranSubModel.Unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Unit)"></MudTextField>
-
-                                    </td>
-                                    <td>
-                                        <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
-                                    </td>
+                                    <td colspan="2">Total</td>
+                                    <td>@model.TotalAmount</td>
+                                    <td colspan="2"></td>
                                 </tr>
-                            }
-                            <tr>
-                                <td colspan="2">Total</td>
-                                <td>@model.TotalAmount</td>
-                                <td colspan="2"></td>
-                            </tr>
-                        </tbody>
-                    </MudSimpleTable>
-                </MudItem>
-                <MudItem xs="12" md="12">
-                    <MudTextField ReadOnly="@ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                </MudItem>
-            </MudGrid>
-        </EditForm>
-    </MudPaper>
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="@ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
     </FormContent>
     <VerificationStatus>
         <AutherizationStatusComponent DocTypeID="@DocTypeID" DocumentID="model.OpTranID" OnApprove="OnApprove"></AutherizationStatusComponent>
@@ -119,13 +121,20 @@
     private EditContext editContext;
 
     DialogForm dialogForm;
+
+    public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 6;
 
     public GstUsageCodeModel gstusge = new();
-    private OpTranSubModel opTranSubModel = new();    
+    private OpTranSubModel opTranSubModel = new();
 
-    protected override async Task  OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         UserID = user.Identity.Name;
@@ -143,17 +152,17 @@
                 };
         }
         else
-        { 
+        {
             model.Transactions = Iservice.GetExpenses(model.OpTranID).ToList();
             model.NatureOfTransaction = "Operation";
             model.BranchID = branchID;
             model.UserInfo.UserID = UserID;
         }
     }
-    
+
     protected override void OnParametersSet()
     {
-        editContext = new EditContext(model);        
+        editContext = new EditContext(model);
     }
     void UsageCodeChanged(GstUsageCodeModel uc)
     {
@@ -208,19 +217,30 @@
     }
 
     private async Task Submit()
-    {        
-        try
+    {
+        if (HasAuthoriseEdit)
         {
-            Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            model = new OpTranModel();
-            dialogForm.Close(model);
+            try
+            {
+                Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                model = new OpTranModel();
+                dialogForm.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+
         }
-        
+
     }
 
 }

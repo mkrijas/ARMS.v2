@@ -53,6 +53,17 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.Driver.Delete]", parameters);
         }
+
+        public int Resign(int? DriverID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DriverID", DriverID),
+               new SqlParameter("@Remarks", Remarks),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Driver.Driver.Resign]", parameters);
+        }
+
         public IEnumerable<DriverModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>

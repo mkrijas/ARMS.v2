@@ -1,6 +1,10 @@
-﻿@inject IContraService Iservice
+﻿@using System.Threading;
+@inject IContraService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IDialogService DialogService
+
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Contra Entry" formID="cotraForm" model="@model">
@@ -27,11 +31,11 @@
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <strong>Credit/Draw A/c</strong>
-                        <PaymentAccountSelector @bind-PaymentMode="@model.ContraModeOther" 
-                                                @bind-ArdCode="@model.ArdCodeOther" @bind-CoaID="@model.CoaIDOther"
-                                                @bind-BankCharges="@model.BankCharges" HideBankCharges @bind-BankTool="@model.PaymentTool" />
+                        <PaymentAccountSelector @bind-PaymentMode="@model.ContraModeOther"
+                        @bind-ArdCode="@model.ArdCodeOther" @bind-CoaID="@model.CoaIDOther"
+                        @bind-BankCharges="@model.BankCharges" HideBankCharges @bind-BankTool="@model.PaymentTool" />
                     </MudItem>
-                    
+
                     @if (model.PaymentTool == "CHEQUE")
                     {
                         <MudItem xs="12" md="6">
@@ -70,6 +74,8 @@
     private EditContext editContext;
 
     DialogForm dialogForm;
+
+    public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 3;
 
     protected void Approve(DataApprovedStatus aprvd)
@@ -85,6 +91,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
@@ -93,12 +104,24 @@
         model.NatureOfTransaction = "Contra";
     }
 
-    public void OnValidSubmit()
+    public async Task OnValidSubmit()
     {
-        model.IsPayment = true;
-        model.UserInfo.UserID = UserID;
-        Iservice.Update(model);
-        dialogForm.Close(model);
+        if (HasAuthoriseEdit)
+        {
+            model.IsPayment = true;
+            model.UserInfo.UserID = UserID;
+            Iservice.Update(model);
+            dialogForm.Close(model);
+
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+
+        }
     }
 
 }

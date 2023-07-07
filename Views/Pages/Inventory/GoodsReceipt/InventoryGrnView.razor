@@ -1,10 +1,12 @@
 ﻿@page "/InventoryGrn"
 
+@using System.Threading;
 
 @inject IInventoryGrnService Iservice
 @inject MudBlazor.ISnackbar snackbar
 
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 
@@ -85,9 +87,18 @@
 
 
     private string searchGrn = "";
+
+
+    public bool HasAuthoriseDelete { get; set; } = false;
+    public int DocTypeID = 16;
+
     public bool IsApproved { get; set; } = false;
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         model = new();
         await GetAll(IsApproved);
     }
@@ -145,9 +156,21 @@
 
     private async Task Delete(InventoryGrnModel tds)
     {
-        Iservice.Delete(tds.GrnID, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        await GetAll(IsApproved);
+
+        if (HasAuthoriseDelete)
+        {
+            Iservice.Delete(tds.GrnID, "Rijas");
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            await GetAll(IsApproved);
+
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to delete.");
+        }
     }
 
     public async Task openpurchaseorder()

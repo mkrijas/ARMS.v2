@@ -123,4 +123,11 @@ namespace ArmsModels.BaseModels
             }
         }
     }
+
+    public class DriverResignModel
+    {
+        public DriverModel Driver { get; set; }
+        public string Remarks { get; set; }
+
+    }
 }

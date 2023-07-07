@@ -1,4 +1,6 @@
-﻿@using Views.Pages.Finance.Transactions
+﻿@using System.Threading;
+
+@using Views.Pages.Finance.Transactions
 @inject IInventoryGrnService Iservice
 @inject IPartyService partyIservice
 @inject IInventoryItemService itemIservice
@@ -7,6 +9,7 @@
 @inject IGstItemService gstIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 
@@ -175,6 +178,10 @@
     private int? branchID = null;
     private string UserID = null;
 
+    
+    public bool HasAuthoriseEdit { get; set; } = false;
+    int DocTypeID = 16;
+
     public InventoryItemModel SelectedItems = new();
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
 
@@ -182,6 +189,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         branchID = int.Parse(brancIDString);
@@ -213,9 +225,11 @@
         }
     }
 
-    private void OnValidSubmit(EditContext context)
+    private async Task OnValidSubmit(EditContext context)
     {
 
+        if (HasAuthoriseEdit)
+        {
         model.PartyCode = partyinfo.PartyCode;
         model.PartyID=partyinfo.PartyID;
         model.PartyName = partyinfo.TradeName;
@@ -235,6 +249,18 @@
             snackbar.Add(ex.Message, Severity.Warning);
         }
         MudDialog.Close(model);
+
+
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+
+        }
+        
 
     }
       protected void IsApproveData(DataApprovedStatus aprvd)
