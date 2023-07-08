@@ -25,6 +25,7 @@ namespace ArmsServices.DataServices
         int BeginUnload(long? TripID, long? GcSetID);
         int RemoveFromTrip(long? GcSetID, long? TripID, string UserID);
         int UpdateEwayBill(EwayBillModel model);
-        decimal? GetFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty);
+        decimal? GetFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty, decimal? freight);
+        //decimal? GetFreight(int? orderID, int? routeID, object value, decimal? billQuantity, decimal? freight);
     }
 }

@@ -1,9 +1,11 @@
 ﻿@page "/TaxVoucherView"
+@using System.Threading;
 @using ArmsModels.BaseModels.Finance.Transactions;
 @using ArmsServices.DataServices.Finance.Transactions;
 @using Microsoft.AspNetCore.Authorization;
 @using Microsoft.AspNetCore.Components.Authorization;
 @using MudBlazor;
+@inject IRoleService<RoleModel> Irole
 @using Views.Pages.Finance.Transactions;
 
 @attribute [Authorize]
@@ -60,8 +62,16 @@
 @code {
     public bool IsApproved { get; set; } = false;
     private List<TaxVoucherModel> collection = new List<TaxVoucherModel>();
-    protected override void OnInitialized()
+
+    public bool HasAuthoriseDelete { get; set; } = false;
+    public int DocTypeID = 19;
+
+    protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         GetAll(IsApproved);
     }
     void ApprovedToggled(bool value)
@@ -82,19 +92,31 @@
     }
     private async Task Delete(TaxVoucherModel tx)
     {
-        try
+
+        if (HasAuthoriseDelete)
         {
+            try
+            {
 
 
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            Iservice.Delete(tx.TaxVoucherID, user.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
-            GetAll(IsApproved);
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(tx.TaxVoucherID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+                GetAll(IsApproved);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to delete.");
         }
     }
 

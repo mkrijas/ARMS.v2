@@ -1,4 +1,5 @@
-﻿@using Microsoft.Extensions.Configuration
+﻿@using System.Threading;
+@using Microsoft.Extensions.Configuration
 @using Views.Pages.Finance.Transactions.PurchaseAndPayment
 @inject IReceiptService Iservice
 @inject IPartyService partyIservice
@@ -8,98 +9,99 @@
 @inject IChartOfAccountService accountService
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Receipt" formID="receiptForm" model="@model">
     <FormContent>
-        <MudPaper Class="p-3" >
-         <EditForm id="receiptForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
-            <ObjectGraphDataAnnotationsValidator />
-            <ValidationSummary />
-            <MudGrid>
-                <MudItem xs="12" md="4">
-                    <MudSelect Label="Select Party Type" Value="@model.BusinessNature" ValueChanged="BusinessNatureChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                        <MudSelectItem Value="@("Supplier")" />
-                        <MudSelectItem Value="@("Customer")" />
-                        <MudSelectItem Value="@("Renter")" />
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" NatureOfBusiness="@model.BusinessNature" For="(() => model.PartyInfo)"/>
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudSelect Label="Nature Of Receipt" ReadOnly="ReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionchanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                        <MudSelectItem Value="@("Deposit")" />
-                        <MudSelectItem Value="@("Reciept")" />
-                        <MudSelectItem Value="@("Prepayment")" />
-                    </MudSelect>
-                </MudItem>
-                @if (model.Bills.Any())
-                {
-                    <MudItem xs="12">
-                        <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
-                            <thead>
-                                <tr>
-                                    <th>Invoice info</th>
-                                    <th>Branch</th>
-                                    <th>ReceiptAmount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in model.Bills)
-                                {
-                                    <tr>
-                                        <td>@item.InvoiceNumber - @item.InvoiceDate?.ToShortDateString()</td>
-                                        <td>@item.BranchName</td>
-                                        <td> <MudTextField T="decimal?" @bind-Value="item.ReceiptAmount" TextChanged="calcTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
-                                    </tr>
-                                }
-                                <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td>Total:@model.TotalAmount</td>
-                                </tr>
-                            </tbody>
-                        </MudSimpleTable>
+        <MudPaper Class="p-3">
+            <EditForm id="receiptForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudSelect Label="Select Party Type" Value="@model.BusinessNature" ValueChanged="BusinessNatureChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            <MudSelectItem Value="@("Supplier")" />
+                            <MudSelectItem Value="@("Customer")" />
+                            <MudSelectItem Value="@("Renter")" />
+                        </MudSelect>
                     </MudItem>
-                }
-                <MudItem xs="12" md="12">
-                    <PaymentAccountSelector @bind-PaymentMode="@model.ReceiptMode"
-                                            @bind-ArdCode="@model.ReceiptArdCode" @bind-CoaID="@model.ReceiptCoaID"
-                                            @bind-BankCharges="@model.BankCharges" @bind-BankTool="@model.ReceiptTool" />
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudDatePicker ReadOnly="ReadOnly" Label="Effective Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EffectiveDate" DateFormat="dd/MM/yyyy" />
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
-                </MudItem>
-                 <MudItem xs="12" md="4">
+                    <MudItem xs="12" md="4">
+                        <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" NatureOfBusiness="@model.BusinessNature" For="(() => model.PartyInfo)" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect Label="Nature Of Receipt" ReadOnly="ReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionchanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            <MudSelectItem Value="@("Deposit")" />
+                            <MudSelectItem Value="@("Reciept")" />
+                            <MudSelectItem Value="@("Prepayment")" />
+                        </MudSelect>
+                    </MudItem>
+                    @if (model.Bills.Any())
+                    {
+                        <MudItem xs="12">
+                            <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+                                <thead>
+                                    <tr>
+                                        <th>Invoice info</th>
+                                        <th>Branch</th>
+                                        <th>ReceiptAmount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in model.Bills)
+                                    {
+                                        <tr>
+                                            <td>@item.InvoiceNumber - @item.InvoiceDate?.ToShortDateString()</td>
+                                            <td>@item.BranchName</td>
+                                            <td> <MudTextField T="decimal?" @bind-Value="item.ReceiptAmount" TextChanged="calcTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
+                                        </tr>
+                                    }
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td>Total:@model.TotalAmount</td>
+                                    </tr>
+                                </tbody>
+                            </MudSimpleTable>
+                        </MudItem>
+                    }
+                    <MudItem xs="12" md="12">
+                        <PaymentAccountSelector @bind-PaymentMode="@model.ReceiptMode"
+                        @bind-ArdCode="@model.ReceiptArdCode" @bind-CoaID="@model.ReceiptCoaID"
+                        @bind-BankCharges="@model.BankCharges" @bind-BankTool="@model.ReceiptTool" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Effective Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EffectiveDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="@ReadOnly" Disabled="@model.Bills.Any()" @bind-Value="model.TotalAmount" Label="TotalAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
                     </MudItem>
-                <MudItem xs="12" md="3">
-                    <MudDatePicker ReadOnly="ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
-                </MudItem>
-                <MudItem xs="12" md="3">
-                    <CostCenterSelector @bind-Value="@model.CostCenter"></CostCenterSelector>
-                </MudItem>
-                <MudItem xs="12" md="3">
-                    <DimensionSelector @bind-Value="@model.Dimension"></DimensionSelector>
-                </MudItem>
-                <MudItem xs="12" md="3">
-                    <MudCheckBox @bind-Checked="model.IsRealized" T="bool" ReadOnly="ReadOnly" Label="IsRealized" Color="Color.Primary"></MudCheckBox>
-                </MudItem>
-                <MudItem xs="12" md="12">
-                    <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                </MudItem>
-            </MudGrid>
-        </EditForm>
+                    <MudItem xs="12" md="3">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <CostCenterSelector @bind-Value="@model.CostCenter"></CostCenterSelector>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <DimensionSelector @bind-Value="@model.Dimension"></DimensionSelector>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudCheckBox @bind-Checked="model.IsRealized" T="bool" ReadOnly="ReadOnly" Label="IsRealized" Color="Color.Primary"></MudCheckBox>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="14" DocumentID="model.ReceiptID" OnApprove="ApproveData"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="DocTypeID" DocumentID="model.ReceiptID" OnApprove="ApproveData"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
@@ -118,18 +120,23 @@
     private EditContext editContext;
 
     DialogForm dialogForm;
-    int DocTypeID = 11;
+    public bool HasAuthoriseEdit { get; set; } = false;
+    int DocTypeID = 14;
 
 
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
-        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);        
+        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = User.Identity.Name;
 
         if (model.ReceiptID != null)
-        {            
+        {
             model.Bills = Iservice.GetBills(model.ReceiptID).ToList();
             model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
         }
@@ -162,14 +169,14 @@
             model.Bills.Clear();
         }
         else
-        {            
+        {
             await OpenOutstandingBills();
         }
     }
 
     private void calcTotalAmt()
     {
-        model.TotalAmount = model.Bills.Sum(x=> x.ReceiptAmount);        
+        model.TotalAmount = model.Bills.Sum(x => x.ReceiptAmount);
     }
 
     private async Task OpenOutstandingBills()
@@ -202,27 +209,38 @@
         }
         else
         {
-           await  nTransactionchanged(null);
+            await nTransactionchanged(null);
         }
     }
 
-    public void OnValidSubmit(EditContext context)
+    public async Task OnValidSubmit(EditContext context)
     {
-        try
+        if (HasAuthoriseEdit)
         {
-            model.PartyCoaID = partyIservice.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
-            if (model.PartyCoaID == null)
+            try
             {
-                throw new Exception("Party Account is not mapped for "+model.NatureOfTransaction+"!");
+                model.PartyCoaID = partyIservice.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
+                if (model.PartyCoaID == null)
+                {
+                    throw new Exception("Party Account is not mapped for " + model.NatureOfTransaction + "!");
+                }
+                model.UserInfo.UserID = UserID;
+                Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                dialogForm.Close(model);
             }
-            model.UserInfo.UserID = UserID;
-            Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            dialogForm.Close(model);
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+
         }
     }
 

@@ -1,8 +1,10 @@
 ﻿@page "/Sale"
+@using System.Threading;
 @inject ISaleService Iservice
 @inject MudBlazor.ISnackbar snackbar
 
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 @using Inventory
@@ -81,10 +83,14 @@
 
     private SaleModel model = new SaleModel();
     private List<SaleModel> collection = new List<SaleModel>();
-    
+
     public bool IsApproved { get; set; } = false;
     private int numberOfRecords = 100;
     private string searchTerm = "";
+
+
+    public bool HasAuthoriseDelete { get; set; } = false;
+    public int DocTypeID = 13;
 
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
@@ -94,8 +100,12 @@
         }
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         model = new();
         GetAll(IsApproved, NumberOfRecords);
     }
@@ -163,23 +173,30 @@
             //model = new();
         }
 
-
-
-
     }
 
 
     private async Task Delete(SaleModel tx)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        Iservice.Delete(tx.SID, user.Identity.Name);
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll(IsApproved, NumberOfRecords);
+
+        if (HasAuthoriseDelete)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            Iservice.Delete(tx.SID, user.Identity.Name);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            GetAll(IsApproved, NumberOfRecords);
+
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to delete.");
+        }
     }
-
-
- }
+}
 
 
 

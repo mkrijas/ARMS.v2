@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Views.Pages.Operations.Place;
 using static NuGet.Packaging.PackagingConstants;
 
 namespace Views.Pages.Operations.Gc
@@ -22,7 +23,7 @@ namespace Views.Pages.Operations.Gc
         [Inject] MudBlazor.ISnackbar snackbar { get; set; }
         [Inject] AuthenticationStateProvider auth { get; set; }
 
-
+        [Inject] IDialogService DialogService { get; set; }
         [CascadingParameter] MudDialogInstance MudDialog { get; set; }
         [Parameter] public GcSetModel model { get; set; } = new GcSetModel();
         [Parameter] public OrderModel Order { get; set; }
@@ -75,7 +76,7 @@ namespace Views.Pages.Operations.Gc
 
         private void GetFreight(GcSetModel GcSet)
         {
-            GcSet.Gcs.ForEach(x => x.Freight = Iservice.GetFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity));
+            GcSet.Gcs.ForEach(x => x.Freight = Iservice.GetFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity,x.Freight));
         }
 
         private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
@@ -110,7 +111,7 @@ namespace Views.Pages.Operations.Gc
             model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
             model.Gcs.ForEach(x => x.UserInfo = model.UserInfo);            
-
+           
             try
             {
                 model = Iservice.Update(model);
@@ -172,6 +173,23 @@ namespace Views.Pages.Operations.Gc
             model.RouteID = obj?.RouteID;
             GetFreight(model);
         }
+     
+        private async Task AddConsignee_Consignor()
+        {
+
+            DialogParameters parms = new DialogParameters();
+            ConsigneeModel consigneeModel = new();
+            parms.Add("model", consigneeModel);
+            parms.Add("Order", Order);
+            var dialog = DialogService.Show<Consineedilog>("Add/Edit Consignee", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                Route = Routes.FirstOrDefault(x => x.RouteID == model.RouteID);
+                Consignor = Consignees.FirstOrDefault(x => x.ConsigneeID == model.ConsignorID);
+                Consignee = Consignees.FirstOrDefault(x => x.ConsigneeID == model.ConsigneeID);
+            }
+        }
 
         private void ConsignorChanged(ConsigneeModel obj)
         {
@@ -188,9 +206,31 @@ namespace Views.Pages.Operations.Gc
         private void QtyChanged(decimal? Qty, GcModel gc)
         {
             gc.BillQuantity = Qty;
+            gc.Freight = null;
             GetFreight(model);
+            gc.EFreight = gc.Freight;
         }
+        private void FrChanged(decimal? Freight, GcModel gc)
+        {
+           // gc.Freight = Freight;
+            if (Freight < gc.EFreight)
+            {
+                gc.Freight = null;
+                snackbar.Add("The Freight should not be less than that master Freight", Severity.Warning);
+                
+            }
+            else
+            {
+                gc.Freight = Freight;
+            }
+           
 
+           
+          
+            GetFreight(model);
+            StateHasChanged();
+           
+        }
 
 
         private void AddMoreInvoice()

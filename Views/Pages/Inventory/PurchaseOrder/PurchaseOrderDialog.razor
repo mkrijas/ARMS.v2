@@ -1,4 +1,5 @@
 ﻿@using Views.Pages.Finance.Transactions
+@using System.Threading;
 @inject IPurchaseOrderService Iservice
 @inject IPartyService partyIservice
 @inject IGstUsageIDService testIservice
@@ -7,6 +8,7 @@
 @inject IGstItemService gstIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
 
@@ -42,11 +44,11 @@
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <StoreSelector @bind-Value="model.Store" VariantParameter="Variant.Outlined" MarginParameter="Margin.Dense" BranchID="@branchID"></StoreSelector>
-@*                        <MudSelect ReadOnly="ReadOnly" Label="Select Store" @bind-Value="model.StoreID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in store)
-                            {
-                                <MudSelectItem Value="@ditem.StoreID">@ditem.StoreName</MudSelectItem>
-                            }
+                        @*                        <MudSelect ReadOnly="ReadOnly" Label="Select Store" @bind-Value="model.StoreID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        @foreach (var ditem in store)
+                        {
+                        <MudSelectItem Value="@ditem.StoreID">@ditem.StoreName</MudSelectItem>
+                        }
                         </MudSelect>*@
                     </MudItem>
                     <MudItem xs="12" md="12">
@@ -80,7 +82,7 @@
                                 @foreach (var item in model.Entries)
                                 {
                                     <tr>
-                                        <td>@(itm.First(x=> x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
+                                        <td>@(itm.First(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
                                         <td>@item.ItemQty</td>
                                         <td>@item.ItemRate</td>
                                         <td>@item.ItemGstVal</td>
@@ -171,20 +173,29 @@
     private List<InventoryItemModel> itm = new();
     public PartyModel partyinfo = new();
     private List<GstItemModel> gstitem = new();
-    
+
     private int branchID = 0;
     public InventoryItemModel SelectedItems = new();
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
+
+    public bool HasAuthoriseEdit { get; set; } = false;
+    int DocTypeID = 17;
+
     protected override async Task OnInitializedAsync()
     {
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-         branchID = int.Parse(brancIDString);
+        branchID = int.Parse(brancIDString);
         store = storeIservice.SelectByBranch(branchID).ToList();
-                if(store.Any(s=>s.StoreID == model.StoreID))
+        if (store.Any(s => s.StoreID == model.StoreID))
         {
             model.Store = store.FirstOrDefault(s => s.StoreID == model.StoreID);
 
@@ -221,22 +232,34 @@
         int rowIndex = model.Entries.IndexOf(i);
         model.Entries.RemoveAt(rowIndex);
     }
-    private void OnValidSubmit(EditContext context)
+    private async Task OnValidSubmit(EditContext context)
     {
-        if (model.Entries == null)
+        if (HasAuthoriseEdit)
         {
-            snackbar.Add("Add at least one Entry before Submitting", Severity.Success);
-            return;
+            if (model.Entries == null)
+            {
+                snackbar.Add("Add at least one Entry before Submitting", Severity.Success);
+                return;
+            }
+            else
+            {
+
+                model.PartyCode = partyinfo.PartyCode;
+                model.PartyID = partyinfo.PartyID;
+                model.PartyName = partyinfo.TradeName;
+                model.StoreID = model.Store.StoreID;
+
+                MudDialog.Close(model);
+            }
+
         }
         else
         {
 
-            model.PartyCode = partyinfo.PartyCode;
-            model.PartyID = partyinfo.PartyID;
-            model.PartyName = partyinfo.TradeName;
-        model.StoreID = model.Store.StoreID;
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
 
-            MudDialog.Close(model);
         }
     }
 

@@ -53,6 +53,17 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.Driver.Delete]", parameters);
         }
+
+        public int Resign(int? DriverID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DriverID", DriverID),
+               new SqlParameter("@Remarks", Remarks),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Driver.Driver.Resign]", parameters);
+        }
+
         public IEnumerable<DriverModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -282,5 +293,26 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        public string GetWorkPeriod(int? DriverID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@DriverID", DriverID)
+            };
+
+            string workPeriod = "Unknown";
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.WorkPeriod.Select]", parameters))
+            {
+                DateTime? startDate = dr.GetDateTime("StartDate");
+                DateTime? endDate = dr.GetDateTime("EndDate");
+                workPeriod = $"{startDate?.ToShortDateString()} - {endDate?.ToShortDateString()}";
+                break;
+            }
+
+            return workPeriod;
+        }
+
     }
 }

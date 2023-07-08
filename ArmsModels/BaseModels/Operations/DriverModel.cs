@@ -34,6 +34,7 @@ namespace ArmsModels.BaseModels
         public int? AddressID { get; set; }       
         public string FestivalBonus { get; set; }
         public string AdditionalInfo { get; set; }
+        [Required]
         [RegularExpression(@"^([0-9]{10})$", ErrorMessage = "Mobile must be 10 digits long")]
         public string Mobile { get; set; }
         [EmailAddress]
@@ -122,5 +123,12 @@ namespace ArmsModels.BaseModels
                     return "Rejected";
             }
         }
+    }
+
+    public class DriverResignModel
+    {
+        public DriverModel Driver { get; set; }
+        public string Remarks { get; set; }
+
     }
 }
