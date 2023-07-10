@@ -5,6 +5,9 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -62,8 +65,14 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private ChartOfAccountModel SelectedAccount = null;
 
-    protected override void OnInitialized()
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 20;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         if (model.ExpenseID != null)
         {
             edit = 1;
@@ -85,17 +94,32 @@
 
         // asseesse = Iservice.SelectAssesseeTypes().ToList();
     }
-    private void OnValidSubmit(EditContext context)
+
+    
+    private async Task OnValidSubmit(EditContext context)
     {
-        model.MappedCoaID = SelectedAccount;
-        MudDialog.Close(model);
+        if (HasPermissionEdit)
+        {
+            model.MappedCoaID = SelectedAccount;
+            MudDialog.Close(model);
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to submit.");
+        }
     }
+
+
     private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
     {
 
         return await Task.FromResult(accountService.FilterSubLedgers(searchString));
 
     }
+
+
     private void Cancel()
     {
         MudDialog.Cancel();
