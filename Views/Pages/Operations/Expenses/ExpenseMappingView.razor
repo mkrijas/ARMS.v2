@@ -5,6 +5,10 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
@@ -50,9 +54,18 @@
     private ExpenseMapping model = new ExpenseMapping();
     private List<ExpenseMapping> collection = new List<ExpenseMapping>();
 
+    public bool IsApproved { get; set; } = false;
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public int DocTypeID = 20;
+
     private string searchEma = "";
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         model = new();
         GetAll();
     }
@@ -68,18 +81,27 @@
     }
     private async Task Delete(ExpenseMapping ep)
     {
-        
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-       int result = Iservice.Delete(ep.ExpenseID, user.Identity.Name);
 
-        if (result != -1)
+        if (HasPermissionDelete)
         {
-            if (collection != null && collection.Any(s => s.ExpenseID == ep.ExpenseID))
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            int result = Iservice.Delete(ep.ExpenseID, user.Identity.Name);
+
+            if (result != -1)
             {
-                collection.Remove(collection.FirstOrDefault(s => s.ExpenseID == ep.ExpenseID));
-                snackbar.Add("Deleted Successfully", Severity.Success);
+                if (collection != null && collection.Any(s => s.ExpenseID == ep.ExpenseID))
+                {
+                    collection.Remove(collection.FirstOrDefault(s => s.ExpenseID == ep.ExpenseID));
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
             }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to delete.");
         }
     }
 
@@ -95,46 +117,55 @@
     //}
     private async Task OpenDialog(ExpenseMapping ema)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", ema);
-        var dialog = DialogService.Show<ExpenseMappingDialog>(ema.ExpenseID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-
-        if (!result.Cancelled)
+        if (HasPermissionEdit)
         {
-            ExpenseMapping UpatedModel = (ExpenseMapping)result.Data;
-            model.UserInfo.UserID = user.Identity.Name;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
 
-            try
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", ema);
+            var dialog = DialogService.Show<ExpenseMappingDialog>(ema.ExpenseID == null ? "ADD" : "EDIT", parms);
+
+            var result = await dialog.Result;
+
+            if (!result.Cancelled)
             {
+                ExpenseMapping UpatedModel = (ExpenseMapping)result.Data;
+                model.UserInfo.UserID = user.Identity.Name;
 
-                var ResultModel = Iservice.Update(UpatedModel);
-
-                if (ResultModel != null)
+                try
                 {
+                    var ResultModel = Iservice.Update(UpatedModel);
 
-                    if (collection.Exists(x => x.ExpenseID == ResultModel.ExpenseID))
+                    if (ResultModel != null)
                     {
-                        collection[collection.FindIndex(x => x.ExpenseID == ResultModel.ExpenseID)] = ResultModel;
+
+                        if (collection.Exists(x => x.ExpenseID == ResultModel.ExpenseID))
+                        {
+                            collection[collection.FindIndex(x => x.ExpenseID == ResultModel.ExpenseID)] = ResultModel;
+                        }
+                        else
+                        {
+                            collection.Add(ResultModel);
+                        }
+                        UpatedModel = new();
+                        ResultModel = new();
+                        model = new();
+                        snackbar.Add("Saved Successfully", Severity.Success);
                     }
-                    else
-                    {
-                        collection.Add(ResultModel);
-                    }
-                    UpatedModel = new();
-                    ResultModel = new();
-                    model = new();
-                    snackbar.Add("Saved Successfully", Severity.Success);
+
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
                 }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
-
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                        "Permission denied!",
+                        "You dont have any permission to Add or Edit.");
         }
     }
 }
