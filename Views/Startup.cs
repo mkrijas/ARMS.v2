@@ -7,6 +7,7 @@ using ArmsServices.DataServices.General;
 using ArmsServices.DataServices.Inventory;
 using ArmsServices.DataServices.Operations;
 using Blazored.SessionStorage;
+using DAL.DataServices.Finance.Transactions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -143,6 +144,7 @@ namespace Views
             services.AddScoped<IInterBranchTransactionService, InterBranchTransactionService>();
             services.AddScoped<IRoutineCheckListMasterService, RoutineCheckListMasterService>();
             services.AddScoped<ITaxVoucherService, TaxVoucherService>();
+            services.AddScoped<IMileageShortageReceiptService, MileageShortageReceiptService>();
 
             //------------FINANCE TRANSACTIONS-------------------
             services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();
