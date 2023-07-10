@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentValidation;
+using ArmsServices.DataServices;
+
 
 namespace ArmsModels.BaseModels
 {
@@ -21,16 +24,14 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? EventTime { get; set; } = DateTime.Now;
 
-
         ///////////////
-        
-        [Required]
-        [Notless("TruckID","EventTime")]
 
-        ///////////////
-        
-
+        //[Required]
+        //[Notless("TruckID", "EventTime")]
         public long? EventReading { get; set; }
+
+        ///////////////
+
         [Required]
         public int? BranchID { get; set; }
         public string BranchName { get; set; }
@@ -42,7 +43,7 @@ namespace ArmsModels.BaseModels
         public int? TruckID { get; set; }
         public int? DriverID { get; set; }
         public long? TripID { get; set; }
-        public long? GcSetID { get; set; }        
+        public long? GcSetID { get; set; }
         public string OriginName { get; set; }
         public string DestinationName { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
@@ -62,7 +63,34 @@ namespace ArmsModels.BaseModels
         public bool IsDriverRequired { get; set; }
         public bool IsBlocking { get; set; }
         public int? DisplayOrder { get; set; }
-        public string  EventStatusText { get; set; }
+        public string EventStatusText { get; set; }
         public byte? LimitPostEvent { get; set; }
+    }
+
+
+    public class EventReadingValidator : AbstractValidator<EventModel>
+    {
+        public EventReadingValidator(IEventService _eventservice)
+        {
+            //_eventservice.GetPreviousEvent(string truckIDName, string eventTimeName);
+            RuleFor(P => P.EventReading)
+                .NotEmpty().WithMessage("Odometer reading cannot be empty !")
+                .Must((eventModel, eventReading) =>
+                        ValidateEventReading(_eventservice, eventModel.TruckID, eventModel.EventTime, eventModel.EventReading))
+                .WithMessage("Odometer reading cannot be lesser than previous reading !");
+        }
+
+        private bool ValidateEventReading(IEventService _eventservice, int? truckID, DateTime? eventTime, long? eventReading)
+        {
+            if (truckID != null && eventTime != null && eventReading != null)
+            {
+                EventModel previousEvent = _eventservice.GetPreviousEvent(truckID.Value, eventTime.Value);
+                if (previousEvent.EventReading <= eventReading)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
