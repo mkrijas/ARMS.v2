@@ -1,5 +1,6 @@
 ﻿@page "/Driver"
 @inject IDriverService Iservice
+@inject IDriverFaultService Ifaultservice
 
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
@@ -12,6 +13,11 @@
 
 @inject NavigationManager nav
 @using MimeTypes
+<style>
+    .RedRow {
+        background-color: #ff8080;
+    }
+</style>
 
 
 <MudGrid Spacing="4">
@@ -32,7 +38,7 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>    
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverAgent.TradeName)" InitialDirection="SortDirection.Ascending">Contractor</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DateOfBirth)" InitialDirection="SortDirection.Ascending">AGE</MudTableSortLabel></MudTh>
-                <MudTh>Status</MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x=> x.Status)" InitialDirection="SortDirection.Ascending">Status</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -44,17 +50,8 @@
                 <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
                 <MudTd DataLabel="PartyName">@context.DriverAgent.TradeName</MudTd>
                 <MudTd DataLabel="DOB">@(DateTime.Today.Year - context.DateOfBirth.Value.Year +(DateTime.Today.DayOfYear < context.DateOfBirth.Value.DayOfYear?-1:0))</MudTd>
-                <MudTd DataLabel="Status">
-                    @switch (context.UserInfo.RecordStatus)
-                    {
-                        case 3:
-                            <p>Available</p>
-                            break;
-                        case 4:
-                            <p>On Leave</p>
-                            break;
-                    }
-                </MudTd>
+                <MudTd DataLabel="Status">@context.Status</MudTd>
+                    
 
                 <MudTd DataLabel="">
                     @if (context.UserInfo.RecordStatus != 4)
@@ -69,12 +66,30 @@
                             <MudFab @onclick="@(() => EndLeave(context.DriverID))" Color="Color.Success" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowUp" IconSize="Size.Small" Size="Size.Small" />
                         </MudTooltip>
                     }
-                    <MudFab Label="DL" OnClick="@(() => nav.NavigateTo("dl/" + context.DriverID.ToString()))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.FileCopy" Size="Size.Small" IconSize="Size.Small" />
-
-                    <MudFab @onclick="@(() => Edit(context.DriverID))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(() => Transfer(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.SwapHoriz" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(() => Resign(context.DriverID))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small" IconSize="Size.Small" />
-
+                    <MudTooltip Text="Driving licence">
+                        <MudFab Label="DL" OnClick="@(() => nav.NavigateTo("dl/" + context.DriverID.ToString()))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.FileCopy" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    <MudTooltip Text="Edit">
+                        <MudFab @onclick="@(() => Edit(context.DriverID))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    <MudTooltip Text="Transfer">
+                        <MudFab @onclick="@(() => Transfer(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.SwapHoriz" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    @if (context.UserInfo.RecordStatus != 9)
+                    {
+                        <MudTooltip Text="Driver Fault">
+                            <MudFab @onclick="@(() => Fault(context.DriverID))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.Warning" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                    }
+                    else if (context.UserInfo.RecordStatus == 9)
+                    {
+                        <MudTooltip Text="Remove From Blacklist">
+                            <MudFab @onclick="@(() => RemoveBlacklist(context.DriverID))" Color="Color.Default" Class="mx-2" Icon="@Icons.Material.Filled.Cancel" IconSize="Size.Small" Size="Size.Small" />
+                        </MudTooltip>
+                    }
+                    <MudTooltip Text="Resign">
+                        <MudFab @onclick="@(() => Resign(context.DriverID))" Color="Color.Warning" Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
                 </MudTd>
 
             </RowTemplate>
@@ -107,6 +122,7 @@
 
 @code
 {
+
     IBrowserFile driverImage;
     IBrowserFile adhaarImage;
 
@@ -121,6 +137,8 @@
 
     string UserID;
     int BranchID;
+
+    string state = "Message box hasn't been opened yet";
 
     private async void BeginLeave(DriverModel dtl)
     {
@@ -150,6 +168,10 @@
 
     private string RowClassFunc(DriverModel driver, Int32 index)
     {
+        if (driver.UserInfo.RecordStatus == 9)
+        {
+            return "RedRow";
+        }
         if (!driver.HasValidLicense)
         {
             return "InvalidRow";
@@ -240,13 +262,13 @@
         var parameters = new DialogParameters();
 
         DriverResignModel model = new();
-        
+
 
         model.Driver = collection.FirstOrDefault(x => x.DriverID == driverId);
-        
+
         parameters.Add("model", model);
         parameters.Add("driverId", driverId);
-        
+
 
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = DialogService.Show<DriverResignDialog>("Resign Driver", parameters, maxWidth);
@@ -284,6 +306,39 @@
         var dialog = DialogService.Show<DriverTransferInitiationDialog>("Transfer Driver", parameters, maxWidth);
         var result = await dialog.Result;
         GetAll();
+    }
+
+    private async Task Fault(int? DriverID)
+    {
+
+        DriverFaultModel DriverFault = new();
+        var DriverData = collection.FirstOrDefault(x => x.DriverID == DriverID);
+        DriverFault.Driver = DriverData;
+        var parameters = new DialogParameters();
+        parameters.Add("model", DriverID != 0 ? DriverFault : new());
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = DialogService.Show<DriverFaultDialog>("Driver Fault", parameters, maxWidth);
+        var result = await dialog.Result;
+        GetAll();
+    }
+
+    private async Task RemoveBlacklist(int? DriverID)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Are you sure you want to remove from blacklist?",
+            yesText: "Delete!", cancelText: "Cancel");
+        state = result == null ? "Cancelled" : "Deleted!";
+
+        if (state == "Deleted!")
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            int qryResult = Ifaultservice.Delete(DriverID, user.Identity.Name);
+            snackbar.Add("Driver removed from Blacklist", Severity.Warning);
+        }
+        GetAll();
+
     }
 
     private bool search(DriverModel Driver)
