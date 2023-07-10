@@ -164,7 +164,9 @@ namespace ArmsServices.DataServices
             cancellationToken.ThrowIfCancellationRequested();
 
             var authprov = await auth.GetAuthenticationStateAsync();
-            var RoleID = authprov.User.Claims.First(x => x.Type == ClaimTypes.Role).Value;
+            string RoleID = "";
+            if (authprov.User.Claims.Any(x => x.Type == ClaimTypes.Role))
+             RoleID = authprov.User.Claims.First(x => x.Type == ClaimTypes.Role).Value;
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
