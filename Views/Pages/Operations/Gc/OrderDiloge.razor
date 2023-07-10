@@ -7,6 +7,11 @@
 @inject AuthenticationStateProvider auth
 @inject NavigationManager UriHelper
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+
 <MudDialog>
     <TitleContent>
         <h3>Add/Edit Order</h3>
@@ -50,7 +55,9 @@
         <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Default" ButtonType="ButtonType.Button">Cancel</MudButton>
     </DialogActions>
 </MudDialog>
+
 @code {
+
     [Parameter]
     public OrderModel model { get; set; }
     private List<OrderModel> collection = new List<OrderModel>();
@@ -59,15 +66,21 @@
     private string searchString = "";
     private string unit = "";
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 21;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         await foreach (var item in Icontent.Select(0))
         {
             contents.Add(item);
         }
         await GetAll();
-        if(model != null)
-        SetContentObject(model.ContentID);
+        if (model != null)
+            SetContentObject(model.ContentID);
     }
 
 
@@ -76,6 +89,7 @@
         return await Task.FromResult(
             contents.Where(x => x.ContentName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
+
 
     private async Task GetAll()
     {
@@ -92,27 +106,38 @@
         if (contents != null && contents.Any(s => s.ContentID == ContentID))
             model.Content = contents.FirstOrDefault(s => s.ContentID == ContentID);
     }
-    private void OnValidSubmit(EditContext context)
+
+
+    private async Task OnValidSubmit(EditContext context)
     {
-        if (model.Party?.PartyID == 0)
+        if (HasPermissionEdit)
         {
-            snackbar.Add("Client is not selected", Severity.Error);
-            return;
-        }
-        if (!model.IsLimitedQuantity)
-        {
-            model.OrderQuantity = 0;
+            if (model.Party?.PartyID == 0)
+            {
+                snackbar.Add("Client is not selected", Severity.Error);
+                return;
+            }
+            if (!model.IsLimitedQuantity)
+            {
+                model.OrderQuantity = 0;
+            }
+            else
+            {
+                var isValid = context.Validate();
+                if (!isValid)
+                {
+                    return;
+                }
+            }
+            model.ClientID = model.Party.PartyID;
+            MudDialog.Close(model);
         }
         else
         {
-            var isValid = context.Validate();
-            if (!isValid)
-            {
-                return;
-            }
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to submit.");
         }
-        model.ClientID = model.Party.PartyID;
-        MudDialog.Close(model);
     }
 
 
