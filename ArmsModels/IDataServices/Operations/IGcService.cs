@@ -12,10 +12,12 @@ namespace ArmsServices.DataServices
     public interface IGcService
     {
         GcSetModel Update(GcSetModel model);
+        int UpdateUnloadingQuantity(GcSetModel model);
         int Delete(long? GcID, string UserID);
         List<GcSetModel> Select(int? BranchID);
         List<GcSetModel> SelectByTrip(long? TripID);
         List<GcSetModel> SelectUnAssigned(int? BranchID);
+        List<GcSetModel> SelectedUnloadEvent(long? TripID);
         List<GcSetModel> SelectToUnload(long? TripID);
         List<GcSetModel> SelectToDispatch(long? TripID);
         List<GcSetModel> SelectPending(long? TripID);

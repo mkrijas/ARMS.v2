@@ -5,7 +5,7 @@
 @inject IGcService Igc
 @inject IDriverService Idriver
 @inject ITruckService Itruck
-
+@inject IDialogService DialogService
 
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
@@ -239,13 +239,33 @@
 
             model.EventTypeID = SelectedEvent.EventTypeID;
 
+            if(model.EventTypeID==5)
+            {
+                DialogParameters parms = new DialogParameters();
+                parms.Add("TripID", model.TripID);  
 
+                var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Quantity", parms);
+                var result = await dialog.Result;
+                if(!result.Canceled)
+                {
+                    List<GcSetModel> gcs = (List<GcSetModel>)result.Data;
+                    foreach (var item in gcs)
+                    {
+                        Igc.UpdateUnloadingQuantity(item);
+                    }
+                }
+                else
+                {
+                    return;
+                }
+
+            }
             if (!ValidateEvent(model))
             {
                 return;
             }
-            model = Ievent.Update(model);
-
+            // model = Ievent.Update(model);
+            
             if (SelectedEvent.EventTypeID == 4)
             {
                 if (!SelectedGCs.Any())
@@ -325,6 +345,9 @@
             if (SelectedEvent.EventTypeID == 4)
             {
                 GCsToUnload = Igc.SelectToUnload(CurrentTrip.TripID).ToList();
+            }
+            if (SelectedEvent.EventTypeID == 5)
+            {
             }
         }
         else

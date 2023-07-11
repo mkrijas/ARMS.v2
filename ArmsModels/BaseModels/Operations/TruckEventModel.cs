@@ -19,11 +19,11 @@ namespace ArmsModels.BaseModels
         [Required]
         public byte? NextEventTypeID { get; set; }
         [Required]
-        public DateTime? EventTime { get; set; } = DateTime.Now;
-
+        //public DateTime? EventTime { get; set; } = DateTime.Now;
+        public DateTime? EventTime { get; set; }
 
         ///////////////
-        
+
         [Required]
         [Notless("TruckID","EventTime")]
 
