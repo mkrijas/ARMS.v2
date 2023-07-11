@@ -9,6 +9,8 @@
 @inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudGrid>
     <MudItem xs="12" md="12">
@@ -60,16 +62,19 @@
 
     private OrderModel Order = new();
 
-
     private List<TariffModel> collection = new();
-
-
-
     #endregion
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public int DocTypeID = 23;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         if (OrderID != 0)
             Order = await Iorder.SelectByID(OrderID);
 
@@ -84,55 +89,72 @@
 
     private async Task Edit(TariffModel editModel)
     {
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", editModel);
-        parms.Add("Order", Order);
-
-        var dialog = DialogService.Show<TarrifDilog>("Add/Edit Tariffs", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
-        var result = await dialog.Result;
-
-        if (!result.Cancelled)
+        if(HasPermissionEdit)
         {
-            TariffModel UpdatedModel = (TariffModel)result.Data;
-            if (UpdatedModel != null)
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", editModel);
+            parms.Add("Order", Order);
+
+            var dialog = DialogService.Show<TarrifDilog>("Add/Edit Tariffs", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+            var result = await dialog.Result;
+
+            if (!result.Cancelled)
             {
+                TariffModel UpdatedModel = (TariffModel)result.Data;
+                if (UpdatedModel != null)
+                {
 
-                if (collection.Exists(x => x.TariffID == UpdatedModel.TariffID))
-                {
-                    collection[collection.FindIndex(x => x.TariffID == UpdatedModel.TariffID)] = UpdatedModel;
+                    if (collection.Exists(x => x.TariffID == UpdatedModel.TariffID))
+                    {
+                        collection[collection.FindIndex(x => x.TariffID == UpdatedModel.TariffID)] = UpdatedModel;
+                    }
+                    else
+                    {
+                        collection.Add(UpdatedModel);
+                    }
+                    UpdatedModel = new();
                 }
-                else
-                {
-                    collection.Add(UpdatedModel);
-                }
-                UpdatedModel = new();
+
             }
-
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                       "Permission denied!",
+                       "You dont have any permission to Add or Edit.");
         }
 
     }
     private async Task Delete(TariffModel deleteModel)
     {
-
-        if (deleteModel != null)
+        if (HasPermissionDelete)
         {
-
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            int result = Iservice.Delete(deleteModel.TariffID, user.Identity.Name);
-
-            if (result != -1)
+            if (deleteModel != null)
             {
-                if (collection != null && collection.Any(s => s.TariffID == deleteModel.TariffID))
+
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                int result = Iservice.Delete(deleteModel.TariffID, user.Identity.Name);
+
+                if (result != -1)
                 {
-                    collection.Remove(collection.FirstOrDefault(s => s.TariffID == deleteModel.TariffID));
-                    snackbar.Add("Deleted Successfully", Severity.Success);
+                    if (collection != null && collection.Any(s => s.TariffID == deleteModel.TariffID))
+                    {
+                        collection.Remove(collection.FirstOrDefault(s => s.TariffID == deleteModel.TariffID));
+                        snackbar.Add("Deleted Successfully", Severity.Success);
+                    }
                 }
             }
-        }
 
-        //snackbar.Add("Deleted Successfully", Severity.Success);
-        //GetAll();
+            //snackbar.Add("Deleted Successfully", Severity.Success);
+            //GetAll();
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to delete.");
+        }
     }
 
 
