@@ -11,6 +11,9 @@
 
 @inject NavigationManager UriHelper
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 <MudText Typo="Typo.h5" GutterBottom="true">
     UNASSIGNED CONSIGNMENTS
     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@Add" Color="Color.Dark" Size="Size.Medium"></MudIconButton>
@@ -32,38 +35,67 @@
 
     private string searchString = "";
 
-
     private int BranchID;
     private List<GcSetModel> collection = new();
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public int DocTypeID = 26;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         var e = await auth.GetAuthenticationStateAsync();
         string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(BranchIDString);
         GetAll(BranchID);
     }
 
+
     private void GetAll(int BranchID)
     {
         collection = Iservice.SelectUnAssigned(BranchID);
     }
-    
+
+
     private async Task Add()
     {
-        var parameters = new DialogParameters();
-        parameters.Add("model", new GcSetModel() { BranchID = BranchID });
+        if (HasPermissionEdit)
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("model", new GcSetModel() { BranchID = BranchID });
 
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var result = DialogService.Show<GcDialog>("Create New GC", parameters,maxWidth);
-        var data = await result.Result;
-        GetAll(BranchID);
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var result = DialogService.Show<GcDialog>("Create New GC", parameters, maxWidth);
+            var data = await result.Result;
+            GetAll(BranchID);
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
     }
-    private void Delete(long? id)
+
+
+    private async Task Delete(long? id)
     {
-        Iservice.Delete(id, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll(BranchID);
+        if(HasPermissionDelete)
+        {
+            Iservice.Delete(id, "Rijas");
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            GetAll(BranchID);
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+             "Permission denied!",
+             "You dont have any permission to delete.");
+        }
     }
 
 
