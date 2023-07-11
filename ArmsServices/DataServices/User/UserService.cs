@@ -256,7 +256,7 @@ namespace ArmsServices.DataServices
         {
 
             //to implement
-            IList<string> strs = new List<string>() { "Admin", "Normal" };
+            IList<string> strs = new List<string>();
             return Task.FromResult(strs);
         }
 

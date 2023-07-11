@@ -6,6 +6,9 @@
 @inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 <MudTable Items="@collection" Dense="true" Hover="true" Striped="true"
           Elevation="10" Filter="new Func<RouteModel, bool>(search)" @bind-model="model">
 
@@ -55,8 +58,16 @@
 
     private string searchRoute = "";
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public int DocTypeID = 24;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         places = Iplace.Select(0).ToList();
         await GetAll();
     }
@@ -89,22 +100,30 @@
     //}
     private async Task Delete(int? id)
     {
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        int result = Iservice.Delete(id, user.Identity.Name);
-
-        if (result != -1)
+        if (HasPermissionDelete)
         {
-            if (collection != null && collection.Any(s => s.RouteID == id))
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            int result = Iservice.Delete(id, user.Identity.Name);
+
+            if (result != -1)
             {
-                collection.Remove(collection.FirstOrDefault(s => s.RouteID == id));
-                snackbar.Add("Deleted Successfully", Severity.Success);
+                if (collection != null && collection.Any(s => s.RouteID == id))
+                {
+                    collection.Remove(collection.FirstOrDefault(s => s.RouteID == id));
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
             }
+            //await Iservice.Delete(id, "Rijas");
+            //snackbar.Add("Deleted Successfully", Severity.Success);
+            //await GetAll();
         }
-        //await Iservice.Delete(id, "Rijas");
-        //snackbar.Add("Deleted Successfully", Severity.Success);
-        //await GetAll();
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+              "Permission denied!",
+              "You dont have any permission to delete.");
+        }
     }
 
 
@@ -118,35 +137,44 @@
     }
     private async Task Edit(RouteModel model)
     {
-        DialogParameters parms = new DialogParameters();
-        parms.Add("routemodel", model.Clone());
-
-
-        var dialog = DialogService.Show<RouteDilog>("ADD/EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
-
-        var result = await dialog.Result;
-
-        // you can check if the modal was cancelled
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
+        if (HasPermissionEdit)
         {
-            RouteModel UpatedModel = (RouteModel)result.Data;
-            if (UpatedModel != null)
+            DialogParameters parms = new DialogParameters();
+            parms.Add("routemodel", model.Clone());
+
+
+            var dialog = DialogService.Show<RouteDilog>("ADD/EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+
+            var result = await dialog.Result;
+
+            // you can check if the modal was cancelled
+            var isCancelled = result.Canceled;
+            if (!isCancelled)
             {
-                if (collection.Exists(x => x.RouteID == UpatedModel.RouteID))
+                RouteModel UpatedModel = (RouteModel)result.Data;
+                if (UpatedModel != null)
                 {
-                    collection[collection.FindIndex(x => x.RouteID == UpatedModel.RouteID)] = UpatedModel;
-                }
-                else
-                {
-                    collection.Add(UpatedModel);
+                    if (collection.Exists(x => x.RouteID == UpatedModel.RouteID))
+                    {
+                        collection[collection.FindIndex(x => x.RouteID == UpatedModel.RouteID)] = UpatedModel;
+                    }
+                    else
+                    {
+                        collection.Add(UpatedModel);
+                    }
+
                 }
 
+                model = new();
             }
-
-            model = new();
+            //await GetAll();
         }
-        //await GetAll();
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
     }
 }
 

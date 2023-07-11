@@ -5,6 +5,9 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 <MudDialog>
     <DialogContent>
         <EditForm id="routeForm" Model="@routemodel" OnValidSubmit="OnValidSubmit">
@@ -67,8 +70,14 @@
 
     private string searchRoute = "";
 
-    protected override void OnInitialized()
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 24;
+
+    protected async Task OnInitialized()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         places = Iplace.Select(0).ToList();
         if (routemodel?.RouteID != null)
         {
@@ -78,46 +87,59 @@
         }
     }
 
+
     private async Task<IEnumerable<PlaceModel>> Search(string searchString)
     {
         return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }    
 
+
     private async Task OnValidSubmit(EditContext context)
     {
-        if (!places.Select(x => x.PlaceName).Contains(routemodel.Origin.PlaceName))
+        if (HasPermissionEdit)
         {
-            snackbar.Add("Invalid Origin", Severity.Error);
-            return;
+            if (!places.Select(x => x.PlaceName).Contains(routemodel.Origin.PlaceName))
+            {
+                snackbar.Add("Invalid Origin", Severity.Error);
+                return;
+            }
+            else
+                 if (!places.Select(x => x.PlaceName).Contains(routemodel.Via.PlaceName))
+            {
+                snackbar.Add("Invalid Via", Severity.Error);
+                return;
+            }
+            else
+            if (!places.Select(x => x.PlaceName).Contains(routemodel.Destination.PlaceName))
+            {
+                snackbar.Add("Invalid Destination", Severity.Error);
+                return;
+            }
+            var authprov = await auth.GetAuthenticationStateAsync();
+            routemodel.UserInfo.UserID = authprov.User.Identity.Name;
+            routemodel.RouteName = routemodel.Origin.PlaceName + "-" + routemodel.Via.PlaceName + "-" + routemodel.Destination.PlaceName;
+            routemodel.MieageModifier = 1;
+            try
+            {
+                routemodel = await Iservice.Update(routemodel);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(routemodel);
+                routemodel = new RouteModel();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
         else
-             if (!places.Select(x => x.PlaceName).Contains(routemodel.Via.PlaceName))
         {
-            snackbar.Add("Invalid Via", Severity.Error);
-            return;
-        }
-        else
-        if (!places.Select(x => x.PlaceName).Contains(routemodel.Destination.PlaceName))
-        {
-            snackbar.Add("Invalid Destination", Severity.Error);
-            return;
-        }
-        var authprov = await auth.GetAuthenticationStateAsync();
-        routemodel.UserInfo.UserID = authprov.User.Identity.Name;
-        routemodel.RouteName = routemodel.Origin.PlaceName + "-" + routemodel.Via.PlaceName + "-" + routemodel.Destination.PlaceName;
-        routemodel.MieageModifier = 1;
-        try
-        {
-            routemodel = await Iservice.Update(routemodel);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(routemodel);
-            routemodel = new RouteModel();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+               "Permission denied!",
+               "You dont have any permission to submit.");
         }
     }
+
+
        private async Task AddPlace()
         {
             DialogParameters parms = new DialogParameters();
