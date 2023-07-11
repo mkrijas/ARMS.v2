@@ -50,8 +50,17 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Gc.Gcs.Delete]", parameters);
         }
-
-        public List<GcSetModel> Select(int? BranchID)
+        public int UpdateUnloadingQuantity(GcSetModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@GcSetID", model.GcSetID),
+               new SqlParameter("@UnloadingQuantity", model.TotalUnloadingQuantity),
+              
+            };
+           return Iservice.ExecuteNonQuery("[usp.GcSet.UpdateUnloadingQuantity]", parameters);
+        }
+            public List<GcSetModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -107,7 +116,16 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
-
+        public List<GcSetModel> SelectedUnloadEvent(long? TripID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "UnloadStarted"),
+               new SqlParameter("@TripID", TripID)
+            };
+            return GetList(parameters);
+        }
+        
         public IEnumerable<GcTypeModel> SelectGcTypes()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.GcType.Select]", null))
@@ -169,7 +187,7 @@ namespace ArmsServices.DataServices
                 GcDate = dr.GetDateTime("GcDate"),
                 OrderID = dr.GetInt32("OrderID"),
                 TotalBillQuantity = dr.GetDecimal("BillQuantity"),
-                //TotalFreight = dr.GetDecimal("Freight"),
+                TotalUnloadingQuantity = dr.GetDecimal("BillQuantity"),
                 OrderName = dr.GetString("OrderName"),
                 RouteID = dr.GetInt32("RouteID"),
                 RouteName = dr.GetString("RouteName"),
