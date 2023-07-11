@@ -4,6 +4,8 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudDialog>
     <TitleContent>
@@ -20,21 +22,21 @@
 
                 <MudGrid Spacing="2">
 
-                        <MudItem xs="12" md="12">
-                            <MudTextField @bind-Value="model.ContentName" Label="Content" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ContentName)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="12">
-                            <MudTextField @bind-Value="model.PrimaryUnit" Label="Primary Unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PrimaryUnit)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="12">
-                            <MudTextField @bind-Value="model.SecondaryUnit" Label="Secondary Unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.SecondaryUnit)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="12">
-                            <MudTextField InputType="InputType.Number" @bind-Value="model.UnitRatio" Label="Ratio" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.UnitRatio)"></MudTextField>
-                        </MudItem>
-@*                        <MudItem xs="12" md="12">
-                            <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
-                        </MudItem>*@
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.ContentName" Label="Content" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ContentName)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.PrimaryUnit" Label="Primary Unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PrimaryUnit)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.SecondaryUnit" Label="Secondary Unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.SecondaryUnit)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField InputType="InputType.Number" @bind-Value="model.UnitRatio" Label="Ratio" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.UnitRatio)"></MudTextField>
+                    </MudItem>
+                    @*                        <MudItem xs="12" md="12">
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+                    </MudItem>*@
 
                 </MudGrid>
 
@@ -52,18 +54,24 @@
 
 @code {
 
-        [Parameter]
-        public ContentModel model { get; set; }
+    [Parameter]
+    public ContentModel model { get; set; }
 
     private List<ContentModel> collection = new List<ContentModel>();
     public List<DistrictModel> districts = new List<DistrictModel>();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 27;
 
     void Submit() => MudDialog.Close(DialogResult.Ok(true));
     void Cancel() => MudDialog.Cancel();
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         await Task.Run(() => GetAll());
     }
 
@@ -76,26 +84,33 @@
     }
     private async void OnValidSubmit(EditContext context)
     {
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-
-        try
+        if(HasPermissionEdit)
         {
-            model = await Iservice.Update(model);
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+
+            try
+            {
+                model = await Iservice.Update(model);
 
 
-            snackbar.Add("Saved Successfully", Severity.Success);
-            StateHasChanged();
-            MudDialog.Close(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                StateHasChanged();
+                MudDialog.Close(model);
 
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                     "Permission denied!",
+                     "You dont have any permission to Add or Edit.");
         }
-
     }
 
 }
