@@ -5,6 +5,9 @@
 @inject IDialogService DialogService
 @inject ITruckService ItruckService
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 <MudPaper  Class="pl-5 my-5" Elevation="4">   
         <MudGrid>
             <MudItem xs="10" md="10" >
@@ -42,10 +45,7 @@
     </PagerContent>
 </MudTable>
 
-
-   
-
-
+ 
 @code {
 
 
@@ -59,8 +59,14 @@
     private List<TruckModel> TruckList = new List<TruckModel>();
     private List<TruckRegistrationModel> collection = new List<TruckRegistrationModel>();
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 31;
+
     protected async override Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var authState = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authState.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
         TruckList = ItruckService.Select(null).ToList();
@@ -74,21 +80,30 @@
 
 
     async Task Edit (TruckRegistrationModel reg)
-    {         
-        if (reg.TruckID == null)
+    {
+        if (HasPermissionEdit)
         {
-            reg.TruckID = SelectedTruck.TruckID;
+            if (reg.TruckID == null)
+            {
+                reg.TruckID = SelectedTruck.TruckID;
+            }
+
+            DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Large, };
+            DialogParameters parms = new();
+            parms.Add("CurrentRegistration", reg);
+
+            var dialog = DialogService.Show<TruckRegisterDialog>("ADD/EDIT", parms, options);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                fetch();
+            }
         }
-
-        DialogOptions options = new DialogOptions() {                MaxWidth = MaxWidth.Large,            };        
-        DialogParameters parms = new();
-        parms.Add("CurrentRegistration", reg);
-
-        var dialog = DialogService.Show<TruckRegisterDialog>("ADD/EDIT", parms, options);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+        else
         {
-            fetch();             
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
         }
     }
 
