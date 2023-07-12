@@ -5,7 +5,8 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 
-
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudDialog>
     <TitleContent>
@@ -26,7 +27,7 @@
                 {
                     var item = wrapperitem.value.EwayBill;
                     <MudTabPanel Text="@("Invoice No:"+wrapperitem.value.BillNumber)">
-                        <MudGrid>                            
+                        <MudGrid>
                             <MudItem xs="6">
                                 <MudTextField @bind-Value="item.EwayBillRef" Label="Eway Bill Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.EwayBillRef)"></MudTextField>
                             </MudItem>
@@ -35,7 +36,7 @@
                             </MudItem>
                             <MudItem xs="12">
                                 <MudDatePicker Label="Expire On" @bind-Date="@(item.ExpireOn)" />
-                            </MudItem>                          
+                            </MudItem>
                         </MudGrid>
                     </MudTabPanel>
                 }
@@ -53,6 +54,16 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter] public GcSetModel model { get; set; }
+
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 26;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+    }
+
     private void Cancel()
     {
         model = new();
@@ -62,30 +73,39 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-
-        foreach (var item in model.Gcs)
+        if (HasPermissionEdit)
         {
-            item.EwayBill.GcID = item.GcID;
-            item.EwayBill.UserInfo.UserID = authprov.User.Identity.Name;
+            var authprov = await auth.GetAuthenticationStateAsync();
 
-            try
+            foreach (var item in model.Gcs)
             {
-                int result = Iservice.UpdateEwayBill(item.EwayBill);
+                item.EwayBill.GcID = item.GcID;
+                item.EwayBill.UserInfo.UserID = authprov.User.Identity.Name;
+
+                try
+                {
+                    int result = Iservice.UpdateEwayBill(item.EwayBill);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                    return;
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-                return;
-            }
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(model));
+            model = new GcSetModel();
         }
-        snackbar.Add("Saved Successfully", Severity.Success);
-        MudDialog.Close(DialogResult.Ok(model));
-        model = new GcSetModel();
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
     }
 
 
-    private void EwayBillDateChanged(EwayBillModel ewaymodel,DateTime? date)
+    private void EwayBillDateChanged(EwayBillModel ewaymodel, DateTime? date)
     {
         ewaymodel.EwayBillDate = date;
         if (date != null)

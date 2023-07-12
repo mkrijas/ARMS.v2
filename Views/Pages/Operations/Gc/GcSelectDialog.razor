@@ -7,7 +7,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 
-
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudDialog>
     <TitleContent>
@@ -61,6 +62,9 @@
     private int BranchID { get; set; }
     private int SelectedCount = 0;
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 26;
+
     private void Cancel()
     {
         MudDialog.Cancel();
@@ -71,6 +75,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         await GetAll();
     }
 
@@ -122,15 +129,24 @@
 
     private async Task Add()
     {
-        var parameters = new DialogParameters();
-        parameters.Add("model", new GcSetModel() { BranchID = BranchID });
-
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<GcDialog>("Create New GC", parameters, maxWidth);
-        var result = await dialog.Result;
-        if(!result.Canceled)
+        if (HasPermissionEdit)
         {
-            await GetAll();
-        }  
+            var parameters = new DialogParameters();
+            parameters.Add("model", new GcSetModel() { BranchID = BranchID });
+
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<GcDialog>("Create New GC", parameters, maxWidth);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                await GetAll();
+            }
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
     }
 }
