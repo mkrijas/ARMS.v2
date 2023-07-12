@@ -57,7 +57,7 @@
                     @if (context.UserInfo.RecordStatus != 4)
                     {
                         <MudTooltip Text="Put the Driver on leave">
-                            <MudFab @onclick="@(() => BeginLeave(context))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowDown" IconSize="Size.Small" Size="Size.Small" />
+                            <MudFab @onclick="@(() => BeginLeave(context.DriverID))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowDown" IconSize="Size.Small" Size="Size.Small" />
                         </MudTooltip>
                     }
                     else if (context.UserInfo.RecordStatus == 4)
@@ -105,21 +105,6 @@
 </MudGrid>
 
 
-<MudMessageBox @ref="mbox" Title="Warning" CancelText="Cancel">
-
-    <MessageContent>
-        <b>@DriverToLeave.DriverName</b> will enter leave as on <b>@DateTime.Today.ToLocalTime()</b>. Please Confirm
-        <MudDatePicker Label="Expected to Return On " DisableToolbar="true" Editable="true" @bind-Date="ExpectedReturn" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
-
-        <MudTextField @bind-Value="ReasonToLeave" Label="Reason for Leave" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-
-    </MessageContent>
-    <YesButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.KeyboardArrowDown">Enter Leave</MudButton>
-
-    </YesButton>
-</MudMessageBox>
-
 @code
 {
 
@@ -130,40 +115,31 @@
 
     private string searchDriver = "";
 
-    MudMessageBox mbox { get; set; }
-    private DriverModel DriverToLeave = new();
-    private DateTime? ExpectedReturn;
-    private string ReasonToLeave;
+    MudMessageBox mbox { get; set; } = new();
+   
 
     string UserID;
     int BranchID;
 
     string state = "Message box hasn't been opened yet";
 
-    private async void BeginLeave(DriverModel dtl)
+    private async void BeginLeave(int? DriverID)
     {
-        DriverToLeave = dtl;
-        bool? result = await mbox.Show();
-        if (result == true)
-        {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
 
-            DriverLeaveModel Lmodel = new();
-            Lmodel.DriverID = dtl.DriverID;
-            Lmodel.BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value);
-            Lmodel.StartTime = DateTime.Now;
-            Lmodel.ExpectedReturn = ExpectedReturn;
-            Lmodel.Reason = ReasonToLeave;
-            Lmodel.UserInfo.UserID = user.Identity.Name;
-            int qryResult = Iservice.BeginLeave(Lmodel);
-
-            if (qryResult > 0)
-            {
-                collection.Find(x => x.DriverID == dtl.DriverID).UserInfo.RecordStatus = 4;
-                StateHasChanged();
-            }
-        }
+        DriverLeaveModel DriverLeave = new();
+        var DriverData = collection.FirstOrDefault(x => x.DriverID == DriverID);
+        DriverLeave.Driver = DriverData;
+        var parameters = new DialogParameters();
+        parameters.Add("model", DriverID != 0 ? DriverLeave : new());
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = DialogService.Show<DriverLeaveDialog>("Driver On Leave", parameters, maxWidth);
+        var result = await dialog.Result;
+        
+        
+        collection.Find(x => x.DriverID == DriverID).UserInfo.RecordStatus = 4;
+        StateHasChanged();
+        
+        GetAll();
     }
 
     private string RowClassFunc(DriverModel driver, Int32 index)
