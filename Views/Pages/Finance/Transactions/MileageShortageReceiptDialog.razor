@@ -24,28 +24,46 @@
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="4">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="TripNo" Label="Trip No" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="model.AllottedMileage" Label="Allotted Mileage" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AllottedMileage)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="model.AllottedDistance" Label="Allotted Mileage" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AllottedMileage)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="model.FuelPrice" Label="Allotted Mileage" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AllottedMileage)"></MudTextField>
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.TripNo" Label="Trip No" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="4">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                    </MudItem>
+
+                    <MudItem xs="12" md="4">
                         <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem  md="4">
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.RunningKM" Label="Running KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RunningKM)" Disabled></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.ConsumedFuel" Label="Consumed Fuel" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ConsumedFuel)" Disabled></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField HideSpinButtons @bind-Value="model.AllottedMileage" Label="Mileage Norms" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AllottedMileage)"></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField HideSpinButtons @bind-Value="model.AllottedDistance" Label="Distance Norms in KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AllottedDistance)"></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField HideSpinButtons @bind-Value="model.FuelPrice" Label="Fuel Price" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.FuelPrice)"></MudNumericField>
+                    </MudItem>
+
+                    <MudItem xs="12" md="4">
+                        <MudTooltip Text="Calculate">
+                            <MudButton @onclick="CalculateTotalAmountToDeduct" Variant="Variant.Filled" Color="Color.Primary">Calculate Amount</MudButton>
+                        </MudTooltip>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="model.TotalAmount" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)" Disabled></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
@@ -71,23 +89,27 @@
     private EditContext editContext;
 
     DialogForm dialogForm;
-    public bool HasAuthoriseEdit { get; set; } = false;
-    int DocTypeID = 12;
-
+    public bool HasPermissionEdit { get; set; } = false;
+    int DocTypeID = 30;
+    bool IsDisableSubmit = false;
     [Parameter]
     public string TripNo { get; set; }
 
     private int? branchID = null;
     private string UserID = null;
     public GstUsageCodeModel gstusge = new();
-
+    ValidationMessageStore validationMessageStore;
 
     protected override async Task OnInitializedAsync()
     {
 
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
+
+        editContext = new EditContext(model);
+        editContext.OnFieldChanged += EditContextOnFieldChanged;
+        validationMessageStore = new ValidationMessageStore(editContext);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
@@ -96,7 +118,7 @@
 
         if (model.MileageShortageReceiptID == null)
         {
-            model.NatureOfTransaction = "Sundry Receipt";
+            model.NatureOfTransaction = "Mileage Shortage";
             model.BranchID = branchID;
         }
         else
@@ -106,7 +128,6 @@
 
     protected override void OnParametersSet()
     {
-        editContext = new EditContext(model);
     }
 
     protected void Approve(DataApprovedStatus aprvd)
@@ -118,11 +139,22 @@
             snackbar.Add("Approved Successfully", Severity.Success);
         }
     }
+    void EditContextOnFieldChanged(object obj,FieldChangedEventArgs e)
+    {
+        validationMessageStore.Clear();
+        var fieldName = e.FieldIdentifier.FieldName;
+        if (fieldName == "AllottedMileage" || fieldName == "AllottedDistance" || fieldName == "FuelPrice")
+        {           
 
+            validationMessageStore.Add(e.FieldIdentifier, "Please calculate before submission!.");
+            editContext.NotifyValidationStateChanged();
+        }
+    }
 
     public async Task OnValidSubmit(EditContext context)
     {
-        if (HasAuthoriseEdit)
+
+        if (HasPermissionEdit)
         {
             model.UserInfo.UserID = UserID;
             try
@@ -146,5 +178,22 @@
         "You dont have any permission to submit.");
 
         }
+    }
+    private async Task CalculateTotalAmountToDeduct()
+    {
+        if (model.ConsumedFuel == null)
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Alert",
+        "Can not calculate because consumed fuel is empty.");
+            return;
+        }
+
+        var fuelConsumed = model.AllottedMileage != 0 ? (model.AllottedDistance / model.AllottedMileage) : 0;
+        var fuelDifference = model.ConsumedFuel - fuelConsumed;
+        model.TotalAmount = Math.Round(Convert.ToDecimal(fuelDifference * model.FuelPrice),2);
+        validationMessageStore.Clear();
+        editContext.NotifyValidationStateChanged();
     }
 }

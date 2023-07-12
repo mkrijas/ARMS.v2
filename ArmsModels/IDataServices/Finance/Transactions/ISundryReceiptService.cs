@@ -18,6 +18,5 @@ namespace ArmsServices.DataServices
         IEnumerable<SundryReceiptModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
         IEnumerable<SundryReceiptEntryModel> GetEntries(int? SID);
         int Approve(int? SundryReceiptID, string UserID, string Remarks);
-        int Reverse(int? SundryReceiptID, string UserID, string Remarks);
     }
 }
