@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 using System.Data;
 using System.Data.SqlClient;
+using FluentValidation;
+using System.Reflection;
 
 namespace ArmsServices.DataServices
 {
@@ -12,10 +14,18 @@ namespace ArmsServices.DataServices
     {
         IDbService Iservice;
         IAddressService _addressService;
-        public DriverService(IDbService iservice, IAddressService Iaddress)
+
+        private readonly ITruckService truckService;
+        private readonly ITripService tripService;
+
+        public DriverService(IDbService iservice, IAddressService Iaddress, ITruckService truckService,
+            ITripService tripService)
         {
             Iservice = iservice;
             _addressService = Iaddress;
+            this.truckService = truckService;
+            this.tripService = tripService;
+
         }
         public DriverModel Update(DriverModel model)
         {
@@ -210,7 +220,11 @@ namespace ArmsServices.DataServices
                 model = new DriverLeaveModel()
                 {
                     BranchID = dr.GetInt32("BranchID"),
-                    DriverID = dr.GetInt32("DriverID"),
+                    Driver = new DriverModel()
+                    {
+                        DriverID = dr.GetInt32("DriverID"),
+                        DriverName = dr.GetString("DriverName"),
+                    },
                     LeaveID = dr.GetInt32("LeaveID"),
                     StartTime = dr.GetDateTime("StartTime"),
                     EndTime = dr.GetDateTime("EndTime"),
@@ -243,7 +257,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DriverID", LeaveModel.DriverID),
+               new SqlParameter("@DriverID", LeaveModel.Driver.DriverID),
                new SqlParameter("@BranchID", LeaveModel.BranchID),
                new SqlParameter("@StartTime", LeaveModel.StartTime),
                new SqlParameter("@ExpectedReturn", LeaveModel.ExpectedReturn),
@@ -314,5 +328,39 @@ namespace ArmsServices.DataServices
             return workPeriod;
         }
 
+        public string RemoveDriverFromTruck(int? driverId, string userId)
+        {
+            int? assignedTruckID = GetAssignedTruck(driverId);
+            if (assignedTruckID != null)
+            {
+                // Check if the assigned truck is on a trip
+                long? currentTripID = truckService.GetCurrentTrip(assignedTruckID);
+                if (currentTripID != null)
+                {
+                    // Check if the current trip is completed
+                    bool isTripClosed = tripService.IsClosed(currentTripID);
+                    if (!isTripClosed)
+                    {
+
+                        return "OnTrip";
+             
+                    }
+
+                }
+                // Assigned truck is not on a trip, remove the driver from the truck
+                try
+                {
+                    TruckModel truck = truckService.SelectByID(assignedTruckID);
+                    truckService.UpdateDriver(assignedTruckID, driverId, false, userId);
+                    return "DriverRemoved";
+                }
+                catch (Exception ex)
+                {
+                    return ex.Message;
+                }
+
+            }
+            return "NoAssignedTruck";
+        }
     }
 }

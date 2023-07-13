@@ -132,7 +132,8 @@ namespace ArmsServices.DataServices
         {
             return new AssetSubClassModel
             {
-                AssetSubClassID = dr.GetInt32("ID"),                
+                ID = dr.GetInt32("ID"),                
+                AssetSubClassID = dr.GetInt32("AssetSubClassID"),                
                 AssetSubclass = dr.GetString("AsstSubClassName"),
                 AssetClassID = dr.GetInt32("AssetClassID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

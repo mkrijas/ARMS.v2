@@ -30,7 +30,7 @@
                 <ValidationSummary />
                  <MudGrid>
                     <MudItem xs="12" md="12">
-                        <MudTextField Value="model.Driver.DriverName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                        <MudTextField Value="model.Driver?.DriverName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudSelect Label="Destination Branch" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="model.DestinationBranch.BranchID" T="int?" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.TopCenter" AdornmentColor="Color.Secondary" Required>
@@ -79,6 +79,14 @@
             model.InitiatedBranch = new();
             model.InitiatedBranch.BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
         }
+        if(model.DestinationBranch==null)
+        {
+            model.DestinationBranch = new();
+        }
+        if(model.Driver==null)
+        {
+            model.Driver = new();
+        }
         BranchID = model?.InitiatedBranch?.BranchID ?? 0; 
 
         DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != BranchID).ToList();
@@ -104,62 +112,45 @@
             return;
         }
 
-        // Check if the selected driver is assigned to a truck
-        int? assignedTruckID = Idriverservice.GetAssignedTruck(model.Driver?.DriverID);
-        if (assignedTruckID != null)
-        {
-            // Check if the assigned truck is on a trip
-            long? currentTripID = Itruckservice.GetCurrentTrip(assignedTruckID);
-            if (currentTripID != null)
-            {
-                // Check if the current trip is completed
-                bool isTripClosed = Itripservice.IsClosed(currentTripID);
-                if (!isTripClosed)
-                {
-                    bool? result = await DialogService.ShowMessageBox(
-                       "Warning",
-                       "The Driver is currently on a trip.",
-                       yesText: "OK");
-                    return;
-                    // Trip is completed, remove the driver from the truck                                       
-                }
+        string removedFromTruck = Idriverservice.RemoveDriverFromTruck(model.Driver?.DriverID, user.Identity.Name);
 
-            }
-            // Assigned truck is not on a trip, remove the driver from the truck
+        if (removedFromTruck == "OnTrip")
+        {
+            await DialogService.ShowMessageBox("Warning", "The Driver is currently on a trip.", yesText: "OK");
+            return;
+        }
+        else if (removedFromTruck == "DriverRemoved")
+        {
+            Snackbar.Add("Driver removed from the truck", Severity.Warning);
+        }
+        else
+        {
+            Snackbar.Add(removedFromTruck, Severity.Error);
+
+        }
+        if (removedFromTruck == "NoAssignedTruck" || removedFromTruck == "DriverRemoved")
+        {
+
             try
             {
-                TruckModel truck = Itruckservice.SelectByID(assignedTruckID);
-                Itruckservice.UpdateDriver(assignedTruckID, model.Driver.DriverID, false, user.Identity.Name);
-                Snackbar.Add($"Driver removed from the truck {truck.RegNo}.", Severity.Warning);
+                model.InitiatedBranch.BranchID = int.Parse(brancIDString);
+
+                if (model.DestinationBranch == null)
+                {
+                    bool? result = await DialogService.ShowMessageBox(
+                          "Warning",
+                          "Select branch !.",
+                          yesText: "OK");
+                    return;
+                }
+                Iservice.UpdateOutgoing(model);
+                Snackbar.Add("Transferred successfully", Severity.Success);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Snackbar.Add(ex.Message, Severity.Error);
-                return;
             }
-
         }
-
-        try
-        {            
-            model.InitiatedBranch.BranchID = int.Parse(brancIDString);
-
-            if (model.DestinationBranch == null)
-            {
-                bool? result = await DialogService.ShowMessageBox(
-                      "Warning",
-                      "Select branch !.",
-                      yesText: "OK");
-                return;
-            }
-            Iservice.UpdateOutgoing(model);
-            Snackbar.Add("Transferred successfully", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
-
         MudDialog.Close(model);
     }
 

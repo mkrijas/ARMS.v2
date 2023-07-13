@@ -12,6 +12,8 @@
 @using Views.Pages.Inventory.TyreManager
 @inject NavigationManager UriHelper;
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 
 <MudTable Items="@collection" RowClassFunc="RowClassFunc" Elevation="8" Filter="new Func<TruckModel, bool>(search)" @bind-Truck="model">
@@ -36,7 +38,12 @@
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Truck">@context.RegNo  @if(!context.CurrentRegistration.IsValid) {<MudText Typo="Typo.caption">(Expired)</MudText> } </MudTd>
+        <MudTd DataLabel="Truck">
+            @context.RegNo  @if (!context.CurrentRegistration.IsValid)
+            {
+                <MudText Typo="Typo.caption">(Expired)</MudText>
+            }
+        </MudTd>
         <MudTd DataLabel="TruckType">@context.TruckType</MudTd>
         <MudTd DataLabel="FuelType">@context.FuelType</MudTd>
         <MudTd DataLabel="FuelTankCapacity">@context.FuelTankCapacity</MudTd>
@@ -47,7 +54,7 @@
             <MudFab @onclick="@(()=> Delete(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
             <MudTooltip Text="Tyre Info">
                 <MudFab @onclick="@(()=> TruckMountDetails(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.TableView" Size="Size.Small" IconSize="Size.Small" />
-            </MudTooltip>           
+            </MudTooltip>
             <MudTooltip Text="Registration Info">
                 <MudFab @onclick="@(()=> RegisterNumberList(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.List" Size="Size.Small" IconSize="Size.Small" />
             </MudTooltip>
@@ -72,8 +79,16 @@
 
     int BranchID = 0;
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public int DocTypeID = 28;
+
     protected override async Task OnInitializedAsync()
-    {        
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
@@ -89,10 +104,10 @@
 
     private string RowClassFunc(TruckModel truck, Int32 index)
     {
-        if(!truck.CurrentRegistration.IsValid)
+        if (!truck.CurrentRegistration.IsValid)
         {
             return "InvalidRow";
-        } 
+        }
         return string.Empty;
     }
 
@@ -114,47 +129,65 @@
 
     }
 
-    
+
 
     private async Task RegisterNumberList(TruckModel truck)
-    {  
+    {
         var truckIdstring = (truck?.TruckID ?? 0).ToString();
         UriHelper.NavigateTo($"TruckRegisterList/{truckIdstring}");
     }
 
     private async Task Edit(int? id)
     {
-        model = new();
-        DialogOptions options = new DialogOptions()
-            {
-                MaxWidth = MaxWidth.Large,
-            };
-        if (id != null)
+        if (HasPermissionEdit)
         {
-            model = Iservice.SelectByID(id);
-            model.CurrentRegistration = Iservice.GetRegistration(id);
+            model = new();
+            DialogOptions options = new DialogOptions()
+                {
+                    MaxWidth = MaxWidth.Large,
+                };
+            if (id != null)
+            {
+                model = Iservice.SelectByID(id);
+                model.CurrentRegistration = Iservice.GetRegistration(id);
+            }
+            DialogParameters parms = new();
+            parms.Add("EditModel", model);
+            var dialog = DialogService.Show<Truckdilog>("ADD/EDIT", parms, options);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                var data = (TruckModel)result.Data;
+                if (id == null)
+                {
+                    collection.Add(data);
+                }
+            }
         }
-        DialogParameters parms = new();
-        parms.Add("EditModel", model);
-        var dialog =   DialogService.Show<Truckdilog>("ADD/EDIT", parms, options);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+        else
         {
-            var data = (TruckModel)result.Data;
-            if (id == null)
-            {
-                collection.Add(data);
-            }            
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
         }
     }
 
 
 
-    private void Delete(int? id)
+    private async Task Delete(int? id)
     {
-        Iservice.Delete(id, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        if (HasPermissionDelete)
+        {
+            Iservice.Delete(id, "Rijas");
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            GetAll();
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+              "Permission denied!",
+              "You dont have any permission to delete.");
+        }
     }
 
 

@@ -86,9 +86,9 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
         public int? LeaveID { get; set; }
-        public int? DriverID { get; set; }
+        public DriverModel Driver { get; set; }
         public int? BranchID { get; set; }
-        public DateTime? StartTime { get; set; }
+        public DateTime? StartTime { get; set; } = DateTime.Now;
         public DateTime? EndTime { get; set; }
         public DateTime? ExpectedReturn { get; set; }
         public string Reason { get; set; }

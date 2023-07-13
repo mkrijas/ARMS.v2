@@ -5,6 +5,8 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
     <MudItem xs="12" md="12">
@@ -51,11 +53,6 @@
 </MudGrid>
 
 
-
-
-
-
-
 @code {
 
     private ContentModel model = new ContentModel();
@@ -64,8 +61,16 @@
 
     private string searchContent = "";
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public int DocTypeID = 27;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         await GetAll();
     }
 
@@ -108,51 +113,67 @@
 
     private async Task Edit(ContentModel model)
     {
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", model);
-        var dialog = DialogService.Show<Contentedit>("Edit", parms);
-
-        var result = await dialog.Result;
-
-        // you can check if the modal was cancelled
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
+        if (HasPermissionEdit)
         {
-            ContentModel UpatedModel = (ContentModel)result.Data;
-            if (UpatedModel != null)
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", model);
+            var dialog = DialogService.Show<Contentedit>("Edit", parms);
+
+            var result = await dialog.Result;
+
+            // you can check if the modal was cancelled
+            var isCancelled = result.Canceled;
+            if (!isCancelled)
             {
-                if (collection.Exists(x => x.ContentID == UpatedModel.ContentID))
+                ContentModel UpatedModel = (ContentModel)result.Data;
+                if (UpatedModel != null)
                 {
-                    collection[collection.FindIndex(x => x.ContentID == UpatedModel.ContentID)] = UpatedModel;
-                }
-                else
-                {
-                    collection.Add(UpatedModel);
+                    if (collection.Exists(x => x.ContentID == UpatedModel.ContentID))
+                    {
+                        collection[collection.FindIndex(x => x.ContentID == UpatedModel.ContentID)] = UpatedModel;
+                    }
+                    else
+                    {
+                        collection.Add(UpatedModel);
+                    }
+
                 }
 
+                model = new();
             }
-
-            model = new();
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
         }
     }
     private async Task Delete(int? id)
     {
-        
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        int result = await Iservice.Delete(id, user.Identity.Name);
-        
-        if (result != -1)
+        if (HasPermissionDelete)
         {
-            if (collection != null && collection.Any(s => s.ContentID == id))
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            int result = await Iservice.Delete(id, user.Identity.Name);
+
+            if (result != -1)
             {
-                collection.Remove(collection.FirstOrDefault(s => s.ContentID == id));
-                 snackbar.Add("Deleted Successfully", Severity.Success);
+                if (collection != null && collection.Any(s => s.ContentID == id))
+                {
+                    collection.Remove(collection.FirstOrDefault(s => s.ContentID == id));
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
             }
+            //snackbar.Add("Deleted Successfully", Severity.Success);
+            //await GetAll();
         }
-        //snackbar.Add("Deleted Successfully", Severity.Success);
-        //await GetAll();
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+              "Permission denied!",
+              "You dont have any permission to delete.");
+        }
     }
 
     private bool search(ContentModel model)

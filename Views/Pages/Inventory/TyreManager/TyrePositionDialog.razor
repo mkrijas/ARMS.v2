@@ -1,6 +1,11 @@
 ﻿@inject AuthenticationStateProvider auth
 @inject ITyreService Iservice
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+
 <MudDialog>
     <TitleContent>
         @if (TypeModel.TruckTypeID == null || TypeModel.TruckTypeID == 0)
@@ -49,7 +54,7 @@
 
                                     <MudItem xs="3" md="3">
                                         <MudTooltip Text="@item.Description">
-                                        <MudCheckBox @bind-Checked="@item.IsChecked"></MudCheckBox>
+                                            <MudCheckBox @bind-Checked="@item.IsChecked"></MudCheckBox>
                                         </MudTooltip>
                                     </MudItem>
                                 }
@@ -94,8 +99,14 @@
     TyreTypeAndPositionMappingModel TyreMappingModel = new();
     //private IEnumerable<RoutineCheckListMasterModel> RoutineCheckListItem { get; set; } = new HashSet<RoutineCheckListMasterModel>();
 
-    protected override void OnInitialized()
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 32;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var tempTyrePositionList = Iservice.GetTyrePositionList(0);
         if (tempTyrePositionList != null && tempTyrePositionList.Count() != 0)
         {
@@ -137,33 +148,45 @@
     {
 
     }
+
+
     void Cancel()
     {
         MudDialog.Cancel();
     }
+
+
     public async Task Submit()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        TyreTypeAndPositionMappingModel Result = new();
-        if (TypeModel != null)
+        if (HasPermissionEdit)
         {
-            Result.UserInfo = new();
-            Result.UserInfo.UserID = user.Identity.Name;
-            Result.TruckTypeID = TypeModel.TruckTypeID;
-            Result.ID = TyreMappingModel.ID;
-            if (TyrePositionList != null && TyrePositionList.Any(s => s.IsChecked))
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            TyreTypeAndPositionMappingModel Result = new();
+            if (TypeModel != null)
             {
-                Result.PositionIDs = String.Join(",", TyrePositionList.Where(s => s.IsChecked).Select(s => s.PositionID));
+                Result.UserInfo = new();
+                Result.UserInfo.UserID = user.Identity.Name;
+                Result.TruckTypeID = TypeModel.TruckTypeID;
+                Result.ID = TyreMappingModel.ID;
+                if (TyrePositionList != null && TyrePositionList.Any(s => s.IsChecked))
+                {
+                    Result.PositionIDs = String.Join(",", TyrePositionList.Where(s => s.IsChecked).Select(s => s.PositionID));
+                }
+                else
+                {
+                    Result.PositionIDs = "";
+                }
+                Iservice.UpdateMappingTyrePositionAndType(Result);
             }
-            else
-            {
-                Result.PositionIDs = "";
-            }
-            Iservice.UpdateMappingTyrePositionAndType(Result);
+            MudDialog.Close(DialogResult.Ok(true));
         }
-
-        MudDialog.Close(DialogResult.Ok(true));
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+               "Permission denied!",
+               "You dont have any permission to submit.");
+        }
     }
 
 

@@ -59,7 +59,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
 
-               new SqlParameter("@DriverID", model.DriverID),
+               new SqlParameter("@DriverID", model.Driver.DriverID),
                new SqlParameter("@LeaveID", model.LeaveID),
                new SqlParameter("@StartTime", model.StartTime),
                new SqlParameter("@EndTime", model.EndTime),
@@ -84,7 +84,11 @@ namespace ArmsServices.DataServices
                 EndTime = dr.GetDateTime("EndTime"),
                 ExpectedReturn = dr.GetDateTime("ExpectedReturn"),
                 Reason = dr.GetString("Reason"),
-                DriverID = dr.GetInt32("DriverID"),
+                Driver = new DriverModel()
+                {
+                    DriverID = dr.GetInt32("DriverID"),
+                    DriverName = dr.GetString("DriverName"),
+                },
                 BranchID = dr.GetInt32("BranchID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

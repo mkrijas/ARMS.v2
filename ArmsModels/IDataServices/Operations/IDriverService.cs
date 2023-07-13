@@ -28,5 +28,7 @@ namespace ArmsServices.DataServices
         public int? GetAssignedTruck(int? DriverID);
         IEnumerable<DriverModel> GetDriverByAdhaarNo(string AdhaarNo);
         public string GetWorkPeriod(int? DriverID);
+        public string RemoveDriverFromTruck(int? driverId, string userId);
+
     }
 }

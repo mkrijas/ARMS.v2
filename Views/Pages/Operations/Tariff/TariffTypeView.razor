@@ -5,29 +5,30 @@
 @inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
 
-
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
-  
+
     <MudItem xs="12" md="12">
         <MudTable Items="@collection" Elevation="10" Filter="new Func<TariffTypeModel, bool>(search)" @bind-model="model">
-           
-               <ToolBarContent>
+
+            <ToolBarContent>
                 <MudText Typo="Typo.h6">Tariffs</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="(()=>Edit(new TariffTypeModel()))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(()=>Edit(new TariffTypeModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
                 <MudSpacer></MudSpacer>
 
                 <MudTextField @bind-Value="searchString" Placeholder="Search ... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium" Class="mt-0"></MudTextField>
-          </ToolBarContent>
+            </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.TariffTypeName)" InitialDirection="SortDirection.Ascending">Transaction Type</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.TariffGroup)" InitialDirection="SortDirection.Ascending">Nature</MudTableSortLabel></MudTh>
-                @*<MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.Area)" InitialDirection="SortDirection.Ascending">Area</MudTableSortLabel></MudTh>  
+                @*<MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.Area)" InitialDirection="SortDirection.Ascending">Area</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.Unit)" InitialDirection="SortDirection.Ascending">Unit</MudTableSortLabel></MudTh>*@
-                <MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.TariffSign)" InitialDirection="SortDirection.Ascending">Mode</MudTableSortLabel></MudTh>                
+                <MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.TariffSign)" InitialDirection="SortDirection.Ascending">Mode</MudTableSortLabel></MudTh>
                 @*<MudTh><MudTableSortLabel SortBy="new Func<TariffTypeModel, object>(x=> x.AllowMultiple)" InitialDirection="SortDirection.Ascending">Allow Multiple</MudTableSortLabel></MudTh>*@
                 <MudTh>Actions</MudTh>
             </HeaderContent>
@@ -36,96 +37,119 @@
                 <MudTd DataLabel="Nature">@context.TariffGroup</MudTd>
                 @*<MudTd DataLabel="Area">@context.Area</MudTd>
                 <MudTd DataLabel="Unit">@context.Unit</MudTd>*@
-                <MudTd DataLabel="Mode">@(context.TariffSign == 1?"INCOME":"EXPENSE")</MudTd>                
-                @*<MudTd DataLabel="Allow Multiple">@context.AllowMultiple</MudTd>*@
-                <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context.TariffTypeID.Value))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
+                <MudTd DataLabel="Mode">@(context.TariffSign == 1 ? "INCOME" : "EXPENSE")</MudTd>
+                    @*<MudTd DataLabel="Allow Multiple">@context.AllowMultiple</MudTd>*@
+                    <MudTd DataLabel="">
+                        <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> Delete(context.TariffTypeID.Value))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                </PagerContent>
+            </MudTable>
+        </MudItem>
 
 
 
-</MudGrid>
-@code {
+    </MudGrid>
+    @code {
 
     private TariffTypeModel model = new();
-    private List<TariffTypeModel> collection = new ();
-       
+    private List<TariffTypeModel> collection = new();
+
     private string searchString = "";
 
-    protected override  async Task  OnInitializedAsync()
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public int DocTypeID = 23;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         await GetAll();
     }
 
     private async Task GetAll()
     {
-        collection = Iservice.SelectTariffTypes("All").ToList();       
+        collection = Iservice.SelectTariffTypes("All").ToList();
     }
 
     private async Task Edit(TariffTypeModel model)
     {
-         DialogParameters parms = new DialogParameters();
-        parms.Add("model",model.Clone());
-        
-        var dialog = DialogService.Show<TarrifTypeDilog>("Add/Edit Tariff", parms);
-
-        var result = await dialog.Result;
-
-        // you can check if the modal was cancelled
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
+        if (HasPermissionEdit)
         {
-            TariffTypeModel UpatedModel = (TariffTypeModel)result.Data;
-            if (UpatedModel != null)
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", model.Clone());
+
+            var dialog = DialogService.Show<TarrifTypeDilog>("Add/Edit Tariff", parms);
+
+            var result = await dialog.Result;
+
+            // you can check if the modal was cancelled
+            var isCancelled = result.Canceled;
+            if (!isCancelled)
             {
-                if (collection.Exists(x => x.TariffTypeID == UpatedModel.TariffTypeID))
+                TariffTypeModel UpatedModel = (TariffTypeModel)result.Data;
+                if (UpatedModel != null)
                 {
-                    collection[collection.FindIndex(x => x.TariffTypeID == UpatedModel.TariffTypeID)] = UpatedModel;
-                }
-                else
-                {
-                    collection.Add(UpatedModel);
+                    if (collection.Exists(x => x.TariffTypeID == UpatedModel.TariffTypeID))
+                    {
+                        collection[collection.FindIndex(x => x.TariffTypeID == UpatedModel.TariffTypeID)] = UpatedModel;
+                    }
+                    else
+                    {
+                        collection.Add(UpatedModel);
+                    }
+
                 }
 
+                model = new();
             }
-
-            model = new();
+            // you can check if the modal was cancelled
+            //var isCancelled = result.Cancelled;
+            //if (!isCancelled)
+            //{
+            //    await GetAll();
+            //}
         }
-        // you can check if the modal was cancelled
-        //var isCancelled = result.Cancelled;
-        //if (!isCancelled)
-        //{
-        //    await GetAll();
-        //}
-
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
     }
     private async Task Delete(int? id)
     {
-        
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        int result = Iservice.Delete(id, user.Identity.Name);
-        
-        if (result != -1)
+        if (HasPermissionDelete)
         {
-            if (collection != null && collection.Any(s => s.TariffTypeID == id))
-            {
-                collection.Remove(collection.FirstOrDefault(s => s.TariffTypeID == id));
-                 snackbar.Add("Deleted Successfully", Severity.Success);
-            }
-        }
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            int result = Iservice.Delete(id, user.Identity.Name);
 
-        //await Iservice.Delete(id, "Rijas");
-        //snackbar.Add("Deleted Successfully", Severity.Success);
-        //await GetAll();
+            if (result != -1)
+            {
+                if (collection != null && collection.Any(s => s.TariffTypeID == id))
+                {
+                    collection.Remove(collection.FirstOrDefault(s => s.TariffTypeID == id));
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
+            }
+
+            //await Iservice.Delete(id, "Rijas");
+            //snackbar.Add("Deleted Successfully", Severity.Success);
+            //await GetAll();
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+              "Permission denied!",
+              "You dont have any permission to delete.");
+        }
     }
 
 
@@ -137,13 +161,13 @@
         }
         return false;
     }
-      private  async Task  OpenDialog()
+    private async Task OpenDialog()
     {
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model", new TariffTypeModel());
-        
-        var dialog =  DialogService.Show<TarrifTypeDilog>("ADD TARRIF TYPE",parms);
+
+        var dialog = DialogService.Show<TarrifTypeDilog>("ADD TARRIF TYPE", parms);
 
         var result = await dialog.Result;
 

@@ -98,52 +98,36 @@
             return;
         }
 
-        // Check if the selected driver is assigned to a truck
-        int? assignedTruckID = Idriverservice.GetAssignedTruck(model.Driver?.DriverID);
-        if (assignedTruckID != null)
-        {
-            // Check if the assigned truck is on a trip
-            long? currentTripID = Itruckservice.GetCurrentTrip(assignedTruckID);
-            if (currentTripID != null)
-            {
-                // Check if the current trip is completed
-                bool isTripClosed = Itripservice.IsClosed(currentTripID);
-                if (!isTripClosed)
-                {
-                    bool? result = await DialogService.ShowMessageBox(
-                       "Warning",
-                       "The Driver is currently on a trip.",
-                       yesText: "OK");
-                    return;
-                    // Trip is completed, remove the driver from the truck
-                }
+        string removedFromTruck = Idriverservice.RemoveDriverFromTruck(model.Driver?.DriverID, user.Identity.Name);
 
-            }
-            // Assigned truck is not on a trip, remove the driver from the truck
+        if (removedFromTruck == "OnTrip")
+        {
+            await DialogService.ShowMessageBox("Warning", "The Driver is currently on a trip.", yesText: "OK");
+            return;
+        }
+        else if (removedFromTruck == "DriverRemoved")
+        {
+            Snackbar.Add("Driver removed from the truck", Severity.Warning);
+        }
+        else
+        {
+            Snackbar.Add(removedFromTruck, Severity.Error);
+
+        }
+        if (removedFromTruck == "NoAssignedTruck" || removedFromTruck == "DriverRemoved")
+        {
+
             try
             {
-                TruckModel truck = Itruckservice.SelectByID(assignedTruckID);
-                Itruckservice.UpdateDriver(assignedTruckID, model.Driver.DriverID, false, user.Identity.Name);
-                Snackbar.Add($"Driver removed from the truck {truck.RegNo}.", Severity.Warning);
+                model.BranchID = int.Parse(brancIDString);
+                model.UserInfo.UserID = user.Identity.Name;
+                Iservice.Update(model);
+                Snackbar.Add("Success", Severity.Success);
             }
             catch (Exception ex)
             {
                 Snackbar.Add(ex.Message, Severity.Error);
-                return;
             }
-
-        }
-
-        try
-        {
-            model.BranchID = int.Parse(brancIDString);
-            model.UserInfo.UserID = user.Identity.Name;
-            Iservice.Update(model);
-            Snackbar.Add("Success", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
         }
 
         MudDialog.Close(model);
