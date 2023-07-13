@@ -92,6 +92,7 @@ namespace ArmsModels.BaseModels
     }
     public class AssetSubClassModel
     {
+        public int? ID { get; set; }
         public int? AssetSubClassID { get; set; }
         public virtual string AssetSubclass { get; set; }
         public int? AssetClassID { get; set; }
