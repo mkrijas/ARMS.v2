@@ -15,13 +15,17 @@ namespace ArmsModels.BaseModels
         }
 
         public int? WorkshopID { get; set; }
-        //[Required]
+        [Required]
         public string WorkshopName { get; set; }
-       // [Required]
+        [Required]
         public string WorkshopType { get; set; } // Inhouse/Outside
-        //[Required]
+        [Required]
+        [StringLength(10, ErrorMessage = "Contact number should digit", MinimumLength = 10)]
+        [RegularExpression("^[0-9]*$", ErrorMessage = "Contact Number must be numeric")]
         public string ContactNumber { get; set; }
+        [Required]
         public int? PartyID { get; set; }
+        public PartyModel Party { get; set; }
         public int? GstID { get; set; }       
         public UserInfoModel UserInfo { get; set; }
     }

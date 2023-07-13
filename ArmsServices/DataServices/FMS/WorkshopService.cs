@@ -84,6 +84,11 @@ namespace ArmsServices.DataServices
                 WorkshopType = dr.GetString("WorkshopType"),
                 ContactNumber = dr.GetString("ContactNumber"),
                 PartyID = dr.GetInt32("PartyID"),
+                Party = new PartyModel()
+                {
+                    PartyID = dr.GetInt32("PartyID"),
+                    TradeName = dr.GetString("TradeName"),
+                },
                 GstID = dr.GetInt32("GstID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

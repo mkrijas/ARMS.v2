@@ -4,7 +4,7 @@
 @inject AuthenticationStateProvider auth
 
 
-<MudDialog >
+<MudDialog>
  
     <DialogActions>
             <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
@@ -24,10 +24,10 @@
                             </MudSelect>
                         </MudItem>
                         <MudItem xs="12">
-                            <PartySelector @bind-Value="selectedPartyBranch" NatureOfBusiness="Supplier"></PartySelector>
+                            <PartySelector Value="model.Party" ValueChanged="PartySelected" NatureOfBusiness="Supplier"></PartySelector>
                         </MudItem>                      
                         <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="@model.ContactNumber" Label="Contact" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ContactNumber)"></MudTextField>
+                        <MudNumericField HideSpinButtons="true" @bind-Value="@model.ContactNumber" MaxLength="10" Label="Contact" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ContactNumber)"></MudNumericField>
                         </MudItem>
                     </MudGrid>
 
@@ -35,19 +35,20 @@
 
                 </MudCardContent>
             </EditForm>
-           </DialogActions>
-           </MudDialog>
+    </DialogActions>
+</MudDialog>
 
 @code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter]
     public WorkshopModel model { get; set;}
     private List<WorkshopModel> collection = new();
     private string searchString = string.Empty;
 
-    private PartyModel selectedPartyBranch;
 
     protected override void OnInitialized()
     {
+
         GetAll();        
     }
 
@@ -56,11 +57,17 @@
         collection = Iservice.Select(null).ToList();
     }
 
+    private void PartySelected(PartyModel party)
+    {
+        model.Party = party;
+        model.PartyID = party?.PartyID;
+    }
+
     private async Task OnValidSubmit(EditContext context)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         model.UserInfo.UserID = authprov.User.Identity.Name;
-        model.PartyID = selectedPartyBranch.PartyID;        
+        model.PartyID = model.Party.PartyID;        
         try
         {
             model = Iservice.Update(model);
@@ -73,6 +80,7 @@
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
+        MudDialog.Close(model);
     }  
 
     private bool search(WorkshopModel model)
