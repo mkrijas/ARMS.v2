@@ -6,6 +6,9 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -43,6 +46,15 @@
     [Parameter]
     public int? DriverID { get; set; }
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 34;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+    }
+
 
     void Cancel()
     {
@@ -51,40 +63,48 @@
 
     public async Task Submit()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        string removedFromTruck = Iservice.RemoveDriverFromTruck(model.Driver?.DriverID, user.Identity.Name);
-
-        if (removedFromTruck == "OnTrip")
+        if (HasPermissionEdit)
         {
-            await DialogService.ShowMessageBox("Warning", "The Driver is currently on a trip.", yesText: "OK");
-            return;
-        }
-        else if (removedFromTruck == "DriverRemoved")
-        {
-            Snackbar.Add("Driver removed from the truck", Severity.Warning);
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            string removedFromTruck = Iservice.RemoveDriverFromTruck(model.Driver?.DriverID, user.Identity.Name);
+
+            if (removedFromTruck == "OnTrip")
+            {
+                await DialogService.ShowMessageBox("Warning", "The Driver is currently on a trip.", yesText: "OK");
+                return;
+            }
+            else if (removedFromTruck == "DriverRemoved")
+            {
+                Snackbar.Add("Driver removed from the truck", Severity.Warning);
+            }
+            else
+            {
+                Snackbar.Add(removedFromTruck, Severity.Error);
+
+            }
+            if (removedFromTruck == "NoAssignedTruck" || removedFromTruck == "DriverRemoved")
+            {
+
+                try
+                {
+                    Iservice.Resign(DriverID, model.Remarks);
+                    Snackbar.Add("Driver Resigned successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+            MudDialog.Close(model);
         }
         else
         {
-            Snackbar.Add(removedFromTruck, Severity.Error);
-
+            bool? result = await DialogService.ShowMessageBox(
+               "Permission denied!",
+               "You dont have any permission to submit.");
         }
-        if (removedFromTruck == "NoAssignedTruck" || removedFromTruck == "DriverRemoved")
-        {
-
-            try
-            {
-                Iservice.Resign(DriverID, model.Remarks);
-                Snackbar.Add("Driver Resigned successfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
-        }
-
-        MudDialog.Close(model);
     }
 
 }

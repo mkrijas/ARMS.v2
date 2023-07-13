@@ -7,38 +7,41 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 <MudPaper Class="p-2 my-5 d-flex justify-center">
-<MudText Typo="Typo.h5">@Driver.DriverName</MudText>
+    <MudText Typo="Typo.h5">@Driver.DriverName</MudText>
     <MudTooltip Text="New Licence">
         <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew( new()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
     </MudTooltip>
 </MudPaper>
-          
-        <MudGrid Spacing="2">
-            @foreach (var item in collection)
-            {
-                <MudItem xs="4">
-                    <MudCard>
-                        @*<MudCardMedia Image="@item.AttachedDocument" Height="300" />*@
-                        <iframe class="mt-1 mr-1 ml-1" src="@item.DLImage" height="500" alt="@item.DLImage" />
-                        <MudCardContent>
-                            <MudText Typo="Typo.h5">@item.LicenceNo</MudText>
-                            <MudText Typo="Typo.body2">Type:  @item.LicenceType</MudText>
-                            <MudText Typo="Typo.body2">Expire On:  @item.DLExpiryDate?.ToShortDateString())</MudText>
-                            <MudText Typo="Typo.body2">Badge No:  @item.BadgeNo - @item.BadgeExpiryDate?.ToShortDateString()</MudText>
-                        </MudCardContent>
-                        <MudCardActions>
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogAddNew(item))">Edit</MudButton>
-                            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(item.LicenceID))">Delete</MudButton>
-                            <MyFileUpload FileName="@(Driver.DriverName + item.LicenceID)" FolderName="DrivingLicence" Label="Upload File" FilePathChanged="((e)=>FileUploaded(e,item.LicenceID))"></MyFileUpload>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
-            }
-        </MudGrid>
-   
-    @*   <DLDialog mode="@model"></DLDialog>*@
-    @*    <MudItem xs="12" md="4">
+
+<MudGrid Spacing="2">
+    @foreach (var item in collection)
+    {
+        <MudItem xs="4">
+            <MudCard>
+                @*<MudCardMedia Image="@item.AttachedDocument" Height="300" />*@
+                <iframe class="mt-1 mr-1 ml-1" src="@item.DLImage" height="500" alt="@item.DLImage" />
+                <MudCardContent>
+                    <MudText Typo="Typo.h5">@item.LicenceNo</MudText>
+                    <MudText Typo="Typo.body2">Type:  @item.LicenceType</MudText>
+                    <MudText Typo="Typo.body2">Expire On:  @item.DLExpiryDate?.ToShortDateString())</MudText>
+                    <MudText Typo="Typo.body2">Badge No:  @item.BadgeNo - @item.BadgeExpiryDate?.ToShortDateString()</MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogAddNew(item))">Edit</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(item.LicenceID))">Delete</MudButton>
+                    <MyFileUpload FileName="@(Driver.DriverName + item.LicenceID)" FolderName="DrivingLicence" Label="Upload File" FilePathChanged="((e)=>FileUploaded(e,item.LicenceID))"></MyFileUpload>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    }
+</MudGrid>
+
+@*   <DLDialog mode="@model"></DLDialog>*@
+@*    <MudItem xs="12" md="4">
     <MudCard Elevation="10">
     <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
     <DataAnnotationsValidator />
@@ -77,60 +80,81 @@
 
     private IBrowserFile DLImage;
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public int DocTypeID = 34;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         Driver = Idriver.SelectByID(DriverID);
         GetAll();
     }
+
 
     private void GetAll()
     {
         collection = Iservice.Select(DriverID).ToList();
     }
 
+
     private async Task OpenDialogAddNew(DriverLicenceModel Drivermodel)
     {
-        var parameters = new DialogParameters();
-        Drivermodel.DriverID = DriverID;
-
-        parameters.Add("model", Drivermodel);
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<DLDialog>("model", parameters, maxWidth);
-
-
-        var result = await dialog.Result;
-
-        // you can check if the modal was cancelled
-        var isCancelled = result.Cancelled;
-        if (!isCancelled)
+        if (HasPermissionEdit)
         {
-            GetAll();
+            var parameters = new DialogParameters();
+            Drivermodel.DriverID = DriverID;
+
+            parameters.Add("model", Drivermodel);
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<DLDialog>("model", parameters, maxWidth);
+
+
+            var result = await dialog.Result;
+
+            // you can check if the modal was cancelled
+            var isCancelled = result.Cancelled;
+            if (!isCancelled)
+            {
+                GetAll();
+            }
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
         }
     }
-    private async void OnValidSubmit(EditContext context)
-    {
-        //try
-        //{
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
-        model.UserInfo.UserID = user.Identity.Name;
-        model.DriverID = Driver.DriverID;
 
-        try
-        {
-            model = Iservice.Update(model);
 
-            snackbar.Add("Saved Successfully", Severity.Success);
+    //private async void OnValidSubmit(EditContext context)
+    //{
+    //    //try
+    //    //{
+    //    var authprov = await auth.GetAuthenticationStateAsync();
+    //    var user = authprov.User;
+    //    model.BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+    //    model.UserInfo.UserID = user.Identity.Name;
+    //    model.DriverID = Driver.DriverID;
 
-            GetAll();
-            model = new();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-    }
+    //    try
+    //    {
+    //        model = Iservice.Update(model);
+
+    //        snackbar.Add("Saved Successfully", Severity.Success);
+
+    //        GetAll();
+    //        model = new();
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        snackbar.Add(ex.Message, Severity.Warning);
+    //    }
+    //}
 
 
 
@@ -140,11 +164,20 @@
     }
 
 
-    private void Delete(int? id)
+    private async Task Delete(int? id)
     {
-        Iservice.Delete(id, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        if (HasPermissionDelete)
+        {
+            Iservice.Delete(id, "Rijas");
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            GetAll();
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+              "Permission denied!",
+              "You dont have any permission to delete.");
+        }
     }
 
 
@@ -153,6 +186,5 @@
         int e = Iservice.SaveFilePath(filePath, ID);
         GetAll();
     }
-
 }
 
