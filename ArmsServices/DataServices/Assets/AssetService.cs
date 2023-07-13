@@ -45,6 +45,7 @@ namespace ArmsServices.DataServices
                 },
                 SubClass = new()
                 {
+                    ID = dr.GetInt32("ID"),
                     AssetSubClassID = dr.GetInt32("AssetSubClassID"),
                     AssetSubclass = dr.GetString("AssetSubClassName"),
                     AssetClassID = dr.GetInt32("AssetClassID"),
@@ -99,7 +100,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", model.BranchID),
                //new SqlParameter("@AccountTransactionID", model.CurrentValue),
                new SqlParameter("@AssetClassID", model.AssetClass.AssetClassID),
-               new SqlParameter("@SubAssetClassID", model.SubClass.AssetClassID),
+               new SqlParameter("@SubAssetClassID", model.SubClass.ID),
                new SqlParameter("@AssetCode", model.AssetCode),
                new SqlParameter("@BookValue", model.BookValue),
                new SqlParameter("@CurrentValue", model.CurrentValue),

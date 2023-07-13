@@ -5,16 +5,20 @@ using System.Data.SqlClient;
 using System.Data;
 using ArmsServices.DataServices;
 using Core.BaseModels.Finance.Transactions;
+using ArmsModels.BaseModels.General;
+using ArmsServices.DataServices.General;
+
 
 namespace DAL.DataServices.Finance.Transactions
 {
     public class MileageShortageReceiptService: IMileageShortageReceiptService
     {
         IDbService Iservice;
-
-        public MileageShortageReceiptService(IDbService iservice)
+        IConfigTable configTable;
+        public MileageShortageReceiptService(IDbService iservice, IConfigTable IconfigTable)
         {
             Iservice = iservice;
+            configTable= IconfigTable;
         }
 
         public int Delete(int? ID, string UserID)
@@ -109,11 +113,14 @@ namespace DAL.DataServices.Finance.Transactions
         }
         public MileageShortageReceiptModel Update(MileageShortageReceiptModel model)
         {
+            ConfigModel MileageShortageAccount = configTable.GetDefaultMileageShortageCredit();
+            ConfigModel CashAccount = configTable.GetByDefaultCashCoaID();
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@MileageShortageReceiptID", model.MileageShortageReceiptID),
+               new SqlParameter("@CreditCoaID", MileageShortageAccount.ValueString),
+               new SqlParameter("@DebitCoaID", CashAccount.ValueString),
                new SqlParameter("@ReceiptMode", model.ReceiptMode),
-               new SqlParameter("@ArdCode", model.ArdCode),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@BranchID", model.BranchID),
@@ -123,6 +130,8 @@ namespace DAL.DataServices.Finance.Transactions
                new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@DriverID", model.DriverID),
+               new SqlParameter("@RunningKM", model.RunningKM),
+               new SqlParameter("@ConsumedFuel", model.ConsumedFuel),
                new SqlParameter("@AllottedMileage", model.AllottedMileage),
                new SqlParameter("@AllottedDistance", model.AllottedDistance),
                new SqlParameter("@FuelPrice", model.FuelPrice),
@@ -143,9 +152,11 @@ namespace DAL.DataServices.Finance.Transactions
                 MileageShortageReceiptID = dr.GetInt32("MileageShortageReceiptID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 ReceiptMode = dr.GetString("ReceiptMode"),
-                ArdCode = dr.GetString("ArdCode"),
                 TripID = dr.GetInt32("TripID"),
+                TripNo = dr.GetString("TripNo"),
                 DriverID = dr.GetInt32("DriverID"),
+                RunningKM = dr.GetDecimal("RunningKM"),
+                ConsumedFuel = dr.GetDecimal("ConsumedFuel"),
                 AllottedMileage = dr.GetDecimal("AllottedMileage"),
                 AllottedDistance = dr.GetDecimal("AllottedDistance"),
                 FuelPrice = dr.GetDecimal("FuelPrice"),
