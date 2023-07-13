@@ -8,6 +8,8 @@
 @using System.Globalization
 @using Pages.Inventory.TyreManager
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 
 <MudItem xs="12">
@@ -52,14 +54,20 @@
 
 @code {
 
-
-
     private TruckTypeModel model = new TruckTypeModel();
     private string searchTruckType = "";
     private List<TruckTypeModel> collection = new List<TruckTypeModel>();
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public int DocTypeID = 32;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         await Task.Run(() => GetAll());
     }
 
@@ -75,78 +83,68 @@
         }
     }
 
-    private async void OnValidSubmit(EditContext context)
-    {
-        //try
-        //{
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
-        {
-            model = Iservice.Update(model);
-
-            snackbar.Add("Saved Successfully", Severity.Success);
-            if (collection.Exists(x => x.TruckTypeID == model.TruckTypeID))
-            {
-                collection[collection.FindIndex(x => x.TruckTypeID == model.TruckTypeID)] = model;
-            }
-            else
-            {
-                collection.Add(model);
-            }
-            model = new TruckTypeModel();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-    }
-
     private async Task Edit(TruckTypeModel TypeModel)
     {
-        DialogParameters tparms = new();
-        tparms.Add("TypeModel", TypeModel);
-
-        var dialog = DialogService.Show<TruckTypeDiloge>("ADD/EDIT", tparms);
-
-        var result = await dialog.Result;
-
-        // you can check if the modal was cancelled
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
+        if (HasPermissionEdit)
         {
-            TruckTypeModel UpatedModel = (TruckTypeModel)result.Data;
-            if (UpatedModel != null)
-            {
+            DialogParameters tparms = new();
+            tparms.Add("TypeModel", TypeModel);
 
-                if (collection.Exists(x => x.TruckTypeID == UpatedModel.TruckTypeID))
+            var dialog = DialogService.Show<TruckTypeDiloge>("ADD/EDIT", tparms);
+
+            var result = await dialog.Result;
+
+            // you can check if the modal was cancelled
+            var isCancelled = result.Canceled;
+            if (!isCancelled)
+            {
+                TruckTypeModel UpatedModel = (TruckTypeModel)result.Data;
+                if (UpatedModel != null)
                 {
-                    collection[collection.FindIndex(x => x.TruckTypeID == UpatedModel.TruckTypeID)] = UpatedModel;
+
+                    if (collection.Exists(x => x.TruckTypeID == UpatedModel.TruckTypeID))
+                    {
+                        collection[collection.FindIndex(x => x.TruckTypeID == UpatedModel.TruckTypeID)] = UpatedModel;
+                    }
+                    else
+                    {
+                        collection.Add(UpatedModel);
+                    }
+                    UpatedModel = new();
                 }
-                else
-                {
-                    collection.Add(UpatedModel);
-                }
-                UpatedModel = new();
             }
         }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
     }
+
     private async Task Delete(short? id)
     {
-        
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        int result = Iservice.Delete(id, user.Identity.Name);
-       
-        StateHasChanged();
-        if (result != -1)
+        if (HasPermissionDelete)
         {
-            if (collection != null && collection.Any(s => s.TruckTypeID == id))
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            int result = Iservice.Delete(id, user.Identity.Name);
+
+            StateHasChanged();
+            if (result != -1)
             {
-                collection.Remove(collection.FirstOrDefault(s => s.TruckTypeID == id));
-                 snackbar.Add("Deleted Successfully", Severity.Success);
+                if (collection != null && collection.Any(s => s.TruckTypeID == id))
+                {
+                    collection.Remove(collection.FirstOrDefault(s => s.TruckTypeID == id));
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
             }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+              "Permission denied!",
+              "You dont have any permission to delete.");
         }
     }
 
@@ -177,9 +175,9 @@
         }
         return false;
     }
+
     private void TruckDilog()
     {
-
         DialogParameters tparms = new DialogParameters();
         tparms.Add("TypeModel", new TruckTypeModel());
 

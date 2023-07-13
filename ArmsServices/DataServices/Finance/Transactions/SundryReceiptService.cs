@@ -119,17 +119,6 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryReceipt.Approve]", parameters);
         }
-
-        public int Reverse(int? SundryReceiptID, string UserID, string Remarks)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@SundryReceiptID", SundryReceiptID),
-               new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remarks)
-            };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryReceipt.Reverse]", parameters);
-        }
         public SundryReceiptModel Update(SundryReceiptModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

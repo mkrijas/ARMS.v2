@@ -21,7 +21,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? BranchID { get; set; }
         [Required]
-        public decimal? TotalAmount { get; set; }
+        public virtual decimal? TotalAmount { get; set; }
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
         [Required]
