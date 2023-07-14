@@ -4,6 +4,9 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 <MudDialog>
     <TitleContent>
 
@@ -52,83 +55,106 @@
     [Parameter]
     public DriverTransferInitiationModel model { get; set; } = new();
 
+    public bool HasPermissionTransferEdit { get; set; } = false;
+    public int DocTypeID = 35;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTransferEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         branchID = model?.DestinationBranch?.BranchID ?? 0;
     }
 
+
     private int branchID { get; set; } = 0;
 
-   
     void Cancel()
     {
         MudDialog.Cancel();
     }
+
+
     public async Task Accept()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        if (model.Driver == null || model.Driver.DriverID == 0)
+        if (HasPermissionTransferEdit)
         {
-            bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Please, Select driver.", yesText: "OK");
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            if (model.Driver == null || model.Driver.DriverID == 0)
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Please, Select driver.", yesText: "OK");
 
-            return;
+                return;
+            }
+            if (model != null)
+            {
+                model.IsdriverReject = 0;
+                try
+                {
+                    model.DriverTransferEndModel.TransferStatus = true;
+                    Iservice.UpdateStatus(model);
+                    Snackbar.Add("Transfered succesfully", Severity.Success);
+
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+            MudDialog.Close(model);
         }
-        if (model != null)
+        else
         {
-            model.IsdriverReject = 0;
-            try
-            {
-                model.DriverTransferEndModel.TransferStatus = true;
-                Iservice.UpdateStatus(model);
-                Snackbar.Add("Transfered succesfully", Severity.Success);
-
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
         }
-
-        MudDialog.Close(model);
     }
+
 
     public async Task Reject()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        if (model.Driver == null || model.Driver.DriverID == 0)
+        if (HasPermissionTransferEdit)
         {
-            bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Please, Select truck.", yesText: "OK");
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            if (model.Driver == null || model.Driver.DriverID == 0)
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Please, Select truck.", yesText: "OK");
 
-            return;
-        }
-        if (model != null)
-        {
-
-            model.IsdriverReject = 1;
-            try
+                return;
+            }
+            if (model != null)
             {
 
-                model.DriverTransferEndModel.TransferStatus = false;
-                Iservice.UpdateStatus(model);
-                Snackbar.Add("Driver Transfer Rejected", Severity.Error);
+                model.IsdriverReject = 1;
+                try
+                {
 
+                    model.DriverTransferEndModel.TransferStatus = false;
+                    Iservice.UpdateStatus(model);
+                    Snackbar.Add("Driver Transfer Rejected", Severity.Error);
+
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
+            MudDialog.Close(model);
         }
-
-        MudDialog.Close(model);
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
     }
-
 }
 
 

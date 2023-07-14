@@ -3,6 +3,12 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IGstUsageIDService Igst
+
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+
 <MudDialog>
     @*<TitleContent>
     <h3>Add/Edit Tariff</h3>
@@ -76,6 +82,9 @@
 
     private string searchString = "";
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 23;
+
     protected override async Task OnInitializedAsync()
     {
         await GetAll();
@@ -119,20 +128,29 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        model.UserInfo.UserID = authprov.User.Identity.Name;
-
-        try
+        if (HasPermissionEdit)
         {
-            model = Iservice.UpdateTariffType(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(model);
-            model = new();
+            var authprov = await auth.GetAuthenticationStateAsync();
+            model.UserInfo.UserID = authprov.User.Identity.Name;
 
+            try
+            {
+                model = Iservice.UpdateTariffType(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(model);
+                model = new();
+
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+               "Permission denied!",
+               "You dont have any permission to submit.");
         }
     }
 

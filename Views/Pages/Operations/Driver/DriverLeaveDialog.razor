@@ -16,24 +16,24 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-
+        <b>@model.Driver.DriverName</b> will enter leave as on <b>@DateTime.Today.ToLocalTime()</b>. Please Confirm<br /><br />
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
             <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
-                    <MudItem xs="12" md="12">
-                        <MudTextField Value="model.Driver.DriverName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled=true></MudTextField>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Expected Return Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.ExpectedReturn" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Lines="3" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                        <MudTextField @bind-Value="model.Reason" Label="Remarks" Variant="Variant.Outlined" Lines="3" Margin="Margin.Dense" For="@(() => model.Reason)"></MudTextField>
                     </MudItem>
                 </MudGrid>
             </EditForm>
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Resign</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Submit" Class="px-12">On Leave</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -42,7 +42,7 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter]
-    public DriverResignModel model { get; set; } = new();
+    public DriverLeaveModel model { get; set; } = new();
     [Parameter]
     public int? DriverID { get; set; }
 
@@ -53,6 +53,14 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        if (model.BranchID == null)
+        {
+            model.BranchID = new();
+            model.BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        }
     }
 
 
@@ -60,6 +68,7 @@
     {
         MudDialog.Cancel();
     }
+
 
     public async Task Submit()
     {
@@ -89,8 +98,9 @@
 
                 try
                 {
-                    Iservice.Resign(DriverID, model.Remarks);
-                    Snackbar.Add("Driver Resigned successfully", Severity.Success);
+                    model.UserInfo.UserID = user.Identity.Name;
+                    Iservice.BeginLeave(model);
+                    Snackbar.Add("Driver On Leave", Severity.Success);
                 }
                 catch (Exception ex)
                 {

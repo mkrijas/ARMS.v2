@@ -1,5 +1,6 @@
 ﻿@page "/Driver"
 @inject IDriverService Iservice
+@inject IDriverFaultService Ifaultservice
 
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
@@ -13,54 +14,56 @@
 @inject NavigationManager nav
 @using MimeTypes
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
+<style>
+    .RedRow {
+        background-color: #ff8080;
+    }
+</style>
+
 
 <MudGrid Spacing="4">
     <MudItem xs="12" md="12">
         <MudTable Items="@collection" RowClassFunc="RowClassFunc" Elevation="10" Filter="new Func<DriverModel, bool>(search)">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Drivers</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"   @onclick="(()=>Edit(0))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                
-             <MudSpacer></MudSpacer>
-             <MudTextField @bind-Value="searchDriver" Placeholder="Search Drivers... "
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(()=>Edit(0))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchDriver" Placeholder="Search Drivers... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
-           
+
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverName)" InitialDirection="SortDirection.Ascending">Driver</MudTableSortLabel></MudTh>                
-                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>    
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverName)" InitialDirection="SortDirection.Ascending">Driver</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverAgent.TradeName)" InitialDirection="SortDirection.Ascending">Contractor</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DateOfBirth)" InitialDirection="SortDirection.Ascending">AGE</MudTableSortLabel></MudTh>
-                <MudTh>Status</MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x=> x.Status)" InitialDirection="SortDirection.Ascending">Status</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Driver">  <MudText Typo="Typo.h6">@context.DriverName </MudText> 
+                <MudTd DataLabel="Driver">
+                    <MudText Typo="Typo.h6">@context.DriverName </MudText>
                     @if (!context.HasValidLicense)
                     {
                         <MudText Typo="Typo.caption">(Invalid License)</MudText>
-                    } </MudTd>
-                <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
-                <MudTd DataLabel="PartyName">@context.DriverAgent.TradeName</MudTd>
-                <MudTd DataLabel="DOB">@(DateTime.Today.Year - context.DateOfBirth.Value.Year +(DateTime.Today.DayOfYear < context.DateOfBirth.Value.DayOfYear?-1:0))</MudTd>
-                <MudTd DataLabel="Status">
-                    @switch (context.UserInfo.RecordStatus)
-                    {
-                        case 3:
-                            <p>Available</p>
-                            break;
-                        case 4:
-                            <p>On Leave</p>
-                            break;
                     }
                 </MudTd>
+                <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
+                <MudTd DataLabel="PartyName">@context.DriverAgent.TradeName</MudTd>
+                <MudTd DataLabel="DOB">@(DateTime.Today.Year - context.DateOfBirth.Value.Year + (DateTime.Today.DayOfYear < context.DateOfBirth.Value.DayOfYear ? -1 : 0))</MudTd>
+                    <MudTd DataLabel="Status">@context.Status</MudTd>
 
-                <MudTd DataLabel="">
-                    @if (context.UserInfo.RecordStatus != 4)
+
+                    <MudTd DataLabel="">
+                        @if (context.UserInfo.RecordStatus != 4)
                     {
                         <MudTooltip Text="Put the Driver on leave">
-                            <MudFab @onclick="@(() => BeginLeave(context))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowDown" IconSize="Size.Small" Size="Size.Small" />
+                            <MudFab @onclick="@(() => BeginLeave(context.DriverID))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowDown" IconSize="Size.Small" Size="Size.Small" />
                         </MudTooltip>
                     }
                     else if (context.UserInfo.RecordStatus == 4)
@@ -69,12 +72,30 @@
                             <MudFab @onclick="@(() => EndLeave(context.DriverID))" Color="Color.Success" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowUp" IconSize="Size.Small" Size="Size.Small" />
                         </MudTooltip>
                     }
-                    <MudFab Label="DL" OnClick="@(() => nav.NavigateTo("dl/" + context.DriverID.ToString()))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.FileCopy" Size="Size.Small" IconSize="Size.Small" />
-
-                    <MudFab @onclick="@(() => Edit(context.DriverID))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(() => Transfer(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.SwapHoriz" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(() => Resign(context.DriverID))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small" IconSize="Size.Small" />
-
+                    <MudTooltip Text="Driving licence">
+                        <MudFab Label="DL" OnClick="@(() => nav.NavigateTo("dl/" + context.DriverID.ToString()))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.FileCopy" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    <MudTooltip Text="Edit">
+                        <MudFab @onclick="@(() => Edit(context.DriverID))" Color="Color.Primary" Class="mx-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    <MudTooltip Text="Transfer">
+                        <MudFab @onclick="@(() => Transfer(context.DriverID))" Color="Color.Primary" Icon="@Icons.Material.Filled.SwapHoriz" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    @if (context.UserInfo.RecordStatus != 9)
+                    {
+                        <MudTooltip Text="Driver Fault">
+                            <MudFab @onclick="@(() => Fault(context.DriverID))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.Warning" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                    }
+                    else if (context.UserInfo.RecordStatus == 9)
+                    {
+                        <MudTooltip Text="Remove From Blacklist">
+                            <MudFab @onclick="@(() => RemoveBlacklist(context.DriverID))" Color="Color.Default" Class="mx-2" Icon="@Icons.Material.Filled.Cancel" IconSize="Size.Small" Size="Size.Small" />
+                        </MudTooltip>
+                    }
+                    <MudTooltip Text="Resign">
+                        <MudFab @onclick="@(() => Resign(context.DriverID))" Color="Color.Warning" Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
                 </MudTd>
 
             </RowTemplate>
@@ -90,23 +111,9 @@
 </MudGrid>
 
 
-<MudMessageBox @ref="mbox" Title="Warning" CancelText="Cancel">
-
-    <MessageContent>
-        <b>@DriverToLeave.DriverName</b> will enter leave as on <b>@DateTime.Today.ToLocalTime()</b>. Please Confirm
-        <MudDatePicker Label="Expected to Return On " DisableToolbar="true" Editable="true" @bind-Date="ExpectedReturn" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
-
-        <MudTextField @bind-Value="ReasonToLeave" Label="Reason for Leave" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-
-    </MessageContent>
-    <YesButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.KeyboardArrowDown">Enter Leave</MudButton>
-
-    </YesButton>
-</MudMessageBox>
-
 @code
 {
+
     IBrowserFile driverImage;
     IBrowserFile adhaarImage;
 
@@ -114,42 +121,52 @@
 
     private string searchDriver = "";
 
-    MudMessageBox mbox { get; set; }
-    private DriverModel DriverToLeave = new();
-    private DateTime? ExpectedReturn;
-    private string ReasonToLeave;
+    MudMessageBox mbox { get; set; } = new();
+
 
     string UserID;
     int BranchID;
 
-    private async void BeginLeave(DriverModel dtl)
+    string state = "Message box hasn't been opened yet";
+
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public bool HasPermissionTransferEdit { get; set; } = false;
+    public int DocTypeID = 34;
+    public int DocTypeIDTransfer = 35;
+
+    private async void BeginLeave(int? DriverID)
     {
-        DriverToLeave = dtl;
-        bool? result = await mbox.Show();
-        if (result == true)
+        if (HasPermissionEdit)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
+            DriverLeaveModel DriverLeave = new();
+            var DriverData = collection.FirstOrDefault(x => x.DriverID == DriverID);
+            DriverLeave.Driver = DriverData;
+            var parameters = new DialogParameters();
+            parameters.Add("model", DriverID != 0 ? DriverLeave : new());
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<DriverLeaveDialog>("Driver On Leave", parameters, maxWidth);
+            var result = await dialog.Result;
 
-            DriverLeaveModel Lmodel = new();
-            Lmodel.DriverID = dtl.DriverID;
-            Lmodel.BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value);
-            Lmodel.StartTime = DateTime.Now;
-            Lmodel.ExpectedReturn = ExpectedReturn;
-            Lmodel.Reason = ReasonToLeave;
-            Lmodel.UserInfo.UserID = user.Identity.Name;
-            int qryResult = Iservice.BeginLeave(Lmodel);
+            collection.Find(x => x.DriverID == DriverID).UserInfo.RecordStatus = 4;
+            StateHasChanged();
 
-            if (qryResult > 0)
-            {
-                collection.Find(x => x.DriverID == dtl.DriverID).UserInfo.RecordStatus = 4;
-                StateHasChanged();
-            }
+            GetAll();
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
         }
     }
 
     private string RowClassFunc(DriverModel driver, Int32 index)
     {
+        if (driver.UserInfo.RecordStatus == 9)
+        {
+            return "RedRow";
+        }
         if (!driver.HasValidLicense)
         {
             return "InvalidRow";
@@ -159,131 +176,220 @@
 
     private async Task EndLeave(int? DriverID)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        int qryResult = Iservice.EndLeave(DriverID, user.Identity.Name);
-
-        if (qryResult > 0)
+        if (HasPermissionEdit)
         {
-            collection.Find(x => x.DriverID == DriverID).UserInfo.RecordStatus = 3;
-            StateHasChanged();
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            int qryResult = Iservice.EndLeave(DriverID, user.Identity.Name);
+
+            if (qryResult > 0)
+            {
+                collection.Find(x => x.DriverID == DriverID).UserInfo.RecordStatus = 3;
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
         }
     }
 
     protected override async Task OnInitializedAsync()
-    {      
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionTransferEdit = await Irole.HasClaim(DocTypeIDTransfer.ToString(), "Edit", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        BranchID = int.Parse (user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+        BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
         GetAll();
     }
 
     private void GetAll()
     {
-        collection = Iservice.SelectByBranch(BranchID).ToList();      
+        collection = Iservice.SelectByBranch(BranchID).ToList();
     }
 
     private async Task Add()
     {
         var parameters = new DialogParameters();
-        parameters.Add("model", new DriverModel());        
+        parameters.Add("model", new DriverModel());
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = DialogService.Show<DriverDialog>("Edit Driver", parameters, maxWidth);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
-            DriverModel newModel = (DriverModel)result.Data;  
+            DriverModel newModel = (DriverModel)result.Data;
             collection.Add(newModel);
         }
     }
 
     private async Task Edit(int? id)
     {
-        var parameters = new DialogParameters();
-        parameters.Add("model",id != 0 ? collection.FirstOrDefault(x => x.DriverID == id):new DriverModel());        
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<DriverDialog>("Add/Edit Driver", parameters, maxWidth);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+        if (HasPermissionEdit)
         {
-            DriverModel editedModel = (DriverModel)result.Data;  
-            if(collection.Exists(x => x.DriverID == editedModel.DriverID))
+            var parameters = new DialogParameters();
+            parameters.Add("model", id != 0 ? collection.FirstOrDefault(x => x.DriverID == id) : new DriverModel());
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<DriverDialog>("Add/Edit Driver", parameters, maxWidth);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
+                DriverModel editedModel = (DriverModel)result.Data;
+                if (collection.Exists(x => x.DriverID == editedModel.DriverID))
+                {
 
-                collection[collection.FindIndex(x => x.DriverID == editedModel.DriverID)] = editedModel;
+                    collection[collection.FindIndex(x => x.DriverID == editedModel.DriverID)] = editedModel;
 
-                //if( editedModel.DriverAgent != null  && PartyList != null && PartyList.Any(s=>s.PartyID == editedModel.DriverAgent.PartyID))
-                //{
-                //    editedModel.DriverAgent = PartyList.FirstOrDefault(s => s.PartyID == editedModel.DriverAgent.PartyID);
-                //}
+                    //if( editedModel.DriverAgent != null  && PartyList != null && PartyList.Any(s=>s.PartyID == editedModel.DriverAgent.PartyID))
+                    //{
+                    //    editedModel.DriverAgent = PartyList.FirstOrDefault(s => s.PartyID == editedModel.DriverAgent.PartyID);
+                    //}
+                }
+                else
+                {
+                    collection.Add(editedModel);
+
+                    //if( editedModel.DriverAgent != null  && PartyList != null && PartyList.Any(s=>s.PartyID == editedModel.DriverAgent.PartyID))
+                    //{
+                    //    editedModel.DriverAgent = PartyList.FirstOrDefault(s => s.PartyID == editedModel.DriverAgent.PartyID);
+                    //}
+                }
+
             }
             else
             {
-                collection.Add(editedModel);
-
-                //if( editedModel.DriverAgent != null  && PartyList != null && PartyList.Any(s=>s.PartyID == editedModel.DriverAgent.PartyID))
-                //{
-                //    editedModel.DriverAgent = PartyList.FirstOrDefault(s => s.PartyID == editedModel.DriverAgent.PartyID);
-                //}
+                GetAll();
             }
-
         }
         else
         {
-            GetAll();
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
         }
     }
 
     private async Task Resign(int? driverId)
     {
-        var parameters = new DialogParameters();
-
-        DriverResignModel model = new();
-        
-
-        model.Driver = collection.FirstOrDefault(x => x.DriverID == driverId);
-        
-        parameters.Add("model", model);
-        parameters.Add("driverId", driverId);
-        
-
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<DriverResignDialog>("Resign Driver", parameters, maxWidth);
-        var result = await dialog.Result;
-
-        // Check if the driver resigned successfully
-        if (result.Cancelled == false)
+        if (HasPermissionEdit)
         {
-            // Call the Delete service method
-            try
-            {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                Iservice.Delete(driverId, user.Identity.Name);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
-        }
+            var parameters = new DialogParameters();
 
-        GetAll();
+            DriverResignModel model = new();
+
+
+            model.Driver = collection.FirstOrDefault(x => x.DriverID == driverId);
+
+            parameters.Add("model", model);
+            parameters.Add("driverId", driverId);
+
+
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<DriverResignDialog>("Resign Driver", parameters, maxWidth);
+            var result = await dialog.Result;
+
+            // Check if the driver resigned successfully
+            if (result.Cancelled == false)
+            {
+                // Call the Delete service method
+                try
+                {
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    Iservice.Delete(driverId, user.Identity.Name);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+
+            GetAll();
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
     }
 
 
 
     private async void Transfer(int? DriverID)
     {
-        DriverTransferInitiationModel DriverTransfer = new();
-        var DriverData = collection.FirstOrDefault(x => x.DriverID == DriverID);
-        DriverTransfer.Driver = DriverData;
-        var parameters = new DialogParameters();
-        parameters.Add("model", DriverID != 0 ? DriverTransfer : new());
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<DriverTransferInitiationDialog>("Transfer Driver", parameters, maxWidth);
-        var result = await dialog.Result;
-        GetAll();
+        if (HasPermissionTransferEdit)
+        {
+            DriverTransferInitiationModel DriverTransfer = new();
+            var DriverData = collection.FirstOrDefault(x => x.DriverID == DriverID);
+            DriverTransfer.Driver = DriverData;
+            var parameters = new DialogParameters();
+            parameters.Add("model", DriverID != 0 ? DriverTransfer : new());
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<DriverTransferInitiationDialog>("Transfer Driver", parameters, maxWidth);
+            var result = await dialog.Result;
+            GetAll();
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
+    }
+
+    private async Task Fault(int? DriverID)
+    {
+        if (HasPermissionEdit)
+        {
+            DriverFaultModel DriverFault = new();
+            var DriverData = collection.FirstOrDefault(x => x.DriverID == DriverID);
+            DriverFault.Driver = DriverData;
+            var parameters = new DialogParameters();
+            parameters.Add("model", DriverID != 0 ? DriverFault : new());
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<DriverFaultDialog>("Driver Fault", parameters, maxWidth);
+            var result = await dialog.Result;
+            GetAll();
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
+    }
+
+    private async Task RemoveBlacklist(int? DriverID)
+    {
+        if (HasPermissionEdit)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Are you sure you want to remove from blacklist?",
+                yesText: "Delete!", cancelText: "Cancel");
+            state = result == null ? "Cancelled" : "Deleted!";
+
+            if (state == "Deleted!")
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                int qryResult = Ifaultservice.Delete(DriverID, user.Identity.Name);
+                snackbar.Add("Driver removed from Blacklist", Severity.Warning);
+            }
+            GetAll();
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
     }
 
     private bool search(DriverModel Driver)
@@ -295,5 +401,5 @@
         return false;
     }
 
-  
+
 }

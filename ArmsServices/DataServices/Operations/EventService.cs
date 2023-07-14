@@ -213,9 +213,20 @@ namespace ArmsServices.DataServices
 
         ///////////////
 
-        public EventModel GetPreviousEvent(int truckID, DateTime eventTime)
+        EventModel IEventService.GetPreviousEvent(int truckID, DateTime eventTime)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", truckID),
+                new SqlParameter("@EventTime", eventTime),
+               new SqlParameter("@Operation", "PreviousEventReadingAndTimeEvent"),
+            };
+            EventModel model = null;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
         }
 
         ///////////////

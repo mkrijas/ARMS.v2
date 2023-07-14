@@ -7,6 +7,9 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 
 <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
@@ -31,13 +34,13 @@
                 <MudTextField @bind-Value="@model.LicenceNo" Label="DL No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LicenceNo)"></MudTextField>
             </MudItem>
             <MudItem xs="12" md="6" xl="6">
-                <MudDatePicker  PickerVariant="PickerVariant.Dialog"  @bind-Date="@model.DLExpiryDate" Label="DL Expiry Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DLExpiryDate)" Editable="true"></MudDatePicker>
+                <MudDatePicker PickerVariant="PickerVariant.Dialog" @bind-Date="@model.DLExpiryDate" Label="DL Expiry Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DLExpiryDate)" Editable="true"></MudDatePicker>
             </MudItem>
             <MudItem xs="12" md="6" xl="6">
                 <MudTextField @bind-Value="@model.BadgeNo" Label="Badge No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BadgeNo)"></MudTextField>
             </MudItem>
             <MudItem xs="12" md="6" xl="6">
-                <MudDatePicker  PickerVariant="PickerVariant.Dialog"  @bind-Date="@model.BadgeExpiryDate" Label="Badge Expiry Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BadgeExpiryDate)" Editable="true"></MudDatePicker>
+                <MudDatePicker PickerVariant="PickerVariant.Dialog" @bind-Date="@model.BadgeExpiryDate" Label="Badge Expiry Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BadgeExpiryDate)" Editable="true"></MudDatePicker>
             </MudItem>
 
         </MudGrid>
@@ -47,7 +50,7 @@
 </EditForm>
 
 @code {
-    
+
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter]
@@ -55,9 +58,14 @@
 
     public EditContext Result { get; set; }
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 34;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         if (model == null)
         {
             model = new();
@@ -66,25 +74,32 @@
 
     private async void OnValidSubmit(EditContext context)
     {
-        //try
-        //{
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
-        model.UserInfo.UserID = user.Identity.Name;
-
-        try
+        if (HasPermissionEdit)
         {
-            model = Iservice.Update(model);
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+            model.UserInfo.UserID = user.Identity.Name;
 
-            snackbar.Add("Saved Successfully", Severity.Success);
+            try
+            {
+                model = Iservice.Update(model);
 
-            model = new();
-             MudDialog.Close(DialogResult.Ok(true));
+                snackbar.Add("Saved Successfully", Severity.Success);
+
+                model = new();
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+               "Permission denied!",
+               "You dont have any permission to submit.");
         }
     }
 }

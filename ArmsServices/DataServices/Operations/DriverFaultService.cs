@@ -15,11 +15,11 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Delete(int? FaultID, string UserID)
+        public int Delete(int? DriverID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@FaultID", FaultID),
+               new SqlParameter("@DriverID", DriverID),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.Fault.Delete]", parameters);
@@ -59,7 +59,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
 
-               new SqlParameter("@DriverID", model.DriverID),
+               new SqlParameter("@DriverID", model.Driver.DriverID),
                new SqlParameter("@FaultID", model.FaultID),
                new SqlParameter("@FaultDate", model.FaultDate),
                new SqlParameter("@Severity", model.Severity),
@@ -83,7 +83,11 @@ namespace ArmsServices.DataServices
                 Severity = dr.GetByte("Severity"),
                 Detail = dr.GetString("Detail"),
                 BranchID = dr.GetInt32("BranchID"),
-                DriverID = dr.GetInt32("DriverID"),
+                Driver = new DriverModel()
+                {
+                    DriverID = dr.GetInt32("DriverID"),
+                    DriverName = dr.GetString("DriverName"),
+                },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

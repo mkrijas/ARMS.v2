@@ -7,26 +7,30 @@ using MudBlazor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.NetworkInformation;
+using System.Threading;
 using System.Threading.Tasks;
+using Views.Pages.Operations.Place;
 using static NuGet.Packaging.PackagingConstants;
+
 
 namespace Views.Pages.Operations.Gc
 {
     public partial class GcDialog : ComponentBase
     {
-        [Inject]
-        IGcService Iservice { get; set; }
+        [Inject] IRoleService<RoleModel> Irole { get; set; }
+        [Inject] IGcService Iservice { get; set; }
         [Inject] IRouteService Iroute { get; set; }
         [Inject] IOrderService Iorder { get; set; }
         [Inject] IConsigneeService Iconsignee { get; set; }
         [Inject] MudBlazor.ISnackbar snackbar { get; set; }
         [Inject] AuthenticationStateProvider auth { get; set; }
 
-
+        [Inject] IDialogService DialogService { get; set; }
         [CascadingParameter] MudDialogInstance MudDialog { get; set; }
         [Parameter] public GcSetModel model { get; set; } = new GcSetModel();
         [Parameter] public OrderModel Order { get; set; }
-       
+
 
         private bool IsLoading = false;
         private RouteModel Route = new();
@@ -42,17 +46,22 @@ namespace Views.Pages.Operations.Gc
         private int _tabIndex = 0;
         private bool _tabAdded = false;
 
+        public bool HasPermissionEdit { get; set; } = false;
+        public int DocTypeID = 26;
 
         protected async override Task OnInitializedAsync()
         {
+            CancellationTokenSource ctc = new CancellationTokenSource();
+            HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
             GcTypes = Iservice.SelectGcTypes().ToList();
             Orders = await Iorder.Select(0).ToListAsync();
         }
 
         protected override async Task OnParametersSetAsync()
-        {           
-            IsLoading = true;  
-            Order = Order == null?Orders.FirstOrDefault(x => x.OrderID == model.OrderID):Order;            
+        {
+            IsLoading = true;
+            Order = Order == null ? Orders.FirstOrDefault(x => x.OrderID == model.OrderID) : Order;
             await OrderSelected(Order);
 
             if (model.GcSetID != null)
@@ -75,7 +84,7 @@ namespace Views.Pages.Operations.Gc
 
         private void GetFreight(GcSetModel GcSet)
         {
-            GcSet.Gcs.ForEach(x => x.Freight = Iservice.GetFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity,x.Freight));
+            GcSet.Gcs.ForEach(x => x.Freight = Iservice.GetFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
         }
 
         private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
@@ -99,33 +108,42 @@ namespace Views.Pages.Operations.Gc
         }
 
         private async Task OnValidSubmit(EditContext context)
-        {   
-            model.OrderID = Order.OrderID;
-            model.RouteID = Route.RouteID;
-            model.ConsignorID = Consignor.ConsigneeID;
-            model.ConsigneeID = Consignee.ConsigneeID;
-
-            var authprov = await auth.GetAuthenticationStateAsync();
-            model.UserInfo.UserID = authprov.User.Identity.Name;
-            model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-
-            model.Gcs.ForEach(x => x.UserInfo = model.UserInfo);            
-           
-            try
+        {
+            if (HasPermissionEdit)
             {
-                model = Iservice.Update(model);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                MudDialog.Close(DialogResult.Ok(model));
-                model = new GcSetModel();
-                Route = new RouteModel();
-                Consignor = new ConsigneeModel();
-                Consignee = new ConsigneeModel();
+                model.OrderID = Order.OrderID;
+                model.RouteID = Route.RouteID;
+                model.ConsignorID = Consignor.ConsigneeID;
+                model.ConsigneeID = Consignee.ConsigneeID;
 
+                var authprov = await auth.GetAuthenticationStateAsync();
+                model.UserInfo.UserID = authprov.User.Identity.Name;
+                model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+                model.Gcs.ForEach(x => x.UserInfo = model.UserInfo);
+
+                try
+                {
+                    model = Iservice.Update(model);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(model));
+                    model = new GcSetModel();
+                    Route = new RouteModel();
+                    Consignor = new ConsigneeModel();
+                    Consignee = new ConsigneeModel();
+
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
+            else
             {
-                snackbar.Add(ex.Message, Severity.Error);
-            }            
+                bool? ResultModel = await DialogService.ShowMessageBox(
+                          "Permission denied!",
+                          "You dont have any permission to Add or Edit.");
+            }
         }
 
         private async Task OrderSelected(OrderModel obj)
@@ -138,7 +156,7 @@ namespace Views.Pages.Operations.Gc
             Consignees.Clear();
             Route = null;
             Consignor = null;
-            Consignee = null; 
+            Consignee = null;
             if (Order != null)
             {
                 Routes = await Iroute.SelectByOrder(Order?.OrderID).ToListAsync();
@@ -173,6 +191,23 @@ namespace Views.Pages.Operations.Gc
             GetFreight(model);
         }
 
+        private async Task AddConsignee_Consignor()
+        {
+
+            DialogParameters parms = new DialogParameters();
+            ConsigneeModel consigneeModel = new();
+            parms.Add("model", consigneeModel);
+            parms.Add("Order", Order);
+            var dialog = DialogService.Show<Consineedilog>("Add/Edit Consignee", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                Route = Routes.FirstOrDefault(x => x.RouteID == model.RouteID);
+                Consignor = Consignees.FirstOrDefault(x => x.ConsigneeID == model.ConsignorID);
+                Consignee = Consignees.FirstOrDefault(x => x.ConsigneeID == model.ConsigneeID);
+            }
+        }
+
         private void ConsignorChanged(ConsigneeModel obj)
         {
             Consignor = obj;
@@ -194,24 +229,24 @@ namespace Views.Pages.Operations.Gc
         }
         private void FrChanged(decimal? Freight, GcModel gc)
         {
-           // gc.Freight = Freight;
+            // gc.Freight = Freight;
             if (Freight < gc.EFreight)
             {
                 gc.Freight = null;
                 snackbar.Add("The Freight should not be less than that master Freight", Severity.Warning);
-                
+
             }
             else
             {
                 gc.Freight = Freight;
             }
-           
 
-           
-          
+
+
+
             GetFreight(model);
             StateHasChanged();
-           
+
         }
 
 

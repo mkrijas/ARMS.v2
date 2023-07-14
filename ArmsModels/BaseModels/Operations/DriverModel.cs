@@ -34,6 +34,7 @@ namespace ArmsModels.BaseModels
         public int? AddressID { get; set; }       
         public string FestivalBonus { get; set; }
         public string AdditionalInfo { get; set; }
+        [Required]
         [RegularExpression(@"^([0-9]{10})$", ErrorMessage = "Mobile must be 10 digits long")]
         public string Mobile { get; set; }
         [EmailAddress]
@@ -44,7 +45,26 @@ namespace ArmsModels.BaseModels
         public List<ContactModel> Contacts { get; set; }
         public bool HasValidLicense { get; set; }
         public int? TruckID { get; set; }
+        public string Status
+        {
+            get
+            {
+                switch (UserInfo.RecordStatus)
+                {
+                    case 3:
+                        return "Available";
+                    case 4:
+                        return "On Leave";
+                    case 9:
+                        return "Blacklisted";
+                    default:
+                        return null;
+                }
+            }
+        }
+
     }
+
     public class DriverFaultModel
     {
         public DriverFaultModel()
@@ -52,9 +72,9 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
         public int? FaultID { get; set; }
-        public int? DriverID { get; set; }
+        public DriverModel Driver { get; set; }
         public int? BranchID { get; set; }
-        public DateTime? FaultDate { get; set; }
+        public DateTime? FaultDate { get; set; } = DateTime.Now;
         public byte? Severity { get; set; }
         public string Detail { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
@@ -66,9 +86,9 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
         public int? LeaveID { get; set; }
-        public int? DriverID { get; set; }
+        public DriverModel Driver { get; set; }
         public int? BranchID { get; set; }
-        public DateTime? StartTime { get; set; }
+        public DateTime? StartTime { get; set; } = DateTime.Now;
         public DateTime? EndTime { get; set; }
         public DateTime? ExpectedReturn { get; set; }
         public string Reason { get; set; }

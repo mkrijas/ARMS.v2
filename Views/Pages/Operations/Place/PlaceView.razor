@@ -6,7 +6,8 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -24,9 +25,9 @@
 
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.PlaceName)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
-                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.PinCode)" InitialDirection="SortDirection.Ascending">PinCode</MudTableSortLabel></MudTh></MudTh>
-                <MudTh><MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.District.DistrictName)" InitialDirection="SortDirection.Ascending">District</MudTableSortLabel></MudTh></MudTh>
-                <MudTh>Actions</MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.PinCode)" InitialDirection="SortDirection.Ascending">PinCode</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.District.DistrictName)" InitialDirection="SortDirection.Ascending">District</MudTableSortLabel></MudTh>
+                <MudTh>Action</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Place">@context.PlaceName</MudTd>
@@ -52,8 +53,16 @@
 
     private string searchPlace = "";
 
-    protected override void OnInitialized()
-    {        
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public int DocTypeID = 25;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         GetAll();
     }
 
@@ -63,16 +72,25 @@
     }
 
     private void GetAll()
-    {        
-        collection = Iservice.Select(0).ToList();       
+    {
+        collection = Iservice.Select(0).ToList();
     }
 
 
     private async void Delete(int? id)
     {
-        await Iservice.Delete(id, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        if (HasPermissionDelete)
+        {
+            await Iservice.Delete(id, "Rijas");
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            GetAll();
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+              "Permission denied!",
+              "You dont have any permission to delete.");
+        }
     }
 
 
@@ -84,12 +102,21 @@
         }
         return false;
     }
-    private void OpenDialog(PlaceModel model)
+    private async Task OpenDialog(PlaceModel model)
     {
-        DialogParameters parms = new DialogParameters();
-        parms.Add("placemodel", model);
-        DialogService.Show<PlaceDilogue>("ADD/EDIT PLACE", parms);
-        GetAll();
+        if (HasPermissionEdit)
+        {
+            DialogParameters parms = new DialogParameters();
+            parms.Add("placemodel", model);
+            DialogService.Show<PlaceDilogue>("ADD/EDIT PLACE", parms);
+            GetAll();
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit.");
+        }
     }
 }
 

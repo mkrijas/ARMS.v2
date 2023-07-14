@@ -1,5 +1,5 @@
 ﻿@inject AuthenticationStateProvider auth
-@inject IDriverTransferService Iservice
+@inject IDriverFaultService Iservice
 @inject IDriverService Idriverservice
 @inject ITruckService Itruckservice
 @inject ITripService Itripservice
@@ -12,16 +12,16 @@
 
 <MudDialog>
     <TitleContent>
-        @if (model.DriverTransferID == null || model.DriverTransferID == 0)
+        @if (model.FaultID == null || model.FaultID == 0)
         {
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Driver Transfer Initiation.
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Driver Fault.
             </MudText>
         }
         else
         {
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Driver Transfer Initiation.
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Driver Fault.
             </MudText>
         }
     </TitleContent>
@@ -33,21 +33,20 @@
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="12">
-                        <MudTextField Value="model.Driver?.DriverName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                        <MudTextField Value="model.Driver.DriverName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudSelect Label="Destination Branch" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="model.DestinationBranch.BranchID" T="int?" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.TopCenter" AdornmentColor="Color.Secondary" Required>
-                            @foreach (BranchModel ditem in DestinationBranchList)
-                            {
-                                <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
-                            }
+                        <MudSelect Label="Severity" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="model.Severity" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.TopCenter" AdornmentColor="Color.Secondary" Required>
+                            <MudSelectItem T="byte?" Value="1">Warning</MudSelectItem>
+                            <MudSelectItem T="byte?" Value="9">Blacklisted</MudSelectItem>
+
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudDatePicker Label="Initiated Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.TransferInitiatedDate" DateFormat="dd/MM/yyyy" />
+                        <MudDatePicker Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.FaultDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                        <MudTextField @bind-Value="model.Detail" Label="Details" Variant="Variant.Outlined" Lines="3" Margin="Margin.Dense" Required></MudTextField>
                     </MudItem>
                 </MudGrid>
 
@@ -65,40 +64,25 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter]
-    public DriverTransferInitiationModel model { get; set; } = new();
+    public DriverFaultModel model { get; set; } = new();
     [Parameter]
     public int? DriverID { get; set; }
 
-
-    private List<BranchModel> DestinationBranchList = new();
-    private int BranchID { get; set; } = 0;
-
-    public bool HasPermissionTransferEdit { get; set; } = false;
-    public int DocTypeID = 35;
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 34;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionTransferEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
-        if (model.InitiatedBranch == null)
+        if (model.BranchID == null)
         {
-            model.InitiatedBranch = new();
-            model.InitiatedBranch.BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+            model.BranchID = new();
+            model.BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
         }
-        if (model.DestinationBranch == null)
-        {
-            model.DestinationBranch = new();
-        }
-        if (model.Driver == null)
-        {
-            model.Driver = new();
-        }
-        BranchID = model?.InitiatedBranch?.BranchID ?? 0;
-
-        DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != BranchID).ToList();
     }
 
 
@@ -110,7 +94,7 @@
 
     public async Task Submit()
     {
-        if (HasPermissionTransferEdit)
+        if (HasPermissionEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
@@ -146,18 +130,10 @@
 
                 try
                 {
-                    model.InitiatedBranch.BranchID = int.Parse(brancIDString);
-
-                    if (model.DestinationBranch == null)
-                    {
-                        bool? result = await DialogService.ShowMessageBox(
-                              "Warning",
-                              "Select branch !.",
-                              yesText: "OK");
-                        return;
-                    }
-                    Iservice.UpdateOutgoing(model);
-                    Snackbar.Add("Transferred successfully", Severity.Success);
+                    model.BranchID = int.Parse(brancIDString);
+                    model.UserInfo.UserID = user.Identity.Name;
+                    Iservice.Update(model);
+                    Snackbar.Add("Success", Severity.Success);
                 }
                 catch (Exception ex)
                 {
