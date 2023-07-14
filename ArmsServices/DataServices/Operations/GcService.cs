@@ -187,7 +187,7 @@ namespace ArmsServices.DataServices
                 GcDate = dr.GetDateTime("GcDate"),
                 OrderID = dr.GetInt32("OrderID"),
                 TotalBillQuantity = dr.GetDecimal("BillQuantity"),
-                TotalUnloadingQuantity = dr.GetDecimal("BillQuantity"),
+                TotalUnloadingQuantity = dr.GetDecimal("UnloadingQuantity"),
                 OrderName = dr.GetString("OrderName"),
                 RouteID = dr.GetInt32("RouteID"),
                 RouteName = dr.GetString("RouteName"),
