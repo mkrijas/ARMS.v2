@@ -59,6 +59,21 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+        public IEnumerable<TripModel> SelectAll(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@searchTerm", searchTerm),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+                new SqlParameter("@Operation", "SelectAll"),
+            };
+
+            foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
+            {
+                yield return GetModel(reader);
+            }
+        }
 
         private TripModel GetModel(IDataRecord reader)
         {
