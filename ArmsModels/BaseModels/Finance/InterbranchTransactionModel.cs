@@ -8,9 +8,9 @@ using Microsoft.Extensions.Configuration;
 
 namespace ArmsModels.BaseModels
 {
-    public class InterBranchAccountMappingModel
+    public class InterBranchMappingModel
     {
-        public InterBranchAccountMappingModel()
+        public InterBranchMappingModel()
         {
 
             UserInfo = new SharedModels.UserInfoModel();
