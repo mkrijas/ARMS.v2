@@ -1,0 +1,144 @@
+﻿@inject IGstUsageIDService Iservice
+@inject IChartOfAccountService accountService
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Create GstUsageID
+        </MudText>
+    </TitleContent>
+    <DialogContent>        
+            <EditForm id="formUsageCode" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                    
+                     <MudItem xs="12" md="12">
+                         @if(model.UsageCode != null)
+                         {
+                           <MudTextField ReadOnly="true" @bind-Value="model.UsageCode" Label="Gst UsageId" Variant="Variant.Outlined" Margin="Margin.Dense" ></MudTextField>
+                         }                        
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="model.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Description)"></MudTextField>
+
+                    </MudItem>
+                    <MudItem xs="6">
+                         <MudSelect Label="Area" @bind-Value="model.Area" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in AreaList)
+                            {
+                                <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                     <MudItem xs="6">
+                           <MudAutocomplete SelectValueOnTab T="ChartOfAccountModel" Label="Select Accounts" Value="SelectedAccount" ValueChanged="OnSelectAccount" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                     SearchFunc="SearchAccounts" ToStringFunc="@(e => e == null ? null : $"{e.AccountName}")" Required></MudAutocomplete>
+                    </MudItem>
+                    <MudItem xs="6">
+
+                        <MudSelect Label="Select GST Rate" @bind-Value="model.RID" T="int?"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in gstRate)
+                            {
+                                <MudSelectItem Value="@ditem.RID">@ditem.TaxRate</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                   
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodFrom" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Period To" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodTo" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.SAC" Label="SAC/HSN" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.SAC)" MaxLength="8"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>       
+    </DialogContent>
+    <DialogActions>       
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="formUsageCode" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+
+
+@code {
+    [Parameter]
+    public GstUsageCodeModel model { get; set; }
+    private List<GstUsageCodeModel> collection = new List<GstUsageCodeModel>();
+    private List<string> AreaList = new List<string>() { "Operation", "Maintenance","All" };
+
+    private List<GstRateModel> gstRate = new();
+
+    private GstUsageCodeModel UsageCode = new();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private string UserID;
+
+    private ChartOfAccountModel SelectedAccount = null;
+
+    protected async override Task OnInitializedAsync()
+    {
+        var authState = await auth.GetAuthenticationStateAsync();
+        var User = authState.User;
+        UserID = User.Identity.Name;
+
+        SelectedAccount = new()
+        {
+                CoaID = model?.CoaID,
+                AccountName = model?.CoaDescreption
+        };   
+        gstRate = Iservice.GetGstRates().ToList();
+    }
+
+    private async Task<IEnumerable<ChartOfAccountModel>> SearchAccounts(string searchString)
+    {
+        return await Task.FromResult(accountService.FilterSubLedgers(searchString));
+    }
+
+    private void OnSelectAccount(ChartOfAccountModel obj)
+    {
+        SelectedAccount = obj;
+        model.CoaID = SelectedAccount?.CoaID;
+    }
+
+    private void OnValidSubmit(EditContext context)
+    {
+        model.UserInfo.UserID = UserID;
+        DateRange dr = new DateRange(model.PeriodFrom, model.PeriodTo);
+        List<GstUsageCodeModel> PeriodList = Iservice.SelectByTaxRateAccount(model.RID, model.CoaID).Where(x => x.Id != model.Id).ToList();
+
+        List<DateRange> drList = new List<DateRange>();
+        PeriodList.ForEach(item => drList.Add(new DateRange(item.PeriodFrom, item.PeriodTo)));
+
+        if (CommonMethods.CheckPeriodOverlap(dr, drList))
+        {
+            snackbar.Add("Periods cannot be overlapped", Severity.Error);
+        }
+        else
+        {           
+            if (model.CoaID == null)
+            {
+                snackbar.Add("Select Account", Severity.Success);
+                return;
+            }           
+            MudDialog.Close(model);
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}
