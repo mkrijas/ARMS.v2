@@ -13,7 +13,7 @@
            
                <ToolBarContent>
                 <MudText Typo="Typo.h6">Workshops</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add"  @onclick="OpenDialog"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new WorkshopModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 
                 <MudSpacer></MudSpacer>
              <MudTextField @bind-Value="searchString" Placeholder="Search... "
@@ -31,8 +31,8 @@
                 <MudTd DataLabel="Type">@context.WorkshopType</MudTd>
                 <MudTd DataLabel="contact">@context.ContactNumber</MudTd>
                 <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> Edit(context.WorkshopID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context.WorkshopID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -59,48 +59,74 @@
 
     private void GetAll()
     {
-        if(collection != null)
+        collection = new List<WorkshopModel>();
+        foreach (var item in Iservice.Select(null))
         {
-            collection.Clear();
+            collection.Add(item);
         }
-        collection = Iservice.Select(null).ToList();
-        StateHasChanged();
     }
 
-    //private async Task OnValidSubmit(EditContext context)
-    //{
-    //    var authprov = await auth.GetAuthenticationStateAsync();
-    //    model.UserInfo.UserID = authprov.User.Identity.Name;
-
-    //    try
-    //    {
-    //        model = Iservice.Update(model);
-    //        snackbar.Add("Saved Successfully", Severity.Success);
-    //        collection.Add(model);
-
-    //        model = new();
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        snackbar.Add(ex.Message, Severity.Warning);
-    //    }
-    //    GetAll();
-    //}
-
-    private void Edit(int? id)
+    private async Task OpenDialog(WorkshopModel ws)
     { 
-        model = collection.FirstOrDefault(x => x.WorkshopID == id);
 
-        DialogParameters parms = new();
-        parms.Add("model",model);
-        DialogService.Show<WorkshopDilogue>("ADD/EDIT",parms);
-        GetAll();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", ws);
+        var dialog = DialogService.Show<WorkshopDilogue>(ws.WorkshopID == null ? "ADD" : "EDIT", parms);
+
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            WorkshopModel UpatedModel = (WorkshopModel)result.Data;
+            UpatedModel.UserInfo.UserID = authprov.User.Identity.Name;
+
+            try
+            {
+
+                var ResultModel = Iservice.Update(UpatedModel);
+
+                if (ResultModel != null)
+                {
+
+                    if (collection.Exists(x => x.WorkshopID == ResultModel.WorkshopID))
+                    {
+                        collection[collection.FindIndex(x => x.WorkshopID == ResultModel.WorkshopID)] = ResultModel;
+                    }
+                    else
+                    {
+                        collection.Add(ResultModel);
+                    }
+                    UpatedModel = new();
+                    ResultModel = new();
+                    model = new();
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
     }
-    private void Delete(int? id)
+
+    private async Task Delete(WorkshopModel ws)
     {
-        Iservice.Delete(id, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        int result = Iservice.Delete(ws.WorkshopID, user.Identity.Name);
+
+        if (result != -1)
+        {
+            if (collection != null && collection.Any(s => s.WorkshopID == ws.WorkshopID))
+            {
+                collection.Remove(collection.FirstOrDefault(s => s.WorkshopID == ws.WorkshopID));
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        }
     }
 
 
@@ -114,13 +140,13 @@
         return false;
     }
 
-    private void OpenDialog()
-    {
+    //private void OpenDialog()
+    //{
 
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", new WorkshopModel());
-        DialogService.Show<WorkshopDilogue>("Add Workshop",parms);
-    }
+    //    DialogParameters parms = new DialogParameters();
+    //    parms.Add("model", new WorkshopModel());
+    //    DialogService.Show<WorkshopDilogue>("Add Workshop",parms);
+    //}
 }
 
 
