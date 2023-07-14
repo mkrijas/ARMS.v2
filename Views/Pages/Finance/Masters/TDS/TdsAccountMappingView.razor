@@ -1,0 +1,370 @@
+﻿@page "/TDSSetting"
+@inject ITdsRateService tdsRate
+@inject ITdsAccountMappingService Iservice
+@inject ITdsRateService ITdsRateservice
+@inject ITdsThresholdLimitService IThresholdLimitservice
+@inject IChartOfAccountService account
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudGrid>
+    <MudItem xs="4" lg="4">
+        <MudPaper Width="100%" Class="p-2">
+            <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
+
+                @if (listOfItems?.Any() == true)
+                {
+                    @foreach (var item in listOfItems)
+                    {
+                        <ContextMenuTrigger MenuId="myMenu" Data="@item">
+
+                            <MudListItem Value="item">
+                                <MudText Typo=Typo.subtitle1> @item.NatureOfPayment.ToString() </MudText>
+                                @* <MudText Typo="Typo.overline">Since : @item.UserInfo.TimeStampField?.ToString("dd/MM/yy")</MudText>
+                        <MudText Typo="Typo.overline">Since : @item.InventoryGroupName.ToString()</MudText>*@
+
+                            </MudListItem>
+                        </ContextMenuTrigger>
+                    }
+                }
+            </MudList>
+        </MudPaper>
+    </MudItem>
+
+
+
+    <MudItem xs="8" lg="8">
+
+        @if (SelectedNP != null)
+        {
+            <MudItem xs="12" lg="12">
+
+                <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
+
+
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">@(SelectedNP.NatureOfPayment) Chart of Account Mapping</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> AddEditAccountMapping(new TdsAccountMappingModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
+                        <MudSpacer></MudSpacer>
+
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<TdsAccountMappingModel, object>(x=> x.AccountName)" InitialDirection="SortDirection.Ascending">Account Name</MudTableSortLabel></MudTh>
+
+
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+
+                        <MudTd DataLabel="TdsAccountMapping">@context.AccountName</MudTd>
+
+
+                        <MudTd DataLabel="">
+                            <MudFab @onclick="@(()=> AddEditAccountMapping(context))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
+            </MudItem>
+            <br />
+            <MudItem xs="12" lg="12">
+                <MudTable Items="@collectionTdsRate" Dense="true" Hover="true" Striped="true" Elevation="10" >
+
+                    <ToolBarContent>
+                            <MudText Typo="Typo.h6">@(SelectedNP.NatureOfPayment) Tds Rates</MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogTdsRate(new TdsRateModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
+                            <MudSpacer></MudSpacer>
+                            <MudCheckBox Label="Show All" T="bool" CheckedChanged="TdsrateToggled" Checked="@TdsRateToggle" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<TdsRateModel, object>(x=> x.TdsNP.NatureOfPayment)" InitialDirection="SortDirection.Ascending">Nature of Payment</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<TdsRateModel, object>(x=> x.AssesseeType.AssesseeTypeName)" InitialDirection="SortDirection.Ascending">Assessee Type</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<TdsRateModel, object>(x=> x.PeriodFrom)" InitialDirection="SortDirection.Ascending">PeriodFrom</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<TdsRateModel, object>(x=> x.PeriodTo)" InitialDirection="SortDirection.Ascending">PeriodTo</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<TdsRateModel, object>(x=> x.TaxRate)" InitialDirection="SortDirection.Ascending">TaxRate</MudTableSortLabel></MudTh>
+
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="NatureOfPayment">@context.TdsNP.NatureOfPayment</MudTd>
+                        <MudTd DataLabel="AssesseeTypeName">@context.AssesseeType.AssesseeTypeName</MudTd>
+                        <MudTd DataLabel="PeriodFrom">@context.PeriodFrom?.ToShortDateString()</MudTd>
+                        <MudTd DataLabel="PeriodTo">@context.PeriodTo?.ToShortDateString()</MudTd>
+                        <MudTd DataLabel="TaxRate">@context.TaxRate</MudTd>
+                        <MudTd DataLabel="">
+                            <MudFab @onclick="@(()=> OpenDialogTdsRate(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                            <MudFab @onclick="@(()=> DeleteTdsRate(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
+            </MudItem>
+            <br />
+            <MudItem xs="12" lg="12">
+                <MudTable Items="@collectionThresholdLimit" Dense="true" Hover="true" Striped="true" Elevation="10">
+
+                    <ToolBarContent>
+                            <MudText Typo="Typo.h6">@(SelectedNP.NatureOfPayment)  Tds Threshold Limits</MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogThresholdLimit(new TdsThresholdLimitModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+
+                            <MudSpacer></MudSpacer>
+                        <MudCheckBox Label="Show All" T="bool" CheckedChanged="ThresholdLimitToggled" Checked="@ThresholdLimitToggle" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
+                    </ToolBarContent>
+
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<TdsThresholdLimitModel, object>(x=> x.NatureOfPayment.NatureOfPayment)" InitialDirection="SortDirection.Ascending">Nature of Payment</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<TdsThresholdLimitModel, object>(x=> x.PeriodFrom)" InitialDirection="SortDirection.Ascending">PeriodFrom</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<TdsThresholdLimitModel, object>(x=> x.PeriodTo)" InitialDirection="SortDirection.Ascending">PeriodTo</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<TdsThresholdLimitModel, object>(x=> x.ThresholdLimitSingle)" InitialDirection="SortDirection.Ascending">Single</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<TdsThresholdLimitModel, object>(x=> x.ThresholdLimitPeriod)" InitialDirection="SortDirection.Ascending">Period</MudTableSortLabel></MudTh>
+
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="NatureOfPayment">@context.NatureOfPayment.NatureOfPayment</MudTd>
+                        <MudTd DataLabel="PeriodFrom">@context.PeriodFrom?.ToShortDateString()</MudTd>
+                        <MudTd DataLabel="PeriodTo">@context.PeriodTo?.ToShortDateString()</MudTd>
+                        <MudTd DataLabel="ThresholdLimitSingle">@context.ThresholdLimitSingle</MudTd>
+                        <MudTd DataLabel="ThresholdLimitPeriod">@context.ThresholdLimitPeriod</MudTd>
+
+                        <MudTd DataLabel="">
+                            <MudFab @onclick="@(()=> OpenDialogThresholdLimit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                            <MudFab @onclick="@(()=> DeleteThresholdLimit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
+            </MudItem>
+        }
+
+    </MudItem>
+
+</MudGrid>
+
+<ContextMenu Id="myMenu" OnAppearing="OnAppearing">
+    @*<Item OnClick="@ContextMenuOnClickadd" Id="addItem">Add Tds Account</Item>*@
+</ContextMenu>
+
+@code {
+
+    private List<TdsAccountMappingModel> collection = new List<TdsAccountMappingModel>();    
+    private List<TdsRateModel> collectionTdsRate = new List<TdsRateModel>();  
+    private List<TdsThresholdLimitModel> collectionThresholdLimit = new List<TdsThresholdLimitModel>();
+
+    public bool TdsRateToggle { get; set; } = false;
+    public bool ThresholdLimitToggle { get; set; } = false;
+
+    private List<NatureOfPaymentModel> listOfItems = new();
+    NatureOfPaymentModel SelectedNP = new();
+    MudListItem SelectedItem = new();
+    //private MudListItem SelectedItem;
+
+    private string searchTds = "";
+
+    protected override void OnInitialized()
+    {        
+        GetAll();
+    }
+
+    protected void SelectedItemChanged(object obj)
+    {
+        SelectedItem = (MudListItem)obj;
+        SelectedNP = (NatureOfPaymentModel)SelectedItem.Value;
+        ShowMappedAccounts(SelectedNP);
+        TdsrateToggled(false);
+        ThresholdLimitToggled(false);
+    }
+    private void GetAll()
+    {
+        listOfItems = ITdsRateservice.SelectTdsNP().ToList();
+    }
+
+    private void ShowMappedAccounts(NatureOfPaymentModel ig)
+    {
+        collection = Iservice.SelectByNP(ig.TdsNPID.Value).ToList();        
+    }
+
+    private void TdsrateToggled(bool Toggle)
+    {
+        TdsRateToggle = Toggle;
+        DateTime? dtm = Toggle ? null : DateTime.Today;
+        collectionTdsRate = ITdsRateservice.Select(null, SelectedNP?.TdsNPID, dtm).ToList();        
+    }
+
+    private void ThresholdLimitToggled(bool Toggle)
+    {
+        ThresholdLimitToggle = Toggle;        
+        DateTime? dtm = Toggle ?null : DateTime.Today ;        
+        collectionThresholdLimit = IThresholdLimitservice.SelectByNP(SelectedNP.TdsNPID ?? 0, dtm).ToList();
+    }
+
+
+    private async Task Delete(TdsAccountMappingModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var result = Iservice.Delete(tds.TdsAccountMappedID, user.Identity.Name);
+        if (result != -1)
+        {
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            NatureOfPaymentModel igm = new NatureOfPaymentModel();
+            igm.TdsNPID = tds.TdsNPID;
+            ShowMappedAccounts(igm);            
+        }
+    }
+
+    private async Task DeleteTdsRate(TdsRateModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var result  = ITdsRateservice.Delete(tds.TdsRateID, user.Identity.Name);
+        
+        if (result != -1)
+        {
+            snackbar.Add("Deleted Successfully", Severity.Success);            
+            TdsrateToggled(TdsRateToggle);
+        }
+    }
+
+    private async Task DeleteThresholdLimit(TdsThresholdLimitModel tds)
+    {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var result = IThresholdLimitservice.Delete(tds.TdsTLID, user.Identity.Name);
+
+        if (result != -1)
+        {
+            snackbar.Add("Deleted Successfully", Severity.Success);            
+            ThresholdLimitToggled(ThresholdLimitToggle);
+
+        }
+    }
+
+    private bool search(TdsAccountMappingModel tds)
+    {
+        if (tds.NatureOfPayment != null && tds.AccountName.Contains(searchTds, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (tds.NatureOfPayment == null) return true;
+        return false;
+    }
+
+
+    private async Task AddEditAccountMapping(TdsAccountMappingModel ii)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        ii.NatureOfPayment = SelectedNP.NatureOfPayment;
+        ii.TdsNPID = SelectedNP.TdsNPID;
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", ii);
+        var dialog = DialogService.Show<TdsAccountMappingDialig>(ii.TdsAccountMappedID == null ? "ADD" : "EDIT", parms);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            TdsAccountMappingModel UpatedModel = (TdsAccountMappingModel)result.Data;
+            ii.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Update(UpatedModel);                
+                snackbar.Add("Saved Successfully", Severity.Success);
+                NatureOfPaymentModel igm = new NatureOfPaymentModel();
+                igm.TdsNPID = UpatedModel.TdsNPID;
+                ShowMappedAccounts(igm);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+
+        }
+    }
+
+    private async Task OpenDialogTdsRate(TdsRateModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        tds.TdsNP = SelectedNP;
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", tds);
+        var dialog = DialogService.Show<TdsRateDialog>(tds.TdsRateID == null ? "ADD" : "EDIT", parms);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            TdsRateModel UpatedModel = (TdsRateModel)result.Data;
+            UpatedModel.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                ITdsRateservice.Update(UpatedModel);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                NatureOfPaymentModel igm = new NatureOfPaymentModel();
+                igm.TdsNPID = UpatedModel.TdsNP.TdsNPID;
+                TdsrateToggled(TdsRateToggle);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+
+        }
+    }
+
+    private async Task OpenDialogThresholdLimit(TdsThresholdLimitModel tds)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        tds.NatureOfPayment = SelectedNP;
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", tds);
+        var dialog = DialogService.Show<TdsThresholdLimitDialog>(tds.TdsTLID == null ? "ADD" : "EDIT", parms);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            TdsThresholdLimitModel UpatedModel = (TdsThresholdLimitModel)result.Data;
+            UpatedModel.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                IThresholdLimitservice.Update(UpatedModel);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                NatureOfPaymentModel igm = new NatureOfPaymentModel();
+                igm.TdsNPID = UpatedModel.TdsTLID;
+                ThresholdLimitToggled(ThresholdLimitToggle);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+
+        }
+    }
+
+    void OnAppearing(MenuAppearingEventArgs e)
+    {
+        //TreeItemData item = (TreeItemData)e.Data;
+        // e.PreventShow = !item.HasChildren;
+    }
+    protected async Task ContextMenuOnClickadd(ItemClickEventArgs e)
+    {
+        NatureOfPaymentModel ig = (NatureOfPaymentModel)e.Data;
+        TdsAccountMappingModel ii = new TdsAccountMappingModel();
+        ii.TdsNPID = ig.TdsNPID;
+        await AddEditAccountMapping(ii);
+    }
+}

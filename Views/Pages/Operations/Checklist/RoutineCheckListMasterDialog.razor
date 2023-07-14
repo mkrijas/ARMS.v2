@@ -4,6 +4,11 @@
 @inject IRoutineCheckListMasterService Iservice
 @inject IAssetDocumentService IDocumentService
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+
 <MudDialog>
     <TitleContent>
         @if (model.ItemID == null || model.ItemID == 0)
@@ -54,6 +59,8 @@
     [Parameter]
     public RoutineCheckListMasterModel model { get; set; } = new();
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 36;
 
     //Dictionary<int?, string> TransNature = new Dictionary<int?, string>()
     //{
@@ -62,9 +69,10 @@
     //};
     List<AssetDocumentTypeModel> DocumentTypes = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
     }
 
     protected override void OnParametersSet()
@@ -77,15 +85,23 @@
     }
     public async Task Submit()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        if (model != null)
+        if (HasPermissionEdit)
         {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            if (model != null)
+            {
 
-            model.UserInfo.UserID = user.Identity.Name;
-            Iservice.Update(model);
+                model.UserInfo.UserID = user.Identity.Name;
+                Iservice.Update(model);
+            }
+            MudDialog.Close(DialogResult.Ok(true));
         }
-
-        MudDialog.Close(DialogResult.Ok(true));
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+               "Permission denied!",
+               "You dont have any permission to submit.");
+        }
     }
 }
