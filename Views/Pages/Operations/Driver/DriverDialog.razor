@@ -11,6 +11,9 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -52,16 +55,16 @@
                                     <MudItem xs="12" md="6">
                                         <MudNumericField HideSpinButtons MaxLength="12" @bind-Value="model.AdhaarNo" Label="ADHAAR No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdhaarNo)"></MudNumericField>
                                     </MudItem>
-                               
+
                                     <!-- Rest of the Blazor component markup -->
                                     @*                                    <MudItem xs="12" md="6">
-                                        <MudTextField @bind-Value="model.FestivalBonus" Label="Bonus For" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.FestivalBonus)"></MudTextField>
+                                    <MudTextField @bind-Value="model.FestivalBonus" Label="Bonus For" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.FestivalBonus)"></MudTextField>
                                     </MudItem>*@
                                     <MudItem xs="12" md="6">
                                         <PartySelector @bind-Value="model.DriverAgent" label="Contractor / Supplier"></PartySelector>
                                     </MudItem>
                                     <MudItem md="6">
-                                        <MudTextField Label="Reference" @bind-Value="model.AdditionalInfo" Variant="Variant.Outlined"  Margin="Margin.Dense"  For="@(() => model.AdditionalInfo)"></MudTextField>
+                                        <MudTextField Label="Reference" @bind-Value="model.AdditionalInfo" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdditionalInfo)"></MudTextField>
                                     </MudItem>
                                     <MudItem md="6">
                                         <MudNumericField HideSpinButtons MaxLength="10" Label="Mobile" @bind-Value="model.Mobile" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Mobile)"></MudNumericField>
@@ -130,13 +133,18 @@
 
     DriverModel existingDriver;
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 34;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        if(model.DriverAgentID != null && model.DriverAgentID != 0)
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+        if (model.DriverAgentID != null && model.DriverAgentID != 0)
         {
-        model.DriverAgent = Iparty.SelectByID(model.DriverAgentID);
-            
+            model.DriverAgent = Iparty.SelectByID(model.DriverAgentID);
+
         }
         if (model.AddressID != null && model.AddressID != 0)
         {
@@ -163,58 +171,66 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-
-        existingDriver = (Iservice.GetDriverByAdhaarNo(model.AdhaarNo)).FirstOrDefault();
-
-        if (existingDriver != null && existingDriver.DriverID != model.DriverID)
+        if (HasPermissionEdit)
         {
-            // Display the existing driver information
-            string branchName = Ibranchservice.GetBranchName(existingDriver.HomeBranchID);
-            string workPeriod = Iservice.GetWorkPeriod(existingDriver.DriverID);
+            existingDriver = (Iservice.GetDriverByAdhaarNo(model.AdhaarNo)).FirstOrDefault();
 
-            snackbar.Add("A driver with the same Aadhaar number already exists.", Severity.Warning);
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning",
-                (MarkupString)$"A driver with the same Aadhaar number already exists <br /> <b>Name:<b> {existingDriver.DriverName} <br /> Branch: {branchName} <br /> Work Period: {workPeriod}",
-                yesText: "OK");
-
-            return;
-        }
-
-
-        model.DriverAgentID = model.DriverAgent.PartyID;
-        model.Address.AddresseeName = model.DriverName;
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.HomeBranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value);
-        model.UserInfo.UserID = user.Identity.Name;
-
-        try
-        {
-            //string AdhaarPath = Configuration.GetSection("FilePath")["Adhaar"];
-            //string PhotoPath = Configuration.GetSection("FilePath")["DriverPhoto"];
-            // model.AdhaarImage = await UploadImage(adhaarImage, model.AdhaarNo, AdhaarPath);
-            //model.DriverImage = await UploadImage(driverImage, model.DriverName, PhotoPath);
-
-            //$"{env.WebRootPath}\\images"
-
-            var contacts = model.Contacts;
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-
-            foreach (var item in contacts)
+            if (existingDriver != null && existingDriver.DriverID != model.DriverID)
             {
-                item.RefKey = model.DriverID;
-                item.UserInfo = model.UserInfo;
-                Icontact.Update(item);
+                // Display the existing driver information
+                string branchName = Ibranchservice.GetBranchName(existingDriver.HomeBranchID);
+                string workPeriod = Iservice.GetWorkPeriod(existingDriver.DriverID);
+
+                snackbar.Add("A driver with the same Aadhaar number already exists.", Severity.Warning);
+                bool? result = await DialogService.ShowMessageBox(
+                    "Warning",
+                    (MarkupString)$"A driver with the same Aadhaar number already exists <br /> <b>Name:<b> {existingDriver.DriverName} <br /> Branch: {branchName} <br /> Work Period: {workPeriod}",
+                    yesText: "OK");
+
+                return;
             }
 
-            MudDialog.Close(model);
+
+            model.DriverAgentID = model.DriverAgent.PartyID;
+            model.Address.AddresseeName = model.DriverName;
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.HomeBranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value);
+            model.UserInfo.UserID = user.Identity.Name;
+
+            try
+            {
+                //string AdhaarPath = Configuration.GetSection("FilePath")["Adhaar"];
+                //string PhotoPath = Configuration.GetSection("FilePath")["DriverPhoto"];
+                // model.AdhaarImage = await UploadImage(adhaarImage, model.AdhaarNo, AdhaarPath);
+                //model.DriverImage = await UploadImage(driverImage, model.DriverName, PhotoPath);
+
+                //$"{env.WebRootPath}\\images"
+
+                var contacts = model.Contacts;
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+
+                foreach (var item in contacts)
+                {
+                    item.RefKey = model.DriverID;
+                    item.UserInfo = model.UserInfo;
+                    Icontact.Update(item);
+                }
+
+                MudDialog.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+               "Permission denied!",
+               "You dont have any permission to submit.");
         }
     }
 }

@@ -141,7 +141,7 @@ namespace Views
             services.AddScoped<IGstItemService, GstItemService>();
             services.AddScoped<ICostCenterService, CostCenterService>();
             services.AddScoped<IDimensionService, DimensionService>();
-            services.AddScoped<IInterBranchTransactionService, InterBranchTransactionService>();
+            services.AddScoped<IInterBranchMappingService, InterBranchTransactionService>();
             services.AddScoped<IRoutineCheckListMasterService, RoutineCheckListMasterService>();
             services.AddScoped<ITaxVoucherService, TaxVoucherService>();
             services.AddScoped<IMileageShortageReceiptService, MileageShortageReceiptService>();

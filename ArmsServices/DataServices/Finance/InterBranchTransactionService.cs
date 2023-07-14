@@ -8,7 +8,7 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public class InterBranchTransactionService : IInterBranchTransactionService
+    public class InterBranchTransactionService : IInterBranchMappingService
     {
         IDbService Iservice;
 
@@ -44,7 +44,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<InterBranchAccountMappingModel> Select(int? NumberOfRecords, string searchTerm)
+        public IEnumerable<InterBranchMappingModel> Select(int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -58,7 +58,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public InterBranchAccountMappingModel Select(int? BranchID, int? TransactionTypeID)
+        public InterBranchMappingModel Select(int? BranchID, int? TransactionTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -73,7 +73,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
-        public InterBranchAccountMappingModel SelectByID(int? ID)
+        public InterBranchMappingModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -87,7 +87,7 @@ namespace ArmsServices.DataServices
             return null;
         }    
       
-        public InterBranchAccountMappingModel Update(InterBranchAccountMappingModel model)
+        public InterBranchMappingModel Update(InterBranchMappingModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -104,9 +104,9 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        private InterBranchAccountMappingModel GetModel(IDataRecord dr)
+        private InterBranchMappingModel GetModel(IDataRecord dr)
         {
-            return new InterBranchAccountMappingModel
+            return new InterBranchMappingModel
             {
                 ID = dr.GetInt32("ID"),
                 BranchID = dr.GetInt32("BranchID"),

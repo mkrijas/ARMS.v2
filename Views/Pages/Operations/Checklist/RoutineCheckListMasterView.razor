@@ -11,12 +11,14 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
             <ToolBarContent>
-                <MudText Typo="Typo.h6">Add Routine Check List.</MudText>
+                <MudText Typo="Typo.h6">Add Routine Check List</MudText>
                 <MudTooltip Text="New Routine Check List">
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew())" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
@@ -70,90 +72,129 @@
     private List<RoutineCheckListMasterModel> collection = new();
 
     string state = "Message box hasn't been opened yet";
-   
+
+    public bool HasPermissionEdit { get; set; } = false;
+    public bool HasPermissionDelete { get; set; } = false;
+    public int DocTypeID = 36;
+
     private async Task OpenDialogAddNew()
     {
-        RoutineCheckListMasterModel ItemMaster = new();
-
-        ItemMaster.UserInfo = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (ItemMaster.UserInfo != null)
+        if (HasPermissionEdit)
         {
-            ItemMaster.UserInfo.UserID = user.Identity.Name;
+            RoutineCheckListMasterModel ItemMaster = new();
 
-        }
-        ItemMaster.BranchID = int.Parse(brancIDString);
-        var model = new DialogParameters { ["model"] = ItemMaster };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<RoutineCheckListMasterDialog>("Simple Dialog", model, options);
-
-
-        var result = await dialog.Result;
-
-        // you can check if the modal was cancelled
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
-        {
-           await  GetAll();
-        }
-    }
-    private async Task OpenDialogEdit(RoutineCheckListMasterModel ItemMaster)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-
-        ItemMaster.UserInfo = new();
-        if (ItemMaster.UserInfo != null)
-        {
-            ItemMaster.UserInfo.UserID = user.Identity.Name;
-        }
-        ItemMaster.BranchID = int.Parse(brancIDString);
-
-        var model = new DialogParameters { ["model"] = ItemMaster };
-
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<RoutineCheckListMasterDialog>("Simple Dialog", model, options);
-
-        var result = await dialog.Result;
-
-        // you can check if the modal was cancelled
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
-        {
-           await  GetAll();
-        }
-    }
-    private async Task OpenDialogDelete(RoutineCheckListMasterModel ItemMaster)
-    {
-
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Are you sure you want to delete this entry?",
-            yesText: "Delete!", cancelText: "Cancel");
-        state = result == null ? "Cancelled" : "Deleted!";
-        if (state == "Deleted!")
-        {
-
+            ItemMaster.UserInfo = new();
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            if (ItemMaster.UserInfo != null)
+            {
+                ItemMaster.UserInfo.UserID = user.Identity.Name;
+            }
+            ItemMaster.BranchID = int.Parse(brancIDString);
+            var model = new DialogParameters { ["model"] = ItemMaster };
+            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+            var dialog = DialogService.Show<RoutineCheckListMasterDialog>("Simple Dialog", model, options);
+
+
+            var result = await dialog.Result;
+
+            // you can check if the modal was cancelled
+            var isCancelled = result.Canceled;
+            if (!isCancelled)
+            {
+                await GetAll();
+            }
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Add or Edit.");
+        }
+    }
+
+
+    private async Task OpenDialogEdit(RoutineCheckListMasterModel ItemMaster)
+    {
+        if (HasPermissionEdit)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
             ItemMaster.UserInfo = new();
             if (ItemMaster.UserInfo != null)
             {
                 ItemMaster.UserInfo.UserID = user.Identity.Name;
-                Iservice.Delete(ItemMaster.ItemID, ItemMaster.UserInfo.UserID);
             }
-            await GetAll();
-        }
+            ItemMaster.BranchID = int.Parse(brancIDString);
 
+            var model = new DialogParameters { ["model"] = ItemMaster };
+
+            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+            var dialog = DialogService.Show<RoutineCheckListMasterDialog>("Simple Dialog", model, options);
+
+            var result = await dialog.Result;
+
+            // you can check if the modal was cancelled
+            var isCancelled = result.Canceled;
+            if (!isCancelled)
+            {
+                await GetAll();
+            }
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Add or Edit.");
+        }
     }
-    protected async override  Task OnInitializedAsync()
+
+
+    private async Task OpenDialogDelete(RoutineCheckListMasterModel ItemMaster)
     {
-        //model = new();
-       await GetAll();
+        if (HasPermissionDelete)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Are you sure you want to delete this entry?",
+                yesText: "Delete!", cancelText: "Cancel");
+            state = result == null ? "Cancelled" : "Deleted!";
+            if (state == "Deleted!")
+            {
+
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                ItemMaster.UserInfo = new();
+                if (ItemMaster.UserInfo != null)
+                {
+                    ItemMaster.UserInfo.UserID = user.Identity.Name;
+                    Iservice.Delete(ItemMaster.ItemID, ItemMaster.UserInfo.UserID);
+                }
+                await GetAll();
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+              "Permission denied!",
+              "You dont have any permission to delete.");
+        }
     }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
+        //model = new();
+        await GetAll();
+    }
+
 
     private async Task GetAll()
     {
@@ -174,6 +215,7 @@
         collection = Iservice.SelectItemByBranch(model.BranchID).ToList();
     }
 
+
     private void OpenDialog()
     {
         RoutineCheckListMasterModel ItemMaster = new();
@@ -184,5 +226,4 @@
         var options = new DialogOptions { CloseOnEscapeKey = true };
         DialogService.Show<RoutineCheckListMasterDialog>("Simple Dialog", model, options);
     }
-
 }

@@ -7,6 +7,9 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 <MudDialog>
     <TitleContent>
         @if (model.FaultID == null || model.FaultID == 0)
@@ -65,9 +68,14 @@
     [Parameter]
     public int? DriverID { get; set; }
 
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 34;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         if (model.BranchID == null)
@@ -83,54 +91,63 @@
         MudDialog.Cancel();
     }
 
+
     public async Task Submit()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-
-        if (model.Driver == null || model.Driver.DriverID == 0)
+        if (HasPermissionEdit)
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning",
-                "Please, Select Driver.",
-                yesText: "OK");
-            return;
-        }
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
 
-        string removedFromTruck = Idriverservice.RemoveDriverFromTruck(model.Driver?.DriverID, user.Identity.Name);
+            if (model.Driver == null || model.Driver.DriverID == 0)
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Warning",
+                    "Please, Select Driver.",
+                    yesText: "OK");
+                return;
+            }
 
-        if (removedFromTruck == "OnTrip")
-        {
-            await DialogService.ShowMessageBox("Warning", "The Driver is currently on a trip.", yesText: "OK");
-            return;
-        }
-        else if (removedFromTruck == "DriverRemoved")
-        {
-            Snackbar.Add("Driver removed from the truck", Severity.Warning);
+            string removedFromTruck = Idriverservice.RemoveDriverFromTruck(model.Driver?.DriverID, user.Identity.Name);
+
+            if (removedFromTruck == "OnTrip")
+            {
+                await DialogService.ShowMessageBox("Warning", "The Driver is currently on a trip.", yesText: "OK");
+                return;
+            }
+            else if (removedFromTruck == "DriverRemoved")
+            {
+                Snackbar.Add("Driver removed from the truck", Severity.Warning);
+            }
+            else
+            {
+                Snackbar.Add(removedFromTruck, Severity.Error);
+
+            }
+            if (removedFromTruck == "NoAssignedTruck" || removedFromTruck == "DriverRemoved")
+            {
+
+                try
+                {
+                    model.BranchID = int.Parse(brancIDString);
+                    model.UserInfo.UserID = user.Identity.Name;
+                    Iservice.Update(model);
+                    Snackbar.Add("Success", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+            MudDialog.Close(model);
         }
         else
         {
-            Snackbar.Add(removedFromTruck, Severity.Error);
-
+            bool? result = await DialogService.ShowMessageBox(
+               "Permission denied!",
+               "You dont have any permission to submit.");
         }
-        if (removedFromTruck == "NoAssignedTruck" || removedFromTruck == "DriverRemoved")
-        {
-
-            try
-            {
-                model.BranchID = int.Parse(brancIDString);
-                model.UserInfo.UserID = user.Identity.Name;
-                Iservice.Update(model);
-                Snackbar.Add("Success", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
-        }
-
-        MudDialog.Close(model);
     }
 
 
