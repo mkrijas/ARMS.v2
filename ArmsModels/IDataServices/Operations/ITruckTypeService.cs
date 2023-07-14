@@ -11,8 +11,8 @@ namespace ArmsServices.DataServices
 {
     public interface ITruckTypeService
     {
-        TruckTypeModel Update(TruckTypeModel model);
-        int Delete(int? TruckTypeID, string UserID);
+        TruckTypeModel Update(TruckTypeModel model);  //edit
+        int Delete(int? TruckTypeID, string UserID);  //delete
         TruckTypeModel SelectByID(short? TruckTypeID);
         IEnumerable<TruckTypeModel> Select(short? TruckTypeID);
     }
