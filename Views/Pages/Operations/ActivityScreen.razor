@@ -20,6 +20,9 @@
 @using Pages.Operations.Gc
 @using Pages.FMS.Breakdown
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
 
 <MudGrid Spacing="4">
 
@@ -41,8 +44,11 @@
         else if (SelectedTruck != null && AssignedDriver != null)
         {
             <MudText Typo="Typo.h4" Color="Color.Success">
-                <MudIcon Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Title="Driver"  /> @AssignedDriver.DriverName</MudText>
-            @if (!AssignedDriver.HasValidLicense) {<MudText Typo="Typo.caption" Color="Color.Error"> (Invalid Licence)</MudText>
+                <MudIcon Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Title="Driver" /> @AssignedDriver.DriverName
+            </MudText>
+            @if (!AssignedDriver.HasValidLicense)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Error"> (Invalid Licence)</MudText>
             }
         }
         <MudSpacer></MudSpacer>
@@ -101,7 +107,6 @@
     private EventTypeModel EventType { get; set; }
     private TripModel CurrentTrip { get; set; }
 
-
     string TruckStatus;
     string EventButtonLabel;
     string AssignDriverLabel;
@@ -111,16 +116,22 @@
     private bool DisableEventButton { get; set; } = false;
     private bool DisableCancelButton { get; set; } = true;
 
+    public bool HasPermissionTripServiceEdit { get; set; } = false;
+    public int DocTypeID = 39;
 
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTripServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         OnTruckSelected(SelectedTruck);
     }
+
 
     private void GetTruckInfo()
     {
     }
+
 
     private void OpenTripCard()
     {
@@ -128,6 +139,7 @@
         parameters.Add("Trip", CurrentTrip);
         var result = DialogService.Show<TripDetailsCard>(CurrentTrip.TripPrefix + CurrentTrip.TripNumber.ToString() + " Details", parameters, new DialogOptions { MaxWidth = MaxWidth.Large });
     }
+
 
     private async Task UpdateEvent()
     {
@@ -171,32 +183,41 @@
 
     }
 
+
     private async Task CancelTrip()
     {
-        int pendingGcs = Igc.SelectPending(CurrentTrip?.TripID).Count();
-        string txt = "";
-        if (pendingGcs != 0)
+        if (HasPermissionTripServiceEdit)
         {
-            txt = pendingGcs + " Unfinished GCs found.Do you want to Remove those GCs from this Truck";
+            int pendingGcs = Igc.SelectPending(CurrentTrip?.TripID).Count();
+            string txt = "";
+            if (pendingGcs != 0)
+            {
+                txt = pendingGcs + " Unfinished GCs found.Do you want to Remove those GCs from this Truck";
+            }
+            else
+            {
+                txt = "Do you confirm the cancellation?";
+            }
+
+            bool? yesno = await DialogService.ShowMessageBox(
+              "Cancel Trip",
+               txt,
+              yesText: "Cancel Trip!", cancelText: "Don't Cancel");
+            if (yesno == null)
+            {
+                return;
+            }
+            var authState = await auth.GetAuthenticationStateAsync();
+            Itrip.Cancel(CurrentTrip.TripID, authState.User.Identity.Name);
+            StateHasChanged();
         }
         else
         {
-            txt = "Do you confirm the cancellation?";
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit Trip.");
         }
-
-        bool? yesno = await DialogService.ShowMessageBox(
-          "Cancel Trip",
-           txt,
-          yesText: "Cancel Trip!", cancelText: "Don't Cancel");
-        if (yesno == null)
-        {
-            return;
-        }
-        var authState = await auth.GetAuthenticationStateAsync();
-        Itrip.Cancel(CurrentTrip.TripID, authState.User.Identity.Name);
-        StateHasChanged();
     }
-
 
 
     private async Task ReportBreakDown()
@@ -224,8 +245,8 @@
         {
             truckStatusUpdated(Ievent.GetCurrentEvent(SelectedTruck.TruckID));
         }
-
     }
+
 
     private async Task AssignDriver()
     {
@@ -241,6 +262,7 @@
             AssignDriverLabel = AssignedDriver == null ? "Assign Driver" : "Replace Driver";
         }
     }
+
 
     private async Task AddConsignment()
     {
@@ -274,6 +296,7 @@
         }
     }
 
+
     private bool IsFit()
     {
         var doc = idocument.SelectByAsset(SelectedTruck.TruckID);
@@ -285,6 +308,7 @@
         }
         return true;
     }
+
 
     protected void TripStatusUpdated(EventModel em)
     {
@@ -348,5 +372,4 @@
         }
 
     }
-
 }
