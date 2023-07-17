@@ -11,8 +11,8 @@ namespace ArmsServices.DataServices
 {
     public interface IPlaceService
     {
-        Task<PlaceModel> Update(PlaceModel model);
-        Task<int> Delete(int? PlaceID, string UserID);
+        Task<PlaceModel> Update(PlaceModel model);  //Edit
+        Task<int> Delete(int? PlaceID, string UserID);  //Edit
         IEnumerable<PlaceModel> Select(int? PlaceID);
         Task<PlaceModel> SelectByID(int? ID);
     }
