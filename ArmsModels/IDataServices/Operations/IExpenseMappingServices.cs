@@ -13,8 +13,8 @@ namespace ArmsServices.DataServices
     {
         IEnumerable<ExpenseMapping> Select();
         IEnumerable<ExpenseMapping> SelectByArea(string Area);
-        ExpenseMapping Update(ExpenseMapping model);
-        ExpenseMapping SelectByID(int ID);
-        int Delete(int? ID, string UserID);
+        ExpenseMapping Update(ExpenseMapping model);  //Edit
+        ExpenseMapping SelectByID(int ID);  
+        int Delete(int? ID, string UserID);  //Edit
     }
 }
