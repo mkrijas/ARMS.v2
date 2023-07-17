@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
         IEnumerable<PurchaseOrderModel> SelectByStore(int StoreID);
         int Approve(int POID, string UserID, string Remarks);
         int Reverse(int POID, string UserID);
+        int CancelOrder(int POID, string UserID, string Remarks);
         IEnumerable<InventoryItemEntryModel> GetItemEntries(int POID);
     }
 }

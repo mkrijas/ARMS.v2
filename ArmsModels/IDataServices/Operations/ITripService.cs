@@ -11,12 +11,12 @@ namespace ArmsServices.DataServices
 {
     public interface ITripService
     {
-        TripModel Update(TripModel model);
-        int Delete(long? TripID, string UserID);
+        TripModel Update(TripModel model);  //Edit
+        int Delete(long? TripID, string UserID);  //Delete
         TripModel Select(long? TripID);
         TripModel SelectByTripNumber(string TripNumber);
-        int Cancel(long? TripID, string UserID);
-        int CloseTrip(long? TripID, int? BranchID, string UserID);
+        int Cancel(long? TripID, string UserID);  //Edit
+        int CloseTrip(long? TripID, int? BranchID, string UserID);  //Edit
         bool IsClosed(long? TripID);
         bool IsSettled(long? TripID);
         TripInfoModel GetTripInfo(long? TripID);

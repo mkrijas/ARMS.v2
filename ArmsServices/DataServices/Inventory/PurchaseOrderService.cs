@@ -39,6 +39,18 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
         }
 
+        public int CancelOrder(int POID, string UserID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@POID", POID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("@Operation","CancelOrder")
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
+        }
+
         public int Delete(int? ID, string UserID)
         {
 
@@ -175,7 +187,5 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-
-
     }
 }

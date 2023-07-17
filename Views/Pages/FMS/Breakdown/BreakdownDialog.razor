@@ -7,7 +7,9 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 
-
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -29,17 +31,17 @@
                                 <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
                             }
                         </MudSelect>
-                    </MudItem>                    
-                    <MudItem xs="12">                        
+                    </MudItem>
+                    <MudItem xs="12">
                         <MudTextField Label="Report time" Format="s" Variant="Variant.Outlined" @bind-Value="@model.BreakdownTime" InputType="InputType.DateTimeLocal"></MudTextField>
                     </MudItem>
                     <MudItem xs="12">
                         <MudTextField @bind-Value="model.ContactNumber" Label="Contact Number of Error Reporter" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ContactNumber)"></MudTextField>
                     </MudItem>
                     <MudItem xs="12">
-                        <MudTextField  Lines="4" @bind-Value="model.Detail" Label="Detail" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Detail)"></MudTextField>
+                        <MudTextField Lines="4" @bind-Value="model.Detail" Label="Detail" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Detail)"></MudTextField>
                     </MudItem>
-                </MudGrid>             
+                </MudGrid>
             </EditForm>
         </MudContainer>
     </DialogContent>
@@ -58,15 +60,22 @@
 
     private BreakdownModel model { get; set; }
 
-    private List<string> BreakdownTypes = new(){"Accident","BreakdownType1","BreakdownType2" };
+    private List<string> BreakdownTypes = new() { "Accident", "BreakdownType1", "BreakdownType2" };
+
+    public bool HasPermissionTripServiceEdit { get; set; } = false;
+    public int DocTypeID = 39;
 
     private void Cancel()
     {
         MudDialog.Cancel();
     }
 
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTripServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var e = await auth.GetAuthenticationStateAsync();
         string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
 
@@ -75,33 +84,42 @@
         model.TruckID = Truck.TruckID;
     }
 
+
     private async Task OnValidSubmit(EditContext context)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         model.UserInfo.UserID = authprov.User.Identity.Name;
-
-        try
+        if (HasPermissionTripServiceEdit)
         {
-            if (CurrentTrip != null && !Itrip.IsClosed(CurrentTrip.TripID))
+            try
             {
-                var authState = auth.GetAuthenticationStateAsync().Result;
-                if (PendingGcs > 0)
+                if (CurrentTrip != null && !Itrip.IsClosed(CurrentTrip.TripID))
                 {
-                    Itrip.Cancel(CurrentTrip.TripID, authState.User.Identity.Name);
+
+                    var authState = auth.GetAuthenticationStateAsync().Result;
+                    if (PendingGcs > 0)
+                    {
+                        Itrip.Cancel(CurrentTrip.TripID, authState.User.Identity.Name);
+                    }
+                    Itrip.CloseTrip(CurrentTrip.TripID, int.Parse(authState.User.Claims.First(x => x.Type == "BranchID").Value), authState.User.Identity.Name);
                 }
-                Itrip.CloseTrip(CurrentTrip.TripID, int.Parse(authState.User.Claims.First(x => x.Type == "BranchID").Value), authState.User.Identity.Name);
+
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(model));
+
+                model = new();
             }
-
-
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(DialogResult.Ok(model));
-
-            model = new();
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit Trip.");
         }
     }
 }
