@@ -98,7 +98,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? Nature { get; set; } //SELECT  -1 as Payment,1 as Receipt
         [Required]
-        public string NatureName { get; set; } //SELECT  -1 as Payment,1 as Receipt
+        public string NatureName { get { return Nature == 1 ? "Receipt" : "Payment" ; } }
+
         [Required]
         public DateTime? TransactionDate { get; set; }
         [Required]
@@ -122,7 +123,14 @@ namespace ArmsModels.BaseModels
     public class ReconciledBankEntryModel
     {
         public int? ID { get; set; }
+        [Required]
         public DateTime? ReconciledDate { get; set; }
+        [Required]
+        public int? BankID { get; set; }
+        [Required]
+        public bool IsExisting { get; set; }
+        [Required]
+        public int? AccountEntryID { get; set; }
         public string Remarks { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
