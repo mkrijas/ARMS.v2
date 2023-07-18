@@ -74,6 +74,7 @@ namespace ArmsServices.DataServices
                 TripPrefix = reader.GetString("TripPrefix"),
                 TripNumber = reader.GetInt64("TripNumber"),
                 TruckID = reader.GetInt32("TruckID"),
+                IsLocked = reader.GetBoolean("LockedStatus"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = reader.GetByte("RecordStatus"),
@@ -120,6 +121,17 @@ namespace ArmsServices.DataServices
             parameters.Add(result);
             Iservice.ExecuteNonQuery("[usp.Operation.Trip.Query]", parameters);
             return (bool)result.Value;
+        }
+
+        public int LockedTrip(long? TripID, bool LockedStatus, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripID", TripID),
+               new SqlParameter("@LockedStatus", LockedStatus),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Operation.Trips.Locked.Update]", parameters);
         }
 
         public bool IsSettled(long? TripID)

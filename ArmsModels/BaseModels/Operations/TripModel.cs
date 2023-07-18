@@ -27,6 +27,7 @@ namespace ArmsModels.BaseModels
         public int? RunKM { get; set; }
         public decimal? Fuel { get; set; }
         public bool Closed { get; set; }
+        public bool IsLocked { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }        
     }
 

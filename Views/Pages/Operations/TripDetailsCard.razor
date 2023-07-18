@@ -46,15 +46,17 @@
         </CardHeaderContent>
         <CardHeaderActions>
             <MudTooltip Text="Add Fuel">
-                <MudIconButton Icon="@Icons.Material.Filled.LocalGasStation" Size="Size.Large" Color="Color.Success" @onclick="@(()=> OpenFuelForm())" />
+                <MudIconButton Icon="@Icons.Material.Filled.LocalGasStation" Disabled="@IsLocked" Size="Size.Large" Color="Color.Success" @onclick="@(()=> OpenFuelForm())" />
             </MudTooltip>
             <MudTooltip Text="Add Expenses">
-                <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenExpenseForm())" />
+                <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Disabled="@IsLocked" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenExpenseForm())" />
             </MudTooltip>
             <MudTooltip Text="Add Mileage Shortage Receipt">
-                <MudIconButton Icon="@Icons.Material.Filled.Toll" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenMileageShortageReceipt())" />
+                <MudIconButton Icon="@Icons.Material.Filled.Toll" Disabled="@IsLocked" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenMileageShortageReceipt())" />
             </MudTooltip>
+            <MudSwitch Checked="@IsLocked" CheckedChanged="((bool value)=>TripLocked(value))" Color="Color.Primary" Label="Trip Locked" />
         </CardHeaderActions>
+
     </MudCardHeader>
 
     <MudCardContent>
@@ -99,7 +101,7 @@
                 <div class="TabStyle">
                     @if (IsEventSelected)
                     {
-                        <TripEventsComponent Trip="@Trip" OnEventCount="@OnEventCount"></TripEventsComponent>
+                        <TripEventsComponent Trip="@Trip" OnEventCount="@OnEventCount" IsLocked="@IsLocked"></TripEventsComponent>
                     }
                 </div>
             </MudTabPanel>
@@ -111,7 +113,7 @@
                             @foreach (var gc in AssignedGCs)
                             {
                                 <MudItem xs="6" lg="6" md="6">
-                                    <GcItemCard item="gc" Style="@($"background:{Colors.Purple.Lighten5};")"></GcItemCard>
+                                    <GcItemCard item="gc" Style="@($"background:{Colors.Purple.Lighten5};")" IsLocked="@IsLocked"></GcItemCard>
                                 </MudItem>
                             }
                         </MudGrid>
@@ -187,14 +189,15 @@
                 </div>
             </MudTabPanel>
         </MudTabs>
-
     </MudCardContent>
 </MudCard>
 @code {
 
     [Parameter]
     public TripModel Trip { get; set; }
-
+    [Parameter]
+    public bool IsLocked { get; set; } = false;
+    string UserID;
     private int? EventCount = 0;
     protected void OnEventCount(int? eventCount)
     {
@@ -217,9 +220,13 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionTripFuelServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
 
         if (Trip != null)
+        {
             TripInfoMdl = tripIservice.GetTripInfo(Trip.TripID);
+        }
     }
 
 
@@ -320,4 +327,11 @@
                       "You dont have any permission to Add or Edit TripFuel.");
         }
     }
+
+    private void TripLocked(bool value)
+    {
+        IsLocked = value;
+        tripIservice.LockedTrip(Trip.TripID, true, UserID);
+    }
+
 }

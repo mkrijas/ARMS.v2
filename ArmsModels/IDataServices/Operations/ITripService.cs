@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
         int Cancel(long? TripID, string UserID);  //Edit
         int CloseTrip(long? TripID, int? BranchID, string UserID);  //Edit
         bool IsClosed(long? TripID);
+        int LockedTrip(long? TripID, bool LockedStatus, string UserID);
         bool IsSettled(long? TripID);
         TripInfoModel GetTripInfo(long? TripID);
         IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString);
