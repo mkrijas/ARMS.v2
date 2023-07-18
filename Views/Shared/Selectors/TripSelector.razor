@@ -1,0 +1,103 @@
+﻿@inject ITripService ITrip
+
+
+<MudAutocomplete Variant="Variant.Outlined" Margin="Margin.Dense" SelectValueOnTab @ref="_autoComplete" Class="@Class" T="TripModel" OnKeyUp="Enter" Label="@Label" @bind-Value="Value" AdornmentColor="Color.Secondary" ResetValueOnEmptyText="true"
+                 Clearable="true" SearchFunc="SearchTrip" ToStringFunc="@(e => e == null ? null : string.Format("{0}",(e.TripPrefix + e.TripNumber?.ToString()??"")))"></MudAutocomplete>
+
+
+@code {
+
+    [Parameter] public EventCallback<bool> SetTrips { get; set; }
+    [Parameter] public string Label { get; set; } = "Select Trip";
+    [Parameter] public int? BranchID { get; set; } = 0;
+    [Parameter] public int? SubClassID { get; set; } = null;
+
+    [Parameter]
+    public TripModel Value
+    {
+        get => _value;
+        set
+        {
+            if (_value == value) return;
+            _value = value;
+            ValueChanged.InvokeAsync(value);
+        }
+    }
+
+
+    private List<TripModel> TripList = new();
+    private MudAutocomplete<TripModel> _autoComplete { get; set; }
+
+
+
+    private async Task Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            await SetTrips.InvokeAsync();
+            await _autoComplete.Clear();
+            await SearchTrip("");
+        }
+    }
+
+    [Parameter]
+    public EventCallback<TripModel> ValueChanged { get; set; }
+
+    [Parameter]
+    public string Class { get; set; }
+
+
+    [Parameter]
+    public int? NumberOfRecords { get; set; } = 20;
+
+    private TripModel _value;
+
+    [Parameter]
+    public List<TripModel> PassedListTrips { get; set; }
+
+    private async Task<IEnumerable<TripModel>> SearchTrip(string searchString)
+    {
+
+        if (searchString.Count() >= 3)
+        {
+            await GetAll(searchString);
+            await Task.Delay(3);
+            if (PassedListTrips != null && PassedListTrips.Count() != 0)
+            {
+                var result = TripList.Where(x => (!PassedListTrips.Any(g => g.TripID == x.TripID)) && (x.TripPrefix + x.TripNumber.ToString()).Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+                return result;
+            }
+            else
+            {
+                return TripList.Where(x => (x.TripPrefix + x.TripNumber.ToString()).Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+
+            }
+        }
+        else
+        {
+            return null;
+        }
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    async Task GetAll(string searchTerm)
+    {
+        if (TripList != null)
+        {
+            TripList.Clear();
+        }
+        if (PassedListTrips != null && PassedListTrips.Count() != 0)
+        {
+            TripList = ITrip.SelectAll(BranchID, NumberOfRecords, searchTerm).Where(s => !PassedListTrips.Any(g => g.TripID == s.TripID)).ToList();
+        }
+        else
+        {
+            TripList = ITrip.SelectAll(BranchID, NumberOfRecords, searchTerm).ToList();
+        }
+
+    }
+}
