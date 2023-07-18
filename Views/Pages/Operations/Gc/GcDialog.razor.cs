@@ -46,17 +46,18 @@ namespace Views.Pages.Operations.Gc
         private int _tabIndex = 0;
         private bool _tabAdded = false;
 
-        public bool HasPermissionEdit { get; set; } = false;
-        public int DocTypeID = 26;
+        public bool HasPermissionGcServiceEdit { get; set; } = false;
+        public int DocTypeID = 46;
 
         protected async override Task OnInitializedAsync()
         {
             CancellationTokenSource ctc = new CancellationTokenSource();
-            HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+            HasPermissionGcServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
             GcTypes = Iservice.SelectGcTypes().ToList();
             Orders = await Iorder.Select(0).ToListAsync();
         }
+
 
         protected override async Task OnParametersSetAsync()
         {
@@ -77,39 +78,46 @@ namespace Views.Pages.Operations.Gc
             IsLoading = false;
         }
 
+
         private void Cancel()
         {
             MudDialog.Cancel();
         }
+
 
         private void GetFreight(GcSetModel GcSet)
         {
             GcSet.Gcs.ForEach(x => x.Freight = Iservice.GetFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
         }
 
+
         private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
         {
             return await Task.FromResult(Consignees.Where(x => x.Consignor == false).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
+
 
         private async Task<IEnumerable<ConsigneeModel>> SearchConsignor(string searchString)
         {
             return await Task.FromResult(Consignees.Where(x => x.Consignor == true).Where(x => x.ConsigneeName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
+
         private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
         {
             return await Task.FromResult(Orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
+
 
         private async Task<IEnumerable<RouteModel>> SearchRoutes(string searchString)
         {
             return await Task.FromResult(Routes.Where(x => x.RouteName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
         }
 
+
         private async Task OnValidSubmit(EditContext context)
         {
-            if (HasPermissionEdit)
+            if (HasPermissionGcServiceEdit)
             {
                 model.OrderID = Order.OrderID;
                 model.RouteID = Route.RouteID;
@@ -141,10 +149,11 @@ namespace Views.Pages.Operations.Gc
             else
             {
                 bool? ResultModel = await DialogService.ShowMessageBox(
-                          "Permission denied!",
-                          "You dont have any permission to Add or Edit.");
+                    "Permission denied!",
+                    "You dont have any permission to Add or Edit GC.");
             }
         }
+
 
         private async Task OrderSelected(OrderModel obj)
         {
@@ -184,12 +193,14 @@ namespace Views.Pages.Operations.Gc
             GetFreight(model);
         }
 
+
         private void RouteChanged(RouteModel obj)
         {
             Route = obj;
             model.RouteID = obj?.RouteID;
             GetFreight(model);
         }
+
 
         private async Task AddConsignee_Consignor()
         {
@@ -208,17 +219,20 @@ namespace Views.Pages.Operations.Gc
             }
         }
 
+
         private void ConsignorChanged(ConsigneeModel obj)
         {
             Consignor = obj;
             model.ConsignorID = obj?.ConsigneeID;
         }
 
+
         private void ConsigneeChanged(ConsigneeModel obj)
         {
             Consignee = obj;
             model.ConsigneeID = obj?.ConsigneeID;
         }
+
 
         private void QtyChanged(decimal? Qty, GcModel gc)
         {
@@ -227,6 +241,8 @@ namespace Views.Pages.Operations.Gc
             GetFreight(model);
             gc.EFreight = gc.Freight;
         }
+
+
         private void FrChanged(decimal? Freight, GcModel gc)
         {
             // gc.Freight = Freight;
@@ -240,13 +256,8 @@ namespace Views.Pages.Operations.Gc
             {
                 gc.Freight = Freight;
             }
-
-
-
-
             GetFreight(model);
             StateHasChanged();
-
         }
 
 
@@ -263,6 +274,7 @@ namespace Views.Pages.Operations.Gc
             model.Gcs.Remove(item);
         }
 
+
         protected override void OnAfterRender(bool firstRender)
         {
             if (_tabAdded)
@@ -272,6 +284,5 @@ namespace Views.Pages.Operations.Gc
                 StateHasChanged();
             }
         }
-
     }
 }

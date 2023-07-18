@@ -1,5 +1,5 @@
 ﻿@inject IDialogService DialogService
-@inject  IGcService Iservice 
+@inject IGcService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 
@@ -9,54 +9,51 @@
 <div style="position:relative">
     @if (item.UnloadEndEventID != null)
     {
-        <h2 class="Finished" >DELIVERED</h2>
+        <h2 class="Finished">DELIVERED</h2>
     }
-<MudCard Class="@Class" Style="@Style">
-    <MudCardHeader>
-        <CardHeaderAvatar>
-            <MudAvatar Color="ewaycolor">GC</MudAvatar>
-        </CardHeaderAvatar>
-        <CardHeaderContent>
-            <MudText Typo="Typo.body1" GutterBottom="true"><b>@item.SetGcNumber</b></MudText>
-            <MudText Typo="Typo.body2">@item.SetBillNumber</MudText>
-        </CardHeaderContent>         
-         <CardHeaderActions>
-            @if (IsLoading)
+    <MudCard Class="@Class" Style="@Style">
+        <MudCardHeader>
+            <CardHeaderAvatar>
+                <MudAvatar Color="ewaycolor">GC</MudAvatar>
+            </CardHeaderAvatar>
+            <CardHeaderContent>
+                <MudText Typo="Typo.body1" GutterBottom="true"><b>@item.SetGcNumber</b></MudText>
+                <MudText Typo="Typo.body2">@item.SetBillNumber</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                @if (IsLoading)
+                {
+                    <MudTooltip Text="Remove GC">
+                        <MudIconButton @onclick="@(() => RemoveButtonClicked(item.GcSetID))" Icon="@Icons.Material.Filled.Close" Color="Color.Error" />
+                    </MudTooltip>
+                }
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudText>@item.ConsignorName</MudText>
+            <MudText>@item.ConsigneeName</MudText>
+            <MudText Typo="Typo.body2">@item.RouteName</MudText>
+            <MudText>@item.TotalFreight</MudText>
+            @if (!unloading)
             {
-                <MudTooltip Text="Remove GC">
-            <MudIconButton  @onclick="@(() => RemoveButtonClicked(item.GcSetID))"  Icon="@Icons.Material.Filled.Close" Color="Color.Error" />
-            </MudTooltip>
+                <MudText>@item.TotalBillQuantity</MudText>
             }
-        </CardHeaderActions>             
-    </MudCardHeader>
-    <MudCardContent>
-        <MudText>@item.ConsignorName</MudText>
-        <MudText>@item.ConsigneeName</MudText>
-        <MudText Typo="Typo.body2">@item.RouteName</MudText>
-         <MudText>@item.TotalFreight</MudText>
-        @if(!unloading)
+            else
             {
-               <MudText>@item.TotalBillQuantity</MudText>
+                <MudTextField @bind-Value="@item.TotalUnloadingQuantity" Label="UnloadingQuantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @item.TotalUnloadingQuantity)"></MudTextField>
             }
-          else
-            {
-               <MudTextField @bind-Value="@item.TotalUnloadingQuantity" Label="UnloadingQuantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @item.TotalUnloadingQuantity)"></MudTextField>                
-            }
-           
-    </MudCardContent>
-    <MudCardActions>
-         @if(!unloading)
-         {
-                <MudButton @onclick="@(() => Edit(item.GcSetID))" Disabled="@IsLocked" Color="Color.Primary">EDIT</MudButton>
-          <MudButton @onclick="@(() => EwayBill(item.GcSetID))" Variant="Variant.Text" Color="@ewaycolor">Eway Bill</MudButton>
-         } @*  <MudButton @onclick="@(() => FillExpenses(item.GcSetID))" Variant="Variant.Text" Color="@FillExpColor">Post Inc/Exp</MudButton>*@
-     
- </MudCardActions>
-</MudCard>
 
+        </MudCardContent>
+        <MudCardActions>
+            @if (!unloading)
+            {
+                <MudButton @onclick="@(() => Edit(item.GcSetID))" Color="Color.Primary">EDIT</MudButton>
+                <MudButton @onclick="@(() => EwayBill(item.GcSetID))" Variant="Variant.Text" Color="@ewaycolor">Eway Bill</MudButton>
+            } @*  <MudButton @onclick="@(() => FillExpenses(item.GcSetID))" Variant="Variant.Text" Color="@FillExpColor">Post Inc/Exp</MudButton>*@
+
+        </MudCardActions>
+    </MudCard>
 </div>
-
-
 
 
 @code {
@@ -75,19 +72,26 @@
     [Parameter]
     public EventCallback<long?> OnGcRemoved { get; set; }
 
-    [Parameter]
-    public bool IsLocked { get; set; } = false;
-
     private Color ewaycolor = new();
     private Color FillExpColor = new();
 
-    public bool HasPermissionEdit { get; set; } = false;
-    public int DocTypeID = 26;
+    public bool HasPermissionGcServiceEdit { get; set; } = false;
+    public bool HasPermissionGcServiceAppentToTrip { get; set; } = false;
+    public int DocTypeID = 46;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionGcServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionGcServiceAppentToTrip = await Irole.HasClaim(DocTypeID.ToString(), "AppentToTrip", ctc.Token);
+    }
+
 
     protected override void OnParametersSet()
     {
         setEwayBillColor();
     }
+
 
     private void setEwayBillColor()
     {
@@ -100,6 +104,7 @@
             ewaycolor = Color.Primary;
         }
     }
+
 
     private void setExpButtonColor()
     {
@@ -118,12 +123,12 @@
         {
             setEwayBillColor();
         }
-    }    
-   
+    }
+
 
     private async Task Edit(long? id)
     {
-        if (HasPermissionEdit)
+        if (HasPermissionGcServiceEdit)
         {
             var parameters = new DialogParameters();
             parameters.Add("model", item);
@@ -136,17 +141,28 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Permission denied!",
-                      "You dont have any permission to Add or Edit.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit GC.");
         }
     }
+
+
     private async Task RemoveButtonClicked(long? id)
     {
-        var e = await auth.GetAuthenticationStateAsync();
-        var user = e.User;
-        var userID = user.Identity.Name;
-        Iservice.RemoveFromTrip(item.GcSetID,item.TripID.Value, userID);
-        snackbar.Add("Removed", Severity.Success, null);
-        await OnGcRemoved.InvokeAsync(id);
+        if (HasPermissionGcServiceAppentToTrip)
+        {
+            var e = await auth.GetAuthenticationStateAsync();
+            var user = e.User;
+            var userID = user.Identity.Name;
+            Iservice.RemoveFromTrip(item.GcSetID, item.TripID.Value, userID);
+            snackbar.Add("Removed", Severity.Success, null);
+            await OnGcRemoved.InvokeAsync(id);
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to AppendToTrip GC.");
+        }
     }
 }

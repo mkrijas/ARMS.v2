@@ -11,9 +11,9 @@ namespace ArmsServices.DataServices
 {
     public interface IRouteService
     {
-        Task<RouteModel> Update(RouteModel model);
+        Task<RouteModel> Update(RouteModel model);  //Edit
         Task<RouteModel> SelectByID(int? ID);
-        int Delete(int? RouteID, string UserID);
+        int Delete(int? RouteID, string UserID);  //Edit
         IAsyncEnumerable<RouteModel> Select(int? RouteID);
         IAsyncEnumerable<RouteModel> SelectByOrder(int? OrderID);
     }
