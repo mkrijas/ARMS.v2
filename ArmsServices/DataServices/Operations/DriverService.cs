@@ -241,7 +241,8 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public int Join(int? DriverID, int? BranchID, DateTime? StartDate, string UserID)
+        public int 
+            Join(int? DriverID, int? BranchID, DateTime? StartDate, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

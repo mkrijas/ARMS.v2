@@ -10,25 +10,26 @@ namespace ArmsServices.DataServices
 {
     public interface IDriverService
     {
-        DriverModel Update(DriverModel model);
-        int Delete(int? DriverID, string UserID);
-        int Resign(int? DriverID, string Remarks);
+        DriverModel Update(DriverModel model);  //Edit
+        int Delete(int? DriverID, string UserID);  //Delete
+
+        //int Resign(int? DriverID, string Remarks);  
         IEnumerable<DriverModel> Select();
         IEnumerable<DriverModel> SelectByBranch(int BranchID);
         DriverModel SelectByID(int? DriverID);
-        int UpdateBranch(int? DriverID, int? BranchID, bool availStatus, string userID);
+        int UpdateBranch(int? DriverID, int? BranchID, bool availStatus, string UserID);
         IEnumerable<int> GetAssignedBranches(int? DriverID);
         DriverModel FindDriver(DriverModel model = null, DriverLicenceModel licence = null);
         int AvailabilityStatus(int? DriverID);
-        int Join(int? DriverID, int? BranchID, DateTime? StartDate, string UserID);
-        int Resign(int? DriverID, string Remarks, string userID);
+        int Join(int? DriverID, int? BranchID, DateTime? StartDate, string UserID);  //Edit
+        int Resign(int? DriverID, string Remarks, string UserID);  //Resign
         DriverLeaveModel GetLastLeave(int? DriverID);
-        int BeginLeave(DriverLeaveModel LeaveModel);
-        int EndLeave(int? DriverID, string UserID);
+        int BeginLeave(DriverLeaveModel LeaveModel);  //AllotLeave
+        int EndLeave(int? DriverID, string UserID);  //AllotLeave
         public int? GetAssignedTruck(int? DriverID);
         IEnumerable<DriverModel> GetDriverByAdhaarNo(string AdhaarNo);
         public string GetWorkPeriod(int? DriverID);
-        public string RemoveDriverFromTruck(int? driverId, string userId);
+        public string RemoveDriverFromTruck(int? driverId, string UserId);  //RemoveDriver
 
     }
 }
