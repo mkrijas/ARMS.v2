@@ -214,12 +214,18 @@
     private bool IsEventSelected = false;
 
     public bool HasPermissionTripFuelServiceEdit { get; set; } = false;
-    public int DocTypeID = 40;
+    public int DocTypeIDTripFuel = 40;
+
+    public bool HasPermissionTripServiceEnableLock { get; set; } = false;
+    public bool HasPermissionTripServiceDisableLock { get; set; } = false;
+    public int DocTypeIDTrip = 39;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionTripFuelServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTripFuelServiceEdit = await Irole.HasClaim(DocTypeIDTripFuel.ToString(), "Edit", ctc.Token);
+        HasPermissionTripServiceEnableLock = await Irole.HasClaim(DocTypeIDTrip.ToString(), "EnableLock", ctc.Token);
+        HasPermissionTripServiceDisableLock = await Irole.HasClaim(DocTypeIDTrip.ToString(), "DisableLock", ctc.Token);
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
 
@@ -328,10 +334,37 @@
         }
     }
 
-    private void TripLocked(bool value)
+    private async Task TripLocked(bool value)
     {
-        IsLocked = value;
-        tripIservice.LockedTrip(Trip.TripID, true, UserID);
-    }
+        if (!value)
+        {
+            if (HasPermissionTripServiceDisableLock)
+            {
+                IsLocked = value;
+                tripIservice.LockedTrip(Trip.TripID, false, UserID);
+            }
+            else
+            {
+                bool? ResultModel = await DialogService.ShowMessageBox(
+                          "Permission denied!",
+                          "You dont have any permission to Disable Lock Trip.");
+            }
+        }
 
+
+        if (value)
+        {
+            if (HasPermissionTripServiceEnableLock)
+            {
+                IsLocked = value;
+                tripIservice.LockedTrip(Trip.TripID, true, UserID);
+            }
+            else
+            {
+                bool? ResultModel = await DialogService.ShowMessageBox(
+                          "Permission denied!",
+                          "You dont have any permission to Enable Lock Trip.");
+            }
+        }
+    }
 }
