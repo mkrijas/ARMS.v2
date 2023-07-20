@@ -13,6 +13,7 @@ namespace Core.BaseModels.Finance.Transactions
             TotalAmount = 0;
         }
         public int? OpInventoryReleaseID { get; set; }
+        [Required]
         public InventoryItemModel Item { get; set; }
         public ChartOfAccountModel DebitCOA { get; set; }
         public ChartOfAccountModel CreditCOA { get; set; }
