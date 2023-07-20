@@ -11,9 +11,9 @@ namespace ArmsServices.DataServices
 {
     public interface IContentService
     {
-        Task<ContentModel> Update(ContentModel model);
+        Task<ContentModel> Update(ContentModel model);  //Edit
         Task<ContentModel> SelectByID(int? ID);
-        Task<int> Delete(int? ContentID, string UserID);
+        Task<int> Delete(int? ContentID, string UserID);  //Delete
         IAsyncEnumerable<ContentModel> Select(int? ContentID);
     }
 }

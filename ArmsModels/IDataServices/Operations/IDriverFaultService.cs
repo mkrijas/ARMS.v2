@@ -11,7 +11,7 @@ namespace ArmsServices.DataServices
     {
         IEnumerable<DriverFaultModel> Select(int? DriverID);
         DriverFaultModel SelectByID(int? FaultID);
-        DriverFaultModel Update(DriverFaultModel model);
-        int Delete(int? DriverID, string UserID);
+        DriverFaultModel Update(DriverFaultModel model);  //Edit
+        int Delete(int? DriverID, string UserID);  //Delete
     }
 }
