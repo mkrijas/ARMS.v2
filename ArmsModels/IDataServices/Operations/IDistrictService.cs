@@ -11,8 +11,8 @@ namespace ArmsServices.DataServices
 {
     public interface IDistrictService
     {
-        DistrictModel Update(DistrictModel model);
-        int Delete(int? DistrictID, string UserID);
+        DistrictModel Update(DistrictModel model);  //Edit
+        int Delete(int? DistrictID, string UserID);  //Delete
         IEnumerable<DistrictModel> Select(int? DistrictID);
         IEnumerable<StateModel> GetStates();
     }
