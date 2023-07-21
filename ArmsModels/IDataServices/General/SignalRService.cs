@@ -12,11 +12,11 @@ namespace ArmsServices.DataServices
 {
     public class SignalRService
     {
-        private HubConnection hubConnection;
+        private Microsoft.AspNetCore.SignalR.Client.HubConnection hubConnection;
         private  List<PushNotificationModel> allNotificationMessages = new List<PushNotificationModel>();
         private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
 
-        public SignalRService(NavigationManager navigationManager, HubConnection _hubconnection)
+        public SignalRService(NavigationManager navigationManager, Microsoft.AspNetCore.SignalR.Client.HubConnection _hubconnection)
         {
             hubConnection = _hubconnection;
             //hubConnection = new HubConnectionBuilder().WithUrl(navigationManager.ToAbsoluteUri("/chatHub")).Build();

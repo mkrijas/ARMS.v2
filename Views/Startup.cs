@@ -7,8 +7,6 @@ using ArmsServices.DataServices.General;
 using ArmsServices.DataServices.Inventory;
 using ArmsServices.DataServices.Operations;
 using Blazored.SessionStorage;
-using Core.IDataServices.Finance.Transactions;
-using DAL.DataServices.Finance.Transactions;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -59,7 +57,7 @@ namespace Views
             services.AddBlazorContextMenu();
             services.AddBlazoredSessionStorage();
 
-            services.AddScoped<SignalRService>();
+            services.AddScoped<ArmsServices.DataServices.SignalRService>();
             services.AddSignalRCore();
             services.AddAuthorization(config =>
             {
