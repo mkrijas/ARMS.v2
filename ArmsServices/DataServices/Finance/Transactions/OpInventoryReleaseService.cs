@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
 using Core.IDataServices.Finance.Transactions;
-using ArmsModels.BaseModels.Finance.Transactions;
 using ArmsModels.BaseModels;
 using System.Linq;
 
@@ -15,11 +14,9 @@ namespace DAL.DataServices.Finance.Transactions
     public class OpInventoryReleaseService : IOpInventoryReleaseService
     {
         IDbService Iservice;
-        IConfigTable configTable;
-        public OpInventoryReleaseService(IDbService iservice, IConfigTable IconfigTable)
+        public OpInventoryReleaseService(IDbService iservice)
         {
             Iservice = iservice;
-            configTable = IconfigTable;
         }
 
         public int Delete(int? ID, string UserID)
@@ -136,13 +133,9 @@ namespace DAL.DataServices.Finance.Transactions
         }
         public OpInventoryReleaseModel Update(OpInventoryReleaseModel model)
         {
-            ConfigModel MileageShortageAccount = configTable.GetDefaultMileageShortageCredit();
-            ConfigModel CashAccount = configTable.GetByDefaultCashCoaID();
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@OpInventoryReleaseID", model.OpInventoryReleaseID),
-               new SqlParameter("@CreditCoaID", MileageShortageAccount.ValueString),
-               new SqlParameter("@DebitCoaID", CashAccount.ValueString),
                new SqlParameter("@ReceiptMode", model.ReceiptMode),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@Reference", model.Reference),

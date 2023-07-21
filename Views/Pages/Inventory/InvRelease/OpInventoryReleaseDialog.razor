@@ -3,18 +3,20 @@
 @using ArmsServices.DataServices.Inventory;
 @using Core.BaseModels.Finance.Transactions;
 @using Core.IDataServices.Finance.Transactions;
+@using System.Threading;
 
 @attribute [Authorize]
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @inject IOpInventoryReleaseService Iservice
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 @inject IInventoryItemService itemIservice
-
-<MudDialog>
-    <DialogContent>
-        <MudContainer Style="min-height:300px;max-height: 800px;">
-            <EditForm id="inventoryRequestForm" Model="@model" OnValidSubmit="OnValidSubmit">
+@inject ITruckService Itruck
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Inventory Release" formID="OpInventoryReleaseForm" model="@model">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm id="OpInventoryReleaseForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
@@ -80,7 +82,7 @@
                                     <TripSelector Value="SelectedTrip" BranchID="model.BranchID" ValueChanged="@((TripModel newValue) => SetTrip(newValue))" />
                                 </MudItem>
                                 <MudItem xs="3">
-                                    <TruckSelector @bind-Value="SelectedTruck"></TruckSelector>
+                                    <TruckSelector @bind-Value="SelectedTruck" IsDisabled="@IsDisableTruck"></TruckSelector>
                                 </MudItem>
                                 <MudItem xs="4">
                                     <MudTextField @bind-Value="EnteredQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => EnteredQty)"></MudTextField>
@@ -96,14 +98,12 @@
                     </MudItem>
                 </MudGrid>
             </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton form="inventoryRequestForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-
-    </DialogActions>
-</MudDialog>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocumentID="model.OpInventoryReleaseID" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
 
 @code {
 
@@ -116,15 +116,18 @@
     [Parameter]
     public int? branchID { get; set; }
     private string UserID = null;
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 51;
 
     private List<InventoryItemModel> ItemList = new();
+    private List<TruckModel> TruckList = new();
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter]
     public bool IsDisableEntries { get; set; } = false;
 
-
+    public bool IsDisableTruck { get; set; } = false;
 
     public InventoryItemModel SelectedItems = new();
     public TripModel SelectedTrip = new();
@@ -137,6 +140,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         var authprov = await auth.GetAuthenticationStateAsync();
         model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
@@ -160,9 +165,19 @@
             model.Items = Iservice.GetSub(model.OpInventoryReleaseID).ToList();
             model.TotalQty = model?.Items?.Sum(s => s.ItemQty) ?? 0;
         }
+        TruckList = Itruck.SelectByBranch(model.BranchID, null).ToList();
         ItemList = itemIservice.SearchByDescription(string.Empty).ToList();
     }
 
+    protected void Approve(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+            model.UserInfo.UserID = UserID;
+            Iservice.Approve(model.OpInventoryReleaseID, model.UserInfo.UserID, aprvd.Remarks);
+            snackbar.Add("Approved Successfully", Severity.Success);
+        }
+    }
     protected override void OnParametersSet()
     {
         editContext = new EditContext(model);
@@ -202,6 +217,7 @@
         EnteredQty = 0;
         SelectedItems = null;
         SelectedItems = new();
+        IsDisableTruck = false;
         SetNarration();
     }
 
@@ -227,30 +243,50 @@
 
     void SetNarration()
     {
-        model.Narration = (model.Item?.ItemDecription ?? "") + " Issue " + (model.Items?.Count() ?? 0) + "against " + String.Join(", ",(model.Items?.Select(s => s.TripNo)?.ToList()??null));
+        model.Narration = (model.Item?.ItemDecription ?? "") + " Issue " + (model.Items?.Count() ?? 0) + " against " + String.Join(", ", (model.Items?.Select(s => s.TripNo)?.ToList() ?? null));
     }
     void SetTrip(TripModel item)
     {
         SelectedTrip = item;
+        if (item == null || item.TripID == null || item.TripID == 0)
+        {
+            IsDisableTruck = false;
+        }
+        else
+        {
+            SelectedTruck = TruckList.FirstOrDefault(s => s.TruckID == item.TruckID);
+            IsDisableTruck = true;
+        }
     }
 
-    public void OnValidSubmit(EditContext context)
+    public async Task OnValidSubmit(EditContext context)
     {
-        try
+        if (HasPermissionEdit)
         {
-            if (model.Items.Count() == 0)
+            try
             {
-                snackbar.Add("Add at least one item.", Severity.Error);
-                return;
-            }
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(model);
+                if (model.Items.Count() == 0)
+                {
+                    snackbar.Add("Add at least one item.", Severity.Error);
+                    return;
+                }
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(model);
 
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+
         }
     }
 
