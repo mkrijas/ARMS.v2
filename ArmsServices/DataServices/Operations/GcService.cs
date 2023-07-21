@@ -277,7 +277,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.GcSet.EventUpdate]", parameters);
         }
 
-        public int UpdateEwayBill(EwayBillModel model)
+        public EwayBillModel UpdateEwayBill(EwayBillModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -287,7 +287,23 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@ExpireOn",model.ExpireOn),
                 new SqlParameter("@UserID",model.UserInfo.UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Gc.EwayBill.Update]", parameters);
+            foreach(IDataRecord dr in   Iservice.GetDataReader("[usp.Gc.EwayBill.Update]", parameters))
+            {
+                return new EwayBillModel()
+                {
+                    GcID = dr.GetInt64("GcID"),
+                    EwayBillRef = dr.GetString("EwayBillRef"),
+                    EwayBillDate = dr.GetDateTime("EwayBillDate"),
+                    ExpireOn = dr.GetDateTime("ExpireOn"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
+            }
+            return null;
         }
         public decimal? GetFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty, decimal? Frt)
         {

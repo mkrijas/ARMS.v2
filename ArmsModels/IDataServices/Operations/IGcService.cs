@@ -26,7 +26,7 @@ namespace ArmsServices.DataServices
         int AppendToTrip(long? TripID, long? GcSetID, string UserID);  //AppentToTrip
         int BeginUnload(long? TripID, long? GcSetID);
         int RemoveFromTrip(long? GcSetID, long? TripID, string UserID);  //AppentToTrip
-        int UpdateEwayBill(EwayBillModel model);  //Edit
+        EwayBillModel UpdateEwayBill(EwayBillModel model);  //Edit
         decimal? GetFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty, decimal? freight);
         //decimal? GetFreight(int? orderID, int? routeID, object value, decimal? billQuantity, decimal? freight);
     }
