@@ -9,6 +9,7 @@ using ArmsServices.DataServices.Operations;
 using Blazored.SessionStorage;
 using Core.IDataServices.Finance.Transactions;
 using DAL.DataServices.Finance.Transactions;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -58,6 +59,7 @@ namespace Views
             services.AddBlazorContextMenu();
             services.AddBlazoredSessionStorage();
 
+            services.AddScoped<SignalRService>();
             services.AddSignalRCore();
             services.AddAuthorization(config =>
             {
@@ -189,6 +191,7 @@ namespace Views
             services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddDefaultTokenProviders();
             services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation > ();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
