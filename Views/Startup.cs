@@ -27,7 +27,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Views.Data;
+using Microsoft.AspNetCore.ResponseCompression;
+
 
 namespace Views
 {
@@ -57,18 +60,27 @@ namespace Views
             services.AddBlazorContextMenu();
             services.AddBlazoredSessionStorage();
 
-            services.AddScoped<ArmsServices.DataServices.SignalRService>();
+
+            // ------ SIgnalR & Hub ---------- //
+            services.AddScoped<SignalRService>();
             services.AddSignalRCore();
-            services.AddAuthorization(config =>
+            services.AddResponseCompression(opts =>
             {
-                config.AddPolicy("Admin", policy => policy.RequireClaim("Admin"));
-                config.AddPolicy("EditJournal", policy => policy.RequireClaim("18","Edit"));
-                config.AddPolicy("DeleteJournal", policy => policy.RequireClaim("18", "Delete"));
+                opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+                      new[] { "application/octet-stream" });
             });
 
 
-            services.AddSingleton<TruckDataArrayModel>();
+            // -------- Authorization----------- //
+            services.AddAuthorization(config =>
+            {
+                config.AddPolicy("Admin", policy => policy.RequireClaim("Admin"));                
+            });
 
+
+
+
+            services.AddSingleton<TruckDataArrayModel>();
 
             services.AddSingleton<IDbService, DbService>();
             services.AddScoped<IBranchService, BranchService>();
@@ -210,6 +222,8 @@ namespace Views
             CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
             CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
+            app.UseResponseCompression();
+
             app.UseHttpsRedirection();          
 
             app.UseRouting();
@@ -235,8 +249,9 @@ namespace Views
             {
                 endpoints.MapControllers();
                 endpoints.MapBlazorHub();
-                endpoints.MapFallbackToPage("/_Host");
                 endpoints.MapHub<ChatHub>("/chatHub");
+                endpoints.MapFallbackToPage("/_Host");
+                
             });
         }
     }
