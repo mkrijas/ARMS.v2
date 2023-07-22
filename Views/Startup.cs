@@ -30,7 +30,8 @@ using System.Threading.Tasks;
 
 using Views.Data;
 using Microsoft.AspNetCore.ResponseCompression;
-
+using Core.IDataServices.Finance.Transactions;
+using DAL.DataServices.Finance.Transactions;
 
 namespace Views
 {
