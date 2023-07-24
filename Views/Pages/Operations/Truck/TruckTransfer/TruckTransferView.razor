@@ -162,22 +162,14 @@
 
     void Receive(PushNotificationModel pushNotificationModel)
     {
-                currentNotificationMessages = allNotificationMessages.Where(s => (s.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-                InvokeAsync(() => StateHasChanged());
+        currentNotificationMessages = allNotificationMessages.Where(s => (s.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+        InvokeAsync(() => StateHasChanged());
     }
 
     private async Task Send()
     {
-        PushNotificationModel PushNotificationMessage = new()
-            {
-                InitiateBranch = notificationMessage.InitiateBranch,
-                ReceivedBranch = notificationMessage.ReceivedBranch,
-                MessageTitle = notificationMessage.MessageTitle,
-                MessageBody = notificationMessage.MessageBody,
-                ExpiredBy = 7,
-            };
 
-        PushNotificationModel result = IpushNotificationService.UpdatePushNotification(PushNotificationMessage);
+        PushNotificationModel result = IpushNotificationService.UpdatePushNotification(notificationMessage);
 
         await hubConnection.SendAsync("SendMessages",
         result);
@@ -270,6 +262,8 @@
                     notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered to this branch.";
                     notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " to this branch on " + (DateTime.Now).ToString() + ".";
                     notificationMessage.RedirectedTo = 0;
+                    notificationMessage.ExpiredBy = 7;
+                    notificationMessage.DocumentID = ReturnData.TruckTransferInitiationID;
                     notificationMessage.MsgDate = DateTime.Now;
                     await Send();
                 }
@@ -426,6 +420,8 @@
                         notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " on " + (DateTime.Now).ToString() + ".";
                         notificationMessage.RedirectedTo = 0;
                         notificationMessage.MsgDate = DateTime.Now;
+                        notificationMessage.ExpiredBy = 7;
+                        notificationMessage.DocumentID = ReturnData.TruckTransferInitiationID;
                         await Send();
                     }
                 }
