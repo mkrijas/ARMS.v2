@@ -136,7 +136,6 @@ namespace DAL.DataServices.Finance.Transactions
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@OpInventoryReleaseID", model.OpInventoryReleaseID),
-               new SqlParameter("@ReceiptMode", model.ReceiptMode),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@BranchID", model.BranchID),
@@ -162,7 +161,6 @@ namespace DAL.DataServices.Finance.Transactions
             {
                 OpInventoryReleaseID = dr.GetInt32("OpInventoryReleaseID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
-                ReceiptMode = dr.GetString("ReceiptMode"),
                 Item = new InventoryItemModel() { 
                     InventoryItemID = dr.GetInt32("InventoryItemID"),
                  ItemDecription = dr.GetString("ItemDescription"),
