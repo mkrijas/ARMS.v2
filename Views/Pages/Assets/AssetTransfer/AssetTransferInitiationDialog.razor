@@ -1,0 +1,146 @@
+﻿@inject AuthenticationStateProvider auth
+@inject IAssetTransferService Iservice
+@inject IBranchService Ibranchservice
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog>
+    <TitleContent>
+        @if (model.AssetTransferID == null || model.AssetTransferID == 0)
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Asset Transfer Initiation.
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Asset Transfer Initiation.
+            </MudText>
+        }
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm Model="@model" OnValidSubmit="Submit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="12">
+                        <AssetSelector Value="model.Asset" BranchID="BranchID" ValueChanged="AssetSelected" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect Label="Destination Branch" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="model.DestinationBranch.BranchID" T="int?" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.TopCenter" AdornmentColor="Color.Secondary" Required>
+                            @foreach (BranchModel ditem in DestinationBranchList)
+                            {
+                                <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Initiated Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.TransferInitiatedDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+
+            </EditForm>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public AssetTransferInitiationModel model { get; set; } = new();
+    [Parameter]
+    public int? AssetID { get; set; }
+
+    private List<BranchModel> DestinationBranchList = new();
+
+    private int BranchID { get; set; } = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        if (model.InitiatedBranch == null)
+        {
+            model.InitiatedBranch = new();
+            model.InitiatedBranch.BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        }
+        if (model.DestinationBranch == null)
+        {
+            model.DestinationBranch = new();
+        }
+        if (model.Asset == null)
+        {
+            model.Asset = new();
+        }
+        BranchID = model?.InitiatedBranch?.BranchID ?? 0;
+
+        DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != BranchID).ToList();
+    }
+    
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public async Task Submit()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        if (model.Asset == null || model.Asset.AssetID == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Please, Select asset.", yesText: "OK");
+
+            return;
+        }
+        if (model != null)
+        {
+            try
+            {
+                model.InitiatedBranch.BranchID = int.Parse(brancIDString);
+
+                if (model.DestinationBranch == null)
+                {
+                    bool? result = await DialogService.ShowMessageBox(
+                          "Warning",
+                          "Select branch !.",
+                          yesText: "OK");
+                    return;
+                }
+                Iservice.UpdateOutgoing(model);
+                Snackbar.Add("Transferred successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+
+        MudDialog.Close(model);
+    }
+
+    private async Task AssetSelected(AssetModel obj)
+    {
+        model.Asset = obj;
+    }
+
+}
+

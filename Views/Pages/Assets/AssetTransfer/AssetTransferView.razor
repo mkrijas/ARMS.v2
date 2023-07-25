@@ -1,0 +1,383 @@
+﻿@page "/AssetTransferView"
+
+@using ArmsModels.BaseModels.General
+@using ArmsServices.DataServices.General
+@using Microsoft.AspNetCore.SignalR.Client;
+@using Views.Data
+
+@inject IAssetTransferService Iservice
+@inject IPushNotificationService IpushNotificationService
+@inject MudBlazor.ISnackbar snackbar
+
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+@inject IBranchService Ibranchservice
+@inject NavigationManager NavigationManager
+
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+            <MudTabPanel Text="Asset Transfer Outgoing">
+                <MudTable Items="@collectionOutGoing" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="modelOutGoing">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Initiate Transfer</MudText>
+                        <MudTooltip Text="New Asset Transfer">
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEditOutGoing(new AssetTransferInitiationModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                        </MudTooltip>
+                        <MudSpacer></MudSpacer>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.Asset.Description)" InitialDirection="SortDirection.Ascending">Asset</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.DestinationBranch.BranchName)" InitialDirection="SortDirection.Ascending">Destination Branch</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<DriverTransferInitiationModel, object>(x=> x.TransferInitiatedDate)" InitialDirection="SortDirection.Ascending">Date</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.AssetTransferEndModel.StatusText)" InitialDirection="SortDirection.Ascending">Status</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.Remarks)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Asset">@context.Asset.Description</MudTd>
+                        <MudTd DataLabel="Destination Branch">@context.DestinationBranch.BranchName</MudTd>
+                        <MudTd DataLabel="Date">@context.TransferInitiatedDate</MudTd>
+                        <MudTd DataLabel="Status">@context.AssetTransferEndModel.StatusText</MudTd>
+                        <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+                        <MudTd DataLabel="">
+                            <MudTooltip Text="Edit">
+                                <MudIconButton @onclick="@(()=> OpenDialogEditOutGoing(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                            </MudTooltip>
+                            <MudTooltip Text="Remove">
+                                <MudIconButton @onclick="@(()=> OpenDialogDeleteOutGoing(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" IconSize="Size.Small" />
+                            </MudTooltip>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+
+                    </PagerContent>
+                </MudTable>
+            </MudTabPanel>
+            <MudTabPanel Text="Asset Transfer Incoming">
+
+                <MudTable Items="@collectionIncoming" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="modelIncoming">
+
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.Asset.Description)" InitialDirection="SortDirection.Ascending">Asset</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.InitiatedBranch.BranchName)" InitialDirection="SortDirection.Ascending">Initiation Branch</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.AssetTransferEndModel.StatusText)" InitialDirection="SortDirection.Ascending">Transfer Status</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.TransferInitiatedDate)" InitialDirection="SortDirection.Ascending">Date</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<AssetTransferInitiationModel, object>(x=> x.Remarks)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Asset">@context.Asset.Description</MudTd>
+                        <MudTd DataLabel="Initiation Branch">@context.InitiatedBranch.BranchName</MudTd>
+                        <MudTd DataLabel="Transfer Status">@context.AssetTransferEndModel.StatusText</MudTd>
+                        <MudTd DataLabel="Date">@context.TransferInitiatedDate</MudTd>
+                        <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+                        <MudTd DataLabel="">
+                            <MudTooltip Text="Edit">
+                                <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                            </MudTooltip>
+                        </MudTd>
+
+                    </RowTemplate>
+
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+
+                    </PagerContent>
+                </MudTable>
+            </MudTabPanel>
+        </MudTabs>
+    </MudItem>
+</MudGrid>
+
+
+@code {
+    int CurrentBranchId = 0;
+
+    private List<BranchModel> BranchList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        BranchList = Ibranchservice.Select().ToList();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        CurrentBranchId = int.Parse(brancIDString);
+
+        hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
+        hubConnection.On<BranchModel, BranchModel, string, string, int, string>("ReceiveMessage", (InitiateBranch, ReceivedBranch, MessageTitle, MessageBody, RedirectedTo, MsgDatest) =>
+        {
+            allNotificationMessages.Add(new PushNotificationModel()
+                {
+                    MSgId = allNotificationMessages.Count() + 1,
+                    MessageID = 0,
+                    InitiateBranch = InitiateBranch,
+                    ReceivedBranch = ReceivedBranch,
+                    MessageTitle = MessageTitle,
+                    MessageBody = MessageBody,
+                    RedirectedTo = RedirectedTo,
+                    MsgDateString = MsgDatest
+                });
+            currentNotificationMessages = allNotificationMessages.Where(s => (s.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+            InvokeAsync(() => StateHasChanged());
+        });
+        await hubConnection.StartAsync();
+
+        await GetAllOutGoing();
+        await GetAllIncoming();
+    }
+
+
+    #region SignaIR Notification
+
+    private List<PushNotificationModel> allNotificationMessages = new List<PushNotificationModel>();
+    private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    private HubConnection hubConnection;
+    private string BoxCss = "none";
+
+    private async Task Send()
+    {
+        PushNotificationModel PushNotificationMessage = new()
+            {
+                InitiateBranch = notificationMessage.InitiateBranch,
+                ReceivedBranch = notificationMessage.ReceivedBranch,
+                MessageTitle = notificationMessage.MessageTitle,
+                MessageBody = notificationMessage.MessageBody,
+                ExpiredBy = 7,
+            };
+
+        var result = IpushNotificationService.UpdatePushNotification(PushNotificationMessage);
+
+        await hubConnection.SendAsync("SendMessages",
+        result.MessageID,
+        notificationMessage.InitiateBranch,
+        notificationMessage.ReceivedBranch,
+        notificationMessage.MessageTitle,
+        notificationMessage.MessageBody,
+        0,
+        notificationMessage.MsgDatest);
+
+
+        notificationMessage.InitiateBranch = new();
+        notificationMessage.ReceivedBranch = new();
+        notificationMessage.MessageTitle = "";
+        notificationMessage.MessageBody = "";
+    }
+
+    public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+
+    private void NotificationHideShow()
+    {
+        if (BoxCss == "none") BoxCss = "block";
+        else BoxCss = "none";
+    }
+
+    #endregion
+
+    private async Task GetAll()
+    {
+
+        await GetAllOutGoing();
+        await GetAllIncoming();
+    }
+
+    #region Outgoing
+
+
+    private AssetTransferInitiationModel modelOutGoing = new();
+
+    private List<AssetTransferInitiationModel> collectionOutGoing = new();
+
+    string state = "Message box hasn't been opened yet";
+
+
+    private async Task OpenDialogEditOutGoing(AssetTransferInitiationModel AssetTransferInitiation)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        if (AssetTransferInitiation.InitiatedBranch == null)
+        {
+            AssetTransferInitiation.InitiatedBranch = new();
+        }
+        if (AssetTransferInitiation.DestinationBranch == null)
+        {
+            AssetTransferInitiation.DestinationBranch = new();
+        }
+        AssetTransferInitiation.InitiatedBranch.BranchID = int.Parse(brancIDString);
+
+
+        var modelOutGoing = new DialogParameters { ["model"] = AssetTransferInitiation };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var dialog = DialogService.Show<AssetTransferInitiationDialog>("Simple Dialog", modelOutGoing, options);
+
+        var result = await dialog.Result;
+
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            if (IsConnected)
+            {
+
+                var ReturnData = (AssetTransferInitiationModel)result.Data;
+                notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiatedBranch?.BranchID ?? 0)) ?? null;
+                notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
+                notificationMessage.MessageTitle = "Asset name " + (ReturnData?.Asset?.Description ?? "") + " is transfered to this branch.";
+                notificationMessage.MessageBody = "Asset name " + (ReturnData?.Asset?.Description ?? "") + " is transfered from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " to this branch on " + (DateTime.Now).ToString() + ".";
+                notificationMessage.RedirectedTo = 0;
+                notificationMessage.MsgDate = DateTime.Now;
+                await Send();
+            }
+
+            await GetAll();
+        }
+       
+    }
+
+
+    private async Task OpenDialogDeleteOutGoing(AssetTransferInitiationModel AssetTransferInitiation)
+    {
+       
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Are you sure you want to delete this entry?",
+            yesText: "Delete!", cancelText: "Cancel");
+        state = result == null ? "Cancelled" : "Deleted!";
+        if (state == "Deleted!")
+        {
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+
+            try
+            {
+                var BranchID = int.Parse(brancIDString);
+
+                Iservice.DeleteInitiation(AssetTransferInitiation.AssetTransferID, BranchID, AssetTransferInitiation.Asset.AssetID);
+                snackbar.Add("Asset Transfer Canceled", Severity.Warning);
+
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+            await GetAll();
+        }
+    }
+
+
+    private async Task GetAllOutGoing()
+    {
+
+        collectionOutGoing = new();
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        if (modelOutGoing.InitiatedBranch == null)
+        {
+            modelOutGoing.InitiatedBranch = new();
+        }
+        modelOutGoing.InitiatedBranch.BranchID = int.Parse(brancIDString);
+
+        foreach (var item in Iservice.SelectOutgoingAssets(modelOutGoing.InitiatedBranch.BranchID))
+        {
+            collectionOutGoing.Add(item);
+        }
+    }
+    #endregion
+
+    #region Incoming
+
+
+    private AssetTransferInitiationModel modelIncoming = new();
+
+    private List<AssetTransferInitiationModel> collectionIncoming = new();
+
+    private async Task OpenDialogEditIncoming(AssetTransferInitiationModel AssetTransferEnd)
+    {
+        
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        if (AssetTransferEnd.AssetTransferEndModel == null)
+        {
+            AssetTransferEnd.AssetTransferEndModel = new();
+        }
+        if (AssetTransferEnd.DestinationBranch == null)
+        {
+            AssetTransferEnd.DestinationBranch = new();
+        }
+        AssetTransferEnd.DestinationBranch.BranchID = int.Parse(brancIDString);
+
+
+        var modelIncoming = new DialogParameters { ["model"] = AssetTransferEnd };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var dialog = DialogService.Show<AssetTransferEndDialog>("Simple Dialog", modelIncoming, options);
+
+        var result = await dialog.Result;
+
+        var isCancelled = result.Cancelled;
+
+        if (!isCancelled)
+        {
+            if (IsConnected)
+            {
+                var ReturnData = (AssetTransferInitiationModel)result.Data;
+                if (ReturnData.IsAssetReject == 1)
+                {
+
+                    notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
+                    notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiatedBranch?.BranchID ?? 0)) ?? null;
+                    notificationMessage.MessageTitle = "Asset name " + (ReturnData?.Asset?.Description ?? "") + " is rejected.";
+                    notificationMessage.MessageBody = "Truck name " + (ReturnData?.Asset?.Description ?? "") + " is rejected from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " on " + (DateTime.Now).ToString() + ".";
+                    notificationMessage.RedirectedTo = 0;
+                    notificationMessage.MsgDate = DateTime.Now;
+                    await Send();
+                }
+            }
+            await GetAll();
+        }
+    }
+
+
+    private async Task GetAllIncoming()
+    {
+        collectionIncoming = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        if (modelIncoming.AssetTransferEndModel == null)
+        {
+            modelIncoming.AssetTransferEndModel = new();
+        }
+        if (modelIncoming.DestinationBranch == null)
+        {
+            modelIncoming.DestinationBranch = new();
+        }
+        modelIncoming.DestinationBranch.BranchID = int.Parse(brancIDString);
+
+        foreach (var item in Iservice.SelectIncomingAssets(modelIncoming.DestinationBranch?.BranchID ?? 0))
+        {
+            collectionIncoming.Add(item);
+        }
+
+
+    }
+    #endregion
+}
