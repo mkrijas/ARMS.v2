@@ -14,6 +14,7 @@
 @inject IDialogService DialogService
 @inject IBranchService Ibranchservice
 @inject NavigationManager NavigationManager
+@inject SignalRService signalRService
 
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
@@ -46,14 +47,15 @@
                             </MudTooltip>
                         </MudTd>
                     </RowTemplate>
+
                     <PagerContent>
                         <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-
                     </PagerContent>
+
                 </MudTable>
             </MudTabPanel>
-            <MudTabPanel Text="Driver Transfer Incoming">
 
+            <MudTabPanel Text="Driver Transfer Incoming">
                 <MudTable Items="@collectionIncoming" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="modelIncoming">
 
                     <HeaderContent>
@@ -75,21 +77,20 @@
                                 <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.HowToReg" Size="Size.Small" IconSize="Size.Small" />
                             </MudTooltip>
                         </MudTd>
-
                     </RowTemplate>
 
                     <PagerContent>
                         <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-
                     </PagerContent>
+
                 </MudTable>
             </MudTabPanel>
         </MudTabs>
     </MudItem>
 </MudGrid>
 
-
 @code {
+
     int CurrentBranchId = 0;
 
     private List<BranchModel> BranchList = new();
@@ -112,28 +113,35 @@
 
         CurrentBranchId = int.Parse(brancIDString);
 
+
         hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
-        hubConnection.On<BranchModel, BranchModel, string, string, int, string>("ReceiveMessage", (InitiateBranch, ReceivedBranch, MessageTitle, MessageBody, RedirectedTo, MsgDatest) =>
-        {
-            allNotificationMessages.Add(new PushNotificationModel()
-                {
-                    MSgId = allNotificationMessages.Count() + 1,
-                    MessageID = 0,
-                    InitiateBranch = InitiateBranch,
-                    ReceivedBranch = ReceivedBranch,
-                    MessageTitle = MessageTitle,
-                    MessageBody = MessageBody,
-                    RedirectedTo = RedirectedTo,
-                    MsgDateString = MsgDatest
-                });
-            currentNotificationMessages = allNotificationMessages.Where(s => (s.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-            InvokeAsync(() => StateHasChanged());
-        });
+        signalRService.RegisterReceivedMessage(e => Receive(e));
+
         await hubConnection.StartAsync();
+
+        //hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
+        //hubConnection.On<BranchModel, BranchModel, string, string, int, string>("ReceiveMessage", (InitiateBranch, ReceivedBranch, MessageTitle, MessageBody, RedirectedTo, MsgDatest) =>
+        //{
+        //    allNotificationMessages.Add(new PushNotificationModel()
+        //        {
+        //            MSgId = allNotificationMessages.Count() + 1,
+        //            MessageID = 0,
+        //            InitiateBranch = InitiateBranch,
+        //            ReceivedBranch = ReceivedBranch,
+        //            MessageTitle = MessageTitle,
+        //            MessageBody = MessageBody,
+        //            RedirectedTo = RedirectedTo,
+        //            MsgDateString = MsgDatest
+        //        });
+        //    currentNotificationMessages = allNotificationMessages.Where(s => (s.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+        //    InvokeAsync(() => StateHasChanged());
+        //});
+        //await hubConnection.StartAsync();
 
         await GetAllOutGoing();
         await GetAllIncoming();
     }
+
 
     #region SignaIR Notification
 
@@ -154,16 +162,9 @@
                 ExpiredBy = 7,
             };
 
-        var result = IpushNotificationService.UpdatePushNotification(PushNotificationMessage);
+        PushNotificationModel result = IpushNotificationService.UpdatePushNotification(PushNotificationMessage);
 
-        await hubConnection.SendAsync("SendMessages",
-        result.MessageID,
-        notificationMessage.InitiateBranch,
-        notificationMessage.ReceivedBranch,
-        notificationMessage.MessageTitle,
-        notificationMessage.MessageBody,
-        0,
-        notificationMessage.MsgDatest);
+        await hubConnection.SendAsync("SendMessages", result);
 
 
         notificationMessage.InitiateBranch = new();
@@ -172,6 +173,7 @@
         notificationMessage.MessageBody = "";
     }
 
+
     public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
 
     private void NotificationHideShow()
@@ -179,6 +181,7 @@
         if (BoxCss == "none") BoxCss = "block";
         else BoxCss = "none";
     }
+
 
     #endregion
 
@@ -189,8 +192,15 @@
         await GetAllIncoming();
     }
 
+
     #region Outgoing
 
+
+    void Receive(PushNotificationModel pushNotificationModel)
+    {
+        currentNotificationMessages = allNotificationMessages.Where(s => (s.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+        InvokeAsync(() => StateHasChanged());
+    }
 
     private DriverTransferInitiationModel modelOutGoing = new();
 
@@ -268,7 +278,6 @@
                 var user = authprov.User;
                 var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
 
-
                 try
                 {
                     var BranchID = int.Parse(brancIDString);
@@ -313,6 +322,8 @@
             collectionOutGoing.Add(item);
         }
     }
+
+
     #endregion
 
     #region Incoming
@@ -322,12 +333,8 @@
 
     private List<DriverTransferInitiationModel> collectionIncoming = new();
 
-
-
     private async Task OpenDialogEditIncoming(DriverTransferInitiationModel DriverTransferEnd)
     {
-
-
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -361,7 +368,6 @@
                 var ReturnData = (DriverTransferInitiationModel)result.Data;
                 if (ReturnData.IsdriverReject == 1)
                 {
-
                     notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
                     notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiatedBranch?.BranchID ?? 0)) ?? null;
                     notificationMessage.MessageTitle = "Driver name " + (ReturnData?.Driver?.DriverName ?? "") + " is rejected.";
@@ -371,10 +377,10 @@
                     await Send();
                 }
             }
-
             await GetAll();
         }
     }
+
 
     private async Task GetAllIncoming()
     {
@@ -397,10 +403,6 @@
         {
             collectionIncoming.Add(item);
         }
-
-
     }
     #endregion
-
-
 }

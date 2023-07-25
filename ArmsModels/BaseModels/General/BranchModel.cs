@@ -16,7 +16,6 @@ namespace ArmsModels.BaseModels
             Contacts = new();
         }
 
-
         private string _branchName;
         [Required]
         public string BranchCode { get; set; }
@@ -31,7 +30,7 @@ namespace ArmsModels.BaseModels
         public string BranchName 
         {
             get { return _branchName; }
-            set { _branchName = value;Address.AddresseeName = value; }
+            set { _branchName = value; Address.AddresseeName = value; }
         }
         [Required]
         [StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]

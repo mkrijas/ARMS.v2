@@ -1,21 +1,23 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace ArmsModels.BaseModels
 {
 
-    public class GcSetModel
+    public class GcSetModel : ICloneable
     {
         public GcSetModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
             Gcs = new();
-        }        
+        }
         public long? GcSetID { get; set; }
-        public long? TripID { get; set; }        
+        public long? TripID { get; set; }
         public int? BranchID { get; set; }
         [Required]
         public int? OrderID { get; set; }
@@ -31,12 +33,10 @@ namespace ArmsModels.BaseModels
         public int? ConsigneeID { get; set; }
         public byte? PaidBy { get; set; }
         public virtual string ConsigneeName { get; set; }
-
         public virtual string SetGcNumber { get; set; }
         public virtual string SetBillNumber { get; set; }
         public virtual decimal? SetBillQuantity { get; set; }
         public virtual decimal? SetUnloadQuantity { get; set; }
-        
         public virtual decimal? TotalFreight { get { return Gcs.Sum(x => x.Freight); } }
         public decimal? TotalBillQuantity { get; set; }
         public decimal? TotalUnloadingQuantity { get; set; }
@@ -48,13 +48,20 @@ namespace ArmsModels.BaseModels
 
         [ValidateComplexType]
         public List<GcModel> Gcs { get; set; }
+
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<GcSetModel>(Json);
+        }
     }
 
-    public class GcModel
+    public class GcModel : ICloneable
     {
         public GcModel()
         {
-            UserInfo = new  SharedModels.UserInfoModel();
+            UserInfo = new SharedModels.UserInfoModel();
             EwayBill = new();
         }
         public long? GcID { get; set; }
@@ -67,7 +74,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? BillDate { get; set; } = DateTime.Today;
         public string BillNumber { get; set; }
-        [Required][Range(1,double.MaxValue)]
+        [Required]
+        [Range(1, double.MaxValue)]
         public decimal? BillQuantity { get; set; }
         public virtual decimal? UnloadedQuantity { get; set; }
         public string PassNumber { get; set; }
@@ -75,14 +83,20 @@ namespace ArmsModels.BaseModels
         [Required]
         public virtual decimal? EFreight { get; set; } = 200;
         [Required]
-       
-        public  decimal? Freight { get; set; }
+
+        public decimal? Freight { get; set; }
 
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<GcModel>(Json);
+        }
     }
 
 
-    public class EwayBillModel
+    public class EwayBillModel : ICloneable
     {
         public EwayBillModel()
         {
@@ -95,5 +109,11 @@ namespace ArmsModels.BaseModels
         public DateTime? EwayBillDate { get; set; } = DateTime.Today;
         public DateTime? ExpireOn { get; set; } = DateTime.Today.AddDays(2);
         public SharedModels.UserInfoModel UserInfo { get; set; }
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<EwayBillModel>(Json);
+        }
     }
 }
