@@ -7,8 +7,7 @@ using ArmsServices.DataServices.General;
 using ArmsServices.DataServices.Inventory;
 using ArmsServices.DataServices.Operations;
 using Blazored.SessionStorage;
-using Core.IDataServices.Finance.Transactions;
-using DAL.DataServices.Finance.Transactions;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -28,7 +27,11 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Views.Data;
+using Microsoft.AspNetCore.ResponseCompression;
+using Core.IDataServices.Finance.Transactions;
+using DAL.DataServices.Finance.Transactions;
 
 namespace Views
 {
@@ -58,17 +61,27 @@ namespace Views
             services.AddBlazorContextMenu();
             services.AddBlazoredSessionStorage();
 
+
+            // ------ SIgnalR & Hub ---------- //
+            services.AddScoped<SignalRService>();
             services.AddSignalRCore();
-            services.AddAuthorization(config =>
+            services.AddResponseCompression(opts =>
             {
-                config.AddPolicy("Admin", policy => policy.RequireClaim("Admin"));
-                config.AddPolicy("EditJournal", policy => policy.RequireClaim("18","Edit"));
-                config.AddPolicy("DeleteJournal", policy => policy.RequireClaim("18", "Delete"));
+                opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+                      new[] { "application/octet-stream" });
             });
 
 
-            services.AddSingleton<TruckDataArrayModel>();
+            // -------- Authorization----------- //
+            services.AddAuthorization(config =>
+            {
+                config.AddPolicy("Admin", policy => policy.RequireClaim("Admin"));                
+            });
 
+
+
+
+            services.AddSingleton<TruckDataArrayModel>();
 
             services.AddSingleton<IDbService, DbService>();
             services.AddScoped<IBranchService, BranchService>();
@@ -189,6 +202,7 @@ namespace Views
             services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddDefaultTokenProviders();
             services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation > ();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -208,6 +222,8 @@ namespace Views
             var cultureInfo = new CultureInfo("en-IN");            
             CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
             CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
+            app.UseResponseCompression();
 
             app.UseHttpsRedirection();          
 
@@ -234,8 +250,9 @@ namespace Views
             {
                 endpoints.MapControllers();
                 endpoints.MapBlazorHub();
-                endpoints.MapFallbackToPage("/_Host");
                 endpoints.MapHub<ChatHub>("/chatHub");
+                endpoints.MapFallbackToPage("/_Host");
+                
             });
         }
     }

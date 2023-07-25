@@ -9,7 +9,6 @@ namespace Core.BaseModels.Finance.Transactions
         public OpInventoryReleaseModel()
         {
             NatureOfTransaction = "Op Inventory Release";
-            ReceiptMode = "Cash";
             TotalAmount = 0;
         }
         public int? OpInventoryReleaseID { get; set; }
@@ -20,8 +19,6 @@ namespace Core.BaseModels.Finance.Transactions
 
         [Required]
         public  decimal? TotalQty { get; set; }
-        [Required]
-        public string ReceiptMode { get; set; }
         public string Reference { get; set; }
         [ValidateComplexType]
         public List<OpInventoryReleaseSubModel> Items { get; set; } = new();
