@@ -12,5 +12,11 @@ namespace ArmsServices.DataServices
         int DeleteInitiation(int? ID, int? BranchID, int? AssetID);
         AssetTransferInitiationModel UpdateStatus(AssetTransferInitiationModel model);
         IEnumerable<AssetTransferInitiationModel> SelectIncomingAssets(int? Branch);
+
+        ChildAssetTransferInitiationModel UpdateOutgoingChild(ChildAssetTransferInitiationModel model);
+        IEnumerable<ChildAssetTransferInitiationModel> SelectOutgoingChildAssets(int? Branch);
+        int DeleteInitiationChild(int? ID, int? BranchID, int? AssetID);
+        ChildAssetTransferInitiationModel UpdateStatusChild(ChildAssetTransferInitiationModel model);
+        IEnumerable<ChildAssetTransferInitiationModel> SelectIncomingChildAssets(int? Branch);
     }
 }
