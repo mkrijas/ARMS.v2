@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.SignalR.Client;
 @using Views.Data
 
+@inject IAssetService Iassetservice
 @inject IAssetTransferService Iservice
 @inject IPushNotificationService IpushNotificationService
 @inject MudBlazor.ISnackbar snackbar
@@ -212,10 +213,19 @@
         {
             AssetTransferInitiation.DestinationBranch = new();
         }
+        if (AssetTransferInitiation.Asset == null)
+        {
+            AssetTransferInitiation.Asset = new();
+        }
         AssetTransferInitiation.InitiatedBranch.BranchID = int.Parse(brancIDString);
 
-
-        var modelOutGoing = new DialogParameters { ["model"] = AssetTransferInitiation };
+        List<AssetModel> childAssets = Iassetservice.GetAttachedAssets(AssetTransferInitiation.Asset.AssetID).ToList();
+ 
+        var modelOutGoing = new DialogParameters
+        {
+            ["model"] = AssetTransferInitiation,
+            ["childAssets"] = childAssets
+        };
 
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
         var dialog = DialogService.Show<AssetTransferInitiationDialog>("Simple Dialog", modelOutGoing, options);
@@ -324,7 +334,14 @@
         AssetTransferEnd.DestinationBranch.BranchID = int.Parse(brancIDString);
 
 
-        var modelIncoming = new DialogParameters { ["model"] = AssetTransferEnd };
+        // Get the child assets for the selected asset
+        List<AssetModel> childAssets = Iassetservice.GetAttachedAssets(AssetTransferEnd.Asset.AssetID).ToList();
+
+        var modelIncoming = new DialogParameters
+        {
+            ["model"] = AssetTransferEnd,
+            ["childAssets"] = childAssets
+        };
 
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
         var dialog = DialogService.Show<AssetTransferEndDialog>("Simple Dialog", modelIncoming, options);

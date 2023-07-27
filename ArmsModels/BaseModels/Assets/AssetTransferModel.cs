@@ -35,32 +35,4 @@ namespace ArmsModels.BaseModels
         }
     }
 
-    public class ChildAssetTransferInitiationModel
-    {
-        public int? ChildAssetTransferID { get; set; }
-        public AssetModel Asset { get; set; }
-        public AssetTransferInitiationModel ParentAsset { get; set; } 
-        public int? BranchID { get; set; } 
-        public ChildAssetTransferEndModel AssetTransferEndModel { get; set; } 
-        public int IsAssetReject { get; set; } = 0; 
-    }
-
-    public class ChildAssetTransferEndModel
-    {
-        public int? ChildAssetTransferEndID { get; set; }
-        public int? BranchID { get; set; } 
-        public bool? TransferStatus { get; set; } 
-        public string StatusText 
-        {
-            get
-            {
-                if (TransferStatus == null)
-                    return "Being Transferred";
-                else if (TransferStatus.Value)
-                    return "Completed";
-                else
-                    return "Rejected";
-            }
-        }
-    }
 }
