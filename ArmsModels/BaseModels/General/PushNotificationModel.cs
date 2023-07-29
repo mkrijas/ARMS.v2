@@ -14,6 +14,8 @@ namespace ArmsModels.BaseModels.General
         public string AknowledgedBy { get; set; }//UserID
         public int? RedirectedTo { get; set; }
         public string MessageGroupID { get; set; }
+        public string PageToRedirectLink { get; set; }
+        public string ClaimValue { get; set; }
         public int? DocumentTypeID { get; set; }
         public int? DocumentID { get; set; }
         public int? ExpiredBy { get; set; }
@@ -23,7 +25,6 @@ namespace ArmsModels.BaseModels.General
         private DateTime CurrentTime { get; set; } = DateTime.Now;
         public string MsgDatest => this.MsgDate.Value.ToString("dd-MMM-yyyy");
         public string MsgDateString { get; set; }
-        public string PageToRedirectLink { get; set; }
         public string MessageTimeSpan
         {
             get
@@ -57,6 +58,13 @@ namespace ArmsModels.BaseModels.General
             }
         }
         public string ShowOrHideBody { get; set; } = "none";
+    }
+    public class PushNotificationGroupModel
+    {
+        public int? ID { get; set; }   
+        public string MessageGroupID { get; set; }   
+        public string MessageGroupName { get; set; }   
+        public string MessageGroupIcon { get; set; }   
     }
     //public class NotificationMessage
     //{

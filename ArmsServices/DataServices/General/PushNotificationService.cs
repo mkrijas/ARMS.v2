@@ -29,6 +29,7 @@ namespace ArmsServices.DataServices.General
                new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
                new SqlParameter("@RedirectedTo", model.RedirectedTo),
                new SqlParameter("@PageToRedirectLink", model.PageToRedirectLink),
+               new SqlParameter("@ClaimValue", model.ClaimValue),
                new SqlParameter("@DocumentID", model.DocumentID),
                new SqlParameter("@ExpiredBy", model.ExpiredBy),
                new SqlParameter("@RecordStatus", model.RecordStatus)
@@ -76,6 +77,21 @@ namespace ArmsServices.DataServices.General
             return Iservice.ExecuteNonQuery("[usp.General.Notification.Aknowledge]", parameters);
 
         }
+        public IEnumerable<PushNotificationGroupModel> GetAllGroupList()
+        {
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.NotificationGroups.Select]", null))
+            {
+                yield return new PushNotificationGroupModel()
+                {
+                    ID = dr.GetInt32("ID"),
+                    MessageGroupID = dr.GetString("MessageGroupID"),
+                    MessageGroupName = dr.GetString("MessageGroupName"),
+                    MessageGroupIcon = dr.GetString("MessageGroupIcon")
+                };
+            }
+
+        }
 
         private PushNotificationModel GetModel(IDataRecord dr)
         {
@@ -100,6 +116,7 @@ namespace ArmsServices.DataServices.General
                 MessageGroupID = dr.GetString("MessageGroupID"),
                 DocumentTypeID = dr.GetInt32("DocumentTypeID"),
                 PageToRedirectLink = dr.GetString("PageToRedirectLink"),
+                ClaimValue = dr.GetString("ClaimValue"),
                 DocumentID = dr.GetInt32("DocumentID"),
                 ExpiredBy = dr.GetInt32("ExpiredBy"),
                 RecordStatus = dr.GetByte("RecordStatus"),
