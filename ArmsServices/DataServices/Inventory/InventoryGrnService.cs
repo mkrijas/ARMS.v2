@@ -55,6 +55,7 @@ namespace ArmsServices.DataServices
                     ItemDescription = dr.GetString("ItemDescription"),
                     ItemRate = dr.GetDecimal("ItemRate"),
                     ItemQty = dr.GetDecimal("ItemQty"),
+                    CoaID = dr.GetInt32("CoaID"),
                     ItemGstVal = dr.GetDecimal("ItemGstVal"),
                 };
             }
