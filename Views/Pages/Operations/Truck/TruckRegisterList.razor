@@ -8,22 +8,22 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
-<MudPaper  Class="pl-5 my-5" Elevation="4">   
-        <MudGrid>
-            <MudItem xs="10" md="10" >
-                <TruckSelector  Value="SelectedTruck" ValueChanged="SelectedTruckChanged" />
-            </MudItem>
-            <MudItem xs="2" md="2">
-                <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" ButtonType="ButtonType.Submit">Fetch</MudButton>
-            </MudItem>
-        </MudGrid>
+<MudPaper Class="pl-5 my-5" Elevation="4">
+    <MudGrid>
+        <MudItem xs="10" md="10">
+            <TruckSelector Value="SelectedTruck" ValueChanged="SelectedTruckChanged" />
+        </MudItem>
+        <MudItem xs="2" md="2">
+            <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" ButtonType="ButtonType.Submit">Fetch</MudButton>
+        </MudItem>
+    </MudGrid>
 </MudPaper>
 
 <MudTable Items="@collection" Elevation="5">
     <ToolBarContent>
         <MudText Typo="Typo.h6"> @SelectedTruck?.CurrentRegistration?.RegNo  Registrations </MudText>
         <MudIconButton Icon="@Icons.Material.Filled.Add" Title="New" @onclick="@(()=> Edit(new TruckRegistrationModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-    <MudSpacer></MudSpacer>  
+        <MudSpacer></MudSpacer>
     </ToolBarContent>
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<TruckRegistrationModel, object>(x=> x.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
@@ -37,7 +37,7 @@
         <MudTd DataLabel="Valid To">@context.EffectTo.Value.ToString("dd/MM/yyyy")</MudTd>
         <MudTd DataLabel="">
             <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-           
+
         </MudTd>
     </RowTemplate>
     <PagerContent>
@@ -45,9 +45,8 @@
     </PagerContent>
 </MudTable>
 
- 
-@code {
 
+@code {
 
     [Parameter]
     public TruckModel SelectedTruck { get; set; }
@@ -59,64 +58,49 @@
     private List<TruckModel> TruckList = new List<TruckModel>();
     private List<TruckRegistrationModel> collection = new List<TruckRegistrationModel>();
 
-    public bool HasPermissionEdit { get; set; } = false;
-    public int DocTypeID = 31;
-
     protected async override Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-
         var authState = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authState.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
         TruckList = ItruckService.Select(null).ToList();
 
         if (SelectedTruck == null)
         {
-            SelectedTruck = TruckList.FirstOrDefault(s => s.TruckID == SelectedTruckID);            
+            SelectedTruck = TruckList.FirstOrDefault(s => s.TruckID == SelectedTruckID);
         }
         fetch();
     }
 
 
-    async Task Edit (TruckRegistrationModel reg)
+    async Task Edit(TruckRegistrationModel reg)
     {
-        if (HasPermissionEdit)
+        if (reg.TruckID == null)
         {
-            if (reg.TruckID == null)
-            {
-                reg.TruckID = SelectedTruck.TruckID;
-            }
-
-            DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Large, };
-            DialogParameters parms = new();
-            parms.Add("CurrentRegistration", reg);
-
-            var dialog = DialogService.Show<TruckRegisterDialog>("ADD/EDIT", parms, options);
-            var result = await dialog.Result;
-            if (!result.Canceled)
-            {
-                fetch();
-            }
+            reg.TruckID = SelectedTruck.TruckID;
         }
-        else
+
+        DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Large, };
+        DialogParameters parms = new();
+        parms.Add("CurrentRegistration", reg);
+
+        var dialog = DialogService.Show<TruckRegisterDialog>("ADD/EDIT", parms, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Permission denied!",
-                      "You dont have any permission to Add or Edit.");
+            fetch();
         }
     }
 
-    void SelectedTruckChanged(TruckModel truck)
 
+    void SelectedTruckChanged(TruckModel truck)
     {
         SelectedTruck = truck;
         fetch();
     }
 
+
     void fetch()
     {
-        collection = ItruckService.GetRegistrationList(SelectedTruck?.TruckID ?? 0).OrderBy(s => s.RegID).ToList();        
+        collection = ItruckService.GetRegistrationList(SelectedTruck?.TruckID ?? 0).OrderBy(s => s.RegID).ToList();
     }
 }
-

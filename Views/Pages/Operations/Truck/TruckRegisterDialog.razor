@@ -5,6 +5,10 @@
 
 @using System.Globalization
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
 
 <MudDialog>
     <DialogContent>
@@ -24,8 +28,8 @@
                         <MudItem xs="6">
                             <MudDatePicker Margin="Margin.Dense" Variant="Variant.Outlined" Label="Valid up to" DisableToolbar="true" Editable="true" @bind-Date="CurrentRegistration.EffectTo" HelperText="Enter Date" Culture="@CultureInfo.GetCultureInfo("en-IN")" />
                         </MudItem>
-                        <MudItem xs="6"  Class="align-center">
-                            <MyFileUpload  FolderName="Truck/RC" FileName="@Guid.NewGuid().ToString()" Label="Click to upload RC File" @bind-FilePath="CurrentRegistration.RC"></MyFileUpload>
+                        <MudItem xs="6" Class="align-center">
+                            <MyFileUpload FolderName="Truck/RC" FileName="@Guid.NewGuid().ToString()" Label="Click to upload RC File" @bind-FilePath="CurrentRegistration.RC"></MyFileUpload>
                             @if (!string.IsNullOrEmpty(CurrentRegistration.RC))
                             {
                                 @*<MudTooltip Text="Download Adhaar">*@
@@ -36,7 +40,6 @@
                                         <MudIcon Icon="@Icons.Material.Filled.Download" Title="Download" />
                                     </MudText>
                                 </a>
-
 
                                 @*</MudTooltip>*@
                             }
@@ -56,7 +59,7 @@
                                 </MudItem>
                             }
                         </MudItem>
-@*
+                        @*
                         <MudItem xs="3" md="3" Class="d-flex align-center">
 
                         </MudItem>*@
@@ -78,49 +81,65 @@
 
     [Parameter]
     public TruckRegistrationModel CurrentRegistration { get; set; }
-    protected override void OnInitialized()
-    {
 
+    public bool HasPermissionITruckServiceEdit { get; set; } = false;
+    public int DocTypeID = 37;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionITruckServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
     }
+
 
     void RegNoUpdated(string val)
     {
-        CurrentRegistration.RegNo = val.ToUpper();       
+        CurrentRegistration.RegNo = val.ToUpper();
     }
+
 
     private async void OnValidSubmit(EditContext context)
     {
-        if(CurrentRegistration.EffectTo == null || CurrentRegistration.EffectFrom == null)
+        if (HasPermissionITruckServiceEdit)
+        {
+            if (CurrentRegistration.EffectTo == null || CurrentRegistration.EffectFrom == null)
             {
                 snackbar.Add("Valid from date and valid to date should select.", Severity.Error);
                 return;
             }
 
-        if(CurrentRegistration.EffectTo>=CurrentRegistration.EffectFrom)
-        {
-            int? dateInvalidCount = Iservice.ValidateRegistrationDate(CurrentRegistration);
-            if(dateInvalidCount > 0)
+            if (CurrentRegistration.EffectTo >= CurrentRegistration.EffectFrom)
             {
-                snackbar.Add("Can not save because date is overlaping on another Registration.", Severity.Error);
-                return;
+                int? dateInvalidCount = Iservice.ValidateRegistrationDate(CurrentRegistration);
+                if (dateInvalidCount > 0)
+                {
+                    snackbar.Add("Can not save because date is overlaping on another Registration.", Severity.Error);
+                    return;
+                }
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                CurrentRegistration.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    int result = Iservice.UpdateRegistration(CurrentRegistration);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    MudDialog.Close(result);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            CurrentRegistration.UserInfo.UserID = user.Identity.Name;
-            try
+            else
             {
-                int result = Iservice.UpdateRegistration(CurrentRegistration);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                MudDialog.Close(result); 
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
+                snackbar.Add("Valid up to date should be greater valid from.", Severity.Error);
             }
         }
         else
         {
-            snackbar.Add("Valid up to date should be greater valid from.", Severity.Error);
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit Truck.");
         }
     }
 }

@@ -12,8 +12,8 @@ namespace ArmsServices.DataServices
     public interface IEventService
     {
         EventModel SelectByID(long? EventID);
-        EventModel Update(EventModel model);
-        int Delete(long? EventID, string UserID);
+        EventModel Update(EventModel model);  //Edit
+        int Delete(long? EventID, string UserID);  //Delete
         EventTypeModel GetNextPossibleEvent(int? TruckID);
         IEnumerable<EventModel> SelectByTrip(long? TripID);
         EventModel GetCurrentEvent(int? TruckID);

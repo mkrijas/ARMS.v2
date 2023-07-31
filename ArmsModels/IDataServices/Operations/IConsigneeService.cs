@@ -11,9 +11,9 @@ namespace ArmsServices.DataServices
 
     public interface IConsigneeService
     {
-        Task<ConsigneeModel> Update(ConsigneeModel model);
+        Task<ConsigneeModel> Update(ConsigneeModel model);  //Edit
         Task<ConsigneeModel> SelectByID(int? ID);
-        Task<int> Delete(int? ConsigneeID, string UserID);
+        Task<int> Delete(int? ConsigneeID, string UserID);  //Delete
         IAsyncEnumerable<ConsigneeModel> Select(int? ConsigneeID);
         IAsyncEnumerable<ConsigneeModel> SelectByOrder(int? ID);
     }

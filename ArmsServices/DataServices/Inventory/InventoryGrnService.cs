@@ -124,7 +124,7 @@ namespace ArmsServices.DataServices
                 POID = dr.GetInt32("POID"),
                 GrnID = dr.GetInt32("GrnID"),
                 EntryDate = dr.GetDateTime("EntryDate"),
-                PartyID = dr.GetInt32("PartyBranchID"),
+                PartyID = dr.GetInt32("PartyID"),
                 AuthLevelID = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 PartyName = dr.GetString("TradeName"),

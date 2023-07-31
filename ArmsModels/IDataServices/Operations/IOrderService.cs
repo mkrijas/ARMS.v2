@@ -11,11 +11,11 @@ namespace ArmsServices.DataServices
 {
     public interface IOrderService
     {
-        Task<OrderModel> Update(OrderModel model);
+        Task<OrderModel> Update(OrderModel model);  //Edit
         Task<OrderModel> SelectByID(int? ID);
         IAsyncEnumerable<OrderModel> SelectByBranch(int? BranchID);
-        Task<int> Delete(int? OrderID, string UserID);
+        Task<int> Delete(int? OrderID, string UserID);  //Edit
         IAsyncEnumerable<OrderModel> Select(int? OrderID);
-        Task<int> BranchOrderUpdate(int? BranchID, int? OrderID, string UserID, string operation);
+        Task<int> BranchOrderUpdate(int? BranchID, int? OrderID, string UserID, string operation); //AddRemoveOrder
     }
 }

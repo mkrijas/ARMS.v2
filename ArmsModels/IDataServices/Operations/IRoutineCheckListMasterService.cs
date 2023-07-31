@@ -8,10 +8,10 @@ namespace ArmsServices.DataServices.Operations
 
     public interface IRoutineCheckListMasterService
     {
-        RoutineCheckListMasterModel Update(RoutineCheckListMasterModel model);
+        RoutineCheckListMasterModel Update(RoutineCheckListMasterModel model);  //Edit
         IEnumerable<RoutineCheckListMasterModel> SelectItemByBranch(int? Branch);
         //IEnumerable<AssetModel> GetRequestedDocuments(int? RequestID);
         //AssetDocumentRequestModel SelectDocumentRequest(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
     }
 }

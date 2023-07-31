@@ -1,0 +1,310 @@
+﻿@using ArmsModels.BaseModels.Finance.Transactions;
+@using ArmsServices.DataServices.Finance.Transactions;
+@using ArmsServices.DataServices.Inventory;
+@using Core.BaseModels.Finance.Transactions;
+@using Core.IDataServices.Finance.Transactions;
+@using System.Threading;
+
+@attribute [Authorize]
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@inject IOpInventoryReleaseService Iservice
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+@inject IInventoryItemService itemIservice
+@inject ITruckService Itruck
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Inventory Release" formID="OpInventoryReleaseForm" model="@model">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm id="OpInventoryReleaseForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.DocumentNumber" Label="Document Number" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                    </MudItem>
+
+                    <MudItem xs="12" md="4">
+                        <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <InventoryItemSelector Value="model.Item" ValueChanged="@((InventoryItemModel newValue) => SetItem(newValue))" />
+                    </MudItem>
+                    <MudItem md="4">
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)" Disabled></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.TotalQty" Lines="2" Label="Total Qty" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalQty)" Disabled></MudTextField>
+                    </MudItem>
+
+                    <MudItem xs="12">
+
+                        <h6><u>Items</u></h6>
+
+                        <MudGrid Justify="Justify.Center">
+                            <MudItem xs="3" Class="d-flex align-center"><span> <strong> <u>Trip No</u></strong> </span></MudItem>
+                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Truck No</u></strong> </span></MudItem>
+                            <MudItem xs="4" Class="d-flex align-center"><span><strong><u>Quantity</u></strong> </span></MudItem>
+                            <MudItem xs="2"></MudItem>
+                            @foreach (var item in model.Items)
+                            {
+                                <MudItem xs="3"> @item.TripNo </MudItem>
+                                <MudItem xs="3"> @item.TruckRegNo </MudItem>
+                                <MudItem xs="4"> @item.ItemQty </MudItem>
+
+                                <MudItem xs="1" Class="d-flex">
+                                </MudItem>
+
+
+                                <MudItem xs="1" Class="d-flex">
+                                    @if (model.OpInventoryReleaseID == null && !ReadOnly)
+                                    {
+                                        <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteItem(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+
+                                    }
+                                </MudItem>
+                            }
+                            @if (model.OpInventoryReleaseID == null && !ReadOnly)
+                            {
+                                <MudItem xs="3">
+                                    <TripSelector Value="SelectedTrip" BranchID="model.BranchID" ValueChanged="@((TripModel newValue) => SetTrip(newValue))" />
+                                </MudItem>
+                                <MudItem xs="3">
+                                    <TruckSelector @bind-Value="SelectedTruck" IsDisabled="@IsDisableTruck"></TruckSelector>
+                                </MudItem>
+                                <MudItem xs="4">
+                                    <MudTextField @bind-Value="EnteredQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => EnteredQty)"></MudTextField>
+                                </MudItem>
+                                <MudItem xs="1">
+                                </MudItem>
+                                <MudItem xs="1">
+                                    <MudItem xs="12" Class="d-flex align-center"><MudFab OnClick="AddSubList" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" /></MudItem>
+                                </MudItem>
+
+                            }
+                        </MudGrid>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocumentID="model.OpInventoryReleaseID" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
+
+@code {
+
+    [Parameter]
+    public OpInventoryReleaseModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+
+
+    [Parameter]
+    public int? branchID { get; set; }
+    private string UserID = null;
+    public bool HasPermissionEdit { get; set; } = false;
+    public int DocTypeID = 51;
+
+    private List<InventoryItemModel> ItemList = new();
+    private List<TruckModel> TruckList = new();
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public bool IsDisableEntries { get; set; } = false;
+
+    public bool IsDisableTruck { get; set; } = false;
+
+    public InventoryItemModel SelectedItems = new();
+    public TripModel SelectedTrip = new();
+    public TruckModel SelectedTruck = new();
+    public decimal? EnteredQty = 0;
+    private OpInventoryReleaseSubModel Entrymodel = new OpInventoryReleaseSubModel();
+    private EditContext editContext;
+
+    DialogForm dialogForm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        if (model.UserInfo == null)
+        {
+            model.UserInfo = new();
+        }
+        model.UserInfo.UserID = UserID;
+
+        if (model == null)
+        {
+            model = new()
+                {
+                    //BranchID = branchID,
+                    UserInfo = new() { UserID = UserID, },
+                };
+        }
+        else
+        {
+            model.Items = Iservice.GetSub(model.OpInventoryReleaseID).ToList();
+            model.TotalQty = model?.Items?.Sum(s => s.ItemQty) ?? 0;
+        }
+        TruckList = Itruck.SelectByBranch(model.BranchID, null).ToList();
+        ItemList = itemIservice.SearchByDescription(string.Empty).ToList();
+    }
+
+    protected void Approve(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+            model.UserInfo.UserID = UserID;
+            Iservice.Approve(model.OpInventoryReleaseID, model.UserInfo.UserID, aprvd.Remarks);
+            snackbar.Add("Approved Successfully", Severity.Success);
+        }
+    }
+    protected override void OnParametersSet()
+    {
+        editContext = new EditContext(model);
+        // editContext.OnValidationRequested += OnValidationRequestedAsync;
+    }
+
+    public void AddSubList()
+    {
+
+        //Entrymodel.OpInventoryReleaseSubID = SelectedItems.InventoryItemID;
+
+
+        if (SelectedTruck.TruckID == null)
+        {
+            snackbar.Add("Please fill truck.", Severity.Success);
+            return;
+        }
+        if (EnteredQty == 0)
+        {
+            snackbar.Add("Please fill quantity.", Severity.Success);
+            return;
+        }
+        OpInventoryReleaseSubModel SubModelEntry = new()
+            {
+                TripID = SelectedTrip.TripID,
+                TripNo = SelectedTrip.TripPrefix + SelectedTrip.TripNumber.ToString(),
+                TruckID = SelectedTruck.TruckID,
+                TruckRegNo = SelectedTruck.RegNo,
+                ItemQty = EnteredQty
+            };
+        model.Items.Add(SubModelEntry);
+
+        model.TotalQty = model?.Items?.Sum(s => s.ItemQty) ?? 0;
+        Entrymodel = new();
+        SelectedTrip = new();
+        SelectedTruck = new();
+        EnteredQty = 0;
+        SelectedItems = null;
+        SelectedItems = new();
+        IsDisableTruck = false;
+        SetNarration();
+    }
+
+
+    protected void SetItem(InventoryItemModel item)
+    {
+
+        model.Item = item;
+        if (item != null)
+        {
+            if (SelectedItems != null && SelectedItems.InventoryItemID == null)
+            {
+                SelectedItems = item;
+            }
+            else
+            {
+                SelectedItems = new InventoryItemModel();
+            }
+        }
+        SetNarration();
+
+    }
+
+    void SetNarration()
+    {
+        model.Narration = (model.Item?.ItemDecription ?? "") + " Issue " + (model.Items?.Count() ?? 0) + " against " + String.Join(", ", (model.Items?.Select(s => s.TripNo)?.ToList() ?? null));
+    }
+    void SetTrip(TripModel item)
+    {
+        SelectedTrip = item;
+        if (item == null || item.TripID == null || item.TripID == 0)
+        {
+            IsDisableTruck = false;
+        }
+        else
+        {
+            SelectedTruck = TruckList.FirstOrDefault(s => s.TruckID == item.TruckID);
+            IsDisableTruck = true;
+        }
+    }
+
+    public async Task OnValidSubmit(EditContext context)
+    {
+        if (HasPermissionEdit)
+        {
+            try
+            {
+                if (model.Items.Count() == 0)
+                {
+                    snackbar.Add("Add at least one item.", Severity.Error);
+                    return;
+                }
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(model);
+
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        else
+        {
+
+            bool? result = await DialogService.ShowMessageBox(
+        "Permission denied!",
+        "You dont have any permission to submit.");
+
+        }
+    }
+
+
+    private void DeleteItem(OpInventoryReleaseSubModel ItemDetails)
+    {
+        if (model.Items.Exists(x => x.OpInventoryReleaseSubID == ItemDetails.OpInventoryReleaseSubID))
+        {
+            int rowIndex = model.Items.IndexOf(ItemDetails);
+            model.Items.RemoveAt(rowIndex);
+            model.TotalQty = model?.Items?.Sum(s => s.ItemQty) ?? 0;
+            SetNarration();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+}

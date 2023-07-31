@@ -3,6 +3,7 @@
 @using ArmsModels.BaseModels.General
 @using ArmsServices.DataServices.General
 @using Microsoft.AspNetCore.SignalR.Client;
+@using System.Threading;
 @using Views.Data
 
 @inject ITruckTransferService Iservice
@@ -12,8 +13,11 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
-@inject IBranchService Ibranchservice
+@inject IBranchService IbranchService
 @inject NavigationManager NavigationManager
+@inject SignalRService signalRService
+@inject IRoleService<RoleModel> Irole
+
 
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
@@ -101,97 +105,43 @@
 
     private List<BranchModel> BranchList = new();
 
-    public bool HasPermissionEdit { get; set; } = false;
-    public bool HasPermissionDelete { get; set; } = false;
-    public int DocTypeID = 33;
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    int DocTypeID = 33;
+
+    //void Receive(PushNotificationModel pushNotificationModel)
+    //{
+    //    currentNotificationMessages = allNotificationMessages.Where(s => (s.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+    //    InvokeAsync(() => StateHasChanged());
+    //}
+
+    #endregion
 
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
-
-        BranchList = Ibranchservice.Select().ToList();
+        BranchList = IbranchService.Select().ToList();
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-
         CurrentBranchId = int.Parse(brancIDString);
 
-        hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
-        hubConnection.On<BranchModel, BranchModel, string, string, int, string>("ReceiveMessage", (InitiateBranch, ReceivedBranch, MessageTitle, MessageBody, RedirectedTo, MsgDatest) =>
-        {
-            allNotificationMessages.Add(new PushNotificationModel()
-                {
-                    MSgId = allNotificationMessages.Count() + 1,
-                    MessageID = 0,
-                    InitiateBranch = InitiateBranch,
-                    ReceivedBranch = ReceivedBranch,
-                    MessageTitle = MessageTitle,
-                    MessageBody = MessageBody,
-                    RedirectedTo = RedirectedTo,
-                    MsgDateString = MsgDatest
-                });
-            currentNotificationMessages = allNotificationMessages.Where(s => (s.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-            InvokeAsync(() => StateHasChanged());
-        });
-        await hubConnection.StartAsync();
+        BranchList = IbranchService.Select().ToList();
+
+        await signalRService.StartAsync();
+        //hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
+        //signalRService.RegisterReceivedMessage(e => Receive(e));
+
+        //await hubConnection.StartAsync();
 
         await GetAllOutGoing();
         await GetAllIncoming();
     }
 
 
-    #region SignaIR Notification
-
-    private List<PushNotificationModel> allNotificationMessages = new List<PushNotificationModel>();
-    private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
-    private HubConnection hubConnection;
-    private string BoxCss = "none";
-
-    private async Task Send()
-    {
-        PushNotificationModel PushNotificationMessage = new()
-            {
-                InitiateBranch = notificationMessage.InitiateBranch,
-                ReceivedBranch = notificationMessage.ReceivedBranch,
-                MessageTitle = notificationMessage.MessageTitle,
-                MessageBody = notificationMessage.MessageBody,
-                ExpiredBy = 7,
-            };
-
-        var result = IpushNotificationService.UpdatePushNotification(PushNotificationMessage);
-
-        await hubConnection.SendAsync("SendMessages",
-        result.MessageID,
-        notificationMessage.InitiateBranch,
-        notificationMessage.ReceivedBranch,
-        notificationMessage.MessageTitle,
-        notificationMessage.MessageBody,
-        0,
-        notificationMessage.MsgDatest);
-
-
-        notificationMessage.InitiateBranch = new();
-        notificationMessage.ReceivedBranch = new();
-        notificationMessage.MessageTitle = "";
-        notificationMessage.MessageBody = "";
-    }
-
-    public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
-
-    private void NotificationHideShow()
-    {
-        if (BoxCss == "none") BoxCss = "block";
-        else BoxCss = "none";
-    }
-
-    #endregion
 
     private async Task GetAll()
     {
-
         await GetAllOutGoing();
         await GetAllIncoming();
     }
@@ -205,22 +155,77 @@
 
     string state = "Message box hasn't been opened yet";
 
-    protected override void OnParametersSet()
-    {
-        //the param will be set now
-        //GetAllOutGoing();
-
-    }
 
 
     private async Task OpenDialogEditOutGoing(TruckTransferInitiationModel TruckTransferInitiation)
     {
-        if (HasPermissionEdit)
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        if (TruckTransferInitiation.TruckEvent == null)
         {
+            TruckTransferInitiation.TruckEvent = new();
+        }
+        TruckTransferInitiation.TruckEvent.UserInfo = new();
+        if (TruckTransferInitiation.TruckEvent.UserInfo != null)
+        {
+            TruckTransferInitiation.TruckEvent.UserInfo.UserID = user.Identity.Name;
+        }
+        if (TruckTransferInitiation.InitiationBranch == null)
+        {
+            TruckTransferInitiation.InitiationBranch = new();
+        }
+        if (TruckTransferInitiation.DestinationBranch == null)
+        {
+            TruckTransferInitiation.DestinationBranch = new();
+        }
+        TruckTransferInitiation.InitiationBranch.BranchID = int.Parse(brancIDString);
+
+
+        var modelOutGoing = new DialogParameters { ["model"] = TruckTransferInitiation };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var dialog = DialogService.Show<TruckTransferInitiationDialog>("Simple Dialog", modelOutGoing, options);
+
+        var result = await dialog.Result;
+
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+
+            var ReturnData = (TruckTransferInitiationModel)result.Data;
+            notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiationBranch?.BranchID ?? 0)) ?? null;
+            notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
+            notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered to this branch.";
+            notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " to this branch on " + (DateTime.Now).ToString() + ".";
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.TruckTransferInitiationID;
+            notificationMessage.MessageGroupID = "TruckTransfer";
+            notificationMessage.PageToRedirectLink = "/TruckTransferView";
+            notificationMessage.ClaimValue = "Edit";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+
+            await GetAll();
+        }
+    }
+
+
+    private async Task OpenDialogDeleteOutGoing(TruckTransferInitiationModel TruckTransferInitiation)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Are you sure you want to delete this entry?",
+            yesText: "Delete!", cancelText: "Cancel");
+        state = result == null ? "Cancelled" : "Deleted!";
+        if (state == "Deleted!")
+        {
+
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
-            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-
             if (TruckTransferInitiation.TruckEvent == null)
             {
                 TruckTransferInitiation.TruckEvent = new();
@@ -229,93 +234,17 @@
             if (TruckTransferInitiation.TruckEvent.UserInfo != null)
             {
                 TruckTransferInitiation.TruckEvent.UserInfo.UserID = user.Identity.Name;
-            }
-            if (TruckTransferInitiation.InitiationBranch == null)
-            {
-                TruckTransferInitiation.InitiationBranch = new();
-            }
-            if (TruckTransferInitiation.DestinationBranch == null)
-            {
-                TruckTransferInitiation.DestinationBranch = new();
-            }
-            TruckTransferInitiation.InitiationBranch.BranchID = int.Parse(brancIDString);
-
-
-            var modelOutGoing = new DialogParameters { ["model"] = TruckTransferInitiation };
-
-            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-            var dialog = DialogService.Show<TruckTransferInitiationDialog>("Simple Dialog", modelOutGoing, options);
-
-            var result = await dialog.Result;
-
-            var isCancelled = result.Cancelled;
-            if (!isCancelled)
-            {
-                if (IsConnected)
+                try
                 {
+                    Iservice.DeleteInitiation(TruckTransferInitiation.TruckTransferInitiationID, TruckTransferInitiation.TruckEvent.TruckEventID, TruckTransferInitiation.TruckEvent.UserInfo.UserID);
 
-                    var ReturnData = (TruckTransferInitiationModel)result.Data;
-                    notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiationBranch?.BranchID ?? 0)) ?? null;
-                    notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
-                    notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered to this branch.";
-                    notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " to this branch on " + (DateTime.Now).ToString() + ".";
-                    notificationMessage.RedirectedTo = 0;
-                    notificationMessage.MsgDate = DateTime.Now;
-                    await Send();
                 }
-
-                await GetAll();
-            }
-        }
-        else
-        {
-            bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Permission denied!",
-                      "You dont have any permission to Add or Edit.");
-        }
-    }
-
-
-    private async Task OpenDialogDeleteOutGoing(TruckTransferInitiationModel TruckTransferInitiation)
-    {
-        if (HasPermissionDelete)
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning",
-                "Are you sure you want to delete this entry?",
-                yesText: "Delete!", cancelText: "Cancel");
-            state = result == null ? "Cancelled" : "Deleted!";
-            if (state == "Deleted!")
-            {
-
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                if (TruckTransferInitiation.TruckEvent == null)
+                catch (Exception ex)
                 {
-                    TruckTransferInitiation.TruckEvent = new();
+                    snackbar.Add(ex.Message, Severity.Error);
                 }
-                TruckTransferInitiation.TruckEvent.UserInfo = new();
-                if (TruckTransferInitiation.TruckEvent.UserInfo != null)
-                {
-                    TruckTransferInitiation.TruckEvent.UserInfo.UserID = user.Identity.Name;
-                    try
-                    {
-                        Iservice.DeleteInitiation(TruckTransferInitiation.TruckTransferInitiationID, TruckTransferInitiation.TruckEvent.TruckEventID, TruckTransferInitiation.TruckEvent.UserInfo.UserID);
-
-                    }
-                    catch (Exception ex)
-                    {
-                        snackbar.Add(ex.Message, Severity.Error);
-                    }
-                }
-                await GetAll();
             }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-              "Permission denied!",
-              "You dont have any permission to delete.");
+            await GetAll();
         }
     }
 
@@ -368,66 +297,63 @@
 
     private async Task OpenDialogEditIncoming(TruckTransferInitiationModel TruckTransferEnd)
     {
-        if (HasPermissionEdit)
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        if (TruckTransferEnd.TruckTransferEndModel == null)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-            if (TruckTransferEnd.TruckTransferEndModel == null)
-            {
-                TruckTransferEnd.TruckTransferEndModel = new();
-            }
-            if (TruckTransferEnd.TruckTransferEndModel.TruckEvent == null)
-            {
-                TruckTransferEnd.TruckTransferEndModel.TruckEvent = new();
-            }
-            TruckTransferEnd.TruckTransferEndModel.TruckEvent.UserInfo = new();
-            if (TruckTransferEnd.TruckTransferEndModel.TruckEvent.UserInfo != null)
-            {
-                TruckTransferEnd.TruckTransferEndModel.TruckEvent.UserInfo.UserID = user.Identity.Name;
-            }
-            if (TruckTransferEnd.DestinationBranch == null)
-            {
-                TruckTransferEnd.DestinationBranch = new();
-            }
-            TruckTransferEnd.DestinationBranch.BranchID = int.Parse(brancIDString);
-
-
-            var modelIncoming = new DialogParameters { ["model"] = TruckTransferEnd };
-
-            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-            var dialog = DialogService.Show<TruckTransferEndDialog>("Simple Dialog", modelIncoming, options);
-
-            var result = await dialog.Result;
-
-            var isCancelled = result.Cancelled;
-
-            if (!isCancelled)
-            {
-                if (IsConnected)
-                {
-                    var ReturnData = (TruckTransferInitiationModel)result.Data;
-                    if (ReturnData.IstruckReject == 1)
-                    {
-
-                        notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
-                        notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiationBranch?.BranchID ?? 0)) ?? null;
-                        notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected.";
-                        notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " on " + (DateTime.Now).ToString() + ".";
-                        notificationMessage.RedirectedTo = 0;
-                        notificationMessage.MsgDate = DateTime.Now;
-                        await Send();
-                    }
-                }
-                await GetAll();
-            }
+            TruckTransferEnd.TruckTransferEndModel = new();
         }
-        else
+        if (TruckTransferEnd.TruckTransferEndModel.TruckEvent == null)
         {
-            bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Permission denied!",
-                      "You dont have any permission to Add or Edit.");
+            TruckTransferEnd.TruckTransferEndModel.TruckEvent = new();
         }
+        TruckTransferEnd.TruckTransferEndModel.TruckEvent.UserInfo = new();
+        if (TruckTransferEnd.TruckTransferEndModel.TruckEvent.UserInfo != null)
+        {
+            TruckTransferEnd.TruckTransferEndModel.TruckEvent.UserInfo.UserID = user.Identity.Name;
+        }
+        if (TruckTransferEnd.DestinationBranch == null)
+        {
+            TruckTransferEnd.DestinationBranch = new();
+        }
+        TruckTransferEnd.DestinationBranch.BranchID = int.Parse(brancIDString);
+
+
+        var modelIncoming = new DialogParameters { ["model"] = TruckTransferEnd };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var dialog = DialogService.Show<TruckTransferEndDialog>("Simple Dialog", modelIncoming, options);
+
+        var result = await dialog.Result;
+
+        var isCancelled = result.Cancelled;
+
+        if (!isCancelled)
+        {
+
+            var ReturnData = (TruckTransferInitiationModel)result.Data;
+            if (ReturnData.IstruckReject == 1)
+            {
+
+                notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
+                notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiationBranch?.BranchID ?? 0)) ?? null;
+                notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected.";
+                notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " on " + (DateTime.Now).ToString() + ".";
+                notificationMessage.RedirectedTo = 0;
+                notificationMessage.MsgDate = DateTime.Now;
+                notificationMessage.ExpiredBy = 7;
+                notificationMessage.DocumentID = ReturnData.TruckTransferInitiationID;
+                notificationMessage.MessageGroupID = "TruckTransfer";
+                notificationMessage.PageToRedirectLink = "/TruckTransferView";
+                notificationMessage.ClaimValue = "Edit";
+                notificationMessage.DocumentTypeID = DocTypeID;
+                await signalRService.Send(notificationMessage);
+            }
+
+            await GetAll();
+        }
+
     }
 
 

@@ -26,7 +26,7 @@
 
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
             <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
-                <ObjectGraphDataAnnotationsValidator />
+                <DataAnnotationsValidator />
                 <ValidationSummary />
 
                 <MudItem xs="12" md="12">
@@ -59,25 +59,16 @@
 @code {
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
     [Parameter]
     public TruckTransferInitiationModel model { get; set; } = new();
-
-
     private List<BranchModel> DestinationBranchList = new();
 
 
     private List<int?> UnAssignedTruckIds = new();
     private string filter { get; set; } = "UnAssigned";
 
-    public bool HasPermissionEdit { get; set; } = false;
-    public int DocTypeID = 33;
-
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-
         filter = "UnAssigned";
         branchID = model?.InitiationBranch?.BranchID ?? 0;
         DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != branchID).ToList();
@@ -87,67 +78,62 @@
 
     protected override void OnParametersSet()
     {
+
     }
+
+
     void Cancel()
     {
         MudDialog.Cancel();
     }
+
+
     public async Task Submit()
     {
-        if (HasPermissionEdit)
-        {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            if (model.Truck == null || model.Truck.TruckID == 0)
-            {
-                bool? result = await DialogService.ShowMessageBox(
-                "Warning",
-                "Please, Select truck.", yesText: "OK");
-
-                return;
-            }
-            if (model != null)
-            {
-
-                if (model.DestinationBranch == null)
-                {
-                    model.DestinationBranch = new();
-                }
-                if (model.TruckEvent == null)
-                {
-                    model.TruckEvent = new();
-                }
-                if (model.TruckEvent.UserInfo == null)
-                {
-                    model.TruckEvent.UserInfo = new();
-                }
-                model.TruckEvent.UserInfo.UserID = user.Identity.Name;
-                try
-                {
-                    Iservice.UpdateOutgoing(model);
-                    Snackbar.Add("Transfered succesfully", Severity.Success);
-
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add(ex.Message, Severity.Error);
-                }
-            }
-
-            MudDialog.Close(model);
-        }
-        else
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model.Truck == null || model.Truck.TruckID == 0)
         {
             bool? result = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to submit.");
+            "Warning",
+            "Please, Select truck.", yesText: "OK");
+
+            return;
         }
+        if (model != null)
+        {
+
+            if (model.DestinationBranch == null)
+            {
+                model.DestinationBranch = new();
+            }
+            if (model.TruckEvent == null)
+            {
+                model.TruckEvent = new();
+            }
+            if (model.TruckEvent.UserInfo == null)
+            {
+                model.TruckEvent.UserInfo = new();
+            }
+            model.TruckEvent.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.UpdateOutgoing(model);
+                Snackbar.Add("Transfered succesfully", Severity.Success);
+
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        MudDialog.Close(model);
     }
 
-    private async Task TruckSelected(TruckModel obj)
+
+    private void TruckSelected(TruckModel obj)
     {
         model.Truck = obj;
     }
-
 }
 

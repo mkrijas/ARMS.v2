@@ -41,6 +41,21 @@ namespace ArmsModels.BaseModels
         public int? QuoteID { get; set; }
         public bool GrnCreated { get; }
         public StoreModel Store { get; set; }
+        public string Status
+        {
+            get
+            {
+                switch (UserInfo.RecordStatus)
+                {
+                    case 3:
+                        return "Available";
+                    case 9:
+                        return "Cancelled";
+                    default:
+                        return null;
+                }
+            }
+        }
     }
 
 

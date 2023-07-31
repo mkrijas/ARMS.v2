@@ -1,16 +1,20 @@
 ﻿using ArmsModels.SharedModels;
+using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
     public class TruckTransferInitiationModel
-    {
+    {        
         public int? TruckTransferInitiationID { get; set; }
+        [Required]
         public TruckModel Truck { get; set; }
+        [Required]
         public BranchModel InitiationBranch { get; set; }        
         public BranchModel DestinationBranch { get; set; }
-        public EventModel TruckEvent { get; set; }
+        [Required]
+        public EventModel TruckEvent { get; set; } = new();
         public string Remarks { get; set; }
-        public TruckTransferEndModel TruckTransferEndModel { get; set; }
+        public TruckTransferEndModel TruckTransferEndModel { get; set; } = new();
         public int IstruckReject { get; set; } = 0;
     }
     public class TruckTransferEndModel
@@ -18,7 +22,7 @@ namespace ArmsModels.BaseModels
         public int? TruckTransferEndID { get; set; }        
         public int? BranchID { get; set; }              
         public bool? TransferStatus { get; set; }
-        public EventModel TruckEvent { get; set; }
+        public EventModel TruckEvent { get; set; } = new();
         public string Remarks { get; set; }
         public string StatusText { get
             {

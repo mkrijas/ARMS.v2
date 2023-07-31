@@ -12,7 +12,8 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 
-
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudDialog>
     <DialogContent>
@@ -23,7 +24,7 @@
         else
         {
             <EditForm id="formEvent" Model="@model" OnValidSubmit="OnValidSubmit">
-                <FluentValidationValidator/>
+                <FluentValidationValidator />
                 <DataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid Spacing="4">
@@ -49,7 +50,7 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudSelect  Label="Select Action" T="byte?" Value="model.EventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" ValueChanged="EventSelected" Disabled="@(IsDisableSelectAction)">
+                        <MudSelect Label="Select Action" T="byte?" Value="model.EventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" ValueChanged="EventSelected" Disabled="@(IsDisableSelectAction)">
                             @foreach (var item in EventTypes)
                             {
                                 <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
@@ -59,7 +60,7 @@
 
                     <MudItem xs="12" md="6">
                         <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label=@(SelectedEvent.IsStationary?"Place":"Origin") Value="@OriginPlace" ValueChanged="@((e)=> {OriginPlace = e; model.OriginID = e.PlaceID;model.DestinationID = SelectedEvent.IsStationary ? model.OriginID : model.DestinationID;})" ResetValueOnEmptyText="true" Clearable="true"
-                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true"></MudAutocomplete>
+                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true"></MudAutocomplete>
                     </MudItem>
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
                         <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="model.NextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
@@ -72,12 +73,12 @@
 
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
                         <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label="Destination" Value="Destination" ValueChanged="((e)=> {Destination =e ; model.DestinationID =e.PlaceID;})" ResetValueOnEmptyText="true" Clearable="true"
-                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                     </MudItem>
 
                     <MudItem xs="12" md="6" hidden="@(SelectedEvent.EventTypeID != 4)">
                         <MudSelect Variant="Variant.Outlined" Label="Select GCs To Unload" MultiSelection="true" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))"
-                               T="GcSetModel" OffsetY="true" AdornmentColor="Color.Secondary" @bind-SelectedValues="SelectedGCs">
+                                   T="GcSetModel" OffsetY="true" AdornmentColor="Color.Secondary" @bind-SelectedValues="SelectedGCs">
                             @foreach (var item in GCsToUnload)
                             {
                                 <MudSelectItem T="GcSetModel" Value="@item">@item.SetGcNumber</MudSelectItem>
@@ -87,7 +88,7 @@
 
                     <MudItem xs="12" md="6">
                         <MudNumericField HideSpinButtons @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined"></MudNumericField>
-                        <ValidationMessage For="@(() => model.EventReading)"/>
+                        <ValidationMessage For="@(() => model.EventReading)" />
                     </MudItem>
                     <MudItem xs="12" md="6">
                         @*<input type="datetime-local" @bind-value="@model.EventTime"  />*@
@@ -118,7 +119,7 @@
     private bool IsLoading = false;
     private string ButtonLabel = "Select an Event";
 
-    bool isSubmitting;    
+    bool isSubmitting;
 
     private PlaceModel OriginPlace = new();
     private PlaceModel Destination = new();
@@ -131,6 +132,9 @@
     private List<GcSetModel> GCsToUnload = new();
     private IEnumerable<GcSetModel> SelectedGCs = new HashSet<GcSetModel>();
 
+    public bool HasPermissionEventServiceEdit { get; set; } = false;
+    public int DocTypeID = 48;
+
     private void Cancel()
     {
         MudDialog.Cancel();
@@ -139,6 +143,9 @@
 
     protected async override Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionEventServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         EventTypes = Ievent.GetEventTypes().Where(x => x.EventTypeID != 1 && x.IsTripRelated).ToList();
         places = Iplace.Select(0).ToList();
         PreEvent = model.TruckEventID == null ? Ievent.GetCurrentEvent(Truck.TruckID) : Ievent.GetPreviousEvent(model.TruckEventID);
@@ -196,106 +203,109 @@
             }
 
             IsDisableSelectAction = CurrentTrip.UserInfo.RecordStatus == 4;
-
-
         }
     }
+
 
     protected override async Task OnParametersSetAsync()
     {
 
     }
 
+
     private async Task<IEnumerable<PlaceModel>> SearchPlaces(string searchString)
     {
         return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
+
     private async Task OnValidSubmit(EditContext context)
     {
-
-        List<GcSetModel> gcSetList = Igc.SelectToUnload(model.TripID);
-        if (gcSetList != null && gcSetList.Count() != 0)
+        if (HasPermissionEventServiceEdit)
         {
-            if (gcSetList.Any() && model.EventTypeID == 6)
+            List<GcSetModel> gcSetList = Igc.SelectToUnload(model.TripID);
+            if (gcSetList != null && gcSetList.Count() != 0)
             {
-                snackbar.Add("The trip is not unloaded", Severity.Warning);
-                return;
-            }
-        }
-        if (isSubmitting)
-            return;
-
-        isSubmitting = true;
-        try
-        {
-
-
-
-            if (model.TruckEventID == null && SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
-            {
-                snackbar.Add("Cannot start this event without Driver", Severity.Warning);
-                return;
-            }
-
-
-
-            model.EventTypeID = SelectedEvent.EventTypeID;
-
-            if(model.EventTypeID==5)
-            {
-                DialogParameters parms = new DialogParameters();
-                parms.Add("TripID", model.TripID);  
-
-                var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Quantity", parms);
-                var result = await dialog.Result;
-                if(!result.Canceled)
+                if (gcSetList.Any() && model.EventTypeID == 6)
                 {
-                    List<GcSetModel> gcs = (List<GcSetModel>)result.Data;
-                    foreach (var item in gcs)
-                    {
-                        Igc.UpdateUnloadingQuantity(item);
-                    }
+                    snackbar.Add("The trip is not unloaded", Severity.Warning);
+                    return;
                 }
-                else
+            }
+            if (isSubmitting)
+                return;
+
+            isSubmitting = true;
+            try
+            {
+                if (model.TruckEventID == null && SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
                 {
+                    snackbar.Add("Cannot start this event without Driver", Severity.Warning);
                     return;
                 }
 
-            }
-            if (!ValidateEvent(model))
-            {
-                return;
-            }
-             model = Ievent.Update(model);
-            
-            if (SelectedEvent.EventTypeID == 4)
-            {
-                if (!SelectedGCs.Any())
+                model.EventTypeID = SelectedEvent.EventTypeID;
+
+                if (model.EventTypeID == 5)
                 {
-                    snackbar.Add("No GCs selected to Unload!", Severity.Warning);
-                    return;
-                }
-                else
-                {
-                    foreach (GcSetModel item in SelectedGCs)
+                    DialogParameters parms = new DialogParameters();
+                    parms.Add("TripID", model.TripID);
+
+                    var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Quantity", parms);
+                    var result = await dialog.Result;
+                    if (!result.Canceled)
                     {
-                        Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                        List<GcSetModel> gcs = (List<GcSetModel>)result.Data;
+                        foreach (var item in gcs)
+                        {
+                            Igc.UpdateUnloadingQuantity(item);
+                        }
+                    }
+                    else
+                    {
+                        return;
                     }
                 }
-            }
-            MudDialog.Close(DialogResult.Ok(model));
+                if (!ValidateEvent(model))
+                {
+                    return;
+                }
+                model = Ievent.Update(model);
 
+                if (SelectedEvent.EventTypeID == 4)
+                {
+                    if (!SelectedGCs.Any())
+                    {
+                        snackbar.Add("No GCs selected to Unload!", Severity.Warning);
+                        return;
+                    }
+                    else
+                    {
+                        foreach (GcSetModel item in SelectedGCs)
+                        {
+                            Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                        }
+                    }
+                }
+                MudDialog.Close(DialogResult.Ok(model));
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+            finally
+            {
+                isSubmitting = false;
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-        finally
-        {
-            isSubmitting = false;
+            bool? ResultModel = await DialogService.ShowMessageBox(
+               "Permission denied!",
+               "You dont have any permission to Add or Edit Event.");
         }
     }
+
 
     private bool ValidateEvent(EventModel ev)
     {
@@ -331,10 +341,12 @@
         return true;
     }
 
+
     private string GetMultiSelectionText(List<string> Gcs)
     {
         return $"{SelectedGCs.Count()}  Gc{(Gcs.Count > 1 ? "s" : "")} Selected ";
     }
+
 
     private void EventSelected(byte? e)
     {

@@ -21,6 +21,8 @@
 @using Views.Pages.Operations.Gc
 @using Pages.Operations.Expenses
 
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudCard Class="mt-3" Style="height:auto" Elevation="4">
     <MudCardHeader>
@@ -31,7 +33,7 @@
             <MudGrid>
                 <MudItem xs="6">
                     <MudText Typo="Typo.h5" GutterBottom="true">
-                        <b> @(Trip != null ? (Trip.TripPrefix + Trip.TripNumber) :"")</b>
+                        <b> @(Trip != null ? (Trip.TripPrefix + Trip.TripNumber) : "")</b>
                     </MudText>
                 </MudItem>
                 <MudItem xs="6">
@@ -44,15 +46,17 @@
         </CardHeaderContent>
         <CardHeaderActions>
             <MudTooltip Text="Add Fuel">
-                <MudIconButton Icon="@Icons.Material.Filled.LocalGasStation" Size="Size.Large" Color="Color.Success" @onclick="@(()=> OpenFuelForm())" />
+                <MudIconButton Icon="@Icons.Material.Filled.LocalGasStation" Disabled="@IsLocked" Size="Size.Large" Color="Color.Success" @onclick="@(()=> OpenFuelForm())" />
             </MudTooltip>
             <MudTooltip Text="Add Expenses">
-                <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenExpenseForm())" />
+                <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Disabled="@IsLocked" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenExpenseForm())" />
             </MudTooltip>
             <MudTooltip Text="Add Mileage Shortage Receipt">
-                <MudIconButton Icon="@Icons.Material.Filled.Toll" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenMileageShortageReceipt())" />
+                <MudIconButton Icon="@Icons.Material.Filled.Toll" Disabled="@IsLocked" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenMileageShortageReceipt())" />
             </MudTooltip>
+            <MudSwitch Checked="@IsLocked" CheckedChanged="((bool value)=>TripLocked(value))" Color="Color.Primary" Label="Trip Locked" />
         </CardHeaderActions>
+
     </MudCardHeader>
 
     <MudCardContent>
@@ -97,19 +101,19 @@
                 <div class="TabStyle">
                     @if (IsEventSelected)
                     {
-                        <TripEventsComponent Trip="@Trip" OnEventCount="@OnEventCount"></TripEventsComponent>
+                        <TripEventsComponent Trip="@Trip" OnEventCount="@OnEventCount" IsLocked="@IsLocked"></TripEventsComponent>
                     }
                 </div>
             </MudTabPanel>
             <MudTabPanel ToolTip="Consignments" OnClick="GcTabSelected" Icon="@Icons.Material.Filled.Backpack">
-                <div class="TabStyle">                   
+                <div class="TabStyle">
                     @if (AssignedGCs != null)
                     {
                         <MudGrid>
                             @foreach (var gc in AssignedGCs)
                             {
                                 <MudItem xs="6" lg="6" md="6">
-                                    <GcItemCard item="gc" Style="@($"background:{Colors.Purple.Lighten5};")"></GcItemCard>
+                                    <GcItemCard item="gc" Style="@($"background:{Colors.Purple.Lighten5};")" IsLocked="@IsLocked"></GcItemCard>
                                 </MudItem>
                             }
                         </MudGrid>
@@ -120,7 +124,7 @@
                 <div class="TabStyle">
                     <MudGrid>
                         <MudItem md="12">
-                            <MudTable Items="@TarifList" Dense="true" Hover="true" Striped="true" >
+                            <MudTable Items="@TarifList" Dense="true" Hover="true" Striped="true">
                                 <HeaderContent>
                                     <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.GcNumber)" InitialDirection="SortDirection.Ascending">GC No</MudTableSortLabel></MudTh>
                                     <MudTh Style="width:180px;"><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.TariffTypeName)" InitialDirection="SortDirection.Ascending">Tarif type Name</MudTableSortLabel></MudTh>
@@ -138,7 +142,7 @@
             </MudTabPanel>
             <MudTabPanel ToolTip="Expenses" Icon="@Icons.Material.Filled.Receipt" OnClick="ExpenseTabSelected">
                 <div class=" TabStyle">
-                    <MudTable Elevation="0" Items="@OptranList" Dense="true" Hover="true" Striped="true" >
+                    <MudTable Elevation="0" Items="@OptranList" Dense="true" Hover="true" Striped="true">
 
                         <HeaderContent>
                             <MudTh Style="width:160px;"><MudTableSortLabel SortBy="new Func<OpTranModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document No</MudTableSortLabel></MudTh>
@@ -185,14 +189,16 @@
                 </div>
             </MudTabPanel>
         </MudTabs>
-
     </MudCardContent>
 </MudCard>
+
 @code {
 
     [Parameter]
     public TripModel Trip { get; set; }
-
+    [Parameter]
+    public bool IsLocked { get; set; } = false;
+    string UserID;
     private int? EventCount = 0;
     protected void OnEventCount(int? eventCount)
     {
@@ -204,65 +210,94 @@
 
 
     public List<GcSetModel> AssignedGCs { get; set; }
-    private List<GcTariffModel> TarifList = new();  
+    private List<GcTariffModel> TarifList = new();
     private TripInfoModel TripInfoMdl = new();
     private bool IsEventSelected = false;
 
-    protected override void OnInitialized()
+    public bool HasPermissionTripFuelServiceEdit { get; set; } = false;
+    public int DocTypeIDTripFuel = 40;
+
+    public bool HasPermissionTripServiceEnableLock { get; set; } = false;
+    public bool HasPermissionTripServiceDisableLock { get; set; } = false;
+    public int DocTypeIDTrip = 39;
+
+    protected override async Task OnInitializedAsync()
     {
-        if(Trip != null)
-        TripInfoMdl =  tripIservice.GetTripInfo(Trip.TripID);   
-    }   
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTripFuelServiceEdit = await Irole.HasClaim(DocTypeIDTripFuel.ToString(), "Edit", ctc.Token);
+        HasPermissionTripServiceEnableLock = await Irole.HasClaim(DocTypeIDTrip.ToString(), "EnableLock", ctc.Token);
+        HasPermissionTripServiceDisableLock = await Irole.HasClaim(DocTypeIDTrip.ToString(), "DisableLock", ctc.Token);
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+
+        if (Trip != null)
+        {
+            TripInfoMdl = tripIservice.GetTripInfo(Trip.TripID);
+        }
+    }
+
 
     public void GcTabSelected()
     {
         LoadGcs();
     }
+
+
     public void FreightTabSelected()
     {
-        TarifList = tripIservice.GetTariffs(Trip.TripID).ToList();            
+        TarifList = tripIservice.GetTariffs(Trip.TripID).ToList();
     }
+
+
     public void EventTabSelected()
     {
         IsEventSelected = true;
     }
+
+
     public void ExpenseTabSelected()
     {
-        OptranList = Iservice.SelectByTrip(Trip.TripID).ToList();             
+        OptranList = Iservice.SelectByTrip(Trip.TripID).ToList();
     }
+
+
     public void FuelTabSelected()
     {
         TFuelList = tripFuelIservice.SelectByTrip(Trip.TripID).ToList();
     }
 
+
     private async Task OpenExpenseForm(OpTranModel opModel = null)
-    {        
+    {
         DialogParameters parms = new DialogParameters();
         if (opModel == null)
         {
-           opModel = new OpTranModel() { TripID = Trip.TripID, TruckID = Trip.TruckID, PaymentMode = "Cash", Area = "Operation" };
+            opModel = new OpTranModel() { TripID = Trip.TripID, TruckID = Trip.TruckID, PaymentMode = "Cash", Area = "Operation" };
         }
         else
         {
             parms.Add("ReadOnly", true);
         }
-        parms.Add("model",opModel);        
+        parms.Add("model", opModel);
         var dialog = DialogService.Show<Finance.Transactions.OpTranDialog>("ADD", parms, maxWidth);
-        var result = await dialog.Result;        
+        var result = await dialog.Result;
     }
 
+
     private async Task OpenMileageShortageReceipt(MileageShortageReceiptModel omsrModel = null)
-    {        
+    {
         DialogParameters parms = new DialogParameters();
         if (omsrModel == null)
         {
-            omsrModel = new MileageShortageReceiptModel() { 
-                TripID = Trip.TripID, 
-                TripNo = (Trip.TripPrefix + Trip.TripNumber.ToString()), 
-                DriverID = Trip.DriverID, 
-                ReceiptMode = "Cash",
-                RunningKM = TripInfoMdl?.RunKM??0,
-                ConsumedFuel = TripInfoMdl?.Fuel??0};
+            omsrModel = new MileageShortageReceiptModel()
+                {
+                    TripID = Trip.TripID,
+                    TripNo = (Trip.TripPrefix + Trip.TripNumber.ToString()),
+                    DriverID = Trip.DriverID,
+                    ReceiptMode = "Cash",
+                    RunningKM = TripInfoMdl?.RunKM ?? 0,
+                    ConsumedFuel = TripInfoMdl?.Fuel ?? 0
+                };
         }
         else
         {
@@ -270,9 +305,10 @@
         }
         parms.Add("model", omsrModel);
         var dialog = DialogService.Show<Finance.Transactions.MileageShortageReceiptDialog>("ADD", parms, maxWidth);
-        var result = await dialog.Result;        
+        var result = await dialog.Result;
     }
-    
+
+
     public void LoadGcs()
     {
         if (Trip == null)
@@ -280,13 +316,56 @@
         else
             AssignedGCs = Igc.SelectByTrip(Trip.TripID);
     }
-    
+
+
     private async Task OpenFuelForm()
     {
-        DialogParameters parms = new DialogParameters(); 
-        parms.Add("Tmodel", new TripFuelModel(){TripID = Trip.TripID});
-        var dialog = DialogService.Show<TripsFuelDialog>("ADD FUEL", parms, maxWidth);
-        var result = await dialog.Result;        
+        if (HasPermissionTripFuelServiceEdit)
+        {
+            DialogParameters parms = new DialogParameters();
+            parms.Add("Tmodel", new TripFuelModel() { TripID = Trip.TripID });
+            var dialog = DialogService.Show<TripsFuelDialog>("ADD FUEL", parms, maxWidth);
+            var result = await dialog.Result;
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                      "Permission denied!",
+                      "You dont have any permission to Add or Edit TripFuel.");
+        }
     }
-    
+
+    private async Task TripLocked(bool value)
+    {
+        if (!value)
+        {
+            if (HasPermissionTripServiceDisableLock)
+            {
+                IsLocked = value;
+                tripIservice.LockedTrip(Trip.TripID, false, UserID);
+            }
+            else
+            {
+                bool? ResultModel = await DialogService.ShowMessageBox(
+                          "Permission denied!",
+                          "You dont have any permission to Disable Lock Trip.");
+            }
+        }
+
+
+        if (value)
+        {
+            if (HasPermissionTripServiceEnableLock)
+            {
+                IsLocked = value;
+                tripIservice.LockedTrip(Trip.TripID, true, UserID);
+            }
+            else
+            {
+                bool? ResultModel = await DialogService.ShowMessageBox(
+                          "Permission denied!",
+                          "You dont have any permission to Enable Lock Trip.");
+            }
+        }
+    }
 }

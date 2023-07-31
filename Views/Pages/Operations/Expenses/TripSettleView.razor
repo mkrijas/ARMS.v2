@@ -10,9 +10,6 @@
 
 @using System.ComponentModel.DataAnnotations
 
-
-
-
 <h4>Select Trip</h4>
 <EditForm id="form" Model="@Selector" OnValidSubmit="OnValidSubmit">
     <MudGrid>
@@ -55,52 +52,51 @@
             <MudButton Class="mt-2" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Load Trip</MudButton>
         </MudItem>
     </MudGrid>
-  
-
 </EditForm>
 
-    <TripDetailsCard Trip="SelectedTrip"></TripDetailsCard>
+<TripDetailsCard Trip="SelectedTrip"></TripDetailsCard>
 
-    @code {        
+@code {
 
-        private TripModel SelectedTrip;
-        private TripSelector Selector;
+    private TripModel SelectedTrip;
+    private TripSelector Selector;
 
-        private List<BranchModel> branches;
-        private int[] Years;
-        private int[] Months;
+    private List<BranchModel> branches;
+    private int[] Years;
+    private int[] Months;
 
+    protected override async Task OnInitializedAsync()
+    {
+        Selector = new();
+        branches = Ibranch.Select().ToList();
 
-        protected override async Task OnInitializedAsync()
-        {
-            Selector = new();
-            branches = Ibranch.Select().ToList();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        Selector.BranchID = int.Parse(authprov.User.Claims.FirstOrDefault(c => c.Type == "BranchID").Value);
+        Selector.Year = DateTime.Today.Year;
+        Selector.Month = DateTime.Today.Month;
 
-            var authprov = await auth.GetAuthenticationStateAsync();
-            Selector.BranchID = int.Parse(authprov.User.Claims.FirstOrDefault(c => c.Type == "BranchID").Value);
-            Selector.Year = DateTime.Today.Year;
-            Selector.Month = DateTime.Today.Month;
-
-            int range = Selector.Year - 2021;
-            Years = Enumerable.Range(2021, range + 1).ToArray();
-            Months = Enumerable.Range(1, 12).ToArray();
-        }
-
-        private async Task OnValidSubmit(EditContext context)
-        {
-        string TripNumber = "T/" + Selector.BranchID.ToString() + "/" + Selector.Year.ToString().Substring(2) + Selector.Month.ToString("00") + "/" + Selector.TripNumber.ToString();
-            SelectedTrip =  Itrip.SelectByTripNumber(TripNumber); 
-        }
-
-        class TripSelector
-        {
-            [Required]
-            public int? BranchID { get; set; }
-            [Required]
-            public int Year { get; set; }
-            [Required]
-            public int Month { get; set; }
-            [Required]
-            public int? TripNumber { get; set; }
-        }
+        int range = Selector.Year - 2021;
+        Years = Enumerable.Range(2021, range + 1).ToArray();
+        Months = Enumerable.Range(1, 12).ToArray();
     }
+
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        string TripNumber = "T/" + Selector.BranchID.ToString() + "/" + Selector.Year.ToString().Substring(2) + Selector.Month.ToString("00") + "/" + Selector.TripNumber.ToString();
+        SelectedTrip = Itrip.SelectByTripNumber(TripNumber);
+    }
+
+
+    class TripSelector
+    {
+        [Required]
+        public int? BranchID { get; set; }
+        [Required]
+        public int Year { get; set; }
+        [Required]
+        public int Month { get; set; }
+        [Required]
+        public int? TripNumber { get; set; }
+    }
+}

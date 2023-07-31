@@ -1,5 +1,4 @@
-﻿
-@inject IGcService Iservice
+﻿@inject IGcService Iservice
 @inject IRouteService Iroute
 @inject IOrderService Iorder
 
@@ -13,12 +12,12 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            Load <MudIcon Icon="@Icons.Material.Filled.DirectionsBus" /> @Truck.RegNo 
+            Load <MudIcon Icon="@Icons.Material.Filled.DirectionsBus" /> @Truck.RegNo
             <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@Add" Color="Color.Dark" Size="Size.Medium"></MudIconButton>
-        </MudText>        
+        </MudText>
     </TitleContent>
-    <DialogContent>       
-        <MudContainer Class="dc">            
+    <DialogContent>
+        <MudContainer Class="dc">
             <MudGrid Spacing="4">
                 @foreach (var row in collection)
                 {
@@ -26,26 +25,30 @@
                     var item = row.model;
 
                     <MudItem xs="12" md="4" @onclick="@(()=> row.Selected = !row.Selected)" @ondblclick="@(()=> dblClickHandler(item))">
-                        <GcItemCard item="row.model" Class="@bgClass" ></GcItemCard>
+                        <GcItemCard item="row.model" Class="@bgClass"></GcItemCard>
                     </MudItem>
                 }
             </MudGrid>
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        @{SelectedCount = collection.Count(x => x.Selected == true); var disabled = SelectedCount == 0;}
+        @{
+            SelectedCount = collection.Count(x => x.Selected == true); var disabled = SelectedCount == 0;
+        }
         <MudButton OnClick="Load" IconColor="Color.Default" Color="Color.Success" Disabled="@disabled">Load</MudButton>
         <MudButton OnClick="Cancel">Cancel</MudButton>
     </DialogActions>
 </MudDialog>
 
-
 <style>
     .bgSelected {
         background-color: #FFFFCC;
     }
-    .bgUnselected{background-color:white}
-  
+
+    .bgUnselected {
+        background-color: white
+    }
+
     .dc {
         min-height: 50vh;
         max-height: calc(80vh - 64px);
@@ -62,24 +65,27 @@
     private int BranchID { get; set; }
     private int SelectedCount = 0;
 
-    public bool HasPermissionEdit { get; set; } = false;
-    public int DocTypeID = 26;
+    public bool HasPermissionGcServiceEdit { get; set; } = false;
+    public bool HasPermissionGcServiceAppentToTrip { get; set; } = false;
+    public int DocTypeID = 46;
 
     private void Cancel()
     {
         MudDialog.Cancel();
     }
 
-    private List<SelectableCollection<GcSetModel>> collection = new();
 
+    private List<SelectableCollection<GcSetModel>> collection = new();
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionGcServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionGcServiceAppentToTrip = await Irole.HasClaim(DocTypeID.ToString(), "AppentToTrip", ctc.Token);
 
         await GetAll();
     }
+
 
     private async Task GetAll()
     {
@@ -94,30 +100,50 @@
         }
     }
 
+
     protected async Task dblClickHandler(GcSetModel item)
     {
-        var e = await auth.GetAuthenticationStateAsync();
-        var user = e.User;
-        var userID = user.Identity.Name;
+        if (HasPermissionGcServiceAppentToTrip)
+        {
+            var e = await auth.GetAuthenticationStateAsync();
+            var user = e.User;
+            var userID = user.Identity.Name;
 
-        Iservice.AppendToTrip(TripID, item.GcSetID, userID);
-        MudDialog.Close(DialogResult.Ok("Appended"));
-        snackbar.Add("Loaded", Severity.Success, null);
+            Iservice.AppendToTrip(TripID, item.GcSetID, userID);
+            MudDialog.Close(DialogResult.Ok("Appended"));
+            snackbar.Add("Loaded", Severity.Success, null);
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to AppendToTrip GC.");
+        }
     }
+
 
     private async Task Load()
     {
-        var e = await auth.GetAuthenticationStateAsync();
-        var user = e.User;
-        var userID = user.Identity.Name;
-        foreach (var item in collection)
+        if (HasPermissionGcServiceAppentToTrip)
         {
-            if (item.Selected)
+            var e = await auth.GetAuthenticationStateAsync();
+            var user = e.User;
+            var userID = user.Identity.Name;
+            foreach (var item in collection)
             {
-                int result =  Iservice.AppendToTrip(TripID, item.model.GcSetID, userID);
+                if (item.Selected)
+                {
+                    int result = Iservice.AppendToTrip(TripID, item.model.GcSetID, userID);
+                }
             }
+            MudDialog.Close(DialogResult.Ok("Appended"));
         }
-        MudDialog.Close(DialogResult.Ok("Appended"));
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to AppendToTrip GC.");
+        }
     }
 
 
@@ -127,9 +153,10 @@
         public T model { get; set; }
     }
 
+
     private async Task Add()
     {
-        if (HasPermissionEdit)
+        if (HasPermissionGcServiceEdit)
         {
             var parameters = new DialogParameters();
             parameters.Add("model", new GcSetModel() { BranchID = BranchID });
@@ -146,7 +173,7 @@
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
                       "Permission denied!",
-                      "You dont have any permission to Add or Edit.");
+                      "You dont have any permission to Add or Edit GC.");
         }
     }
 }

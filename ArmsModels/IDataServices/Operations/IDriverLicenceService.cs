@@ -12,8 +12,8 @@ namespace ArmsServices.DataServices
         IEnumerable<DriverLicenceModel> Select(int? DriverID);
         DriverLicenceModel GetActiveHeavyLicense(int? DriverID);
         DriverLicenceModel SelectByID(int? LicenceID);
-        DriverLicenceModel Update(DriverLicenceModel model);
-        int Delete(int? LicenceID, string UserID);
-        int SaveFilePath(string link, int? id);
+        DriverLicenceModel Update(DriverLicenceModel model);  //Edit
+        int Delete(int? LicenceID, string UserID);  //Delete
+        int SaveFilePath(string link, int? id);  //Edit
     }
 }

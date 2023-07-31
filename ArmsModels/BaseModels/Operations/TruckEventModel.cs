@@ -25,13 +25,10 @@ namespace ArmsModels.BaseModels
         public DateTime? EventTime { get; set; } = DateTime.Now;
 
         ///////////////
-
-        //[Required]
-        //[Notless("TruckID", "EventTime")]
+        
+        [Required]
+        [Notless("TruckID","EventTime")]
         public long? EventReading { get; set; }
-
-        ///////////////
-
         [Required]
         public int? BranchID { get; set; }
         public string BranchName { get; set; }

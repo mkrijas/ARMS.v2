@@ -10,6 +10,10 @@
 @inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
 
+@using System.Threading;
+@using ArmsAdmin.Pages.User;
+@inject IRoleService<RoleModel> Irole
+
 <MudGrid Spacing="4">
     <MudItem xs="12" md="12">
         @if (isLoaded)
@@ -22,8 +26,8 @@
                     <MudSpacer></MudSpacer>
 
                     <MudTextField @bind-Value="searchBranch" Placeholder="Search Branchs... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                                  IconSize="Size.Medium" Class="mt-0"></MudTextField>
                 </ToolBarContent>
                 <HeaderContent>
                     <MudTh><MudTableSortLabel SortBy="new Func<BranchModel, object>(x => x.BranchID)" InitialDirection="SortDirection.Ascending">ID</MudTableSortLabel></MudTh>
@@ -42,11 +46,13 @@
                     <MudTd DataLabel="Active">@context.Active</MudTd>
                     <MudTd DataLabel="GSTNo">@context.GstNo</MudTd>
                     <MudTd DataLabel="">
-                        <MudFab @onclick="@(() => openOrders(context.BranchID))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddBox" Size="Size.Small" IconSize="Size.Small" />
-                        <MudFab @onclick="@(() => Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(() => openOrders(context.BranchID))" Title="Open Orders" Color="Color.Primary" Icon="@Icons.Material.Filled.AddBox" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(() => Edit(context))" Title="Edit" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
 
-                        <MudFab @onclick="@(() => Delete(context.BranchID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                        <MudFab @onclick="@(() => AddContact(context.BranchID))" title="Add Contact" Color="Color.Primary" Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(() => Delete(context.BranchID))" Title="Delete" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(() => AddContact(context.BranchID))" Title="Add Contact" Color="Color.Primary" Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" IconSize="Size.Small" />
+
+                        <MudFab @onclick="@(() => Settings(context.BranchID))" Title="Settings" Color="Color.Primary" Icon="@Icons.Material.Filled.Settings" Size="Size.Small" IconSize="Size.Small" />
 
                     </MudTd>
                 </RowTemplate>
@@ -84,10 +90,9 @@
                     </MudTable>
                     <MudItem>
                         <MudAutocomplete T="OrderModel" Label="Order" Value="OrderAssigned" ResetValueOnEmptyText="true"
-                                     SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"
-                                     ValueChanged="addOrder"></MudAutocomplete>
+                                         SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"
+                                         ValueChanged="addOrder"></MudAutocomplete>
                     </MudItem>
-
                 }
             </MudContainer>
         </DialogContent>
@@ -105,18 +110,23 @@
     private OrderModel OrderAssigned { get; set; }
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
+    public bool HasPermissionOrderServiceAddRemoveOrder { get; set; } = false;
+    public int DocTypeID = 45;
+
     private string searchBranch = "";
     private bool visibleOrders;
     private int? ClickedBranchID;
 
     private bool isLoaded = false;
 
-
-
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionOrderServiceAddRemoveOrder = await Irole.HasClaim(DocTypeID.ToString(), "AddRemoveOrder", ctc.Token);
+
         await GetAll();
     }
+
 
     private async Task openOrders(int? BranchID)
     {
@@ -126,14 +136,12 @@
     }
 
 
-
     private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
     {
         return await Task.FromResult(
             Orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase))
              .Where(x => AssignedOrders.All(y => y.OrderID != x.OrderID)));
     }
-
 
 
     private async Task GetAll()
@@ -152,24 +160,21 @@
     }
 
 
-
-
-
     private async Task Edit(BranchModel model)
     {
         if (model.BranchID != null)
         {
             model.Address = Iaddress.SelectByID(model.AddressID);
             model.Place = await Iplace.SelectByID(model.PlaceID);
-            if(model.Coa != null)
+            if (model.Coa != null)
             {
-            model.Coa = Icoa.SelectByID(model.Coa.CoaID);
-                
+                model.Coa = Icoa.SelectByID(model.Coa.CoaID);
+
             }
         }
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model);
-        var dialog = DialogService.Show<BranchDialog>("Add/Edit Branch", parms);
+        var dialog = DialogService.Show<BranchDialog>("Add/Edit Branch", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
         var result = await dialog.Result;
         if (!result.Cancelled)
         {
@@ -181,6 +186,13 @@
             await GetAll();
         }
     }
+
+
+    private async Task Settings(int? BranchID)
+    {
+        var dialog = DialogService.Show<SettingsDialog>("Branch Settings", new DialogOptions() { MaxWidth = MaxWidth.Medium });
+    }
+
 
     private async Task refreshOrders()
     {
@@ -197,6 +209,7 @@
         }
     }
 
+
     private async void Delete(int? id)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -204,6 +217,7 @@
         snackbar.Add("Deleted Successfully", Severity.Success);
         await GetAll();
     }
+
 
     private async void AddContact(int? id)
     {
@@ -221,24 +235,46 @@
             //await GetAll();
         }
     }
+
+
     private async Task addOrder(OrderModel obj)
     {
-        OrderAssigned = obj;
-        if (OrderAssigned?.OrderID > 0)
+        if (HasPermissionOrderServiceAddRemoveOrder)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            int result = await Iorder.BranchOrderUpdate(ClickedBranchID, OrderAssigned.OrderID, authprov.User.Identity.Name, "Update");
-            await refreshOrders();
-            OrderAssigned = new OrderModel();
+            OrderAssigned = obj;
+            if (OrderAssigned?.OrderID > 0)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                int result = await Iorder.BranchOrderUpdate(ClickedBranchID, OrderAssigned.OrderID, authprov.User.Identity.Name, "Update");
+                await refreshOrders();
+                OrderAssigned = new OrderModel();
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+              "Permission denied!",
+              "You dont have any permission to Add/Remove Order.");
         }
     }
 
+
     private async Task removeOrder(int? OrderID)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        int result = await Iorder.BranchOrderUpdate(ClickedBranchID, OrderID, authprov.User.Identity.Name, "Delete");
-        await refreshOrders();
+        if (HasPermissionOrderServiceAddRemoveOrder)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            int result = await Iorder.BranchOrderUpdate(ClickedBranchID, OrderID, authprov.User.Identity.Name, "Delete");
+            await refreshOrders();
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+              "Permission denied!",
+              "You dont have any permission to Add/Remove Order.");
+        }
     }
+
 
     private bool search(BranchModel model)
     {
@@ -249,6 +285,3 @@
         return false;
     }
 }
-
-
-

@@ -11,5 +11,6 @@ namespace ArmsServices.DataServices.General
         IEnumerable<PushNotificationModel> SelectUnAknowledgedAndNonTimeElapsedNotifications(int? ID);
         int AknowledgedSelectedItems(string MessageIDs, string UserID);
         int AknowledgedCurrentItem(int? MessageID, string UserID);
+        IEnumerable<PushNotificationGroupModel> GetAllGroupList();
     }
 }

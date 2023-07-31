@@ -39,48 +39,49 @@
                 <MudTd DataLabel="Unit">@context.Unit</MudTd>*@
                 <MudTd DataLabel="Mode">@(context.TariffSign == 1 ? "INCOME" : "EXPENSE")</MudTd>
                     @*<MudTd DataLabel="Allow Multiple">@context.AllowMultiple</MudTd>*@
-                    <MudTd DataLabel="">
-                        <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                        <MudFab @onclick="@(()=> Delete(context.TariffTypeID.Value))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTd>
-                </RowTemplate>
-                <PagerContent>
-                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                </PagerContent>
-            </MudTable>
-        </MudItem>
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context.TariffTypeID.Value))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+             </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+         </MudTable>
+    </MudItem>
 
+</MudGrid>
 
-
-    </MudGrid>
-    @code {
+@code {
 
     private TariffTypeModel model = new();
     private List<TariffTypeModel> collection = new();
 
     private string searchString = "";
 
-    public bool HasPermissionEdit { get; set; } = false;
-    public bool HasPermissionDelete { get; set; } = false;
-    public int DocTypeID = 23;
+    public bool HasPermissionTariffServiceEdit { get; set; } = false;
+    public bool HasPermissionTariffServiceDelete { get; set; } = false;
+    public int DocTypeID = 41;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionTariffServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTariffServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         await GetAll();
     }
+
 
     private async Task GetAll()
     {
         collection = Iservice.SelectTariffTypes("All").ToList();
     }
 
+
     private async Task Edit(TariffTypeModel model)
     {
-        if (HasPermissionEdit)
+        if (HasPermissionTariffServiceEdit)
         {
             DialogParameters parms = new DialogParameters();
             parms.Add("model", model.Clone());
@@ -104,9 +105,7 @@
                     {
                         collection.Add(UpatedModel);
                     }
-
                 }
-
                 model = new();
             }
             // you can check if the modal was cancelled
@@ -120,12 +119,14 @@
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
                       "Permission denied!",
-                      "You dont have any permission to Add or Edit.");
+                      "You dont have any permission to Add or Edit Tariff.");
         }
     }
+
+
     private async Task Delete(int? id)
     {
-        if (HasPermissionDelete)
+        if (HasPermissionTariffServiceEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
@@ -139,7 +140,6 @@
                     snackbar.Add("Deleted Successfully", Severity.Success);
                 }
             }
-
             //await Iservice.Delete(id, "Rijas");
             //snackbar.Add("Deleted Successfully", Severity.Success);
             //await GetAll();
@@ -148,7 +148,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
               "Permission denied!",
-              "You dont have any permission to delete.");
+              "You dont have any permission to delete Tariff.");
         }
     }
 
@@ -161,24 +161,4 @@
         }
         return false;
     }
-    private async Task OpenDialog()
-    {
-
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", new TariffTypeModel());
-
-        var dialog = DialogService.Show<TarrifTypeDilog>("ADD TARRIF TYPE", parms);
-
-        var result = await dialog.Result;
-
-        // you can check if the modal was cancelled
-        var isCancelled = result.Cancelled;
-        if (!isCancelled)
-        {
-            await GetAll();
-        }
-    }
 }
-
-
-

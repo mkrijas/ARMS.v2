@@ -16,7 +16,6 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
             <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
                 <ObjectGraphDataAnnotationsValidator />
@@ -46,13 +45,15 @@
     [Parameter]
     public int? DriverID { get; set; }
 
-    public bool HasPermissionEdit { get; set; } = false;
-    public int DocTypeID = 34;
+    public bool HasPermissionDriverServiceRemoveDriver { get; set; } = false;
+    public bool HasPermissionDriverServiceResign { get; set; } = false;
+    public int DocTypeID = 50;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDriverServiceRemoveDriver = await Irole.HasClaim(DocTypeID.ToString(), "RemoveDriver", ctc.Token);
+        HasPermissionDriverServiceResign = await Irole.HasClaim(DocTypeID.ToString(), "Resign", ctc.Token);
     }
 
 
@@ -61,9 +62,10 @@
         MudDialog.Cancel();
     }
 
+
     public async Task Submit()
     {
-        if (HasPermissionEdit)
+        if (HasPermissionDriverServiceResign)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
@@ -86,10 +88,9 @@
             }
             if (removedFromTruck == "NoAssignedTruck" || removedFromTruck == "DriverRemoved")
             {
-
                 try
                 {
-                    Iservice.Resign(DriverID, model.Remarks);
+                    Iservice.Resign(DriverID, model.Remarks, user.Identity.Name);
                     Snackbar.Add("Driver Resigned successfully", Severity.Success);
                 }
                 catch (Exception ex)
@@ -103,9 +104,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                "Permission denied!",
-               "You dont have any permission to submit.");
+               "You dont have any permission to Resign Driver.");
         }
     }
-
 }
-
