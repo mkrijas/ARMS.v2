@@ -1,4 +1,5 @@
 ﻿using ArmsModels.BaseModels.General;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -14,6 +15,17 @@ namespace ArmsServices.DataServices.General
             Iservice = iservice;
         }
 
+        public string GetMessageTitle(string DocType, string DocNumber,string Varification)
+        {
+
+            return "The DocNo :- "+ DocNumber + " of "+ DocType + " requires " + Varification + ".";
+        }
+
+        public string GetMessageBody(string DocType, string DocNumber, string Varification, DateTime? DocDate)
+        {
+
+            return "The DocNo :- " + DocNumber + " of " + DocType + " requires " + Varification + ". which was requested on " + DocDate;
+        }
         public PushNotificationModel UpdatePushNotification(PushNotificationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
