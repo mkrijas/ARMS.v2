@@ -10,41 +10,64 @@
 @inject IPushNotificationService IpushNotificationService
 
 <style>
-    .pointer{
-        cursor:pointer;
+    .pointer {
+        cursor: pointer;
     }
 </style>
 
 <div id="noti_Container">
-   
+
     <MudBadge Visible="@(currentNotificationMessages.Count()>0)" OnClick="@NotificationHideShow" Content="@currentNotificationMessages.Count()" Color="Color.Error" Overlap="true" Class="mx-6 my-4 pointer">
-        <MudChip Icon="@Icons.Material.Filled.Home" Color="Color.Primary" >
-        <MudText Class="pointer" @onclick="@NotificationHideShow" Typo="Typo.subtitle2">@BranchName</MudText>
+        <MudChip Icon="@Icons.Material.Filled.Home" Color="Color.Primary">
+            <MudText Class="pointer" @onclick="@NotificationHideShow" Typo="Typo.subtitle2">@BranchName</MudText>
         </MudChip>
-    </MudBadge>    
-    <div class="ikrNotifications" style="display:@BoxCss !important">
-        <h3>Notification(<span class="notiCounterOnHead">@currentNotificationMessages.Count()</span>)</h3>
+    </MudBadge>
+    <div class="ikrNotifications" style="display:@BoxCss !important; font-size:11px;">
+        <div style="color:#111;font-size:14px;font-weight:500; border:1px solid #ccc;">
+            <div style="margin:3px;">
+        Notification (@currentNotificationMessages.Count())
+            </div>
+        </div>
         <div class="ikrNotificationItems">
             <MudExpansionPanels>
-                @foreach (var nmObj in @currentNotificationMessages)
-                {   
-                    <MudExpansionPanel MaxHeight="200">
+                @foreach (var group in GroupList)
+                {
+                    <MudExpansionPanel>
                         <TitleContent>
-                            <MudText Typo="Typo.body1" class="ikrNotificationTitle">@nmObj.MessageTitle<MudText Typo="Typo.subtitle1" Color="Color.Primary">- @nmObj.MessageTimeSpan</MudText></MudText>
+                            <MudText Style="font-size:13px" class="ikrNotificationTitle"> <MudIcon Icon="@group.MessageGroupIcon" Title="@group.MessageGroupName" Color="Color.Primary" /> @group.MessageGroupName (@currentNotificationMessages.Where(s=>s.MessageGroupID == group.MessageGroupID).Count())</MudText>
                         </TitleContent>
                         <ChildContent>
-                            <div class="ikrNotificationBody">@nmObj.MessageBody</div>
-                            <div style="text-align:center">
-                                <br />
-                                <MudButton Style="background-color:#EEE" OnClick="@(()=>AknowledgedCurrentItem(nmObj.MessageID))"><a href="#">Aknowledge</a></MudButton>
-                            </div>
+                            <MudExpansionPanels>
+                                @foreach (var nmObj in @currentNotificationMessages.Where(s => s.MessageGroupID == group.MessageGroupID))
+                                {
+                                    <MudExpansionPanel>
+                                        <TitleContent>
+                                            <MudGrid>
+                                                <MudItem md="10" lg="10">
+                                                    <MudText Style="font-size:13px" class="ikrNotificationTitle">@nmObj.MessageTitle<MudText Typo="Typo.subtitle1" Color="Color.Primary">- @nmObj.MessageTimeSpan</MudText></MudText>
+                                                </MudItem>
+                                                <MudItem md="2" lg="2">
+                                                    <MudIconButton Class="ml-6 mb-0" Style="color:#ccc" Icon="@Icons.Material.Filled.Close" Title="Aknowledged" @onclick="@(()=>AknowledgedCurrentItem(nmObj.MessageID))" Size="Size.Small"></MudIconButton>
+                                                </MudItem>
+                                            </MudGrid>
+                                        </TitleContent>
+                                        <ChildContent>
+                                            <div class="ikrNotificationBody" style="font-size:13px;">@nmObj.MessageBody</div>
+                                            <div style="text-align:center">
+                                                <br />
+                                                <MudButton Style="background-color:#EEE" OnClick="@(()=>RedirectToLink(nmObj.PageToRedirectLink,nmObj.DocumentID))"><a href="#" style="font-size:13px;">Go to</a></MudButton>
+                                            </div>
+                                        </ChildContent>
+                                    </MudExpansionPanel>
+                                }
+                            </MudExpansionPanels>
                         </ChildContent>
                     </MudExpansionPanel>
                 }
             </MudExpansionPanels>
         </div>
         <div style="text-align:center">
-            <MudButton OnClick="@AknowledgeAllInTheList"><a href="#">Aknowledge All</a></MudButton>
+            <MudButton OnClick="@AknowledgeAllInTheList"><a href="#" style="font-size:13px">Aknowledge All</a></MudButton>
         </div>
         @*<div class="ikrSeeAll"><button id="AknowledgeId" value="Aknowledge" name="Aknowledge" onclick="@AknowledgeAllInTheList();"> <a href="#">Aknowledge</a></button>
         </div>*@
@@ -66,21 +89,11 @@
         int.TryParse(brancIDString, out CurrentBranchId);
         allNotificationMessages = IpushNotificationService.SelectUnAknowledgedAndNonTimeElapsedNotifications(CurrentBranchId).ToList();
         currentNotificationMessages = allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-
+        GroupList = IpushNotificationService.GetAllGroupList().ToList();
         hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
         hubConnection.On<PushNotificationModel>("ReceiveMessage", (PushNotificationMessage) =>
         {
-            allNotificationMessages.Add(new PushNotificationModel()
-                {
-                    MSgId = allNotificationMessages.Count() + 1,
-                    MessageID = (int?)(PushNotificationMessage.MessageID),
-                    InitiateBranch = PushNotificationMessage.InitiateBranch,
-                    ReceivedBranch = PushNotificationMessage.ReceivedBranch,
-                    MessageTitle = PushNotificationMessage.MessageTitle,
-                    MessageBody = PushNotificationMessage.MessageBody,
-                    RedirectedTo = PushNotificationMessage.RedirectedTo,
-                    MsgDateString = PushNotificationMessage.MsgDatest
-                });
+            allNotificationMessages.Add(PushNotificationMessage);
             currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
             InvokeAsync(() => StateHasChanged());
         });
@@ -95,7 +108,7 @@
     private PushNotificationModel notificationMessage = new PushNotificationModel();
     private HubConnection hubConnection;
     private string BoxCss = "none";
-
+    List<PushNotificationGroupModel> GroupList = new();
 
     public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
 
@@ -140,15 +153,29 @@
                     allNotificationMessages.RemoveAll(x => x.MessageID == MessageID);
                 }
 
-                if (currentNotificationMessages!= null)
+                if (currentNotificationMessages != null)
                 {
-                   currentNotificationMessages.RemoveAll(t => t.MessageID == MessageID);                    
+                    currentNotificationMessages.RemoveAll(t => t.MessageID == MessageID);
                 }
             }
         }
 
     }
+
+
+    private void RedirectToLink(string RedirectToLink, int? DocumentID)
+    {
+        if(!string.IsNullOrEmpty(RedirectToLink))
+        {
+            if (DocumentID != null && DocumentID != 0)
+            {
+                RedirectToLink = RedirectToLink + "/" + DocumentID?.ToString() ?? "";
+            }
+            NavigationManager.NavigateTo(RedirectToLink);
+            
+        }
+    }
     #endregion
-    
+
 
 }

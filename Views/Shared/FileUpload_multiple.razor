@@ -1,0 +1,191 @@
+﻿@using System.IO
+@using System.Linq
+@using Microsoft.AspNetCore.Hosting;
+@inject IWebHostEnvironment _env;
+
+@using System.Security.AccessControl
+@using MimeTypes
+
+
+<MudContainer>
+
+    <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="UploadFiles">
+        <ButtonTemplate>
+            <MudButton HtmlTag="label"
+                       Variant="Variant.Filled"
+                       Color="Color.Secondary"
+                       for="@context">
+                Upload Files
+            </MudButton>
+        </ButtonTemplate>
+        <SelectedTemplate>
+            @if (context != null)
+            {
+                @foreach (var file in context)
+                {
+                    <MudText>
+                        @file.Name
+                    </MudText>
+
+                }
+            }
+            else
+            {
+                @if (!IsEdit)
+                {
+                    <MudText>No Files</MudText>
+                }
+            }
+        </SelectedTemplate>
+    </MudFileUpload>
+
+    @if (IsEdit)
+        @foreach (var value in fnames)
+        {
+
+
+
+
+            <a href="@value" download="FinancialDocuments">
+                <MudText Typo="Typo.h6" Color="Color.Primary">
+                    @value.ToString()
+                    <MudIcon Icon="@Icons.Material.Filled.Download" Title="Download" />
+                </MudText>
+            </a>
+
+        }
+
+</MudContainer>
+@code {
+    [Parameter] public string FileName { get; set; } = "Original";
+
+    [Parameter] public string FolderName { get; set; }
+
+    [Parameter] public bool Resize { get; set; } = false;
+    public bool IsEdit { get; set; } = false;
+    private List<string> fnames = new();
+
+    [Parameter]
+    public string FilePath
+    {
+        get => _filepath;
+        set
+        {
+            if (_filepath == value) return;
+            _filepath = value;
+            FilePathChanged.InvokeAsync(value);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        if (model.FileName != null)
+        {
+            fnames = model.FileName.Split(',').ToList();
+            IsEdit = true;
+        }
+    }
+
+    [Parameter]
+    public TransactionBaseModel model { get; set; }
+    [Parameter]
+    public EventCallback<string> FilePathChanged { get; set; }
+
+
+
+    private string _filepath;
+
+
+    private async Task<string> UploadImage(IBrowserFile file, string filename, string physicalPath)
+    {
+        string DerivedFileName = null;
+        FilePath = null;
+        if (file != null && file.Size > 0)
+        {
+            if (filename == "Original")
+            {
+                DerivedFileName = file.Name;
+            }
+            else
+            {
+                DerivedFileName = filename + MimeTypeMap.GetExtension(file.ContentType);
+            }
+
+            DirectoryInfo di = new DirectoryInfo(physicalPath);
+            if (!di.Exists)
+            {
+                System.IO.Directory.CreateDirectory(physicalPath);
+            }
+
+            string filePath = Path.Combine(physicalPath, DerivedFileName);
+
+            if (FilePath != null)
+            {
+                string oldfileName = Path.Combine(_env.WebRootPath, FilePath);
+                if (File.Exists(oldfileName))
+                {
+                    File.Delete(oldfileName);
+                }
+            }
+
+            if (Resize)
+            {
+                file = await ResizeImage(file);
+            }
+            try
+            {
+                Stream stream = file.OpenReadStream();
+                FileStream fs = File.Create(filePath);
+                await stream.CopyToAsync(fs);
+                stream.Close();
+                fs.Close();
+            }
+            catch (Exception ex)
+            {
+                int k = 0;
+            }
+
+        }
+        return DerivedFileName;
+    }
+
+
+
+    private async Task<IBrowserFile> ResizeImage(IBrowserFile file)
+    {
+        return await file.RequestImageFileAsync("image/jpg", 250, 250);
+    }
+
+
+
+
+    private async Task UploadFiles(IReadOnlyList<IBrowserFile> files)
+    {
+        string PhysicalPath = Path.Combine(_env.WebRootPath, "ArmsStaticFiles", FolderName);
+        string VirtualPath = Path.Combine("ArmsStaticFiles", FolderName);
+
+        foreach (var file in files)
+        {
+            string File_Name = Guid.NewGuid().ToString();
+
+            var result = await UploadImage(file, File_Name, PhysicalPath);
+            if (result != null)
+            {
+                FilePath = Path.Combine(VirtualPath, result);
+                if (model.FileName == null)
+                {
+                    model.FileName = FilePath;
+                }
+                else
+                {
+                    model.FileName = model.FileName + ',' + FilePath;
+                }
+
+            }
+
+        }
+
+
+    }
+
+}

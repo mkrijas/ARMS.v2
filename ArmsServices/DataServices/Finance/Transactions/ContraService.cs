@@ -172,6 +172,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ChequeDate", model.ChequeInfo.ChequeDate),
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@IsInterBranch", model.IsInterBranch),
@@ -204,6 +205,7 @@ namespace ArmsServices.DataServices
                 IsPayment = dr.GetBoolean("IsPayment"),
                 PaymentTool = dr.GetString("PaymentTool"),
                 BankCharges = dr.GetDecimal("BankCharges"),
+                FileName = dr.GetString("FilePath"),
                 InterBranchTranID = dr.GetInt32("InterBranchTranID"),
                 IsInterBranch = dr.GetBoolean("IsInterBranch"),
                 ChequeInfo = new ChequeModel()

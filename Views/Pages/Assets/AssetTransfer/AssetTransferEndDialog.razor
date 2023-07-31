@@ -1,0 +1,148 @@
+﻿@inject AuthenticationStateProvider auth
+@inject IAssetTransferService Iservice
+@inject IBranchService Ibranchservice
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog>
+    <TitleContent>
+
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Accept Or Reject Asset.
+        </MudText>
+
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm Model="@model" OnValidSubmit="Accept">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="12">
+                        <MudTextField Value="model.Asset.Description" Label="Asset" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Asset.Description)" Disabled></MudTextField>
+                    </MudItem>
+                    <!-- Display the list of child assets -->
+                    <MudItem xs="12" md="12">
+                        @if (ChildAssets != null && ChildAssets.Any())
+                        {
+                            <MudTable Items="@ChildAssets">
+                                <RowTemplate Context="asset">
+                                    <MudTd>@asset.Description</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        }
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="model.InitiatedBranch.BranchName" Label="Initiated Branch" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InitiatedBranch.BranchName)" Disabled></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="End Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.AssetTransferEndModel.TransferEndDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.AssetTransferEndModel.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Accept" Class="px-12">Accept Driver</MudButton>
+        @if (model.AssetTransferEndModel.TransferStatus == null)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reject" Class="px-12">Reject Driver</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public AssetTransferInitiationModel model { get; set; } = new();
+
+    [Parameter]
+    public List<AssetModel> ChildAssets { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        branchID = model?.DestinationBranch?.BranchID ?? 0;
+    }
+
+
+    private int branchID { get; set; } = 0;
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+
+    public async Task Accept()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model.Asset == null || model.Asset.AssetID == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Please, Select asset.", yesText: "OK");
+
+            return;
+        }
+        if (model != null)
+        {
+            model.IsAssetReject = 0;
+            try
+            {
+                model.AssetTransferEndModel.TransferStatus = true;
+                Iservice.UpdateStatus(model);
+                Snackbar.Add("Transfered succesfully", Severity.Success);
+
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        MudDialog.Close(model);  
+    }
+
+
+    public async Task Reject()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model.Asset == null || model.Asset.AssetID == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Please, Select asset.", yesText: "OK");
+
+            return;
+        }
+        if (model != null)
+        {
+
+            model.IsAssetReject = 1;
+            try
+            {
+
+                model.AssetTransferEndModel.TransferStatus = false;
+                Iservice.UpdateStatus(model);
+                Snackbar.Add("Asset Transfer Rejected", Severity.Error);
+
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        MudDialog.Close(model);
+    }
+}

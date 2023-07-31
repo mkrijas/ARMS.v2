@@ -27,6 +27,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@PaymentTool", model.PaymentTool),
                new SqlParameter("@BankCharges", model.BankCharges),
+               new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -99,6 +100,7 @@ namespace ArmsServices.DataServices
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),
+                FileName = dr.GetString("FilePath"),
                 BusinessNature = dr.GetString("BusinessNature"),
                 PartyCoaID = dr.GetInt32("PartyCoaID"),
                 OtherBranchID = dr.GetInt32("OtherBranchID"),

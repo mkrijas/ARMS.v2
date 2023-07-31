@@ -151,6 +151,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@CostCenter", model.CostCenter),
                new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -176,7 +177,7 @@ namespace ArmsServices.DataServices
                 MID = dr.GetInt32("MID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 CostCenter = dr.GetInt32("CostCenter"),
-
+                FileName= dr.GetString("FilePath"),
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),

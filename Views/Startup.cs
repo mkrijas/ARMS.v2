@@ -191,6 +191,7 @@ namespace Views
             //------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
+            services.AddScoped<IAssetTransferService, AssetTransferService>();
             //------------General-------------------
             services.AddScoped<IConfigTable, ConfigTable>();
 
