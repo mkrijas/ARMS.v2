@@ -7,6 +7,8 @@
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -72,9 +74,16 @@
     private int numberOfRecords = 100;
     private string searchTerm = "";
 
+    [Parameter]
     public int? id { get; set; } = null;
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID { get; set; } = 3;
+
+    
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
 
     private int NumberOfRecords
     {
@@ -109,9 +118,11 @@
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
         await GetAll(IsApproved, NumberOfRecords);
 
+        await signalRService.StartAsync();
+
         if (id != null && collection != null && collection.Any(g => g.ContraID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.ContraID == id), false);
+            await OpenDialog(collection.FirstOrDefault(s => s.ContraID == id), true);
         }
     }
 
@@ -169,7 +180,29 @@
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<ContraDialog>(ContraModel.ContraID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
-        await GetAll(IsApproved, NumberOfRecords);
+
+        var isCancelled = result.Cancelled;
+
+        if (!isCancelled)
+        {
+            var ReturnData = (ContraModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ContraModel.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ContraModel.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ContraModel.NatureOfTransaction, ContraModel.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ContraModel.NatureOfTransaction, ContraModel.DocumentNumber, "Level 1 Verification", ContraModel.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.ContraID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/ContraView";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+
+            await GetAll(IsApproved, NumberOfRecords);
+        }
+        
     }
 
 }
