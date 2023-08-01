@@ -146,6 +146,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@JobcardID", model.Jobcard?.JobcardID??0),
                new SqlParameter("@TruckID", model.Truck?.TruckID??0),
+               new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@Items", model.Items?.ToDataTable()??null),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -181,6 +182,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     RegNo = dr.GetString("RegNo")
                 },
                 Narration = dr.GetString("Narration"),
+                FileName = dr.GetString("FilePath"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

@@ -94,6 +94,7 @@ namespace ArmsServices.DataServices
                 AuthLevelID = dr.GetInt32("AuthLevelID"),
                 DocTypeID = dr.GetInt32("DocTypeID"),
                 RoleID = dr.GetString("RoleID"),
+                ClaimValue = dr.GetString("ClaimValue"),
                 AuthorizeType = dr.GetString("AuthorzationType"),
                 DocType = dr.GetString("DocType")
             };

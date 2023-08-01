@@ -85,6 +85,7 @@ namespace Views
 
             services.AddSingleton<IDbService, DbService>();
             services.AddScoped<IBranchService, BranchService>();
+            services.AddScoped<IBranchSettingsService, BranchSettingsService>();
             services.AddScoped<IPlaceService, PlaceService>();
             services.AddScoped<IRouteService, RouteService>();
             services.AddScoped<IConsigneeService, ConsigneeService>();

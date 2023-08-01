@@ -171,7 +171,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                new SqlParameter("@PaymentCoaID", model.PaymentCoaID),
                new SqlParameter("@PaymentTool", model.PaymentTool),
                new SqlParameter("@BankCharges", model.BankCharges),
-               //new SqlParameter("@AccountName", model.AccountName),
+               new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@SGST", model.SGST),
                new SqlParameter("@CGST", model.CGST),
@@ -202,6 +202,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                 CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),
                 Narration = dr.GetString("Narration"),
+                FileName = dr.GetString("FilePath"),
                 DocumentType = new AssetDocumentTypeModel()
                 {
                     DocumentTypeID = dr.GetInt32("DocumentTypeID"),
