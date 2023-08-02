@@ -10,7 +10,7 @@ namespace ArmsModels.BaseModels
     {
         public TransactionBaseModel()
         {
-            UserInfo = new();            
+            UserInfo = new();
         }
         public int? MID { get; set; }
         [Required]
@@ -28,12 +28,19 @@ namespace ArmsModels.BaseModels
         public string Narration { get; set; }
         public int? AuthLevelId { get; set; }
         public string AuthStatus { get; set; }
-        public bool IsInterBranch { get; set; }=false;
+        public bool IsInterBranch { get; set; } = false;
         public int? InterBranchTranID { get; set; } = null;
-        [RequiredIfTrue("IsInterBranch") ]
-        public int ? OtherBranchID { get;set; }
+        [RequiredIfTrue("IsInterBranch")]
+        public int? OtherBranchID { get; set; }
+
+        public string FileName { get; set; }
+        //public virtual List<FileNames> filenames { get; set; } = new List<FileNames>();
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
+    //public class FileNames
+    //{
+    //    public string FileName { get; set; }
+    //}
 
 
     public class AccountInfoViewModel

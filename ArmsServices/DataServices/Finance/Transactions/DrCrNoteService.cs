@@ -277,6 +277,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyCoaID", model.PartyCoaID),
                new SqlParameter("@PartyID", model.Party.PartyID),
                new SqlParameter("@PartyCode", model.Party.PartyCode),
+               new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -303,6 +304,7 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),                
                 MID = dr.GetInt32("MID"),
+                FileName = dr.GetString("FilePath"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 CostCenter = dr.GetInt32("CostCenter"),
 

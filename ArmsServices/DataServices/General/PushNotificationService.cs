@@ -1,4 +1,5 @@
 ﻿using ArmsModels.BaseModels.General;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -14,6 +15,17 @@ namespace ArmsServices.DataServices.General
             Iservice = iservice;
         }
 
+        public string GetMessageTitle(string DocType, string DocNumber,string Varification)
+        {
+
+            return "The DocNo :- "+ DocNumber + " of "+ DocType + " requires " + Varification + ".";
+        }
+
+        public string GetMessageBody(string DocType, string DocNumber, string Varification, DateTime? DocDate)
+        {
+
+            return "The DocNo :- " + DocNumber + " of " + DocType + " requires " + Varification + ". which was requested on " + DocDate;
+        }
         public PushNotificationModel UpdatePushNotification(PushNotificationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -29,6 +41,7 @@ namespace ArmsServices.DataServices.General
                new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
                new SqlParameter("@RedirectedTo", model.RedirectedTo),
                new SqlParameter("@PageToRedirectLink", model.PageToRedirectLink),
+               new SqlParameter("@ClaimValue", model.ClaimValue),
                new SqlParameter("@DocumentID", model.DocumentID),
                new SqlParameter("@ExpiredBy", model.ExpiredBy),
                new SqlParameter("@RecordStatus", model.RecordStatus)
@@ -76,6 +89,21 @@ namespace ArmsServices.DataServices.General
             return Iservice.ExecuteNonQuery("[usp.General.Notification.Aknowledge]", parameters);
 
         }
+        public IEnumerable<PushNotificationGroupModel> GetAllGroupList()
+        {
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.NotificationGroups.Select]", null))
+            {
+                yield return new PushNotificationGroupModel()
+                {
+                    ID = dr.GetInt32("ID"),
+                    MessageGroupID = dr.GetString("MessageGroupID"),
+                    MessageGroupName = dr.GetString("MessageGroupName"),
+                    MessageGroupIcon = dr.GetString("MessageGroupIcon")
+                };
+            }
+
+        }
 
         private PushNotificationModel GetModel(IDataRecord dr)
         {
@@ -100,6 +128,7 @@ namespace ArmsServices.DataServices.General
                 MessageGroupID = dr.GetString("MessageGroupID"),
                 DocumentTypeID = dr.GetInt32("DocumentTypeID"),
                 PageToRedirectLink = dr.GetString("PageToRedirectLink"),
+                ClaimValue = dr.GetString("ClaimValue"),
                 DocumentID = dr.GetInt32("DocumentID"),
                 ExpiredBy = dr.GetInt32("ExpiredBy"),
                 RecordStatus = dr.GetByte("RecordStatus"),

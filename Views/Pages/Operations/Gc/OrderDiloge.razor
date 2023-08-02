@@ -26,7 +26,6 @@
                 </MudItem>
                 <MudItem xs="12" md="12">
                     <PartySelector @bind-Value="model.Party" NatureOfBusiness="Customer"></PartySelector>
-
                 </MudItem>
                 <MudItem xs="12" md="12">
                     <MudSelect Label="Content" T="short?" Value="@model.ContentID" ValueChanged="SetContentObject" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" AdornmentColor="Color.Secondary">
@@ -46,7 +45,6 @@
                                       Adornment="Adornment.End" AdornmentText="@model?.Content?.PrimaryUnit" AdornmentColor="Color.Dark"></MudTextField>
                     </MudItem>
                 }
-
             </MudGrid>
         </EditForm>
     </DialogContent>
@@ -66,14 +64,8 @@
     private string searchString = "";
     private string unit = "";
 
-    public bool HasPermissionEdit { get; set; } = false;
-    public int DocTypeID = 21;
-
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-
         await foreach (var item in Icontent.Select(0))
         {
             contents.Add(item);
@@ -110,36 +102,26 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-        if (HasPermissionEdit)
+        if (model.Party?.PartyID == 0)
         {
-            if (model.Party?.PartyID == 0)
-            {
-                snackbar.Add("Client is not selected", Severity.Error);
-                return;
-            }
-            if (!model.IsLimitedQuantity)
-            {
-                model.OrderQuantity = 0;
-            }
-            else
-            {
-                var isValid = context.Validate();
-                if (!isValid)
-                {
-                    return;
-                }
-            }
-            model.ClientID = model.Party.PartyID;
-            MudDialog.Close(model);
+            snackbar.Add("Client is not selected", Severity.Error);
+            return;
+        }
+        if (!model.IsLimitedQuantity)
+        {
+            model.OrderQuantity = 0;
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to submit.");
+            var isValid = context.Validate();
+            if (!isValid)
+            {
+                return;
+            }
         }
+        model.ClientID = model.Party.PartyID;
+        MudDialog.Close(model);
     }
-
 
     private void Cancel() => MudDialog.Cancel();
 }

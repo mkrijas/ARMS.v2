@@ -6,7 +6,7 @@
 @inject IDriverService Idriver
 @inject ITruckService Itruck
 @inject IDialogService DialogService
-
+@inject IBranchSettingsService branchSettingsService 
 
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
@@ -60,7 +60,7 @@
 
                     <MudItem xs="12" md="6">
                         <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label=@(SelectedEvent.IsStationary?"Place":"Origin") Value="@OriginPlace" ValueChanged="@((e)=> {OriginPlace = e; model.OriginID = e.PlaceID;model.DestinationID = SelectedEvent.IsStationary ? model.OriginID : model.DestinationID;})" ResetValueOnEmptyText="true" Clearable="true"
-                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true"></MudAutocomplete>
+                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true"></MudAutocomplete>
                     </MudItem>
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
                         <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="model.NextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
@@ -73,12 +73,12 @@
 
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
                         <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label="Destination" Value="Destination" ValueChanged="((e)=> {Destination =e ; model.DestinationID =e.PlaceID;})" ResetValueOnEmptyText="true" Clearable="true"
-                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                     </MudItem>
 
                     <MudItem xs="12" md="6" hidden="@(SelectedEvent.EventTypeID != 4)">
                         <MudSelect Variant="Variant.Outlined" Label="Select GCs To Unload" MultiSelection="true" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))"
-                                   T="GcSetModel" OffsetY="true" AdornmentColor="Color.Secondary" @bind-SelectedValues="SelectedGCs">
+                               T="GcSetModel" OffsetY="true" AdornmentColor="Color.Secondary" @bind-SelectedValues="SelectedGCs">
                             @foreach (var item in GCsToUnload)
                             {
                                 <MudSelectItem T="GcSetModel" Value="@item">@item.SetGcNumber</MudSelectItem>
@@ -106,7 +106,7 @@
 </MudDialog>
 
 @code {
-
+    //Opration ID-109
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter] public TruckModel Truck { get; set; }
@@ -203,20 +203,21 @@
             }
 
             IsDisableSelectAction = CurrentTrip.UserInfo.RecordStatus == 4;
-
-
         }
     }
+
 
     protected override async Task OnParametersSetAsync()
     {
 
     }
 
+
     private async Task<IEnumerable<PlaceModel>> SearchPlaces(string searchString)
     {
         return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
+
 
     private async Task OnValidSubmit(EditContext context)
     {
@@ -265,37 +266,57 @@
                         return;
                     }
                 }
-                if (!ValidateEvent(model))
+                if (model.EventTypeID == 6)
                 {
-                    return;
-                }
-                model = Ievent.Update(model);
+                    bool IsbranchSetting = branchSettingsService.IsEnabled(model.BranchID, 109);
+                    if (IsbranchSetting)
+                    {
+                        DialogOptions DialogWidth = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true };
 
-                if (SelectedEvent.EventTypeID == 4)
-                {
-                    if (!SelectedGCs.Any())
-                    {
-                        snackbar.Add("No GCs selected to Unload!", Severity.Warning);
-                        return;
-                    }
-                    else
-                    {
-                        foreach (GcSetModel item in SelectedGCs)
+                        var dialog = DialogService.Show<AcceptedKMDialog>("Update Accepted KM", DialogWidth);
+                        var result = await dialog.Result;
+                        if (!result.Canceled)
                         {
-                            Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                            int AcceptedKM = (int)result.Data;
+                            model.AcceptedKM = AcceptedKM;
+                        }
+                        else
+                        {
+                            return;
                         }
                     }
                 }
-                MudDialog.Close(DialogResult.Ok(model));
-            }
-            catch (Exception ex)
+            if (!ValidateEvent(model))
             {
-                snackbar.Add(ex.Message, Severity.Warning);
+                return;
             }
-            finally
+            model = Ievent.Update(model);
+
+            if (SelectedEvent.EventTypeID == 4)
             {
-                isSubmitting = false;
+                if (!SelectedGCs.Any())
+                {
+                    snackbar.Add("No GCs selected to Unload!", Severity.Warning);
+                    return;
+                }
+                else
+                {
+                    foreach (GcSetModel item in SelectedGCs)
+                    {
+                        Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                    }
+                }
             }
+            MudDialog.Close(DialogResult.Ok(model));
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
         }
         else
         {
@@ -304,6 +325,7 @@
                "You dont have any permission to Add or Edit Event.");
         }
     }
+
 
     private bool ValidateEvent(EventModel ev)
     {
@@ -339,10 +361,12 @@
         return true;
     }
 
+
     private string GetMultiSelectionText(List<string> Gcs)
     {
         return $"{SelectedGCs.Count()}  Gc{(Gcs.Count > 1 ? "s" : "")} Selected ";
     }
+
 
     private void EventSelected(byte? e)
     {

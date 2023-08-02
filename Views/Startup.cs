@@ -85,6 +85,7 @@ namespace Views
 
             services.AddSingleton<IDbService, DbService>();
             services.AddScoped<IBranchService, BranchService>();
+            services.AddScoped<IBranchSettingsService, BranchSettingsService>();
             services.AddScoped<IPlaceService, PlaceService>();
             services.AddScoped<IRouteService, RouteService>();
             services.AddScoped<IConsigneeService, ConsigneeService>();
@@ -147,6 +148,8 @@ namespace Views
             //------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetDocumentRequestService, AssetDocumentRequestService>();
+            services.AddScoped<IAssetSettingsService, AssetSettingsService>();
+
             //------------FINANCE-------------------
             services.AddScoped<IChartOfAccountService, ChartOfAccountService>();
             services.AddScoped<ITdsRateService, TdsRateService>();
@@ -190,6 +193,7 @@ namespace Views
             //------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
+            services.AddScoped<IAssetTransferService, AssetTransferService>();
             //------------General-------------------
             services.AddScoped<IConfigTable, ConfigTable>();
 
