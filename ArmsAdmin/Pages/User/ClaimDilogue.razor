@@ -26,10 +26,18 @@
             Manage Permissions
         </MudText>
     </TitleContent>
-    <DialogContent>
+    <DialogContent >
+        @if (Progressing)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else
+        {
         <MudContainer Style="min-height:300px;max-height: 70vh; overflow-y:auto">
             <MudTable Style="overflow-y:hidden" Class="mb-3" Items="@Claims" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<roleClaimView, bool>(search)" @bind-place="roleClaimModel">
                 <ToolBarContent>
+                    
+                    <MudCheckBox T="bool" CheckedChanged="@SetAllPermissions" Class="mr-2" Checked="@SetAllPermssionsVal" Label="Select All Permissions" Color="Color.Primary"></MudCheckBox>
                     <MudSpacer></MudSpacer>
                     <MudTextField @bind-Value="searchClaim" Placeholder="Search Claim... "
                                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
@@ -53,6 +61,7 @@
                 </PagerContent>
             </MudTable>
         </MudContainer>
+        }
     </DialogContent>
 </MudDialog>
 
@@ -61,7 +70,7 @@
     public RoleModel RoleModel { get; set; }
 
     private RoleModel model = new RoleModel();
-    public IList<Claim> UserClaimList { get; set; }
+    public IList<Claim> UserClaimList { get; set; } = new List<Claim>();
     private string searchTruck = "";
     private string searchClaim = "";
     private string id = "";
@@ -69,9 +78,11 @@
     private List<RoleModel> collection = new List<RoleModel>();
     private List<Claim> clamelist = new List<Claim>();
     public string csroleid { get; set; } = "";
-    IDictionary<int?, string> doctypes = null;
+    IDictionary<int?, string> doctypes = new Dictionary<int?, string>();
     public bool checkbox { get; set; } = false;
+    private bool SetAllPermssionsVal;
 
+    private bool Progressing;
 
     class roleClaimView
     {
@@ -105,7 +116,6 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         clamelist = Irole.GetAllClaims(ctc.Token).Result.ToList();
-
 
         foreach (var claimType in clamelist.DistinctBy(x => x.Type).Select(y => y.Type))
         {
@@ -142,27 +152,22 @@
         return false;
     }
 
-
-    private void Roleupdate(bool val, String Claimtype, String claimvalue)
+    private async Task Roleupdate(bool val, String Claimtype, String claimvalue)
     {
-        Claim claim = new Claim(Claimtype, claimvalue);
 
+        Claim claim = new Claim(Claimtype, claimvalue);
         try
-        {
+        {         
+
             if (val == true)
             {
-                rolemngr.AddClaimAsync(RoleModel, claim);
-                UserClaimList.Add(claim);
-
-                //snackbar.Add("Claim Added", Severity.Success);
+                await rolemngr.AddClaimAsync(RoleModel, claim);
+                UserClaimList.Add(claim);                
             }
             else
             {
-                rolemngr.RemoveClaimAsync(RoleModel, claim);
-                UserClaimList.Remove(UserClaimList.FirstOrDefault(s => s.Type == claim.Type && s.Value == claim.Value));
-                //UserClaimList =  UserClaimList.Except(x => x.ValueType == claim.ValueType).ToList();
-
-                //snackbar.Add("Claim Removed", Severity.Success);
+                await rolemngr.RemoveClaimAsync(RoleModel, claim);
+                UserClaimList.Remove(UserClaimList.FirstOrDefault(s => s.Type == claim.Type && s.Value == claim.Value));                
             }
         }
         catch (Exception ex)
@@ -181,4 +186,19 @@
             return false;
         return false;
     }
+
+    private async Task SetAllPermissions(bool val)
+    {
+        SetAllPermssionsVal = val;
+        Progressing = true;
+        foreach(var item in Claims)
+        {
+            foreach (var claimValue in item.ClaimValues)
+            {
+                await Roleupdate(val, item.ClaimType, claimValue);
+            }
+        }
+        Progressing = false;
+    }
 }
+

@@ -1,4 +1,5 @@
 ﻿using ArmsModels.BaseModels;
+using ArmsModels.BaseModels.General;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -11,34 +12,49 @@ namespace ArmsServices.DataServices
     public class AssetSettingsService : IAssetSettingsService
     {
         IDbService Iservice;
-        IAssetPostingGroupService _asset;
 
-        public AssetSettingsService(IDbService iservice, IAssetPostingGroupService asset)
+        public AssetSettingsService(IDbService iservice)
         {
             Iservice = iservice;
-            _asset = asset;
         }
 
-        public IEnumerable<AssetSettingsModel> SelectAssetSettings(int? ID)
+        public IEnumerable<AssetSettingsModel> SelectByID(int? SubClassID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@SubClassID", ID)
+                new SqlParameter("@SubClassID", SubClassID),
             };
-
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.SettingsMaster.Select]", parameters))
             {
-                yield return new AssetSettingsModel()
+                foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Settings.SelectByID]", parameters))
                 {
-                    SettingsID = dr.GetInt32("SettingsID"),
-                    SubClassID = dr.GetInt32("SubClassID"),
-                    SettingsName = dr.GetString("SettingsName"),
-                    SettingsDescription = dr.GetString("SettingsDescription"),
-                    RecordStatus = dr.GetBoolean("IsSet"),
-
-                };
+                    yield return GetModel(dr);
+                }
             }
+        }
 
+        public AssetSettingsModel Update(AssetSettingsModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@SettingsID", model.SettingsID),
+                new SqlParameter("@SubClassID", model.SubClassID),
+                new SqlParameter("@RecordStatus", model.RecordStatus),
+                new SqlParameter("@UserID", model.UserInfo.UserID)
+            };
+            Iservice.ExecuteNonQuery("[dbo].[usp.Asset.Settings.Update]", parameters);
+            return model;
+        }
+
+
+        public AssetSettingsModel GetModel(IDataRecord dr)
+        {
+            return new AssetSettingsModel
+            {
+                SettingsID = dr.GetInt32("SettingsID"),
+                SettingsName = dr.GetString("SettingsName"),
+                SettingsDescription = dr.GetString("SettingsDescription"),
+                RecordStatus = dr.GetBoolean("IsSet"),
+            };
         }
 
     }

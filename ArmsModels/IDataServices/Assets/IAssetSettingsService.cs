@@ -1,4 +1,5 @@
 ﻿using ArmsModels.BaseModels;
+using ArmsModels.BaseModels.General;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,8 +11,8 @@ namespace ArmsServices.DataServices
 {
     public interface IAssetSettingsService
     {
-       
-        IEnumerable<AssetSettingsModel> SelectAssetSettings(int? ID);
 
+        IEnumerable<AssetSettingsModel> SelectByID(int? SubClassID);
+        AssetSettingsModel Update(AssetSettingsModel model);
     }
 }
