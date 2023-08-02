@@ -25,7 +25,7 @@ namespace ArmsModels.BaseModels
         public DateTime? EventTime { get; set; } = DateTime.Now;
 
         ///////////////
-        
+
         [Required]
         [Notless("TruckID","EventTime")]
         public long? EventReading { get; set; }
@@ -39,6 +39,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? TruckID { get; set; }
         public int? DriverID { get; set; }
+        public int? AcceptedKM { get; set; }
         public long? TripID { get; set; }
         public long? GcSetID { get; set; }
         public string OriginName { get; set; }
