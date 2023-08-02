@@ -13,6 +13,6 @@ namespace ArmsServices.DataServices
     {
 
         IEnumerable<AssetSettingsModel> SelectByID(int? SubClassID);
-        AssetSettingsModel Update(AssetSettingsModel model);
+        int Update(AssetSettingsModel obj, string UserID);
     }
 }

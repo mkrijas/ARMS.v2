@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
@@ -32,32 +33,58 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public AssetSettingsModel Update(AssetSettingsModel model)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-                new SqlParameter("@SettingsID", model.SettingsID),
-                new SqlParameter("@SubClassID", model.SubClassID),
-                new SqlParameter("@RecordStatus", model.RecordStatus),
-                new SqlParameter("@UserID", model.UserInfo.UserID)
-            };
-            Iservice.ExecuteNonQuery("[dbo].[usp.Asset.Settings.Update]", parameters);
-            return model;
-        }
-
-
-        public AssetSettingsModel GetModel(IDataRecord dr)
+        private AssetSettingsModel GetModel(IDataRecord dr)
         {
             return new AssetSettingsModel
             {
                 SettingsID = dr.GetInt32("SettingsID"),
+                SubClassID = dr.GetInt32("SubClassID"),
                 SettingsName = dr.GetString("SettingsName"),
                 SettingsDescription = dr.GetString("SettingsDescription"),
                 RecordStatus = dr.GetBoolean("IsSet"),
             };
         }
 
+        //public AssetSettingsModel Update(AssetSettingsModel model)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //        new SqlParameter("@SettingsID", model.SettingsID),
+        //        new SqlParameter("@SubClassID", model.SubClassID),
+        //        new SqlParameter("@RecordStatus", model.RecordStatus),
+        //        new SqlParameter("@UserID", model.UserInfo.UserID)
+        //    };
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Settings.Update]", parameters))
+        //    {
+        //        model = new AssetSettingsModel
+        //        {
+        //            SettingsID = dr.GetInt32("SettingsID"),
+        //            SubClassID = dr.GetInt32("SubClassID"),
+        //            RecordStatus = dr.GetBoolean("RecordStatus"),
+        //            UserInfo = new ArmsModels.SharedModels.UserInfoModel
+        //            {
+        //                UserID = dr.GetString("UserID"),
+        //            },
+        //        };
+        //    }
+        //    return model;
+        //}
+
+        public int Update(AssetSettingsModel obj, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@SettingsID", obj.SettingsID),
+               new SqlParameter("@SubClassID", obj.SubClassID),
+               new SqlParameter("@RecordStatus", obj.RecordStatus ? (byte)3 : (byte)0),
+               new SqlParameter("@UserID", UserID)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Asset.Settings.Update]", parameters);
+        }
+
+
     }
+
 }
 
 

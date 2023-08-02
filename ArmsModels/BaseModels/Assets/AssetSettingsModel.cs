@@ -12,6 +12,6 @@ namespace ArmsModels.BaseModels
         public string SettingsDescription { get; set; }
         public bool RecordStatus { get; set; }
         public List<int?> RecordStatusList { get; set; } = new();
-        public virtual SharedModels.UserInfoModel UserInfo { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
     }
 }
