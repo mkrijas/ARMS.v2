@@ -2,11 +2,13 @@
 @using ArmsServices.DataServices.General
 @using Microsoft.AspNetCore.SignalR.Client;
 @using Views.Data
+@using System.Threading;
 
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject NavigationManager NavigationManager
+@inject IRoleService<RoleModel> Irole
 @inject IPushNotificationService IpushNotificationService
 
 <style>
@@ -86,16 +88,52 @@
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value;
 
+        CancellationTokenSource ctc = new CancellationTokenSource();
         int.TryParse(brancIDString, out CurrentBranchId);
         allNotificationMessages = IpushNotificationService.SelectUnAknowledgedAndNonTimeElapsedNotifications(CurrentBranchId).ToList();
         currentNotificationMessages = allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
         GroupList = IpushNotificationService.GetAllGroupList().ToList();
         hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
-        hubConnection.On<PushNotificationModel>("ReceiveMessage", (PushNotificationMessage) =>
+        hubConnection.On<PushNotificationModel>("ReceiveMessage",async (PushNotificationMessage) =>
         {
-            allNotificationMessages.Add(PushNotificationMessage);
-            currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-            InvokeAsync(() => StateHasChanged());
+            if( PushNotificationMessage != null && PushNotificationMessage.MessageGroupID == "PendingVerification" && PushNotificationMessage.DocumentID != null && PushNotificationMessage.DocumentTypeID != null && allNotificationMessages.Any(g=>g.DocumentID == PushNotificationMessage.DocumentID && g.DocumentTypeID == PushNotificationMessage.DocumentTypeID))
+            {
+                
+                foreach (var MessageID in allNotificationMessages.Where(g=>g.DocumentID == PushNotificationMessage.DocumentID && g.DocumentTypeID == PushNotificationMessage.DocumentTypeID).Select(g=>g.MessageID).ToList())
+                {
+                    if (allNotificationMessages != null &&allNotificationMessages.Any(x => x.MessageID == MessageID))
+                    {
+                        allNotificationMessages.RemoveAll(x => x.MessageID == MessageID);
+                    }
+
+                    if (currentNotificationMessages != null && currentNotificationMessages.Any(x => x.MessageID == MessageID))
+                    {
+                        currentNotificationMessages.RemoveAll(t => t.MessageID == MessageID);
+                    }
+                } 
+                InvokeAsync(() => StateHasChanged());
+            }
+            if(PushNotificationMessage != null && PushNotificationMessage.MessageID != null && PushNotificationMessage.MessageID != 0 )
+            {
+                 var ResultClaim = await Irole.HasClaim(PushNotificationMessage.DocumentTypeID.ToString(), PushNotificationMessage.ClaimValue, ctc.Token);
+                 if(ResultClaim)
+                 {
+
+                        allNotificationMessages.Add(PushNotificationMessage);
+                        currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+                        InvokeAsync(() => StateHasChanged());
+                 }
+                 else if(string.IsNullOrEmpty(PushNotificationMessage.ClaimValue))
+                 {
+
+                        allNotificationMessages.Add(PushNotificationMessage);
+                        currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+                        InvokeAsync(() => StateHasChanged());
+
+                 }
+                
+            }
+
         });
         await hubConnection.StartAsync();
     }
@@ -105,7 +143,6 @@
 
     private List<PushNotificationModel> allNotificationMessages = new List<PushNotificationModel>();
     private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
     private HubConnection hubConnection;
     private string BoxCss = "none";
     List<PushNotificationGroupModel> GroupList = new();

@@ -148,6 +148,8 @@ namespace Views
             //------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetDocumentRequestService, AssetDocumentRequestService>();
+            services.AddScoped<IAssetSettingsService, AssetSettingsService>();
+
             //------------FINANCE-------------------
             services.AddScoped<IChartOfAccountService, ChartOfAccountService>();
             services.AddScoped<ITdsRateService, TdsRateService>();

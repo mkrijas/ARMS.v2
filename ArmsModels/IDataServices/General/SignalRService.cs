@@ -47,12 +47,24 @@ namespace ArmsServices.DataServices
 
             if (IsConnected)
             {
-                PushNotificationModel result = pushNotificationService.UpdatePushNotification(notificationMessage);
+                if(notificationMessage != null && !string.IsNullOrEmpty(notificationMessage.MessageTitle) )
+                {
+                    PushNotificationModel result = pushNotificationService.UpdatePushNotification(notificationMessage);
 
-                await hubConnection.SendAsync("SendMessages",
-                result);
+                    await hubConnection.SendAsync("SendMessages",
+                    result);
 
-                notificationMessage = new();
+                    notificationMessage = new();
+
+                }
+                else if(notificationMessage != null && string.IsNullOrEmpty(notificationMessage.MessageTitle) && notificationMessage.DocumentID != null && notificationMessage.DocumentTypeID != null)
+                {
+                    await hubConnection.SendAsync("SendMessages",
+                    notificationMessage);
+
+                    notificationMessage = new();
+
+                }
             }
         }
 

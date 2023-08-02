@@ -63,6 +63,8 @@
     [Parameter]
     public string DocType { get; set; }
 
+    public int BranchID { get; set; }
+    public string UserID { get; set; }
 
     public int? authlevelID;
     public bool Authorized = false;
@@ -70,13 +72,23 @@
 
 
     #region SignaIR Notification
-
+    private List<PushNotificationModel> allNotificationMessages = new List<PushNotificationModel>();
+    private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
     private PushNotificationModel notificationMessage = new PushNotificationModel();
     #endregion
 
     protected override async Task OnInitializedAsync()
     {
         GetAll();
+
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = user.Identity.Name;
+
+        //allNotificationMessages = IpushNotificationService.SelectUnAknowledgedAndNonTimeElapsedNotifications(BranchID).ToList();
+        //currentNotificationMessages = allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == BranchID).ToList();
 
         await signalRService.StartAsync();
     }
@@ -96,15 +108,34 @@
         var result = await dialog.Result;
         DataApprovedStatus aprd = new DataApprovedStatus();
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
-        var branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        allNotificationMessages = IpushNotificationService.SelectUnAknowledgedAndNonTimeElapsedNotifications(BranchID).ToList();
+        currentNotificationMessages = allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == BranchID).ToList();
+
         if (!result.Canceled)
         {
             aprd = (DataApprovedStatus)result.Data;
             if (aprd.IsApprove)
             {
                 await OnApprove.InvokeAsync(aprd);
+                notificationMessage = new();
+                notificationMessage.DocumentID = DocumentID;
+                notificationMessage.MessageGroupID = "PendingVerification";
+                notificationMessage.DocumentTypeID = DocTypeID;
+
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                string MessageIDs = string.Join(",", currentNotificationMessages.Where(g => g.DocumentID == DocumentID && g.DocumentTypeID == DocTypeID).Select(d => d.MessageID).ToList());
+                try
+                {
+                    IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+                }
+                catch (Exception ex)
+                {
+
+                }
+
+                await signalRService.Send(notificationMessage);
+
             }
             else
             {
@@ -113,12 +144,26 @@
                 if (collection.Any(s => s.AuthLevelID > statusModel.AuthLevelID))
                 {
                     verficationType = collection.OrderBy(g => g.AuthLevelID).FirstOrDefault(s => s.AuthLevelID > statusModel.AuthLevelID).AuthType;
-                    claimValue = collection.OrderBy(g => g.AuthLevelID).FirstOrDefault(s => s.AuthLevelID > statusModel.AuthLevelID).AuthType;
+                    claimValue = collection.OrderBy(g => g.AuthLevelID).FirstOrDefault(s => s.AuthLevelID > statusModel.AuthLevelID).ClaimValue;
                 }
-                notificationMessage.InitiateBranch = new BranchModel() { BranchID = branchID };
-                notificationMessage.ReceivedBranch = new BranchModel() { BranchID = branchID };
-                notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(DocType,DocNumber, verficationType);
-                notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(DocType, DocNumber, verficationType, DateTime.Now);
+                if (currentNotificationMessages != null && currentNotificationMessages.Any(g => g.DocumentID == DocumentID && g.DocumentTypeID == DocTypeID))
+                {
+
+                    string MessageIDs = string.Join(",", currentNotificationMessages.Where(g => g.DocumentID == DocumentID && g.DocumentTypeID == DocTypeID).Select(d => d.MessageID).ToList());
+                    try
+                    {
+                        IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                }
+
+                notificationMessage.InitiateBranch = new BranchModel() { BranchID = BranchID };
+                notificationMessage.ReceivedBranch = new BranchModel() { BranchID = BranchID };
+                notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(DocType, DocNumber, verficationType);
+                notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(DocType, DocNumber, verficationType, DocDate);
                 notificationMessage.RedirectedTo = 0;
                 notificationMessage.ExpiredBy = 7;
                 notificationMessage.DocumentID = DocumentID;
