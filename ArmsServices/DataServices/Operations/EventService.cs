@@ -30,6 +30,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@EventTypeID", model.EventTypeID),
                new SqlParameter("@DefaultNextEventTypeID", model.NextEventTypeID),
                new SqlParameter("@GcSetID", model.GcSetID),
+               new SqlParameter("@AcceptedKM", model.AcceptedKM),
                new SqlParameter("@OriginID", model.OriginID),
                new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@EventID", model.TruckEventID),
