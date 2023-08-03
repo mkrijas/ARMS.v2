@@ -12,6 +12,7 @@ namespace ArmsServices.DataServices
     public interface IAssetSettingsService
     {
 
+        IEnumerable<AssetSettingsModel> GetSettings(int? SubClassID);
         IEnumerable<AssetSettingsModel> SelectByID(int? SubClassID);
         int Update(AssetSettingsModel obj, string UserID);
     }
