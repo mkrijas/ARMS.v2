@@ -7,7 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 using System.Reflection;
-
+using System.ComponentModel;
+using System.Reflection.Metadata.Ecma335;
 
 namespace ArmsServices.DataServices
 {
@@ -272,6 +273,26 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },
             };
+        }
+
+        public TaxPurchaseModel CheckInvoiceDuplication(TaxPurchaseModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@InvoiceDate", model.InvoiceDate),
+                new SqlParameter("@InvoiceNo", model.InvoiceNo),
+                new SqlParameter("@PartyID", model.PartyInfo.PartyID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Validate]", parameters))
+            {
+                return new TaxPurchaseModel
+                {
+                    DocumentDate = dr.GetDateTime("DocDate"),
+                    DocumentNumber = dr.GetString("DocNumber"),
+                };
+            }
+            return null;
         }
     }
 }
