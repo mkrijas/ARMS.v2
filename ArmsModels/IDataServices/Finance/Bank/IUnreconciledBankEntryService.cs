@@ -17,5 +17,7 @@ namespace ArmsServices.DataServices
         ReconciledBankEntryModel GetRecociledInfo(int? UnreconciledEntryID);
         UnReconciledBankEntryModel SelectByID(int? ID);
         ReconciledBankEntryModel Reconcile(ReconciledBankEntryModel model);
+        IEnumerable<ReconciledBankEntryModel> SelectAllUnReconciledBank(int? BranchID,int? BankID);
+        ReconciledBankEntryModel UpdateUnReconciledBankEntry(ReconciledBankEntryModel reconciledBankEntry);
     }
 }
