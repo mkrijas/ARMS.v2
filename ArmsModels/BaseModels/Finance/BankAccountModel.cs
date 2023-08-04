@@ -131,6 +131,8 @@ namespace ArmsModels.BaseModels
         public bool IsExisting { get; set; }
         [Required]
         public int? AccountEntryID { get; set; }
+        public string AccountEntryName { get; set; }
+        public decimal? Amount { get; set; }
         public string Remarks { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
