@@ -15,10 +15,10 @@
 
 @inject IInventoryGroupService inventoryGroupIservice
 
-
 @*@inject IBranchService branchIservice*@
-
 @inject ITdsRateService tdsIService
+@inject IJSRuntime JsRuntime
+
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Tax Purchase" formID="formTaxPurchase" model="@model">
     <FormContent>
@@ -188,30 +188,41 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-
         if (HasAuthoriseEdit)
         {
             try
             {
-                model.UserInfo.UserID = UserID;
-                Iservice.Update(model);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                dialogForm.Close(model);
-                model = new();
+                TaxPurchaseModel check = Iservice.CheckInvoiceDuplication(model);
+                if (check == null)
+                {
+                    model.UserInfo.UserID = UserID;
+                    Iservice.Update(model);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    dialogForm.Close(model);
+                    model = new();
+                }
+                else
+                {
+                    //snackbar.Add("Invoice already entered On " + check.DocumentDate + " as " + check.DocumentNumber + "!", Severity.Error);
+
+                    //string alertMessage = $"Invoice already entered On {check.DocumentDate} as {check.DocumentNumber}!";
+                    //await JsRuntime.InvokeVoidAsync("alert", alertMessage);
+
+                    bool? result = await DialogService.ShowMessageBox(
+                            "Warning",
+                            "Invoice already entered On " + check.DocumentDate + " as " + check.DocumentNumber + "!");
+                }
             }
             catch (Exception ex)
             {
                 snackbar.Add(ex.Message, Severity.Error);
             }
-
         }
         else
         {
-
             bool? result = await DialogService.ShowMessageBox(
-        "Permission denied!",
-        "You dont have any permission to edit.");
+                "Permission denied!",
+                "You dont have any permission to edit.");
         }
     }
-
 }

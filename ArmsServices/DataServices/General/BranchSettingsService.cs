@@ -7,6 +7,7 @@ using Core.BaseModels.Finance.Transactions;
 using ArmsModels.SharedModels;
 using System.Reflection;
 using System.Linq;
+using System;
 
 namespace ArmsServices.DataServices
 {
@@ -26,7 +27,7 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@BranchID", ID),
             };
             {
-                foreach (IDataRecord dr in Iservice.GetDataReader("[usp.entity.Branch.SettingsMaster.SelectByID]", parameters))
+                foreach (IDataRecord dr in Iservice.GetDataReader("[usp.entity.Branch.Settings.SelectByID]", parameters))
                 {
                     yield return GetModel(dr);
                 }
@@ -47,15 +48,29 @@ namespace ArmsServices.DataServices
         //////////////////////////////////
 
 
-        public SettingsModel Update(int? ID, List<int?> RecordStatusList, UserInfoModel UserID)
+        public SettingsModel Update(int? ID, List<int?> RecordStatusList, string UserID)
         {
+            DataTable dataTable = new DataTable();
+            dataTable.Columns.Add("IntField", typeof(int));
+            foreach (int? value in RecordStatusList)
+            {
+                if (value.HasValue)
+                {
+                    dataTable.Rows.Add(value.Value);
+                }
+                else
+                {
+                    dataTable.Rows.Add(DBNull.Value);
+                }
+            }
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BranchID", ID),
-               new SqlParameter("@Settings", RecordStatusList.ToDataTable()),
-               new SqlParameter("@UserID", UserID.UserID),
+               new SqlParameter("@Settings", dataTable),
+               new SqlParameter("@UserID", UserID),
             };
-            Iservice.ExecuteNonQuery("[usp.entity.Branch.SettingsMaster.Update]", parameters);
+            Iservice.ExecuteNonQuery("[usp.entity.Branch.Settings.Update]", parameters);
             return null;
         }
 

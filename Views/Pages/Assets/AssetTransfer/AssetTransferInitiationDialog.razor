@@ -1,6 +1,7 @@
 ﻿@inject AuthenticationStateProvider auth
 @inject IAssetService Iassetservice
 @inject IAssetTransferService Iservice
+@inject IAssetSettingsService Iassetsettingsservice
 @inject IBranchService Ibranchservice
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -58,6 +59,22 @@
                     <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                     </MudItem>
+                    <MudItem xs="12" md="12">
+                        @if (Checklist != null && Checklist.Any())
+                        {
+                            <MudGrid>
+                                @foreach (var item in Checklist)
+                                {
+                                    <MudItem xs="12" md="6">
+                                        <MudText Typo="Typo.body2">@item.SettingsName</MudText>
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        @*<MudTextField Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>*@
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                    </MudItem>
                 </MudGrid>
 
             </EditForm>
@@ -71,23 +88,28 @@
 
 @code {
 
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] 
+    MudDialogInstance MudDialog { get; set; }
 
     [Parameter]
     public AssetTransferInitiationModel model { get; set; } = new();
     [Parameter]
     public int? AssetID { get; set; }
 
+    public int? SubClassID { get; set; } = new();
+
     private List<BranchModel> DestinationBranchList = new();
 
     [Parameter]
     public List<AssetModel> ChildAssets { get; set; } = new();
 
+    public List<AssetSettingsModel> Checklist { get; set; } = new();
+
     private int BranchID { get; set; } = 0;
 
     protected override async Task OnInitializedAsync()
     {
-        
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         if (model.InitiatedBranch == null)
@@ -107,7 +129,7 @@
 
         DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != BranchID).ToList();
     }
-    
+
     void Cancel()
     {
         MudDialog.Cancel();
@@ -150,12 +172,15 @@
         }
 
         MudDialog.Close(model);
-    }
+    } 
 
     private async Task AssetSelected(AssetModel obj)
     {
         model.Asset = obj;
         ChildAssets = Iassetservice.GetAttachedAssets(obj.AssetID).ToList();
+        SubClassID = Iassetservice.SelectByID(obj.AssetID).SubClass.AssetSubClassID;
+        Checklist = Iassetsettingsservice.GetSettings(SubClassID).ToList();
+
     }
 
 }

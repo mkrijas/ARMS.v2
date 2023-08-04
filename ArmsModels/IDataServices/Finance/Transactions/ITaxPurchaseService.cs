@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
     public interface ITaxPurchaseService
     {
         TaxPurchaseModel Update(TaxPurchaseModel model);
+        TaxPurchaseModel CheckInvoiceDuplication(TaxPurchaseModel model);
         TaxPurchaseModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<TaxPurchaseModel> Select();
