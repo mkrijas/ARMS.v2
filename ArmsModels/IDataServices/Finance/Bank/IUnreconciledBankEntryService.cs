@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
 using System.Reflection.Metadata;
+using System;
 
 namespace ArmsServices.DataServices
 {
@@ -18,6 +19,7 @@ namespace ArmsServices.DataServices
         UnReconciledBankEntryModel SelectByID(int? ID);
         ReconciledBankEntryModel Reconcile(ReconciledBankEntryModel model);
         IEnumerable<ReconciledBankEntryModel> SelectAllUnReconciledBank(int? BranchID,int? BankID);
+        IEnumerable<ReconciledBankEntryModel> SelectAllReconciledBank(int? BranchID, int? BankID, DateTime? StartDate, DateTime? EndDate);
         ReconciledBankEntryModel UpdateUnReconciledBankEntry(ReconciledBankEntryModel reconciledBankEntry);
     }
 }
