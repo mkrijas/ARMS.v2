@@ -46,7 +46,7 @@ namespace ArmsServices.DataServices
                 SubClass = new()
                 {
                     ID = dr.GetInt32("ID"),
-                    AssetSubClassID = dr.GetInt32("AssetSubClassID"),
+                    AssetSubClassID = dr.GetInt32("SubAssetClassID"),
                     AssetSubclass = dr.GetString("AssetSubClassName"),
                     AssetClassID = dr.GetInt32("AssetClassID"),
                 },

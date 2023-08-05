@@ -23,6 +23,22 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+                new SqlParameter("@Operation", "All"),
+                new SqlParameter("@SubClassID", SubClassID),
+            };
+            {
+                foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Settings.SelectByID]", parameters))
+                {
+                    yield return GetModel(dr);
+                }
+            }
+        }
+
+        public IEnumerable<AssetSettingsModel> GetSettings(int? SubClassID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "BySubClass"),
                 new SqlParameter("@SubClassID", SubClassID),
             };
             {
