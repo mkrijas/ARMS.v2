@@ -128,9 +128,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? BankID { get; set; }
         [Required]
-        public bool IsExisting { get; set; }
+        public bool? IsExisting { get; set; }
         [Required]
-        public int? AccountEntryID { get; set; }
+        public long? AccountEntryID { get; set; }
         public string AccountEntryName { get; set; }
         public decimal? Amount { get; set; }
         public string Remarks { get; set; }
