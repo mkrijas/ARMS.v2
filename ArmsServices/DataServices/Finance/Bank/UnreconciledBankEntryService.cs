@@ -4,15 +4,16 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
 using System.Reflection.Metadata;
+using System;
 
 namespace ArmsServices.DataServices
 {
     public class UnreconciledBankEntryService : IUnreconciledBankEntryService
     {
-        IDbService Iservice;        
+        IDbService Iservice;
         public UnreconciledBankEntryService(IDbService iservice)
         {
-            Iservice = iservice;           
+            Iservice = iservice;
         }
 
         public int Delete(int? ID, string UserID)
@@ -30,7 +31,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@UnreconciledEntryID", model.ID),               
+               new SqlParameter("@UnreconciledEntryID", model.ID),
                new SqlParameter("@ReconciledDate", model.ReconciledDate),
                new SqlParameter("@ReconciledDate", model.Remarks),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -98,7 +99,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@BranchID",BranchID),              
+               new SqlParameter("@BranchID",BranchID),
                new SqlParameter("@Operation","ByBranchID" ),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.UnreconciledEntry.Select]", parameters))
@@ -107,11 +108,63 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<ReconciledBankEntryModel> SelectAllUnReconciledBank(int? BranchID, int? BankID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID",BranchID),
+               new SqlParameter("@BankID",BankID),
+               new SqlParameter("@Operation","GetAllUnreconciledEntry" ),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.UnreconciledEntry.Select]", parameters))
+            {
+                yield return GetReconciledModel(dr);
+            }
+        }
+
+        public IEnumerable<ReconciledBankEntryModel> SelectAllReconciledBank(int? BranchID, int? BankID, DateTime? StartDate, DateTime? EndDate)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID",BranchID),
+               new SqlParameter("@BankID",BankID),
+               new SqlParameter("@StartDate",StartDate?.ToString("yyyy/MM/dd")??null),
+               new SqlParameter("@EndDate",EndDate?.ToString("yyyy/MM/dd")?? null),
+               new SqlParameter("@Operation","GetAllReconciledEntry" ),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.UnreconciledEntry.Select]", parameters))
+            {
+                yield return GetReconciledModel(dr);
+            }
+        }
+
+        public ReconciledBankSummaryModel GetReconcilBankSummary(int? BranchID, string ArdCode, DateTime? StartDate, DateTime? EndDate)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID",BranchID),
+               new SqlParameter("@ArdCode",ArdCode),
+               new SqlParameter("@StartDate",StartDate?.ToString("yyyy/MM/dd")??null),
+               new SqlParameter("@EndDate",EndDate?.ToString("yyyy/MM/dd")?? null),
+            };
+            ReconciledBankSummaryModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.UnreconciledEntry.Summary.Select]", parameters))
+            {
+                model.CompanyOpeningAmount =  dr.GetDecimal("CompanyOpeningAmount");
+                model.CompanyTransactionAmount =  dr.GetDecimal("CompanyTransactionAmount");
+                model.CompanyClossingAmount =  dr.GetDecimal("CompanyClossingAmount");
+                model.BankOpeningAmount =  dr.GetDecimal("BankOpeningAmount");
+                model.BankTransactionAmount =  dr.GetDecimal("BankTransactionAmount");
+                model.BankClossingAmount =  dr.GetDecimal("BankClossingAmount");
+            }
+            return model;
+        }
+
         public UnReconciledBankEntryModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID",ID),              
+               new SqlParameter("@ID",ID),
                new SqlParameter("@Operation","ByID"),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.UnreconciledEntry.Select]", parameters))
@@ -119,6 +172,25 @@ namespace ArmsServices.DataServices
                 return GetModel(dr);
             }
             return null;
+        }
+        public ReconciledBankEntryModel UpdateUnReconciledBankEntry(ReconciledBankEntryModel reconciledBankEntry)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID",reconciledBankEntry.ID),
+               new SqlParameter("@BankID",reconciledBankEntry.BankID),
+               new SqlParameter("@IsExisting",reconciledBankEntry.IsExisting),
+               new SqlParameter("@ReconciledDate",reconciledBankEntry.ReconciledDate),
+               new SqlParameter("@AccountEntryID",reconciledBankEntry.AccountEntryID),
+               new SqlParameter("@Remarks",reconciledBankEntry.Remarks),
+               new SqlParameter("@UserID",reconciledBankEntry.UserInfo.UserID),
+            };
+            ReconciledBankEntryModel reconciledBankModel = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.ReconciledEntry.Update]", parameters))
+            {
+                reconciledBankModel = GetReconciledModel(dr);
+            }
+            return reconciledBankModel;
         }
 
         public UnReconciledBankEntryModel Update(UnReconciledBankEntryModel model)
@@ -156,7 +228,7 @@ namespace ArmsServices.DataServices
                 InstrumentReference = dr.GetString("InstrumentReference"),
                 InstrumentType = dr.GetString("InstrumentType"),
                 Nature = dr.GetInt32("Nature"),
-                PaymentRemarks =  dr.GetString("PaymentRemarks"),
+                PaymentRemarks = dr.GetString("PaymentRemarks"),
                 IsReconciled = dr.GetBoolean("IsReconciled"),
                 TransactionDate = dr.GetDateTime("TransactionDate"),
                 ReconciledInfo = new ReconciledBankEntryModel()
@@ -172,6 +244,27 @@ namespace ArmsServices.DataServices
                         UserID = dr.GetString("RecUserID"),
                     },
                 },
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+
+            };
+
+        }
+        private ReconciledBankEntryModel GetReconciledModel(IDataRecord dr)
+        {
+            return new ReconciledBankEntryModel()
+            {
+                Amount = dr.GetDecimal("Amount"),
+                BankID = dr.GetInt32("BankID"),
+                IsExisting = dr.GetBoolean("IsExisting"),
+                ReconciledDate = dr.GetDateTime("ReconciledDate"),
+                AccountEntryID = dr.GetInt64("AccountEntryID"),
+                AccountEntryName = dr.GetString("AccountEntryName"),
+                Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
