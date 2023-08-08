@@ -138,7 +138,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public ReconciledBankSummaryModel GetReconcilBankSummary(int? BranchID, string ArdCode, DateTime? StartDate, DateTime? EndDate)
+        public List<ReconciledBankSummaryModel> GetReconcilBankSummary(int? BranchID, string ArdCode, DateTime? StartDate, DateTime? EndDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -147,15 +147,24 @@ namespace ArmsServices.DataServices
                new SqlParameter("@StartDate",StartDate?.ToString("yyyy/MM/dd")??null),
                new SqlParameter("@EndDate",EndDate?.ToString("yyyy/MM/dd")?? null),
             };
-            ReconciledBankSummaryModel model = new();
+            List<ReconciledBankSummaryModel> model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.UnreconciledEntry.Summary.Select]", parameters))
             {
-                model.CompanyOpeningAmount =  dr.GetDecimal("CompanyOpeningAmount");
-                model.CompanyTransactionAmount =  dr.GetDecimal("CompanyTransactionAmount");
-                model.CompanyClossingAmount =  dr.GetDecimal("CompanyClossingAmount");
-                model.BankOpeningAmount =  dr.GetDecimal("BankOpeningAmount");
-                model.BankTransactionAmount =  dr.GetDecimal("BankTransactionAmount");
-                model.BankClossingAmount =  dr.GetDecimal("BankClossingAmount");
+                model.Add(new ReconciledBankSummaryModel()
+                {
+                    BankOrCompany = "Company",
+                    OpeningAmount = dr.GetDecimal("CompanyOpeningAmount"),
+                    TransactionAmount = dr.GetDecimal("CompanyTransactionAmount"),
+                    ClossingAmount = dr.GetDecimal("CompanyClossingAmount")
+                });
+
+                model.Add(new ReconciledBankSummaryModel()
+                {
+                    BankOrCompany = "Bank",
+                    OpeningAmount = dr.GetDecimal("BankOpeningAmount"),
+                    TransactionAmount = dr.GetDecimal("BankTransactionAmount"),
+                    ClossingAmount = dr.GetDecimal("BankClossingAmount")
+                });
             }
             return model;
         }
