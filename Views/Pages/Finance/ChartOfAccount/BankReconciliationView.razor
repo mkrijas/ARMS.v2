@@ -125,18 +125,43 @@ else
         </MudGrid>
     </MudPaper>
 }
+@if(UnRecounciledEntriesSummary != null && UnRecounciledEntriesSummary.Count() != 0)
+{
+    
 <MudPaper Class="p-2" Elevation="0">
-    <div class="d-flex">
-        <MudGrid Spacing="4">
-            <MudItem xs="10" lg="10" md="10">
-            </MudItem>
-
-            <MudItem lg="2" md="2" xs="2">
-
-            </MudItem>
-        </MudGrid>
-    </div>
+    <MudGrid Spacing="4">
+        <MudItem xs="12">
+            <MudTable Items="@UnRecounciledEntriesSummary" Dense="true" Hover="true" Striped="true" Elevation="0">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Bank Reconcil Summary</MudText>
+                    <MudSpacer></MudSpacer>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh></MudTh>
+                    <MudTh>Opening</MudTh>
+                    <MudTh>Transaction</MudTh>
+                    <MudTh>Clossing</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd></MudTd>
+                    <MudTd DataLabel="Company Opening Amount">@context.CompanyOpeningAmount</MudTd>
+                    <MudTd DataLabel="Company Transaction Amount">@context.CompanyTransactionAmount</MudTd>
+                    <MudTd DataLabel="Company Clossing Amount">@context.CompanyClossingAmount</MudTd>
+                </RowTemplate>
+                <RowTemplate>
+                    <MudTd></MudTd>
+                    <MudTd DataLabel="Bank Opening Amount">@context.BankOpeningAmount</MudTd>
+                    <MudTd DataLabel="Bank Transaction Amount">@context.BankTransactionAmount</MudTd>
+                    <MudTd DataLabel="Bank Clossing Amount">@context.BankClossingAmount</MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                </PagerContent>
+            </MudTable>
+        </MudItem>
+    </MudGrid>
 </MudPaper>
+}
 
 @code {
     public bool IsApproved { get; set; } = false;
@@ -144,6 +169,9 @@ else
     private List<ReconciledBankEntryModel> CompleteUnRecounciledEntries = new List<ReconciledBankEntryModel>();
     private List<ReconciledBankEntryModel> RecounciledEntries = new List<ReconciledBankEntryModel>();
     private List<ReconciledBankEntryModel> CompleteRecounciledEntries = new List<ReconciledBankEntryModel>();
+
+    private List<ReconciledBankSummaryModel> UnRecounciledEntriesSummary = new List<ReconciledBankSummaryModel>();
+
     private ReconciledBankEntryModel opening = new();
     private List<OwnBankModel> BankList = new List<OwnBankModel>();
     public OwnBankModel SelectedBank { get; set; } = new OwnBankModel();
@@ -185,6 +213,28 @@ else
         }
 
     }
+    private void FetchRecounsileSummary()
+    {
+        var UnRecounciledSummary = IunreconciledBankEntryService.GetReconcilBankSummary(branchID, SelectedBank.BankCode, dateRange?.Start ?? null, dateRange?.End ?? null);
+        if (UnRecounciledEntriesSummary != null)
+        {
+            UnRecounciledEntriesSummary.Clear();
+        }
+        if (UnRecounciledEntriesSummary == null)
+        {
+            UnRecounciledEntriesSummary = new();
+        }
+        if ((UnRecounciledSummary.CompanyOpeningAmount != null && UnRecounciledSummary.CompanyOpeningAmount != 0) ||
+         (UnRecounciledSummary.CompanyTransactionAmount != null && UnRecounciledSummary.CompanyTransactionAmount != 0) ||
+         (UnRecounciledSummary.CompanyClossingAmount != null && UnRecounciledSummary.CompanyClossingAmount != 0) ||
+         (UnRecounciledSummary.BankOpeningAmount != null && UnRecounciledSummary.BankOpeningAmount != 0) ||
+         (UnRecounciledSummary.BankTransactionAmount != null && UnRecounciledSummary.BankTransactionAmount != 0) ||
+         (UnRecounciledSummary.BankClossingAmount != null && UnRecounciledSummary.BankClossingAmount != 0))
+        {
+            UnRecounciledEntriesSummary.Add(UnRecounciledSummary);
+            
+        }
+    }
     private async Task SaveRecounsileEntry(ReconciledBankEntryModel reconciledBankEntryModel)
     {
         if (reconciledBankEntryModel != null && reconciledBankEntryModel.ReconciledDate == null)
@@ -199,6 +249,7 @@ else
         reconciledBankEntryModel.UserInfo.UserID = userID;
         var result = IunreconciledBankEntryService.UpdateUnReconciledBankEntry(reconciledBankEntryModel);
         getSelectedBankUnRecoincilEntries();
+        FetchRecounsileSummary();
     }
 
 
@@ -219,6 +270,7 @@ else
         {
             opening = CompleteUnRecounciledEntries.FirstOrDefault(s => (s.IsExisting ?? false));
         }
+        FetchRecounsileSummary();
 
     }
 
@@ -238,7 +290,7 @@ else
         {
             opening = CompleteRecounciledEntries.FirstOrDefault(s => (s.IsExisting ?? false));
         }
-
+        FetchRecounsileSummary();
     }
 
 

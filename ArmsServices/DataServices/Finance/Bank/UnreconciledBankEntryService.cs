@@ -138,6 +138,28 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public ReconciledBankSummaryModel GetReconcilBankSummary(int? BranchID, string ArdCode, DateTime? StartDate, DateTime? EndDate)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID",BranchID),
+               new SqlParameter("@ArdCode",ArdCode),
+               new SqlParameter("@StartDate",StartDate?.ToString("yyyy/MM/dd")??null),
+               new SqlParameter("@EndDate",EndDate?.ToString("yyyy/MM/dd")?? null),
+            };
+            ReconciledBankSummaryModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.UnreconciledEntry.Summary.Select]", parameters))
+            {
+                model.CompanyOpeningAmount =  dr.GetDecimal("CompanyOpeningAmount");
+                model.CompanyTransactionAmount =  dr.GetDecimal("CompanyTransactionAmount");
+                model.CompanyClossingAmount =  dr.GetDecimal("CompanyClossingAmount");
+                model.BankOpeningAmount =  dr.GetDecimal("BankOpeningAmount");
+                model.BankTransactionAmount =  dr.GetDecimal("BankTransactionAmount");
+                model.BankClossingAmount =  dr.GetDecimal("BankClossingAmount");
+            }
+            return model;
+        }
+
         public UnReconciledBankEntryModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
