@@ -9,6 +9,14 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
+<style>
+    .border {
+        border: 10px solid black;
+        border-radius: 10px;
+        padding: 10px;
+    }
+</style>
+
 <MudDialog>
     <TitleContent>
         @if (model.AssetTransferID == null || model.AssetTransferID == 0)
@@ -34,15 +42,20 @@
                     <MudItem xs="12" md="12">
                         <AssetSelector Value="model.Asset" BranchID="BranchID" ValueChanged="AssetSelected" />
                     </MudItem>
-                    <!-- Display the list of child assets -->
                     <MudItem xs="12" md="12">
                         @if (ChildAssets != null && ChildAssets.Any())
                         {
-                            <MudTable Items="@ChildAssets">
-                                <RowTemplate Context="asset">
-                                    <MudTd>@asset.Description</MudTd>
-                                </RowTemplate>
-                            </MudTable>
+                            <MudText Typo="Typo.body1">Following assets will be transferred along with the above asset</MudText>
+                            <div class="d-flex">
+                                @foreach (var asset in ChildAssets)
+                                {
+                                    <div class="m-2">@asset.Description</div>
+                                    @if (!asset.Equals(ChildAssets.Last()))
+                                    {
+                                        <div class="m-2">|</div>
+                                    }
+                                }
+                            </div>
                         }
                     </MudItem>
                     <MudItem xs="12" md="6">
@@ -59,24 +72,26 @@
                     <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                     </MudItem>
+                    
                     <MudItem xs="12" md="12">
                         @if (Checklist != null && Checklist.Any())
                         {
-                            <MudGrid>
-                                @foreach (var item in Checklist)
-                                {
-                                    <MudItem xs="12" md="6">
-                                        <MudText Typo="Typo.body2">@item.SettingsName</MudText>
-                                    </MudItem>
-                                    <MudItem xs="12" md="6">
-                                        @*<MudTextField Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>*@
-                                    </MudItem>
-                                }
-                            </MudGrid>
+                            <MudText Typo="Typo.h6">Checklist</MudText>
+                            <br />
+                            <MudContainer>
+                                <MudGrid class="border">
+                                    @foreach (var item in Checklist)
+                                    {
+                                        <MudItem xs="6">
+                                            <MudTextField @bind-Value="item.SettingsDescription" Label="@item.SettingsName" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+                            </MudContainer>
                         }
                     </MudItem>
                 </MudGrid>
-
+                <br />
             </EditForm>
         </MudContainer>
 
@@ -96,6 +111,8 @@
     [Parameter]
     public int? AssetID { get; set; }
 
+    public AssetTransferCheckListModel checklistmodel { get; set; } = new();
+
     public int? SubClassID { get; set; } = new();
 
     private List<BranchModel> DestinationBranchList = new();
@@ -103,6 +120,7 @@
     [Parameter]
     public List<AssetModel> ChildAssets { get; set; } = new();
 
+    [Parameter]
     public List<AssetSettingsModel> Checklist { get; set; } = new();
 
     private int BranchID { get; set; } = 0;
@@ -127,7 +145,14 @@
         }
         BranchID = model?.InitiatedBranch?.BranchID ?? 0;
 
+        if(model != null)
+        {
+            Checklist = Iservice.GetCheckList(model.AssetTransferID).ToList();
+        }
+
         DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != BranchID).ToList();
+
+
     }
 
     void Cancel()
@@ -162,6 +187,17 @@
                           yesText: "OK");
                     return;
                 }
+
+
+                    model.CheckList = Checklist.Select(s=> new AssetTransferCheckListModel()
+                    {
+                        AssetSettingsID = s.SettingsID,
+                        AssetTransferID = null,
+                        CheckListID = s.CheckListID,
+                        Description = s.SettingsDescription
+                    }).ToList();
+                
+
                 Iservice.UpdateOutgoing(model);
                 Snackbar.Add("Transferred successfully", Severity.Success);
             }
@@ -174,12 +210,16 @@
         MudDialog.Close(model);
     } 
 
-    private async Task AssetSelected(AssetModel obj)
+    private void AssetSelected(AssetModel obj)
     {
         model.Asset = obj;
-        ChildAssets = Iassetservice.GetAttachedAssets(obj.AssetID).ToList();
-        SubClassID = Iassetservice.SelectByID(obj.AssetID).SubClass.AssetSubClassID;
-        Checklist = Iassetsettingsservice.GetSettings(SubClassID).ToList();
+        if(obj != null)
+        {
+            ChildAssets = Iassetservice.GetAttachedAssets(obj.AssetID).ToList();
+            SubClassID = Iassetservice.SelectByID(obj.AssetID).SubClass.AssetSubClassID;
+            Checklist = Iassetsettingsservice.GetSettings(SubClassID).ToList();
+            
+        }
 
     }
 

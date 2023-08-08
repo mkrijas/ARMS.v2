@@ -1,4 +1,6 @@
 ﻿using ArmsModels.BaseModels;
+using Core.BaseModels.Finance.Transactions;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -40,6 +42,25 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<AssetSettingsModel> GetCheckList(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetSub"),
+               new SqlParameter("@ID", ID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Select]", parameters))
+            {
+                yield return new AssetSettingsModel()
+                {
+                    CheckListID = dr.GetInt32("CheckListID"),
+                    SettingsID = dr.GetInt32("AssetSettingsID"),
+                    SettingsName = dr.GetString("SettingsName"),
+                    SettingsDescription = dr.GetString("Description"),
+                };
+            }
+        }
 
         public AssetTransferInitiationModel UpdateOutgoing(AssetTransferInitiationModel model)
         {
@@ -53,6 +74,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TransferInitiatedDate", model.TransferInitiatedDate),
                new SqlParameter("@Remarks", model.Remarks),
                new SqlParameter("@RecordStatus", 3),
+               new SqlParameter("@CheckList", model.CheckList.ToDataTable()),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Update]", parameters))
@@ -61,6 +83,7 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
+
 
         public IEnumerable<AssetTransferInitiationModel> SelectIncomingAssets(int? BranchID)
         {
@@ -76,8 +99,21 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public AssetTransferInitiationModel UpdateStatus(AssetTransferInitiationModel model)
+        public AssetTransferInitiationModel UpdateStatus(AssetTransferInitiationModel model, List<int?> RecievedList)
         {
+            DataTable dataTable = new DataTable();
+            dataTable.Columns.Add("IntField", typeof(int));
+            foreach (int? value in RecievedList)
+            {
+                if (value.HasValue)
+                {
+                    dataTable.Rows.Add(value.Value);
+                }
+                else
+                {
+                    dataTable.Rows.Add(DBNull.Value);
+                }
+            }
             List<SqlParameter> parameters = new List<SqlParameter>
             {
 
@@ -90,6 +126,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Remarks", model.AssetTransferEndModel.Remarks),
                new SqlParameter("@RecordStatus", 3),
                new SqlParameter("@Status", model.AssetTransferEndModel.TransferStatus),
+               new SqlParameter("@CheckList", dataTable),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Transfer.Status.Update]", parameters))
@@ -98,7 +135,6 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
-
 
         private AssetTransferInitiationModel GetModel(IDataRecord dr)
         {
