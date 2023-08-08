@@ -136,4 +136,12 @@ namespace ArmsModels.BaseModels
         public string Remarks { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
+
+    public class ReconciledBankSummaryModel
+    {
+        public string BankOrCompany { get; set; }
+        public decimal? OpeningAmount { get; set; }
+        public decimal? TransactionAmount { get; set; }
+        public decimal? ClossingAmount { get; set; }
+    }
 }

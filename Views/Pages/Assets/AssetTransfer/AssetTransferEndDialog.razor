@@ -7,6 +7,12 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
+<style>
+    .completed {
+        text-decoration: line-through;
+    }
+</style>
+
 <MudDialog>
     <TitleContent>
 
@@ -18,7 +24,7 @@
     <DialogContent>
 
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm Model="@model" OnValidSubmit="Accept">
+            <EditForm Model="@model" OnValidSubmit="() => Accept(Checklist)">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
@@ -45,16 +51,34 @@
                     <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="model.AssetTransferEndModel.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                     </MudItem>
+                    <MudItem xs="12" md="12">
+                        @foreach (var item in Checklist)
+                        {
+                            <MudItem sm="12">
+                                <MudGrid>
+                                    <MudItem sm="4">
+                                        <!-- Update the MudCheckBox to bind to the IsRecieved property -->
+                                        <MudCheckBox @bind-Checked="@item.IsRecieved" Label="@item.SettingsName"></MudCheckBox>
+                                    </MudItem>
+                                    <MudItem sm="8">
+                                        <p class="d-flex align-content-lg-between">@item.SettingsDescription</p>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudItem>
+                        }
+
+                    </MudItem>
+
                 </MudGrid>
             </EditForm>
         </MudContainer>
 
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Accept" Class="px-12">Accept Driver</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Accept(Checklist)" Class="px-12">Accept Asset</MudButton>
         @if (model.AssetTransferEndModel.TransferStatus == null)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reject" Class="px-12">Reject Driver</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Reject(Checklist)" Class="px-12">Reject Asset</MudButton>
         }
     </DialogActions>
 </MudDialog>
@@ -65,13 +89,19 @@
 
     [Parameter]
     public AssetTransferInitiationModel model { get; set; } = new();
+    public int IsCompleted;
 
     [Parameter]
     public List<AssetModel> ChildAssets { get; set; } = new();
+    [Parameter]
+    public List<AssetSettingsModel> Checklist { get; set; } = new();
+
 
     protected override async Task OnInitializedAsync()
     {
         branchID = model?.DestinationBranch?.BranchID ?? 0;
+
+        Checklist = Iservice.GetCheckList(model.AssetTransferID).ToList();
     }
 
 
@@ -83,7 +113,7 @@
     }
 
 
-    public async Task Accept()
+    public async Task Accept(List<AssetSettingsModel> context)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
@@ -100,8 +130,10 @@
             model.IsAssetReject = 0;
             try
             {
+                List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
+
                 model.AssetTransferEndModel.TransferStatus = true;
-                Iservice.UpdateStatus(model);
+                Iservice.UpdateStatus(model, RecievedList);
                 Snackbar.Add("Transfered succesfully", Severity.Success);
 
             }
@@ -114,7 +146,7 @@
     }
 
 
-    public async Task Reject()
+    public async Task Reject(List<AssetSettingsModel> context)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
@@ -132,9 +164,9 @@
             model.IsAssetReject = 1;
             try
             {
-
+                List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
                 model.AssetTransferEndModel.TransferStatus = false;
-                Iservice.UpdateStatus(model);
+                Iservice.UpdateStatus(model, RecievedList);
                 Snackbar.Add("Asset Transfer Rejected", Severity.Error);
 
             }

@@ -1,6 +1,7 @@
 ﻿using ArmsModels.SharedModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
@@ -9,9 +10,10 @@ namespace ArmsModels.BaseModels
         public int? SettingsID { get; set; }
         public int? SubClassID { get; set; }
         public string SettingsName { get; set; }
+        [Required]
         public string SettingsDescription { get; set; }
         public bool RecordStatus { get; set; }
-        public List<int?> RecordStatusList { get; set; } = new();
-        public UserInfoModel UserInfo { get; set; } = new();
+        public int? CheckListID { get; set; }
+        public bool? IsRecieved { get; set; }
     }
 }
