@@ -35,7 +35,7 @@
     <DialogContent>
 
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm Model="@model" OnValidSubmit="Submit">
+            <EditForm id="AssetTransferForm" Model="@model" OnValidSubmit="Submit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
@@ -74,16 +74,16 @@
                     </MudItem>
                     
                     <MudItem xs="12" md="12">
-                        @if (Checklist != null && Checklist.Any())
+                        @if (model.CheckList != null && model.CheckList.Any())
                         {
                             <MudText Typo="Typo.h6">Checklist</MudText>
                             <br />
                             <MudContainer>
                                 <MudGrid class="border">
-                                    @foreach (var item in Checklist)
+                                    @foreach (var item in model.CheckList)
                                     {
                                         <MudItem xs="6">
-                                            <MudTextField @bind-Value="item.SettingsDescription" Label="@item.SettingsName" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
+                                            <MudTextField Form="" @bind-Value="item.SettingsDescription" Label="@item.SettingsName" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
                                         </MudItem>
                                     }
                                 </MudGrid>
@@ -97,7 +97,7 @@
 
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+        <MudButton form="AssetTransferForm" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -111,17 +111,12 @@
     [Parameter]
     public int? AssetID { get; set; }
 
-    public AssetTransferCheckListModel checklistmodel { get; set; } = new();
-
     public int? SubClassID { get; set; } = new();
 
     private List<BranchModel> DestinationBranchList = new();
 
     [Parameter]
     public List<AssetModel> ChildAssets { get; set; } = new();
-
-    [Parameter]
-    public List<AssetSettingsModel> Checklist { get; set; } = new();
 
     private int BranchID { get; set; } = 0;
 
@@ -130,6 +125,11 @@
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
+        if(model.UserInfo == null)
+        {
+            model.UserInfo = new();
+            model.UserInfo.UserID = User.Identity.Name;
+        }
         if (model.InitiatedBranch == null)
         {
             model.InitiatedBranch = new();
@@ -147,7 +147,7 @@
 
         if(model != null)
         {
-            Checklist = Iservice.GetCheckList(model.AssetTransferID).ToList();
+            model.CheckList = Iservice.GetCheckList(model.AssetTransferID).ToList();
         }
 
         DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != BranchID).ToList();
@@ -163,9 +163,9 @@
     public async Task Submit()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
+        var User = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (model.Asset == null || model.Asset.AssetID == 0)
+        if (model.Asset.AssetID == null)
         {
             bool? result = await DialogService.ShowMessageBox(
             "Warning",
@@ -175,11 +175,12 @@
         }
         if (model != null)
         {
+           
             try
             {
                 model.InitiatedBranch.BranchID = int.Parse(brancIDString);
-
-                if (model.DestinationBranch == null)
+                model.UserInfo.UserID = User.Identity.Name;
+                if (model.DestinationBranch.BranchID == null)
                 {
                     bool? result = await DialogService.ShowMessageBox(
                           "Warning",
@@ -187,17 +188,6 @@
                           yesText: "OK");
                     return;
                 }
-
-
-                    model.CheckList = Checklist.Select(s=> new AssetTransferCheckListModel()
-                    {
-                        AssetSettingsID = s.SettingsID,
-                        AssetTransferID = null,
-                        CheckListID = s.CheckListID,
-                        Description = s.SettingsDescription
-                    }).ToList();
-                
-
                 Iservice.UpdateOutgoing(model);
                 Snackbar.Add("Transferred successfully", Severity.Success);
             }
@@ -215,10 +205,9 @@
         model.Asset = obj;
         if(obj != null)
         {
-            ChildAssets = Iassetservice.GetAttachedAssets(obj.AssetID).ToList();
-            SubClassID = Iassetservice.SelectByID(obj.AssetID).SubClass.AssetSubClassID;
-            Checklist = Iassetsettingsservice.GetSettings(SubClassID).ToList();
-            
+            ChildAssets = Iassetservice.GetAttachedAssets(obj?.AssetID).ToList();
+            SubClassID = Iassetservice.SelectByID(obj?.AssetID).SubClass.AssetSubClassID;
+            model.CheckList = Iassetsettingsservice.GetSettings(SubClassID).ToList();
         }
 
     }

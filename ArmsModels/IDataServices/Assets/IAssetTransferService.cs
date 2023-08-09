@@ -10,7 +10,7 @@ namespace ArmsServices.DataServices
         AssetTransferInitiationModel UpdateOutgoing(AssetTransferInitiationModel model);
         IEnumerable<AssetTransferInitiationModel> SelectOutgoingAssets(int? Branch);
         IEnumerable<AssetSettingsModel> GetCheckList(int? ID);
-        int DeleteInitiation(int? ID, int? BranchID, int? AssetID);
+        int DeleteInitiation(int? ID, int? BranchID, int? AssetID, string UserID);
         AssetTransferInitiationModel UpdateStatus(AssetTransferInitiationModel model, List<int?> RecievedList);
         IEnumerable<AssetTransferInitiationModel> SelectIncomingAssets(int? Branch);
        
