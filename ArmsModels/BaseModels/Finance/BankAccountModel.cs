@@ -139,12 +139,9 @@ namespace ArmsModels.BaseModels
 
     public class ReconciledBankSummaryModel
     {
-        public decimal? CompanyOpeningAmount { get; set; }
-        public decimal? CompanyTransactionAmount { get; set; }
-        public decimal? CompanyClossingAmount { get; set; }
-
-        public decimal? BankOpeningAmount { get; set; }
-        public decimal? BankTransactionAmount { get; set; }
-        public decimal? BankClossingAmount { get; set; }
+        public string BankOrCompany { get; set; }
+        public decimal? OpeningAmount { get; set; }
+        public decimal? TransactionAmount { get; set; }
+        public decimal? ClossingAmount { get; set; }
     }
 }

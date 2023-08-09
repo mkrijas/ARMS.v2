@@ -16,35 +16,37 @@
         cursor: pointer;
     }
 
-/*    body {
+    /*    body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }*/
+
+    .wrapper {
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }*/
-
-    #wrapper {
-        display: flex;
     }
 
-    #d2 {
+    .d2 {
         margin-top: 0.25rem;
         text-align: center;
         background-color: #336712;
     }
 </style>
 
-<div id="noti_Container">
-
-    <MudBadge Visible="@(currentNotificationMessages.Where(s=>!string.IsNullOrEmpty(s.MessageGroupID)).Count()>0)" OnClick="@NotificationHideShow" Content="@currentNotificationMessages.Where(s=>!string.IsNullOrEmpty(s.MessageGroupID)).Count()" Color="Color.Error" Overlap="true" Class="mx-6 my-4 pointer">
-        <MudChip Icon="@Icons.Material.Filled.Home" Color="Color.Primary">
-            <MudText Class="pointer" @onclick="@NotificationHideShow" Typo="Typo.subtitle2">@BranchName</MudText>
-        </MudChip>
-    </MudBadge>
+<div id="noti_Container" style="@(BoxCss == "block" ? "float:right;":"")" class="wrapper">
+    <div style="@(BoxCss == "block" ? "margin-top:365px;margin-left:188px;":"")">
+        <MudBadge Visible="@(currentNotificationMessages.Where(s=>!string.IsNullOrEmpty(s.MessageGroupID)).Count()>0)" OnClick="@NotificationHideShow" Content="@currentNotificationMessages.Where(s=>!string.IsNullOrEmpty(s.MessageGroupID)).Count()" Color="Color.Error" Overlap="true" Class="mx-6 my-4 pointer">
+            <MudChip Icon="@Icons.Material.Filled.Home" Color="Color.Primary">
+                <MudText Class="pointer" @onclick="@NotificationHideShow" Typo="Typo.subtitle2">@BranchName</MudText>
+            </MudChip>
+        </MudBadge>
+    </div>
     <div class="ikrNotifications" style="display:@BoxCss !important; font-size:11px;">
         <div style="color:#111;font-size:14px;font-weight:500; border:1px solid #ccc;">
             <div style="margin:3px;">
-        Notification (@currentNotificationMessages.Where(s=>!string.IsNullOrEmpty(s.MessageGroupID)).Count())
+                Notification (@currentNotificationMessages.Where(s=>!string.IsNullOrEmpty(s.MessageGroupID)).Count())
             </div>
         </div>
         <div class="ikrNotificationItems">
@@ -111,14 +113,14 @@
         currentNotificationMessages = allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
         GroupList = IpushNotificationService.GetAllGroupList().ToList();
         hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
-        hubConnection.On<PushNotificationModel>("ReceiveMessage",async (PushNotificationMessage) =>
+        hubConnection.On<PushNotificationModel>("ReceiveMessage", async (PushNotificationMessage) =>
         {
-            if( PushNotificationMessage != null && PushNotificationMessage.MessageGroupID == "PendingVerification" && PushNotificationMessage.DocumentID != null && PushNotificationMessage.DocumentTypeID != null && allNotificationMessages.Any(g=>g.DocumentID == PushNotificationMessage.DocumentID && g.DocumentTypeID == PushNotificationMessage.DocumentTypeID))
+            if (PushNotificationMessage != null && PushNotificationMessage.MessageGroupID == "PendingVerification" && PushNotificationMessage.DocumentID != null && PushNotificationMessage.DocumentTypeID != null && allNotificationMessages.Any(g => g.DocumentID == PushNotificationMessage.DocumentID && g.DocumentTypeID == PushNotificationMessage.DocumentTypeID))
             {
-                
-                foreach (var MessageID in allNotificationMessages.Where(g=>g.DocumentID == PushNotificationMessage.DocumentID && g.DocumentTypeID == PushNotificationMessage.DocumentTypeID).Select(g=>g.MessageID).ToList())
+
+                foreach (var MessageID in allNotificationMessages.Where(g => g.DocumentID == PushNotificationMessage.DocumentID && g.DocumentTypeID == PushNotificationMessage.DocumentTypeID).Select(g => g.MessageID).ToList())
                 {
-                    if (allNotificationMessages != null &&allNotificationMessages.Any(x => x.MessageID == MessageID))
+                    if (allNotificationMessages != null && allNotificationMessages.Any(x => x.MessageID == MessageID))
                     {
                         allNotificationMessages.RemoveAll(x => x.MessageID == MessageID);
                     }
@@ -127,28 +129,28 @@
                     {
                         currentNotificationMessages.RemoveAll(t => t.MessageID == MessageID);
                     }
-                } 
+                }
                 await InvokeAsync(() => StateHasChanged());
             }
-            if(PushNotificationMessage != null && PushNotificationMessage.MessageID != null && PushNotificationMessage.MessageID != 0 )
+            if (PushNotificationMessage != null && PushNotificationMessage.MessageID != null && PushNotificationMessage.MessageID != 0)
             {
-                 var ResultClaim = await Irole.HasClaim(PushNotificationMessage.DocumentTypeID.ToString(), PushNotificationMessage.ClaimValue, ctc.Token);
-                 if(ResultClaim)
-                 {
+                var ResultClaim = await Irole.HasClaim(PushNotificationMessage.DocumentTypeID.ToString(), PushNotificationMessage.ClaimValue, ctc.Token);
+                if (ResultClaim)
+                {
 
-                        allNotificationMessages.Add(PushNotificationMessage);
-                        currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+                    allNotificationMessages.Add(PushNotificationMessage);
+                    currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
                     await InvokeAsync(() => StateHasChanged());
-                 }
-                 else if(string.IsNullOrEmpty(PushNotificationMessage.ClaimValue))
-                 {
+                }
+                else if (string.IsNullOrEmpty(PushNotificationMessage.ClaimValue))
+                {
 
-                        allNotificationMessages.Add(PushNotificationMessage);
-                        currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+                    allNotificationMessages.Add(PushNotificationMessage);
+                    currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
                     await InvokeAsync(() => StateHasChanged());
 
-                 }
-                
+                }
+
             }
 
         });
@@ -219,14 +221,14 @@
 
     private void RedirectToLink(string RedirectToLink, int? DocumentID)
     {
-        if(!string.IsNullOrEmpty(RedirectToLink))
+        if (!string.IsNullOrEmpty(RedirectToLink))
         {
             if (DocumentID != null && DocumentID != 0)
             {
                 RedirectToLink = RedirectToLink + "/" + DocumentID?.ToString() ?? "";
             }
             NavigationManager.NavigateTo(RedirectToLink);
-            
+
         }
     }
     #endregion
