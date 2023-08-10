@@ -9,6 +9,14 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
+<style>
+    .border {
+        border: 10px solid black;
+        border-radius: 10px;
+        padding: 10px;
+    }
+</style>
+
 <MudDialog>
     <TitleContent>
         @if (model.AssetTransferID == null || model.AssetTransferID == 0)
@@ -27,22 +35,27 @@
     <DialogContent>
 
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm Model="@model" OnValidSubmit="Submit">
+            <EditForm id="AssetTransferForm" Model="@model" OnValidSubmit="Submit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="12">
                         <AssetSelector Value="model.Asset" BranchID="BranchID" ValueChanged="AssetSelected" />
                     </MudItem>
-                    <!-- Display the list of child assets -->
                     <MudItem xs="12" md="12">
                         @if (ChildAssets != null && ChildAssets.Any())
                         {
-                            <MudTable Items="@ChildAssets">
-                                <RowTemplate Context="asset">
-                                    <MudTd>@asset.Description</MudTd>
-                                </RowTemplate>
-                            </MudTable>
+                            <MudText Typo="Typo.body1">Following assets will be transferred along with the above asset</MudText>
+                            <div class="d-flex">
+                                @foreach (var asset in ChildAssets)
+                                {
+                                    <div class="m-2">@asset.Description</div>
+                                    @if (!asset.Equals(ChildAssets.Last()))
+                                    {
+                                        <div class="m-2">|</div>
+                                    }
+                                }
+                            </div>
                         }
                     </MudItem>
                     <MudItem xs="12" md="6">
@@ -59,30 +72,32 @@
                     <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                     </MudItem>
+                    
                     <MudItem xs="12" md="12">
-                        @if (Checklist != null && Checklist.Any())
+                        @if (model.CheckList != null && model.CheckList.Any())
                         {
-                            <MudGrid>
-                                @foreach (var item in Checklist)
-                                {
-                                    <MudItem xs="12" md="6">
-                                        <MudText Typo="Typo.body2">@item.SettingsName</MudText>
-                                    </MudItem>
-                                    <MudItem xs="12" md="6">
-                                        @*<MudTextField Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>*@
-                                    </MudItem>
-                                }
-                            </MudGrid>
+                            <MudText Typo="Typo.h6">Checklist</MudText>
+                            <br />
+                            <MudContainer>
+                                <MudGrid class="border">
+                                    @foreach (var item in model.CheckList)
+                                    {
+                                        <MudItem xs="6">
+                                            <MudTextField Form="" @bind-Value="item.SettingsDescription" Label="@item.SettingsName" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+                            </MudContainer>
                         }
                     </MudItem>
                 </MudGrid>
-
+                <br />
             </EditForm>
         </MudContainer>
 
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+        <MudButton form="AssetTransferForm" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -103,8 +118,6 @@
     [Parameter]
     public List<AssetModel> ChildAssets { get; set; } = new();
 
-    public List<AssetSettingsModel> Checklist { get; set; } = new();
-
     private int BranchID { get; set; } = 0;
 
     protected override async Task OnInitializedAsync()
@@ -112,6 +125,11 @@
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
+        if(model.UserInfo == null)
+        {
+            model.UserInfo = new();
+            model.UserInfo.UserID = User.Identity.Name;
+        }
         if (model.InitiatedBranch == null)
         {
             model.InitiatedBranch = new();
@@ -127,7 +145,14 @@
         }
         BranchID = model?.InitiatedBranch?.BranchID ?? 0;
 
+        if(model != null)
+        {
+            model.CheckList = Iservice.GetCheckList(model.AssetTransferID).ToList();
+        }
+
         DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != BranchID).ToList();
+
+
     }
 
     void Cancel()
@@ -138,9 +163,9 @@
     public async Task Submit()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
+        var User = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (model.Asset == null || model.Asset.AssetID == 0)
+        if (model.Asset.AssetID == null)
         {
             bool? result = await DialogService.ShowMessageBox(
             "Warning",
@@ -150,11 +175,12 @@
         }
         if (model != null)
         {
+           
             try
             {
                 model.InitiatedBranch.BranchID = int.Parse(brancIDString);
-
-                if (model.DestinationBranch == null)
+                model.UserInfo.UserID = User.Identity.Name;
+                if (model.DestinationBranch.BranchID == null)
                 {
                     bool? result = await DialogService.ShowMessageBox(
                           "Warning",
@@ -174,12 +200,15 @@
         MudDialog.Close(model);
     } 
 
-    private async Task AssetSelected(AssetModel obj)
+    private void AssetSelected(AssetModel obj)
     {
         model.Asset = obj;
-        ChildAssets = Iassetservice.GetAttachedAssets(obj.AssetID).ToList();
-        SubClassID = Iassetservice.SelectByID(obj.AssetID).SubClass.AssetSubClassID;
-        Checklist = Iassetsettingsservice.GetSettings(SubClassID).ToList();
+        if(obj != null)
+        {
+            ChildAssets = Iassetservice.GetAttachedAssets(obj?.AssetID).ToList();
+            SubClassID = Iassetservice.SelectByID(obj?.AssetID).SubClass.AssetSubClassID;
+            model.CheckList = Iassetsettingsservice.GetSettings(SubClassID).ToList();
+        }
 
     }
 
