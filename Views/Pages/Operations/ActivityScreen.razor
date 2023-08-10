@@ -8,14 +8,18 @@
 @inject IGcService Igc
 @inject IPlaceService Iplace
 @inject IAssetDocumentService idocument
-
+@inject IRoutineCheckListMasterService IserviceRoutineMaster
+@inject IRoutineCheckListService IroutineCheckListService
 
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 
 @inject IDialogService DialogService
+@inject IBranchSettingsService branchSettingsService
 
+@using ArmsServices.DataServices.FMS;
+@using ArmsServices.DataServices.Operations;
 @using Pages.Operations.Truck
 @using Pages.Operations.Gc
 @using Pages.FMS.Breakdown
@@ -154,8 +158,29 @@
 
         if (EventButtonLabel == "Start New Trip")
         {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            var branchid = int.Parse(brancIDString);
+            bool IsbranchSetting = branchSettingsService.IsEnabled(branchid, 1);
+            if (IsbranchSetting)
+            {
+                var ResultList = IroutineCheckListService.ExpireItems(branchid, SelectedTruck?.TruckID ?? 0);
+                if (ResultList != null && ResultList.Count() != 0)
+                {
+                    string ResultString = string.Join(",", ResultList.Select(s => s.ItemName +" (" + (s.CurrentTruckLastUpdatedDate?.ToString("dd/MM/yyyy") ?? "") + ")").ToList());
+                    string message = "Some of the check list item(s) " + ResultString + " is expired.";
+                    bool? result1 = await DialogService.ShowMessageBox(
+                        "Expired", message
+                        );
+                    return;
+
+                }
+            }
+
             var dialog = DialogService.Show<NewTripView>("Start Trip", parameters);
             var result = await dialog.Result;
+
 
             if (!result.Canceled)
             {
