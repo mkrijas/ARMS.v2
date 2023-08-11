@@ -18,7 +18,7 @@ namespace ArmsModels.BaseModels
         public int? TruckID { get; set; }
         public int? DriverID { get; set; }
         public string TripPrefix { get; set; }        
-        public long? TripNumber { get; set; }
+        public long? TripNumber { get; set; }        
         [Required]
         public int? BranchID { get; set; }
         [Required]
