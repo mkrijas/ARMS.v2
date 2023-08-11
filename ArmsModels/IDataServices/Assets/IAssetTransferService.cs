@@ -7,7 +7,7 @@ namespace ArmsServices.DataServices
 {
     public interface IAssetTransferService
     {
-        AssetTransferInitiationModel UpdateOutgoing(AssetTransferInitiationModel model);
+        AssetTransferInitiationModel UpdateOutgoing(AssetTransferInitiationModel model, int? TruckID);
         IEnumerable<AssetTransferInitiationModel> SelectOutgoingAssets(int? Branch);
         IEnumerable<AssetSettingsModel> GetCheckList(int? ID);
         int DeleteInitiation(int? ID, int? BranchID, int? AssetID, string UserID);

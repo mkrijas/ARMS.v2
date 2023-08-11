@@ -64,13 +64,14 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public AssetTransferInitiationModel UpdateOutgoing(AssetTransferInitiationModel model)
+        public AssetTransferInitiationModel UpdateOutgoing(AssetTransferInitiationModel model, int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
 
                new SqlParameter("@AssetTransferID", model.AssetTransferID),
                new SqlParameter("@AssetID", model.Asset.AssetID),
+               new SqlParameter("@TruckID", TruckID),
                new SqlParameter("@InitiatedBranchID", model.InitiatedBranch?.BranchID??null),
                new SqlParameter("@DestinationBranchID", model.DestinationBranch.BranchID),
                new SqlParameter("@TransferInitiatedDate", model.TransferInitiatedDate),

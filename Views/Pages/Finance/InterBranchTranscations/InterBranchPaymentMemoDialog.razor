@@ -23,6 +23,17 @@
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="6">
+                        <MudSelect Label="Select Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in transactionTypeList)
+                            {
+                                <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <BranchSelector LabelName="Billed Branch" Value="@OtherBranch" ValueChanged="@OtherBranchChanged" Except="@model.BranchID"></BranchSelector>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
                         <MudSelect Label="Select Party" ReadOnly="ReadOnly" Value="@model.BusinessNature" T="string" ValueChanged="nbusinesschanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             <MudSelectItem Value="@("Supplier")" />
                             <MudSelectItem Value="@("Customer")" />
@@ -33,16 +44,6 @@
                         <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" NatureOfBusiness="@model.BusinessNature"></PartySelector>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                       <BranchSelector Value="@OtherBranch" ValueChanged="@OtherBranchChanged" Except="@model.BranchID"></BranchSelector>
-                    </MudItem>  <MudItem xs="12" md="4">
-                        <MudSelect Label="Select Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in transactionTypeList)
-                            {
-                                <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
                         <MudSelect Label="NatureOfBusiness" ReadOnly="ReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @if (model.PartyInfo != null)
                             {
@@ -51,8 +52,9 @@
                                 <MudSelectItem Value="@("Prepayment")" />
                             }
                         </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" md="3">
+                    </MudItem>                  
+                   
+                    <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="4">
@@ -126,12 +128,11 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    public BranchModel OtherBranch;
+    private BranchModel OtherBranch;
     private List<InterBranchTransactionTypeModel> transactionTypeList = new();
 
     protected override async Task OnInitializedAsync()
-    {
-
+    {        
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
@@ -157,8 +158,6 @@
     {
         editContext = new EditContext(model);
     }
-
-
 
     private async Task OpenOutstandingBills()
     {
@@ -196,24 +195,23 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-
         if (HasAuthoriseEdit)
         {
-        try
-        {
-            model.UserInfo.UserID = UserID;
-            model.PartyCoaID = partyService.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
-            if (model.PartyCoaID == null)
+            try
             {
-                throw new Exception("Party Account is not mapped!");
+                model.UserInfo.UserID = UserID;
+                model.PartyCoaID = partyService.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
+                if (model.PartyCoaID == null)
+                {
+                    throw new Exception("Party Account is not mapped!");
+                }
+                model = Iservice.Update(model);
+                dialogForm.Close(model);
             }
-            model = Iservice.Update(model);
-            dialogForm.Close(model);
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Error);
-        }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
 
         }
         else
@@ -253,26 +251,25 @@
             collection = OBIservice.SelectByParty(model.PartyInfo.PartyID, branchID).ToList();
         }
     }
-
-
     private void SetTotalAmt()
     {
         model.TotalAmount = (model.Bills.Sum(x => x.PayAmount) ?? 0);
     }
 
-    async Task OtherBranchChanged(BranchModel branch)
+
+    private async Task OtherBranchChanged(BranchModel branch)
     {
-        model.OtherBranchID = branch.BranchID;
+        OtherBranch = branch;
+        model.OtherBranchID = branch?.BranchID;
         model.Bills = new();
         await nbusinesschanged(null);
     }
-
-    async Task nbusinesschanged(string val)
+    private async Task nbusinesschanged(string val)
     {
         model.BusinessNature = val;
         await PartyChanged(null);
     }
-    async Task PartyChanged(PartyModel party)
+    private async Task PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
         await nTransactionChanged(null);

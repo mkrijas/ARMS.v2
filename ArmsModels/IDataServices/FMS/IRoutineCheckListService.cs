@@ -14,5 +14,6 @@ namespace ArmsServices.DataServices.FMS
         //IEnumerable<AssetModel> GetRequestedDocuments(int? RequestID);
         //AssetDocumentRequestModel SelectDocumentRequest(int? ID);
         int Delete(int? ID, string UserID);
+        IEnumerable<RoutineCheckListMasterModel> ExpireItems(int? BranchID,int?TruckID);
     }
 }
