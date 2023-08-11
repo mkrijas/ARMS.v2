@@ -1,0 +1,271 @@
+﻿@page "/BankReconciliationView"
+@using ArmsModels.BaseModels.Finance.Transactions;
+@using ArmsServices.DataServices.Finance.Transactions;
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using MudBlazor;
+@using Views.Pages.Finance.Transactions;
+
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IBankAccountOwnService IbankOwnservice
+@inject IUnreconciledBankEntryService IunreconciledBankEntryService
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+
+@inject IInventoryReleaseService Iservice
+
+<MudPaper Class="p-2" Elevation="0">
+    <div class="d-flex">
+        <MudGrid Spacing="4">
+
+            <MudItem xs="4" lg="4" md="4">
+                <MudSelect Label="Select Bank" @bind-Value="SelectedBank" T="OwnBankModel" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" ToStringFunc="@(e => e == null ? null : $"{e.BankCode}")">
+                    @foreach (var item in BankList)
+                    {
+                        <MudSelectItem Value="@item">@item.BankCode</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="2" lg="2" md="2">
+                <MudCheckBox T="bool" CheckedChanged="@SetIsViewRecounciledEntry" Class="mr-2" Checked="@IsViewRecounciledEntry" Label="Show Recounciled Entry" Color="Color.Primary"></MudCheckBox>
+            </MudItem>
+            @if (IsViewRecounciledEntry)
+            {
+                <MudItem xs="4" lg="4" md="4">
+                    <MudDateRangePicker Label="Select Period" @bind-DateRange="@dateRange" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy"></MudDateRangePicker>
+                </MudItem>
+            }
+            <MudItem xs="2" lg="2" md="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" ButtonType="ButtonType.Button" OnClick="(()=>FetchDetails())">Fetch</MudButton>
+            </MudItem>
+
+        </MudGrid>
+    </div>
+</MudPaper>
+@if (IsViewRecounciledEntry)
+{
+    <MudPaper Class="p-2" Elevation="0">
+        <MudGrid Spacing="4">
+            <MudItem xs="12">
+                <MudTable Items="@RecounciledEntries" Dense="true" Hover="true" Striped="true" Elevation="0">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Bank Reconciled Entry</MudText>
+                        <MudSpacer></MudSpacer>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ReconciledBankEntryModel, object>(x=> x.Remarks)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ReconciledBankEntryModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ReconciledBankEntryModel, object>(x=> x.ReconciledDate)" InitialDirection="SortDirection.Ascending">Reconciled Date</MudTableSortLabel></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Account">@context.Remarks</MudTd>
+                        <MudTd DataLabel="Amount">@context.Amount</MudTd>
+                        <MudTd DataLabel="Reconciled Date">
+                            <MudDatePicker Label="Reconciled Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @context.ReconciledDate)" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="@context.ReconciledDate" Disabled />
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+}
+else
+{
+    <MudPaper Class="p-2" Elevation="0">
+        <MudGrid Spacing="4">
+            <MudItem xs="12">
+                <MudTable Items="@UnRecounciledEntries" Dense="true" Hover="true" Striped="true" Elevation="0">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Bank Reconciliation</MudText>
+                        <MudSpacer></MudSpacer>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ReconciledBankEntryModel, object>(x=> x.Remarks)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ReconciledBankEntryModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ReconciledBankEntryModel, object>(x=> x.ReconciledDate)" InitialDirection="SortDirection.Ascending">Reconciled Date</MudTableSortLabel></MudTh>
+                        <MudTh>Action</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Account">@context.Remarks</MudTd>
+                        <MudTd DataLabel="Amount">@context.Amount</MudTd>
+                        <MudTd DataLabel="Reconciled Date">
+                            <MudDatePicker Label="Reconciled Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @context.ReconciledDate)" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="@context.ReconciledDate" />
+                        </MudTd>
+                        <MudTd DataLabel="Save">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" ButtonType="ButtonType.Button" OnClick="(()=>SaveRecounsileEntry(context))">Save</MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+@if (UnRecounciledEntriesSummary != null && UnRecounciledEntriesSummary.Count() != 0)
+{
+
+    <MudPaper Class="p-2" Elevation="0">
+        <MudGrid Spacing="4">
+            <MudItem xs="12">
+                <MudTable Items="@UnRecounciledEntriesSummary" Dense="true" Hover="true" Striped="true" Elevation="0">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Bank Reconcil Summary</MudText>
+                        <MudSpacer></MudSpacer>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh></MudTh>
+                        <MudTh>Opening</MudTh>
+                        <MudTh>Transaction</MudTh>
+                        <MudTh>Clossing</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Bank Or Company">@context.BankOrCompany</MudTd>
+                        <MudTd DataLabel="Company Opening Amount">@context.OpeningAmount</MudTd>
+                        <MudTd DataLabel="Company Transaction Amount">@context.TransactionAmount</MudTd>
+                        <MudTd DataLabel="Company Clossing Amount">@context.ClossingAmount</MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+
+@code {
+    public bool IsApproved { get; set; } = false;
+    private List<ReconciledBankEntryModel> UnRecounciledEntries = new List<ReconciledBankEntryModel>();
+    private List<ReconciledBankEntryModel> CompleteUnRecounciledEntries = new List<ReconciledBankEntryModel>();
+    private List<ReconciledBankEntryModel> RecounciledEntries = new List<ReconciledBankEntryModel>();
+    private List<ReconciledBankEntryModel> CompleteRecounciledEntries = new List<ReconciledBankEntryModel>();
+
+    private List<ReconciledBankSummaryModel> UnRecounciledEntriesSummary = new List<ReconciledBankSummaryModel>();
+
+    private ReconciledBankEntryModel opening = new();
+    private List<OwnBankModel> BankList = new List<OwnBankModel>();
+    public OwnBankModel SelectedBank { get; set; } = new OwnBankModel();
+    public List<int?> RequestIds { get; set; } = new();
+    public int? branchID { get; set; }
+    public string userID { get; set; }
+
+    private bool IsViewRecounciledEntry { get; set; } = false;
+    DateRange dateRange;
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        userID = user.Identity.Name;
+        BankList = IbankOwnservice.Select().ToList();
+    }
+
+    private void SetIsViewRecounciledEntry(bool val)
+    {
+        IsViewRecounciledEntry = val;
+
+    }
+    private void FetchDetails()
+    {
+        if (IsViewRecounciledEntry)
+        {
+
+            if (dateRange == null)
+            {
+                snackbar.Add("Please select date.", Severity.Error);
+                return;
+            }
+            getSelectedBankRecoincilEntries();
+        }
+        else
+        {
+            getSelectedBankUnRecoincilEntries();
+        }
+
+    }
+    private void FetchRecounsileSummary()
+    {
+        var UnRecounciledSummary = IunreconciledBankEntryService.GetReconcilBankSummary(branchID, SelectedBank.BankCode, dateRange?.Start ?? null, dateRange?.End ?? null);
+        if (UnRecounciledEntriesSummary != null)
+        {
+            UnRecounciledEntriesSummary.Clear();
+        }
+        if (UnRecounciledEntriesSummary == null)
+        {
+            UnRecounciledEntriesSummary = new();
+        }
+        if (UnRecounciledSummary != null && UnRecounciledSummary.Any(s => (s.OpeningAmount != null && s.OpeningAmount != 0) || (s.TransactionAmount != null && s.TransactionAmount != 0) || (s.ClossingAmount != null && s.ClossingAmount != 0)))
+        {
+            UnRecounciledEntriesSummary = UnRecounciledSummary;
+
+        }
+    }
+    private async Task SaveRecounsileEntry(ReconciledBankEntryModel reconciledBankEntryModel)
+    {
+        if (reconciledBankEntryModel != null && reconciledBankEntryModel.ReconciledDate == null)
+        {
+            snackbar.Add("Please Select date before save.", Severity.Error);
+            return;
+        }
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+
+        reconciledBankEntryModel.UserInfo = new();
+        reconciledBankEntryModel.UserInfo.UserID = userID;
+        var result = IunreconciledBankEntryService.UpdateUnReconciledBankEntry(reconciledBankEntryModel);
+        getSelectedBankUnRecoincilEntries();
+        FetchRecounsileSummary();
+    }
+
+
+
+    public void getSelectedBankUnRecoincilEntries()
+    {
+        if (UnRecounciledEntries != null)
+        {
+            UnRecounciledEntries.Clear();
+        }
+        if (CompleteUnRecounciledEntries != null)
+        {
+            CompleteUnRecounciledEntries.Clear();
+        }
+        CompleteUnRecounciledEntries = IunreconciledBankEntryService.SelectAllUnReconciledBank(branchID, SelectedBank.ID).ToList();
+        UnRecounciledEntries = CompleteUnRecounciledEntries.Where(s => !(s.IsExisting ?? false)).ToList();
+        if (CompleteUnRecounciledEntries.Any(s => (s.IsExisting ?? false)))
+        {
+            opening = CompleteUnRecounciledEntries.FirstOrDefault(s => (s.IsExisting ?? false));
+        }
+        FetchRecounsileSummary();
+
+    }
+
+    public void getSelectedBankRecoincilEntries()
+    {
+        if (RecounciledEntries != null)
+        {
+            RecounciledEntries.Clear();
+        }
+        if (CompleteRecounciledEntries != null)
+        {
+            CompleteRecounciledEntries.Clear();
+        }
+        CompleteRecounciledEntries = IunreconciledBankEntryService.SelectAllReconciledBank(branchID, SelectedBank.ID, dateRange?.Start ?? null, dateRange?.End ?? null).ToList();
+        RecounciledEntries = CompleteRecounciledEntries.Where(s => !(s.IsExisting ?? false)).ToList();
+        if (CompleteRecounciledEntries.Any(s => (s.IsExisting ?? false)))
+        {
+            opening = CompleteRecounciledEntries.FirstOrDefault(s => (s.IsExisting ?? false));
+        }
+        FetchRecounsileSummary();
+    }
+
+
+}
+

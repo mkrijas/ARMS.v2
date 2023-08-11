@@ -24,7 +24,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", RenterID),
                new SqlParameter("@Operation", "ByParty"),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Renter.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Rent.Select]", parameters))
             {
                 return GetModel(dr);
             }

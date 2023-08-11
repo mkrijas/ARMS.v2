@@ -7,6 +7,18 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
+<style>
+    .completed {
+        text-decoration: line-through;
+    }
+
+    .border {
+        border: 10px solid black;
+        border-radius: 10px;
+        padding: 10px;
+    }
+</style>
+
 <MudDialog>
     <TitleContent>
 
@@ -18,32 +30,59 @@
     <DialogContent>
 
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm Model="@model" OnValidSubmit="Accept">
+            <EditForm Model="@model" OnValidSubmit="() => Accept(Checklist)">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="12">
                         <MudTextField Value="model.Asset.Description" Label="Asset" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Asset.Description)" Disabled></MudTextField>
                     </MudItem>
-                    <!-- Display the list of child assets -->
                     <MudItem xs="12" md="12">
                         @if (ChildAssets != null && ChildAssets.Any())
                         {
-                            <MudTable Items="@ChildAssets">
-                                <RowTemplate Context="asset">
-                                    <MudTd>@asset.Description</MudTd>
-                                </RowTemplate>
-                            </MudTable>
+                            <MudText Typo="Typo.body1">Following assets will be transferred along with the above asset</MudText>
+                            <div class="d-flex">
+                                @foreach (var asset in ChildAssets)
+                                {
+                                    <div class="m-2">@asset.Description</div>
+                                    @if (!asset.Equals(ChildAssets.Last()))
+                                    {
+                                        <div class="m-2">|</div>
+                                    }
+                                }
+                            </div>
                         }
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudTextField @bind-Value="model.InitiatedBranch.BranchName" Label="Initiated Branch" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InitiatedBranch.BranchName)" Disabled></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudDatePicker Label="End Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.AssetTransferEndModel.TransferEndDate" DateFormat="dd/MM/yyyy" />
+                        <MudDatePicker Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.AssetTransferEndModel.TransferEndDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="model.AssetTransferEndModel.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        @if (Checklist != null && Checklist.Any())
+                        {
+                            <MudText Typo="Typo.h6">Checklist</MudText>
+                            <br />
+                            <MudContainer>
+                                <MudGrid class="border">
+                                    @foreach (var item in Checklist)
+                                    {
+                                        <MudItem xs="6">
+                                            <MudTextField Form="" @bind-Value="item.SettingsDescription" Label="@item.SettingsName" Variant="Variant.Text" Margin="Margin.Dense"         
+                                    ReadOnly
+                                            ></MudTextField>
+                                        </MudItem>
+                                        <MudItem sm="4">
+                                            <MudCheckBox Color="Color.Primary" @bind-Checked="@item.IsRecieved"></MudCheckBox>
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+                            </MudContainer>
+                        }
                     </MudItem>
                 </MudGrid>
             </EditForm>
@@ -51,10 +90,10 @@
 
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Accept" Class="px-12">Accept Driver</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Accept(Checklist)" Class="px-12">Accept Asset</MudButton>
         @if (model.AssetTransferEndModel.TransferStatus == null)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reject" Class="px-12">Reject Driver</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Reject(Checklist)" Class="px-12">Reject Asset</MudButton>
         }
     </DialogActions>
 </MudDialog>
@@ -65,13 +104,19 @@
 
     [Parameter]
     public AssetTransferInitiationModel model { get; set; } = new();
+    public int IsCompleted;
 
     [Parameter]
     public List<AssetModel> ChildAssets { get; set; } = new();
+    [Parameter]
+    public List<AssetSettingsModel> Checklist { get; set; } = new();
+
 
     protected override async Task OnInitializedAsync()
     {
         branchID = model?.DestinationBranch?.BranchID ?? 0;
+
+        Checklist = Iservice.GetCheckList(model.AssetTransferID).ToList();
     }
 
 
@@ -83,25 +128,20 @@
     }
 
 
-    public async Task Accept()
+    public async Task Accept(List<AssetSettingsModel> context)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        if (model.Asset == null || model.Asset.AssetID == 0)
-        {
-            bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Please, Select asset.", yesText: "OK");
 
-            return;
-        }
         if (model != null)
         {
             model.IsAssetReject = 0;
             try
             {
+                List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
+                model.UserInfo.UserID = user.Identity.Name;
                 model.AssetTransferEndModel.TransferStatus = true;
-                Iservice.UpdateStatus(model);
+                Iservice.UpdateStatus(model, RecievedList);
                 Snackbar.Add("Transfered succesfully", Severity.Success);
 
             }
@@ -114,27 +154,20 @@
     }
 
 
-    public async Task Reject()
+    public async Task Reject(List<AssetSettingsModel> context)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        if (model.Asset == null || model.Asset.AssetID == 0)
-        {
-            bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Please, Select asset.", yesText: "OK");
-
-            return;
-        }
         if (model != null)
         {
 
             model.IsAssetReject = 1;
             try
             {
-
+                List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
+                model.UserInfo.UserID = user.Identity.Name;
                 model.AssetTransferEndModel.TransferStatus = false;
-                Iservice.UpdateStatus(model);
+                Iservice.UpdateStatus(model, RecievedList);
                 Snackbar.Add("Asset Transfer Rejected", Severity.Error);
 
             }

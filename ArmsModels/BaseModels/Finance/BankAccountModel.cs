@@ -128,10 +128,20 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? BankID { get; set; }
         [Required]
-        public bool IsExisting { get; set; }
+        public bool? IsExisting { get; set; }
         [Required]
-        public int? AccountEntryID { get; set; }
+        public long? AccountEntryID { get; set; }
+        public string AccountEntryName { get; set; }
+        public decimal? Amount { get; set; }
         public string Remarks { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+    }
+
+    public class ReconciledBankSummaryModel
+    {
+        public string BankOrCompany { get; set; }
+        public decimal? OpeningAmount { get; set; }
+        public decimal? TransactionAmount { get; set; }
+        public decimal? ClossingAmount { get; set; }
     }
 }

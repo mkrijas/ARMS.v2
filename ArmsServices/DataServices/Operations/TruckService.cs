@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Reflection;
 
 
 namespace ArmsServices.DataServices
@@ -326,6 +327,21 @@ namespace ArmsServices.DataServices
                     },
                 };
             }
+        }
+
+        public TruckModel SelectByAsset(int? AssetID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetID", AssetID),
+            };
+
+            TruckModel model = new TruckModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Truck.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
         }
 
         public IEnumerable<TruckStatusModel> GetTruckStatus(int? BranchID)

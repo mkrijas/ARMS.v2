@@ -39,6 +39,27 @@ namespace ArmsServices.DataServices.FMS
             }
         }
 
+
+
+        public IEnumerable<RoutineCheckListMasterModel> ExpireItems(int? BranchID, int? TruckID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@TruckID", TruckID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RoutineCheckList.ExpiredItems.Select]", parameters))
+            {
+                yield return new RoutineCheckListMasterModel() {
+                    ItemID = dr.GetInt32("ItemID"),
+                     ItemName = dr.GetString("ItemName"),
+                     ValidDays = dr.GetInt32("ValidDays"),
+                     Description = dr.GetString("Description"),
+                    CurrentTruckLastUpdatedDate = dr.GetDateTime("CurrentTruckLastUpdatedDate")
+                };
+            }
+        }
+
         //public AssetDocumentRequestModel SelectDocumentRequest(int? ID)
         //{
         //    List<SqlParameter> parameters = new List<SqlParameter>

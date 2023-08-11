@@ -17,8 +17,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? TruckID { get; set; }
         public int? DriverID { get; set; }
-        public string TripPrefix { get; set; }        
-        public long? TripNumber { get; set; }        
+        public string TripPrefix { get; set; }
+        public long? TripNumber { get; set; }
+        public string TripNumberDisplay { get { return TripPrefix + TripNumber.ToString().PadLeft(4,'0'); } }
         [Required]
         public int? BranchID { get; set; }
         [Required]
@@ -28,7 +29,7 @@ namespace ArmsModels.BaseModels
         public decimal? Fuel { get; set; }
         public bool Closed { get; set; }
         public bool IsLocked { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }        
+        public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
 
@@ -52,25 +53,27 @@ namespace ArmsModels.BaseModels
 
         public long? TripFuelID { get; set; }
         [Required]
-        public DateTime? EntryDate { 
-            get { return docdate; } 
-            set { docdate = value;this.PurchaseModel.DocumentDate = value; } 
-        }        
+        public DateTime? EntryDate
+        {
+            get { return docdate; }
+            set { docdate = value; this.PurchaseModel.DocumentDate = value; }
+        }
         public long? TripID { get; set; }
-        public int? TruckID { get; set; }        
+        public int? TruckID { get; set; }
         [Required]
         public int? FuelItemID { get; set; }
         public decimal? RatePerLitre { get; set; }
-        public decimal? Amount {
+        public decimal? Amount
+        {
             get { return amount; }
             set { amount = value; this.PurchaseModel.TotalAmount = value; }
         }
         [Required]
         public decimal? Quantity { get; set; }
         [Required]
-        public bool IsPurchase { get; set; } = false; 
-        public TaxPurchaseModel PurchaseModel { get; set; } = new(); 
+        public bool IsPurchase { get; set; } = false;
+        public TaxPurchaseModel PurchaseModel { get; set; } = new();
         public string UsageID { get; set; }
-       
+
     }
 }
