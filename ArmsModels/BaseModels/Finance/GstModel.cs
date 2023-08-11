@@ -10,8 +10,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? Id { get; set; }
-        [Required(ErrorMessage = "Usage ID is required!")]
+        public int? Id { get; set; }        
         public virtual string UsageCode { get; set; }
         [Required]
         [StringLength(maximumLength: 25)]
