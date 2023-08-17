@@ -153,9 +153,9 @@ namespace ArmsServices.DataServices
                 model.Add(new ReconciledBankSummaryModel()
                 {
                     BankOrCompany = "Company",
-                    OpeningAmount = dr.GetDecimal("CompanyOpeningAmount"),
-                    TransactionAmount = dr.GetDecimal("CompanyTransactionAmount"),
-                    ClossingAmount = dr.GetDecimal("CompanyClossingAmount")
+                    OpeningAmount = dr.GetDecimal("CompanyOpeningAmount") ?? 0,
+                    TransactionAmount = dr.GetDecimal("CompanyTransactionAmount") ?? 0,
+                    ClossingAmount = dr.GetDecimal("CompanyClossingAmount") ?? 0
                 });
 
                 model.Add(new ReconciledBankSummaryModel()

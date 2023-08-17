@@ -17,8 +17,10 @@ namespace ArmsModels.BaseModels
         public DateTime? TransferInitiatedDate { get; set; } = DateTime.Now;
         public string Remarks { get; set; }
         public AssetTransferEndModel AssetTransferEndModel { get; set; }
+        public UserInfoModel UserInfo { get; set; }
         public int IsAssetReject { get; set; } = 0;
-        public List<AssetTransferCheckListModel> CheckList { get; set; } = new();
+        [ValidateComplexType]
+        public List<AssetSettingsModel> CheckList { get; set; }
 
     }
     public class AssetTransferEndModel
@@ -26,8 +28,10 @@ namespace ArmsModels.BaseModels
         public int? AssetTransferEndID { get; set; }
         public int? BranchID { get; set; }
         public bool? TransferStatus { get; set; }
+        [Required]
         public DateTime? TransferEndDate { get; set; } = DateTime.Now;
         public string Remarks { get; set; }
+        public UserInfoModel UserInfo { get; set; }
         public string StatusText 
         {
             get
@@ -40,17 +44,6 @@ namespace ArmsModels.BaseModels
                     return "Rejected";
             }
         }
-    }
-
-    public class AssetTransferCheckListModel
-    {
-        public int? CheckListID { get; set; }
-        public int? AssetTransferID { get; set; }
-        [Required]
-        public int? AssetSettingsID { get; set; }
-        [Required]
-        public string Description { get; set; }
-
     }
 
 }
