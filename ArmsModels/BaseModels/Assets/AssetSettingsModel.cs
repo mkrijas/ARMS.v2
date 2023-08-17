@@ -15,6 +15,6 @@ namespace ArmsModels.BaseModels
         [Required]
         public string SettingsDescription { get; set; }
         public virtual bool RecordStatus { get; set; }
-        public virtual bool? IsRecieved { get; set; }
+        public virtual bool? IsRecieved { get; set; } = false;
     }
 }

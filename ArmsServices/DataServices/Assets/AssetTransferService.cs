@@ -163,7 +163,7 @@ namespace ArmsServices.DataServices
 
                     AssetTransferEndID = dr.GetInt32("AssetTransferEndID"),
                     TransferStatus = dr.GetBooleanNullable("TransferStatus"),
-                    TransferEndDate = dr.GetDateTime("TransferEndDate"),
+                    //TransferEndDate = dr.GetDateTime("TransferEndDate"),
 
                 },
                 Remarks = dr.GetString("Remarks"),

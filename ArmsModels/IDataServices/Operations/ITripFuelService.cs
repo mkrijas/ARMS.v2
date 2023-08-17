@@ -15,5 +15,7 @@ namespace ArmsServices.DataServices
         int Delete(int? TripFuelID, string UserID);  //Edit
         TripFuelModel Select(int? TripFuelID);
         IEnumerable<TripFuelModel> SelectByTrip(long? TripID);
+        IEnumerable<TripFuelModel> SelectByAssetTransfer(int? AssetTransferID);
+
     }
 }
