@@ -1,14 +1,14 @@
-﻿//namespace Core.BaseModels.Inventory
-//{
-//    public class StockTransferModelInitiationModel
-//    {
+﻿namespace Core.BaseModels.Inventory
+{
+    public class StockTransferModelInitiationModel
+    {
 
 
-//    }
+    }
 
-//    public class StockTransferModelEndModel
-//    {
+    public class StockTransferModelEndModel
+    {
 
 
-//    }
-//}
+    }
+}
