@@ -16,7 +16,7 @@ namespace ArmsServices.DataServices
         int? Scrap(int? AssetID, string UserID);
         IEnumerable<AssetModel> SelectByBranch(int BranchID,bool scrap);
         IEnumerable<AssetModel> SelectBySubClass(int BranchID, int? SubClassID);
-        IEnumerable<AssetModel> GetAttachedAssets(int? ParentAssetID);
+        IEnumerable<AssetModel> GetAttachedAssets(int? AssetID);
         IEnumerable<AssetModel> SelectLinkedAssetsOnTruck();
         int? UpdateStatus(AssetStatusUpdateModel model); 
         AssetStatusUpdateModel GetCurrentStatus(int? AssetID);

@@ -190,15 +190,15 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-        public IEnumerable<AssetModel> GetAttachedAssets(int? ParentAssetID)
+        public IEnumerable<AssetModel> GetAttachedAssets(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "BYParent"),
-               new SqlParameter("@AssetID", ParentAssetID)
+               //new SqlParameter("@Operation", "ByParent"),
+               new SqlParameter("@AssetID", AssetID)
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Child.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
