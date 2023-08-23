@@ -22,6 +22,7 @@ namespace ArmsServices.DataServices
         public SignalRService(NavigationManager navigationManager, IPushNotificationService _pushNotificationService)
         {
             //hubConnection = _hubconnection;
+            var cc = navigationManager.ToAbsoluteUri("/chatHub");
             hubConnection = new HubConnectionBuilder().WithUrl(navigationManager.ToAbsoluteUri("/chatHub")).Build();
             pushNotificationService = _pushNotificationService;
         }
@@ -61,6 +62,23 @@ namespace ArmsServices.DataServices
                 {
                     await hubConnection.SendAsync("SendMessages",
                     notificationMessage);
+
+                    notificationMessage = new();
+
+                }
+            }
+        }
+        public void SendWithOutSave(PushNotificationModel notificationMessage)
+        {
+
+            if (IsConnected)
+            {
+                if (notificationMessage != null && !string.IsNullOrEmpty(notificationMessage.MessageTitle))
+                {
+                    PushNotificationModel result = pushNotificationService.UpdatePushNotification(notificationMessage);
+
+                     hubConnection.SendAsync("SendMessages",
+                    result);
 
                     notificationMessage = new();
 
