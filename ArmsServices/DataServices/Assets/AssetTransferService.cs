@@ -176,7 +176,8 @@ namespace ArmsServices.DataServices
                 Asset = new AssetModel()
                 {
                     AssetID = dr.GetInt32("AssetID"),
-                    Description = dr.GetString("Description"), 
+                    Description = dr.GetString("Description"),
+                    AssetCode = dr.GetString("AssetCode"),
                 },
             };
         }
