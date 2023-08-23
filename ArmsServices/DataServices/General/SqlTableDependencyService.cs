@@ -22,13 +22,10 @@ namespace DAL.DataServices.General
         public SqlTableDependencyService(IServiceProvider _serviceProvider)
         {
             serviceProvider = _serviceProvider;
-
             using (var scope = serviceProvider.CreateScope())
             {
-                //var navigationManager = scope.ServiceProvider.GetRequiredService<NavigationManager>();
-                //var scopedService = scope.ServiceProvider.GetRequiredService<SignalRService(navigationService,) > ();
-                // Use the scoped service here
-                //scopedService.SendWithOutSave(changeEntity);
+                //var navigationManager = scope.ServiceProvider.GetRequiredService< NavigationManager> ();
+                //var result = navigationManager.ToAbsoluteUri("/chatHub");
                 hubConnection = new HubConnectionBuilder().WithUrl("http://localhost:35411/chatHub").Build();
                 if (!IsConnected)
                 {
