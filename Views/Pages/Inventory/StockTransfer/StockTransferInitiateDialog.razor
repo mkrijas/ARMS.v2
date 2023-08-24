@@ -1,0 +1,254 @@
+﻿@using ArmsServices.DataServices.Finance.Transactions;
+@using Core.BaseModels.Inventory;
+@using Views.Pages.Finance.Transactions
+
+@inject AuthenticationStateProvider auth
+@inject IInventoryReleaseService inventoryReleaseService
+@inject IBranchService branchservice
+@inject IInventoryItemService itemIservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IStockTransferService StockTransferService
+@inject AuthenticationStateProvider auth
+
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Items Transfer Initiation.
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer>
+            <MudPaper Class="p-3" Elevation="0">
+                <EditForm id="form" Model="@InitiationModel" OnValidSubmit="OnValidSubmit">
+                    <MudGrid>
+                        <MudItem xs="12" md="5">
+                            <StoreSelector Value="SelectedStore" ValueChanged="StoreChanged" BranchID="@branchID.Value"></StoreSelector>
+                        </MudItem>
+                        <MudItem xs="12" md="2">
+                            <Center>
+                                <MudIcon Style="margin-top:10px" Icon="@Icons.Material.Filled.East"></MudIcon>
+                            </Center>
+                        </MudItem>
+                        <MudItem xs="12" md="5">
+                            <BranchSelector LabelName="Select Destination Branch" Value="SelectedBranch" ValueChanged="BranchChanged"></BranchSelector>
+                        </MudItem>
+                        <br />
+                        <MudItem xs="12" md="12">
+
+                            <MudSimpleTable Elevation="1" Hover="true" Dense="true" FixedHeader="true">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th>Total</th>
+                                        <th>@InitiationModel.TotalValue</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Items</th>
+                                        <th>Quantity</th>
+                                        <th>Rate</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in InitiationModel.ItemsList)
+                                    {
+                                        <tr>
+                                            <td>@(itm.First(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
+                                            <td>@item.ItemQty</td>
+                                            <td>@item.ItemRate</td>
+                                            <td>
+                                                @if (!ReadOnly)
+                                                {
+                                                    <MudFab Color="Color.Error" @onclick="@(()=> Delete(item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                    @if (!ReadOnly)
+                                    {
+                                        <tr>
+                                            <td colspan="2">
+                                                <InventoryItemSelector Value="SelectedItems" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" />
+                                            </td>
+                                            <td>
+                                                <MudTextField @bind-Value="ItemsModel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => ItemsModel.ItemQty)"></MudTextField>
+
+                                            </td>
+                                            <td>
+                                                <MudTextField @bind-Value="ItemsModel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => ItemsModel.ItemRate)"></MudTextField>
+                                            </td>
+                                            <td>
+                                                <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        </MudItem>
+                    </MudGrid>
+                </EditForm>
+            </MudPaper>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton form="form" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+
+    public StoreModel SelectedStore { get; set; } = new();
+    private List<InventoryReleaseModel> InitiatedStore = new List<InventoryReleaseModel>();
+    public int? branchID { get; set; }
+
+    public BranchModel SelectedBranch { get; set; } = new();
+    private List<BranchModel> BranchCollection = new List<BranchModel>();
+
+    private List<InventoryItemModel> itm = new();
+    public InventoryItemModel SelectedItems = new();
+
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    [Parameter]
+    public bool IsView { get; set; }
+    [Parameter]
+    public StockTransferInitiationModel InitiationModel { get; set; } = new();
+
+    public InventoryItemEntryModel ItemsModel { get; set; } = new();
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        itm = itemIservice.SearchByDescription(string.Empty).ToList();
+        InitiationModel.TotalValue = 0;
+    }
+
+    private void StoreChanged(StoreModel obj)
+    {
+        SelectedStore = obj;
+        InitiationModel.InitiatedStore = SelectedStore;
+        GetStore();
+    }
+
+    private void GetStore()
+    {
+        if (SelectedStore != null && SelectedStore.StoreID != 0)
+        {
+            InitiatedStore = inventoryReleaseService.SelectByStoreID(SelectedStore.StoreID).ToList();
+        }
+        else
+        {
+            if (InitiatedStore != null)
+            {
+                InitiatedStore.Clear();
+            }
+        }
+    }
+
+    private void BranchChanged(BranchModel obj)
+    {
+        SelectedBranch = obj;
+        InitiationModel.DestinationBranch = SelectedBranch;
+        GetBranch();
+    }
+
+    private void GetBranch()
+    {
+        if (SelectedBranch != null && SelectedBranch.BranchID != 0)
+        {
+            BranchCollection = branchservice.Select().ToList();
+        }
+        else
+        {
+            if (BranchCollection != null)
+            {
+                BranchCollection.Clear();
+            }
+        }
+    }
+
+    public async Task OnValidSubmit()
+    {
+        if (InitiationModel.ItemsList == null)
+        {
+            snackbar.Add("Add at least one Entry before Submitting", Severity.Success);
+            return;
+        }
+        else
+        { 
+            try
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+
+                InitiationModel.UserInfo.UserID = user.Identity.Name;
+                StockTransferService.Update(InitiationModel);
+                InitiationModel = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(InitiationModel);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+    }
+
+    private void AddItems()
+    {
+        ItemsModel.ItemID = SelectedItems.InventoryItemID;
+
+        if (ItemsModel.ItemID == null || ItemsModel.ItemRate == null || ItemsModel.ItemQty == null)
+        {
+            snackbar.Add("Please fill in all Fields", Severity.Error);
+            return;
+        }
+
+        InitiationModel.ItemsList.Add(ItemsModel);
+
+        decimal? total = ((ItemsModel.ItemQty) * (ItemsModel.ItemRate));
+        InitiationModel.TotalValue = InitiationModel.TotalValue + total;
+        ItemsModel = new();
+
+        SelectedItems = null;
+        SelectedItems = new();
+    }
+
+    private void Delete(InventoryItemEntryModel i)
+    {
+        decimal? total = ((i.ItemQty) * (i.ItemRate));
+
+        InitiationModel.TotalValue = InitiationModel.TotalValue - total;
+        int rowIndex = InitiationModel.ItemsList.IndexOf(i);
+        InitiationModel.ItemsList.RemoveAt(rowIndex);
+    }
+
+
+    protected void getitemCode(InventoryItemModel item)
+    {
+        if (item != null)
+        {
+            if (SelectedItems != null && SelectedItems.InventoryItemID == null)
+            {
+                SelectedItems = item;
+            }
+            else
+            {
+                SelectedItems = new InventoryItemModel();
+            }
+        }
+        else
+        {
+
+        }
+    }
+}
