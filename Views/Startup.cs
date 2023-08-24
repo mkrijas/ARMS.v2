@@ -33,6 +33,8 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Core.IDataServices.Finance.Transactions;
 using DAL.DataServices.Finance.Transactions;
 using System.Security.Cryptography;
+using DAL.DataServices.General;
+using Core.IDataServices.General;
 
 namespace Views
 {
@@ -85,6 +87,8 @@ namespace Views
             services.AddSingleton<TruckDataArrayModel>();
 
             services.AddSingleton<IDbService, DbService>();
+            services.AddSingleton<SqlTableDependencyService>();
+
             services.AddScoped<IBranchService, BranchService>();
             services.AddScoped<IBranchSettingsService, BranchSettingsService>();
             services.AddScoped<IPlaceService, PlaceService>();
@@ -213,7 +217,8 @@ namespace Views
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {            
+        {
+            var connectionString = Configuration.GetConnectionString("ArmsDB");
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -238,6 +243,8 @@ namespace Views
             app.UseAuthorization();
 
             app.UseStaticFiles();
+
+            app.UseSqlTableDependency<SqlTableDependencyService>(connectionString);
             //app.UseStaticFiles(new StaticFileOptions()
             //{
             //    FileProvider = new PhysicalFileProvider(

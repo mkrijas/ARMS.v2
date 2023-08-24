@@ -57,7 +57,7 @@ namespace ArmsServices.DataServices
                 SubClassID = dr.GetInt32("SubClassID"),
                 SettingsName = dr.GetString("SettingsName"),
                 SettingsDescription = dr.GetString("SettingsDescription"),
-                RecordStatus = dr.GetBoolean("IsSet"),
+                IsActive = dr.GetBoolean("IsSet"),
             };
         }
 
@@ -92,7 +92,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@SettingsID", obj.SettingsID),
                new SqlParameter("@SubClassID", obj.SubClassID),
-               new SqlParameter("@RecordStatus", obj.RecordStatus ? (byte)3 : (byte)0),
+               new SqlParameter("@IsActive", obj.IsActive),
                new SqlParameter("@UserID", UserID)
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.Settings.Update]", parameters);

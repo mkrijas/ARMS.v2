@@ -6,6 +6,7 @@
 @inject IBranchService Ibranchservice
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IConfigTable config
 
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
@@ -23,13 +24,13 @@
         @if (model.AssetTransferID == null || model.AssetTransferID == 0)
         {
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Asset Transfer Initiation.
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Asset Transfer
             </MudText>
         }
         else
         {
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Asset Transfer Initiation.
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Asset Transfer
             </MudText>
         }
     </TitleContent>
@@ -50,7 +51,7 @@
                             <div class="d-flex">
                                 @foreach (var asset in ChildAssets)
                                 {
-                                    <div class="m-2">@asset.Description</div>
+                                    <div class="m-2"><b>@asset.Description</b></div>
                                     @if (!asset.Equals(ChildAssets.Last()))
                                     {
                                         <div class="m-2">|</div>
@@ -68,10 +69,10 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudDatePicker Label="Initiated Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.TransferInitiatedDate" DateFormat="dd/MM/yyyy" />
+                        <MudDatePicker Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.TransferInitiatedDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                     </MudItem>
                     
                     <MudItem xs="12" md="12">
@@ -114,6 +115,7 @@
 
     public int? SubClassID { get; set; } = new();
     public int? TruckID { get; set; } = new();
+    int? AssetSubClassID;
 
     private List<BranchModel> DestinationBranchList = new();
 
@@ -190,7 +192,9 @@
                           yesText: "OK");
                     return;
                 }
-                if(SubClassID == 7)
+                ConfigModel cModel = config.GetAssetSubclassForTrucks();
+                AssetSubClassID = int.Parse(cModel.ValueString);
+                if (SubClassID == AssetSubClassID)
                 {
                     TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
                     Iservice.UpdateOutgoing(model, TruckID);
@@ -200,6 +204,7 @@
                     Iservice.UpdateOutgoing(model, null);
                 }
                 Snackbar.Add("Transferred successfully", Severity.Success);
+                MudDialog.Close(model);
             }
             catch (Exception ex)
             {
@@ -207,7 +212,7 @@
             }
         }
 
-        MudDialog.Close(model);
+        
     } 
 
     private void AssetSelected(AssetModel obj)
@@ -215,7 +220,7 @@
         model.Asset = obj;
         if(obj != null)
         {
-            ChildAssets = Iassetservice.GetAttachedAssets(obj?.AssetID).ToList();
+            ChildAssets = Iassetservice.GetAttachedAssets(obj?.AssetID).Skip(1).ToList();
             SubClassID = Iassetservice.SelectByID(obj?.AssetID).SubClass.AssetSubClassID;
             model.CheckList = Iassetsettingsservice.GetSettings(SubClassID).ToList();
         }
