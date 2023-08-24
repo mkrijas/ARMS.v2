@@ -32,6 +32,7 @@ using Views.Data;
 using Microsoft.AspNetCore.ResponseCompression;
 using Core.IDataServices.Finance.Transactions;
 using DAL.DataServices.Finance.Transactions;
+using System.Security.Cryptography;
 
 namespace Views
 {
@@ -113,7 +114,7 @@ namespace Views
             services.AddScoped<IExpenseMappingServices, ExpenseMappingServices>();
             services.AddScoped<IPushNotificationService, PushNotificationService>();
             
-                 services.AddScoped<ITripFuelService, TripFuelService>();
+            services.AddScoped<ITripFuelService, TripFuelService>();
 
 
             //services.AddScoped<IPartyDirectorService, PartyDirectorService>();
@@ -141,6 +142,7 @@ namespace Views
             services.AddScoped<ITyreService, TyreService>();
             services.AddScoped<IInventoryRequestService, InventoryRequestService>();
             services.AddScoped<IOpInventoryReleaseService, OpInventoryReleaseService>();
+            services.AddScoped<IStockTransferService, StockTransferService>();
             //------------DATA AUTHENTICATION-------------------
             services.AddScoped<IDataAuthorizationSettingsService, DataAuthorizationSettingsService>();
             services.AddScoped<IDataAuthorizationService, DataAuthorizationService>();
