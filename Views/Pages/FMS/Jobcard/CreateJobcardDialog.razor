@@ -7,7 +7,9 @@
 @inject IBreakdownService IBreakdownservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IPushNotificationService IpushNotificationService
 
+@inject SignalRService signalRService
 @inject ITripService Itrip
 @inject ITruckService Itruck
 
@@ -73,6 +75,14 @@
     public int? PeriodicMaintenanceId { get; set; } = null;
     private List<WorkshopModel> Workshops = new();
 
+
+    public string UserID { get; set; }
+
+    #region SignaIR Notification
+    private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
+
     protected override async Task OnInitializedAsync()
     {
         var e = await auth.GetAuthenticationStateAsync();
@@ -83,8 +93,11 @@
         }
         model.TruckID = Breakdown.TruckID;
         model.BreakdownID = Breakdown?.BreakdownID??null;
-
-        Workshops =  Iworkshop.Select(null).ToList();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        Workshops = Iworkshop.Select(null).ToList();
+        await signalRService.StartAsync();
         AddJob();
     }
 
@@ -110,6 +123,7 @@
         {
             Breakdown = IBreakdownservice.Update(Breakdown);
             model.BreakdownID = Breakdown?.BreakdownID??null;
+            model.PMIID = PeriodicMaintenanceId;
         }
         var authprov = await auth.GetAuthenticationStateAsync();
         model.UserInfo.UserID = authprov.User.Identity.Name;
@@ -135,6 +149,26 @@
                 JipComp.UpdateJob(item);
             }
             snackbar.Add("Saved Successfully", Severity.Success);
+            if(PeriodicMaintenanceId != null)
+            {
+                notificationMessage = new();
+                notificationMessage.DocumentID = PeriodicMaintenanceId;
+                notificationMessage.MessageGroupID = "PeriodicMaintainence";
+                notificationMessage.DocumentTypeID = 59;
+
+                currentNotificationMessages = IpushNotificationService.SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(BranchID, PeriodicMaintenanceId, 59).ToList();
+                string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
+                try
+                {
+                    IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+                }
+                catch (Exception ex)
+                {
+
+                }
+
+                await signalRService.Send(notificationMessage);
+            }
             MudDialog.Close(DialogResult.Ok(model));            
         }
         catch (Exception ex)

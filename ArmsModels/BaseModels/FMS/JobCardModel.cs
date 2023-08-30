@@ -26,6 +26,8 @@ namespace ArmsModels.BaseModels
         public List<JobcardWorkshopModel> Workshops { get; set; }
         public List<JobInProgressModel> Jobs { get; set; }
         public UserInfoModel UserInfo { get; set; }
+
+        public int? PMIID { get; set; } = null;
     }
 
 
