@@ -23,6 +23,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string Area { get; set; } // Operation,Maintenenace req
         public long? TripID { get; set; } 
+        public int? AssetTransferID { get; set; }
         public int? TruckID { get; set; }
         public int? JobCardID { get; set; }
         [ValidateComplexType]

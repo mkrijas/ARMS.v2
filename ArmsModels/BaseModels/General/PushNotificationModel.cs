@@ -7,7 +7,9 @@ namespace ArmsModels.BaseModels.General
         public int MSgId { get; set; } = 0;
         public int? MessageID { get; set; }
         public BranchModel InitiateBranch { get; set; }
+        public int? InitiateBranchID { get; set; }
         public BranchModel ReceivedBranch { get; set; }
+        public int? ReceivedBranchID { get; set; }
         public string MessageTitle { get; set; }
         public string MessageBody { get; set; }
         public bool? Aknowledged { get; set; }

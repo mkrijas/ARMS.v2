@@ -29,9 +29,9 @@
             </MudItem>
 
             <MudItem xs="2" lg="2" md="2">
-                <MudCheckBox T="bool" CheckedChanged="@SetIsViewRecounciledEntry" Class="mr-2" Checked="@IsViewRecounciledEntry" Label="Show Recounciled Entry" Color="Color.Primary"></MudCheckBox>
+                <MudCheckBox T="bool" CheckedChanged="@SetIsViewReconciledEntry" Class="mr-2" Checked="@IsViewReconciledEntry" Label="Show Reconciled Entry" Color="Color.Primary"></MudCheckBox>
             </MudItem>
-            @if (IsViewRecounciledEntry)
+            @if (IsViewReconciledEntry)
             {
                 <MudItem xs="4" lg="4" md="4">
                     <MudDateRangePicker Label="Select Period" @bind-DateRange="@dateRange" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy"></MudDateRangePicker>
@@ -44,12 +44,12 @@
         </MudGrid>
     </div>
 </MudPaper>
-@if (IsViewRecounciledEntry)
+@if (IsViewReconciledEntry)
 {
     <MudPaper Class="p-2" Elevation="0">
         <MudGrid Spacing="4">
             <MudItem xs="12">
-                <MudTable Items="@RecounciledEntries" Dense="true" Hover="true" Striped="true" Elevation="0">
+                <MudTable Items="@ReconciledEntries" Dense="true" Hover="true" Striped="true" Elevation="0">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">Bank Reconciled Entry</MudText>
                         <MudSpacer></MudSpacer>
@@ -80,7 +80,7 @@ else
     <MudPaper Class="p-2" Elevation="0">
         <MudGrid Spacing="4">
             <MudItem xs="12">
-                <MudTable Items="@UnRecounciledEntries" Dense="true" Hover="true" Striped="true" Elevation="0">
+                <MudTable Items="@UnReconciledEntries" Dense="true" Hover="true" Striped="true" Elevation="0">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">Bank Reconciliation</MudText>
                         <MudSpacer></MudSpacer>
@@ -109,15 +109,15 @@ else
         </MudGrid>
     </MudPaper>
 }
-@if (UnRecounciledEntriesSummary != null && UnRecounciledEntriesSummary.Count() != 0)
+@if (UnReconciledEntriesSummary != null && UnReconciledEntriesSummary.Count() != 0)
 {
 
     <MudPaper Class="p-2" Elevation="0">
         <MudGrid Spacing="4">
             <MudItem xs="12">
-                <MudTable Items="@UnRecounciledEntriesSummary" Dense="true" Hover="true" Striped="true" Elevation="0">
+                <MudTable Items="@UnReconciledEntriesSummary" Dense="true" Hover="true" Striped="true" Elevation="0">
                     <ToolBarContent>
-                        <MudText Typo="Typo.h6">Bank Reconcil Summary</MudText>
+                        <MudText Typo="Typo.h6">Bank Reconcil Summary in @UnReconciledEntriesSummaryLabel</MudText>
                         <MudSpacer></MudSpacer>
                     </ToolBarContent>
                     <HeaderContent>
@@ -143,12 +143,12 @@ else
 
 @code {
     public bool IsApproved { get; set; } = false;
-    private List<ReconciledBankEntryModel> UnRecounciledEntries = new List<ReconciledBankEntryModel>();
-    private List<ReconciledBankEntryModel> CompleteUnRecounciledEntries = new List<ReconciledBankEntryModel>();
-    private List<ReconciledBankEntryModel> RecounciledEntries = new List<ReconciledBankEntryModel>();
-    private List<ReconciledBankEntryModel> CompleteRecounciledEntries = new List<ReconciledBankEntryModel>();
+    private List<ReconciledBankEntryModel> UnReconciledEntries = new List<ReconciledBankEntryModel>();
+    private List<ReconciledBankEntryModel> CompleteUnReconciledEntries = new List<ReconciledBankEntryModel>();
+    private List<ReconciledBankEntryModel> ReconciledEntries = new List<ReconciledBankEntryModel>();
+    private List<ReconciledBankEntryModel> CompleteReconciledEntries = new List<ReconciledBankEntryModel>();
 
-    private List<ReconciledBankSummaryModel> UnRecounciledEntriesSummary = new List<ReconciledBankSummaryModel>();
+    private List<ReconciledBankSummaryModel> UnReconciledEntriesSummary = new List<ReconciledBankSummaryModel>();
 
     private ReconciledBankEntryModel opening = new();
     private List<OwnBankModel> BankList = new List<OwnBankModel>();
@@ -156,8 +156,8 @@ else
     public List<int?> RequestIds { get; set; } = new();
     public int? branchID { get; set; }
     public string userID { get; set; }
-
-    private bool IsViewRecounciledEntry { get; set; } = false;
+    public string UnReconciledEntriesSummaryLabel { get; set; } = "";
+    private bool IsViewReconciledEntry { get; set; } = false;
     DateRange dateRange;
     protected override async Task OnInitializedAsync()
     {
@@ -168,14 +168,22 @@ else
         BankList = IbankOwnservice.Select().ToList();
     }
 
-    private void SetIsViewRecounciledEntry(bool val)
+    private void SetIsViewReconciledEntry(bool val)
     {
-        IsViewRecounciledEntry = val;
+        IsViewReconciledEntry = val;
+        if(val == true)
+        {
+            FetchRecounsileSummary(branchID, SelectedBank.BankCode, dateRange?.Start ?? null, dateRange?.End ?? null);
+        }
+        else
+        {
+            FetchRecounsileSummary(branchID, SelectedBank.BankCode, DateTime.Now, DateTime.Now);
+        }
 
     }
     private void FetchDetails()
     {
-        if (IsViewRecounciledEntry)
+        if (IsViewReconciledEntry)
         {
 
             if (dateRange == null)
@@ -191,22 +199,23 @@ else
         }
 
     }
-    private void FetchRecounsileSummary()
+    private void FetchRecounsileSummary(int? BranchID, string BankCode, DateTime? StartDate, DateTime? EndDate)
     {
-        var UnRecounciledSummary = IunreconciledBankEntryService.GetReconcilBankSummary(branchID, SelectedBank.BankCode, dateRange?.Start ?? null, dateRange?.End ?? null);
-        if (UnRecounciledEntriesSummary != null)
+        var UnReconciledSummary = IunreconciledBankEntryService.GetReconcilBankSummary(BranchID, BankCode, StartDate, EndDate);
+        if (UnReconciledEntriesSummary != null)
         {
-            UnRecounciledEntriesSummary.Clear();
+            UnReconciledEntriesSummary.Clear();
         }
-        if (UnRecounciledEntriesSummary == null)
+        if (UnReconciledEntriesSummary == null)
         {
-            UnRecounciledEntriesSummary = new();
+            UnReconciledEntriesSummary = new();
         }
-        if (UnRecounciledSummary != null && UnRecounciledSummary.Any(s => (s.OpeningAmount != null && s.OpeningAmount != 0) || (s.TransactionAmount != null && s.TransactionAmount != 0) || (s.ClossingAmount != null && s.ClossingAmount != 0)))
+        if (UnReconciledSummary != null && UnReconciledSummary.Any(s => (s.OpeningAmount != null ) || (s.TransactionAmount != null) || (s.ClossingAmount != null)))
         {
-            UnRecounciledEntriesSummary = UnRecounciledSummary;
+            UnReconciledEntriesSummaryLabel = "(" + (StartDate?.ToString("dd/MM/yyyy") ?? "") + " - " + (EndDate?.ToString("dd/MM/yyyy")??"") + ")";
+            UnReconciledEntriesSummary = UnReconciledSummary;
 
-        }
+        } 
     }
     private async Task SaveRecounsileEntry(ReconciledBankEntryModel reconciledBankEntryModel)
     {
@@ -222,48 +231,48 @@ else
         reconciledBankEntryModel.UserInfo.UserID = userID;
         var result = IunreconciledBankEntryService.UpdateUnReconciledBankEntry(reconciledBankEntryModel);
         getSelectedBankUnRecoincilEntries();
-        FetchRecounsileSummary();
+        FetchRecounsileSummary(branchID, SelectedBank.BankCode, DateTime.Now, DateTime.Now);
     }
 
 
 
     public void getSelectedBankUnRecoincilEntries()
     {
-        if (UnRecounciledEntries != null)
+        if (UnReconciledEntries != null)
         {
-            UnRecounciledEntries.Clear();
+            UnReconciledEntries.Clear();
         }
-        if (CompleteUnRecounciledEntries != null)
+        if (CompleteUnReconciledEntries != null)
         {
-            CompleteUnRecounciledEntries.Clear();
+            CompleteUnReconciledEntries.Clear();
         }
-        CompleteUnRecounciledEntries = IunreconciledBankEntryService.SelectAllUnReconciledBank(branchID, SelectedBank.ID).ToList();
-        UnRecounciledEntries = CompleteUnRecounciledEntries.Where(s => !(s.IsExisting ?? false)).ToList();
-        if (CompleteUnRecounciledEntries.Any(s => (s.IsExisting ?? false)))
+        CompleteUnReconciledEntries = IunreconciledBankEntryService.SelectAllUnReconciledBank(branchID, SelectedBank.ID).ToList();
+        UnReconciledEntries = CompleteUnReconciledEntries.Where(s => !(s.IsExisting ?? false)).ToList();
+        if (CompleteUnReconciledEntries.Any(s => (s.IsExisting ?? false)))
         {
-            opening = CompleteUnRecounciledEntries.FirstOrDefault(s => (s.IsExisting ?? false));
+            opening = CompleteUnReconciledEntries.FirstOrDefault(s => (s.IsExisting ?? false));
         }
-        FetchRecounsileSummary();
+        FetchRecounsileSummary(branchID, SelectedBank.BankCode, DateTime.Now, DateTime.Now);
 
     }
 
     public void getSelectedBankRecoincilEntries()
     {
-        if (RecounciledEntries != null)
+        if (ReconciledEntries != null)
         {
-            RecounciledEntries.Clear();
+            ReconciledEntries.Clear();
         }
-        if (CompleteRecounciledEntries != null)
+        if (CompleteReconciledEntries != null)
         {
-            CompleteRecounciledEntries.Clear();
+            CompleteReconciledEntries.Clear();
         }
-        CompleteRecounciledEntries = IunreconciledBankEntryService.SelectAllReconciledBank(branchID, SelectedBank.ID, dateRange?.Start ?? null, dateRange?.End ?? null).ToList();
-        RecounciledEntries = CompleteRecounciledEntries.Where(s => !(s.IsExisting ?? false)).ToList();
-        if (CompleteRecounciledEntries.Any(s => (s.IsExisting ?? false)))
+        CompleteReconciledEntries = IunreconciledBankEntryService.SelectAllReconciledBank(branchID, SelectedBank.ID, dateRange?.Start ?? null, dateRange?.End ?? null).ToList();
+        ReconciledEntries = CompleteReconciledEntries.Where(s => !(s.IsExisting ?? false)).ToList();
+        if (CompleteReconciledEntries.Any(s => (s.IsExisting ?? false)))
         {
-            opening = CompleteRecounciledEntries.FirstOrDefault(s => (s.IsExisting ?? false));
+            opening = CompleteReconciledEntries.FirstOrDefault(s => (s.IsExisting ?? false));
         }
-        FetchRecounsileSummary();
+        FetchRecounsileSummary(branchID, SelectedBank.BankCode, dateRange?.Start ?? null, dateRange?.End ?? null);
     }
 
 

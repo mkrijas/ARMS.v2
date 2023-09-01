@@ -4,8 +4,14 @@
 @inject IJobcardService Iservice
 @inject IWorkshopService Iworkshop
 @inject IJobcardWorkshopService Ijw
+@inject IBreakdownService IBreakdownservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@inject IPushNotificationService IpushNotificationService
+
+@inject SignalRService signalRService
+@inject ITripService Itrip
+@inject ITruckService Itruck
 
 <MudDialog>
     <TitleContent>
@@ -20,6 +26,13 @@
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid Spacing="2">
+@*                    @if (PeriodicMaintenanceId != null)
+                    {*@
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="@(Breakdown.BreakdownType)" Label="Periodic" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField>
+                        </MudItem>
+                        
+                    @*}*@
                     <MudItem xs="12">
                         <MudSelect Label="Select Workshop" @bind-Value="SelectedWorkshop" T="WorkshopModel" ToStringFunc="@((p) => p?.WorkshopName)" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in Workshops)
@@ -53,13 +66,22 @@
     [Parameter]
     public JobcardModel model { get; set; }
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    [Parameter] public BreakdownModel Breakdown { get; set; }
+    [Parameter] public BreakdownModel Breakdown { get; set; } = new();
     private WorkshopModel SelectedWorkshop = new();
 
     private JobInProgressView JipComp;
 
-
+    [Parameter]
+    public int? PeriodicMaintenanceId { get; set; } = null;
     private List<WorkshopModel> Workshops = new();
+
+
+    public string UserID { get; set; }
+
+    #region SignaIR Notification
+    private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
 
     protected override async Task OnInitializedAsync()
     {
@@ -70,9 +92,12 @@
             model = new();
         }
         model.TruckID = Breakdown.TruckID;
-        model.BreakdownID = Breakdown.BreakdownID;
-
-        Workshops =  Iworkshop.Select(null).ToList();
+        model.BreakdownID = Breakdown?.BreakdownID??null;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        Workshops = Iworkshop.Select(null).ToList();
+        await signalRService.StartAsync();
         AddJob();
     }
 
@@ -93,6 +118,13 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
+        var CurrentTrip = Itrip.Select(Itruck.GetCurrentTrip(Breakdown.TruckID));
+        if (CurrentTrip != null && PeriodicMaintenanceId != null && !Itrip.IsClosed(CurrentTrip.TripID))
+        {
+            Breakdown = IBreakdownservice.Update(Breakdown);
+            model.BreakdownID = Breakdown?.BreakdownID??null;
+            model.PMIID = PeriodicMaintenanceId;
+        }
         var authprov = await auth.GetAuthenticationStateAsync();
         model.UserInfo.UserID = authprov.User.Identity.Name;
 
@@ -117,6 +149,26 @@
                 JipComp.UpdateJob(item);
             }
             snackbar.Add("Saved Successfully", Severity.Success);
+            if(PeriodicMaintenanceId != null)
+            {
+                notificationMessage = new();
+                notificationMessage.DocumentID = PeriodicMaintenanceId;
+                notificationMessage.MessageGroupID = "PeriodicMaintainence";
+                notificationMessage.DocumentTypeID = 59;
+
+                currentNotificationMessages = IpushNotificationService.SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(BranchID, PeriodicMaintenanceId, 59).ToList();
+                string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
+                try
+                {
+                    IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+                }
+                catch (Exception ex)
+                {
+
+                }
+
+                await signalRService.Send(notificationMessage);
+            }
             MudDialog.Close(DialogResult.Ok(model));            
         }
         catch (Exception ex)

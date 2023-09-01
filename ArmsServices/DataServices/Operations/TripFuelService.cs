@@ -60,6 +60,20 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<TripFuelModel> SelectByAssetTransfer(int? AssetTransferID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetTransferID", AssetTransferID),
+                new SqlParameter("@Operation", "SelectByAssetTransfer"),
+            };
+
+            foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Fuel.Select]", parameters))
+            {
+                yield return GetModel(reader);
+            }
+        }
+
         public TripFuelModel Update(TripFuelModel model)
         {
 

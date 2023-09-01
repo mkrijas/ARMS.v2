@@ -16,13 +16,14 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int DeleteInitiation(int? ID, int? BranchID, int? AssetID, string UserID)
+        public int DeleteInitiation(int? ID, int? BranchID, int? AssetID,int? TruckID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@AssetID", AssetID),
+               new SqlParameter("TruckID", TruckID),
                new SqlParameter("@UserID", UserID),
 
             };
@@ -103,7 +104,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public AssetTransferInitiationModel UpdateStatus(AssetTransferInitiationModel model, List<int?> RecievedList)
+        public AssetTransferInitiationModel UpdateStatus(AssetTransferInitiationModel model, int? TruckID, List<int?> RecievedList)
         {
             DataTable dataTable = new DataTable();
             dataTable.Columns.Add("IntField", typeof(int));
@@ -124,6 +125,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AssetTransferEndID", model.AssetTransferEndModel.AssetTransferEndID),
                new SqlParameter("@AssetTransferID", model.AssetTransferID),
                new SqlParameter("@AssetID", model.Asset.AssetID),
+               new SqlParameter("@TruckID", TruckID),
                new SqlParameter("@InitiatedBranchID", model.InitiatedBranch.BranchID),
                new SqlParameter("@BranchID", model.DestinationBranch.BranchID),
                new SqlParameter("@TransferEndDate", model.AssetTransferEndModel.TransferEndDate),
@@ -163,7 +165,7 @@ namespace ArmsServices.DataServices
 
                     AssetTransferEndID = dr.GetInt32("AssetTransferEndID"),
                     TransferStatus = dr.GetBooleanNullable("TransferStatus"),
-                    TransferEndDate = dr.GetDateTime("TransferEndDate"),
+                    //TransferEndDate = dr.GetDateTime("TransferEndDate"),
 
                 },
                 Remarks = dr.GetString("Remarks"),
@@ -176,7 +178,8 @@ namespace ArmsServices.DataServices
                 Asset = new AssetModel()
                 {
                     AssetID = dr.GetInt32("AssetID"),
-                    Description = dr.GetString("Description"), 
+                    Description = dr.GetString("Description"),
+                    AssetCode = dr.GetString("AssetCode"),
                 },
             };
         }

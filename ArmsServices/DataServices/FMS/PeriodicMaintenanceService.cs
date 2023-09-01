@@ -118,6 +118,7 @@ namespace ArmsServices.DataServices
                 Remarks = dr.GetString("Remarks"),
                 Title = dr.GetString("Title"),
                 TruckID = dr.GetInt32("TruckID"),
+                JobCardID = dr.GetInt32("JobCardID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

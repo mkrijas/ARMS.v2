@@ -14,13 +14,15 @@ namespace ArmsModels.BaseModels
         [Required]
         public BranchModel InitiatedBranch { get; set; }
         public BranchModel DestinationBranch { get; set; }
-        public DateTime? TransferInitiatedDate { get; set; } = DateTime.Now;
+        public DateTime? TransferInitiatedDate { get; set; } = DateTime.Today;
         public string Remarks { get; set; }
-        public AssetTransferEndModel AssetTransferEndModel { get; set; }
+        public AssetTransferEndModel AssetTransferEndModel { get; set; } = new();
         public UserInfoModel UserInfo { get; set; }
         public int IsAssetReject { get; set; } = 0;
         [ValidateComplexType]
         public List<AssetSettingsModel> CheckList { get; set; }
+        public decimal? Fuel { get; set; }
+        public decimal? Expenses { get; set; }
 
     }
     public class AssetTransferEndModel
@@ -29,7 +31,7 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         public bool? TransferStatus { get; set; }
         [Required]
-        public DateTime? TransferEndDate { get; set; } = DateTime.Now;
+        public DateTime? TransferEndDate { get; set; } = DateTime.Today;
         public string Remarks { get; set; }
         public UserInfoModel UserInfo { get; set; }
         public string StatusText 

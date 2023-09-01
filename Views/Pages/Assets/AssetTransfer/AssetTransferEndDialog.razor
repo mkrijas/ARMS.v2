@@ -1,8 +1,11 @@
 ﻿@inject AuthenticationStateProvider auth
 @inject IAssetTransferService Iservice
+@inject IAssetService Iassetservice
+@inject ITruckService Itruckservice
 @inject IBranchService Ibranchservice
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IConfigTable config
 
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
@@ -44,7 +47,7 @@
                             <div class="d-flex">
                                 @foreach (var asset in ChildAssets)
                                 {
-                                    <div class="m-2">@asset.Description</div>
+                                    <div class="m-2"><b>@asset.Description</b></div>
                                     @if (!asset.Equals(ChildAssets.Last()))
                                     {
                                         <div class="m-2">|</div>
@@ -60,7 +63,7 @@
                         <MudDatePicker Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.AssetTransferEndModel.TransferEndDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.AssetTransferEndModel.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                        <MudTextField @bind-Value="model.AssetTransferEndModel.Remarks" Label="Remarks" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="12">
                         @if (Checklist != null && Checklist.Any())
@@ -71,12 +74,10 @@
                                 <MudGrid class="border">
                                     @foreach (var item in Checklist)
                                     {
-                                        <MudItem xs="6">
-                                            <MudTextField Form="" @bind-Value="item.SettingsDescription" Label="@item.SettingsName" Variant="Variant.Text" Margin="Margin.Dense"         
-                                    ReadOnly
-                                            ></MudTextField>
+                                        <MudItem xs="3">
+                                            <MudTextField Form="" @bind-Value="item.SettingsDescription" Label="@item.SettingsName" Variant="Variant.Text" Margin="Margin.Dense" ReadOnly></MudTextField>
                                         </MudItem>
-                                        <MudItem sm="4">
+                                        <MudItem xs="3">
                                             <MudCheckBox Color="Color.Primary" @bind-Checked="@item.IsRecieved"></MudCheckBox>
                                         </MudItem>
                                     }
@@ -111,12 +112,17 @@
     [Parameter]
     public List<AssetSettingsModel> Checklist { get; set; } = new();
 
+    public int? SubClassID { get; set; } = new();
+    public int? TruckID { get; set; } = new();
+    int? AssetSubClassID;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         branchID = model?.DestinationBranch?.BranchID ?? 0;
-
         Checklist = Iservice.GetCheckList(model.AssetTransferID).ToList();
+        SubClassID = Iassetservice.SelectByID(model.Asset.AssetID).SubClass.AssetSubClassID;
+        ConfigModel cModel = config.GetAssetSubclassForTrucks();
+        AssetSubClassID = int.Parse(cModel.ValueString);
     }
 
 
@@ -141,9 +147,16 @@
                 List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
                 model.UserInfo.UserID = user.Identity.Name;
                 model.AssetTransferEndModel.TransferStatus = true;
-                Iservice.UpdateStatus(model, RecievedList);
+                if (SubClassID == AssetSubClassID)
+                {
+                    TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
+                    Iservice.UpdateStatus(model, TruckID, RecievedList);
+                }
+                else
+                {
+                    Iservice.UpdateStatus(model, null, RecievedList);
+                }
                 Snackbar.Add("Transfered succesfully", Severity.Success);
-
             }
             catch (Exception ex)
             {
@@ -167,7 +180,15 @@
                 List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
                 model.UserInfo.UserID = user.Identity.Name;
                 model.AssetTransferEndModel.TransferStatus = false;
-                Iservice.UpdateStatus(model, RecievedList);
+                if (SubClassID == AssetSubClassID)
+                {
+                    TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
+                    Iservice.UpdateStatus(model, TruckID, RecievedList);
+                }
+                else
+                {
+                    Iservice.UpdateStatus(model, null, RecievedList);
+                }
                 Snackbar.Add("Asset Transfer Rejected", Severity.Error);
 
             }
