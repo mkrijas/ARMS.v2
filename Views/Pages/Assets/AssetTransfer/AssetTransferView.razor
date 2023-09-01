@@ -9,8 +9,10 @@
 @inject IAssetService Iassetservice
 @inject IAssetTransferService Iservice
 @inject ITripFuelService tripFuelIservice
+@inject ITruckService Itruckservice
 @inject IPushNotificationService IpushNotificationService
 @inject MudBlazor.ISnackbar snackbar
+@inject IConfigTable config
 
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
@@ -177,6 +179,9 @@
 
     private List<OpTranModel> OptranList = new();
     private List<TripFuelModel> TFuelList = new();
+    public int? SubClassID { get; set; } = new();
+    public int? TruckID { get; set; } = new();
+    int? AssetSubClassID;
 
     protected override async Task OnInitializedAsync()
     {
@@ -349,7 +354,18 @@
             {
                 var BranchID = int.Parse(brancIDString);
                 var UserID = user.Identity.Name;
-                Iservice.DeleteInitiation(AssetTransferInitiation.AssetTransferID, BranchID, AssetTransferInitiation.Asset.AssetID, UserID);
+                SubClassID = Iassetservice.SelectByID(AssetTransferInitiation.Asset.AssetID).SubClass.AssetSubClassID;
+                ConfigModel cModel = config.GetAssetSubclassForTrucks();
+                AssetSubClassID = int.Parse(cModel.ValueString);
+                if (SubClassID == AssetSubClassID)
+                {
+                    TruckID = Itruckservice.SelectByAsset(AssetTransferInitiation.Asset.AssetID).TruckID;
+                    Iservice.DeleteInitiation(AssetTransferInitiation.AssetTransferID, BranchID, AssetTransferInitiation.Asset.AssetID, TruckID, UserID);
+                }
+                else
+                {
+                    Iservice.DeleteInitiation(AssetTransferInitiation.AssetTransferID, BranchID, AssetTransferInitiation.Asset.AssetID, null, UserID);
+                }
                 snackbar.Add("Asset Transfer Canceled", Severity.Warning);
 
             }
