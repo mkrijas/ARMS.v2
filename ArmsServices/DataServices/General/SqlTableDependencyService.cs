@@ -24,7 +24,8 @@ namespace DAL.DataServices.General
             serviceProvider = _serviceProvider;
             using (var scope = serviceProvider.CreateScope())
             {
-                //var navigationManager = scope.ServiceProvider.GetRequiredService< NavigationManager> ();
+                //var navigationManager = scope.ServiceProvider.GetRequiredService<NavigationManager>();
+                //NavigationManager.Initialized(navigationManager);
                 //var result = navigationManager.ToAbsoluteUri("/chatHub");
                 hubConnection = new HubConnectionBuilder().WithUrl("http://localhost:35411/chatHub").Build();
                 if (!IsConnected)

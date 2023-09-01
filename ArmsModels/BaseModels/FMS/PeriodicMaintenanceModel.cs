@@ -29,6 +29,7 @@ namespace ArmsModels.BaseModels
         public int? NotificationID { get; set; }
         //Get when Notification is created
         public UserInfoModel UserInfo { get; set; }
+        public int? JobCardID { get; set; } = null;
     }
 
     public class PeriodicMaintenanceConcludeModel
