@@ -1,4 +1,5 @@
 ﻿@page "/gc"
+@page "/gc/{id:int}"
 
 @inject IGcService Iservice
 @inject IRouteService Iroute
@@ -23,7 +24,7 @@
     @foreach (var item in collection)
     {
         <MudItem xs="12" md="4" xl="3">
-            <GcItemCard item="item"></GcItemCard>
+            <GcItemCard item="item" MessageDocumentID="id"></GcItemCard>
         </MudItem>
     }
 </MudGrid>
@@ -34,6 +35,10 @@
 
     private int BranchID;
     private List<GcSetModel> collection = new();
+
+
+    [Parameter]
+    public int? id { get; set; } = null;
 
     public bool HasPermissionGcServiceEdit { get; set; } = false;
     public bool HasPermissionGCServiceDelete { get; set; } = false;
@@ -48,13 +53,20 @@
         var e = await auth.GetAuthenticationStateAsync();
         string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(BranchIDString);
+
+
         GetAll(BranchID);
     }
 
 
     private void GetAll(int BranchID)
     {
-        collection = Iservice.SelectUnAssigned(BranchID);
+        //collection = Iservice.SelectUnAssigned(BranchID);
+        var collectionResult = Iservice.SelectUnAssigned(BranchID);
+        if (id != null && collectionResult != null && collectionResult.Any(g => g.Gcs!= null && g.Gcs.Any(d => d.EwayBill != null && d.EwayBill.GcID == id)))
+        {
+            collection = collectionResult.Where(g => g.Gcs != null && g.Gcs.Any(d => d.EwayBill != null && d.EwayBill.GcID == id)).ToList();
+        }
     }
 
 
