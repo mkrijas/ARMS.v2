@@ -6,7 +6,7 @@
 @inject IDriverService Idriver
 @inject ITruckService Itruck
 @inject IDialogService DialogService
-@inject IBranchSettingsService branchSettingsService 
+@inject IBranchSettingsService branchSettingsService
 
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
@@ -14,6 +14,9 @@
 
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
+
+@inject IPushNotificationService IpushNotificationService
+@inject SignalRService signalRService
 
 <MudDialog>
     <DialogContent>
@@ -60,7 +63,7 @@
 
                     <MudItem xs="12" md="6">
                         <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label=@(SelectedEvent.IsStationary?"Place":"Origin") Value="@OriginPlace" ValueChanged="@((e)=> {OriginPlace = e; model.OriginID = e.PlaceID;model.DestinationID = SelectedEvent.IsStationary ? model.OriginID : model.DestinationID;})" ResetValueOnEmptyText="true" Clearable="true"
-                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true"></MudAutocomplete>
+                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true"></MudAutocomplete>
                     </MudItem>
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
                         <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="model.NextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
@@ -73,12 +76,12 @@
 
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
                         <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label="Destination" Value="Destination" ValueChanged="((e)=> {Destination =e ; model.DestinationID =e.PlaceID;})" ResetValueOnEmptyText="true" Clearable="true"
-                                     SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                                         SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                     </MudItem>
 
                     <MudItem xs="12" md="6" hidden="@(SelectedEvent.EventTypeID != 4)">
                         <MudSelect Variant="Variant.Outlined" Label="Select GCs To Unload" MultiSelection="true" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))"
-                               T="GcSetModel" OffsetY="true" AdornmentColor="Color.Secondary" @bind-SelectedValues="SelectedGCs">
+                                   T="GcSetModel" OffsetY="true" AdornmentColor="Color.Secondary" @bind-SelectedValues="SelectedGCs">
                             @foreach (var item in GCsToUnload)
                             {
                                 <MudSelectItem T="GcSetModel" Value="@item">@item.SetGcNumber</MudSelectItem>
@@ -139,6 +142,16 @@
     {
         MudDialog.Cancel();
     }
+
+
+    public string UserID { get; set; }
+    public int BranchID { get; set; }
+
+
+    #region SignaIR Notification
+    private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
 
 
     protected async override Task OnInitializedAsync()
@@ -204,6 +217,10 @@
 
             IsDisableSelectAction = CurrentTrip.UserInfo.RecordStatus == 4;
         }
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        await signalRService.StartAsync();
     }
 
 
@@ -286,37 +303,55 @@
                         }
                     }
                 }
-            if (!ValidateEvent(model))
-            {
-                return;
-            }
-            model = Ievent.Update(model);
-
-            if (SelectedEvent.EventTypeID == 4)
-            {
-                if (!SelectedGCs.Any())
+                if (!ValidateEvent(model))
                 {
-                    snackbar.Add("No GCs selected to Unload!", Severity.Warning);
                     return;
                 }
-                else
+                model = Ievent.Update(model);
+
+                if (SelectedEvent.EventTypeID == 4)
                 {
-                    foreach (GcSetModel item in SelectedGCs)
+                    if (!SelectedGCs.Any())
                     {
-                        Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                        snackbar.Add("No GCs selected to Unload!", Severity.Warning);
+                        return;
+                    }
+                    else
+                    {
+                        foreach (GcSetModel item in SelectedGCs)
+                        {
+                            Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+
+                            if (item != null && item.Gcs != null && item.Gcs.Any(s => s.EwayBill != null && s.EwayBill.ExpireOn != null && (s.EwayBill.ExpireOn - DateTime.Now).Value.TotalHours >= 4))
+                            {
+                                foreach (var EwayBill in item.Gcs.Where(s => s.EwayBill != null && s.EwayBill.ExpireOn != null && (s.EwayBill.ExpireOn - DateTime.Now).Value.TotalHours >= 4))
+                                {
+                                    notificationMessage = new();
+                                    notificationMessage.DocumentID = Convert.ToInt32(EwayBill.GcID);
+                                    notificationMessage.MessageGroupID = "EWayBill";
+                                    notificationMessage.DocumentTypeID = 46;
+
+                                    currentNotificationMessages = IpushNotificationService.SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(BranchID, Convert.ToInt32(EwayBill.GcID), 46).ToList();
+                                    string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
+                                    IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+
+                                    await signalRService.Send(notificationMessage);
+
+                                }
+                            }
+                        }
                     }
                 }
+                MudDialog.Close(DialogResult.Ok(model));
             }
-            MudDialog.Close(DialogResult.Ok(model));
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-        finally
-        {
-            isSubmitting = false;
-        }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+            finally
+            {
+                isSubmitting = false;
+            }
         }
         else
         {

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {  
-    public class InventoryflowModel : InventoryBaseModel
+    public class InventoryflowModel : InventoryOrderBaseModel
     {
         public InventoryflowModel(string _invtranNo)
         {

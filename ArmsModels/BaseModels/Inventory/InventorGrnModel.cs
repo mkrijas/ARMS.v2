@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class InventoryGrnModel : InventoryBaseModel
+    public class InventoryGrnModel : InventoryOrderBaseModel
     {
         public InventoryGrnModel(string grnNo, bool invoiced )
         {
@@ -25,7 +25,7 @@ namespace ArmsModels.BaseModels
     }
 
 
-    public class PurchaseOrderModel : InventoryBaseModel
+    public class PurchaseOrderModel : InventoryOrderBaseModel
     {
         public PurchaseOrderModel()
         {
@@ -60,32 +60,48 @@ namespace ArmsModels.BaseModels
 
 
 
+    public class PurchaseRequestModel : InventoryBaseModel
+    {
+        public PurchaseRequestModel() { } 
+        public int PrID { get; set; }
+        public string PrNo { get; set; }
+    }
+
     public class InventoryBaseModel
     {
-        public InventoryBaseModel()
-        {
-            UserInfo = new();
-            Entries = new();            
-        }
-
+        public InventoryBaseModel() { }
         public int? InvTranID { get; set; }
         public int? StoreID { get; set; }
         [Required]
         public DateTime? EntryDate { get; set; }
-        public bool Direction { get; set; } = true; // True for Inward, False for Outward;
-        [Required]
-        public int? PartyID { get; set; }
-        public string PartyCode { get; set; }
+        public bool Direction { get; set; } = true; // True for Inward, False for Outward;       
         public virtual string PartyName { get; set; }
         public decimal? TotalValue { get; set; }
         public string Reference { get; set; }
         public int? AuthLevelID { get; set; }
         public string AuthStatus { get; set; }
-        public string Remarks { get; set; }              
+        public string Remarks { get; set; }
         public UserInfoModel UserInfo { get; set; }
         [ValidateComplexType]
         public List<InventoryItemEntryModel> Entries { get; set; } = new();
     }
+
+
+    public class InventoryOrderBaseModel: InventoryBaseModel
+    {
+        public InventoryOrderBaseModel()
+        {
+            UserInfo = new();
+            Entries = new();            
+        }
+        [Required]
+        public int? PartyID { get; set; }
+        public string PartyCode { get; set; }
+
+    }
+
+
+
 
     public class InventoryItemEntryModel
     {
