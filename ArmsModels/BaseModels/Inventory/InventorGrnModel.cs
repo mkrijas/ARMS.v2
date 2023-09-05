@@ -95,7 +95,7 @@ namespace ArmsModels.BaseModels
         public virtual int? CoaID { get; set; }
         public virtual string ItemDescription { get; set; }
         [Required]
-        public decimal? ItemQty { get; set; }        
+        public decimal? ItemQty { get; set; }
         public decimal? ItemRate { get; set; }
         public decimal? ItemGstVal { get; set; }
     }

@@ -1,0 +1,125 @@
+﻿@using Core.BaseModels.Inventory;
+@using ArmsServices.DataServices.Finance.Transactions;
+
+
+@inject AuthenticationStateProvider auth
+@inject IInventoryReleaseService inventoryReleaseService
+@inject IStockTransferService IStockTransferService
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Assignment" Class="mr-3" /> View Items
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer>
+            <MudPaper Class="p-3" Elevation="0">
+                <EditForm id="form" Model="@InitiationModel" OnValidSubmit="OnValidSubmit">
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudDatePicker Disabled="true" Label="Initiated Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="false" @bind-Date="InitiationModel.InitiatedDate" DateFormat="dd/MM/yyyy" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <StoreSelector IsDisabled="IsView" Value="SelectedStore" ValueChanged="StoreChanged"></StoreSelector>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                        </MudItem>
+                    </MudGrid>
+                    <br />
+                    <MudSimpleTable Elevation="1" Hover="true" Dense="true" FixedHeader="true">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Total</th>
+                                <th>@InitiationModel.TotalValue</th>
+                                <th></th>
+                            </tr>
+                            <tr>
+                                <th>Items</th>
+                                <th>Initiated Quantity</th>
+                                <th>Rate</th>
+                                <th>Delivered Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in itm)
+                            {
+                                <tr>
+                                    <td>@item.ItemDescription</td>
+                                    <td>@item.ItemQty</td>
+                                    <td>@item.ItemRate</td>
+                                    <td>
+                                        @if (item.ItemGstVal!.HasValue)
+                                        {
+                                            <Center>-</Center>
+                                        }
+                                        @if (item.ItemGstVal.HasValue)
+                                        {
+                                            @item.ItemGstVal
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </EditForm>
+            </MudPaper>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton form="form" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    public StoreModel SelectedStore { get; set; } = new();
+    public int? branchID { get; set; }
+
+    [Parameter]
+    public bool IsView { get; set; }
+    [Parameter]
+    public StockTransferInitiationModel InitiationModel { get; set; } = new();
+
+    private List<InventoryReleaseModel> InitiatedStore = new List<InventoryReleaseModel>();
+
+
+    private List<InventoryItemEntryModel> itm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        itm = IStockTransferService.SelectItemsList(InitiationModel?.InvTranID).ToList();
+
+        //InitiationModel.TotalValue = itm.Sum(item => item.ItemRate * item.ItemQty);
+    }
+
+    private void StoreChanged(StoreModel obj)
+    {
+        SelectedStore = InitiationModel.Store;
+    }
+
+    private void GetStore()
+    {
+        if (SelectedStore != null && SelectedStore.StoreID != 0)
+        {
+            InitiatedStore = inventoryReleaseService.SelectByStoreID(SelectedStore.StoreID).ToList();
+        }
+        else
+        {
+            if (InitiatedStore != null)
+            {
+                InitiatedStore.Clear();
+            }
+        }
+    }
+
+    public async Task OnValidSubmit()
+    {
+
+    }
+}
