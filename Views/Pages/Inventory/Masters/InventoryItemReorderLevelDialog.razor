@@ -1,0 +1,93 @@
+﻿@inject IInventoryItemReOrderLevelService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            @iimodel.InventoryItemCode
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="reorderlevelform" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                    @foreach (var item in model.ReOrderLevelList)
+                     {
+                        <MudItem xs="2" md="2">
+                            <MudText><p style="padding-top:12px">@item.Store.StoreName</p></MudText>
+                        </MudItem>
+                        <MudItem xs="3" md="3">
+                            <MudTextField @bind-Value="item.InhandQty" Label="Inhand Qty" Variant="Variant.Text" MaxLength="8" Margin="Margin.Dense" For="@(() => item.InhandQty)" ReadOnly></MudTextField>
+                        </MudItem>
+                        <MudItem xs="3" md="3">
+                            <MudTextField @bind-Value="item.MinQty" Label="Min Qty" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.MinQty)"></MudTextField>
+                        </MudItem>
+                        <MudItem xs="3" md="3">
+                            <MudTextField @bind-Value="item.ReOrderLevel" Label="ReOrder Level Qty" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.ReOrderLevel)"></MudTextField>
+                        </MudItem>
+                     }
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="reorderlevelform" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+
+
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    public InventoryItemReOrderLevelModel model { get; set; } = new();
+
+    [Parameter]
+    public InventoryItemModel iimodel { get; set; }
+
+    [CascadingParameter] 
+    MudDialogInstance MudDialog { get; set; }
+
+    private int BranchID { get; set; } = 0;
+    private string UserID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = User.Identity.Name;
+        model.ReOrderLevelList = Iservice.SelectByItem(iimodel.InventoryItemID, BranchID).ToList();
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo = new();
+        model.UserInfo.UserID = user.Identity.Name;
+        try
+        {
+            Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+        MudDialog.Close(model);
+    }
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

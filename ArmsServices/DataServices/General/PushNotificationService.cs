@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Reflection.Metadata;
 
 namespace ArmsServices.DataServices.General
 {
@@ -59,6 +60,21 @@ namespace ArmsServices.DataServices.General
             {
                new SqlParameter("@ID", ID),
                new SqlParameter("@Operation", "ByBranch"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.Notification.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+        public IEnumerable<PushNotificationModel> SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(int? ID,int? DocumentID,int? DocumentTypeID)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@ID", ID),
+               new SqlParameter("@DocumentID", DocumentID),
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+               new SqlParameter("@Operation", "ByBranchDocIdAndDocTypeId"),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.Notification.Select]", parameters))
             {

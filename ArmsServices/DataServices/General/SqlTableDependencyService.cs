@@ -24,7 +24,8 @@ namespace DAL.DataServices.General
             serviceProvider = _serviceProvider;
             using (var scope = serviceProvider.CreateScope())
             {
-                //var navigationManager = scope.ServiceProvider.GetRequiredService< NavigationManager> ();
+                //var navigationManager = scope.ServiceProvider.GetRequiredService<NavigationManager>();
+                //NavigationManager.Initialized(navigationManager);
                 //var result = navigationManager.ToAbsoluteUri("/chatHub");
                 hubConnection = new HubConnectionBuilder().WithUrl("http://localhost:35411/chatHub").Build();
                 if (!IsConnected)
@@ -49,16 +50,18 @@ namespace DAL.DataServices.General
             if (e.ChangeType != TableDependency.SqlClient.Base.Enums.ChangeType.None)
             {
                 var changeEntity = e.Entity;
-                if (changeEntity != null && changeEntity.MessageGroupID != null && changeEntity.MessageGroupID.ToLower().Trim() == ("PeriodicMaintainence").ToLower().Trim())
+                if (changeEntity != null && changeEntity.MessageGroupID != null &&( changeEntity.MessageGroupID.ToLower().Trim() == ("PeriodicMaintainence").ToLower().Trim() || changeEntity.MessageGroupID.ToLower().Trim() == ("EWayBill").ToLower().Trim()))
                 {
-                    changeEntity.InitiateBranch = new();
-                    changeEntity.InitiateBranch.BranchID = changeEntity.InitiateBranchID;
-                    changeEntity.ReceivedBranch = new();
-                    changeEntity.ReceivedBranch.BranchID = changeEntity.ReceivedBranchID;
                     if (!IsConnected)
                     {
                         await hubConnection.StartAsync();
                     }
+
+                    changeEntity.InitiateBranch = new();
+                    changeEntity.InitiateBranch.BranchID = changeEntity.InitiateBranchID;
+                    changeEntity.ReceivedBranch = new();
+                    changeEntity.ReceivedBranch.BranchID = changeEntity.ReceivedBranchID;
+
                     await hubConnection.SendAsync("SendMessages",
                         changeEntity);
                 }

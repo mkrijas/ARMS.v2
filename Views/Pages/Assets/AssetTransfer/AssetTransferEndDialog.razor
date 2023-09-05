@@ -1,8 +1,11 @@
 ﻿@inject AuthenticationStateProvider auth
 @inject IAssetTransferService Iservice
+@inject IAssetService Iassetservice
+@inject ITruckService Itruckservice
 @inject IBranchService Ibranchservice
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IConfigTable config
 
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
@@ -109,12 +112,17 @@
     [Parameter]
     public List<AssetSettingsModel> Checklist { get; set; } = new();
 
+    public int? SubClassID { get; set; } = new();
+    public int? TruckID { get; set; } = new();
+    int? AssetSubClassID;
 
     protected override void OnInitialized()
     {
         branchID = model?.DestinationBranch?.BranchID ?? 0;
-
         Checklist = Iservice.GetCheckList(model.AssetTransferID).ToList();
+        SubClassID = Iassetservice.SelectByID(model.Asset.AssetID).SubClass.AssetSubClassID;
+        ConfigModel cModel = config.GetAssetSubclassForTrucks();
+        AssetSubClassID = int.Parse(cModel.ValueString);
     }
 
 
@@ -139,9 +147,16 @@
                 List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
                 model.UserInfo.UserID = user.Identity.Name;
                 model.AssetTransferEndModel.TransferStatus = true;
-                Iservice.UpdateStatus(model, RecievedList);
+                if (SubClassID == AssetSubClassID)
+                {
+                    TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
+                    Iservice.UpdateStatus(model, TruckID, RecievedList);
+                }
+                else
+                {
+                    Iservice.UpdateStatus(model, null, RecievedList);
+                }
                 Snackbar.Add("Transfered succesfully", Severity.Success);
-
             }
             catch (Exception ex)
             {
@@ -165,7 +180,15 @@
                 List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
                 model.UserInfo.UserID = user.Identity.Name;
                 model.AssetTransferEndModel.TransferStatus = false;
-                Iservice.UpdateStatus(model, RecievedList);
+                if (SubClassID == AssetSubClassID)
+                {
+                    TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
+                    Iservice.UpdateStatus(model, TruckID, RecievedList);
+                }
+                else
+                {
+                    Iservice.UpdateStatus(model, null, RecievedList);
+                }
                 Snackbar.Add("Asset Transfer Rejected", Severity.Error);
 
             }
