@@ -14,18 +14,18 @@
             </ActivatorContent>
             <ChildContent>
                 <MudMenuItem OnClick="@(async ()=> await changeBranch(@context.User.Identity.Name))">Change Branch</MudMenuItem>
-                
+
                 <MudMenuItem OnClick="@Adminlog">Admin</MudMenuItem>
-                <MudMenuItem >
+                <MudMenuItem>
                     <form id="form1" method="post" name="Logout" action="/Identity/Account/Manage">
                         <button type="submit">Manage</button>
                     </form>
-                </MudMenuItem>       
+                </MudMenuItem>
                 <MudDivider></MudDivider>
                 <MudMenuItem>
                     <form id="form1" method="post" name="Logout" action="UserAccount/Logout">
                         <button type="submit">SignOut</button>
-                    </form>                    
+                    </form>
                 </MudMenuItem>
             </ChildContent>
         </MudMenu>
@@ -37,7 +37,7 @@
 </AuthorizeView>
 
 @code {
-    
+
 
 
     private void Adminlog()
@@ -49,19 +49,35 @@
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
-        bool BranchSeleceted = int.TryParse(User.Claims.First(x => x.Type == "BranchID").Value, out int BranchID);
-
-        DialogOptions options = new DialogOptions() { CloseButton = BranchSeleceted };
-        DialogParameters parameters = new DialogParameters();
-        parameters.Add("UserID", UserID);
-
-        var dialog = DialogService.Show<ChooseBranch>("Select A Branch", parameters, options);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+        bool? BranchSeleceted = null; 
+        try
         {
-            UserBranchRoleModel BranchRole = (UserBranchRoleModel)result.Data;
-            _user.SetCurrentBranchRole(BranchRole);
-            uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+
+
+            BranchSeleceted = int.TryParse(User.Claims.First(x => x.Type == "BranchID").Value, out int BranchID);
+
+            DialogOptions options = new DialogOptions() { CloseButton = BranchSeleceted };
+            DialogParameters parameters = new DialogParameters();
+            parameters.Add("UserID", UserID);
+
+            var dialog = DialogService.Show<ChooseBranch>("Select A Branch", parameters, options);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                UserBranchRoleModel BranchRole = (UserBranchRoleModel)result.Data;
+                _user.SetCurrentBranchRole(BranchRole);
+                uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+            }
+        }
+        catch
+        {
+            if (BranchSeleceted == null)
+            {
+                bool? ResultModel = await DialogService.ShowMessageBox(
+                    "Warning",
+                        "You are not allocated with any branch!");
+                
+            }
         }
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -78,6 +94,6 @@
             }
         }
     }
-    
+
 
 }
