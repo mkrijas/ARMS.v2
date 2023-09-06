@@ -7,24 +7,40 @@
 @inject IBranchService branchservice
 @inject IInventoryItemService itemIservice
 @inject MudBlazor.ISnackbar snackbar
-@inject IStockTransferService StockTransferService
-@inject AuthenticationStateProvider auth
+@inject IStockTransferService IStockTransferService
 
 
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Items Transfer Initiation.
-        </MudText>
+        @if (IsView)
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> View Items
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add/Edit Stock Transfer
+            </MudText>
+        }
     </TitleContent>
+
     <DialogContent>
         <MudContainer>
             <MudPaper Class="p-3" Elevation="0">
                 <EditForm id="form" Model="@InitiationModel" OnValidSubmit="OnValidSubmit">
                     <MudGrid>
                         <MudItem xs="12" md="5">
-                            <StoreSelector Value="SelectedStore" ValueChanged="StoreChanged" BranchID="@branchID.Value"></StoreSelector>
+                            @if (Acpt)
+                            {
+                                <BranchSelector IsDisabled="true" LabelName="Initiated Branch" Value="SelectedBranch" ValueChanged="BranchChanged"></BranchSelector>
+                            }
+                            else
+                            {
+                                <StoreSelector IsDisabled="@(IsView ? true : false)" Value="SelectedStore" ValueChanged="StoreChanged" BranchID="@branchID.Value"></StoreSelector>
+                            }
                         </MudItem>
                         <MudItem xs="12" md="2">
                             <Center>
@@ -32,7 +48,14 @@
                             </Center>
                         </MudItem>
                         <MudItem xs="12" md="5">
-                            <BranchSelector LabelName="Select Destination Branch" Value="SelectedBranch" ValueChanged="BranchChanged"></BranchSelector>
+                            @if (Acpt)
+                            {
+                                <StoreSelector Value="SelectedStore" ValueChanged="StoreChanged" BranchID="@branchID.Value"></StoreSelector>
+                            }
+                            else
+                            {
+                                <BranchSelector IsDisabled="@(IsView ? true : false)" LabelName="@(IsView ? "Selected Destination Branch" : "Select Destination Branch")" Value="SelectedBranch" ValueChanged="BranchChanged"></BranchSelector>
+                            }
                         </MudItem>
                         <br />
                         <MudItem xs="12" md="12">
@@ -41,15 +64,40 @@
                                 <thead>
                                     <tr>
                                         <th></th>
-                                        <th></th>
                                         <th>Total</th>
                                         <th>@InitiationModel.TotalValue</th>
+                                        <th></th>
+                                        @if (Acpt)
+                                        {
+                                        }
+                                        else
+                                        {
+                                            <th></th>
+                                        }
                                     </tr>
                                     <tr>
                                         <th>Items</th>
-                                        <th>Quantity</th>
+                                        @if (IsView)
+                                        {
+                                            <th>Initiated Quantity</th>
+                                        }
+                                        else
+                                        {
+                                            <th>Quantity</th>
+                                        }
                                         <th>Rate</th>
-                                        <th>Action</th>
+                                        @if (!IsView)
+                                        {
+                                            <th>Action</th>
+                                        }
+                                        @if (Acpt)
+                                        {
+                                            <th>Delivered Quantity</th>
+                                        }
+                                        else
+                                        {
+                                            <th></th>
+                                        }
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -60,14 +108,22 @@
                                             <td>@item.ItemQty</td>
                                             <td>@item.ItemRate</td>
                                             <td>
-                                                @if (!ReadOnly)
+                                                @if (!IsView)
                                                 {
                                                     <MudFab Color="Color.Error" @onclick="@(()=> Delete(item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                                }
+                                                @if (Acpt)
+                                                {
+                                                    <MudTextField @bind-Value="item.ItemGstVal" Label="" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.ItemGstVal)"></MudTextField>
+                                                }
+                                                @if (IsView && !Acpt)
+                                                {
+                                                    <MudText>@item.ItemGstVal</MudText>
                                                 }
                                             </td>
                                         </tr>
                                     }
-                                    @if (!ReadOnly)
+                                    @if (!IsView)
                                     {
                                         <tr>
                                             <td colspan="2">
@@ -75,7 +131,6 @@
                                             </td>
                                             <td>
                                                 <MudTextField @bind-Value="ItemsModel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => ItemsModel.ItemQty)"></MudTextField>
-
                                             </td>
                                             <td>
                                                 <MudTextField @bind-Value="ItemsModel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => ItemsModel.ItemRate)"></MudTextField>
@@ -94,7 +149,23 @@
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        <MudButton form="form" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">Submit</MudButton>
+        @if (IsView)
+        {
+            @if (Acpt)
+            {
+                <MudButton @onclick="CloseDialog" Variant="Variant.Filled" Color="Color.Error" Class="px-12">Cancel</MudButton>
+
+                <MudButton form="form" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Success" Class="px-12">Accept Order</MudButton>
+            }
+            else
+            {
+                <MudButton @onclick="CloseDialog" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">OK</MudButton>
+            }
+        }
+        else
+        {
+            <MudButton form="form" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">Submit</MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
@@ -109,10 +180,12 @@
     private List<BranchModel> BranchCollection = new List<BranchModel>();
 
     private List<InventoryItemModel> itm = new();
+    private List<InventoryItemEntryModel> items = new();
+
     public InventoryItemModel SelectedItems = new();
 
     [Parameter]
-    public bool ReadOnly { get; set; }
+    public bool Acpt { get; set; }
     [Parameter]
     public bool IsView { get; set; }
     [Parameter]
@@ -128,14 +201,25 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
+        @if (IsView)
+        {
+            @if (!Acpt)
+            {
+                InitiationModel = IStockTransferService.SelectSandB(InitiationModel?.InvTranID);
+            }
+            SelectedStore = new() { StoreName = InitiationModel.Store.StoreName };
+
+            SelectedBranch = new() { BranchName = InitiationModel.Branch.BranchName };
+
+            InitiationModel.ItemsList = IStockTransferService.SelectItemsList(InitiationModel?.InvTranID).ToList();
+        }
         itm = itemIservice.SearchByDescription(string.Empty).ToList();
-        InitiationModel.TotalValue = 0;
     }
 
     private void StoreChanged(StoreModel obj)
     {
         SelectedStore = obj;
-        InitiationModel.InitiatedStore = SelectedStore;
+        InitiationModel.Store = SelectedStore;
         GetStore();
     }
 
@@ -156,9 +240,16 @@
 
     private void BranchChanged(BranchModel obj)
     {
-        SelectedBranch = obj;
-        InitiationModel.DestinationBranch = SelectedBranch;
-        GetBranch();
+        @if (Acpt)
+        {
+            SelectedBranch = new() { BranchName = InitiationModel.Branch.BranchName };
+        }
+        else
+        {
+            SelectedBranch = obj;
+            InitiationModel.Branch = SelectedBranch;
+            GetBranch();
+        }
     }
 
     private void GetBranch()
@@ -184,16 +275,24 @@
             return;
         }
         else
-        { 
+        {
             try
             {
                 var authprov = await auth.GetAuthenticationStateAsync();
                 var user = authprov.User;
-
                 InitiationModel.UserInfo.UserID = user.Identity.Name;
-                StockTransferService.Update(InitiationModel);
-                InitiationModel = new();
-                snackbar.Add("Saved Successfully", Severity.Success);
+                @if (Acpt)
+                {
+                    IStockTransferService.UpdateDelivery(InitiationModel);
+                    InitiationModel = new();
+                    snackbar.Add("Stock Accepted Successfully", Severity.Success);
+                }
+                else
+                {
+                    IStockTransferService.Update(InitiationModel);
+                    InitiationModel = new();
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                }
                 MudDialog.Close(InitiationModel);
             }
             catch (Exception ex)
@@ -215,8 +314,8 @@
 
         InitiationModel.ItemsList.Add(ItemsModel);
 
-        decimal? total = ((ItemsModel.ItemQty) * (ItemsModel.ItemRate));
-        InitiationModel.TotalValue = InitiationModel.TotalValue + total;
+        //decimal? total = ((ItemsModel.ItemQty) * (ItemsModel.ItemRate));
+        //InitiationModel.TotalValue = InitiationModel.TotalValue + total;
         ItemsModel = new();
 
         SelectedItems = null;
@@ -225,13 +324,17 @@
 
     private void Delete(InventoryItemEntryModel i)
     {
-        decimal? total = ((i.ItemQty) * (i.ItemRate));
+        // decimal? total = ((i.ItemQty) * (i.ItemRate));
 
-        InitiationModel.TotalValue = InitiationModel.TotalValue - total;
+        // InitiationModel.TotalValue = InitiationModel.TotalValue - total;
         int rowIndex = InitiationModel.ItemsList.IndexOf(i);
         InitiationModel.ItemsList.RemoveAt(rowIndex);
     }
 
+    private void CloseDialog()
+    {
+        MudDialog.Close();
+    }
 
     protected void getitemCode(InventoryItemModel item)
     {

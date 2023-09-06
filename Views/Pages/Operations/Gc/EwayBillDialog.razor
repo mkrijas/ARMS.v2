@@ -8,6 +8,9 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
+@inject IPushNotificationService IpushNotificationService
+@inject SignalRService signalRService
+
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -57,10 +60,28 @@
     public bool HasPermissionGcServiceEdit { get; set; } = false;
     public int DocTypeID = 46;
 
+
+    [Parameter]
+    public int? MessageDocumentID { get; set; } = null;
+
+    public string UserID { get; set; }
+    public int BranchID { get; set; }
+
+
+    #region SignaIR Notification
+    private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
+
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionGcServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        await signalRService.StartAsync();
     }
 
 
@@ -85,6 +106,19 @@
                 try
                 {
                     EwayBillModel result = Iservice.UpdateEwayBill(item.EwayBill);
+                    if (MessageDocumentID != null && item != null && item.EwayBill != null && item.EwayBill.ExpireOn != null && (item.EwayBill.ExpireOn - DateTime.Now).Value.TotalHours >= 4)
+                    {
+                        notificationMessage = new();
+                        notificationMessage.DocumentID = MessageDocumentID;
+                        notificationMessage.MessageGroupID = "EWayBill";
+                        notificationMessage.DocumentTypeID = DocTypeID;
+
+                        currentNotificationMessages = IpushNotificationService.SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(BranchID, MessageDocumentID, DocTypeID).ToList();
+                        string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
+                        IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+
+                        await signalRService.Send(notificationMessage);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -93,6 +127,7 @@
                 }
             }
             snackbar.Add("Saved Successfully", Severity.Success);
+
             MudDialog.Close(DialogResult.Ok(model));
             model = new GcSetModel();
         }

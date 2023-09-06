@@ -140,6 +140,7 @@ namespace Views
             //------------INVENTORY-------------------
             services.AddScoped<IInventoryGroupService, InventoryGroupService>();
             services.AddScoped<IInventoryItemService, InventoryItemService>();
+            services.AddScoped<IInventoryItemReOrderLevelService, InventoryItemReOrderLevelService>();
             services.AddScoped<IStoreService, StoreService>();
             services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
             services.AddScoped<IInventoryGrnService, InventoryGrnService>();
