@@ -77,7 +77,7 @@ namespace ArmsServices.DataServices
         public bool IsEnabled(int? BranchID, int? OptionID)
         {
             var list = SelectByID(BranchID);
-            return list.Where(x => x.SettingsID == OptionID).Select(x => x.RecordStatus.Value).First();
+            return list!= null && list.Any(x => x != null && x.RecordStatus != null && x.SettingsID == OptionID) ? list.Where(x => x != null && x.RecordStatus != null && x.SettingsID == OptionID).Select(x => x.RecordStatus.Value)?.First()??false:false;
         }
     }
 }
