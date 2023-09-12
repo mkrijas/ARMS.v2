@@ -9,6 +9,7 @@
 @inject IJobcardService Iservice
 @inject IBreakdownService Ibreakdown
 @inject ITruckService Itruck
+@inject IEventService Ievent
 @inject IJobcardWorkshopService Ijw
 @inject IJobInProgressService Ijp
 @inject IWorkshopService Iworkshop
@@ -311,6 +312,7 @@
 
     private JobInProgressModel NewJob = new JobInProgressModel();
 
+    private List<EventTypeModel> EventTypes;
     string ColorInProgress = Colors.Indigo.Lighten5;
     string ColorFinished = Colors.Green.Lighten5;
     string ColorCancelled = Colors.Grey.Lighten5;
@@ -327,6 +329,7 @@
     {
         Workshops = Iworkshop.Select(0).ToList();
 
+        EventTypes = Ievent.GetEventTypes().ToList();
         if (TruckID != null)
         {
             await TruckSelected(Itruck.SelectByID(TruckID));
@@ -446,10 +449,13 @@
 
         var authProvider = await auth.GetAuthenticationStateAsync();
         int BraanchID = int.Parse(authProvider.User.Claims.First(x => x.Type == "BranchID").Value);
-
         SelectedJobcard.UserInfo.RecordStatus = 4;
         Iservice.Update(SelectedJobcard);
         EventModel CurrentEvent = Ievent.GetCurrentEvent(SelectedTruck.TruckID);
+        if(CurrentEvent.NextEventTypeID == null)
+        {
+            CurrentEvent.NextEventTypeID = EventTypes.FirstOrDefault(s => s.EventTypeID == CurrentEvent.EventTypeID)?.DefaultNextEventTypeID??null;
+        }
         Ievent.Update(new EventModel()
             {
                 EventTypeID = 6,
