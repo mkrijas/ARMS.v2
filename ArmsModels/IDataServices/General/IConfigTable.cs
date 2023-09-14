@@ -10,6 +10,7 @@ namespace ArmsServices.DataServices.General
         ConfigModel GetByID(string KeyString);
         ConfigModel GetByDefaultCashCoaID();
         ConfigModel GetByFinanceBankGroupID();
+        ConfigModel GetByAdministrativeExpenceGroupID();
         ConfigModel GetByFinanceCashGroupID();
         ConfigModel GetByInventoryFuelGroupID();
         ConfigModel GetByInventoryTyreGroupID();
