@@ -8,6 +8,7 @@
         <MudTable Items="@collection" Elevation="10" Filter="new Func<RepairJobModel, bool>(search)" @bind-model="model">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Jobs</MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(()=>Edit(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchString" Placeholder="Search... "
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
@@ -45,7 +46,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-      
+
         GetAll();
     }
 
@@ -73,12 +74,35 @@
         }
     }
 
-    private void Edit(int? id)
+    private async Task Edit(int? id)
     {
-        model = collection.FirstOrDefault(x => x.RepairJobID == id);
         DialogParameters parms = new DialogParameters();
+
+        if(id != null)
+        {
+            model = collection.FirstOrDefault(x => x.RepairJobID == id);
+        }
+        else
+        {
+            model = new();
+        }
         parms.Add("model",model);
-        DialogService.Show<JobMasterDilogue>("Add Jobcard",parms);
+        var dialog = DialogService.Show<JobMasterDilogue>("Add Jobcard",parms);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            RepairJobModel editedModel = (RepairJobModel)result.Data;
+            if (collection.Exists(x => x.RepairJobID == editedModel.RepairJobID))
+            {
+
+                collection[collection.FindIndex(x => x.RepairJobID == editedModel.RepairJobID)] = editedModel;
+
+            }
+            else
+            {
+                collection.Add(editedModel);
+            }
+        }
     }
     private void Delete(int? id)
     {

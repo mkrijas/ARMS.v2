@@ -32,9 +32,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@Operation", "All"),
-
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Workshop.Mechanic.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -95,6 +93,7 @@ namespace ArmsServices.DataServices
                 MechanicName = dr.GetString("MechanicName"),
                 Remarks = dr.GetString("Remarks"),
                 WorkshopID = dr.GetInt32("WorkshopID"),
+                WorkshopName = dr.GetString("WorkshopName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

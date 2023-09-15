@@ -51,6 +51,19 @@ namespace ArmsServices.DataServices.General
             }
             return null;
         }
+        public ConfigModel GetByAdministrativeExpenceGroupID()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@KeyString", "AdministrativeExpenceGroupID"),
+               new SqlParameter("@Operation", "ByID")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
         public ConfigModel GetByFinanceCashGroupID()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
