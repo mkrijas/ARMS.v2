@@ -45,7 +45,7 @@ namespace ArmsModels.BaseModels
         public virtual AddressModel Address { get; set; }        
         public PlaceModel Place { 
             get { return _place; } 
-            set { _place = value; Address.Place = value.PlaceName;  PlaceID = value.PlaceID; } 
+            set { _place = value; Address.Place = value?.PlaceName;  PlaceID = value?.PlaceID; } 
         }
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
         public List<ContactModel> Contacts { get; set; }

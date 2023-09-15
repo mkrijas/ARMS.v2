@@ -128,7 +128,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PasswordHash", model.PasswordHash),
                new SqlParameter("@PhoneNumber", model.PhoneNumber),
                new SqlParameter("@PhoneNumberConfirmed", model.PhoneNumberConfirmed),
-               new SqlParameter("@UpdatedBy", model.UpdatedBy),
+               new SqlParameter("@UpdatedBy", model.UpdatedBy?? model.UserID),
                new SqlParameter("@operation", "Update"),
             };
             await Iservice.ExecuteNonQueryAsync("[usp.user.UserUpdate]", parameters);

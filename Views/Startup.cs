@@ -35,6 +35,7 @@ using DAL.DataServices.Finance.Transactions;
 using System.Security.Cryptography;
 using DAL.DataServices.General;
 using Core.IDataServices.General;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace Views
 {
@@ -82,13 +83,26 @@ namespace Views
             });
 
 
+        #region Email_Sender
 
-
-            services.AddSingleton<TruckDataArrayModel>();
+            services.AddTransient<IEmailSender, EmailSender>();
+            services.Configure<EmailSenderOptions>(options =>
+            {
+                options.Host_Address = "smtp-relay.sendinblue.com";
+                options.Host_Port = 587;
+                options.Host_Username = "mkrijas@gmail.com";
+                options.Host_Password = "wbrhVfpAD4c210yU";
+                options.Sender_EMail = "rijasmk@teamthai.in";
+                options.Sender_Name = "ArmsV2";
+            });
+        #endregion
 
             services.AddSingleton<IDbService, DbService>();
-            services.AddSingleton<SqlTableDependencyService>();
+            
+         #region  Operation_Services
 
+            services.AddSingleton<TruckDataArrayModel>();            
+            services.AddSingleton<SqlTableDependencyService>();
             services.AddScoped<IBranchService, BranchService>();
             services.AddScoped<IBranchSettingsService, BranchSettingsService>();
             services.AddScoped<IPlaceService, PlaceService>();
@@ -116,14 +130,12 @@ namespace Views
             services.AddScoped<IOpTranService, OpTranService>();
             services.AddScoped<IAssetDocumentService, AssetDocumentService>();
             services.AddScoped<IExpenseMappingServices, ExpenseMappingServices>();
-            services.AddScoped<IPushNotificationService, PushNotificationService>();
-            
+            services.AddScoped<IPushNotificationService, PushNotificationService>();            
             services.AddScoped<ITripFuelService, TripFuelService>();
+        #endregion
 
 
-            //services.AddScoped<IPartyDirectorService, PartyDirectorService>();
-
-            //------------FMS---------------
+        #region ------------FMS---------------
             services.AddScoped<IBreakdownService, BreakdownService>();
             services.AddScoped<IWorkshopService, WorkshopService>();
             services.AddScoped<IJobcardService, JobcardService>();
@@ -136,8 +148,9 @@ namespace Views
             services.AddScoped<IInsuranceClaimService, InsuranceClaimService>();
             services.AddScoped<IRoutineCheckListService, RoutineCheckListService>();
             services.AddScoped<ITruckTransferService, TruckTransferService>();
+        #endregion
 
-            //------------INVENTORY-------------------
+        #region ------------INVENTORY-------------------
             services.AddScoped<IInventoryGroupService, InventoryGroupService>();
             services.AddScoped<IInventoryItemService, InventoryItemService>();
             services.AddScoped<IInventoryItemReOrderLevelService, InventoryItemReOrderLevelService>();
@@ -148,16 +161,20 @@ namespace Views
             services.AddScoped<IInventoryRequestService, InventoryRequestService>();
             services.AddScoped<IOpInventoryReleaseService, OpInventoryReleaseService>();
             services.AddScoped<IStockTransferService, StockTransferService>();
-            //------------DATA AUTHENTICATION-------------------
+            #endregion
+
+        #region ------------DATA AUTHENTICATION-------------------
             services.AddScoped<IDataAuthorizationSettingsService, DataAuthorizationSettingsService>();
             services.AddScoped<IDataAuthorizationService, DataAuthorizationService>();
+            #endregion
 
-            //------------ASSETS-------------------
+        #region ------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetDocumentRequestService, AssetDocumentRequestService>();
             services.AddScoped<IAssetSettingsService, AssetSettingsService>();
+            #endregion
 
-            //------------FINANCE-------------------
+        #region ------------FINANCE-------------------
             services.AddScoped<IChartOfAccountService, ChartOfAccountService>();
             services.AddScoped<ITdsRateService, TdsRateService>();
             services.AddScoped<ITdsAccountMappingService, TdsAccountMappingService>();
@@ -170,6 +187,7 @@ namespace Views
             services.AddScoped<IRoutineCheckListMasterService, RoutineCheckListMasterService>();
             services.AddScoped<ITaxVoucherService, TaxVoucherService>();
             services.AddScoped<IMileageShortageReceiptService, MileageShortageReceiptService>();
+        
 
             //------------FINANCE TRANSACTIONS-------------------
             services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();
@@ -197,23 +215,27 @@ namespace Views
             services.AddScoped<ICashAccountService, CashAccountService>();
             services.AddScoped<IAssetPostingGroupService, AssetPostingGroupService>();
             services.AddScoped<IUnreconciledBankEntryService, UnreconciledBankEntryService>();
-            //------------ASSETS-------------------
+            #endregion
+
+        #region------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
             services.AddScoped<IAssetTransferService, AssetTransferService>();
+        #endregion
+
             //------------General-------------------
             services.AddScoped<IConfigTable, ConfigTable>();
 
-            //--------Identity configure--------------
+         #region--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
             services.AddScoped<IRoleService<RoleModel>, RoleStore>();
-
             services.AddTransient<IUserStore<UserModel>, UserStore>();
             services.AddTransient<IRoleStore<RoleModel>, RoleStore>();            
             services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddDefaultTokenProviders();
+                .AddDefaultTokenProviders()
+                .AddDefaultUI();
             services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation > ();
-
+            #endregion
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
