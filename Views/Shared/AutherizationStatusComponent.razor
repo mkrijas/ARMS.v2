@@ -72,7 +72,7 @@
 
 
     #region SignaIR Notification
-    private List<PushNotificationModel> allNotificationMessages = new List<PushNotificationModel>();
+    private IEnumerable<PushNotificationModel> allNotificationMessages = null;
     private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
     private PushNotificationModel notificationMessage = new PushNotificationModel();
     #endregion
@@ -108,8 +108,8 @@
         var result = await dialog.Result;
         DataApprovedStatus aprd = new DataApprovedStatus();
 
-        allNotificationMessages = IpushNotificationService.SelectUnAknowledgedAndNonTimeElapsedNotifications(BranchID).ToList();
-        currentNotificationMessages = allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == BranchID).ToList();
+        allNotificationMessages = IpushNotificationService.SelectUnAknowledgedAndNonTimeElapsedNotifications(BranchID);
+        currentNotificationMessages = allNotificationMessages.Any(y => (y?.ReceivedBranch?.BranchID ?? 0) == BranchID) ? allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == BranchID).ToList() : null;
 
         if (!result.Canceled)
         {
@@ -124,10 +124,13 @@
 
                 var authprov = await auth.GetAuthenticationStateAsync();
                 var user = authprov.User;
-                string MessageIDs = string.Join(",", currentNotificationMessages.Where(g => g.DocumentID == DocumentID && g.DocumentTypeID == DocTypeID).Select(d => d.MessageID).ToList());
+                string MessageIDs = string.Join(",", (currentNotificationMessages != null && currentNotificationMessages.Any(g => g.DocumentID == DocumentID && g.DocumentTypeID == DocTypeID) ? currentNotificationMessages.Where(g => g.DocumentID == DocumentID && g.DocumentTypeID == DocTypeID).Select(d => d.MessageID).ToList() : ""));
                 try
                 {
-                    IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+                    if (!string.IsNullOrEmpty(MessageIDs))
+                    {
+                        IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+                    }
                 }
                 catch (Exception ex)
                 {
