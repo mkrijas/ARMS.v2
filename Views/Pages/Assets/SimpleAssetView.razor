@@ -11,36 +11,85 @@
 @inject IDialogService DialogService
 
 <MudPaper>
-    <MudGrid Spacing="4"> <MudItem xs="12" lg="1"></MudItem>
-        <MudItem xs="12" lg="10">
-        <h3>Assets</h3>
-         <MudTooltip Text="New Simple Asset">
-                <MudButton    @onclick="@(()=> OpenDialog())" Color="Color.Primary" >Create Simple Asset</MudButton>
-                </MudTooltip>
-                  <MudTooltip Text="New Complex Asset">
-                <MudButton   @onclick="@(()=> OpenDialogComplexAsset())"  Color="Color.Primary" >Create Complex Asset</MudButton>
-                </MudTooltip></MudItem>
-        <MudItem xs="12" lg="12">
-    <MudGrid Justify="Justify.FlexEnd">
-         <MudItem xs="12" md="1"></MudItem>    
-          <MudItem xs="12" md="3"><h5>Description</h5></MudItem>    
-           <MudItem xs="12" md="3"><h5> NatureOfAsset </h5></MudItem>    
-            <MudItem xs="12" md="3"><h5>SerialNumber</h5></MudItem>  
-             <MudItem xs="12" md="2"><h5>Actions</h5></MudItem>    
-    </MudGrid>
-@foreach (var child in Model)
-{
-  <AssetDisplayControl Model="child" />
-}
+    <MudGrid Spacing="4">
+        <MudItem xs="1" lg="1"></MudItem>
+        <MudItem xs="11" lg="11">
+            <MudItem xs="12" lg="12">
+                <MudText Typo="Typo.h6" Class="mt-2">Assets</MudText>
+            </MudItem>
+            <MudItem></MudItem>
+            <MudItem xs="12" lg="12">
+                <MudGrid>
+                    <MudItem xs="4" lg="4" Class="pt-3">
 
-</MudItem>
-</MudGrid>
+
+                        <MudTooltip Text="New Simple Asset" >
+                            <MudButton Class="pt-5 mt-3" @onclick="@(()=> OpenDialog())" Color="Color.Primary">Create Simple Asset</MudButton>
+                        </MudTooltip>
+                        <MudTooltip Text="New Complex Asset">
+                            <MudButton Class="pt-5 mt-3" @onclick="@(()=> OpenDialogComplexAsset())" Color="Color.Primary">Create Complex Asset</MudButton>
+                        </MudTooltip>
+                    </MudItem>
+                    <MudItem xs="6" lg="6">
+                        <MudTextField @bind-Value="searchTerm" Placeholder="Search Receipt..." Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="pb-3 mb-5"
+                                      @onkeyup="HandleSearchKeyUp">
+                        </MudTextField>
+                    </MudItem>
+                    <MudItem xs="2" lg="2">
+                        <MudTextField Class="pt-3" @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 80px;"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+
+        </MudItem>
+        <MudItem xs="12" lg="12">
+            <MudGrid Justify="Justify.FlexEnd">
+                <MudItem xs="12" md="1"></MudItem>
+                <MudItem xs="12" md="3"><h5>Description</h5></MudItem>
+                <MudItem xs="12" md="3"><h5> NatureOfAsset </h5></MudItem>
+                <MudItem xs="12" md="3"><h5>SerialNumber</h5></MudItem>
+                <MudItem xs="12" md="2"><h5>Actions</h5></MudItem>
+            </MudGrid>
+            @foreach (var child in Model)
+            {
+                <AssetDisplayControl Model="child" />
+            }
+
+        </MudItem>
+    </MudGrid>
 </MudPaper>
 @code {
+
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
+
 
     private List<AssetViewModel> Model = new List<AssetViewModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await GetAll();
+        }
+    }
+
+
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = GetAll();
+            }
+        }
+    }
     protected override async Task OnInitializedAsync()
     {
         await GetAll();
@@ -51,11 +100,12 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-        if(Model!= null)
+        if (Model != null)
         {
             Model.Clear();
         }
-        Model= Iservice.GetAssetView(brancID,null).ToList();
+        Iservice.ClearAssets();
+        Model = Iservice.GetAssetView(brancID, null, NumberOfRecords, searchTerm).ToList();
     }
 
     private async Task OpenDialog()
@@ -65,12 +115,12 @@
         var user = authprov.User;
         assetModel.IsComplex = false;
         DialogParameters parms = new DialogParameters();
-        parms.Add("model",assetModel);
-        var dialog =  DialogService.Show<AssetSimpleDialog>("Simple Asset",parms,maxWidth);
+        parms.Add("model", assetModel);
+        var dialog = DialogService.Show<AssetSimpleDialog>("Simple Asset", parms, maxWidth);
         var result = await dialog.Result;
 
-        if(!result.Canceled)
-        { 
+        if (!result.Canceled)
+        {
             _navigationManager.NavigateTo("AssetSimpleView", true);
         }
     }
@@ -83,12 +133,12 @@
         assetModel.IsComplex = true;
 
         DialogParameters parms = new DialogParameters();
-        parms.Add("model",assetModel);
-        var dialog =  DialogService.Show<AssetSimpleDialog>("Complex Asset",parms,maxWidth);
+        parms.Add("model", assetModel);
+        var dialog = DialogService.Show<AssetSimpleDialog>("Complex Asset", parms, maxWidth);
         var result = await dialog.Result;
-        if(!result.Cancelled)
+        if (!result.Cancelled)
         {
-             _navigationManager.NavigateTo("AssetSimpleView", true);
+            _navigationManager.NavigateTo("AssetSimpleView", true);
         }
     }
 }
