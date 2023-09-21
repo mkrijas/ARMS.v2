@@ -39,6 +39,18 @@ namespace ArmsModels.BaseModels
         public int? JobCardID { get; set; }
         public int? WorkshopID { get; set; }
         public int? JobStatus { get; set; }
+        public string JobStatusText {
+            get
+            {
+                switch (JobStatus)
+                {
+                    case 1: return "in Progress";
+                    case 2: return "Finished";
+                    case 0: return "Cancelled";
+                    default: return string.Empty;
+                }
+            }
+        }
         public string Remarks { get; set; }
         public UserInfoModel UserInfo { get; set; }
         public List<MechanicJobModel> Mechanics { get; set; }

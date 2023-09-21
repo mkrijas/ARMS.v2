@@ -13,12 +13,10 @@ using Microsoft.Extensions.Options;
 
 namespace ArmsServices.DataServices
 {  
-
     public class AddUserClaimsTransformation : IClaimsTransformation
     {
         private readonly IUserService _userService;
-        private RoleManager<RoleModel> _role;
-        
+        private RoleManager<RoleModel> _role;       
 
         public AddUserClaimsTransformation(IUserService userService,RoleManager<RoleModel> role)
         {
@@ -39,25 +37,21 @@ namespace ArmsServices.DataServices
             {
                 return principal;
             }
-
             // Get userInfo from database
             UserBranchRoleModel userInfo = await Task.Run(() => _userService.GetCurrentBranchRole(nameId.Value));
             if (userInfo?.User == null)
             {
                 return principal;
             }
-
             //foreach (var item in newIdentity.Claims.ToList())
             //{
             //    if (item.Type == ClaimTypes.Role)
             //        newIdentity.RemoveClaim(item);
             //}
-
             IList<Claim> claims = await _role.GetClaimsAsync(userInfo.Role);
             claims.Add(new Claim("BranchID", userInfo.Branch.BranchID.ToString()));
             claims.Add(new Claim("BranchName", userInfo.Branch.BranchName));
-            claims.Add(new Claim(newIdentity.RoleClaimType, userInfo.Role.RoleID));
-            
+            claims.Add(new Claim(newIdentity.RoleClaimType, userInfo.Role.RoleID));            
             newIdentity.AddClaims(claims);
             return clone;
         }
