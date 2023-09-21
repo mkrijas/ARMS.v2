@@ -54,8 +54,12 @@ namespace Views.Pages.Operations.Gc
             CancellationTokenSource ctc = new CancellationTokenSource();
             HasPermissionGcServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
+            var e = await auth.GetAuthenticationStateAsync();
+            string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
+            int BranchID = int.Parse(BranchIDString);
+
             GcTypes = Iservice.SelectGcTypes().ToList();
-            Orders = await Iorder.Select(0).ToListAsync();
+            Orders = await Iorder.SelectByBranch(BranchID).ToListAsync();
         }
 
 
