@@ -2,6 +2,7 @@
 using ArmsModels.SharedModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels.FMS
 {
@@ -9,6 +10,7 @@ namespace ArmsModels.BaseModels.FMS
     {
         public int? RoutineCheckListID { get; set; }
         public int? BranchID { get; set; }
+        [Required]
         public int? TruckID { get; set; }
         public string TruckName { get; set; }
         public TruckModel Truck { get; set; }
