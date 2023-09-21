@@ -29,9 +29,9 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@BranchName", model.BranchName),
-               new SqlParameter("@BranchCode", model.BranchCode),
-               new SqlParameter("@BranchAbbrev", model.BranchAbbrev),
-               new SqlParameter("@CoaID", model.Coa.CoaID),
+               //new SqlParameter("@BranchCode", model.BranchCode),
+               //new SqlParameter("@BranchAbbrev", model.BranchAbbrev),
+               //new SqlParameter("@CoaID", model.Coa.CoaID),
                new SqlParameter("@GstNo", model.GstNo),
                new SqlParameter("@AddressID", model.Address.AddressID),
                new SqlParameter("@PlaceID", model.PlaceID),
@@ -82,16 +82,34 @@ namespace ArmsServices.DataServices
             return new BranchModel
             {
                 Active = dr.GetBoolean("Active"),
-                AddressID = dr.GetInt32("AddressID"),
+                //AddressID = dr.GetInt32("AddressID"),
                 BranchName = dr.GetString("BranchName"),
                 BranchCode = dr.GetString("BranchCode"),
                 BranchAbbrev = dr.GetString("BranchAbbrev"),
                 Coa = new ChartOfAccountModel() { CoaID = dr.GetInt32("CoaID") },
                 BranchID = dr.GetInt32("BranchID"),
                 Operate = dr.GetBoolean("Operate"),
-                PlaceID = dr.GetInt32("PlaceID"),
+                //PlaceID = dr.GetInt32("PlaceID"),
                 GstNo = dr.GetString("GstNo"),
                 UpwardBranchID = dr.GetInt32("UpwardBranchID"),
+                State = new StateModel
+                {
+                    StateName = dr.GetString("StateName")
+                },
+                District = new DistrictModel
+                {
+                    DistrictName = dr.GetString("DistrictName")
+                },
+                Place = new PlaceModel()
+                {
+                    PlaceID = dr.GetInt32("PlaceID"),
+                    PlaceName = dr.GetString("PlaceName")
+                },
+                Address = new AddressModel()
+                {
+                    AddressID = dr.GetInt32("AddressID"),
+                    AddresseeName = dr.GetString("AddresseeName")
+                },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

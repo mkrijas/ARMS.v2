@@ -52,17 +52,14 @@
 
                 </ToolBarContent>
                 <HeaderContent>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemModel, object>(x=> x.InventoryItemID)" InitialDirection="SortDirection.Ascending">ID</MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemModel, object>(x=> x.InventoryItemCode)" InitialDirection="SortDirection.Ascending">ItemCode</MudTableSortLabel></MudTh>
-
+                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemModel, object>(x=> x.ItemDescription)" InitialDirection="SortDirection.Ascending">Item Description</MudTableSortLabel></MudTh>
 
                     <MudTh>Actions</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="InventoryItemID">@context.InventoryItemID</MudTd>
-
                     <MudTd DataLabel="InventoryItemCode">@context.InventoryItemCode</MudTd>
-
+                    <MudTd DataLabel="ItemDescription">@context.ItemDescription</MudTd>
 
                     <MudTd DataLabel="">
                         <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
@@ -92,11 +89,14 @@
     private List<InventoryGroupModel> listOfItems = new();
 
     private List<InventoryItemModel> collection = new List<InventoryItemModel>();
+    private string UserID = string.Empty;
 
 
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
         GetAll();
 
     }
@@ -109,7 +109,13 @@
     }
     private void GetAll()
     {
+        if (listOfItems != null)
+        {
+            listOfItems.Clear();
+        }
         listOfItems = GIservice.SearchByName(string.Empty).ToList();
+        StateHasChanged();
+
     }
     private void GetInventoryItem(InventoryGroupModel ig)
     {
@@ -118,6 +124,7 @@
         {
             collection.Add(item);
         }
+        StateHasChanged();
     }
 
     private async Task OpenDialog(InventoryItemModel ii)
@@ -156,9 +163,10 @@
 
     private void Delete(InventoryItemModel ii)
     {
-        IIservice.Delete(ii.InventoryItemID, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        GetAll();
+
+        IIservice.Delete(ii.InventoryItemID, UserID);
+        snackbar.Add("Deleted Successfully", Severity.Error);
+        SelectedItemChanged(SelectedItem);
     }
     private async Task OpenDialogGroup(InventoryGroupModel ig)
     {
