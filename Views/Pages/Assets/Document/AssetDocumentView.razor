@@ -29,7 +29,7 @@
         <MudItem xs="12" sm="6" md="4" xl="3">
             <MudCard>
                 @*<MudCardMedia Image="@item.AttachedDocument" Height="300" />*@
-                <iframe class="mt-1 mr-1 ml-1" src="@item.AttachedDocument" style="height:350px"  alt="@item.AttachedDocument" />
+                <iframe class="mt-1 mr-1 ml-1" src="@item.AttachedDocument" style="height:350px" alt="@item.AttachedDocument" />
                 <MudCardContent Class="overflow-auto" Style="min-width:500px">
                     <MudText Typo="Typo.h6">@item.DocumentType.DocumentTypeName</MudText>
                     <MudText Typo="Typo.body2">Period:  @string.Format("{0} - {1}", item.StartDate?.ToShortDateString(), item.EndDate?.ToShortDateString())</MudText>
@@ -58,7 +58,7 @@
             <ValidationSummary />
             <MudGrid Spacing="2">
                 <MudItem xs="6">
-                    <MudSelect T="AssetDocumentTypeModel" @bind-Value="@model.DocumentType" Label="Type" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentType)" OffsetY="true" AdornmentColor="Color.Secondary">
+                    <MudSelect T="AssetDocumentTypeModel" @bind-Value="@model.DocumentType" ToStringFunc="@(e => e == null ? null : $"{e.DocumentTypeName}")" Label="Type" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentType)" OffsetY="true" AdornmentColor="Color.Secondary">
                         @foreach (var item in Dtypes)
                         {
                             <MudSelectItem Value="@item">@item.DocumentTypeName</MudSelectItem>
@@ -82,7 +82,7 @@
         <MudButton form="Docform" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
         @if (model.DocumentID != null)
         {
-            <MudButton  Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(model.DocumentID))">Delete</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(model.DocumentID))">Delete</MudButton>
         }
     </DialogActions>
 </MudDialog>
@@ -95,7 +95,7 @@
 
     private AssetDocumentModel model = new();
     private List<AssetDocumentModel> collection = new();
-    private List<AssetDocumentTypeModel> Dtypes = new();   
+    private List<AssetDocumentTypeModel> Dtypes = new();
 
     private IBrowserFile DocImage;
 
@@ -121,11 +121,11 @@
     {
         collection = Iservice.SelectByAsset(Asset?.AssetID).ToList();
     }
-   
+
 
     private async void OnValidSubmit(EditContext context)
-    {       
-        model.UserInfo.UserID = UserID;        
+    {
+        model.UserInfo.UserID = UserID;
         var validationOls = Iservice.ValidatePeriod(model).ToList();
         if (validationOls.Any(x => x.DocumentID != model.DocumentID))
         {
@@ -134,6 +134,15 @@
         }
         try
         {
+            if (Asset == null)
+            {
+                snackbar.Add("Please select asset. ", Severity.Error);
+                return;
+            }
+            if (model.Asset == null || model.Asset.AssetID == null || model.Asset.AssetID == 0)
+            {
+                model.Asset = Asset;
+            }
             model = Iservice.Update(model);
             snackbar.Add("Saved Successfully", Severity.Success);
             GetAll();
@@ -154,13 +163,15 @@
 
     private void Delete(int? id)
     {
-        Iservice.Delete(id, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
+        Iservice.Delete(id, UserID);
+        snackbar.Add("Deleted Successfully", Severity.Error);
+        model = new();
+        visible = false;
         GetAll();
     }
 
     private async Task Remove(AssetDocumentModel model)
-    {       
+    {
         model.UserInfo.UserID = UserID;
         Iservice.Remove(model);
         snackbar.Add("Removed " + model.DocumentType.DocumentTypeName + " From " + Asset.Description, Severity.Success);
@@ -170,7 +181,7 @@
     private void AssetSelected(AssetModel selectedAsset)
     {
         Asset = selectedAsset;
-        model = new(){Asset = selectedAsset};
+        model = new() { Asset = selectedAsset };
         GetAll();
     }
 

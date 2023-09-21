@@ -1,5 +1,6 @@
 ﻿using ArmsModels.SharedModels;
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels.General
 {
@@ -7,6 +8,7 @@ namespace ArmsModels.BaseModels.General
     {
         public int? ItemID { get; set; }
         public int? BranchID { get; set; }
+        [Required]
         public string ItemName { get; set; }
         public bool IsChecked { get; set; }
         public bool IsDisabled { get; set; }

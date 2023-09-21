@@ -45,6 +45,8 @@ namespace ArmsModels.BaseModels
             get { return _place; } 
             set { _place = value; Address.Place = value?.PlaceName;  PlaceID = value?.PlaceID; } 
         }
+        public StateModel State { get; set; }
+        public DistrictModel District { get; set; }
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
         public List<ContactModel> Contacts { get; set; }
     }

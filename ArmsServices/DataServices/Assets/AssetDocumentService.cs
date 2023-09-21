@@ -165,7 +165,7 @@ namespace ArmsServices.DataServices
                     DocumentTypeID = dr.GetInt32("DocumentTypeID"),
                     DocumentTypeName = dr.GetString("DocumentTypeName"),
                 },
-                InvoiceDate = dr.GetDateTime("ReferenceDate"),
+                InvoiceDate = dr.GetDateTime("InvoiceDate"),
                 StartDate = dr.GetDateTime("StartDate"),
                 Asset = new AssetModel()
                 {
