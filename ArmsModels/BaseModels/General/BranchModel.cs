@@ -15,12 +15,10 @@ namespace ArmsModels.BaseModels
             Place = new PlaceModel();
             Contacts = new();
         }
-
         private string _branchName;
-        [Required]
         public string BranchCode { get; set; }
-        [Required]
-        [StringLength(3, MinimumLength = 3, ErrorMessage = "Abbrev number must have 3 characters")]
+        //[Required]
+        //[StringLength(3, MinimumLength = 3, ErrorMessage = "Abbrev number must have 3 characters")]
         public string BranchAbbrev { get; set; }
         public ChartOfAccountModel Coa { get; set; }
         private PlaceModel _place;
