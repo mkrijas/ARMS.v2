@@ -29,9 +29,9 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@BranchName", model.BranchName),
-               new SqlParameter("@BranchCode", model.BranchCode),
-               new SqlParameter("@BranchAbbrev", model.BranchAbbrev),
-               new SqlParameter("@CoaID", model.Coa.CoaID),
+               //new SqlParameter("@BranchCode", model.BranchCode),
+               //new SqlParameter("@BranchAbbrev", model.BranchAbbrev),
+               //new SqlParameter("@CoaID", model.Coa.CoaID),
                new SqlParameter("@GstNo", model.GstNo),
                new SqlParameter("@AddressID", model.Address.AddressID),
                new SqlParameter("@PlaceID", model.PlaceID),
