@@ -10,18 +10,20 @@ namespace ArmsServices.DataServices
 {
     public interface IAssetService
     {
-        AssetModel UpdateAsset(AssetModel model);        
+        AssetModel UpdateAsset(AssetModel model);
+        int Delete(int? ID, string UserID);
         int MoveAsset(int? AssetID,int? ParentAssetID,string Mode, string UserID);
         AssetModel SelectByID(int? ID);
         int? Scrap(int? AssetID, string UserID);
-        IEnumerable<AssetModel> SelectByBranch(int BranchID,bool scrap);
+        IEnumerable<AssetModel> SelectByBranch(int BranchID,bool scrap, int? NumberOfRecords, string searchTerm);
+        void ClearAssets();
         IEnumerable<AssetModel> SelectBySubClass(int BranchID, int? SubClassID);
         IEnumerable<AssetModel> GetAttachedAssets(int? AssetID);
         IEnumerable<AssetModel> SelectLinkedAssetsOnTruck();
         int? UpdateStatus(AssetStatusUpdateModel model); 
         AssetStatusUpdateModel GetCurrentStatus(int? AssetID);
         IEnumerable<AssetStatusUpdateModel> GetStatusHistory(int? AssetID);
-        List<AssetViewModel> GetAssetView(int BranchID,int? parantID);
+        List<AssetViewModel> GetAssetView(int BranchID,int? parantID, int? NumberOfRecords, string searchTerm);
         int? GetCapitalizationCoaID(int? AssetID);
         int? GetCWIPCoaID(int? AssetID);
         int? GetDepreciationCoaID(int? AssetID);

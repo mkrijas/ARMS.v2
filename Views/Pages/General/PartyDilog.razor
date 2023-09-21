@@ -1,4 +1,5 @@
-﻿@inject IPartyService Iservice
+﻿@using System.Text.RegularExpressions;
+@inject IPartyService Iservice
 @inject IContactService Icontact
 @inject IVendorPostingGroupService vendorService
 @inject IRenterPostingGroupService renterService
@@ -24,8 +25,6 @@
     <DialogContent>
         <MudContainer Style="max-height: 450px; overflow-y: scroll">
             <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
                 <MudGrid Spacing="2">
                     <MudItem xs="12" md="12">
                         <MudRadioGroup @bind-SelectedOption="model.NatureOfBusiness">
@@ -60,7 +59,7 @@
                                     @if (model.PanAvailable == true)
                                     {
                                         <MudItem xs="12" md="6">
-                                            <MudTextField @bind-Value="model.PAN" Label="PAN No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PAN)" Mask="@(new PatternMask("aaaaa0000a"))" />
+                                            <MudTextField @bind-Value="model.PAN" Label="PAN No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PAN)" />
                                         </MudItem>
                                     }
                                 </MudGrid>
@@ -162,7 +161,7 @@
                                     @if (model.InterCompany == true)
                                     {
                                         <MudItem xs="12" md="6">
-                                            <MudTextField @bind-Value="model.IcPartnerCode" Label="IcPartnerCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.IcPartnerCode)" />
+                                            <MudTextField @bind-Value="model.IcPartnerCode" Label="IcPartnerCode" MaxLength="15" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.IcPartnerCode)" />
 
                                         </MudItem>
                                     }
@@ -225,7 +224,7 @@
 
                                         </MudItem>
                                         <MudItem xs="12" md="6">
-                                            <MudNumericField  HideSpinButtons MaxLength="18" @bind-Value="model.BankAccount.AccountNumber" Label="Account Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BankAccount.AccountNumber)"/>
+                                            <MudNumericField HideSpinButtons MaxLength="18" @bind-Value="model.BankAccount.AccountNumber" Label="Account Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BankAccount.AccountNumber)" />
 
                                         </MudItem>
                                         <MudItem xs="12" md="6">
@@ -233,7 +232,7 @@
 
                                         </MudItem>
                                         <MudItem xs="12" md="6">
-                                            <MudTextField  MaxLength="9" @bind-Value="model.BankAccount.MicrCode" Label="Micr Code" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BankAccount.MicrCode)" />
+                                            <MudTextField MaxLength="9" @bind-Value="model.BankAccount.MicrCode" Label="Micr Code" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BankAccount.MicrCode)" />
 
                                         </MudItem>
                                         <MudItem xs="12" md="6">
@@ -319,7 +318,7 @@
                                                     </td>
 
                                                     <td>
-                                                        <MudNumericField HideSpinButtons MaxLength="18" Label="Phone" @bind-Value="contactModel.Phone" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => contactModel.Phone)"></MudNumericField>
+                                                        <MudNumericField HideSpinButtons MaxLength="10" Label="Phone" @bind-Value="contactModel.Phone" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => contactModel.Phone)"></MudNumericField>
 
                                                     </td>
 
@@ -347,9 +346,11 @@
                     </MudItem>
 
                 </MudGrid>
-
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
             </EditForm>
         </MudContainer>
+
     </DialogContent>
     <DialogActions>
 
@@ -453,6 +454,16 @@
             if (VendorList.Any(s => s.VendorPostingGroupID == model.VendorPostingGroup.VendorPostingGroupID))
                 model.VendorPostingGroup = VendorList.FirstOrDefault(s => s.VendorPostingGroupID == model.VendorPostingGroup.VendorPostingGroupID);
         }
+        if (CustomerList != null && CustomerList.Count() != 0 && model.CustomerPostingGroup != null && model.CustomerPostingGroup.CustomerPostingGroupID != null && model.CustomerPostingGroup.CustomerPostingGroupID != 0)
+        {
+            if (CustomerList.Any(s => s.CustomerPostingGroupID == model.CustomerPostingGroup.CustomerPostingGroupID))
+                model.CustomerPostingGroup = CustomerList.FirstOrDefault(s => s.CustomerPostingGroupID == model.CustomerPostingGroup.CustomerPostingGroupID);
+        }
+        if (RenterList != null && RenterList.Count() != 0 && model.RenterPostingGroup != null && model.RenterPostingGroup.RenterPostingGroupID != null && model.RenterPostingGroup.RenterPostingGroupID != 0)
+        {
+            if (RenterList.Any(s => s.RenterPostingGroupID == model.RenterPostingGroup.RenterPostingGroupID))
+                model.RenterPostingGroup = RenterList.FirstOrDefault(s => s.RenterPostingGroupID == model.RenterPostingGroup.RenterPostingGroupID);
+        }
         if (model.PartyID != null && model.PartyID != 0)
         {
             if (Contactlist != null)
@@ -473,13 +484,26 @@
     }
     public void AddItems()
     {
+        if (contactModel.ContactName == null || contactModel.AdditionalInfo == null || contactModel.Phone == null || contactModel.Email == null)
+        {
+            snackbar.Add("Please fill all entries.", Severity.Error);
+            return;
+        }
+        if (contactModel.Phone== null || contactModel.Phone.Length != 10)
+        {
+            snackbar.Add("Phone number should be 10 digit", Severity.Error);
+            return;
+        }
+        var pattern = @"^[a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$";
+
+        var regex = new Regex(pattern);
+        if (contactModel.Email == null || !regex.IsMatch(contactModel.Email))
+        {
+            snackbar.Add("Enter valid Email address.", Severity.Error);
+            return;
+        }
         contactModel.RefTable = "Party";
         Contactlist.Add(contactModel);
         contactModel = new();
     }
-
-
-
-
-
 }

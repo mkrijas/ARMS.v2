@@ -88,6 +88,17 @@ namespace ArmsServices.DataServices
 
 
 
+        public int Delete(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetID", ID),
+               new SqlParameter("@UserID", UserID),
+
+            };
+            return Iservice.ExecuteNonQuery("[usp.Asset.Delete]", parameters);
+        }
+
 
         public AssetModel UpdateAsset(AssetModel model)
         {
@@ -161,13 +172,15 @@ namespace ArmsServices.DataServices
             return null;
         }
 
-        public IEnumerable<AssetModel> SelectByBranch(int BranchID,bool Scrap)
+        public IEnumerable<AssetModel> SelectByBranch(int BranchID,bool Scrap, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByBranch"),
                new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@Scrap", Scrap)
+               new SqlParameter("@Scrap", Scrap),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Select]", parameters))
@@ -303,13 +316,21 @@ namespace ArmsServices.DataServices
             //throw new NotImplementedException();
         }
 
+        public void ClearAssets()
+        {
+            if (assets != null)
+            {
+                assets.Clear();
+            }
 
+        }
         private List<AssetModel> assets = new();
-        public List<AssetViewModel> GetAssetView(int BranchID,int? ParentID = null)
-        {            
+        public List<AssetViewModel> GetAssetView(int BranchID,int? ParentID = null, int? NumberOfRecords = 100, string searchTerm = "")
+        {         
+
             if(assets.Count == 0)
             {
-               assets = SelectByBranch(BranchID, false).ToList();
+               assets = SelectByBranch(BranchID, false, NumberOfRecords, searchTerm).ToList();
             }  
             List<AssetViewModel> view = new List<AssetViewModel>();
 
@@ -317,7 +338,7 @@ namespace ArmsServices.DataServices
             {                
                     view.Add(new AssetViewModel() { 
                         Parent = item ,
-                        Children = GetAssetView(BranchID,item.AssetID)
+                        Children = GetAssetView(BranchID,item.AssetID, null, "")
                     });               
             }
             return view;
