@@ -163,7 +163,7 @@ namespace DAL.DataServices.Finance.Transactions
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 Item = new InventoryItemModel() { 
                     InventoryItemID = dr.GetInt32("InventoryItemID"),
-                 ItemDecription = dr.GetString("ItemDescription"),
+                 ItemDescription = dr.GetString("ItemDescription"),
                  InventoryItemCode = dr.GetString("InventoryItemCode"),
                 },
                 Reference = dr.GetString("Reference"),

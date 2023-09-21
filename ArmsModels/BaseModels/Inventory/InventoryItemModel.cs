@@ -19,7 +19,7 @@ namespace ArmsModels.BaseModels
         public int? InventoryGroupID { get; set; }
         public string InventoryItemCode { get; set; }
         [Required]
-        public string ItemDecription { get; set; }
+        public string ItemDescription { get; set; }
         [StringLength(8)]
         public string HsnCode { get; set; }
         public virtual decimal? QtyAvailable { get; set; }

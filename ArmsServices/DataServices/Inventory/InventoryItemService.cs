@@ -120,7 +120,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@InventoryGroupID", model.InventoryGroupID),
-               new SqlParameter("@ItemDescription",model.ItemDecription),
+               new SqlParameter("@ItemDescription",model.ItemDescription),
                new SqlParameter("@InventoryItemID",model.InventoryItemID),
               // new SqlParameter("@InventoryItemCode",model.InventoryItemCode),
                new SqlParameter("@HsnCode",model.HsnCode),
@@ -143,7 +143,7 @@ namespace ArmsServices.DataServices
                 InventoryGroupID = dr.GetInt32("InventoryGroupID"),
                 InventoryItemCode = dr.GetString("InventoryItemCode"),
                 InventoryItemID = dr.GetInt32("InventoryItemID"),
-                ItemDecription = dr.GetString("ItemDescription"),
+                ItemDescription = dr.GetString("ItemDescription"),
                 Group = new InventoryGroupModel()
                 {
                     MappedConsumptionHead = dr.GetInt32("MappedConsumptionHead"),
