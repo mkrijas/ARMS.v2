@@ -92,7 +92,7 @@ namespace Views
                 options.Host_Port = 587;
                 options.Host_Username = "mkrijas@gmail.com";
                 options.Host_Password = "wbrhVfpAD4c210yU";
-                options.Sender_EMail = "rijasmk@teamthai.in";
+                options.Sender_EMail = "noreply@teamthai.in";
                 options.Sender_Name = "ArmsV2";
             });
         #endregion
