@@ -12,6 +12,7 @@
 @inject SignalRService signalRService
 @inject ITripService Itrip
 @inject ITruckService Itruck
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -34,7 +35,7 @@
                         
                     @*}*@
                     <MudItem xs="12">
-                        <MudSelect Label="Select Workshop" @bind-Value="SelectedWorkshop" T="WorkshopModel" ToStringFunc="@((p) => p?.WorkshopName)" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        <MudSelect Label="Select Workshop" Value="SelectedWorkshop" ValueChanged="OnWorkshopChanged" T="WorkshopModel" ToStringFunc="@((p) => p?.WorkshopName)" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in Workshops)
                             {
                                 <MudSelectItem Value="@ditem">@ditem.WorkshopName</MudSelectItem>
@@ -101,6 +102,18 @@
         AddJob();
     }
 
+    private void OnWorkshopChanged(WorkshopModel obj)
+    {
+        SelectedWorkshop = obj;
+        if(obj != null)
+        {
+            model.workshop = obj.WorkshopID.ToString(); 
+        }
+        else
+        {
+            model.workshop = null;
+        }
+    }
     private void Cancel()
     {
         MudDialog.Cancel();
@@ -130,6 +143,24 @@
 
         int BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         model.BranchID = BranchID;
+        if (SelectedWorkshop.WorkshopID == null)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Please, Select workshop.", yesText: "OK");
+
+            return;
+        }
+
+        if (model.Jobs == null)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Please, Select a job and mechanic.", yesText: "OK");
+
+            return;
+        }
+        
         try {
             model.JobcardID = Iservice.Update(model).JobcardID;
             JobcardWorkshopModel Jwm = new()
