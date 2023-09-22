@@ -104,6 +104,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@CreatedOn", model.CreatedOn),
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@PMIID", model.PMIID),
+               new SqlParameter("@RecordStatus", model.UserInfo.RecordStatus),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 

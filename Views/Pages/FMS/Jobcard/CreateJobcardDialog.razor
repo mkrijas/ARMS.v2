@@ -56,7 +56,7 @@
         <MudButton OnClick="DeleteJob" Hidden="@(model.Jobs.Count<2)">Delete Job</MudButton>
         <MudButton OnClick="AddJob">Add More Jobs</MudButton>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton form="formJobcard" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        <MudButton Disabled="@_busy" form="formJobcard" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
 
     </DialogActions>
 </MudDialog>
@@ -71,6 +71,7 @@
     private WorkshopModel SelectedWorkshop = new();
 
     private JobInProgressView JipComp;
+    private bool _busy;
 
     [Parameter]
     public int? PeriodicMaintenanceId { get; set; } = null;
@@ -131,6 +132,13 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
+        if (_busy) {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+
         var CurrentTrip = Itrip.Select(Itruck.GetCurrentTrip(Breakdown.TruckID));
         if (CurrentTrip != null && PeriodicMaintenanceId != null && !Itrip.IsClosed(CurrentTrip.TripID))
         {
@@ -160,7 +168,7 @@
 
             return;
         }
-        
+
         try {
             model.JobcardID = Iservice.Update(model).JobcardID;
             JobcardWorkshopModel Jwm = new()
@@ -206,6 +214,8 @@
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
+        await Task.Delay(2000);
+        _busy = false;
     }
 }
 
