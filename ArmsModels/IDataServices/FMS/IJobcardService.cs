@@ -16,5 +16,6 @@ namespace ArmsServices.DataServices
         IEnumerable<JobcardModel> Select(int? ID);
         IEnumerable<JobcardModel> SelectByBranch(int? BranchID, bool Active = false);
         IEnumerable<JobcardModel> SelectByTruck(int? TruckID, bool Active = false);
+        int AddPurchase(int? JobCardID, int? PID);
     }
 }
