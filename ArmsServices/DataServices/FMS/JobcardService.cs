@@ -17,6 +17,16 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        public int AddPurchase(int? JobCardID, int? PID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@JobcardID", JobCardID),
+               new SqlParameter("@PID", PID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.AddPurchase]", parameters);
+        }
+
         public int Delete(int? JobcardID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -94,6 +104,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@CreatedOn", model.CreatedOn),
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@PMIID", model.PMIID),
+               new SqlParameter("@RecordStatus", model.UserInfo.RecordStatus),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 

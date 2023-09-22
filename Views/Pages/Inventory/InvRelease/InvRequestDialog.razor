@@ -24,7 +24,7 @@
                     </MudItem>
 
                     <MudItem xs="12" md="4">
-                        <MudSelect Label="Select Job Card" T="JobcardModel" Value="model.Jobcard" ValueChanged="OnChangeJobcard" ToStringFunc="@(e => e == null ? null : $"{e.JobcardNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" Disabled="@IsDisableEntries">
+                        <MudSelect Label="Select Job Card" T="JobcardModel" Value="model.Jobcard" ValueChanged="OnChangeJobcard" ToStringFunc="@(e => e == null ? null : $"{e.JobcardNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" Disabled="@SetIncomingVal">
                             @foreach (var ditem in JobcardList)
                             {
                                 <MudSelectItem Value="@ditem">@ditem.JobcardNumber</MudSelectItem>
@@ -33,11 +33,11 @@
                     </MudItem>
 
                     <MudItem xs="12" md="12">
-                        <TruckSelector @bind-Value="@model.Truck" BranchID="@branchID" IsDisabled="@IsDisableEntries"></TruckSelector>
+                        <TruckSelector @bind-Value="@model.Truck" BranchID="@model.BranchID" IsDisabled="@SetIncomingVal"></TruckSelector>
                     </MudItem>
 
                     <MudItem xs="12" md="12">
-                        <StoreSelector @bind-Value="@model.Store" BranchID="@branchID.Value"></StoreSelector>
+                        <StoreSelector @bind-Value="@model.Store" BranchID="@(model.BranchID??0)"></StoreSelector>
                     </MudItem>
 
 
@@ -104,8 +104,8 @@
 
     public string Area { get; set; } = null;
     public bool Local { get; set; } = true;
-    [Parameter]
-    public int? branchID { get; set; }
+    //[Parameter]
+    //public int? branchID { get; set; }
     private string UserID = null;
 
     public int SubAssetModel { get; set; }
@@ -115,12 +115,12 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
+    //[Parameter]
+    //public JobcardModel JobCard { get; set; } = null;
     [Parameter]
-    public JobcardModel JobCard { get; set; } = null;
-    [Parameter]
-    public bool IsDisableEntries { get; set; } = false;
-    [Parameter]
-    public TruckModel SelectedTruck { get; set; } = null;
+    public bool SetIncomingVal { get; set; } = false;
+    //[Parameter]
+    //public TruckModel SelectedTruck { get; set; } = null;
 
     public InventoryItemModel SelectedItems = new();
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
@@ -138,17 +138,12 @@
         {
             model.UserInfo = new(); 
         }
-        model.UserInfo.UserID = UserID;
-        if (JobCard != null)
-        {
-            model.Jobcard = JobCard;
-        }
+        model.UserInfo.UserID = UserID;        
 
         if (model == null)
         {
             model = new()
-                {
-                    //BranchID = branchID,
+                {                   
                     UserInfo = new() { UserID = UserID, },
                 };
         }
@@ -156,12 +151,9 @@
         {
             model.Items = Iservice.GetSub(model.RequestID).ToList();
         }
-        if(SelectedTruck!=null && SelectedTruck.TruckID != 0)
-        {
-            model.Truck = SelectedTruck;
-        }
+
         ItemList = itemIservice.SearchByDescription(string.Empty).ToList();
-        JobcardList = IJobcardService.SelectByBranch(branchID, true).ToList();
+        JobcardList = IJobcardService.SelectByBranch(model.BranchID, true).ToList();
     }
 
     protected override void OnParametersSet()
@@ -172,10 +164,7 @@
 
     public void AddSubList()
     {
-
         Entrymodel.ItemID = SelectedItems.InventoryItemID;
-
-
         if (Entrymodel.ItemID == null  || Entrymodel.ItemQty == null)
         {
             snackbar.Add("Please fill in all Fields", Severity.Success);
@@ -231,10 +220,11 @@
                 snackbar.Add("Add at least one item.", Severity.Error);
                 return;
             }
-            model = Iservice.Update(model);
+            var result = Iservice.Update(model);
+            model.RequestNumber = result.RequestNumber;
+            model.RequestID = result.RequestID;
             snackbar.Add("Saved Successfully", Severity.Success);
             MudDialog.Close(model);
-
         }
         catch (Exception ex)
         {

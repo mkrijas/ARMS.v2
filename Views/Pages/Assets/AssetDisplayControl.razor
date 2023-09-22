@@ -4,10 +4,12 @@
     @attribute [Authorize]*@
 @inject IDialogService DialogService
 @inject NavigationManager _navigationManager
+@inject IAssetService Iservice
+@inject MudBlazor.ISnackbar snackbar
 
 <MudPaper Outlined Class="pa-2">
     <MudGrid Justify="Justify.FlexEnd">
-        <MudItem xs="12" md="1">
+        <MudItem xs="1" md="1">
             @if (this.hasChildren)
             {
                 <MudIconButton Icon="@btnIcon" @onclick="ToggleShow" Size="Size.Small" IconSize="Size.Small"></MudIconButton>
@@ -29,13 +31,19 @@
         </MudItem>
         <MudItem xs="12" md="2">
 
-            <MudText> @(this.Model.Parent.IsComplex? "Complex": "Simple")</MudText>
-            @* <MudTextField ReadOnly="true" @bind-Value="@this.Model.Parent.SerialNumber" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>*@
+            <MudText> @(this.Model.Parent.IsComplex ? "Complex" : "Simple")</MudText>
+                @* <MudTextField ReadOnly="true" @bind-Value="@this.Model.Parent.SerialNumber" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>*@
 
-        </MudItem>
-        <MudItem xs="12" md="2">
-            <MudTooltip Text="Add Simple Assets">
-                <MudIconButton @onclick="@(()=> OpenDialogComplexAsset(this.Model.Parent))" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                @if (this.Model.Parent.IsComplex)
+            {
+                <MudTooltip Text="Add Simple Assets">
+                    <MudIconButton @onclick="@(()=> OpenDialogComplexAsset(this.Model.Parent))" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+                </MudTooltip>
+            }
+            <MudTooltip Text="Edit">
+                <MudIconButton @onclick="@(()=> EditComplexAsset(this.Model.Parent))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
             </MudTooltip>
             @if (this.Model.Parent.ParentAssetID == null)
             {
@@ -90,11 +98,33 @@
 
     private async Task OpenDialogComplexAsset(AssetModel tds)
     {
+        if (!tds.IsComplex)
+        {
+            snackbar.Add("Can not create asset under simple asset.",Severity.Error);
+            return;
+        }
         AssetModel assetModel = new AssetModel();
         assetModel.IsComplex = false;
         if (tds.AssetID != null)
         {
             assetModel.ParentAssetID = tds.AssetID;
+        }
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", assetModel);
+        var dialog = DialogService.Show<AssetSimpleDialog>(assetModel.AssetID == null ? "ADD" : "EDIT", parms, maxWidth);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            //await GetAll();
+            _navigationManager.NavigateTo("AssetSimpleView", true);
+        }
+    }
+    private async Task EditComplexAsset(AssetModel tds)
+    {
+        AssetModel assetModel = Iservice.SelectByID(tds?.AssetID ?? 0);
+        if (assetModel != null && assetModel.SubClass != null && assetModel.SubClass.ID == null && assetModel.SubClass.AssetSubClassID != null)
+        {
+            assetModel.SubClass.ID = assetModel.SubClass.AssetSubClassID;
         }
         DialogParameters parms = new DialogParameters();
         parms.Add("model", assetModel);
