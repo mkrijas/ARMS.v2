@@ -1,6 +1,7 @@
 ﻿using ArmsModels.SharedModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -22,7 +23,9 @@ namespace ArmsModels.BaseModels
         public virtual string RegNo { get; set; }
         public int? BranchID { get; set; }
         public string BranchName { get; set; }
-        public int? BreakdownID { get; set; }        
+        public int? BreakdownID { get; set; }
+        [Required]
+        public string workshop { get; set; }
         public List<JobcardWorkshopModel> Workshops { get; set; }
         public List<JobInProgressModel> Jobs { get; set; }
         public UserInfoModel UserInfo { get; set; }
