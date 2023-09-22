@@ -133,8 +133,6 @@
 
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-
-
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         UserID = user.Identity.Name;
@@ -142,22 +140,20 @@
 
         if (model == null)
         {
-            model = new()
-                {
-                    Area = "Operation",
-                    PaymentMode = "Cash",
-                    NatureOfTransaction = "Operation",
-                    BranchID = branchID,
-                    UserInfo = new() { UserID = UserID }
-                };
+            model = new()  {  Area = "Operation", };
         }
         else
+        {            
+            model.Transactions = Iservice.GetExpenses(model.OpTranID).ToList();            
+        }        
+        if (model.PaymentMode == null)
         {
-            model.Transactions = Iservice.GetExpenses(model.OpTranID).ToList();
-            model.NatureOfTransaction = "Operation";
-            model.BranchID = branchID;
-            model.UserInfo.UserID = UserID;
+            model.PaymentMode = "Cash";
         }
+
+        model.NatureOfTransaction = model.Area;
+        model.BranchID = branchID;
+        model.UserInfo.UserID = UserID;
     }
 
     protected override void OnParametersSet()
@@ -185,6 +181,7 @@
             catch (Exception ex)
             {
                 snackbar.Add(ex.Message, Severity.Error);
+                
             }
         }
     }
@@ -229,6 +226,7 @@
         {
             try
             {
+                
                 Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
                 model = new OpTranModel();
