@@ -20,6 +20,7 @@ namespace ArmsServices.DataServices
         IEnumerable<AssetModel> SelectBySubClass(int BranchID, int? SubClassID);
         IEnumerable<AssetModel> GetAttachedAssets(int? AssetID);
         IEnumerable<AssetModel> SelectLinkedAssetsOnTruck();
+        AssetModel SelectByTruckID(int? TruckID); 
         int? UpdateStatus(AssetStatusUpdateModel model); 
         AssetStatusUpdateModel GetCurrentStatus(int? AssetID);
         IEnumerable<AssetStatusUpdateModel> GetStatusHistory(int? AssetID);

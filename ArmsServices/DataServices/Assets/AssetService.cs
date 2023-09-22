@@ -86,8 +86,6 @@ namespace ArmsServices.DataServices
             };
         }
 
-
-
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -98,7 +96,6 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.Delete]", parameters);
         }
-
 
         public AssetModel UpdateAsset(AssetModel model)
         {
@@ -157,7 +154,7 @@ namespace ArmsServices.DataServices
         }
 
 
-        AssetModel IAssetService.SelectByID(int? ID)
+        public AssetModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -247,7 +244,6 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
-
 
         public AssetStatusUpdateModel GetCurrentStatus(int? AssetID)
         {
@@ -374,7 +370,12 @@ namespace ArmsServices.DataServices
             return _asset.GetPostingGroup(AssetID).RevaluationReserve.CoaID;
         }
 
-      
+        public AssetModel SelectByTruckID(int? TruckID)
+        {           
+            ITruckService truckService = new TruckService(Iservice);
+            var truck = truckService.SelectByID(TruckID);
+            return SelectByID(truck.AssetID);
+        }
     }
 }
    
