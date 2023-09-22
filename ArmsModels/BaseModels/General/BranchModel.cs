@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ArmsServices.DataServices;
+using FluentValidation;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -50,4 +52,31 @@ namespace ArmsModels.BaseModels
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
         public List<ContactModel> Contacts { get; set; }
     }
+
+    //public class GstCodeValidator : AbstractValidator<BranchModel>
+    //{
+    //    public GstCodeValidator(IBranchService _IBranchService)
+    //    {
+    //        RuleFor(P => P.GstNo)
+    //           .NotEmpty().WithMessage("GstNo cannot be empty !")
+    //           .Must((branchModel, GstNo) =>
+    //                   ValidateGstNo(_IBranchService, branchModel.GstNo, branchModel.PlaceID.Value.ToString()))
+    //           .WithMessage("GstNo is not matching with State GstCode !");
+    //    }
+
+    //    private bool ValidateGstNo(IBranchService _IBranchService, string GstNo, string PlaceID)
+    //    {
+    //        if (GstNo != null && PlaceID != null && Convert.ToInt32(PlaceID)!= 0)
+    //        {
+    //            BranchModel GstCodeModel = _IBranchService.ValidateGstNo(Convert.ToInt32(PlaceID));
+    //            var gststatecode = GstCodeModel.GstCode;
+    //            var gstcode = GstNo.Substring(0, 2);
+    //            if (gststatecode.Value.ToString() == gstcode)
+    //            {
+    //                return true;
+    //            }
+    //        }
+    //        return false;
+    //    }
+    //}
 }

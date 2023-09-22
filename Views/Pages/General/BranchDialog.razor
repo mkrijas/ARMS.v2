@@ -1,6 +1,6 @@
 ﻿@inject MudBlazor.ISnackbar snackbar
 @inject IPlaceService Iplace
-@inject IBranchService Iservice
+@inject IBranchService IBranchService
 
 <MudDialog DisableSidePadding="true">
     <TitleContent>
@@ -15,20 +15,21 @@
                 <MudGrid>
                     <MudGrid xs="12">
                         <EditForm id="mainForm" Model="@model" OnValidSubmit="OnValidSubmit">
-                            <ValidationSummary></ValidationSummary>
+                            <FluentValidationValidator />
+                            <ValidationSummary />
                             <ObjectGraphDataAnnotationsValidator />
                             <MudGrid>
                                 <MudItem xs="6">
                                     <MudTextField @bind-Value="model.BranchName" Label="Branch Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BranchName)"></MudTextField>
                                 </MudItem>
-@*                                <MudItem xs="6">
-                                    <MudTextField @bind-Value="model.BranchCode" Label="Branch Code" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BranchCode)"></MudTextField>
+                                @*                                <MudItem xs="6">
+                                <MudTextField @bind-Value="model.BranchCode" Label="Branch Code" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BranchCode)"></MudTextField>
                                 </MudItem>
                                 <MudItem xs="6">
-                                    <MudTextField @bind-Value="model.BranchAbbrev" MaxLength="3" Label="Branch Abbreviation" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BranchAbbrev)"></MudTextField>
+                                <MudTextField @bind-Value="model.BranchAbbrev" MaxLength="3" Label="Branch Abbreviation" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BranchAbbrev)"></MudTextField>
                                 </MudItem>
                                 <MudItem xs="6">
-                                    <CoaSelector LabelName="Chart Of Accounts" @bind-Value="model.Coa" />
+                                <CoaSelector LabelName="Chart Of Accounts" @bind-Value="model.Coa" />
 
                                 </MudItem>*@
                                 <MudItem xs="6">
@@ -36,10 +37,10 @@
                                                      SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"
                                                      For="@(() => model.Place)"></MudAutocomplete>
                                 </MudItem>
-@*                                <MudItem xs="12">
+                                @*                                <MudItem xs="12">
                                 </MudItem>*@
                                 @*<MudItem xs="6">
-                                    <MudCheckBox @bind-Checked="model.Operate" Label="Allow Operation" For="@(() => model.Operate)" />
+                                <MudCheckBox @bind-Checked="model.Operate" Label="Allow Operation" For="@(() => model.Operate)" />
                                 </MudItem>*@
                                 <MudItem xs="6">
                                     <MudCheckBox @bind-Checked="model.Active" Label="Is Active" For="@(() => model.Active)" />
@@ -59,10 +60,14 @@
                                     <MudTextField @bind-Value="@model.Address.City" Label="City" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Address.City)"></MudTextField>
                                 </MudItem>
                                 <MudItem xs="6">
-                                    <MudTextField @bind-Value="@model.Address.PinCode" Label="PinCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Address.PinCode)"></MudTextField>
+                                    <MudTextField @bind-Value="@model.Address.PinCode" Label="PinCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Address.PinCode)" Mask="@(new PatternMask("000000"))"></MudTextField>
                                 </MudItem>
                                 <MudItem xs="6">
                                     <MudTextField @bind-Value="@model.GstNo" Label="GST NO" MaxLength="15" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.GstNo)"></MudTextField>
+                                    @if (ValidationMessage != null)
+                                    {
+                                        <div class="validation-message">@ValidationMessage</div>
+                                    }
                                 </MudItem>
                             </MudGrid>
                         </EditForm>
@@ -93,47 +98,63 @@
     protected override async Task OnInitializedAsync()
     {
         places = Iplace.Select(0).ToList();
-        branches = Iservice.Select().ToList();
+        branches = IBranchService.Select().ToList();
         if (model.BranchID != null)
         {
-            UpwardBranch = Iservice.SelectByID(model.UpwardBranchID);
+            UpwardBranch = IBranchService.SelectByID(model.UpwardBranchID);
         }
     }
 
-
-    private void OnValidSubmit(EditContext context)
+    private async Task OnValidSubmit(EditContext context)
     {
         if (model.Place?.PlaceID == null)
         {
             snackbar.Add("Place is not selected", Severity.Error);
             return;
         }
-        else
-        if (!places.Select(x => x.PlaceName).Contains(model.Place.PlaceName))
+        else if (!places.Select(x => x.PlaceName).Contains(model.Place.PlaceName))
         {
             snackbar.Add("Invalid Place", Severity.Error);
             return;
         }
-        else
-        if (model.UpwardBranchID == null)
+        else if (model.UpwardBranchID == null)
         {
             snackbar.Add("Please select parent branch", Severity.Error);
             return;
         }
+        else if (!ValidCustomGstNo(model))
+        {
+            ValidationMessage = "GstNo StateCode is InValid for " + model.Place.PlaceName + " ! ";
+            return;
+        }
+        ValidationMessage = null;
         model.UpwardBranchID = UpwardBranch?.BranchID;
-        snackbar.Add("Saved Successfully", Severity.Success);
         MudDialog.Close(model);
+    }
+
+    public string ValidationMessage = null;
+
+    private bool ValidCustomGstNo(BranchModel model)
+    {
+        var gstcode = model.Place.GstCode;
+        var gstno = model.GstNo.Substring(0, 2);
+        if (gstno == gstcode.Value.ToString())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     private async Task<IEnumerable<PlaceModel>> Search(string searchString)
     {
-        return await Task.FromResult(
-            places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+        return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
     private async Task<IEnumerable<BranchModel>> SearchBranch(string searchString)
     {
         return await Task.FromResult(branches.Where(x => x.BranchName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)).Where(x => x.BranchID != model.BranchID));
     }
-
 }
