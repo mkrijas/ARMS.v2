@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices.General
         ConfigModel GetByInventoryTyreGroupID();
         ConfigModel GetAssetSubclassForTrucks();
         ConfigModel GetDefaultMileageShortageCredit();
+        ConfigModel GetCloseTripEventTypeID();
         ConfigModel GetBaseFinanceGroupId(string groupName);
         IEnumerable<ConfigModel> GetAll();
     }
