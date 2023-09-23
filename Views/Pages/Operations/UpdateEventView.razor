@@ -68,7 +68,7 @@
                     </MudItem>
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
                         <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="model.NextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
-                            @foreach (var item in EventTypes)
+                            @foreach (var item in DestinationEventTypes)
                             {
                                 <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
                             }
@@ -131,6 +131,7 @@
 
     private List<PlaceModel> places = new();
     private List<EventTypeModel> EventTypes;
+    private List<EventTypeModel> DestinationEventTypes;
     private EventTypeModel SelectedEvent = new();
 
     private List<GcSetModel> GCsToUnload = new();
@@ -155,17 +156,18 @@
     #endregion
 
 
-    protected async override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionEventServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
         EventTypes = Ievent.GetEventTypes().Where(x => x.EventTypeID != 1 && x.IsTripRelated).ToList();
+       
         places = Iplace.Select(0).ToList();
         PreEvent = model.TruckEventID == null ? Ievent.GetCurrentEvent(Truck.TruckID) : Ievent.GetPreviousEvent(model.TruckEventID);
 
         int? OriginID = null, DestinationID = null;
-
+        DestinationEventTypes = EventTypes.Where(d => model.EventTypeID == null || model.EventTypeID != null && (d.EventTypeID > model.EventTypeID)).ToList();
         if (Truck == null)
         {
             Truck = Itruck.SelectByID(CurrentTrip.TruckID);
@@ -227,6 +229,7 @@
                 IsDisableSelectAction = CurrentTrip.UserInfo.RecordStatus == 4;
             }
         }
+        
         var user = authprov.User;
         UserID = user.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -415,6 +418,7 @@
     {
         SelectedEvent = Ievent.GetEventType(e);
         model.EventTypeID = e;
+        DestinationEventTypes = EventTypes.Where(d => model.EventTypeID == null || model.EventTypeID != null && (d.EventTypeID > model.EventTypeID)).ToList();
         if (SelectedEvent.EventTypeName != null)
         {
             model.DestinationID = SelectedEvent.IsStationary ? model.OriginID : model.DestinationID;
