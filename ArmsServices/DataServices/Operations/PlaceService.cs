@@ -78,6 +78,7 @@ namespace ArmsServices.DataServices
                 DistrictID = dr.GetInt32("DistrictID"),
                 GeoFenceID = dr.GetInt64("GeoFenceID"),
                 //LatLong = dr.GetLatLongString("LatLong"),
+                GstCode = dr.GetInt32("GstCode"),
                 PinCode = dr.GetString("PinCode"),
                 PlaceID = dr.GetInt32("PlaceID"),
                 PlaceName = dr.GetString("PlaceName"),

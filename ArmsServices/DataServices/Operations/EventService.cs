@@ -219,7 +219,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TruckID", truckID),
-                new SqlParameter("@EventTime", eventTime),
+               new SqlParameter("@EventTime", eventTime),
                new SqlParameter("@Operation", "PreviousEventReadingAndTimeEvent"),
             };
             EventModel model = null;
