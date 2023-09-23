@@ -94,7 +94,9 @@ namespace ArmsModels.BaseModels
     {
         public int? ID { get; set; }
         public int? AssetSubClassID { get; set; }
+        [Required(ErrorMessage = "Name of Asset SubClass is required.")]
         public virtual string AssetSubclass { get; set; }
+        [Required(ErrorMessage = "AssetClass is required.")]
         public int? AssetClassID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
