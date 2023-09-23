@@ -26,6 +26,10 @@ namespace ArmsModels.BaseModels
         public int? BreakdownID { get; set; }
         [Required]
         public string workshop { get; set; }
+        [Required]
+        public string job { get; set; }
+        [Required]
+        public string mechanic { get; set; }
         public List<JobcardWorkshopModel> Workshops { get; set; }
         public List<JobInProgressModel> Jobs { get; set; }
         public UserInfoModel UserInfo { get; set; }

@@ -26,11 +26,17 @@
 
     [Parameter] public JobInProgressModel model { get; set; }
     [Parameter] public WorkshopModel workshop { get; set; }
-    private RepairJobModel SelectedJob = new();
+
+    [Parameter] public EventCallback<bool> SetJobs { get; set; }
+    [Parameter] public bool ClearOnSelect { get; set; } = false;
+    private MudAutocomplete<RepairJobModel> _autoComplete { get; set; } = new();
+
+
+    public RepairJobModel SelectedJob = new();
     private WorkshopModel SelectedWorkshop = new();
     private List<RepairJobModel> jobslist = new();
     private List<MechanicModel> Mechanics = new();
-    private HashSet<MechanicModel> SelectedMechanics;
+    public HashSet<MechanicModel> SelectedMechanics;
 
 
     protected override void OnInitialized()
@@ -47,14 +53,16 @@
     }
 
 
-    private void JobChanged(RepairJobModel obj)
+    private async Task JobChanged(RepairJobModel obj)
     {
         SelectedJob = obj;
         model.RepairJobID = obj?.RepairJobID;
+
+        await SetJobs.InvokeAsync();
     }
 
 
-    private void mechanicChanged(IEnumerable<MechanicModel> obj)
+    private async Task mechanicChanged(IEnumerable<MechanicModel> obj)
     {
         model.Mechanics.Clear();
         SelectedMechanics = obj.ToHashSet();
@@ -69,6 +77,7 @@
                 JipID = model.JipID,
             });
         }
+        await SetJobs.InvokeAsync();
     }
 
     protected override async Task OnParametersSetAsync()
