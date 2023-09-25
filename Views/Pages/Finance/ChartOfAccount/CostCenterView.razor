@@ -11,7 +11,7 @@
         <MudPaper Width="100%" Class="p-2" >
             <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
                 <MudText Typo="Typo.h6">Category
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogCategory(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogCategory(new CategoryModel()))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
 
                 </MudText>
              
@@ -52,14 +52,12 @@
                
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<CostCenterModel, object>(x=> x.CostCenterID)" InitialDirection="SortDirection.Ascending">ID</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<CostCenterModel, object>(x=> x.CostCenter)" InitialDirection="SortDirection.Ascending">Cost Center</MudTableSortLabel></MudTh>
                 
                 
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="CostCenterID">@context.CostCenterID</MudTd>
                
                 <MudTd DataLabel="CostCenter">@context.CostCenter</MudTd>
                 
@@ -122,25 +120,25 @@
         var user = authprov.User;
 
         DialogParameters parms = new DialogParameters();
-        parms.Add("model",ii);
+        parms.Add("model",ii.Clone());
         var dialog =  DialogService.Show<CostCenterDialog>(ii.CostCenterID == null?"ADD":"EDIT",parms);
         var result = await dialog.Result;
 
         if(!result.Cancelled)
         {   
             CostCenterModel UpatedModel = (CostCenterModel)result.Data;            
-            ii.UserInfo.UserID = user.Identity.Name;
+            UpatedModel.UserInfo.UserID = user.Identity.Name;
 
             try
             {
 
-                Iservice.Update(UpatedModel);
+                UpatedModel = Iservice.Update(UpatedModel);
                 // model = new();
                 snackbar.Add("Saved Successfully", Severity.Success);
                 CategoryModel igm = new CategoryModel();
                 igm.CategoryID = UpatedModel.Category.CategoryID;
                 GetInventoryItem(igm);
-                
+
             }
             catch (Exception ex)
             {
@@ -150,11 +148,15 @@
         }
     }
 
-    private void Delete(CostCenterModel ii)
+    private async Task Delete(CostCenterModel ii)
     {
-        Iservice.Delete(ii.CostCenterID, "Rijas");
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var UserID = authprov.User.Identity.Name;
+        Iservice.Delete(ii.CostCenterID, UserID);
         snackbar.Add("Deleted Successfully", Severity.Success);
         GetAll();
+        await SelectedItemChanged(SelectedItem);
     }
     private async Task OpenDialogCategory(CategoryModel ig)
     {
@@ -162,14 +164,14 @@
         var user = authprov.User;
 
         DialogParameters parms = new DialogParameters();
-        parms.Add("model",ig);
+        parms.Add("model",ig.Clone());
         var dialog =  DialogService.Show<CostCenterCategoryDialog>(ig.CategoryID == null?"ADD":"EDIT",parms);
         var result = await dialog.Result;
 
         if(!result.Cancelled)
         {   
             CategoryModel UpdatedModel = (CategoryModel)result.Data;            
-            ig.UserInfo.UserID = user.Identity.Name;
+            UpdatedModel.UserInfo.UserID = user.Identity.Name;
 
             try
             {
