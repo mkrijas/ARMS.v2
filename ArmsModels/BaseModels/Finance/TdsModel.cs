@@ -20,6 +20,7 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         public NatureOfPaymentModel TdsNP { get; set; }  
         [ValidateComplexType]
+        [Required]
         public AssesseeTypeModel AssesseeType { get; set; }
         [Required]
         public DateTime? PeriodFrom { get; set; }
@@ -33,8 +34,8 @@ namespace ArmsModels.BaseModels
 
     public class NatureOfPaymentModel
     {
+        public int? TdsNPID { get; set; }
         [Required]
-        public int? TdsNPID { get; set; }        
         public string NatureOfPayment { get; set; }
     }
     public class AssesseeTypeModel
@@ -52,7 +53,7 @@ namespace ArmsModels.BaseModels
             this.UserInfo = new SharedModels.UserInfoModel();          
         }
         public int? TdsAccountMappedID { get; set; }
-        
+        [Required]
         public int? CoaID { get; set; }
         public virtual string AccountName { get; set; }
         [Required]
@@ -68,13 +69,22 @@ namespace ArmsModels.BaseModels
         public TdsThresholdLimitModel()
         {
             this.UserInfo = new SharedModels.UserInfoModel();
-        }       
+        }
         public int? TdsTLID { get; set; }
         [ValidateComplexType]
-        public NatureOfPaymentModel NatureOfPayment { get; set; }       
+        [Required]
+        public NatureOfPaymentModel NatureOfPayment { get; set; }
+
+        [Required]
         public DateTime? PeriodFrom { get; set; }
+
+        [Required]
         public DateTime? PeriodTo { get; set; }
+
+        [Required]
         public decimal? ThresholdLimitSingle { get; set; }
+
+        [Required]
         public decimal? ThresholdLimitPeriod { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
