@@ -42,12 +42,17 @@ namespace ArmsModels.BaseModels
         }
     }
 
-    public class DimensionModel
+    public class DimensionModel : ICloneable
     {
 
         public int? DimensionID { get; set; }
         public string Dimension { get; set; }
         public CategoryModel Category { get; set; } = new();
         public UserInfoModel UserInfo { get; set; } = new();
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<DimensionModel>(Json);
+        }
     }
 }
