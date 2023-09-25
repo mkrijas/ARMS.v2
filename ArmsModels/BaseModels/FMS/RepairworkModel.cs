@@ -51,6 +51,19 @@ namespace ArmsModels.BaseModels
                 }
             }
         }
+        public string JobStatusTextColor
+        {
+            get
+            {
+                switch (JobStatus)
+                {
+                    case 1: return "blue"; // Set the color for 'in Progress' status
+                    case 2: return "green"; // Set the color for 'Finished' status
+                    case 0: return "red"; // Set the color for 'Cancelled' status
+                    default: return string.Empty;
+                }
+            }
+        }
         public string Remarks { get; set; }
         public UserInfoModel UserInfo { get; set; }
         public List<MechanicJobModel> Mechanics { get; set; }
