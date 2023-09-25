@@ -1,12 +1,15 @@
 ﻿@page "/Driver"
 @inject IDriverService Iservice
 @inject IDriverFaultService Ifaultservice
+@inject IBranchService Ibranchservice
 
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IPartyService Iparty
+@inject SignalRService signalRService
+
 
 @using System.IO
 @using System.Security.AccessControl
@@ -135,6 +138,14 @@
     public bool HasPermissionDriverFaultServiceEditDriver { get; set; } = false;
     public int DocTypeID = 53;
 
+    private List<BranchModel> BranchList = new();
+
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+
+    #endregion
+
     private async void BeginLeave(int? DriverID)
     {
         if (HasPermissionDriverServiceAllotLeave)
@@ -207,10 +218,13 @@
         HasPermissionDriverServiceEdit = await Irole.HasClaim(DocTypeIDDriver.ToString(), "Edit", ctc.Token);
         HasPermissionDriverServiceResign = await Irole.HasClaim(DocTypeIDDriver.ToString(), "Resign", ctc.Token);
         HasPermissionDriverServiceAllotLeave = await Irole.HasClaim(DocTypeIDDriverTransfer.ToString(), "AllotLeave", ctc.Token);
-
+        BranchList = Ibranchservice.Select().ToList();
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+
+        await signalRService.StartAsync();
+
         GetAll();
     }
 
@@ -323,7 +337,7 @@
     }
 
 
-    private async void Transfer(int? DriverID)
+    private async Task Transfer(int? DriverID)
     {
         if (HasPermissionDriverTransferEdit)
         {
@@ -335,6 +349,25 @@
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
             var dialog = DialogService.Show<DriverTransferInitiationDialog>("Transfer Driver", parameters, maxWidth);
             var result = await dialog.Result;
+
+            var isCancelled = result.Cancelled;
+            if (!isCancelled)
+            {
+                var ReturnData = (DriverTransferInitiationModel)result.Data;
+                notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiatedBranch?.BranchID ?? 0)) ?? null;
+                notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
+                notificationMessage.MessageTitle = "Driver " + (ReturnData?.Driver?.DriverName ?? "") + " is transfered to this branch.";
+                notificationMessage.MessageBody = "Driver " + (ReturnData?.Driver?.DriverName ?? "") + " is transfered from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " to this branch on " + (DateTime.Now).ToString() + ".";
+                notificationMessage.RedirectedTo = 0;
+                notificationMessage.ExpiredBy = 7;
+                notificationMessage.DocumentID = ReturnData.DriverTransferID;
+                notificationMessage.MessageGroupID = "DriverTransfer";
+                notificationMessage.PageToRedirectLink = "/DriverTransferView";
+                notificationMessage.ClaimValue = "Edit";
+                notificationMessage.DocumentTypeID = DocTypeID;
+                notificationMessage.MsgDate = DateTime.Now;
+                await signalRService.Send(notificationMessage);
+            }
             GetAll();
         }
         else
