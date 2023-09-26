@@ -307,14 +307,14 @@ namespace ArmsServices.DataServices
                 FileName = dr.GetString("FilePath"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 CostCenter = dr.GetInt32("CostCenter"),
-
+                BusinessNature = dr.GetString("NatureOfFirm"),
                 Dimension = dr.GetInt32("Dimension"),              
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 Narration = dr.GetString("Narration"),
                 Party = new PartyModel()
-                {                
+                {  
                     PartyID = dr.GetInt32("PartyID"),
                     TradeName = dr.GetString("TradeName"),
                     PartyCode = dr.GetString("PartyCode"),
