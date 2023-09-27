@@ -17,7 +17,7 @@ namespace ArmsModels.BaseModels
         [StringLength(maximumLength: 200)]
         public string BeneficiaryName { get; set; }
         [Required]
-        [StringLength(18,ErrorMessage = "Account number should between 9 to 18 digit", MinimumLength = 9)]
+        [StringLength(18, ErrorMessage = "Account number should between 9 to 18 digit", MinimumLength = 9)]
         [RegularExpression("^[0-9]*$", ErrorMessage = "Account Number must be numeric")]
         public string AccountNumber { get; set; }
         [Required]
@@ -65,7 +65,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo
         {
             get
-            {                return _userInfo;            }
+            { return _userInfo; }
             set
             {
                 _userInfo = value;
@@ -85,9 +85,17 @@ namespace ArmsModels.BaseModels
         public int? ID { get; set; }
         [Required]
         public string Title { get; set; }
+        [ValidateComplexType]
         [Required]
+
         public ChartOfAccountModel BankAccount { get; set; }
+        [ValidateComplexType]
+        [Required]
+
         public ChartOfAccountModel BankCharges { get; set; }
+        [ValidateComplexType]
+        [Required]
+
         public ChartOfAccountModel ProcessingFee { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
@@ -98,7 +106,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? Nature { get; set; } //SELECT  -1 as Payment,1 as Receipt
         [Required]
-        public string NatureName { get { return Nature == 1 ? "Receipt" : "Payment" ; } }
+        public string NatureName { get { return Nature == 1 ? "Receipt" : "Payment"; } }
 
         [Required]
         public DateTime? TransactionDate { get; set; }
