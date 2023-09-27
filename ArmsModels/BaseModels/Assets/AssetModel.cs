@@ -55,7 +55,7 @@ namespace ArmsModels.BaseModels
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public decimal? SpanOfYear { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
-        public decimal? SalvageValue { get; set; }        
+        public decimal? SalvageValue { get; set; }
         public virtual decimal? DepreciableValue
         {
             get
@@ -84,8 +84,8 @@ namespace ArmsModels.BaseModels
 
     public class AssetClassModel
     {
-        public int? AssetClassID { get; set; }        
-        public string AssetClassName { get; set; }       
+        public int? AssetClassID { get; set; }
+        public string AssetClassName { get; set; }
         public int? PostingGroupID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
 
@@ -100,30 +100,43 @@ namespace ArmsModels.BaseModels
         public int? AssetClassID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
-        public class AssetStatusUpdateModel
-{
-    public int? StatusUpdateID { get; set; }
-    [Required]
-    public int? AssetID { get; set; }
-    [Required]
-    public string Status { get; set; }
-    [Required]
-    public DateTime? StatusDate { get; set; }
-    public int? AccountTransactionID { get; set; }
-    [Required]
-    public decimal? Amount { get; set; } 
-    public UserInfoModel UserInfo { get; set; } = new();
-}
+    public class AssetStatusUpdateModel
+    {
+        public int? StatusUpdateID { get; set; }
+        [Required]
+        public int? AssetID { get; set; }
+        [Required]
+        public string Status { get; set; }
+        [Required]
+        public DateTime? StatusDate { get; set; }
+        public int? AccountTransactionID { get; set; }
+        [Required]
+        public decimal? Amount { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
+    }
 
-public class AssetPostingGroupModel
-{      
+    public class AssetPostingGroupModel
+    {
         public int? ID { get; set; }
-        public string Title { get; set; }        
+        [Required]
+        public string Title { get; set; }
+        [ValidateComplexType]
+        [Required]
         public ChartOfAccountModel Capitalization { get; set; }
+        [ValidateComplexType]
+        [Required]
         public ChartOfAccountModel CWIP { get; set; }
+        [ValidateComplexType]
+        [Required]
         public ChartOfAccountModel AccummulatedDepreciation { get; set; }
+        [ValidateComplexType]
+        [Required]
         public ChartOfAccountModel Depreciation { get; set; }
+        [ValidateComplexType]
+        [Required]
         public ChartOfAccountModel Revaluation { get; set; }
+        [ValidateComplexType]
+        [Required]
         public ChartOfAccountModel RevaluationReserve { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
