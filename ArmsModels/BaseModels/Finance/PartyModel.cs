@@ -79,10 +79,17 @@ namespace ArmsModels.BaseModels
     public class VendorPostingGroupModel
     {
         public int? VendorPostingGroupID { get; set; }
+        [Required]
         public string Title { get; set; }
-        public ChartOfAccountModel Payable { get; set; } = new();
-        public ChartOfAccountModel PrePayment { get; set; } = new();
-        public ChartOfAccountModel Deposit { get; set; } = new();
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel Payable { get; set; }
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel PrePayment { get; set; }
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel Deposit { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
