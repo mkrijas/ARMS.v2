@@ -99,10 +99,17 @@ namespace ArmsModels.BaseModels
     public class RenterPostingGroupModel
     {
         public int? RenterPostingGroupID { get; set; }
+        [Required]
         public string Title { get; set; }
-        public ChartOfAccountModel Rent { get; set; } = new();
-        public ChartOfAccountModel Deposit { get; set; } = new();
-        public ChartOfAccountModel Other { get; set; } = new();
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel Rent { get; set; }
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel Deposit { get; set; }
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel Other { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }
