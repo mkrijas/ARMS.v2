@@ -14,8 +14,8 @@ namespace ArmsServices.DataServices
         SundryReceiptModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<SundryReceiptModel> Select();
-        IEnumerable<SundryReceiptModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<SundryReceiptModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
+        IEnumerable<SundryReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<SundryReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<SundryReceiptEntryModel> GetEntries(int? SID);
         int Approve(int? SundryReceiptID, string UserID, string Remarks);
     }
