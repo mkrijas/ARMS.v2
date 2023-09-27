@@ -13,6 +13,7 @@ namespace ArmsModels.BaseModels
         private string _tradeName;
         public PartyModel()
         {                   
+
         }
         public int? PartyID { get; set; } = 0;
         public string PartyCode { get; set; }        
@@ -96,10 +97,17 @@ namespace ArmsModels.BaseModels
     public class CustomerPostingGroupModel
     {
         public int? CustomerPostingGroupID { get; set; }
+        [Required]
         public string Title { get; set; }
-        public ChartOfAccountModel Receivable { get; set; } = new();
-        public ChartOfAccountModel PrePayment { get; set; } = new();
-        public ChartOfAccountModel Deposit { get; set; } = new();
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel Receivable { get; set; }
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel PrePayment { get; set; }
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel Deposit { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
