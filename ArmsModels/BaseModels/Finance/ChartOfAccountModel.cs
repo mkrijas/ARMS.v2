@@ -14,7 +14,6 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
         }
 
-        [Required]
         public int? CoaID { get; set; }
         [Required]
         public int? ParentID { get; set; }
