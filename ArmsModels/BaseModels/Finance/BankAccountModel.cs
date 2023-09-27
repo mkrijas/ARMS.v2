@@ -87,15 +87,12 @@ namespace ArmsModels.BaseModels
         public string Title { get; set; }
         [ValidateComplexType]
         [Required]
-
         public ChartOfAccountModel BankAccount { get; set; }
         [ValidateComplexType]
         [Required]
-
         public ChartOfAccountModel BankCharges { get; set; }
         [ValidateComplexType]
         [Required]
-
         public ChartOfAccountModel ProcessingFee { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
