@@ -14,6 +14,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
         }
 
+        [Required]
         public int? CoaID { get; set; }
         [Required]
         public int? ParentID { get; set; }
@@ -71,6 +72,4 @@ namespace ArmsModels.BaseModels
         public virtual decimal? BankCharges { get; set; }
         public virtual string BankTools { get; set; }
     }
-
-
 }
