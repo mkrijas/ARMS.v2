@@ -70,6 +70,16 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
+    public class TyreUnMountedModel
+    {
+        [Required]
+        [ValidateComplexType]
+        public TyreModel Tyre { get; set; } = new();
+        [Required]
+        public int? UnmountedKM { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
+    }
+
     public class TyreResoleModel
     {
         public int? ID { get; set; }

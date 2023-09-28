@@ -8,22 +8,22 @@
     <TitleContent>
 
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Mount Tyre.
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Mount Tyre
             </MudText>
 
     </TitleContent>
     <DialogContent>
 
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm id="formDriver" Model="@model">
-                <ObjectGraphDataAnnotationsValidator />
+            <EditForm id="formMount" Model="@model" OnValidSubmit="Mount">
+                <DataAnnotationsValidator />
                 <ValidationSummary />
 
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <MudSelect T="string?" Variant="Variant.Outlined" Disabled="IsTyreDisabled" Margin="Margin.Dense" Label="Tyre" @bind-Value="@SelectedTyre.TyreSerialNumber">
+                    <MudSelect T="TyreModel" Variant="Variant.Outlined" Disabled="IsTyreDisabled" Margin="Margin.Dense" Label="Tyre" ToStringFunc="@(e => e == null ? null : $"{e.TyreSerialNumber}")" Value="@SelectedTyre" ValueChanged="OnTyreChanged">
                         @foreach (TyreModel Tyre in TyreList)
                         {
-                            <MudSelectItem Value="@Tyre.TyreSerialNumber">@Tyre.TyreSerialNumber</MudSelectItem>
+                            <MudSelectItem Value="@Tyre">@Tyre.TyreSerialNumber</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
@@ -31,15 +31,15 @@
                     <TruckSelector Value="SelectedTruck" ValueChanged="OnValueChanged" IsDisabled="IsTruckDisabled"></TruckSelector>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <MudSelect T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Tyre Position" @bind-Value="@SelectedTyrePosition.PositionID">
+                    <MudSelect T="TyrePositionModel" Variant="Variant.Outlined" Margin="Margin.Dense" ToStringFunc="@(e => e== null ? null : $"{e.Description}")" Label="Tyre Position" Value="@SelectedTyrePosition" ValueChanged="OnTyrePositionChanged">
                         @foreach (TyrePositionModel TyrePosition in TyrePositionListForMountAndUnMount)
                         {
-                            <MudSelectItem Value="@TyrePosition.PositionID">@TyrePosition.Description</MudSelectItem>
+                            <MudSelectItem Value="@TyrePosition">@TyrePosition.Description</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <MudTextField @bind-Value="@MountedKM" Label="Mount KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @MountedKM)"></MudTextField>
+                    <MudTextField @bind-Value="@model.MountedKM" Label="Mount KM" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                 </MudItem>
                 @*<MudItem xs="11" md="11" Class="mb-6">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Mount" Class="px-12">Mount</MudButton>
@@ -49,7 +49,7 @@
 
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Mount" Class="px-12">Mount</MudButton>
+        <MudButton form="formMount" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Mount</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -66,8 +66,6 @@
     public TyreModel SelectedTyre { get; set; } = new();
     [Required]
     public TyrePositionModel SelectedTyrePosition { get; set; } = new();
-    [Required]
-    public int? MountedKM { get; set; }
 
     public bool IsTruckDisabled { get; set; } = false;
 
@@ -129,6 +127,18 @@
 
     protected override void OnParametersSet()
     {
+        model.TyreID = SelectedTyre.TyreID;
+        model.MountedOn = DateTime.Now;
+    }
+    private void OnTyreChanged(TyreModel obj)
+    {
+        SelectedTyre = obj;
+        model.TyreID = obj?.TyreID ?? null;
+    }
+    private void OnTyrePositionChanged(TyrePositionModel obj)
+    {
+        SelectedTyrePosition = obj;
+        model.PositionID = obj?.PositionID ?? null;
     }
     void Cancel()
     {
@@ -146,7 +156,6 @@
             model.TruckID = SelectedTruck.TruckID;
             model.TyreID = SelectedTyre.TyreID;
             model.PositionID = SelectedTyrePosition.PositionID;
-            model.MountedKM = MountedKM;
             model.MountedOn = DateTime.Now;
             model.UserInfo.UserID = user.Identity.Name;
             try

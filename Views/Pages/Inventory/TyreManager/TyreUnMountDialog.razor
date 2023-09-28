@@ -14,15 +14,15 @@
     <DialogContent>
 
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm id="formDriver" Model="@model">
+            <EditForm id="formUnMount" Model="@SubmitModel" OnValidSubmit="UnMount">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
 
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <MudSelect T="string?" Variant="Variant.Outlined" Disabled="IsTyreDisabled" Margin="Margin.Dense" Label="Tyre" @bind-Value="@SelectedTyre.TyreSerialNumber">
+                    <MudSelect T="TyreModel" Variant="Variant.Outlined" Disabled="IsTyreDisabled" Margin="Margin.Dense" Label="Tyre" @bind-Value="@SubmitModel.Tyre" ToStringFunc="@(e => e== null ? null : $"{e.TyreSerialNumber}")">
                         @foreach (TyreModel Tyre in TyreList)
                         {
-                            <MudSelectItem Value="@Tyre.TyreSerialNumber">@Tyre.TyreSerialNumber</MudSelectItem>
+                            <MudSelectItem Value="@Tyre">@Tyre.TyreSerialNumber</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
@@ -30,14 +30,14 @@
                     <MudTextField @bind-Value="@SelectedTyre.TyrePosition.Side" Label="Tyre position" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @SelectedTyre.TyrePosition.Side)"></MudTextField>
                 </MudItem>*@
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <MudTextField @bind-Value="@UnMountedKM" Label="Un Mounted KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @UnMountedKM)"></MudTextField>
+                    <MudTextField @bind-Value="@SubmitModel.UnmountedKM" Label="Un Mounted KM" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                 </MudItem>
             </EditForm>
         </MudContainer>
 
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UnMount" Class="px-12">UnMount</MudButton>
+        <MudButton form="formUnMount" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">UnMount</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -49,14 +49,10 @@
     public TyreMountedModel model { get; set; } = new();
     [Parameter]
     public TruckModel SelectedTruck { get; set; } = new();
-    [Required]
     [Parameter]
     public TyreModel SelectedTyre { get; set; } = new();
-    [Required]
-    public TyrePositionModel SelectedTyrePosition { get; set; } = new();
-    [Required]
-    public int? UnMountedKM { get; set; }
 
+    public TyreUnMountedModel SubmitModel { get; set; } = new();
     public bool IsTruckDisabled { get; set; } = false;
 
     public bool IsTyreDisabled { get; set; } = false;
@@ -83,17 +79,7 @@
 
         if (SelectedTyre != null && SelectedTyre.TyreID != null && SelectedTyre.TyreID != 0)
         {
-            //List<TyreMountedModel> MountedTyreList = IServices.SelectMountedTyresByTyreID(SelectedTyre.TyreID).ToList();
-            //if (MountedTyreList != null && MountedTyreList.Count != 0)
-            //{
-            //    if (SelectedTyre.TyrePosition == null)
-            //    {
-            //        SelectedTyre.TyrePosition = new();
-            //    }
-            //    SelectedTyre.TyrePosition.PositionID = MountedTyreList.First().PositionID;
-            //    SelectedTyre.TyrePosition.Side = MountedTyreList.First().PositionName;
-            //}
-            
+
             IsTyreDisabled = true;
         }
         else
@@ -111,6 +97,7 @@
 
     protected override void OnParametersSet()
     {
+        SubmitModel.Tyre = SelectedTyre;
     }
     void Cancel()
     {
@@ -128,7 +115,7 @@
             //model.BranchID = int.Parse(brancIDString);
             model.UserInfo.UserID = user.Identity.Name;
 
-            IServices.Unmount(SelectedTyre.TyreID, DateTime.Now, UnMountedKM, model.UserInfo.UserID);
+            IServices.Unmount(SubmitModel.Tyre.TyreID, DateTime.Now, SubmitModel.UnmountedKM, model.UserInfo.UserID);
         }
 
         MudDialog.Close(DialogResult.Ok(true));
