@@ -201,7 +201,9 @@ namespace ArmsServices.DataServices
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 BankCharges = dr.GetDecimal("BankCharges"),
-
+                deferredExpenditure = dr.GetBoolean("deferredExpenditure"),
+                beginDate = dr.GetDateTime("beginDate"),
+                EndDate = dr.GetDateTime("EndDate"),
                 Narration = dr.GetString("Narration"),
 
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
