@@ -84,23 +84,26 @@
 
     private List<OwnBankModel> collection = new List<OwnBankModel>();
     DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        GetAll();
+        await GetAll();
     }
 
-    private void GetAll()
+    private async Task GetAll()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var branchIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int branchID = int.Parse(branchIDString);
 
         collection = new List<OwnBankModel>();
-        foreach (var item in Iservice.Select())
+        foreach (var item in Iservice.Select(branchID))
         {
             collection.Add(item);
         }
-
-
     }
+
     public async Task OpenDialog(OwnBankModel ownBank)
     {
         //var authprov = await auth.GetAuthenticationStateAsync();
@@ -121,7 +124,7 @@
                 OwnBankModel UpdatedModel = (OwnBankModel)result.Data;
                 Iservice.Update(UpdatedModel);
                 snackbar.Add("Saved Successfully", Severity.Success);
-                GetAll();
+                await GetAll();
             }
             catch (Exception ex)
             {
@@ -166,9 +169,7 @@
                 ShowUnReconciledBankEntry = true;
             }
             PreviousBankId = (int)bankModel.ID;
-
         }
-
         //model = new();
         //GetAll();
     }

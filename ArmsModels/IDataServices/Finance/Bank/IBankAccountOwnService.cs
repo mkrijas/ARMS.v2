@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
         OwnBankModel Update(OwnBankModel model);
         int Delete(int? ID, string UserID);
         IEnumerable<OwnBankModel> Select();
+        IEnumerable<OwnBankModel> Select(int? BranchID);
         OwnBankModel SelectByID(int ID);
         OwnBankModel SelectByCode(string BankCode);       
         int? GetBankChargeCoaID(int? BankID);

@@ -147,6 +147,7 @@ namespace ArmsModels.BaseModels
     public class DriverResignModel
     {
         public DriverModel Driver { get; set; }
+        [Required]
         public string Remarks { get; set; }
 
     }

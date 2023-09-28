@@ -45,7 +45,7 @@
                     <MudItem xs="12">
                         @foreach (var item in model.Jobs)
                         {
-                            <JobInProgressView model="item" workshop="SelectedWorkshop" @ref="JipComp"></JobInProgressView>
+                            <JobInProgressView model="item" workshop="SelectedWorkshop" @ref="JipComp" SetJobs="SetJob"></JobInProgressView>
                         }
                         </MudItem>
                 </MudGrid>
@@ -115,6 +115,41 @@
             model.workshop = null;
         }
     }
+
+    private void SetJob()
+    {
+        if (model.Jobs != null && model.Jobs.Count() != 0 && model.Jobs.Any(g=>g.RepairJobID != null) )
+        {
+            model.job = string.Join(",", model.Jobs.Select(g => g.RepairJobID));
+
+        }
+        else
+        {
+            model.job = null;
+        }
+
+        if (model.Jobs != null && model.Jobs.Count() != 0 && model.Jobs.Any(g => g.RepairJobID == null))
+        {
+            model.job = null;
+        }
+
+        
+        if (model.Jobs != null && model.Jobs.Count() != 0 && model.Jobs.Any(g=>g.Mechanics != null && g.Mechanics.Count()!=0) )
+        {
+            model.mechanic = string.Join(",", model.Jobs.Select(g => g.Mechanics.Select(c=>c.MechanicID) ));
+
+        }
+        else
+        {
+            model.mechanic = null;
+        }
+        if (model.Jobs != null && model.Jobs.Count() != 0 && model.Jobs.Any(g => g.Mechanics == null || g.Mechanics.Count() == 0))
+        {
+            model.mechanic = null;
+
+        }
+    }
+
     private void Cancel()
     {
         MudDialog.Cancel();
@@ -128,6 +163,7 @@
     private void DeleteJob()
     {
         model.Jobs.RemoveAt(model.Jobs.Count - 1);
+        SetJob();
     }
 
     private async Task OnValidSubmit(EditContext context)
@@ -148,26 +184,8 @@
         }
         var authprov = await auth.GetAuthenticationStateAsync();
         model.UserInfo.UserID = authprov.User.Identity.Name;
-
         int BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         model.BranchID = BranchID;
-        if (SelectedWorkshop.WorkshopID == null)
-        {
-            bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Please, Select workshop.", yesText: "OK");
-
-            return;
-        }
-
-        if (model.Jobs == null)
-        {
-            bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Please, Select a job and mechanic.", yesText: "OK");
-
-            return;
-        }
 
         try {
             model.JobcardID = Iservice.Update(model).JobcardID;

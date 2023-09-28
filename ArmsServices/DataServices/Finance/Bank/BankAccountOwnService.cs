@@ -70,6 +70,19 @@ namespace ArmsServices.DataServices
                     yield return GetModel(dr);
             }
         }
+        public IEnumerable<OwnBankModel> Select(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "ByBranch"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.Own.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
 
 
         private OwnBankModel GetModel(IDataRecord dr)

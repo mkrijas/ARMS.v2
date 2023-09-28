@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class ContraModel: TransactionBaseModel
+    public class ContraModel: TransactionBaseModel, ICloneable
     {
         public int? ContraID { get; set; }
         [Required]
@@ -27,6 +28,11 @@ namespace ArmsModels.BaseModels
         public ChequeModel ChequeInfo { get; set; } = new();
         public string EntryReference { get; set; }
         public bool IsPayment { get; set; }
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<ContraModel>(Json);
+        }
 
     }
 }

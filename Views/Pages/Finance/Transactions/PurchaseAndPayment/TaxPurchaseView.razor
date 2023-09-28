@@ -121,7 +121,7 @@
 
     private async Task ReloadTable()
     {
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
     }
 
     protected override async Task OnInitializedAsync()
@@ -132,27 +132,30 @@
 
         model = new();
 
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
     }
-    void ApprovedChanged(bool value)
+    async Task ApprovedChanged(bool value)
     {
 
         IsApproved = value;
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
 
     }
-    private void GetAll(bool val, int numberOfRecords)
+    private async Task GetAll(bool val, int numberOfRecords)
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int? brancID = int.Parse(brancIDString);
 
         int NumberOfRecords = numberOfRecords;
 
         if (val)
         {
-            collection = Iservice.SelectByApproved(NumberOfRecords, searchTerm).ToList();
+            collection = Iservice.SelectByApproved(brancID, NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.SelectByUnapproved(NumberOfRecords, searchTerm).ToList();
+            collection = Iservice.SelectByUnapproved(brancID, NumberOfRecords, searchTerm).ToList();
         }
 
     }
@@ -165,7 +168,7 @@
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<TaxPurchaseDialog>(tds.PID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
     }
 
 
@@ -176,7 +179,7 @@
         {
             Iservice.Delete(tx.PID, "Rijas");
             snackbar.Add("Deleted Successfully", Severity.Success);
-            GetAll(IsApproved, NumberOfRecords);
+            await GetAll(IsApproved, NumberOfRecords);
 
         }
         else
@@ -201,7 +204,7 @@
         DialogParameters parms = new DialogParameters();
         var dialog = DialogService.Show<InventoryGrnViewDialog>("GRN", parms, maxWidth);
         var result = await dialog.Result;
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
 
     }
 

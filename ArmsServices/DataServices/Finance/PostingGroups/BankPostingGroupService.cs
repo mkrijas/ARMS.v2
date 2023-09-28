@@ -98,16 +98,19 @@ namespace ArmsServices.DataServices
                 Title = dr.GetString("Title"),
                 BankAccount = new ChartOfAccountModel()
                 {
+                    ParentID = dr.GetInt32("BankAccountParentID"),
                     CoaID  = dr.GetInt32("BankAccount"),
                     AccountName = dr.GetString("BankAccountCoa"),
                 },
                 ProcessingFee = new ChartOfAccountModel()
                 {
+                    ParentID = dr.GetInt32("BankChargesParentID"),
                     CoaID = dr.GetInt32("ProcessingFee"),
                     AccountName = dr.GetString("ProcessingFeeCoa"),
                 },
                 BankCharges = new ChartOfAccountModel()
                 {
+                    ParentID = dr.GetInt32("ProcessingFeeParentID"),
                     CoaID = dr.GetInt32("BankCharges"),
                     AccountName = dr.GetString("BankChargesCoa"),
                 },
@@ -119,6 +122,5 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-
     }
 }

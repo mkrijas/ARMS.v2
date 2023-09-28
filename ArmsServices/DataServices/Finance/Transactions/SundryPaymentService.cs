@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PaymentMemoID", ID),
+               new SqlParameter("@SundryPaymentID", ID),
                new SqlParameter("@UserID", UserID),
 
             };

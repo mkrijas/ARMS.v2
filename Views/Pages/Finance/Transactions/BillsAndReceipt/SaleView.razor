@@ -19,7 +19,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Sale</MudText>
                 <MudTooltip Text="New Sales">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new SaleModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
 
                 <MudSpacer></MudSpacer>
@@ -107,18 +107,23 @@
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         model = new();
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
     }
 
-    void ApprovedChanged(bool value)
+    async Task ApprovedChanged(bool value)
     {
 
         IsApproved = value;
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
 
     }
-    private void GetAll(bool val, int numberOfRecords)
+    private async Task GetAll(bool val, int numberOfRecords)
     {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+
         int NumberOfRecords = numberOfRecords;
         collection = new List<SaleModel>();
 
@@ -134,7 +139,7 @@
 
     private async Task ReloadTable()
     {
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
     }
 
     private int NumberOfRecords
@@ -149,10 +154,10 @@
             }
         }
     }
-    private void Verified()
+    private async Task Verified()
     {
 
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
 
     }
 
@@ -167,11 +172,9 @@
 
         var dialog = DialogService.Show<SaleDialog>(saleModel.SID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
-        if (!result.Cancelled)
-        {
-            GetAll(IsApproved, NumberOfRecords);
-            //model = new();
-        }
+        await GetAll(IsApproved, NumberOfRecords);
+        //model = new();
+
 
     }
 
@@ -185,7 +188,7 @@
             var user = authprov.User;
             Iservice.Delete(tx.SID, user.Identity.Name);
             snackbar.Add("Deleted Successfully", Severity.Success);
-            GetAll(IsApproved, NumberOfRecords);
+            await GetAll(IsApproved, NumberOfRecords);
 
         }
         else

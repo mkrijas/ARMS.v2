@@ -14,7 +14,9 @@ namespace ArmsModels.BaseModels
             this.UserInfo = new SharedModels.UserInfoModel();
         }
         public int? PlaceID { get; set; }
-        [Required][StringLength(maximumLength:200)]
+        public int? GstCode { get; set; }
+        [Required]
+        [StringLength(maximumLength:200)]
         public string PlaceName { get; set; }        
         public int? DistrictID { get; set; }
         [Required]

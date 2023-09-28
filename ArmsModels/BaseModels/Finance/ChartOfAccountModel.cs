@@ -71,6 +71,4 @@ namespace ArmsModels.BaseModels
         public virtual decimal? BankCharges { get; set; }
         public virtual string BankTools { get; set; }
     }
-
-
 }

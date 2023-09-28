@@ -125,13 +125,13 @@
                     <div class="opthead"><h6>Jobs</h6></div>
                     <MudList>
                         @foreach (var item in JipList)
-                        {                            
-                            <MudListItem Class="px-0">                                
+                        {
+                            <MudListItem Class="px-0">
                                 <MudPaper Class="mb-2 px-5" Elevation="0">
                                     <MudGrid>
                                         <MudItem Class="d-flex" xs="12">
                                             <b>@item.RepairJobTitle</b>
-                                            <b class="ml-3">@item.JobStatusText </b>
+                                            <b class="ml-3" style="color: @item.JobStatusTextColor">@item.JobStatusText </b>
                                             @if (item.JobStatus == 1)
                                             {
                                                 <MudButtonGroup Class="ml-3" Color="Color.Primary" Variant="Variant.Outlined">
@@ -145,8 +145,8 @@
                                             }
                                             <MudSpacer></MudSpacer>
                                             <b>@item.CreatedOn?.ToString("MMM-dd-yy HH:mm tt")</b>
-                                                                            
-                                       
+
+
                                         </MudItem>
                                         <MudDivider></MudDivider>
                                         <MudItem xs="12" Class="d-flex">
@@ -167,7 +167,7 @@
                                                     <MudIconButton Class="ml-3" Size="Size.Small" Icon="@Icons.Material.Sharp.Add" OnClick="(() => OpenMechanicSelector(item))" aria-label="AddMechanic"></MudIconButton>
                                                 </MudTooltip>
                                             }
-                                           
+
                                         </MudItem>
                                     </MudGrid>
                                 </MudPaper>
@@ -239,7 +239,7 @@
     <DialogContent>
         <MudContainer Style="height: 300px; overflow-y: auto">
             <MudSelect T="MechanicModel" MultiSelection="true" Label="Assign Mechanic/s" ToStringFunc="@(p => p.MechanicName)"
-                       @bind-SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+            @bind-SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
 
                 @foreach (var item in Mechanics)
                 {
@@ -314,7 +314,6 @@
         SelectedTruck = obj;
         if (obj != null)
         {
-
             SelectedJobcard = Iservice.SelectByTruck(SelectedTruck?.TruckID, true).FirstOrDefault();
             Breakdown = Ibreakdown.SelectByID(SelectedJobcard?.BreakdownID);
             jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
@@ -338,7 +337,6 @@
                     UserInfo = new() { UserID = authProvider.User.Identity.Name }
                 };
         }
-
     }
 
     void setJipList(JobcardModel jobcard)
@@ -410,6 +408,7 @@
         }
         jipView.UpdateJob(NewJob);
         setJipList(SelectedJobcard);
+        jipView.clearmodel();
     }
 
     async Task CloseJobcard()
@@ -443,9 +442,9 @@
                 GcSetID = CurrentEvent.GcSetID,
                 NextEventTypeID = CurrentEvent.NextEventTypeID,
                 UserInfo =
-            {
-                UserID = authProvider.User.Identity.Name
-            }
+                {
+                    UserID = authProvider.User.Identity.Name
+                }
             });
     }
 
@@ -475,18 +474,17 @@
 
         foreach (var item in SelectedMechanics)
         {
-            ImechanicJob.Update(
-                new MechanicJobModel()
+            ImechanicJob.Update(new MechanicJobModel()
+                {
+                    AssignedOn = DateTime.Now,
+                    JipID = SelectedJob.JipID,
+                    MechanicID = item.MechanicID,
+                    MechanicName = item.MechanicName,
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel()
                     {
-                        AssignedOn = DateTime.Now,
-                        JipID = SelectedJob.JipID,
-                        MechanicID = item.MechanicID,
-                        MechanicName = item.MechanicName,
-                        UserInfo = new ArmsModels.SharedModels.UserInfoModel()
-                        {
-                            UserID = authProvider.User.Identity.Name
-                        }
-                    });
+                        UserID = authProvider.User.Identity.Name
+                    }
+                });
         }
         setJipList(SelectedJobcard);
         visibleMechanicSelector = false;
@@ -509,19 +507,19 @@
     }
 
     private async Task OpenExpenses()
-    {  
+    {
         var parameters = new DialogParameters();
         parameters.Add("model", new TaxPurchaseModel() { NonStoreInventory = true, });
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = DialogService.Show<Pages.Finance.Transactions.PurchaseAndPayment.TaxPurchaseDialog>("Maintenance Expenses", parameters, maxWidth);
         var result = await dialog.Result;
-        if(!result.Canceled)
+        if (!result.Canceled)
         {
             var purchaseModel = (TaxPurchaseModel)result.Data;
             int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, purchaseModel.PID);
-            if(queryStatus == 0)
+            if (queryStatus == 0)
             {
-                snackbar.Add("Something went wrong !  Please check Taxpurchase collect number then contact Admin",Severity.Error);
+                snackbar.Add("Something went wrong !  Please check Taxpurchase collect number then contact Admin", Severity.Error);
             }
             else
             {
@@ -545,7 +543,7 @@
         parms.Add("SetIncomingVal", true);
         var dialog = DialogService.Show<InvRequestDialog>("ADD", parms, mediumWidth);
 
-        var result = await dialog.Result;       
+        var result = await dialog.Result;
         if (!result.Canceled)
         {
             InvRequestList = IInvRequestservice.SelectRequestReleaseByTruckID(SelectedTruck?.TruckID ?? 0).ToList();

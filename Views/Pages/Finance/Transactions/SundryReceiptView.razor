@@ -108,7 +108,7 @@
 
     private async Task ReloadTable()
     {
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
     }
 
     protected override async Task OnInitializedAsync()
@@ -117,27 +117,30 @@
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
     }
 
-    private void GetAll(bool val, int numberOfRecords)
+    private async Task GetAll(bool val, int numberOfRecords)
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int? brancID = int.Parse(brancIDString);
         int NumberOfRecords = numberOfRecords;
 
         if (val)
         {
-            collection = Iservice.SelectByApproved(NumberOfRecords, searchTerm).ToList();
+            collection = Iservice.SelectByApproved(brancID, NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.SelectByUnapproved(NumberOfRecords, searchTerm).ToList();
+            collection = Iservice.SelectByUnapproved(brancID, NumberOfRecords, searchTerm).ToList();
         }
     }
 
-    void ApprovedChanged(bool value)
+    async Task ApprovedChanged(bool value)
     {
         IsApproved = value;
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
 
     }
 
@@ -150,7 +153,7 @@
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<SundryReceiptDialog>(RModel.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
-        GetAll(IsApproved, NumberOfRecords);
+        await GetAll(IsApproved, NumberOfRecords);
     }
 
 

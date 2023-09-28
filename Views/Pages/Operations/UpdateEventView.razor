@@ -7,6 +7,7 @@
 @inject ITruckService Itruck
 @inject IDialogService DialogService
 @inject IBranchSettingsService branchSettingsService
+@inject IConfigTable configTable;
 
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
@@ -67,7 +68,7 @@
                     </MudItem>
                     <MudItem xs="12" md="6" hidden="@SelectedEvent.IsStationary">
                         <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="model.NextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
-                            @foreach (var item in EventTypes)
+                            @foreach (var item in DestinationEventTypes)
                             {
                                 <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
                             }
@@ -91,15 +92,15 @@
 
                     <MudItem xs="12" md="6">
                         <MudNumericField HideSpinButtons @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined"></MudNumericField>
-                        <ValidationMessage For="@(() => model.EventReading)" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        @*<input type="datetime-local" @bind-value="@model.EventTime"  />*@
-                        <MudTextField Label="Date n Time" Format="s" Variant="Variant.Outlined" @bind-Value="@model.EventTime" InputType="InputType.DateTimeLocal"></MudTextField>
-                        @*<MyDateTimePicker Label="Event" @bind-Value="model.EventTime"></MyDateTimePicker>*@
-                    </MudItem>
-                </MudGrid>
-            </EditForm>
+                         <ValidationMessage For="@(() => model.EventReading)" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         @*<input type="datetime-local" @bind-value="@model.EventTime"  />*@
+                         <MudTextField Label="Date n Time" Format="s" Variant="Variant.Outlined" @bind-Value="@model.EventTime" InputType="InputType.DateTimeLocal"></MudTextField>
+                         @*<MyDateTimePicker Label="Event" @bind-Value="model.EventTime"></MyDateTimePicker>*@
+                     </MudItem>
+                 </MudGrid>
+             </EditForm>
         }
     </DialogContent>
     <DialogActions>
@@ -130,6 +131,7 @@
 
     private List<PlaceModel> places = new();
     private List<EventTypeModel> EventTypes;
+    private List<EventTypeModel> DestinationEventTypes;
     private EventTypeModel SelectedEvent = new();
 
     private List<GcSetModel> GCsToUnload = new();
@@ -154,17 +156,18 @@
     #endregion
 
 
-    protected async override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionEventServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
         EventTypes = Ievent.GetEventTypes().Where(x => x.EventTypeID != 1 && x.IsTripRelated).ToList();
+       
         places = Iplace.Select(0).ToList();
         PreEvent = model.TruckEventID == null ? Ievent.GetCurrentEvent(Truck.TruckID) : Ievent.GetPreviousEvent(model.TruckEventID);
 
         int? OriginID = null, DestinationID = null;
-
+        DestinationEventTypes = EventTypes.Where(d => model.EventTypeID == null || model.EventTypeID != null && (d.EventTypeID > model.EventTypeID)).ToList();
         if (Truck == null)
         {
             Truck = Itruck.SelectByID(CurrentTrip.TruckID);
@@ -203,20 +206,30 @@
 
         if (model.TruckEventID == null)
         {
-            var limitPostEvent = EventTypes.FirstOrDefault(s => s.EventTypeID == PreEvent.EventTypeID)?.LimitPostEvent;
-            var postEvent = EventTypes.FirstOrDefault(s => s.EventTypeID == PreEvent.EventTypeID)?.DefaultNextEventTypeID;
-            if (limitPostEvent != null)
+            if (Itrip.Select(model.TripID)?.UserInfo.RecordStatus == 4)
             {
+                EventSelected(Convert.ToByte( configTable.GetCloseTripEventTypeID().ValueString));
                 IsDisableSelectAction = true;
-                EventSelected(limitPostEvent);
             }
-            else if (postEvent != null)
+            else
             {
-                EventSelected(postEvent);
-            }
 
-            IsDisableSelectAction = CurrentTrip.UserInfo.RecordStatus == 4;
+                var limitPostEvent = EventTypes.FirstOrDefault(s => s.EventTypeID == PreEvent.EventTypeID)?.LimitPostEvent;
+                var postEvent = EventTypes.FirstOrDefault(s => s.EventTypeID == PreEvent.EventTypeID)?.DefaultNextEventTypeID;
+                if (limitPostEvent != null)
+                {
+                    IsDisableSelectAction = true;
+                    EventSelected(limitPostEvent);
+                }
+                else if (postEvent != null)
+                {
+                    EventSelected(postEvent);
+                }
+
+                IsDisableSelectAction = CurrentTrip.UserInfo.RecordStatus == 4;
+            }
         }
+        
         var user = authprov.User;
         UserID = user.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -377,14 +390,12 @@
             snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
             return false;
         }
-        else
-        if ((PreEvent != null && PreEvent.EventTypeID == SelectedEvent.EventTypeID) || (NextEvent != null && NextEvent.EventTypeID == SelectedEvent.EventTypeID))
+        else if ((PreEvent != null && PreEvent.EventTypeID == SelectedEvent.EventTypeID) || (NextEvent != null && NextEvent.EventTypeID == SelectedEvent.EventTypeID))
         {
             snackbar.Add("Cannot enter an event twice in a row", Severity.Warning);
             return false;
         }
-        else
-        if (model.EventTypeID == 3)
+        else if (model.EventTypeID == 3)
         {
             var gcs = Igc.SelectToDispatch(CurrentTrip.TripID);
             if (!gcs.Any())
@@ -407,6 +418,7 @@
     {
         SelectedEvent = Ievent.GetEventType(e);
         model.EventTypeID = e;
+        DestinationEventTypes = EventTypes.Where(d => model.EventTypeID == null || model.EventTypeID != null && (d.EventTypeID > model.EventTypeID)).ToList();
         if (SelectedEvent.EventTypeName != null)
         {
             model.DestinationID = SelectedEvent.IsStationary ? model.OriginID : model.DestinationID;
@@ -421,6 +433,8 @@
             }
         }
         else
+        {
             ButtonLabel = "Select an Event";
+        }
     }
 }

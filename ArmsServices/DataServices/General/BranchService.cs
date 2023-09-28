@@ -90,6 +90,7 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 Operate = dr.GetBoolean("Operate"),
                 //PlaceID = dr.GetInt32("PlaceID"),
+                //GstCode = dr.GetInt32("GstCode"),
                 GstNo = dr.GetString("GstNo"),
                 UpwardBranchID = dr.GetInt32("UpwardBranchID"),
                 State = new StateModel
@@ -146,6 +147,21 @@ namespace ArmsServices.DataServices
         {
             var result = SelectByID(BranchID);
             return result.BranchName;
+        }
+
+        public BranchModel ValidateGstNo(int? PlaceID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PlaceID", PlaceID),
+               new SqlParameter("@Operation", "GetGstCode"),
+            };
+            BranchModel model = new BranchModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Branch.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
         }
     }
 }

@@ -177,5 +177,37 @@ namespace ArmsModels.BaseModels
         }
     }
 
+
+    //[AttributeUsage(AttributeTargets.Property)]
+    //public class GstCodeAttribute : RequiredAttribute
+    //{
+    //    private string _GstNo;
+    //    private string _PlaceID;
+    //    public GstCodeAttribute(string GstNo, string PlaceID)
+    //    {
+    //        _GstNo = GstNo;
+    //        _PlaceID = PlaceID;
+    //    }
+
+    //    protected override ValidationResult IsValid(object value, ValidationContext context)
+    //    {
+    //        object instance = context.ObjectInstance;
+    //        Type type = instance.GetType();
+    //        if (type.GetProperty(_GstNo) != null)
+    //        {
+    //            var GstNo = type.GetProperty(_GstNo).GetValue(instance, null);
+    //            var PlaceID = type.GetProperty(_PlaceID).GetValue(instance, null);
+    //            if (GstNo != null && PlaceID != null)
+    //            {
+
+    //            }
+    //            if (value == null)
+    //            {
+    //                return new ValidationResult(ErrorMessage);
+    //            }
+    //        }
+    //        return ValidationResult.Success;
+    //    }
+    //}
     //////////////
 }
