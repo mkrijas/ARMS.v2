@@ -1,4 +1,5 @@
 ﻿using ArmsModels.SharedModels;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class InventoryGrnModel : InventoryOrderBaseModel
+    public class InventoryGrnModel : InventoryOrderBaseModel,ICloneable
     {
         public InventoryGrnModel(string grnNo, bool invoiced )
         {
@@ -21,7 +22,15 @@ namespace ArmsModels.BaseModels
         public string GrnNo { get; }        
         public int? POID { get; set; }      
         public bool Invoiced { get; }
+        [Required]
+        [ValidateComplexType]
         public StoreModel Store { get; set; }
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<InventoryGrnModel>(Json);
+        }
     }
 
 

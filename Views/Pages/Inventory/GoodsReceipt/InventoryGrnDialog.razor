@@ -84,7 +84,7 @@
                                 @foreach (var item in model.Entries)
                                 {
                                     <tr>
-                                        <td>@(itm.First(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
+                                        <td>@(itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
                                         <td>@item.ItemQty</td>
                                         <td>@item.ItemRate</td>
                                         <td>@item.ItemGstVal</td>
@@ -228,27 +228,34 @@
 
         if (HasAuthoriseEdit)
         {
-            model.PartyCode = partyinfo.PartyCode;
-            model.PartyID = partyinfo.PartyID;
-            model.PartyName = partyinfo.TradeName;
-            model.StoreID = model.Store.StoreID;
-            model.UserInfo.UserID = UserID;
-            try
+            if (model.Entries == null || (model.Entries != null && model.Entries.Count() == 0))
             {
+                snackbar.Add("Add at least one Entry before Submitting", Severity.Error);
+                return;
+            }
+            else
+            {
+                model.PartyCode = partyinfo.PartyCode;
+                model.PartyID = partyinfo.PartyID;
+                model.PartyName = partyinfo.TradeName;
+                model.StoreID = model.Store?.StoreID ?? null;
+                model.UserInfo.UserID = UserID;
+                try
+                {
 
-                Iservice.Update(model);
-                model = new();
-                snackbar.Add("Saved Successfully", Severity.Success);
-                model = new InventoryGrnModel();
+                    Iservice.Update(model);
+                    model = new();
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    model = new InventoryGrnModel();
+
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
+                MudDialog.Close(model);
 
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
-            MudDialog.Close(model);
-
-
         }
         else
         {
@@ -344,7 +351,7 @@
 
         if (Entrymodel.ItemID == null || Entrymodel.ItemRate == null || Entrymodel.ItemQty == null)
         {
-            snackbar.Add("Please fill in all Fields", Severity.Success);
+            snackbar.Add("Please fill in all Fields", Severity.Error);
             return;
         }
         decimal gstrt = 0;
