@@ -66,14 +66,14 @@ namespace Views.Pages.UserAccount
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
                 code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                 var callbackUrl = Url.Page(
-                    "/Account/ResetPassword",
+                    "/UserAccount/ResetPassword",
                     pageHandler: null,
-                    values: new { area = "Identity", code },
+                    values: new { code, UserId = user.UserID },
                     protocol: Request.Scheme);
 
                 await _emailSender.SendEmailAsync(
                     Input.Email,
-                    "Reset Password",
+                    "Reset ArmsV2 Password",
                     $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
                 return RedirectToPage("./ForgotPasswordConfirmation");
