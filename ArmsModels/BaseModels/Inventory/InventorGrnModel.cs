@@ -40,6 +40,8 @@ namespace ArmsModels.BaseModels
         public int? PRID { get; set; }
         public int? QuoteID { get; set; }
         public bool GrnCreated { get; }
+        [Required]
+        [ValidateComplexType]
         public StoreModel Store { get; set; }
         public string Status
         {
