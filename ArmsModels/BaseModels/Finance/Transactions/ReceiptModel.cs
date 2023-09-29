@@ -4,31 +4,37 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class ReceiptModel : TransactionBaseModel
+    public class ReceiptModel : TransactionBaseModel, ICloneable
     {
         public int? ReceiptID { get; set; }
         [Required]
         public string BusinessNature { get; set; }
         [Required]
         public PartyModel PartyInfo { get; set; }
-        public int? PartyCoaID { get; set; }        
-        [Required]                                        
+        public int? PartyCoaID { get; set; }
+        [Required]
         public string ReceiptMode { get; set; }  // Cash/Bank        
         [Required]
         public string ReceiptArdCode { get; set; }
         [Required]
         public int? ReceiptCoaID { get; set; }  //ac cash ac
         public string ReceiptTool { get; set; }  // (Cheque/NEFT)
-        public decimal? BankCharges { get; set; }        
+        public decimal? BankCharges { get; set; }
         public string Reference { get; set; }
         [Required]
         public DateTime? EffectiveDate { get; set; }
-        public bool IsRealized { get; set; }        
+        public bool IsRealized { get; set; }
         public List<BillsReceiptModel> Bills { get; set; } = new();
 
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<ReceiptModel>(Json);
+        }
     }
 
     public class BillsReceiptModel
