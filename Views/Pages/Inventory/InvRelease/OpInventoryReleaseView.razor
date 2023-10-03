@@ -45,12 +45,14 @@
                 <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
                 <MudTd DataLabel="TotalAmount">@(Math.Abs(context.TotalAmount ?? 0))</MudTd>
                     <MudTd DataLabel="">
-                        @if (@context.AuthLevelId == null)
+                    @if (@context.AuthLevelId == null)
                     {
                         <MudTooltip Text="Edit">
                             <MudFab @onclick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
-                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                        <MudTooltip Text="Delete">
+                            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
                     }
                     @if (@context.AuthLevelId != 99)
                     {
@@ -70,20 +72,15 @@
     </MudItem>
 </MudGrid>
 
-
 @code {
-
 
     public bool IsApproved { get; set; } = false;
     private List<OpInventoryReleaseModel> collection = new List<OpInventoryReleaseModel>();
     private int numberOfRecords = 100;
     private string searchTerm = "";
 
-
-
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 51;
-
 
     private int NumberOfRecords
     {
@@ -113,7 +110,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
@@ -123,7 +119,6 @@
     private void GetAll(bool val, int numberOfRecords)
     {
         int NumberOfRecords = numberOfRecords;
-
         if (val)
         {
             collection = Iservice.SelectByApproved(NumberOfRecords, searchTerm).ToList();
@@ -144,7 +139,6 @@
     private async Task OpenDialog(OpInventoryReleaseModel RModel, bool ReadOnly)
     {
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-
         DialogParameters parms = new DialogParameters();
         parms.Add("model", RModel);
         parms.Add("ReadOnly", ReadOnly);
@@ -153,21 +147,21 @@
         GetAll(IsApproved, NumberOfRecords);
     }
 
-
-    private async Task Delete(OpInventoryReleaseModel tx)
+    private async Task Delete(OpInventoryReleaseModel model)
     {
-
         if (HasAuthoriseDelete)
         {
             bool? result = await DialogService.ShowMessageBox(
-                  "Warning !",
-                  "Are you sure, you to delete ?");
+                "Warning !",
+                "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
             if (result == true)
             {
-                Iservice.Delete(tx.OpInventoryReleaseID, "Rijas");
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.OpInventoryReleaseID, user.Identity.Name);
                 snackbar.Add("Deleted Successfully", Severity.Success);
-                GetAll(IsApproved, NumberOfRecords);
             }
+            GetAll(IsApproved, NumberOfRecords);
         }
         else
         {
@@ -177,4 +171,3 @@
         }
     }
 }
-
