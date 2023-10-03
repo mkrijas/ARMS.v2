@@ -79,6 +79,35 @@ namespace ArmsServices.DataServices
             {
                 model = GetModel(reader);
             }
+            List<int?> CurrentPartyContactIDs = new List<int?>();
+            List<SqlParameter> parametersGetContactID = new List<SqlParameter>
+            {
+                 new SqlParameter("@PartyID", model.PartyID)
+            };
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Contacts.GetAllContactIDForPartyID]", parametersGetContactID))
+            {
+                CurrentPartyContactIDs.Add(reader.GetInt32("ContactID"));
+            }
+            List<IntList> ContactIDsForDetete = new List<IntList>();
+            foreach (var item in CurrentPartyContactIDs)
+            {
+                if(item!= null && !(ContactList.Any(d=>d.ContactID == item)))
+                {
+                    ContactIDsForDetete.Add(new IntList() { IntField = item });
+                }
+            }
+
+            List<SqlParameter> parametersDeleteContactIDs = new List<SqlParameter>
+            {
+                 new SqlParameter("@PartyID", model.PartyID),
+                 new SqlParameter("@ContactIDs", ContactIDsForDetete.ToDataTable()),
+
+            };
+            int deleteResult = Iservice.ExecuteNonQuery("[usp.Entity.Party.Contacts.DeletePassedContactIDsForPartyID]", parametersDeleteContactIDs);
+            if(deleteResult<0)
+            {
+                throw new Exception("Error occured while updating contact information list.");
+            }
             foreach (var item in ContactList)
             {
                 AddContact(model.PartyID, item, UserId);
@@ -86,7 +115,10 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
+        private class IntList
+        {
+            public int? IntField { get; set; }
+        }
 
         public PartyModel SelectByID(int? ID)
         {
@@ -248,7 +280,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PartyID", PartyID),
-               new SqlParameter("@ContactID", contact?.ContactID??0)    ,
+               new SqlParameter("@ContactID", contact?.ContactID??null)    ,
                new SqlParameter("@UserID", UserId)
             };
             return Iservice.ExecuteNonQuery("[usp.Entity.Party.Contacts.Update]", parameters);
