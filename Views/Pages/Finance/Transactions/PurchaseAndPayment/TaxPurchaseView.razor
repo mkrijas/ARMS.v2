@@ -9,12 +9,9 @@
 @inject IDialogService DialogService
 @using Inventory.GoodsReceipt
 
-
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
-
-
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Tax Purchase</MudText>
                 <MudTooltip Text="New TaxPurchase">
@@ -24,10 +21,8 @@
                     <MudIconButton Icon="@Icons.Material.Filled.AddLink" @onclick="openGrn" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
-
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Tax..." Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
-                              @onkeyup="HandleSearchKeyUp">
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
                 </MudTextField>
                 <div class="tablefont">
                     <span style="margin-right: 10px;">Maximum Records: </span>
@@ -36,24 +31,19 @@
                     <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
                 </MudItem>
                 <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.InvoiceDate)" InitialDirection="SortDirection.Ascending">Invoice No</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.InvoiceNo)" InitialDirection="SortDirection.Ascending">Invoice Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.InvoiceDate)" InitialDirection="SortDirection.Ascending">Invoice No</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
-
-
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="GrnNO">@context.InvoiceNo</MudTd>
                 <MudTd DataLabel="EntryDate">@context.InvoiceDate?.ToShortDateString()</MudTd>
                 <MudTd DataLabel="EntryDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-
                 <MudTd DataLabel="GrnNO">@context.DocumentNumber</MudTd>
-
                 <MudTd DataLabel="">
                     @if (@context.AuthLevelId == null)
                     {
@@ -80,21 +70,15 @@
     </MudItem>
 </MudGrid>
 
-
-
 @code {
-
 
     private TaxPurchaseModel model = new TaxPurchaseModel();
     private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     public bool IsApproved { get; set; } = false;
     private int numberOfRecords = 100;
-
-
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 9;
-
 
     private string searchTerm = "";
 
@@ -126,27 +110,24 @@
 
     protected override async Task OnInitializedAsync()
     {
-
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
-
         model = new();
 
         await GetAll(IsApproved, NumberOfRecords);
     }
+
     async Task ApprovedChanged(bool value)
     {
-
         IsApproved = value;
         await GetAll(IsApproved, NumberOfRecords);
-
     }
+
     private async Task GetAll(bool val, int numberOfRecords)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int? brancID = int.Parse(brancIDString);
-
         int NumberOfRecords = numberOfRecords;
 
         if (val)
@@ -157,12 +138,10 @@
         {
             collection = Iservice.SelectByUnapproved(brancID, NumberOfRecords, searchTerm).ToList();
         }
-
     }
 
     private async Task OpenDialog(TaxPurchaseModel tds, bool ReadOnly, bool View)
     {
-
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds);
         parms.Add("ReadOnly", ReadOnly);
@@ -172,22 +151,27 @@
     }
 
 
-    private async Task Delete(TaxPurchaseModel tx)
+    private async Task Delete(TaxPurchaseModel model)
     {
-
         if (HasAuthoriseDelete)
         {
-            Iservice.Delete(tx.PID, "Rijas");
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.InvoiceNo + " (" + model.InvoiceDate + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.PID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
             await GetAll(IsApproved, NumberOfRecords);
-
         }
         else
         {
-
             bool? result = await DialogService.ShowMessageBox(
-        "Permission denied!",
-        "You dont have any permission to delete.");
+                "Permission denied!",
+                "You dont have any permission to delete.");
         }
     }
 
@@ -198,6 +182,7 @@
         parms.Add("MID", MID);
         DialogService.Show<AccountInfoDialog>(tpm.DocumentNumber, parms, maxWidth);
     }
+
     public async Task openGrn()
     {
         PurchaseOrderModel tds = new();
@@ -205,7 +190,5 @@
         var dialog = DialogService.Show<InventoryGrnViewDialog>("GRN", parms, maxWidth);
         var result = await dialog.Result;
         await GetAll(IsApproved, NumberOfRecords);
-
     }
-
 }
