@@ -98,31 +98,37 @@ namespace ArmsServices.DataServices
                 Capitalization = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("CapitalizationID"),
+                    AccountCode = dr.GetString("CapitalizationCoaCode"),
                     AccountName = dr.GetString("CapitalizationCoa"),
                 },
                 CWIP = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("CWIPID"),
+                    AccountCode = dr.GetString("CWIPCoaCode"),
                     AccountName = dr.GetString("CWIPCoa"),
                 },
                 Depreciation = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("DepreciationID"),
+                    AccountCode = dr.GetString("DepreciationCoaCode"),
                     AccountName = dr.GetString("DepreciationCoa"),
                 },
                 AccummulatedDepreciation = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("AccummulatedDepreciationID"),
+                    AccountCode = dr.GetString("AccummulatedDepreciationCoaCode"),
                     AccountName = dr.GetString("AccummulatedDepreciationCoa"),
                 },
                 Revaluation = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("RevaluationID"),
+                    AccountCode = dr.GetString("RevaluationCoaCode"),
                     AccountName = dr.GetString("RevaluationCoa"),
                 },
                 RevaluationReserve = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("RevaluationReserveID"),
+                    AccountCode = dr.GetString("RevaluationReserveCoaCode"),
                     AccountName = dr.GetString("RevaluationReserveCoa"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
