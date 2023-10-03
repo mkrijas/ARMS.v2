@@ -15,11 +15,7 @@
                 <MudText Typo="Typo.h6">
                     Inventory Group
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
                 </MudText>
-
-
-
                 @if (listOfItems?.Any() == true)
                 {
                     @foreach (var item in listOfItems)
@@ -37,30 +33,25 @@
         </MudPaper>
     </MudItem>
 
-
-
     <MudItem xs="8" lg="8">
         @if (SelectedItem != null)
         {
-            <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
-
-
+            <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<InventoryItemModel, bool>(search)" @bind-TruckType="model">
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Inventory Item</MudText>
-
                     <MudSpacer></MudSpacer>
-
+                    <MudTextField @bind-Value="SearchItemCode" Placeholder="Search Item Code... "
+                                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                                  IconSize="Size.Medium" Class="mt-0"></MudTextField>
                 </ToolBarContent>
                 <HeaderContent>
                     <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemModel, object>(x=> x.InventoryItemCode)" InitialDirection="SortDirection.Ascending">ItemCode</MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemModel, object>(x=> x.ItemDescription)" InitialDirection="SortDirection.Ascending">Item Description</MudTableSortLabel></MudTh>
-
                     <MudTh>Actions</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="InventoryItemCode">@context.InventoryItemCode</MudTd>
                     <MudTd DataLabel="ItemDescription">@context.ItemDescription</MudTd>
-
                     <MudTd DataLabel="">
                         <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                         <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
@@ -75,15 +66,17 @@
             </MudTable>
         }
     </MudItem>
-
-
 </MudGrid>
 
 <ContextMenu Id="myMenu" OnAppearing="OnAppearing">
     <Item OnClick="@ContextMenuOnClickadd" Id="addItem">Add Items</Item>
     <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Group</Item>
 </ContextMenu>
+
 @code {
+
+    private string SearchItemCode = "";
+
     InventoryGroupModel model = new InventoryGroupModel();
     private MudListItem SelectedItem;
     private List<InventoryGroupModel> listOfItems = new();
@@ -100,6 +93,7 @@
         GetAll();
 
     }
+
     protected void SelectedItemChanged(object obj)
     {
         InventoryGroupModel SelectedModel = new();
@@ -107,6 +101,7 @@
         SelectedModel = (InventoryGroupModel)SelectedItem.Value;
         GetInventoryItem(SelectedModel);
     }
+
     private void GetAll()
     {
         if (listOfItems != null)
@@ -115,8 +110,8 @@
         }
         listOfItems = GIservice.SearchByName(string.Empty).ToList();
         StateHasChanged();
-
     }
+
     private void GetInventoryItem(InventoryGroupModel ig)
     {
         collection = new List<InventoryItemModel>();
@@ -141,33 +136,28 @@
         {
             InventoryItemModel UpatedModel = (InventoryItemModel)result.Data;
             ii.UserInfo.UserID = user.Identity.Name;
-
             try
             {
-
                 IIservice.Update(UpatedModel);
-
                 snackbar.Add("Saved Successfully", Severity.Success);
                 InventoryGroupModel igm = new InventoryGroupModel();
                 igm.InventoryGroupID = UpatedModel.InventoryGroupID;
                 GetInventoryItem(igm);
-
             }
             catch (Exception ex)
             {
                 snackbar.Add(ex.Message, Severity.Warning);
             }
-
         }
     }
 
     private void Delete(InventoryItemModel ii)
     {
-
         IIservice.Delete(ii.InventoryItemID, UserID);
         snackbar.Add("Deleted Successfully", Severity.Error);
         SelectedItemChanged(SelectedItem);
     }
+
     private async Task OpenDialogGroup(InventoryGroupModel ig)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -182,11 +172,9 @@
         {
             InventoryGroupModel UpdatedModel = (InventoryGroupModel)result.Data;
             ig.UserInfo.UserID = user.Identity.Name;
-
             try
             {
                 GIservice.Update(UpdatedModel);
-
                 snackbar.Add("Saved Successfully", Severity.Success);
                 GetAll();
             }
@@ -194,19 +182,20 @@
             {
                 snackbar.Add(ex.Message, Severity.Warning);
             }
-
         }
     }
+
     void OnAppearing(MenuAppearingEventArgs e)
     {
 
     }
+
     protected async Task ContextMenuOnClickedit(ItemClickEventArgs e)
     {
         InventoryGroupModel ig = (InventoryGroupModel)e.Data;
         await OpenDialogGroup(ig);
-
     }
+
     protected async Task ContextMenuOnClickadd(ItemClickEventArgs e)
     {
         InventoryGroupModel ig = (InventoryGroupModel)e.Data;
@@ -220,5 +209,14 @@
         DialogParameters parms = new DialogParameters();
         parms.Add("iimodel", ii);
         var dialog = DialogService.Show<InventoryItemReorderLevelDialog>("Quantity Manage", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
+    }
+
+    private bool search(InventoryItemModel ItemModel)
+    {
+        if (ItemModel.InventoryItemCode != null && ItemModel.InventoryItemCode.Contains(SearchItemCode, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
     }
 }
