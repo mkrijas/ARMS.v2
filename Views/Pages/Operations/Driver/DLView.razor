@@ -16,13 +16,11 @@
         <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew( new()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
     </MudTooltip>
 </MudPaper>
-
 <MudGrid Spacing="2">
     @foreach (var item in collection)
     {
         <MudItem xs="4">
             <MudCard>
-                @*<MudCardMedia Image="@item.AttachedDocument" Height="300" />*@
                 <iframe class="mt-1 mr-1 ml-1" src="@item.DLImage" height="500" alt="@item.DLImage" />
                 <MudCardContent>
                     <MudText Typo="Typo.h5">@item.LicenceNo</MudText>
@@ -32,41 +30,13 @@
                 </MudCardContent>
                 <MudCardActions>
                     <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogAddNew(item))">Edit</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(item.LicenceID))">Delete</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(item))">Delete</MudButton>
                     <MyFileUpload FileName="@(Driver.DriverName + item.LicenceID)" FolderName="DrivingLicence" Label="Upload File" FilePathChanged="((e)=>FileUploaded(e,item.LicenceID))"></MyFileUpload>
                 </MudCardActions>
             </MudCard>
         </MudItem>
     }
 </MudGrid>
-
-@*   <DLDialog mode="@model"></DLDialog>
-    <MudItem xs="12" md="4">
-    <MudCard Elevation="10">
-    <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-    <MudCardHeader>
-    <CardHeaderContent>
-    <MudText Typo="Typo.h6">Add/Edit Driving Licence</MudText>
-    </CardHeaderContent>
-    </MudCardHeader>
-    <MudCardContent>
-    <MudSelect @bind-Value="@model.LicenceType" Label="Type" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LicenceType)" OffsetY="true" AdornmentColor="Color.Secondary">
-    <MudSelectItem Value="@("Heavy")">Heavy</MudSelectItem>
-    <MudSelectItem Value="@("Light")">Light</MudSelectItem>
-    <MudSelectItem Value="@("TwoWheeler")">TwoWheeler</MudSelectItem>
-    </MudSelect>
-    <MudTextField @bind-Value="@model.LicenceNo" Label="DL No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LicenceNo)"></MudTextField>
-    <MudDatePicker @bind-Date="@model.DLExpiryDate" Label="DL Expiry Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DLExpiryDate)" Editable="true"></MudDatePicker>
-    <MudTextField @bind-Value="@model.BadgeNo" Label="Badge No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BadgeNo)"></MudTextField>
-    <MudDatePicker @bind-Date="@model.BadgeExpiryDate" Label="Badge Expiry Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BadgeExpiryDate)" Editable="true"></MudDatePicker>
-    <br />
-    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
-    </MudCardContent>
-    </EditForm>
-    </MudCard>
-    </MudItem>*@
 
 @code {
 
@@ -89,17 +59,15 @@
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionDriverLicenceServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionDriverLicenceServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
-
         Driver = Idriver.SelectByID(DriverID);
+
         GetAll();
     }
-
 
     private void GetAll()
     {
         collection = Iservice.Select(DriverID).ToList();
     }
-
 
     private async Task OpenDialogAddNew(DriverLicenceModel Drivermodel)
     {
@@ -107,11 +75,9 @@
         {
             var parameters = new DialogParameters();
             Drivermodel.DriverID = DriverID;
-
             parameters.Add("model", Drivermodel);
-            DialogOptions maxWidth = new DialogOptions() {  MaxWidth = MaxWidth.Medium, FullWidth = true };
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
             var dialog = DialogService.Show<DLDialog>("model", parameters, maxWidth);
-
             var result = await dialog.Result;
 
             // you can check if the modal was cancelled
@@ -129,46 +95,20 @@
         }
     }
 
-
-    //private async void OnValidSubmit(EditContext context)
-    //{
-    //    //try
-    //    //{
-    //    var authprov = await auth.GetAuthenticationStateAsync();
-    //    var user = authprov.User;
-    //    model.BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
-    //    model.UserInfo.UserID = user.Identity.Name;
-    //    model.DriverID = Driver.DriverID;
-
-    //    try
-    //    {
-    //        model = Iservice.Update(model);
-
-    //        snackbar.Add("Saved Successfully", Severity.Success);
-
-    //        GetAll();
-    //        model = new();
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        snackbar.Add(ex.Message, Severity.Warning);
-    //    }
-    //}
-
-
-
-    //private void Edit(int? id)
-    //{
-    //    model = collection.First(x => x.LicenceID == id);
-    //}
-
-
-    private async Task Delete(int? id)
+    private async Task Delete(DriverLicenceModel model)
     {
         if (HasPermissionDriverLicenceServiceDelete)
         {
-            Iservice.Delete(id, "Rijas");
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete LicenceNo : " + model.LicenceNo + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.LicenceID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
             GetAll();
         }
         else
@@ -178,7 +118,6 @@
               "You dont have any permission to Delete DriverLicence.");
         }
     }
-
 
     private async Task FileUploaded(string filePath, int? ID)
     {
