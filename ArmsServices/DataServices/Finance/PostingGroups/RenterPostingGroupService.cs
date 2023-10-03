@@ -97,16 +97,19 @@ namespace ArmsServices.DataServices
                 Rent = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("Rent"),
+                    AccountCode = dr.GetString("RentCoaCode"),
                     AccountName = dr.GetString("RentCoa"),
                 },
                 Other = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("Other"),
+                    AccountCode = dr.GetString("OtherCoaCode"),
                     AccountName = dr.GetString("OtherCoa"),
                 },
                 Deposit = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("Deposit"),
+                    AccountCode = dr.GetString("DepositCoaCode"),
                     AccountName = dr.GetString("DepositCoa"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
