@@ -8,15 +8,11 @@
 @inject NavigationManager nav
 @inject IDialogService DialogService
 
-
-
 <MudTable Items="@collection" Elevation="10" Filter="new Func<JobcardModel, bool>(search)" @bind-model="model">
-    <ToolBarContent> 
+    <ToolBarContent>
         <MudText Typo="Typo.h6">Jobcards</MudText>
         <MudSpacer></MudSpacer>
-        <MudTextField @bind-Value="searchString" Placeholder="Search... "
-                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                      IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudTextField @bind-Value="searchString" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </ToolBarContent>
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<JobcardModel, object>(x=> x.JobcardNumber)" InitialDirection="SortDirection.Ascending">Jobcard No</MudTableSortLabel></MudTh>
@@ -39,6 +35,7 @@
 </MudTable>
 
 @code {
+
     private JobcardModel model;
     private List<JobcardModel> collection = new();
 
@@ -54,30 +51,28 @@
     {
         var authState = await auth.GetAuthenticationStateAsync();
         int branchID = int.Parse(authState.User.Claims.First(x => x.Type == "BranchID").Value);
-        collection = Iservice.SelectByBranch(branchID,true).ToList();
+        collection = Iservice.SelectByBranch(branchID, true).ToList();
     }
-
 
     private async Task Edit(JobcardModel Jobcard)
     {
-        //var breakdown = Ibreakdownservice.SelectByID(Jobcard.BreakdownID);
-        //var parameters = new DialogParameters();
-        //parameters.Add("model", Jobcard);
-        //parameters.Add("breakdown", breakdown);
-        //DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        //var result = DialogService.Show<CreateJobcardDialog>("Edit jobcard", parameters, maxWidth);
-        //var data = await result.Result;
-        //GetAll();
         nav.NavigateTo("jobcard/" + Jobcard.TruckID);
-
     }
-    private void Delete(JobcardModel jobcard)
+
+    private async Task Delete(JobcardModel model)
     {
-        Iservice.Delete(jobcard.JobcardID, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
+        bool? result = await DialogService.ShowMessageBox(
+             "Warning !",
+             "Are you sure, you want to delete - " + model.JobcardNumber + " ?");
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            Iservice.Delete(model.JobcardID, user.Identity.Name);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+        }
         GetAll();
     }
-
 
     private bool search(JobcardModel model)
     {
