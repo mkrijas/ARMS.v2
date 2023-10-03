@@ -5,42 +5,37 @@
 @inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
 
-        <MudTable Items="@collection" Elevation="10" Filter="new Func<RepairJobModel, bool>(search)" @bind-model="model">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Jobs</MudText>
+<MudTable Items="@collection" Elevation="10" Filter="new Func<RepairJobModel, bool>(search)" @bind-model="model">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Jobs</MudText>
         <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(()=>Edit(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchString" Placeholder="Search... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.RepairJobTitle)" InitialDirection="SortDirection.Ascending">Job Name</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.MechanicalHours)" InitialDirection="SortDirection.Ascending">Hours</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.Description)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="RepairJob">@context.RepairJobTitle</MudTd>
-                <MudTd DataLabel="Hours">@context.MechanicalHours</MudTd>
-                <MudTd DataLabel="Description">@context.Description</MudTd>
-                <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> Edit(context.RepairJobID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context.RepairJobID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-
-
-
+        <MudSpacer></MudSpacer>
+        <MudTextField @bind-Value="searchString" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.RepairJobTitle)" InitialDirection="SortDirection.Ascending">Job Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.MechanicalHours)" InitialDirection="SortDirection.Ascending">Hours</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<RepairJobModel, object>(x=> x.Description)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="RepairJob">@context.RepairJobTitle</MudTd>
+        <MudTd DataLabel="Hours">@context.MechanicalHours</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=> Edit(context.RepairJobID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+    </PagerContent>
+</MudTable>
 
 @code {
 
     private RepairJobModel model;
-    private List<RepairJobModel> collection = new();    
+    private List<RepairJobModel> collection = new();
 
     private string searchString = string.Empty;
 
@@ -59,13 +54,11 @@
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         model.UserInfo.UserID = authprov.User.Identity.Name;
-
         try
         {
             model = Iservice.Update(model);
             snackbar.Add("Saved Successfully", Severity.Success);
             collection.Add(model);
-
             model = new();
         }
         catch (Exception ex)
@@ -78,7 +71,7 @@
     {
         DialogParameters parms = new DialogParameters();
 
-        if(id != null)
+        if (id != null)
         {
             model = collection.FirstOrDefault(x => x.RepairJobID == id);
         }
@@ -86,17 +79,15 @@
         {
             model = new();
         }
-        parms.Add("model",model);
-        var dialog = DialogService.Show<JobMasterDilogue>("Add Jobcard",parms);
+        parms.Add("model", model);
+        var dialog = DialogService.Show<JobMasterDilogue>("Add Jobcard", parms);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
             RepairJobModel editedModel = (RepairJobModel)result.Data;
             if (collection.Exists(x => x.RepairJobID == editedModel.RepairJobID))
             {
-
                 collection[collection.FindIndex(x => x.RepairJobID == editedModel.RepairJobID)] = editedModel;
-
             }
             else
             {
@@ -104,13 +95,21 @@
             }
         }
     }
-    private void Delete(int? id)
+
+    private async Task Delete(RepairJobModel model)
     {
-        Iservice.Delete(id, "Rijas");
-        snackbar.Add("Deleted Successfully", Severity.Success);
+        bool? result = await DialogService.ShowMessageBox(
+              "Warning !",
+              "Are you sure, you want to delete - " + model.RepairJobTitle + " ?");
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            Iservice.Delete(model.RepairJobID, user.Identity.Name);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+        }
         GetAll();
     }
-
 
     private bool search(RepairJobModel model)
     {
@@ -121,7 +120,3 @@
         return false;
     }
 }
-
-
-
-
