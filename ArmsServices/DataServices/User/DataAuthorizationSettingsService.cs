@@ -16,11 +16,13 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-        public int? Delete(int? ID)
+
+        public int? Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.User.DataAuthorization.Settings.Delete]", parameters);
         }
@@ -100,6 +102,4 @@ namespace ArmsServices.DataServices
             };
         }
     }
-
-
 }

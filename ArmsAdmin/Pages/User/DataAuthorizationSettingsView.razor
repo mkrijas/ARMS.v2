@@ -37,12 +37,9 @@
                             <MudTooltip Text="Edit">
                                 <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                             </MudTooltip>
-                            @*   @if(@context.ApprovedInfo.RecordStatus!=1)
-                            {
-                            <MudTooltip Text="Approve">
-                            <MudFab @onclick="@(()=> Approve(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                            <MudTooltip Text="Delete">
+                                <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                             </MudTooltip>
-                            }*@
                         </MudTd>
                     </RowTemplate>
                     <ChildRowContent>
@@ -111,18 +108,33 @@
         GetAll();
     }
 
-    public async Task OpenDialog(DataAuthorizationSettingsModel dtaumodel)
+    public async Task OpenDialog(DataAuthorizationSettingsModel model)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
 
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", dtaumodel);
-        var dialog = DialogService.Show<DataAuthorizationSettingsDialog>(dtaumodel.ID == null ? "ADD" : "EDIT", parms, maxWidth);
+        parms.Add("model", model);
+        var dialog = DialogService.Show<DataAuthorizationSettingsDialog>(model.ID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
 
         if (!result.Cancelled)
         {
             GetAll();
+        }
+        GetAll();
+    }
+
+    public async Task Delete(DataAuthorizationSettingsModel model)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - AuthorizeType : " + model.AuthorizeType + " for DocType : " + model.DocType + "?");
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            Iservice.Delete(model.ID, user.Identity.Name);
+            snackbar.Add("Deleted Successfully", Severity.Success);
         }
         GetAll();
     }
