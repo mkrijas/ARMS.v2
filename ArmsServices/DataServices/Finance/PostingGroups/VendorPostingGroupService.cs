@@ -96,16 +96,19 @@ namespace ArmsServices.DataServices
                 Payable = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("Payable"),
+                    AccountCode = dr.GetString("PayableCoaCode"),
                     AccountName = dr.GetString("PayableCoa"),
                 },
                 PrePayment = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("PrePayment"),
+                    AccountCode = dr.GetString("PrePaymentCoaCode"),
                     AccountName = dr.GetString("PrePaymentCoa"),
                 },
                 Deposit = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("Deposit"),
+                    AccountCode = dr.GetString("DepositCoaCode"),
                     AccountName = dr.GetString("DepositCoa"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
