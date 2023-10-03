@@ -290,6 +290,7 @@ namespace ArmsServices.DataServices
                 InterBranchTranID = dr.GetInt32("InterBranchTranID"),
                 IsInterBranch = dr.GetBoolean("IsInterBranch"),
                 OtherBranchID = dr.GetInt32("OtherBranchID"),
+                OtherBranchName = dr.GetString("OtherBranchName"),
                 PartyCoaID = dr.GetInt32("PartyCoaID"),
                 PartyInfo = new PartyModel()
                 {

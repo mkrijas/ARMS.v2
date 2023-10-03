@@ -32,6 +32,7 @@ namespace ArmsModels.BaseModels
         public int? InterBranchTranID { get; set; } = null;
         [RequiredIfTrue("IsInterBranch")]
         public int? OtherBranchID { get; set; }
+        public string OtherBranchName { get; set; }
 
         public string FileName { get; set; }
         //public virtual List<FileNames> filenames { get; set; } = new List<FileNames>();

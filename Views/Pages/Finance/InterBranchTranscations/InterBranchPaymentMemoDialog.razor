@@ -9,6 +9,7 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
+@inject IBranchService BrService
 @attribute [Authorize]
 @inject IDialogService DialogService
 
@@ -95,6 +96,13 @@
                             </MudSimpleTable>
                         </MudItem>
                     }
+
+                    @if (model.NatureOfTransaction == "Deposit" || model.NatureOfTransaction == "Prepayment")
+                    {
+                        <MudItem xs="12" md="12">
+                            <MudNumericField ReadOnly="ReadOnly" HideSpinButtons @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudNumericField>
+                        </MudItem>
+                    }
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
@@ -131,6 +139,7 @@
     private BranchModel OtherBranch;
     private List<InterBranchTransactionTypeModel> transactionTypeList = new();
 
+    private List<BranchModel> BranchList = new();
     protected override async Task OnInitializedAsync()
     {        
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -141,6 +150,11 @@
         branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);        
         UserID = User.Identity.Name;
 
+        BranchList = BrService.Select().ToList();
+        if (BranchList != null && model.OtherBranchID != null && BranchList.Any(s => s.BranchID == model.OtherBranchID))
+        {
+            OtherBranch = BranchList.FirstOrDefault(s => s.BranchID == model.OtherBranchID);
+        }
         if (model.PaymentMemoID != null)
         {
             model.Bills = Iservice.GetBills(model.PaymentMemoID.Value).ToList();            
@@ -205,7 +219,9 @@
                 {
                     throw new Exception("Party Account is not mapped!");
                 }
+                model.IsInterBranch = true;
                 model = Iservice.Update(model);
+                snackbar.Add("Submitted Successfully", Severity.Success);
                 dialogForm.Close(model);
             }
             catch (Exception ex)
