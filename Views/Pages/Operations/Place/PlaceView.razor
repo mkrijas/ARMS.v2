@@ -15,14 +15,9 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Manage Places</MudText>
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new PlaceModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
                 <MudSpacer></MudSpacer>
-
-                <MudTextField @bind-Value="searchPlace" Placeholder="Search Places... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudTextField @bind-Value="searchPlace" Placeholder="Search Places... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
-
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.PlaceName)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PlaceModel, object>(x=> x.PinCode)" InitialDirection="SortDirection.Ascending">PinCode</MudTableSortLabel></MudTh>
@@ -35,7 +30,7 @@
                 <MudTd DataLabel="DistrictName">@context.District.DistrictName</MudTd>
                 <MudTd DataLabel="">
                     <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context.PlaceID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -66,25 +61,30 @@
         await GetAll();
     }
 
-
     private async Task<IEnumerable<DistrictModel>> Search(string searchString)
     {
         return await Task.FromResult(districts.Where(x => x.DistrictName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
-
 
     private async Task GetAll()
     {
         collection = Iservice.Select(0).ToList();
     }
 
-
-    private async void Delete(int? id)
+    private async void Delete(PlaceModel model)
     {
         if (HasPermissionPlaceServiceDelete)
         {
-            await Iservice.Delete(id, "Rijas");
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.PlaceName + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                await Iservice.Delete(model.PlaceID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
             await GetAll();
         }
         else
@@ -95,7 +95,6 @@
         }
     }
 
-
     private bool search(PlaceModel place)
     {
         if (place.PlaceName != null && place.PlaceName.Contains(searchPlace, StringComparison.OrdinalIgnoreCase))
@@ -104,7 +103,6 @@
         }
         return false;
     }
-
 
     private async Task OpenDialog(PlaceModel model)
     {
