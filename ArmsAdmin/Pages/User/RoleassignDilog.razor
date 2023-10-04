@@ -9,17 +9,13 @@
 @inject IDialogService DialogService
 
 <MudDialog>
-    @*<TitleContent><MudIconButton OnClick="Cancel" Icon=@Icons.Filled.Close></MudIconButton></TitleContent>*@
-
     <DialogContent>
         <MudGrid>
             <MudItem xs="12" md="12">
                 <h5>Assign new role for @UserRmodel.UserName</h5>
-
                 <hr />
                 <div class="d-flex flex-column" style="height:70vh; overflow-x:auto;">
                     <MudTable Items="@collection" Elevation="0">
-
                         <HeaderContent>
                             <MudTh Style="display:none;"><MudTableSortLabel SortBy="new Func<UserBranchRoleModel, object>(x=> x.IsSelected)" InitialDirection="SortDirection.Ascending">Check</MudTableSortLabel></MudTh>
                             <MudTh><MudTableSortLabel SortBy="new Func<UserBranchRoleModel, object>(x=> x.Branch)" InitialDirection="SortDirection.Ascending">Branch</MudTableSortLabel></MudTh>
@@ -38,62 +34,55 @@
                                 </MudSelect>
                             </MudTd>
                             <MudTd DataLabel="">
-                                @*<MudFab @onclick="@(()=> OnValidSubmit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Save" Size="Size.Small" IconSize="Size.Small" />*@
                                 <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                             </MudTd>
                         </RowTemplate>
-@*                        <PagerContent>
-                            <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                        </PagerContent>*@
                     </MudTable>
                 </div>
             </MudItem>
         </MudGrid>
         <hr />
-
     </DialogContent>
 </MudDialog>
-
-
-
-
-
 
 @code {
 
     [Parameter]
     public UserModel UserRmodel { get; set; }
-
     private BranchModel bmodel = new BranchModel();
     private List<BranchModel> bcollection = new List<BranchModel>();
     private RoleModel Rolem = new RoleModel();
     private List<RoleModel> rolecollection = new List<RoleModel>();
 
     private string searchUser = "";
+
     private UserBranchRoleModel usbr = new UserBranchRoleModel();
     private List<UserBranchRoleModel> collection = new List<UserBranchRoleModel>();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
     void Cancel()
     {
         MudDialog.Cancel();
     }
-    public void OnRoleIdSet(string RoleId,UserBranchRoleModel SelectedModel)
+
+    public void OnRoleIdSet(string RoleId, UserBranchRoleModel SelectedModel)
     {
-        if((!String.IsNullOrWhiteSpace(RoleId)) && SelectedModel != null)
+        if ((!String.IsNullOrWhiteSpace(RoleId)) && SelectedModel != null)
         {
             SelectedModel.Role.RoleID = RoleId;
             OnValidSubmit(SelectedModel);
         }
     }
+
     protected override async Task OnInitializedAsync()
     {
-
         await GetAll();
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         rolecollection = Irole.Select(null).ToList();
         bcollection = bsr.Select().ToList();
     }
+
     private async Task GetAll()
     {
         collection.Clear();
@@ -107,43 +96,32 @@
             item.User = UserRmodel;
         }
     }
+
     public async Task Delete(UserBranchRoleModel Context)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User.Identity.Name;
-        Iservice.DeleteBranchesNRoles(Context, user);
-         snackbar.Add("Deleted Successfully", Severity.Success);
+        bool? result = await DialogService.ShowMessageBox(
+               "Warning !",
+               "Are you sure, you want to delete ?");
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User.Identity.Name;
+            Iservice.DeleteBranchesNRoles(Context, user);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+        }
         GetAll();
     }
+
     private async void OnValidSubmit(UserBranchRoleModel context)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        //usbr.UserInfo.UserID = user.Identity.Name;
-
-
-
         try
         {
+            if (collection != null && collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty && context != null && context.Role != null && s.Role.RoleID == context.Role.RoleID) != null && collection.Where(s => s.Role != null).Count() != 0)
             {
-
-                //collection.Add(usbr);
-                if (collection != null && collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty && context != null && context.Role != null && s.Role.RoleID == context.Role.RoleID) != null && collection.Where(s => s.Role != null).Count() != 0)
-                {
-
-                    Iservice.SetBranchesNRoles(collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty).ToList(), user.Identity.Name);
-                    snackbar.Add("Saved Successfully", Severity.Success);
-                }
-
-                //if (collection.Exists(x => x.Branch == usbr.Branch))
-                //{
-                //    collection[collection.FindIndex(x => x.Branch == usbr.Branch && x.Role == usbr.Role)] = usbr;
-                //}
-                //else
-                //{
-                //    collection.Add(usbr);
-                //}
-                //usbr = new UserBranchRoleModel();
+                Iservice.SetBranchesNRoles(collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty).ToList(), user.Identity.Name);
+                snackbar.Add("Saved Successfully", Severity.Success);
             }
         }
         catch (Exception ex)
@@ -151,5 +129,4 @@
             snackbar.Add(ex.Message, Severity.Warning);
         }
     }
-
 }
