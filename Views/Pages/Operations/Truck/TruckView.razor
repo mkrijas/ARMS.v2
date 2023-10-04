@@ -1,5 +1,4 @@
 ﻿@page "/trucks"
-
 @inject TruckDataArrayModel data
 @inject ITruckService Iservice
 @inject ITruckTypeService Itrucktype
@@ -15,19 +14,13 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
-
 <MudTable Items="@collection" RowClassFunc="RowClassFunc" Elevation="8" Filter="new Func<TruckModel, bool>(search)" @bind-Truck="model">
-
     <ToolBarContent>
         <MudText Typo="Typo.h6">Trucks</MudText>
         <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
         <MudSpacer></MudSpacer>
-        <MudTextField @bind-Value="searchTruck" Placeholder="Search Trucks... "
-                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                      IconSize="Size.Medium"></MudTextField>
+        <MudTextField @bind-Value="searchTruck" Placeholder="Search Trucks... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
     </ToolBarContent>
-
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<TruckModel, object>(x=> x.TruckType)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
@@ -51,7 +44,7 @@
         <MudTd DataLabel="ManufacturedYear">@context.ManufacturedYear</MudTd>
         <MudTd DataLabel="">
             <MudFab style="font-size:5px" @onclick="@(()=> Edit(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-            <MudFab @onclick="@(()=> Delete(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
             <MudTooltip Text="Tyre Info">
                 <MudFab @onclick="@(()=> TruckMountDetails(context.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.TableView" Size="Size.Small" IconSize="Size.Small" />
             </MudTooltip>
@@ -64,7 +57,6 @@
         <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
     </PagerContent>
 </MudTable>
-
 
 @code {
 
@@ -127,7 +119,6 @@
         DialogService.Show<MountTruckDetailsDialog>("ADD/EDIT", parms, options);
     }
 
-
     private async Task RegisterNumberList(TruckModel truck)
     {
         var truckIdstring = (truck?.TruckID ?? 0).ToString();
@@ -168,7 +159,7 @@
                         if (collection.Exists(x => x.TruckID == data.TruckID))
                         {
                             data.CurrentRegistration = Iservice.GetRegistration(data.TruckID);
-                            collection[collection.FindIndex(x => x.TruckID == data.TruckID)] = data ;
+                            collection[collection.FindIndex(x => x.TruckID == data.TruckID)] = data;
                         }
                     }
                 }
@@ -178,28 +169,34 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Permission denied!",
-                      "You dont have any permission to Add or Edit Truck.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Truck.");
         }
     }
 
-
-    private async Task Delete(int? id)
+    private async Task Delete(TruckModel model)
     {
         if (HasPermissionITruckServiceDelete)
         {
-            Iservice.Delete(id, "Rijas");
-            snackbar.Add("Deleted Successfully", Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete Truck : " + model.RegNo + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.TruckID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Error);
+            }
             GetAll();
         }
         else
         {
             bool? result = await DialogService.ShowMessageBox(
-              "Permission denied!",
-              "You dont have any permission to Delete Truck.");
+                  "Permission denied!",
+                  "You dont have any permission to Delete Truck.");
         }
     }
-
 
     private bool search(TruckModel Truck)
     {

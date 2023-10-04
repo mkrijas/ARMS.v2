@@ -1,26 +1,19 @@
 ﻿@page "/DocumentType"
 @inject IAssetDocumentService Iservice
-
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-
-
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Elevation="10" Filter="new Func<AssetDocumentTypeModel, bool>(search)" @bind-DocumentTypeModel="model">
-
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Document</MudText>
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(0))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchDocumentType" Placeholder="Search DocumentTypes... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudTextField @bind-Value="searchDocumentType" Placeholder="Search DocumentTypes... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<AssetDocumentTypeModel, object>(x=> x.DocumentTypeName)" InitialDirection="SortDirection.Ascending">Document Type</MudTableSortLabel></MudTh>
@@ -34,7 +27,7 @@
                 <MudTd DataLabel="BlockAfter">@context.BlockAfter</MudTd>
                 <MudTd DataLabel="">
                     <MudFab @onclick="@(()=> Edit(context.DocumentTypeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context.DocumentTypeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -42,9 +35,8 @@
             </PagerContent>
         </MudTable>
     </MudItem>
-
-
 </MudGrid>
+
 @code {
 
     private AssetDocumentTypeModel model = new();
@@ -70,7 +62,6 @@
         }
     }
 
-
     private async Task Edit(int? id)
     {
         if (id == null || id != null && id == 0)
@@ -80,13 +71,10 @@
         else
         {
             model = collection.First(x => x.DocumentTypeID == id);
-
         }
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model);
-
         var dialog = DialogService.Show<DocumentDilog>("ADD TRUCK", parms);
-
         var result = await dialog.Result;
 
         // you can check if the modal was cancelled
@@ -96,7 +84,6 @@
             AssetDocumentTypeModel UpdatedModel = (AssetDocumentTypeModel)result.Data;
             if (UpdatedModel != null)
             {
-
                 if (collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID))
                 {
                     collection[collection.FindIndex(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)] = UpdatedModel;
@@ -109,23 +96,27 @@
             }
         }
     }
-    private async Task Delete(int? id)
+
+    private async Task Delete(AssetDocumentTypeModel model)
     {
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        int result = Iservice.DeleteType(id, user.Identity.Name);
-
-        if (result != -1)
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "Are you sure, you want to delete - " + model.DocumentTypeName + " ?");
+        if (result == true)
         {
-            if (collection != null && collection.Any(s => s.DocumentTypeID == id))
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            int value = Iservice.DeleteType(model.DocumentTypeID, user.Identity.Name);
+            if (value != -1)
             {
-                collection.Remove(collection.FirstOrDefault(s => s.DocumentTypeID == id));
-                snackbar.Add("Deleted Successfully", Severity.Success);
+                if (collection != null && collection.Any(s => s.DocumentTypeID == model.DocumentTypeID))
+                {
+                    collection.Remove(collection.FirstOrDefault(s => s.DocumentTypeID == model.DocumentTypeID));
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
             }
         }
     }
-
 
     private bool search(AssetDocumentTypeModel DocumentType)
     {
@@ -135,13 +126,11 @@
         }
         return false;
     }
+
     private void OpenDialog()
     {
-
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model);
         DialogService.Show<DocumentDilog>("Add Document", parms);
     }
 }
-
-

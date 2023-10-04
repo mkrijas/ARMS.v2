@@ -9,20 +9,13 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
-<MudTable Items="@collection" Dense="true" Hover="true" Striped="true"
-          Elevation="10" Filter="new Func<RouteModel, bool>(search)" @bind-model="model">
-
+<MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<RouteModel, bool>(search)" @bind-model="model">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Manage Routes</MudText>
         <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(new RouteModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
         <MudSpacer></MudSpacer>
-
-        <MudTextField @bind-Value="searchRoute" Placeholder="Search Routes... "
-                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                      IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudTextField @bind-Value="searchRoute" Placeholder="Search Routes... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </ToolBarContent>
-
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<RouteModel, object>(x=> x.RouteName)" InitialDirection="SortDirection.Ascending">Route</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<RouteModel, object>(x=> x.Distance)" InitialDirection="SortDirection.Ascending">Distance</MudTableSortLabel></MudTh>
@@ -39,7 +32,7 @@
         <MudTd DataLabel="TollBooths">@context.TollBooths</MudTd>
         <MudTd DataLabel="">
             <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-            <MudFab @onclick="@(()=> Delete(context.RouteID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
         </MudTd>
     </RowTemplate>
     <PagerContent>
@@ -52,7 +45,6 @@
     private RouteModel model = new RouteModel();
     private List<RouteModel> collection = new List<RouteModel>();
     public List<PlaceModel> places = new List<PlaceModel>();
-
     private List<string> RouteTypes = new List<string>() { "Highland", "City", "Highway", "Other" };
 
     private string searchRoute = "";
@@ -71,12 +63,10 @@
         await GetAll();
     }
 
-
     private async Task<IEnumerable<PlaceModel>> Search(string searchString)
     {
         return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
-
 
     private async Task GetAll()
     {
@@ -86,37 +76,28 @@
         }
     }
 
-    //private void Edit(int? id)
-    //{
-
-    //    model = collection.FirstOrDefault(x => x.RouteID == id);
-    //    model.Origin = places.FirstOrDefault(x => x.PlaceID == model.Origin.PlaceID);
-    //    model.Via = places.FirstOrDefault(x => x.PlaceID == model.Via.PlaceID);
-    //    model.Destination = places.FirstOrDefault(x => x.PlaceID == model.Destination.PlaceID);
-    //    DialogParameters parms = new DialogParameters();
-    //    parms.Add("routemodel",model);
-    //    DialogService.Show<RouteDilog>("ADD ROUTE",parms);
-    //}
-
-    private async Task Delete(int? id)
+    private async Task Delete(RouteModel model)
     {
         if (HasPermissionRouteServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            int result = Iservice.Delete(id, user.Identity.Name);
-
-            if (result != -1)
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.RouteName + " ?");
+            if (result == true)
             {
-                if (collection != null && collection.Any(s => s.RouteID == id))
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                int value = Iservice.Delete(model.RouteID, user.Identity.Name);
+
+                if (value != -1)
                 {
-                    collection.Remove(collection.FirstOrDefault(s => s.RouteID == id));
-                    snackbar.Add("Deleted Successfully", Severity.Success);
+                    if (collection != null && collection.Any(s => s.RouteID == model.RouteID))
+                    {
+                        collection.Remove(collection.FirstOrDefault(s => s.RouteID == model.RouteID));
+                        snackbar.Add("Deleted Successfully", Severity.Success);
+                    }
                 }
             }
-            //await Iservice.Delete(id, "Rijas");
-            //snackbar.Add("Deleted Successfully", Severity.Success);
-            //await GetAll();
         }
         else
         {
@@ -125,7 +106,6 @@
               "You dont have any permission to Delete Route.");
         }
     }
-
 
     private bool search(RouteModel model)
     {
@@ -136,17 +116,13 @@
         return false;
     }
 
-
     private async Task Edit(RouteModel model)
     {
         if (HasPermissionRouteServiceEdit)
         {
             DialogParameters parms = new DialogParameters();
             parms.Add("routemodel", model.Clone());
-
-
             var dialog = DialogService.Show<RouteDilog>("Route", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
-
             var result = await dialog.Result;
 
             // you can check if the modal was cancelled
@@ -167,7 +143,6 @@
                 }
                 model = new();
             }
-            //await GetAll();
         }
         else
         {

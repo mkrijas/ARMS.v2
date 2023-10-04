@@ -2,7 +2,6 @@
 @inject IRoleService<RoleModel> Irole
 @inject RoleManager<RoleModel> rolemngr
 @inject IDataAuthorizationSettingsService dataAuthSetting
-
 @inject UserManager<UserModel> Usmg
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -17,8 +16,8 @@
     .mud-table-container {
         overflow: revert;
     }
-
 </style>
+
 <MudDialog Class="my-dialogue pb-3">
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -26,49 +25,46 @@
             Manage Permissions
         </MudText>
     </TitleContent>
-    <DialogContent >
+    <DialogContent>
         @if (Progressing)
         {
             <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
         }
         else
         {
-        <MudContainer Style="min-height:300px;max-height: 70vh; overflow-y:auto">
-            <MudTable Style="overflow-y:hidden" Class="mb-3" Items="@Claims" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<roleClaimView, bool>(search)" @bind-place="roleClaimModel">
-                <ToolBarContent>
-                    
-                    <MudCheckBox T="bool" CheckedChanged="@SetAllPermissions" Class="mr-2" Checked="@SetAllPermssionsVal" Label="Select All Permissions" Color="Color.Primary"></MudCheckBox>
-                    <MudSpacer></MudSpacer>
-                    <MudTextField @bind-Value="searchClaim" Placeholder="Search Claim... "
-                                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                                  IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                </ToolBarContent>
-                <HeaderContent>
-                    <MudTh>Page</MudTh>
-                    <MudTh>Permission</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Claim Type">@context.DocType</MudTd>
-                    <MudTd DataLabel="Value">
-                        @foreach (var item in @context.ClaimValues)
-                        {
-                            <MudCheckBox CheckedChanged="@((bool val) => Roleupdate(val,context.ClaimType,item))" Class="mr-2" Checked="@UserClaimList.Any(x=> x.Type == @context.ClaimType && x.Value == item)" Label="@item" Color="Color.Primary"></MudCheckBox>
-                        }
-                    </MudTd>
-                </RowTemplate>
-                <PagerContent>
-                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                </PagerContent>
-            </MudTable>
-        </MudContainer>
+            <MudContainer Style="min-height:300px;max-height: 70vh; overflow-y:auto">
+                <MudTable Style="overflow-y:hidden" Class="mb-3" Items="@Claims" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<roleClaimView, bool>(search)" @bind-place="roleClaimModel">
+                    <ToolBarContent>
+                        <MudCheckBox T="bool" CheckedChanged="@SetAllPermissions" Class="mr-2" Checked="@SetAllPermssionsVal" Label="Select All Permissions" Color="Color.Primary"></MudCheckBox>
+                        <MudSpacer></MudSpacer>
+                        <MudTextField @bind-Value="searchClaim" Placeholder="Search Claim... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Page</MudTh>
+                        <MudTh>Permission</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Claim Type">@context.DocType</MudTd>
+                        <MudTd DataLabel="Value">
+                            @foreach (var item in @context.ClaimValues)
+                            {
+                                <MudCheckBox CheckedChanged="@((bool val) => Roleupdate(val,context.ClaimType,item))" Class="mr-2" Checked="@UserClaimList.Any(x=> x.Type == @context.ClaimType && x.Value == item)" Label="@item" Color="Color.Primary"></MudCheckBox>
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
+            </MudContainer>
         }
     </DialogContent>
 </MudDialog>
 
 @code {
+
     [Parameter]
     public RoleModel RoleModel { get; set; }
-
     private RoleModel model = new RoleModel();
     public IList<Claim> UserClaimList { get; set; } = new List<Claim>();
     private string searchTruck = "";
@@ -94,7 +90,6 @@
     private List<roleClaimView> Claims = new();
     roleClaimView roleClaimModel = new();
 
-
     protected override async Task OnInitializedAsync()
     {
         doctypes = dataAuthSetting.GetDocTypes();
@@ -103,14 +98,11 @@
         GetClaim();
     }
 
-
     private void GetAll()
     {
         collection.Clear();
         collection = Irole.Select(null).ToList();
-
     }
-
 
     private void GetClaim()
     {
@@ -128,19 +120,22 @@
         }
     }
 
-
     private void Edit(RoleModel editModel)
     {
 
     }
 
-
-    private void Delete(int? id)
+    private async Task Delete(int? id)
     {
-        snackbar.Add("Deleted Successfully", Severity.Success);
+        bool? result = await DialogService.ShowMessageBox(
+           "Warning !",
+           "Are you sure, you want to delete ?");
+        if (result == true)
+        {
+            snackbar.Add("Deleted Successfully", Severity.Success);
+        }
         GetAll();
     }
-
 
     private bool search(RoleModel roles)
     {
@@ -154,20 +149,18 @@
 
     private async Task Roleupdate(bool val, String Claimtype, String claimvalue)
     {
-
         Claim claim = new Claim(Claimtype, claimvalue);
         try
-        {         
-
+        {
             if (val == true)
             {
                 await rolemngr.AddClaimAsync(RoleModel, claim);
-                UserClaimList.Add(claim);                
+                UserClaimList.Add(claim);
             }
             else
             {
                 await rolemngr.RemoveClaimAsync(RoleModel, claim);
-                UserClaimList.Remove(UserClaimList.FirstOrDefault(s => s.Type == claim.Type && s.Value == claim.Value));                
+                UserClaimList.Remove(UserClaimList.FirstOrDefault(s => s.Type == claim.Type && s.Value == claim.Value));
             }
         }
         catch (Exception ex)
@@ -191,7 +184,7 @@
     {
         SetAllPermssionsVal = val;
         Progressing = true;
-        foreach(var item in Claims)
+        foreach (var item in Claims)
         {
             foreach (var claimValue in item.ClaimValues)
             {
@@ -201,4 +194,3 @@
         Progressing = false;
     }
 }
-
