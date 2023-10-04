@@ -4,12 +4,10 @@
 @inject IGcService Iservice
 @inject IRouteService Iroute
 @inject IOrderService Iorder
-
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-
 @inject NavigationManager UriHelper
 
 @using System.Threading;
@@ -20,7 +18,6 @@
     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@Add" Color="Color.Dark" Size="Size.Medium"></MudIconButton>
 </MudText>
 <MudGrid>
-
     @foreach (var item in collection)
     {
         <MudItem xs="12" md="4" xl="3">
@@ -35,8 +32,6 @@
 
     private int BranchID;
     private List<GcSetModel> collection = new();
-
-
     [Parameter]
     public int? id { get; set; } = null;
 
@@ -54,16 +49,13 @@
         string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(BranchIDString);
 
-
         GetAll(BranchID);
     }
 
-
     private void GetAll(int BranchID)
     {
-        //collection = Iservice.SelectUnAssigned(BranchID);
         var collectionResult = Iservice.SelectUnAssigned(BranchID);
-        if (id != null && collectionResult != null && collectionResult.Any(g => g.Gcs!= null && g.Gcs.Any(d => d.EwayBill != null && d.EwayBill.GcID == id)))
+        if (id != null && collectionResult != null && collectionResult.Any(g => g.Gcs != null && g.Gcs.Any(d => d.EwayBill != null && d.EwayBill.GcID == id)))
         {
             collection = collectionResult.Where(g => g.Gcs != null && g.Gcs.Any(d => d.EwayBill != null && d.EwayBill.GcID == id)).ToList();
         }
@@ -73,14 +65,12 @@
         }
     }
 
-
     private async Task Add()
     {
         if (HasPermissionGcServiceEdit)
         {
             var parameters = new DialogParameters();
             parameters.Add("model", new GcSetModel() { BranchID = BranchID });
-
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
             var result = DialogService.Show<GcDialog>("Create New GC", parameters, maxWidth);
             var data = await result.Result;
@@ -94,13 +84,20 @@
         }
     }
 
-
     private async Task Delete(long? id)
     {
         if (HasPermissionGCServiceDelete)
         {
-            Iservice.Delete(id, "Rijas");
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(id, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
             GetAll(BranchID);
         }
         else
@@ -110,7 +107,6 @@
                 "You dont have any permission to Delete GC.");
         }
     }
-
 
     private bool search(GcSetModel model)
     {
