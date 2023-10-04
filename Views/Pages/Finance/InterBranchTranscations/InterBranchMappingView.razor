@@ -5,21 +5,17 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
-
-
             <ToolBarContent>
                 <MudText Typo="Typo.h6">InterBranch Account Mapping</MudText>
                 <MudTooltip Text="New Sales">
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new InterBranchMappingModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Inter Branch Account Mapping..." Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
-                              @onkeyup="HandleSearchKeyUp">
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Inter Branch Account Mapping..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
                 </MudTextField>
                 <div class="tablefont">
                     <span style="margin-right: 10px;">Maximum Records: </span>
@@ -27,30 +23,19 @@
                 <MudItem xs="1">
                     <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
                 </MudItem>
-
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<InterBranchMappingModel, object>(x=> x.BranchName)" InitialDirection="SortDirection.Ascending">Branch Name</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<InterBranchMappingModel, object>(x=> x.InterBranchArdCode)" InitialDirection="SortDirection.Ascending">InterBranch ArdCode</MudTableSortLabel></MudTh>
-
-
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="GrnNO">@context.BranchName</MudTd>
                 <MudTd DataLabel="EntryDate">@context.InterBranchArdCode</MudTd>
-
-
                 <MudTd DataLabel="">
-
-
                     <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-
                     <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
-
-
-
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -61,6 +46,7 @@
 </MudGrid>
 
 @code {
+
     private InterBranchMappingModel model = new InterBranchMappingModel();
     private List<InterBranchMappingModel> collection = new List<InterBranchMappingModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
@@ -95,44 +81,44 @@
 
     protected override void OnInitialized()
     {
-
         GetAll(NumberOfRecords);
     }
+
     private void GetAll(int numberOfRecords)
     {
         int NumberOfRecords = numberOfRecords;
         collection = Iservice.Select(NumberOfRecords, searchTerm).ToList();
-
     }
 
     private async Task OpenDialog(InterBranchMappingModel tds, bool Readonly, bool View)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds.Clone());
         parms.Add("ReadOnly", Readonly);
         parms.Add("IsView", View);
         var dialog = DialogService.Show<InterBranchMappingDialog>(tds.ID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
-
         if (!result.Canceled)
         {
-
             GetAll(NumberOfRecords);
-
-
         }
     }
 
-    private async Task Delete(InterBranchMappingModel tx)
+    private async Task Delete(InterBranchMappingModel model)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
-        var UserID = User.Identity.Name;
-        Iservice.Delete(tx.ID, UserID);
-        snackbar.Add("Deleted Successfully", Severity.Success);
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "Are you sure, you want to delete - " + model.BranchName + " (" + model.InterBranchArdCode + ") ?");
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var User = authprov.User;
+            var UserID = User.Identity.Name;
+            Iservice.Delete(model.ID, UserID);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+        }
         GetAll(NumberOfRecords);
     }
 }
