@@ -63,6 +63,7 @@ namespace ArmsModels.BaseModels
         public int? TruckID { get; set; }
         [Required]
         public int? FuelItemID { get; set; }
+        public string FuelItemDescription { get; set; } 
         public decimal? RatePerLitre { get; set; }
         public decimal? Amount
         {

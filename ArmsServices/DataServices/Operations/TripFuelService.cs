@@ -107,6 +107,7 @@ namespace ArmsServices.DataServices
                 TripFuelID = reader.GetInt64("TripFuelID"),
                 EntryDate = reader.GetDateTime("EntryDate"),
                 FuelItemID = reader.GetInt32("FuelItemID"),
+                FuelItemDescription = reader.GetString("FuelItemDescription"),
                 PurchaseModel = new()
                 {
                     PID = reader.GetInt32("PID"),
