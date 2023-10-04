@@ -7,22 +7,16 @@
 
 @using System.Globalization
 @using Pages.Inventory.TyreManager
-
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
-
 <MudItem xs="12">
     <MudTable Items="@collection" Elevation="10" Filter="new Func<TruckTypeModel, bool>(search)" @bind-TruckType="model">
-
         <ToolBarContent>
             <MudText Typo="Typo.h6">Truck Types</MudText>
             <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(()=>Edit(new TruckTypeModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
             <MudSpacer></MudSpacer>
-            <MudTextField @bind-Value="searchTruckType" Placeholder="Search TruckTypes... "
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudTextField @bind-Value="searchTruckType" Placeholder="Search TruckTypes... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         </ToolBarContent>
         <HeaderContent>
             <MudTh><MudTableSortLabel SortBy="new Func<TruckTypeModel, object>(x=> x.TruckType)" InitialDirection="SortDirection.Ascending">TruckType</MudTableSortLabel></MudTh>
@@ -42,7 +36,7 @@
             <MudTd DataLabel="wheels">@context.wheels</MudTd>
             <MudTd DataLabel="">
                 <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                <MudFab @onclick="@(()=> Delete(context.TruckTypeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 <MudFab @onclick="@(()=> SelectTyrePosition(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Checklist" Size="Size.Small" IconSize="Size.Small" />
             </MudTd>
         </RowTemplate>
@@ -71,7 +65,6 @@
         await Task.Run(() => GetAll());
     }
 
-
     private void GetAll()
     {
         if (collection != null)
@@ -84,16 +77,13 @@
         }
     }
 
-
     private async Task Edit(TruckTypeModel TypeModel)
     {
         if (HasPermissionITruckTypeServiceEdit)
         {
             DialogParameters tparms = new();
             tparms.Add("TypeModel", TypeModel);
-
             var dialog = DialogService.Show<TruckTypeDiloge>("Truck type", tparms);
-
             var result = await dialog.Result;
 
             // you can check if the modal was cancelled
@@ -119,48 +109,49 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Permission denied!",
-                      "You dont have any permission to Add or Edit TruckType.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit TruckType.");
         }
     }
 
-
-    private async Task Delete(short? id)
+    private async Task Delete(TruckTypeModel model)
     {
         if (HasPermissionITruckTypeServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            int result = Iservice.Delete(id, user.Identity.Name);
-
-            StateHasChanged();
-            if (result != -1)
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.TruckType + " (" + model.BSType + ") ?");
+            if (result == true)
             {
-                if (collection != null && collection.Any(s => s.TruckTypeID == id))
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                int value = Iservice.Delete(model.TruckTypeID, user.Identity.Name);
+
+                StateHasChanged();
+                if (value != -1)
                 {
-                    collection.Remove(collection.FirstOrDefault(s => s.TruckTypeID == id));
-                    snackbar.Add("Deleted Successfully", Severity.Success);
+                    if (collection != null && collection.Any(s => s.TruckTypeID == model.TruckTypeID))
+                    {
+                        collection.Remove(collection.FirstOrDefault(s => s.TruckTypeID == model.TruckTypeID));
+                        snackbar.Add("Deleted Successfully", Severity.Success);
+                    }
                 }
             }
         }
         else
         {
             bool? result = await DialogService.ShowMessageBox(
-              "Permission denied!",
-              "You dont have any permission to Delete TruckType.");
+                "Permission denied!",
+                "You dont have any permission to Delete TruckType.");
         }
     }
-
 
     private async Task SelectTyrePosition(TruckTypeModel TypeModel)
     {
         DialogParameters tparms = new DialogParameters();
         tparms.Add("TypeModel", TypeModel);
-        //DialogService.Show<TyrePositionDialog>("ADD/EDIT",tparms);
-
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
         var dialog = DialogService.Show<TyrePositionDialog>("ADD/EDIT Tyre Position", tparms, options);
-
         var result = await dialog.Result;
 
         // you can check if the modal was cancelled
@@ -171,7 +162,6 @@
         }
     }
 
-
     private bool search(TruckTypeModel TruckType)
     {
         if (TruckType.TruckType != null && TruckType.TruckType.Contains(searchTruckType, StringComparison.OrdinalIgnoreCase))
@@ -180,7 +170,6 @@
         }
         return false;
     }
-
 
     private void TruckDilog()
     {
