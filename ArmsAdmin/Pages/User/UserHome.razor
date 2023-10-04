@@ -9,21 +9,12 @@
 @using System.Globalization
 @using Microsoft.AspNetCore.Identity
 
-
 <br />
 <br />
-
-@*<div style="background-color:#1469c0;padding:1%;padding-top:1%;  color:#fff;">
-    <div style="float:left;padding-top:1%"><h6>User List</h6></div><div style="float:right;">
-        <MudButton OnClick="DeletedUsersDialog" StartIcon="@Icons.Outlined.Add" Variant="Variant.Filled" Style="background:none;color:#fff;">
-            Deleted Users
-        </MudButton>
-    </div>
-</div>*@
 <div style="background-color:#1469c0;padding:1%;padding-top:1%;  color:#fff;">
     <div style="float:left;padding-top:1%"><h6>User List</h6></div><div style="float:right;">
         <MudButton OnClick="DeletedUsersDialog" StartIcon="@Icons.Outlined.Add" Variant="Variant.Filled" Style="background:none;color:#fff;">
-            disabled Users
+            Disabled Users
         </MudButton>
         <MudButton OnClick="Undilog" StartIcon="@Icons.Outlined.Add" Variant="Variant.Filled" Style="background:none;color:#fff;">
             Unapproved User
@@ -33,13 +24,9 @@
     <br />
 </div>
 
-
 <MudTable Items="@collection" Dense="true" Elevation="8" Filter="new Func<UserModel, bool>(search)" @bind-Truck="model">
     <ToolBarContent>
-
-        <MudTextField @bind-Value="searchUser" Placeholder="Search User... "
-                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                      IconSize="Size.Medium"></MudTextField>
+        <MudTextField @bind-Value="searchUser" Placeholder="Search User... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
     </ToolBarContent>
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<UserModel, object>(x=> x.UserID)" InitialDirection="SortDirection.Ascending">UserID</MudTableSortLabel></MudTh>
@@ -53,19 +40,15 @@
         <MudTd DataLabel="UserName">@context.UserName</MudTd>
         <MudTd DataLabel="Email">@context.Email</MudTd>
         <MudTd DataLabel="PhoneNumber">@context.PhoneNumber</MudTd>
-        @*<MudTd DataLabel="Status">@context.RecordStatus</MudTd>*@
         <MudTd DataLabel="">
             <MudFab style="font-size:5px" @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.ManageAccounts" Size="Size.Small" IconSize="Size.Small" />
             <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-
         </MudTd>
-
     </RowTemplate>
     <PagerContent>
         <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
     </PagerContent>
 </MudTable>
-
 
 @code {
 
@@ -80,42 +63,39 @@
     protected async override Task OnInitializedAsync()
     {
         await GetAll();
-
     }
 
     private async Task GetAll()
     {
         collection.Clear();
         collection = Iservice.Select(null).ToList();
-
     }
 
     private void Edit(UserModel editModel)
     {
         DialogParameters parms = new();
-
         parms.Add("UserRmodel", editModel);
         DialogService.Show<RoleassignDilog>("ADD/EDIT", parms);
-        //model = Iservice.SelectByID(id);
-        //model.CurrentRegistration = Iservice.GetRegistration();
     }
 
-    private async Task Delete(UserModel editModel)
+    private async Task Delete(UserModel model)
     {
-        var CurrentElement = collection.First(x => x.UserID == editModel.UserID);
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        //usbr.UserInfo.UserID = user.Identity.Name;
-        int result = Iservice.DeleteUser(CurrentElement.UserID, user.Identity.Name);
-        if (result != -1)
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "Are you sure, you want to delete - " + model.UserName + " (" + model.UserID + ") ?");
+        if (result == true)
         {
-
-            snackbar.Add("Deleted Successfully", Severity.Success);
-            await GetAll();
+            var CurrentElement = collection.First(x => x.UserID == model.UserID);
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            int value = Iservice.DeleteUser(CurrentElement.UserID, user.Identity.Name);
+            if (value != -1)
+            {
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
         }
+        await GetAll();
     }
-
 
     private bool search(UserModel users)
     {
@@ -126,35 +106,27 @@
         else if (users.UserID == null) return true;
         return false;
     }
+
     private void OpenDialog()
     {
-
         DialogParameters parms = new DialogParameters();
         parms.Add("EditModel", new UserDilogue());
-
-
     }
+
     private void DeletedUsersDialog()
     {
         DialogService.Show<DeletedUserDialog>("", maxWidthMedium);
-
     }
+
     private void Undilog()
     {
         DialogService.Show<UnaprovedDilog>("", maxWidthMedium);
-
     }
+
     private void Roledilog(String UserRModel)
     {
         DialogParameters parms = new();
         parms.Add("UserRModel", UserRModel);
         DialogService.Show<RoleassignDilog>("Assign Branches", parms, maxWidth);
-
-
-
     }
 }
-
-
-
-
