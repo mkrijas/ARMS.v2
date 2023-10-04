@@ -2,37 +2,27 @@
 @layout AdminMainLayout
 @inject IStoreService Iservice
 @inject MudBlazor.ISnackbar snackbar
-
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-
-
 <MudGrid Spacing="4">
-   <MudItem xs="12">
-        <MudTable Items="@collection"  Dense="true" Hover="true"  Striped="true" Elevation="10" Filter="new Func<StoreModel, bool>(search)" @bind-place="model">
-           
-
-             <ToolBarContent>
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<StoreModel, bool>(search)" @bind-place="model">
+            <ToolBarContent>
                 <MudText Typo="Typo.h6">Store</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))"  Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchstore" Placeholder="Search Store... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudTextField @bind-Value="searchstore" Placeholder="Search Store... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<StoreModel, object>(x=> x.StoreName)" InitialDirection="SortDirection.Ascending">StoreName</MudTableSortLabel></MudTh>
-             <MudTh><MudTableSortLabel SortBy="new Func<StoreModel, object>(x=> x.BranchName)" InitialDirection="SortDirection.Ascending">BranchName</MudTableSortLabel></MudTh>
-              
+                <MudTh><MudTableSortLabel SortBy="new Func<StoreModel, object>(x=> x.BranchName)" InitialDirection="SortDirection.Ascending">BranchName</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="UsageID">@context.StoreName</MudTd>
                 <MudTd DataLabel="AccountID">@context.BranchName</MudTd>
-                
                 <MudTd DataLabel="">
                     <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
@@ -43,16 +33,12 @@
             </PagerContent>
         </MudTable>
     </MudItem>
-    </MudGrid>
-
-
+</MudGrid>
 
 @code {
 
-
     private StoreModel model = new StoreModel();
     private List<StoreModel> collection = new List<StoreModel>();
-
     string UserID = string.Empty;
 
     private string searchstore = "";
@@ -66,16 +52,14 @@
         GetAll();
     }
 
-    private  void GetAll()
+    private void GetAll()
     {
         collection = new List<StoreModel>();
         foreach (var item in Iservice.Select())
         {
             collection.Add(item);
         }
-
-
-    }   
+    }
 
     private async Task OpenDialog(StoreModel st)
     {
@@ -83,18 +67,16 @@
         var user = authprov.User;
 
         DialogParameters parms = new DialogParameters();
-        parms.Add("model",st);
-        var dialog =  DialogService.Show<StoreViewDialog>(st.StoreID == null?"ADD":"EDIT",parms);
+        parms.Add("model", st);
+        var dialog = DialogService.Show<StoreViewDialog>(st.StoreID == null ? "ADD" : "EDIT", parms);
         var result = await dialog.Result;
 
-        if(!result.Cancelled)
-        {   
-            StoreModel UpatedModel = (StoreModel)result.Data;            
+        if (!result.Cancelled)
+        {
+            StoreModel UpatedModel = (StoreModel)result.Data;
             model.UserInfo.UserID = user.Identity.Name;
-
             try
             {
-
                 Iservice.Update(UpatedModel);
                 model = new();
                 snackbar.Add("Saved Successfully", Severity.Success);
@@ -105,28 +87,30 @@
             {
                 snackbar.Add(ex.Message, Severity.Warning);
             }
-
         }
     }
-    
-    private void Delete(StoreModel st)
+
+    private async Task Delete(StoreModel model)
     {
-        Iservice.Delete(st.StoreID, UserID);
-        snackbar.Add("Deleted Successfully", Severity.Error);
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "Are you sure, you want to delete - " + model.StoreName + " (" + model.BranchName + ") ?");
+        if (result == true)
+        {
+            Iservice.Delete(model.StoreID, UserID);
+            snackbar.Add("Deleted Successfully", Severity.Error);
+        }
         GetAll();
     }
 
     private bool search(StoreModel tds)
     {
-     if (tds.StoreName != null && tds.StoreName.Contains(searchstore, StringComparison.OrdinalIgnoreCase))
+        if (tds.StoreName != null && tds.StoreName.Contains(searchstore, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
         else if (tds.StoreName == null)
-        return true;
+            return true;
         return false;
     }
-
-
-
 }
