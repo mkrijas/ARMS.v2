@@ -42,7 +42,6 @@ namespace ArmsModels.BaseModels
         public int? AuthLevelID { get; set; }
         [Required]
         public int? DocTypeID { get; set; }
-        [Required]
         public virtual string DocType { get; set; }
         public virtual string AuthorizeType { get; set; }
         public string RoleID { get; set; }
