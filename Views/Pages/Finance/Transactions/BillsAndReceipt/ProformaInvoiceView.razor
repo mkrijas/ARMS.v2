@@ -9,7 +9,6 @@
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
-
 @layout BillsLayout
 
 <MudGrid Spacing="4">
@@ -18,9 +17,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Proforma Invoices</MudText>
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Proforma..." Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
-                              @onkeyup="HandleSearchKeyUp">
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Proforma..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
                 </MudTextField>
                 <div class="tablefont">
                     <span style="margin-right: 10px;">Maximum Records: </span>
@@ -63,6 +60,7 @@
 </MudGrid>
 
 @code {
+
     private ProformaInvoiceModel model = new ProformaInvoiceModel();
     private List<ProformaInvoiceModel> collection = new List<ProformaInvoiceModel>();
 
@@ -74,7 +72,6 @@
 
     public bool HasAuthoriseDelete { get; set; } = false;
     int DocTypeID = 2;
-
 
     private int NumberOfRecords
     {
@@ -104,29 +101,30 @@
 
     protected override async Task OnInitializedAsync()
     {
-
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
         var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;        
+        var User = authprov.User;
         BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = User.Identity.Name;
         GetPerfomaInvoice(IsApproved, NumberOfRecords);
     }
+
     void ApprovedChanged(bool value)
     {
         IsApproved = value;
         GetPerfomaInvoice(IsApproved, NumberOfRecords);
     }
+
     public async Task OpenDialog(ProformaInvoiceModel pfm, bool ReadOnly)
-    {        
+    {
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         pfm.Gst = Iservice.GetGstRate(pfm.DraftBillID);
         pfm.UserInfo.UserID = UserID;
         pfm.BookedGCs = Iservice.GetBilled(pfm.DraftBillID).ToList();
         DialogParameters parms = new DialogParameters();
         parms.Add("model", pfm);
-        parms.Add("ReadOnly", ReadOnly);        
+        parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<ProformaInvoceDialog>("Proforma Invoce", parms, maxWidth);
         var result = await dialog.Result;
         if (!result.Canceled)
@@ -154,21 +152,23 @@
 
     public async Task Reverse(ProformaInvoiceModel pim)
     {
-
         if (HasAuthoriseDelete)
         {
-        Iservice.ReverseProformaInvoice(pim.ProformaInvoiceID, UserID);
-        snackbar.Add("Updated Successfully", Severity.Success);
-        GetPerfomaInvoice(IsApproved, NumberOfRecords);
-
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to reverse document - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
+            if (result == true)
+            {
+                Iservice.ReverseProformaInvoice(pim.ProformaInvoiceID, UserID);
+                snackbar.Add("Updated Successfully", Severity.Success);
+                GetPerfomaInvoice(IsApproved, NumberOfRecords);
+            }
         }
         else
         {
-
             bool? result = await DialogService.ShowMessageBox(
-        "Permission denied!",
-        "You dont have any permission to reverse.");
+                "Permission denied!",
+                "You dont have any permission to reverse.");
         }
     }
-
 }
