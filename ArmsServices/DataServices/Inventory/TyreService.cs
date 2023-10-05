@@ -92,9 +92,9 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@Party", model.Party.PartyID),
+               new SqlParameter("@Party", model.Party?.PartyID??null),
                new SqlParameter("@RequestedDate", model.RequestedDate),
-               new SqlParameter("@Tyres", model.Tyres.Select(s=>s.Value).ToList().ToDataTable()),
+               new SqlParameter("@Tyres", model.Tyres.Select(s=>s.Value)?.ToList()?.ToDataTable()??null),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Update]", parameters);

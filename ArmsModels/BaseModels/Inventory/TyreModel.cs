@@ -1,4 +1,5 @@
 ﻿using ArmsModels.SharedModels;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -80,15 +81,27 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
-    public class TyreResoleModel
+    public class TyreResoleModel :ICloneable
     {
         public int? ID { get; set; }
         public PartyModel Party { get; set; }
+        [Required]
+        public int? PartyID { get; set; }
+        [Required]
         public DateTime? RequestedDate { get; set; }
         public DateTime? DeliveredDate { get; set; }
         public int? DeliveryID { get; set; }
+        [Required(ErrorMessage = "The tyre is required.")]
+        [MinLength(1, ErrorMessage = "At least 1 tyre should be selected.")]
         public List<int?> Tyres { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<TyreResoleModel>(Json);
+        }
+
     }
 
 
