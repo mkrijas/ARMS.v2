@@ -16,9 +16,13 @@
     <DialogContent>
 
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
-            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
-                <ObjectGraphDataAnnotationsValidator />
+            <EditForm id="ResoleDeliveryID" Model="@model" OnValidSubmit="Submit">
+                <DataAnnotationsValidator />
                 <ValidationSummary />
+                @if (ValidationMessage != null)
+                {
+                    <div class="validation-message">@ValidationMessage</div>
+                }
                 <MudGrid>
                     <MudItem xs="6" md="6" Class="mb-6">
                         <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Label="Party" @bind-Value="@model.Party.TradeName" Disabled></MudTextField>
@@ -38,7 +42,7 @@
                             @foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList)
                             {
                                 <MudItem xs="3">
-                                    <MudTextField @bind-Value="@item.Tyre.TyreSerialNumber" Label="Tyre" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.Tyre.TyreSerialNumber)"></MudTextField>
+                                    <MudTextField @bind-Value="@item.Tyre.TyreSerialNumber" Label="Tyre" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.Tyre.TyreSerialNumber)" Disabled></MudTextField>
                                 </MudItem>
                                 <MudItem xs="2">
                                     <MudSelect T="bool" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Status" @bind-Value="@item.Status" SelectedValuesChanged="@(() => OnChangeStatus(item.Status,item.TyreID))">
@@ -78,7 +82,7 @@
 
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+        <MudButton form="ResoleDeliveryID" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -98,6 +102,8 @@
     List<TyreModel> TyreList = new();
 
 
+    public string ValidationMessage = null;
+
     public void OnChangeStatus(bool status, int? tyreId)
     {
         if (!status)
@@ -110,6 +116,7 @@
             }
 
         }
+        ValidationMessage = null;
     }
     public void OnChangeAmount(bool status, int? tyreId)
     {
@@ -130,6 +137,7 @@
                 }
             }
         }
+        ValidationMessage = null;
     }
 
     public void OnChangeTax(bool status, int? tyreId)
@@ -148,10 +156,12 @@
                 }
             }
         }
+        ValidationMessage = null;
     }
     public void UsageCodeChanged(GstUsageCodeModel UsageCode)
     {
         CurrentUsageCode = UsageCode;
+        model.UsageCode = CurrentUsageCode?.UsageCode ?? null;
         if (CurrentUsageCode != null)
         {
             foreach (ResoleDeliveryTyreModel item in @model.ResoleDeliveryTyreList)
@@ -215,7 +225,7 @@
         {
             model.ResoleDeliveryTyreList = new();
         }
-        if(model.ID == null || model.ID == 0)
+        if (model.ID == null || model.ID == 0)
         {
             model.PID = 0;
         }
@@ -233,6 +243,7 @@
             }
 
         }
+        model.UsageCode = CurrentUsageCode?.UsageCode ?? null;
         var TyresList = Iservice.SelectByBranch(BranchID);
         if (TyresList != null && TyresList.Count() != 0)
         {
@@ -267,6 +278,25 @@
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         model.UsageCode = CurrentUsageCode.UsageCode;
+        if (model.ResoleDeliveryTyreList == null || model.ResoleDeliveryTyreList.Count() == 0)
+        {
+            ValidationMessage = "Need at lest one item to submit \n";
+            return;
+        }
+        if (model.ResoleDeliveryTyreList.Any(s => s.Status == true && s.Amount == null) || model.ResoleDeliveryTyreList.Any(s => s.TaxIncluded == false && s.Tax == null))
+        {
+            if (model.ResoleDeliveryTyreList.Any(s => s.Status == true && s.Amount == null))
+            {
+                ValidationMessage = "Amount Should not be empty \n";
+            }
+            if (model.ResoleDeliveryTyreList.Any(s => s.TaxIncluded == false && s.Tax == null))
+            {
+                ValidationMessage = "Amount Should not be empty \n";
+            }
+            return;
+
+        }
+        ValidationMessage = null;
         if (model != null)
         {
             model.UserInfo.UserID = user.Identity.Name;

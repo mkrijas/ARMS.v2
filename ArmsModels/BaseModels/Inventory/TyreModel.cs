@@ -110,29 +110,40 @@ namespace ArmsModels.BaseModels
         public int? ID { get; set; }
         public int? DeliveryID { get; set; }
         public int? TyreID { get; set; }
+        public bool TaxIncluded { get; set; }
         public TyreModel Tyre { get; set; }
-        public bool Status { get; set; } = true;
+        public bool Status { get; set; } = false;
+        [ExpressiveAnnotations.Attributes.RequiredIf("Status == true")]
         public decimal? Amount { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("TaxIncluded == true")]
         public decimal? Tax { get; set; }
         public decimal? TotalAmount { get; set; }
     }
 
 
-    public class ResoleDeliveryModel
+    public class ResoleDeliveryModel : ICloneable
     {
         public int? ID { get; set; }
         public int? ResoleID { get; set; }
         public TyreResoleModel Resole { get; set; }
         public PartyModel Party { get; set; }
         public DateTime? RequestedDate { get; set; }
+        [Required]
         public DateTime? DeliveryDate { get; set; }
+        [Required]
         public string UsageCode { get; set; }
         public bool TaxIncluded { get; set; }
         public int? PID { get; set; } = 0;
         public List<int?> Tyres { get; set; }
-
+        [Required]
         public List<ResoleDeliveryTyreModel> ResoleDeliveryTyreList = new();
         public UserInfoModel UserInfo { get; set; } = new();
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<ResoleDeliveryModel>(Json);
+        }
     }
 
 }
