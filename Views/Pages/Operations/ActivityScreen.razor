@@ -31,7 +31,13 @@
 <MudGrid Spacing="4">
 
     <MudItem xs="12">
-        <TruckSelector Class="bg-white" Value="SelectedTruck" ValueChanged="OnTruckSelected" />
+        <MudSelect T="TruckModel" Value="SelectedTruck" AnchorOrigin="Origin.BottomCenter" ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")" ValueChanged="OnTruckSelected" Label="Select Truck" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+            @foreach (var list in TruckList)
+            {
+                <MudSelectItem Value="@list">@list.RegNo</MudSelectItem>
+            }
+        </MudSelect>
+        @* <TruckSelector Class="bg-white" Value="SelectedTruck" ValueChanged="OnTruckSelected" /> *@
     </MudItem>
 
 
@@ -105,8 +111,9 @@
 
 
 @code {
-    [Parameter]
+   
     public TruckModel SelectedTruck { get; set; }
+    private List<TruckModel> TruckList = new();
 
     TripViewComponent TripViewRef;
 
@@ -131,6 +138,11 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionTripServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int branchID = int.Parse(brancIDString);
+
+        TruckList = Itruck.SelectAvailableTrucks(branchID).ToList();
 
         OnTruckSelected(SelectedTruck);
     }

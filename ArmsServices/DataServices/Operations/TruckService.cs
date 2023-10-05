@@ -329,6 +329,61 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<TruckModel> SelectAvailableTrucks(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "UnAssigned"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Truck.Select]", parameters))
+            {
+                yield return new TruckModel()
+                {
+                    RegNo = dr.GetString("RegNo"),
+                    TruckID = dr.GetInt32("TruckID"),
+                    TruckTypeID = dr.GetInt16("TruckTypeID"),
+                    TruckType = dr.GetString("TruckType"),
+                    FuelType = dr.GetString("FuelType"),
+                    FuelTankCapacity = dr.GetDecimal("FuelTankCapacity"),
+                    BodyType = dr.GetString("BodyType"),
+                    ManufacturedYear = dr.GetInt16("ManufacturedYear"),
+                    CurrentRegistration = new()
+                    {
+                        RegID = dr.GetInt32("RegID"),
+                        RegNo = dr.GetString("RegNo"),
+                        RC = dr.GetString("RC"),
+                        EffectFrom = dr.GetDateTime("EffectFrom"),
+                        EffectTo = dr.GetDateTime("EffectTo"),
+                    },
+                    CurrentEvent = new EventModel()
+                    {
+                        BranchID = dr.GetInt32("BranchID"),
+                        BranchName = dr.GetString("BranchName"),
+                        DestinationID = dr.GetInt32("DestinationID"),
+                        DriverID = dr.GetInt32("DriverID"),
+                        EventReading = dr.GetInt64("EventReading"),
+                        EventTime = dr.GetDateTime("EventTime"),
+                        EventTypeID = dr.GetByte("EventTypeID"),
+                        GcSetID = dr.GetInt64("GcSetID"),
+                        OriginID = dr.GetInt32("OriginID"),
+                        TripID = dr.GetInt64("TripID"),
+                        TruckEventID = dr.GetInt64("EventID"),
+                        TruckID = dr.GetInt32("TruckID"),
+                        OriginName = dr.GetString("OriginName"),
+                        DestinationName = dr.GetString("DestinationName")
+                    },
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
+            }
+        }
+
         public TruckModel SelectByAsset(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
