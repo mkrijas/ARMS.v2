@@ -11,18 +11,14 @@
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">InterBranch Receipt</MudText>
                 <MudTooltip Text="Add Receipt">
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new ReceiptModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Receipt..." Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
-                              @onkeyup="HandleSearchKeyUp">
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Receipt..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
                 </MudTextField>
                 <div class="tablefont">
                     <span style="margin-right: 10px;">Maximum Records: </span>
@@ -31,57 +27,38 @@
                     <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
                 </MudItem>
                 <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
-
             </ToolBarContent>
-
-
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<ReceiptModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Total Amount</MudTableSortLabel></MudTh>
-
-
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
                 <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
-
                 <MudTd DataLabel="">
-
-
                     @if (@context.AuthLevelId == null)
                     {
                         <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                         <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-
                     }
                     @if (@context.AuthLevelId != 99)
                     {
                         <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
-
                     }
                     <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
-
-
-
                 </MudTd>
-
-
             </RowTemplate>
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
                 <MudItem xs="12" md="9"> </MudItem><MudItem xs="12" md="3">
-
                 </MudItem>
             </PagerContent>
         </MudTable>
     </MudItem>
 </MudGrid>
-
-
-
 <br />
 
 @code {
@@ -121,18 +98,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-
-
         await GetReceiptBill(IsApproved, NumberOfRecords);
-
     }
 
     async Task ApprovedChanged(bool value)
     {
-
         IsApproved = value;
         await GetReceiptBill(IsApproved, NumberOfRecords);
-
     }
 
     public async Task GetReceiptBill(bool val, int numberOfRecords)
@@ -140,9 +112,7 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-
         int NumberOfRecords = numberOfRecords;
-
         if (val)
         {
             collection = Iservice.SelectInterBranchByApproved(brancID, NumberOfRecords, searchTerm).ToList();
@@ -153,31 +123,32 @@
         }
     }
 
-
     private async Task OpenDialog(ReceiptModel tds, bool ReadOnly, bool View)
     {
-
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds.Clone());
-        parms.Add("ReadOnly", ReadOnly);      
+        parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<InterBranchReceiptDialog>(tds.ReceiptID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
 
-
         await GetReceiptBill(IsApproved, NumberOfRecords);
     }
 
-    private async Task Delete(ReceiptModel tx)
+    private async Task Delete(ReceiptModel model)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
-        var branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
-        var UserID = User.Identity.Name;
-        Iservice.Delete(tx.ReceiptID, UserID);
-        snackbar.Add("Deleted Successfully", Severity.Success);
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var User = authprov.User;
+            var branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+            var UserID = User.Identity.Name;
+            Iservice.Delete(model.ReceiptID, UserID);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+        }
         await GetReceiptBill(IsApproved, NumberOfRecords);
     }
 }
-
