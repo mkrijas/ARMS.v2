@@ -1,14 +1,9 @@
 ﻿@page "/GstUsageID"
 @inject IGstUsageIDService Iservice
 @inject MudBlazor.ISnackbar snackbar
-
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
-
-
-
-
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -16,11 +11,8 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">GST Usage ID</MudText>
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
-                <MudSpacer></MudSpacer>                
-                <MudTextField @bind-Value="searchGstUsageID" Placeholder="Search Gst Usage ID... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchGstUsageID" Placeholder="Search Gst Usage ID... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
                 <MudCheckBox T="bool" Size="Size.Medium" Checked="SelectAll" CheckedChanged="SelectAllChanged" Label="Show All" Class="tablefont margin0 pr-3"></MudCheckBox>
             </ToolBarContent>
             <HeaderContent>
@@ -30,7 +22,7 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<GstUsageCodeModel, object>(x=> x.CoaDescreption)" InitialDirection="SortDirection.Ascending">Account</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<GstUsageCodeModel, object>(x=> x.TaxRate)" InitialDirection="SortDirection.Ascending">Rate</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<GstUsageCodeModel, object>(x=> x.PeriodFrom)" InitialDirection="SortDirection.Ascending">Period From</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<GstUsageCodeModel, object>(x=> x.PeriodTo)" InitialDirection="SortDirection.Ascending">Period To</MudTableSortLabel></MudTh>    
+                <MudTh><MudTableSortLabel SortBy="new Func<GstUsageCodeModel, object>(x=> x.PeriodTo)" InitialDirection="SortDirection.Ascending">Period To</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -53,10 +45,7 @@
     </MudItem>
 </MudGrid>
 
-
-
 @code {
-
 
     private GstUsageCodeModel model = new GstUsageCodeModel();
     private List<GstUsageCodeModel> collection = new List<GstUsageCodeModel>();
@@ -70,26 +59,20 @@
         GetAll(SelectAll);
     }
 
-
-
     private async Task OpenDialog(GstUsageCodeModel tds)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds.Clone());
         var dialog = DialogService.Show<GstUsageIDDialog>(tds.Id == null ? "ADD" : "EDIT", parms);
         var result = await dialog.Result;
-
         if (!result.Canceled)
         {
             GstUsageCodeModel UpatedModel = (GstUsageCodeModel)result.Data;
             model.UserInfo.UserID = user.Identity.Name;
-
             try
             {
-
                 Iservice.Update(UpatedModel);
                 model = new();
                 snackbar.Add("Saved Successfully", Severity.Success);
@@ -100,17 +83,21 @@
             {
                 snackbar.Add(ex.Message, Severity.Warning);
             }
-
         }
     }
 
-    private async Task Delete(GstUsageCodeModel tds)
+    private async Task Delete(GstUsageCodeModel model)
     {
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User.Identity.Name;
-        Iservice.Delete(tds.Id, user);
-        snackbar.Add("Deleted Successfully", Severity.Success);
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "Are you sure, you want to delete - " + model.UsageCode + " (" + model.Description + ") ?");
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User.Identity.Name;
+            Iservice.Delete(model.Id, user);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+        }
         GetAll(SelectAll);
     }
 
@@ -134,6 +121,6 @@
     private void GetAll(bool val)
     {
         DateTime? Today = val ? null : DateTime.Today;
-        collection = Iservice.Select(Today).ToList();        
+        collection = Iservice.Select(Today).ToList();
     }
 }
