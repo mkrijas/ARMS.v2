@@ -5,24 +5,17 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
-
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
-
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Expense Mapping</MudText>
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
                 <MudSpacer></MudSpacer>
-                @*    <MudTextField @bind-Value="searchEma" Placeholder="Search EMA... "
-                Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                IconSize="Size.Medium" Class="mt-0"></MudTextField>*@
             </ToolBarContent>
-
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<ExpenseMapping, object>(x=> x.ExpenseTitle)" InitialDirection="SortDirection.Ascending">ExpenseTitle</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<ExpenseMapping, object>(x=> x.ExpenseCode)" InitialDirection="SortDirection.Ascending">ExpenseCode</MudTableSortLabel></MudTh>
@@ -58,6 +51,7 @@
     public int DocTypeID = 47;
 
     private string searchEma = "";
+
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -68,7 +62,6 @@
         GetAll();
     }
 
-
     private void GetAll()
     {
         collection = new List<ExpenseMapping>();
@@ -78,42 +71,35 @@
         }
     }
 
-
-    private async Task Delete(ExpenseMapping ep)
+    private async Task Delete(ExpenseMapping model)
     {
         if (HasPermissionExpenseMappingDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            int result = Iservice.Delete(ep.ExpenseID, user.Identity.Name);
-
-            if (result != -1)
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.ExpenseTitle + " (" + model.ExpenseCode + ") ?");
+            if (result == true)
             {
-                if (collection != null && collection.Any(s => s.ExpenseID == ep.ExpenseID))
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                int value = Iservice.Delete(model.ExpenseID, user.Identity.Name);
+                if (value != -1)
                 {
-                    collection.Remove(collection.FirstOrDefault(s => s.ExpenseID == ep.ExpenseID));
-                    snackbar.Add("Deleted Successfully", Severity.Success);
+                    if (collection != null && collection.Any(s => s.ExpenseID == model.ExpenseID))
+                    {
+                        collection.Remove(collection.FirstOrDefault(s => s.ExpenseID == model.ExpenseID));
+                        snackbar.Add("Deleted Successfully", Severity.Success);
+                    }
                 }
             }
         }
         else
         {
             bool? result = await DialogService.ShowMessageBox(
-              "Permission denied!",
-              "You dont have any permission to Delete Expense.");
+                "Permission denied!",
+                "You dont have any permission to Delete Expense.");
         }
     }
-
-    //private bool search(ExpenseMapping ep)
-    //{
-    //if (ep.ExpenseID != null && ep.ExpenseID.Contains(searchEma, StringComparison.OrdinalIgnoreCase))
-    //   {
-    //       return true;
-    //   }
-    //   else if (ep.ExpenseID == null)
-    //   return true;
-    //return false;
-    //}
 
     private async Task OpenDialog(ExpenseMapping ema)
     {
@@ -121,13 +107,10 @@
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
-
             DialogParameters parms = new DialogParameters();
             parms.Add("model", ema);
             var dialog = DialogService.Show<ExpenseMappingDialog>(ema.ExpenseID == null ? "ADD" : "EDIT", parms);
-
             var result = await dialog.Result;
-
             if (!result.Cancelled)
             {
                 ExpenseMapping UpatedModel = (ExpenseMapping)result.Data;
@@ -135,10 +118,8 @@
                 try
                 {
                     var ResultModel = Iservice.Update(UpatedModel);
-
                     if (ResultModel != null)
                     {
-
                         if (collection.Exists(x => x.ExpenseID == ResultModel.ExpenseID))
                         {
                             collection[collection.FindIndex(x => x.ExpenseID == ResultModel.ExpenseID)] = ResultModel;
@@ -162,8 +143,8 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Add or Edit Expense.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Expense.");
         }
     }
 }

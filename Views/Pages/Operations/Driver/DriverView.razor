@@ -2,21 +2,16 @@
 @inject IDriverService Iservice
 @inject IDriverFaultService Ifaultservice
 @inject IBranchService Ibranchservice
-
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IPartyService Iparty
 @inject SignalRService signalRService
-
-
 @using System.IO
 @using System.Security.AccessControl
-
 @inject NavigationManager nav
 @using MimeTypes
-
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
@@ -29,17 +24,12 @@
 <MudGrid Spacing="4">
     <MudItem xs="12" md="12">
         <MudTable Items="@collection" RowClassFunc="RowClassFunc" Elevation="10" Filter="new Func<DriverModel, bool>(search)">
-
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Drivers</MudText>
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(()=>Edit(0))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchDriver" Placeholder="Search Drivers... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudTextField @bind-Value="searchDriver" Placeholder="Search Drivers... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
-
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverName)" InitialDirection="SortDirection.Ascending">Driver</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>
@@ -59,10 +49,8 @@
                 <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
                 <MudTd DataLabel="PartyName">@context.DriverAgent.TradeName</MudTd>
                 <MudTd DataLabel="DOB">@(DateTime.Today.Year - context.DateOfBirth.Value.Year + (DateTime.Today.DayOfYear < context.DateOfBirth.Value.DayOfYear ? -1 : 0))</MudTd>
-                    <MudTd DataLabel="Status">@context.Status</MudTd>
-
-
-                    <MudTd DataLabel="">
+                <MudTd DataLabel="Status">@context.Status</MudTd>
+                <MudTd DataLabel="">
                         @if (context.UserInfo.RecordStatus != 4)
                     {
                         <MudTooltip Text="Put the Driver on leave">
@@ -101,27 +89,22 @@
                     </MudTooltip>
                 </MudTd>
             </RowTemplate>
-
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
             </PagerContent>
-
         </MudTable>
     </MudItem>
 </MudGrid>
 
-@code
-{
+@code {
 
     IBrowserFile driverImage;
     IBrowserFile adhaarImage;
-
     private List<DriverModel> collection = new List<DriverModel>();
 
     private string searchDriver = "";
 
     MudMessageBox mbox { get; set; } = new();
-
     string UserID;
     int BranchID;
 
@@ -158,7 +141,6 @@
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
             var dialog = DialogService.Show<DriverLeaveDialog>("Driver On Leave", parameters, maxWidth);
             var result = await dialog.Result;
-
             collection.Find(x => x.DriverID == DriverID).UserInfo.RecordStatus = 4;
             StateHasChanged();
 
@@ -167,11 +149,10 @@
         else
         {
             bool? result = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to AllotLeave to Driver.");
+                "Permission denied!",
+                "You dont have any permission to AllotLeave to Driver.");
         }
     }
-
 
     private string RowClassFunc(DriverModel driver, Int32 index)
     {
@@ -186,7 +167,6 @@
         return string.Empty;
     }
 
-
     private async Task EndLeave(int? DriverID)
     {
         if (HasPermissionDriverServiceAllotLeave)
@@ -194,7 +174,6 @@
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
             int qryResult = Iservice.EndLeave(DriverID, user.Identity.Name);
-
             if (qryResult > 0)
             {
                 collection.Find(x => x.DriverID == DriverID).UserInfo.RecordStatus = 3;
@@ -204,17 +183,15 @@
         else
         {
             bool? result = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to AllotLeave to Driver.");
+                "Permission denied!",
+                "You dont have any permission to AllotLeave to Driver.");
         }
     }
-
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionDriverTransferEdit = await Irole.HasClaim(DocTypeIDDriverTransfer.ToString(), "Edit", ctc.Token);
-
         HasPermissionDriverServiceEdit = await Irole.HasClaim(DocTypeIDDriver.ToString(), "Edit", ctc.Token);
         HasPermissionDriverServiceResign = await Irole.HasClaim(DocTypeIDDriver.ToString(), "Resign", ctc.Token);
         HasPermissionDriverServiceAllotLeave = await Irole.HasClaim(DocTypeIDDriverTransfer.ToString(), "AllotLeave", ctc.Token);
@@ -222,31 +199,15 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
-
         await signalRService.StartAsync();
 
         GetAll();
     }
 
-
     private void GetAll()
     {
         collection = Iservice.SelectByBranch(BranchID).ToList();
     }
-
-    //private async Task Add()
-    //{
-    //    var parameters = new DialogParameters();
-    //    parameters.Add("model", new DriverModel());
-    //    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-    //    var dialog = DialogService.Show<DriverDialog>("Edit Driver", parameters, maxWidth);
-    //    var result = await dialog.Result;
-    //    if (!result.Canceled)
-    //    {
-    //        DriverModel newModel = (DriverModel)result.Data;
-    //        collection.Add(newModel);
-    //    }
-    //}
 
     private async Task Edit(int? id)
     {
@@ -262,22 +223,11 @@
                 DriverModel editedModel = (DriverModel)result.Data;
                 if (collection.Exists(x => x.DriverID == editedModel.DriverID))
                 {
-
                     collection[collection.FindIndex(x => x.DriverID == editedModel.DriverID)] = editedModel;
-
-                    //if( editedModel.DriverAgent != null  && PartyList != null && PartyList.Any(s=>s.PartyID == editedModel.DriverAgent.PartyID))
-                    //{
-                    //    editedModel.DriverAgent = PartyList.FirstOrDefault(s => s.PartyID == editedModel.DriverAgent.PartyID);
-                    //}
                 }
                 else
                 {
                     collection.Add(editedModel);
-
-                    //if( editedModel.DriverAgent != null  && PartyList != null && PartyList.Any(s=>s.PartyID == editedModel.DriverAgent.PartyID))
-                    //{
-                    //    editedModel.DriverAgent = PartyList.FirstOrDefault(s => s.PartyID == editedModel.DriverAgent.PartyID);
-                    //}
                 }
             }
             else
@@ -288,25 +238,20 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Permission denied!",
-                      "You dont have any permission to Add or Edit Driver.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Driver.");
         }
     }
-
 
     private async Task Resign(int? driverId)
     {
         if (HasPermissionDriverServiceResign)
         {
             var parameters = new DialogParameters();
-
             DriverResignModel model = new();
-
             model.Driver = collection.FirstOrDefault(x => x.DriverID == driverId);
-
             parameters.Add("model", model);
             parameters.Add("driverId", driverId);
-
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
             var dialog = DialogService.Show<DriverResignDialog>("Resign Driver", parameters, maxWidth);
             var result = await dialog.Result;
@@ -331,11 +276,10 @@
         else
         {
             bool? result = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Resign Driver.");
+                "Permission denied!",
+                "You dont have any permission to Resign Driver.");
         }
     }
-
 
     private async Task Transfer(int? DriverID)
     {
@@ -349,7 +293,6 @@
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
             var dialog = DialogService.Show<DriverTransferInitiationDialog>("Transfer Driver", parameters, maxWidth);
             var result = await dialog.Result;
-
             var isCancelled = result.Cancelled;
             if (!isCancelled)
             {
@@ -373,11 +316,10 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Add or Edit DriverTransfer.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit DriverTransfer.");
         }
     }
-
 
     private async Task Fault(int? DriverID)
     {
@@ -396,11 +338,10 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Permission denied!",
-                      "You dont have any permission to Add or Edit Driver.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Driver.");
         }
     }
-
 
     private async Task RemoveBlacklist(int? DriverID)
     {
@@ -424,11 +365,10 @@
         else
         {
             bool? result = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Edit DriverFault.");
+                "Permission denied!",
+                "You dont have any permission to Edit DriverFault.");
         }
     }
-
 
     private bool search(DriverModel Driver)
     {
