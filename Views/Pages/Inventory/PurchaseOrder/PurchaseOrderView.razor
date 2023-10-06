@@ -2,59 +2,44 @@
 @using System.Threading;
 @inject IPurchaseOrderService Iservice
 @inject MudBlazor.ISnackbar snackbar
-
 @inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
-
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" RowStyleFunc="TableRowStyle" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<PurchaseOrderModel, bool>(search)" @bind-place="model">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Purchase Order</MudText>
-
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new PurchaseOrderModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchPurchase" Placeholder="Search Purchase order... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudTextField @bind-Value="searchPurchase" Placeholder="Search Purchase order... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
                 <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
-
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PONo)" InitialDirection="SortDirection.Ascending">PO No</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Ascending">Entry Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x=> x.PartyName)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x=> x.Status)" InitialDirection="SortDirection.Ascending">Status</MudTableSortLabel></MudTh>
-
                 <MudTh>Actions</MudTh>
             </HeaderContent>
-
             <RowTemplate>
                 <MudTd DataLabel="PONo">@context.PONo</MudTd>
                 <MudTd DataLabel="EntryDate">@context.EntryDate?.ToShortDateString()</MudTd>
                 <MudTd DataLabel="Party">@context.PartyName</MudTd>
                 <MudTd DataLabel="Status">@context.Status</MudTd>
                 <MudTd DataLabel="">
-
                     @if (@context.AuthLevelID == null)
                     {
                         <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" title="Edit" Size="Size.Small" IconSize="Size.Small" />
                         <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" title="Delete" Size="Size.Small" IconSize="Size.Small" />
-
                     }
                     @if (@context.AuthLevelID != 99)
                     {
                         <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
-
                     }
                     <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
-
-
-
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -64,19 +49,14 @@
     </MudItem>
 </MudGrid>
 
-
-
 @code {
-
 
     private PurchaseOrderModel model = new PurchaseOrderModel();
     private List<PurchaseOrderModel> collection = new List<PurchaseOrderModel>();
     public bool IsApproved { get; set; } = false;
 
-
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 17;
-
 
     private string searchPurchase = "";
 
@@ -88,38 +68,31 @@
         model = new();
         await GetAll(IsApproved);
     }
+
     async Task ApprovedChanged(bool value)
     {
-
         IsApproved = value;
         await GetAll(IsApproved);
-
     }
+
     private async Task GetAll(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-
         if (val)
         {
             collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID == 99).ToList();
-
         }
         else
         {
             collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID != 99).ToList();
-
         }
-
-
     }
-
 
     private async Task OpenDialog(PurchaseOrderModel tds, bool ReadOnly, bool View)
     {
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         DialogParameters parms = new DialogParameters();
@@ -128,11 +101,9 @@
         parms.Add("IsView", View);
         var dialog = DialogService.Show<PurchaseOrderDialog>(tds.POID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
-
         if (!result.Canceled)
         {
             PurchaseOrderModel UpatedModel = (PurchaseOrderModel)result.Data;
-
             try
             {
                 UpatedModel.UserInfo.UserID = user.Identity.Name;
@@ -140,42 +111,38 @@
                 model = new();
                 snackbar.Add("Saved Successfully", Severity.Success);
                 model = new PurchaseOrderModel();
-
             }
             catch (Exception ex)
             {
                 snackbar.Add(ex.Message, Severity.Warning);
             }
-
         }
         await GetAll(IsApproved);
     }
 
-
-
-
     private async Task Delete(PurchaseOrderModel tds)
     {
-
         if (HasAuthoriseDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            Iservice.Delete(tds.POID, user.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
-            await GetAll(IsApproved);
-
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.PONo + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(tds.POID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+                await GetAll(IsApproved);
+            }
         }
         else
         {
-
             bool? result = await DialogService.ShowMessageBox(
-        "Permission denied!",
-        "You dont have any permission to delete.");
+                "Permission denied!",
+                "You dont have any permission to delete.");
         }
     }
-
-
 
     private bool search(PurchaseOrderModel tds)
     {
@@ -200,5 +167,4 @@
         }
         return string.Empty;
     }
-
 }
