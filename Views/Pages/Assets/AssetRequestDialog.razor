@@ -1,6 +1,8 @@
 ﻿@inject AuthenticationStateProvider auth
 @inject IAssetDocumentRequestService Iservice
 @inject IAssetDocumentService IDocumentService
+@inject MudBlazor.ISnackbar snackbar
+
 
 <MudDialog>
     <TitleContent>
@@ -84,7 +86,7 @@
 
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+        <MudButton Disabled=@_busy Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -97,6 +99,8 @@
 
     public AssetModel SelectedAsset { get; set; }
     public List<AssetModel> PassedListAssets { get; set; }
+
+    private bool _busy;
 
     //Dictionary<int?, string> TransNature = new Dictionary<int?, string>()
     //{
@@ -170,6 +174,12 @@
     }
     public async Task Submit()
     {
+        if (_busy) {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         if (model != null)
@@ -187,7 +197,11 @@
             model.UserInfo.UserID = user.Identity.Name;
             Iservice.Update(model);
         }
+        await Task.Delay(2000);
+        _busy = false;
 
         MudDialog.Close(DialogResult.Ok(true));
+
+        
     }
 }
