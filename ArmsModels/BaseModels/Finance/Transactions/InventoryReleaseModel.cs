@@ -4,10 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using ArmsModels.SharedModels;
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class InventoryReleaseModel : TransactionBaseModel/*, IValidatableObject*/
+    public class InventoryReleaseModel : TransactionBaseModel,ICloneable/*, IValidatableObject*/
     {
         public InventoryReleaseModel()
         {
@@ -30,6 +31,12 @@ namespace ArmsModels.BaseModels
         //    if (Items.Count == 0)
         //        yield return new ValidationResult("No Items selected!");
         //}
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<InventoryReleaseModel>(Json);
+        }
     }
 
 

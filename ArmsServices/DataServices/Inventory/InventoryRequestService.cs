@@ -60,6 +60,21 @@ namespace ArmsServices.DataServices.Inventory
             }
         }
 
+        public IEnumerable<InventoryRequestModel> SelectByStore(int? StoreID,int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByStoreID"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@StoreID", StoreID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Request.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public IEnumerable<InventoryRequestModel> SelectByTruckID(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

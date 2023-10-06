@@ -78,6 +78,21 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        public IEnumerable<InventoryReleaseModel> SelectByStoreAndBranchID(int? StoreID, int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByStore"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@StoreID", StoreID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InventoryRelease.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public InventoryReleaseModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
