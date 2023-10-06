@@ -3,6 +3,7 @@
 @using ArmsServices.DataServices.FMS
 @using ArmsServices.DataServices.Operations
 @inject AuthenticationStateProvider auth
+@inject MudBlazor.ISnackbar snackbar
 @inject IRoutineCheckListService Iservice
 @inject ITruckService IserviceTruck
 @inject IRoutineCheckListMasterService IserviceRoutineMaster
@@ -53,7 +54,7 @@
 
     </DialogContent>
     <DialogActions>
-        <MudButton form="formRoutineCheckList" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
+        <MudButton Disabled=@_busy form="formRoutineCheckList" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -67,6 +68,7 @@
     List<TruckModel> TruckList = new();
     List<RoutineCheckListMasterModel> ItemList = new();
     private int branchID { get; set; } = 0;
+    private bool _busy;
 
     private IEnumerable<RoutineCheckListMasterModel> RoutineCheckListItem { get; set; } = new HashSet<RoutineCheckListMasterModel>();
 
@@ -116,6 +118,12 @@
     }
     public async Task Submit()
     {
+        if (_busy) {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         if (model != null)
@@ -129,7 +137,8 @@
             model.UserInfo.UserID = user.Identity.Name;
             Iservice.Update(model);
         }
-
+        await Task.Delay(2000);
+        _busy = false;
         MudDialog.Close(DialogResult.Ok(true));
     }
 
