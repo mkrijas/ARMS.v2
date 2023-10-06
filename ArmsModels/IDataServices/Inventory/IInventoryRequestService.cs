@@ -12,6 +12,7 @@ namespace ArmsServices.DataServices.Inventory
         InventoryRequestModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<InventoryRequestModel> Select();
+        IEnumerable<InventoryRequestModel> SelectByStore(int? StoreID, int? BranchID);
         IEnumerable<InventoryRequestModel> SelectByTruckID(int? TruckID);
         IEnumerable<InventoryRequestModel> SelectRequestReleaseByTruckID(int? TruckID);
         IEnumerable<InventoryRequestModel> SelectByParty(int? PartyID, int? PartyBranchID);
