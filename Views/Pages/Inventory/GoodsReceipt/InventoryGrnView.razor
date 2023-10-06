@@ -1,22 +1,16 @@
 ﻿@page "/InventoryGrn"
-
 @using System.Threading;
-
-@inject IInventoryGrnService Iservice
-@inject MudBlazor.ISnackbar snackbar
-
+@using PurchaseOrder
+@attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
 @inject IDialogService DialogService
-
-@using PurchaseOrder
+@inject IInventoryGrnService Iservice
+@inject MudBlazor.ISnackbar snackbar
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" RowStyleFunc="TableRowStyle" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<InventoryGrnModel, bool>(search)" @bind-place="model">
-
-
             <ToolBarContent>
                 <MudText Typo="Typo.h6">GRN</MudText>
                 <MudTooltip Text="New Grn">
@@ -28,45 +22,31 @@
                 <MudTooltip Text="Approved Data">
                     <MudIconButton Icon="@Icons.Material.Filled.TableView" Title="Approved Data" @onclick="@(()=> OpenDialogApproved(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
-
-
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchGrn" Placeholder="Search Grn... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudTextField @bind-Value="searchGrn" Placeholder="Search Grn... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
                 <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
-
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.GrnNo)" InitialDirection="SortDirection.Ascending">GRN No</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Ascending">Entry Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.PartyName)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>
-
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="GrnNO">@context.GrnNo</MudTd>
                 <MudTd DataLabel="EntryDate">@context.EntryDate?.ToShortDateString()</MudTd>
                 <MudTd DataLabel="Party">@context.PartyName</MudTd>
-
                 <MudTd DataLabel="">
-
                     @if (@context.AuthLevelID == null)
                     {
-
                         <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                         <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-
                     }
                     @if (@context.AuthLevelID != 99)
                     {
                         <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
-
                     }
                     <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
-
-
-
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -76,57 +56,47 @@
     </MudItem>
 </MudGrid>
 
-
-
 @code {
-
 
     private InventoryGrnModel model = new InventoryGrnModel();
     private List<InventoryGrnModel> collection = new List<InventoryGrnModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
-
     private string searchGrn = "";
-
 
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 16;
 
     public bool IsApproved { get; set; } = false;
+
     protected override async Task OnInitializedAsync()
     {
-
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         model = new();
         await GetAll(IsApproved);
     }
+
     async Task ApprovedChanged(bool value)
     {
-
         IsApproved = value;
         await GetAll(IsApproved);
-
     }
+
     private async Task GetAll(bool val)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         int brancID = int.Parse(brancIDString);
-
         if (val)
         {
             collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID == 99).ToList();
-
         }
         else
         {
             collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID != 99).ToList();
-
         }
-
-
     }
 
     private async Task OpenDialog(InventoryGrnModel tds, bool ReadOnly, bool View)
@@ -141,37 +111,37 @@
         var dialog = DialogService.Show<InventoryGrnDialog>(tds.GrnID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
 
-
         await GetAll(IsApproved);
     }
 
     public void OpenDialogApproved(InventoryGrnModel p)
     {
-
         DialogParameters parms = new DialogParameters();
         parms.Add("model", p);
         var dialog = DialogService.Show<InventoryGrnApproveView>(p.GrnID == null ? "Approved Data" : "Approved Data", parms, maxWidth);
-
     }
 
-    private async Task Delete(InventoryGrnModel tds)
+    private async Task Delete(InventoryGrnModel model)
     {
-
         if (HasAuthoriseDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            Iservice.Delete(tds.GrnID, user.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
-            await GetAll(IsApproved);
-
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.GrnNo + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.GrnID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+                await GetAll(IsApproved);
+            }
         }
         else
         {
-
             bool? result = await DialogService.ShowMessageBox(
-        "Permission denied!",
-        "You dont have any permission to delete.");
+                "Permission denied!",
+                "You dont have any permission to delete.");
         }
     }
 
@@ -180,17 +150,12 @@
         PurchaseOrderModel tds = new();
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-
         DialogParameters parms = new DialogParameters();
-
         var dialog = DialogService.Show<PurchaseOrderViewDialog>("Purchase Order", parms, maxWidth);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
-
             await GetAll(IsApproved);
-
-
         }
         await GetAll(IsApproved);
     }
@@ -214,5 +179,4 @@
         }
         return string.Empty;
     }
-
 }
