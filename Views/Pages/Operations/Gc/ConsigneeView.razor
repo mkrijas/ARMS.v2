@@ -1,16 +1,12 @@
 ﻿@page "/consignee"
 @page "/consignee/{OrderID:int}"
-
-@inject IConsigneeService Iservice
-@inject IOrderService Iorder
-
-@inject MudBlazor.ISnackbar snackbar
+@using System.Threading;
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-
+@inject IConsigneeService Iservice
+@inject IOrderService Iorder
+@inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
 @if (loading)
@@ -24,9 +20,7 @@ else
             <MudText Typo="Typo.h6">@Order?.OrderName Consignees</MudText>
             <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(() => Edit(new ConsigneeModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
             <MudSpacer></MudSpacer>
-            <MudTextField @bind-Value="searchConsignee" Placeholder="Search Consignees... "
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudTextField @bind-Value="searchConsignee" Placeholder="Search Consignees... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         </ToolBarContent>
         <HeaderContent>
             <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.ConsigneeName)" InitialDirection="SortDirection.Ascending">Name</MudTableSortLabel></MudTh>
@@ -42,7 +36,7 @@ else
             <MudTd DataLabel="Type">@(context.Consignor == true ? "Consignor" : "Consignee") </MudTd>
             <MudTd DataLabel="">
                 <MudFab @onclick="@(() => Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                <MudFab @onclick="@(() => Delete(context.ConsigneeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                <MudFab @onclick="@(() => Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
             </MudTd>
         </RowTemplate>
         <PagerContent>
@@ -56,11 +50,8 @@ else
     [Parameter]
     public int? OrderID { get; set; }
     private OrderModel Order = new OrderModel();
-
     private List<ConsigneeModel> collection = new List<ConsigneeModel>();
-
     private int BranchID { get; set; } = 0;
-
     bool loading = false;
 
     public bool HasPermissionConsigneeServiceEdit { get; set; } = false;
@@ -79,12 +70,10 @@ else
         loading = false;
     }
 
-
     private async Task GetAll()
     {
         collection = await Iservice.SelectByOrder(OrderID.GetValueOrDefault()).ToListAsync();
     }
-
 
     private async Task Edit(ConsigneeModel model)
     {
@@ -97,37 +86,39 @@ else
             var result = await dialog.Result;
             if (!result.Canceled)
             {
-                //ConsigneeModel UpdatedModel = (ConsigneeModel)result.Data;
-                //await Iservice.Update(UpdatedModel);
                 await GetAll();
             }
         }
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Add or Edit Consignee.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Consignee.");
         }
     }
 
-
-    private async Task Delete(int? id)
+    private async Task Delete(ConsigneeModel model)
     {
         if (HasPermissionConsigneeServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            await Iservice.Delete(id, authprov.User.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
-            await GetAll();
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.ConsigneeName + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                await Iservice.Delete(model.ConsigneeID, authprov.User.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+                await GetAll();
+            }
         }
         else
         {
             bool? result = await DialogService.ShowMessageBox(
-              "Permission denied!",
-              "You dont have any permission to Delete Consignee.");
+                "Permission denied!",
+                "You dont have any permission to Delete Consignee.");
         }
     }
-
 
     private string searchConsignee = "";
 
@@ -140,247 +131,3 @@ else
         return false;
     }
 }
-
-
-@*@page "/consignee"
-@page "/consignee/{OrderID:int}"
-
-@inject IConsigneeService Iservice
-@inject IPlaceService Iplace
-@inject IOrderService Iorder
-@inject MudBlazor.ISnackbar snackbar
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
-
-
-
-<div style="background-color:#1469c0;padding:1%;padding-top:1%;  color:#fff;"><div style="float:left;padding-top:1%"><h6>Consignee</h6></div><div style="float:right;"><MudButton @onclick="OpenDialog" StartIcon="@Icons.Material.Outlined.Add" Variant="Variant.Filled" Style="background:none;color:#fff;">
-  Add New Consignee
-</MudButton></div>
-<br />
-<br />
-</div>
-        <MudTable Items="@collection" Elevation="10" Filter="new Func<ConsigneeModel, bool>(search)" @bind-model="model">
-            <ToolBarContent>
-
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchConsignee" Placeholder="Search Consignees... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.ConsigneeID)" InitialDirection="SortDirection.Ascending">ID</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.ConsigneeName)" InitialDirection="SortDirection.Ascending">Name</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Address.Place)" InitialDirection="SortDirection.Ascending">Place</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ConsigneeModel, object>(x => x.Consignor)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
-
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="ID">@context.ConsigneeID</MudTd>
-                <MudTd DataLabel="Name"><MudHighlighter Style="background-color:cornflowerblue;font-weight:bold" Text="@context.ConsigneeName" HighlightedText="@searchConsignee" /></MudTd>
-                <MudTd DataLabel="Place">@context.Address.Place</MudTd>
-                <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
-                <MudTd DataLabel="Type">@(context.Consignor == true?"Consignor":"Consignee") </MudTd>
-                <MudTd DataLabel="">
-                    <MudFab @onclick="@(() => Edit(context.ConsigneeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(() => Delete(context.ConsigneeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-
-@code {
-
-    [Parameter]
-    public int? OrderID { get; set; }
-
-    private ConsigneeModel model = new ConsigneeModel();
-    private OrderModel Order = new OrderModel();
-    private PlaceModel Place = new PlaceModel();
-
-    private List<ConsigneeModel> collection = new List<ConsigneeModel>();
-    private List<PlaceModel> places = new List<PlaceModel>();
-    private List<OrderModel> orders = new List<OrderModel>();
-
-    private int BranchID { get; set; } = 0;
-    public string customstr { get; set; } = "CONSIGNEE";
-
-
-    protected override async Task OnInitializedAsync()
-    {
-        places = Iplace.Select(0).ToList();
-        await foreach (var item in Iorder.Select(0))
-        {
-            orders.Add(item);
-        }
-
-        model.Address = new AddressModel() { AddresseeName = "temp", Place = "temp" };
-
-        if (OrderID != null)
-        {
-            Order = await Iorder.SelectByID(OrderID.Value);
-        }
-
-        await GetAll();
-    }
-
-
-    private async Task<IEnumerable<PlaceModel>> Search(string searchString)
-    {
-        return await Task.FromResult(
-            places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
-    }
-
-    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
-    {
-        var o = orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
-        return await Task.FromResult(o);
-    }
-
-    private async Task GetAll()
-    {
-        collection = new();
-        await foreach (var item in Iservice.SelectByOrder(OrderID.GetValueOrDefault()))
-        {
-            collection.Add(item);
-        }
-    }
-
-
-
-    private async Task OnValidSubmit(EditContext context)
-    {
-        if (Place?.PlaceID == 0)
-        {
-            snackbar.Add("Place is not selected", Severity.Error);
-            return;
-        }
-        else
-        if (!places.Select(x => x.PlaceName).Contains(Place.PlaceName))
-        {
-            snackbar.Add("Invalid Place", Severity.Error);
-            return;
-        }
-
-        model.PlaceID = Place.PlaceID;
-        model.Address.Place = Place.PlaceName;
-        model.OrderID = Order.OrderID;
-        model.Address.AddresseeName = model.ConsigneeName;
-        CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
-        model.Consignor = cs.SetFunc(customstr).Value;
-
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        model.UserInfo.UserID = authprov.User.Identity.Name;
-        try
-        {
-            model = await Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            if (collection.Exists(x => x.ConsigneeID == model.ConsigneeID))
-            {
-                collection[collection.FindIndex(x => x.ConsigneeID == model.ConsigneeID)] = model;
-            }
-            else
-            {
-                collection.Add(model);
-            }
-            model = new ConsigneeModel();
-            Order = new OrderModel();
-            Place = new PlaceModel();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-    }
-    private void Edit(int? id)
-    {
-        model = collection.FirstOrDefault(x => x.ConsigneeID == id);
-        CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
-        customstr = cs.GetFunc(model.Consignor);
-     //   Order = orders.FirstOrDefault(x => x.OrderID == model.OrderID);
-       // Place = places.FirstOrDefault(x => x.PlaceID == model.PlaceID);
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model",model);
-        DialogService.Show<Consineedilog>("Add Consignee",parms);
-
-
-    }
-    private async void Delete(int? id)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        await Iservice.Delete(id, authprov.User.Identity.Name);
-        snackbar.Add("Deleted Successfully", Severity.Success);
-        await GetAll();
-    }
-
-    private string searchConsignee = "";
-
-    private bool search(ConsigneeModel model)
-    {
-        if (model.ConsigneeName != null && model.ConsigneeName.Contains(searchConsignee, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-        return false;
-    }
-    public class CustomStringToBoolConverter : BoolConverter<string>
-    {
-
-        public CustomStringToBoolConverter()
-        {
-            SetFunc = OnSet;
-            GetFunc = OnGet;
-        }
-
-        private string TrueString = "CONSIGNOR";
-        private string FalseString = "CONSIGNEE";
-        private string NullString = "SELECT";
-
-        private string OnGet(bool? value)
-        {
-            try
-            {
-                return (value == true) ? TrueString : FalseString;
-            }
-            catch (Exception e)
-            {
-                UpdateGetError("Conversion error: " + e.Message);
-                return NullString;
-            }
-        }
-
-        private bool? OnSet(string arg)
-        {
-            if (arg == null)
-                return null;
-            try
-            {
-                if (arg == TrueString)
-                    return true;
-                if (arg == FalseString)
-                    return false;
-                else
-                    return null;
-            }
-            catch (FormatException e)
-            {
-                UpdateSetError("Conversion error: " + e.Message);
-                return null;
-            }
-        }
-
-    }
-         private void OpenDialog()
-    {
-
-         DialogParameters parms = new DialogParameters();
-        parms.Add("model", new ConsigneeModel());
-
-        DialogService.Show<Consineedilog>("ADD PLACE",parms);
-    }
-}*@
