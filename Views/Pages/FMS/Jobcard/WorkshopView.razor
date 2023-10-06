@@ -4,50 +4,41 @@
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-
 @inject IDialogService DialogService
 
-
-
- <MudTable Items="@collection" Elevation="10" Filter="new Func<WorkshopModel, bool>(search)" @bind-model="model">
-           
-               <ToolBarContent>
-                <MudText Typo="Typo.h6">Workshops</MudText>
+<MudTable Items="@collection" Elevation="10" Filter="new Func<WorkshopModel, bool>(search)" @bind-model="model">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Workshops</MudText>
         <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new WorkshopModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                
-                <MudSpacer></MudSpacer>
-             <MudTextField @bind-Value="searchString" Placeholder="Search... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<WorkshopModel, object>(x=> x.WorkshopName)" InitialDirection="SortDirection.Ascending">Workshop Name</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<WorkshopModel, object>(x=> x.WorkshopType)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<WorkshopModel, object>(x=> x.ContactNumber)" InitialDirection="SortDirection.Ascending">Contact</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Workshop">@context.WorkshopName</MudTd>
-                <MudTd DataLabel="Type">@context.WorkshopType</MudTd>
-                <MudTd DataLabel="contact">@context.ContactNumber</MudTd>
-                <MudTd DataLabel="">
+        <MudSpacer></MudSpacer>
+        <MudTextField @bind-Value="searchString" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<WorkshopModel, object>(x=> x.WorkshopName)" InitialDirection="SortDirection.Ascending">Workshop Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<WorkshopModel, object>(x=> x.WorkshopType)" InitialDirection="SortDirection.Ascending">Type</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<WorkshopModel, object>(x=> x.ContactNumber)" InitialDirection="SortDirection.Ascending">Contact</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Workshop">@context.WorkshopName</MudTd>
+        <MudTd DataLabel="Type">@context.WorkshopType</MudTd>
+        <MudTd DataLabel="contact">@context.ContactNumber</MudTd>
+        <MudTd DataLabel="">
             <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-
-
+            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+    </PagerContent>
+</MudTable>
 
 @code {
 
     private WorkshopModel model;
     private List<WorkshopModel> collection = new();
     private PartyModel SelectedParty = new();
-    private List<PartyModel> Parties = new();    
+    private List<PartyModel> Parties = new();
 
     private string searchString = string.Empty;
 
@@ -67,30 +58,23 @@
     }
 
     private async Task OpenDialog(WorkshopModel ws)
-    { 
-
+    {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model", ws);
         var dialog = DialogService.Show<WorkshopDilogue>(ws.WorkshopID == null ? "ADD" : "EDIT", parms);
-
         var result = await dialog.Result;
-
         if (!result.Cancelled)
         {
             WorkshopModel UpatedModel = (WorkshopModel)result.Data;
             UpatedModel.UserInfo.UserID = authprov.User.Identity.Name;
-
             try
             {
-
                 var ResultModel = Iservice.Update(UpatedModel);
-
                 if (ResultModel != null)
                 {
-
                     if (collection.Exists(x => x.WorkshopID == ResultModel.WorkshopID))
                     {
                         collection[collection.FindIndex(x => x.WorkshopID == ResultModel.WorkshopID)] = ResultModel;
@@ -104,7 +88,6 @@
                     model = new();
                     snackbar.Add("Saved Successfully", Severity.Success);
                 }
-
             }
             catch (Exception ex)
             {
@@ -113,24 +96,27 @@
         }
     }
 
-    private async Task Delete(WorkshopModel ws)
+    private async Task Delete(WorkshopModel model)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        int result = Iservice.Delete(ws.WorkshopID, user.Identity.Name);
-
-        if (result != -1)
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "Are you sure, you want to delete - " + model.WorkshopName + " (" + model.WorkshopType + ") ?");
+        if (result == true)
         {
-            if (collection != null && collection.Any(s => s.WorkshopID == ws.WorkshopID))
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            int value = Iservice.Delete(model.WorkshopID, user.Identity.Name);
+            if (value != -1)
             {
-                collection.Remove(collection.FirstOrDefault(s => s.WorkshopID == ws.WorkshopID));
-                snackbar.Add("Deleted Successfully", Severity.Success);
+                if (collection != null && collection.Any(s => s.WorkshopID == model.WorkshopID))
+                {
+                    collection.Remove(collection.FirstOrDefault(s => s.WorkshopID == model.WorkshopID));
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
             }
         }
     }
 
-
-   
     private bool search(WorkshopModel model)
     {
         if (model.WorkshopName != null && model.WorkshopName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
@@ -139,15 +125,4 @@
         }
         return false;
     }
-
-    //private void OpenDialog()
-    //{
-
-    //    DialogParameters parms = new DialogParameters();
-    //    parms.Add("model", new WorkshopModel());
-    //    DialogService.Show<WorkshopDilogue>("Add Workshop",parms);
-    //}
 }
-
-
-
