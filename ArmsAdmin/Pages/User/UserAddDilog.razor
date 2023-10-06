@@ -18,7 +18,7 @@
 <MudTextField Class="dropstyle"   @bind-Value="EditModel.RoleDesc"  Label="Role  Description" Variant="Variant.Text" Margin="Margin.Normal" For="@(() => EditModel.RoleDesc)"></MudTextField>
 </MudItem>
  <br />
- <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Create Role</MudButton>
+ <MudButton Disabled=@_busy Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Create Role</MudButton>
   <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Cancel</MudButton>
 </EditForm>
 </div>
@@ -28,36 +28,47 @@
     [Parameter]
     public RoleModel EditModel { get; set; }
 
+    private bool _busy;
+
     private List<RoleModel> collection = new List<RoleModel>();
-       [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     void Cancel() => MudDialog.Cancel();
     private async void OnValidSubmit(EditContext context)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         EditModel.UserInfo.UserID = user.Identity.Name;
         try
         {
-           await imgr.CreateAsync(EditModel);
+            await imgr.CreateAsync(EditModel);
 
             snackbar.Add("Saved Successfully", Severity.Success);
             if (collection.Exists(x => x.RoleNo == EditModel.RoleNo))
             {
                 collection[collection.FindIndex(x => x.RoleNo == EditModel.RoleNo)] =  EditModel;
-               
+
             }
             else
             {
                 collection.Add( EditModel);
             }
-             EditModel = new RoleModel();  
-              MudDialog.Cancel();
+            EditModel = new RoleModel();  
+            MudDialog.Cancel();
         }
         catch (Exception ex)
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
+
+        await Task.Delay(2000);
+        _busy = false;
     }
 
 
