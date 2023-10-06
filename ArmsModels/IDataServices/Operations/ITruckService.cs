@@ -17,7 +17,6 @@ namespace ArmsServices.DataServices
         int Delete(int? TruckID, string UserID);  //delete
         IEnumerable<TruckModel> Select(int? TruckID);
         IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer = "All");
-        public IEnumerable<TruckModel> SelectAvailableTrucks(int? BranchID);
         TruckModel SelectByAsset(int? AssetID);
         TruckModel SelectByID(int? ID);
         TruckRegistrationModel GetRegistration(int? TruckID);
