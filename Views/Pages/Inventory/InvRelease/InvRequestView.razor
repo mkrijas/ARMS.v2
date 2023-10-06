@@ -39,7 +39,9 @@
                     <MudTooltip Text="Edit">
                         <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
-                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudTooltip Text="Delete">
+                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -48,35 +50,43 @@
         </MudTable>
     </MudItem>
 </MudGrid>
+
 @code {
+
     public bool IsApproved { get; set; } = false;
     private List<InventoryRequestModel> collection = new List<InventoryRequestModel>();
+
     protected override void OnInitialized()
     {
         GetAll();
     }
+
     void ApprovedToggled(bool value)
     {
         IsApproved = value;
         GetAll();
     }
+
     private void GetAll()
     {
-
-            collection = Iservice.Select().ToList();
-
+        collection = Iservice.Select().ToList();
     }
-    private async Task Delete(InventoryRequestModel tx)
+
+    private async Task Delete(InventoryRequestModel model)
     {
         try
         {
-
-
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            Iservice.Delete(tx.RequestID, user.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
-            GetAll();
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.RequestDate + " : " + model.Store.StoreName + " (" + model.Jobcard.JobcardNumber + ") ? ");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.RequestID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+                GetAll();
+            }
         }
         catch (Exception ex)
         {
@@ -86,7 +96,6 @@
 
     private async Task OpenDialog(InventoryRequestModel model)
     {
-
         var authprov = await auth.GetAuthenticationStateAsync();
         var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
@@ -99,4 +108,3 @@
         GetAll();
     }
 }
-
