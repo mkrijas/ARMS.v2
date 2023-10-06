@@ -5,21 +5,17 @@
 @using Microsoft.AspNetCore.SignalR.Client;
 @using System.Threading;
 @using Views.Data
-
+@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
 @inject ITruckTransferService Iservice
 @inject IPushNotificationService IpushNotificationService
 @inject MudBlazor.ISnackbar snackbar
-
-@inject AuthenticationStateProvider auth
-@attribute [Authorize]
 @inject IDialogService DialogService
 @inject IBranchService IbranchService
 @inject NavigationManager NavigationManager
 @inject SignalRService signalRService
 @inject IRoleService<RoleModel> Irole
-
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
@@ -59,14 +55,11 @@
                     </RowTemplate>
                     <PagerContent>
                         <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-
                     </PagerContent>
                 </MudTable>
             </MudTabPanel>
             <MudTabPanel Text="Truck Transfer Incoming">
-
                 <MudTable Items="@collectionIncoming" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="modelIncoming">
-
                     <HeaderContent>
                         <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.Truck.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
                         <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.InitiationBranch.BranchName)" InitialDirection="SortDirection.Ascending">Initiation Branch</MudTableSortLabel></MudTh>
@@ -86,12 +79,9 @@
                                 <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                             </MudTooltip>
                         </MudTd>
-
                     </RowTemplate>
-
                     <PagerContent>
                         <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-
                     </PagerContent>
                 </MudTable>
             </MudTabPanel>
@@ -99,10 +89,9 @@
     </MudItem>
 </MudGrid>
 
-
 @code {
-    int CurrentBranchId = 0;
 
+    int CurrentBranchId = 0;
     private List<BranchModel> BranchList = new();
 
     #region SignaIR Notification
@@ -125,20 +114,15 @@
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         CurrentBranchId = int.Parse(brancIDString);
-
         BranchList = IbranchService.Select().ToList();
-
         await signalRService.StartAsync();
         //hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
         //signalRService.RegisterReceivedMessage(e => Receive(e));
-
         //await hubConnection.StartAsync();
 
         await GetAllOutGoing();
         await GetAllIncoming();
     }
-
-
 
     private async Task GetAll()
     {
@@ -148,21 +132,15 @@
 
     #region Outgoing
 
-
     private TruckTransferInitiationModel modelOutGoing = new();
-
     private List<TruckTransferInitiationModel> collectionOutGoing = new();
-
     string state = "Message box hasn't been opened yet";
-
-
 
     private async Task OpenDialogEditOutGoing(TruckTransferInitiationModel TruckTransferInitiation)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-
         if (TruckTransferInitiation.TruckEvent == null)
         {
             TruckTransferInitiation.TruckEvent = new();
@@ -181,19 +159,13 @@
             TruckTransferInitiation.DestinationBranch = new();
         }
         TruckTransferInitiation.InitiationBranch.BranchID = int.Parse(brancIDString);
-
-
         var modelOutGoing = new DialogParameters { ["model"] = TruckTransferInitiation };
-
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
         var dialog = DialogService.Show<TruckTransferInitiationDialog>("Simple Dialog", modelOutGoing, options);
-
         var result = await dialog.Result;
-
         var isCancelled = result.Cancelled;
         if (!isCancelled)
         {
-
             var ReturnData = (TruckTransferInitiationModel)result.Data;
             notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiationBranch?.BranchID ?? 0)) ?? null;
             notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
@@ -213,7 +185,6 @@
         }
     }
 
-
     private async Task OpenDialogDeleteOutGoing(TruckTransferInitiationModel TruckTransferInitiation)
     {
         bool? result = await DialogService.ShowMessageBox(
@@ -223,7 +194,6 @@
         state = result == null ? "Cancelled" : "Deleted!";
         if (state == "Deleted!")
         {
-
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
             if (TruckTransferInitiation.TruckEvent == null)
@@ -237,7 +207,6 @@
                 try
                 {
                     Iservice.DeleteInitiation(TruckTransferInitiation.TruckTransferInitiationID, TruckTransferInitiation.TruckEvent.TruckEventID, TruckTransferInitiation.TruckEvent.UserInfo.UserID);
-
                 }
                 catch (Exception ex)
                 {
@@ -248,12 +217,9 @@
         }
     }
 
-
     private async Task GetAllOutGoing()
     {
-
         collectionOutGoing = new();
-
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -281,19 +247,8 @@
 
     #region Incoming
 
-
     private TruckTransferInitiationModel modelIncoming = new();
-
     private List<TruckTransferInitiationModel> collectionIncoming = new();
-
-    //string state = "Message box hasn't been opened yet";
-    //protected override void OnParametersSet()
-    //{
-    //    //the param will be set now
-    //    GetAllIncoming();
-
-    //}
-
 
     private async Task OpenDialogEditIncoming(TruckTransferInitiationModel TruckTransferEnd)
     {
@@ -318,24 +273,16 @@
             TruckTransferEnd.DestinationBranch = new();
         }
         TruckTransferEnd.DestinationBranch.BranchID = int.Parse(brancIDString);
-
-
         var modelIncoming = new DialogParameters { ["model"] = TruckTransferEnd };
-
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
         var dialog = DialogService.Show<TruckTransferEndDialog>("Simple Dialog", modelIncoming, options);
-
         var result = await dialog.Result;
-
         var isCancelled = result.Cancelled;
-
         if (!isCancelled)
         {
-
             var ReturnData = (TruckTransferInitiationModel)result.Data;
             if (ReturnData.IstruckReject == 1)
             {
-
                 notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
                 notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiationBranch?.BranchID ?? 0)) ?? null;
                 notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected.";
@@ -350,12 +297,9 @@
                 notificationMessage.DocumentTypeID = DocTypeID;
                 await signalRService.Send(notificationMessage);
             }
-
             await GetAll();
         }
-
     }
-
 
     private async Task GetAllIncoming()
     {
@@ -371,7 +315,6 @@
         {
             modelIncoming.TruckTransferEndModel.TruckEvent = new();
         }
-
         modelIncoming.TruckTransferEndModel.TruckEvent.UserInfo = new();
         modelIncoming.TruckTransferEndModel.TruckEvent.UserInfo.UserID = user.Identity.Name;
         if (modelIncoming.DestinationBranch == null)
@@ -379,25 +322,14 @@
             modelIncoming.DestinationBranch = new();
         }
         modelIncoming.DestinationBranch.BranchID = int.Parse(brancIDString);
-
         foreach (var item in Iservice.SelectIncomingTrucks(modelIncoming.DestinationBranch?.BranchID ?? 0))
         {
-            //if(item.TruckTransferEndModel.TruckTransferEndID == null || item.TruckTransferEndModel.TruckTransferEndID == 0)
-            //{
-            //    item.TruckTransferEndModel.TransferStatus = "Transfer Not Completed";
-            //}
-            //else
-            //{
-            //    item.TransferStatus = "Transfer Completed";
-            //}
             if (item.TruckEvent == null)
             {
                 item.TruckEvent = new();
             }
             collectionIncoming.Add(item);
         }
-
-
     }
     #endregion
 }
