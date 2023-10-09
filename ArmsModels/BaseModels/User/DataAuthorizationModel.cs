@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -21,9 +22,9 @@ namespace ArmsModels.BaseModels
         public string ClaimValue { get; set; }
         public virtual string AuthType { get; set; }
         public virtual bool IsCompleted { get; set; } = false;
-        public virtual string DisplayString { get { return string.Concat(UserInfo?.UserID, " at ", UserInfo?.TimeStampField?.ToString("dd/MM/yy HH:mm"));  } }
+        public virtual string DisplayString { get { return string.Concat(UserInfo?.UserID, " at ", UserInfo?.TimeStampField?.ToString("dd/MM/yy HH:mm")); } }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
-    }    
+    }
 
     public class DocTypeModel
     {
@@ -31,7 +32,7 @@ namespace ArmsModels.BaseModels
         public string Description { get; set; }
     }
 
-    public class DataAuthorizationSettingsModel
+    public class DataAuthorizationSettingsModel : ICloneable
     {
         public DataAuthorizationSettingsModel()
         {
@@ -46,6 +47,12 @@ namespace ArmsModels.BaseModels
         public virtual string AuthorizeType { get; set; }
         public string RoleID { get; set; }
         public string ClaimValue { get; set; }
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<DataAuthorizationSettingsModel>(Json);
+        }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
@@ -53,13 +60,13 @@ namespace ArmsModels.BaseModels
     public class DataAuthorizationTypeModel
     {
         public int? AuthLevelID { get; set; }
-        public string Description { get; set; }        
+        public string Description { get; set; }
         public bool IsApproval { get; set; }
     }
     public class DataApprovedStatus
     {
         public bool IsApprove { get; set; }
         public string Remarks { get; set; }
-       
+
     }
 }
