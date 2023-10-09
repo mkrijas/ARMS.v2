@@ -91,6 +91,11 @@ namespace ArmsModels.BaseModels
 
     public class AssetSubClassModel
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AssetSubClassModel>(Json);
+        }
         public int? ID { get; set; }
         public int? AssetSubClassID { get; set; }
         [Required(ErrorMessage = "Name of Asset SubClass is required.")]
