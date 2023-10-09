@@ -19,5 +19,6 @@ namespace ArmsServices.DataServices
         InsuranceClaimEventMasterModel UpdateEventList(InsuranceClaimEventMasterModel model);
         InsuranceClaimEventStatusModel UpdateClaimEvent(InsuranceClaimEventStatusModel model);
         IEnumerable<InsuranceClaimEventStatusModel> GetEventStatusList(int? InsuranceClaimID);
+        int OrderMoveUpward(int? Order);
     }
 }

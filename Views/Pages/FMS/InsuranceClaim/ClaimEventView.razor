@@ -6,12 +6,13 @@
 @inject AuthenticationStateProvider auth
 
 
-<MudTable Items="@ClaimEventList" Hover="true"
+<MudForm @bind-IsValid="@formValid">
+    <MudTable Items="@ClaimEventList" Hover="true"
           CanCancelEdit="true" Filter="new Func<InsuranceClaimEventMasterModel,bool>(FilterFunc)"
           @bind-SelectedItem="selectedItem1" SortLabel="Sort By" CommitEditTooltip="Update" 
           RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted">
     <ToolBarContent>
-        <MudText Typo="Typo.h6">Insurance-Claim Events</MudText>
+        <MudText Typo="Typo.h6">Insurance-Followup Events Master</MudText>
         <MudSpacer />
         <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </ToolBarContent>
@@ -29,13 +30,18 @@
         <MudTh><MudTableSortLabel SortBy="new Func<InsuranceClaimEventMasterModel, object>(x=>x.Description)">Description</MudTableSortLabel></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Order">@context.Order</MudTd>
+        <MudTd DataLabel="Order">
+            @context.Order
+                <MudIconButton Icon="@Icons.Material.Sharp.ArrowDropUp"  Class="p-0" Size="Size.Large" OnClick="@(()=>MoveUp(context.Order))"></MudIconButton>                
+            </MudTd>
         <MudTd DataLabel="Title">@context.Title</MudTd>
         <MudTd DataLabel="Is Mandatory">@context.IsMandatory</MudTd>
         <MudTd DataLabel="Description">@context.Description</MudTd>       
     </RowTemplate>
     <RowEditingTemplate>
-        <MudTd DataLabel="Order">@context.Order</MudTd>
+        <MudTd DataLabel="Order">
+            @context.Order            
+        </MudTd>
         <MudTd DataLabel="Title">
             <MudTextField @bind-Value="@context.Title" Required />
         </MudTd>
@@ -43,32 +49,35 @@
             <MudCheckBox @bind-Checked="@context.IsMandatory" />
         </MudTd>
         <MudTd DataLabel="Description">
-            <MudTextField @bind-Value="@context.Description" />
+            <MudTextField @bind-Value="@context.Description" Required  />
         </MudTd>       
     </RowEditingTemplate>    
-    <FooterContent>
+    <FooterContent>                
         <MudTd DataLabel="Order">
-            <MudNumericField @bind-Value="@InsertElement.Order" Required Min="1" />
+            New
         </MudTd>
         <MudTd DataLabel="Title">
             <MudTextField @bind-Value="@InsertElement.Title" Required />
         </MudTd>
         <MudTd DataLabel="Is Mandatory">
-            <MudCheckBox @bind-Checked="@InsertElement.IsMandatory" Required />
+            <MudCheckBox @bind-Checked="@InsertElement.IsMandatory"  />
         </MudTd>
         <MudTd DataLabel="Description">
-            <MudTextField @bind-Value="@InsertElement.Description" />
+            <MudTextField @bind-Value="@InsertElement.Description" Required />
         </MudTd>
         <MudTd DataLabel="Description">
-            <MudButton OnClick="(()=>ItemHasBeenCommitted(InsertElement))">Create</MudButton>
-        </MudTd>
+            <MudButton Disabled="@(!formValid)" OnClick="(()=>ItemHasBeenCommitted(InsertElement))">Create</MudButton>
+        </MudTd>        
     </FooterContent>
     <PagerContent>
         <MudTablePager />
     </PagerContent>
 </MudTable>
-
+</MudForm>
 @code {
+
+
+    bool formValid;
     private List<InsuranceClaimEventMasterModel> ClaimEventList = new();
 
     private string searchString = "";
@@ -86,7 +95,11 @@
         ClaimEventList = Iservice.GetEventList(null).ToList();
     }
 
-
+    void MoveUp(int? Order)
+    {
+        int retVal =  Iservice.OrderMoveUpward(Order);
+        ClaimEventList = Iservice.GetEventList(null).ToList();
+    }
 
 
 
@@ -108,6 +121,7 @@
         var item = (InsuranceClaimEventMasterModel)element;
         var authState =  auth.GetAuthenticationStateAsync().Result;
         item.UserInfo.UserID = authState.User.Identity.Name;
+        item.Order = item.Order ?? ((ClaimEventList.Max(x => x.Order)??0) + 1);
         Iservice.UpdateEventList(item);
 
         if (item.IcemID == null)
