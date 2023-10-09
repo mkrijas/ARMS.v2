@@ -1,4 +1,5 @@
 ﻿using ArmsModels.SharedModels;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -8,6 +9,11 @@ namespace ArmsModels.BaseModels
 {
     public class AssetDocumentRequestModel
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AssetDocumentRequestModel>(Json);
+        }
         public int? ID { get; set; }
         public int? BranchID { get; set; }
         public AssetDocumentTypeModel DocumentType { get; set; }
