@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Views.Data
 {
-    public class ChatHub:Hub
+    public class ChatHub : Hub
     {
         //public async Task SendMessages(int MessageID, BranchModel InitiateBranch, BranchModel ReceivedBranch, string MessageTitle, string MessageBody, int RedirectedTo, string MsgDatest)
         //{

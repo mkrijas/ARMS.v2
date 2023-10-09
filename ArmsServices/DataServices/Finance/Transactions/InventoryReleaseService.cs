@@ -60,7 +60,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "GetSub"),
+               new SqlParameter("@Operation", "GetSubReadOnly"),
                new SqlParameter("@ID", ID),
                new SqlParameter("@StoreID", StoreID),
             };

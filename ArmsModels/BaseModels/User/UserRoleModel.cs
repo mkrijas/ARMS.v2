@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -6,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-
     public class RoleModel
     {
         public int? RoleNo { get; set; }
@@ -15,7 +15,11 @@ namespace ArmsModels.BaseModels
         [Required]
         public string RoleDesc { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
-
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<RoleModel>(Json);
+        }
         public RoleModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
@@ -34,9 +38,5 @@ namespace ArmsModels.BaseModels
         public BranchModel Branch { get; set; }
         public RoleModel Role { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
-       
-
     }
-
-  
 }
