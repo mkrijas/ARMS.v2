@@ -1,5 +1,7 @@
 ﻿@inject AuthenticationStateProvider auth
 @inject IUnreconciledBankEntryService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -46,7 +48,7 @@
             </EditForm>  
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-10">Submit</MudButton>
+        <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-10">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 @code {
@@ -56,16 +58,30 @@
     [Parameter]
     public UnReconciledBankEntryModel model { get; set; } = new();
 
+    private bool _busy;
+
     void Cancel()
     {
         MudDialog.Cancel();
     }
-    public async Task Submit() {
+
+    public async Task Submit() 
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
         Iservice.Update(model);
         MudDialog.Close(DialogResult.Ok(true));
+
+        await Task.Delay(2000);
+        _busy = false;
     }
 
 }

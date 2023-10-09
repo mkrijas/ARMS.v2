@@ -42,7 +42,7 @@
         </EditForm>
     </DialogContent>
     <DialogActions>
-        <MudButton form="formcshAc" Variant="Variant.Filled" ButtonType="ButtonType.Submit" Color="Color.Success">Submit</MudButton>
+        <MudButton Disabled="@_busy" form="formcshAc" Variant="Variant.Filled" ButtonType="ButtonType.Submit" Color="Color.Success">Submit</MudButton>
         <MudButton @onclick="Cancel" Variant="Variant.Filled" Color="Color.Primary">Cancel</MudButton>
     </DialogActions>
 </MudDialog>
@@ -53,6 +53,7 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private List<ChartOfAccountModel> Coa = new();
 
+    private bool _busy;
 
     protected override void OnInitialized()
     {
@@ -61,6 +62,13 @@
     }
     private async Task OnValidSubmit(EditContext context)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -76,7 +84,10 @@
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
+        await Task.Delay(2000);
+        _busy = false;
     }
+
     public void Cancel()
     {
         MudDialog.Cancel();
