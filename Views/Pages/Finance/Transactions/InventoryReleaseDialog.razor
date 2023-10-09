@@ -12,7 +12,7 @@
 @inject ITruckService Itruck
 @inject IStoreService storeIservice
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Inventory Release" formID="inventoryReleaseForm" model="@model">
+<DialogForm @ref="@dialogForm" ReadOnly="false" Title="Inventory Release" formID="inventoryReleaseForm" model="@model">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="inventoryReleaseForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
@@ -53,16 +53,14 @@
                         <MudItem xs="12">
                             <h6><u>Items</u></h6>
                             <MudGrid Justify="Justify.Center">
-                                <MudItem xs="3" Class="d-flex align-center"><span> <strong> <u>Asset</u></strong> </span></MudItem>
-                                <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Requst Qty</u></strong> </span></MudItem>
-                                <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Available Qty</u></strong> </span></MudItem>
-                                <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Release Qty</u></strong> </span></MudItem>
+                                <MudItem xs="4" Class="d-flex align-center"><span> <strong> <u>Asset</u></strong> </span></MudItem>
+                                <MudItem xs="4" Class="d-flex align-center"><span><strong><u>Requst Qty</u></strong> </span></MudItem>
+                                <MudItem xs="4" Class="d-flex align-center"><span><strong><u>Release Qty</u></strong> </span></MudItem>
                                 @foreach (var item in InventoryRequestSubList)
                                 {
-                                    <MudItem xs="3"> @(ItemList.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.ItemDescription) </MudItem>
-                                    <MudItem xs="3"> @item.RequestQty </MudItem>
-                                    <MudItem xs="3"> @item.AvailableQty </MudItem>
-                                    <MudItem xs="3"> @item.ItemQty </MudItem>
+                                    <MudItem xs="4"> @(ItemList.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.ItemDescription) </MudItem>
+                                    <MudItem xs="4"> @item.RequestQty </MudItem>
+                                    <MudItem xs="4"> @item.ItemQty </MudItem>
                                 }
                             </MudGrid>
                         </MudItem>
@@ -180,14 +178,14 @@
             }
             if (ReadOnly)
             {
-                InventoryRequestSubList = Iservice.GetRequstSubReadOnly(model.RequestID, model.Store.StoreID).ToList();
+                InventoryRequestSubList = Iservice.GetRequstSubReadOnly(model.RID, model.Store.StoreID).ToList();
             }
             else
             {
                 InventoryRequestSubList = Iservice.GetRequstSub(model.RequestID, model.Store.StoreID).ToList();
                 foreach (var item in InventoryRequestSubList)
                 {
-                    item.ItemQty = (item.PendingQty > item.AvailableQty) ? item.AvailableQty : item.PendingQty;
+                    item.ItemQty = (item.PendingQty != null && item.AvailableQty != null && (item.PendingQty > item.AvailableQty)) ? item.AvailableQty : item.PendingQty;
                 }
             }
 
@@ -208,21 +206,21 @@
         // editContext.OnValidationRequested += OnValidationRequestedAsync;
     }
 
-    public void AddSubList()
-    {
-        Entrymodel.ItemID = SelectedItems.InventoryItemID;
-        if (Entrymodel.ItemID == null || Entrymodel.ItemRate == null || Entrymodel.ItemQty == null)
-        {
-            snackbar.Add("Please fill in all fields.", Severity.Success);
-            return;
-        }
-        model.Items.Add(Entrymodel);
-        decimal total = ((Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value));
-        model.TotalAmount = model.TotalAmount + total;
-        Entrymodel = new();
-        SelectedItems = null;
-        SelectedItems = new();
-    }
+    //public void AddSubList()
+    //{
+    //    Entrymodel.ItemID = SelectedItems.InventoryItemID;
+    //    if (Entrymodel.ItemID == null || Entrymodel.ItemRate == null || Entrymodel.ItemQty == null)
+    //    {
+    //        snackbar.Add("Please fill in all fields.", Severity.Success);
+    //        return;
+    //    }
+    //    model.Items.Add(Entrymodel);
+    //    decimal total = ((Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value));
+    //    model.TotalAmount = model.TotalAmount + total;
+    //    Entrymodel = new();
+    //    SelectedItems = null;
+    //    SelectedItems = new();
+    //}
 
     protected void getitemCode(InventoryItemModel item)
     {
@@ -313,7 +311,7 @@
             }
             foreach (var item in InventoryRequestSubList)
             {
-                if (item.ItemQty > item.AvailableQty || item.ItemQty > item.RequestQty || item.ItemQty < 0)
+                if (item.ItemQty > item.AvailableQty || item.ItemQty > item.RequestQty || (item.PendingQty != null && item.ItemQty > item.PendingQty) || item.ItemQty < 0)
                 {
                     snackbar.Add(("You enterd invalid Qty in " + item.ItemDescription + "."), Severity.Error);
                     model.Items.Clear();

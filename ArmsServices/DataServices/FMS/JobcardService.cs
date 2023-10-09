@@ -41,6 +41,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "ByID"),
                new SqlParameter("@JobcardID", JobcardID),
                new SqlParameter("@Active",false)
             };
@@ -55,6 +56,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "ByBranchID"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@Active",Active)
             };
@@ -69,6 +71,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "ByID"),
                new SqlParameter("@JobcardID", ID),
                new SqlParameter("@Active",false)
             };
@@ -84,6 +87,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "ByTruckID"),
                new SqlParameter("@TruckID", TruckID),
                new SqlParameter("@Active",Active)
             };
