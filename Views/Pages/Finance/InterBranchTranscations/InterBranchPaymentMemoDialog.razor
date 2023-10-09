@@ -14,7 +14,10 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="InterBranch Payment Memo" formID="ibpaymentform" model="@model">
+@using Pages.Finance.Transactions.PurchaseAndPayment
+
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="InterBranch Payment Memo" formID="ibpaymentform" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="ibpaymentform" OnValidSubmit="OnValidSubmit" EditContext="editContext">
@@ -118,6 +121,9 @@
     public bool ReadOnly { get; set; }
     [Parameter]
     public bool Dialog { get; set; } = true;
+    
+    public bool _busy;
+
     private List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
     private int? branchID = null;
     private string UserID = null;
@@ -200,8 +206,16 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
+        
         if (HasAuthoriseEdit)
         {
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+
             try
             {
                 model.UserInfo.UserID = UserID;
@@ -219,6 +233,8 @@
             {
                 snackbar.Add(ex.Message, Severity.Error);
             }
+            await Task.Delay(2000);
+            _busy = false;
         }
         else
         {
