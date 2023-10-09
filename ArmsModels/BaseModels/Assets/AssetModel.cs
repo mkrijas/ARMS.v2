@@ -5,13 +5,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.SharedModels;
 using ExpressiveAnnotations.Attributes;
-
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-
     public class AssetModel
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AssetModel>(Json);
+        }
         public int? AssetID { get; set; }
         [Required]
         public string Description { get; set; }
@@ -68,10 +72,6 @@ namespace ArmsModels.BaseModels
         public bool Scrap { get; set; } = false;
         public string Status { get; set; }//Scrap,Dismantled,Sold,Revaluated        
         public UserInfoModel UserInfo { get; set; } = new();
-        //Additional Methods Required are 
-        //Revaluation
-        //Dismantle
-        //Sale        
     }
 
     public class AssetViewModel
@@ -81,17 +81,21 @@ namespace ArmsModels.BaseModels
         public List<AssetViewModel> Children { get; set; } = new();
     }
 
-
     public class AssetClassModel
     {
         public int? AssetClassID { get; set; }
         public string AssetClassName { get; set; }
         public int? PostingGroupID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
-
     }
+
     public class AssetSubClassModel
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AssetSubClassModel>(Json);
+        }
         public int? ID { get; set; }
         public int? AssetSubClassID { get; set; }
         [Required(ErrorMessage = "Name of Asset SubClass is required.")]
@@ -100,6 +104,7 @@ namespace ArmsModels.BaseModels
         public int? AssetClassID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
+
     public class AssetStatusUpdateModel
     {
         public int? StatusUpdateID { get; set; }
@@ -152,6 +157,4 @@ namespace ArmsModels.BaseModels
         public int? AccountTransactionID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
-
-
 }
