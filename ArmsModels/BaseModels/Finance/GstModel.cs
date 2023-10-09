@@ -6,11 +6,16 @@ namespace ArmsModels.BaseModels
 {
     public class GstUsageCodeModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<GstUsageCodeModel>(Json);
+        }
         public GstUsageCodeModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? Id { get; set; }        
+        public int? Id { get; set; }
         public virtual string UsageCode { get; set; }
         [Required]
         [StringLength(maximumLength: 25)]
@@ -23,7 +28,6 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? RID { get; set; }
         public virtual decimal? TaxRate { get; set; }
-
         [StringLength(maximumLength: 8)]
         [Required]
         public string SAC { get; set; }
@@ -32,15 +36,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? PeriodTo { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
-
-        public object Clone()
-        {
-            string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<GstUsageCodeModel>(Json);
-        }
-
     }
-
 
     public class GstRateModel
     {
@@ -49,8 +45,13 @@ namespace ArmsModels.BaseModels
         public string Description { get; set; }
     }
 
-    public class GstItemModel
+    public class GstItemModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<GstItemModel>(Json);
+        }
         public GstItemModel(string _itemCode, decimal? _taxRate)
         {
             ItemCode = _itemCode;
@@ -69,7 +70,6 @@ namespace ArmsModels.BaseModels
         public string HsnCode { get; set; }
         [Required]
         public int? RID { get; set; }
-
         public virtual decimal? TaxRate { get; }
         [Required]
         public DateTime? PeriodFrom { get; set; }
@@ -77,8 +77,6 @@ namespace ArmsModels.BaseModels
         public DateTime? PeriodTo { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
-
-
 
     public class GstInOutModel
     {
