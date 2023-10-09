@@ -77,8 +77,13 @@ namespace ArmsModels.BaseModels
         }
     }
 
-    public class BankPostingGroupModel
+    public class BankPostingGroupModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<BankPostingGroupModel>(Json);
+        }
         public BankPostingGroupModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
@@ -128,6 +133,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
         public virtual ReconciledBankEntryModel ReconciledInfo { get; set; } = new();
     }
+
     public class ReconciledBankEntryModel
     {
         public int? ID { get; set; }
@@ -144,6 +150,7 @@ namespace ArmsModels.BaseModels
         public string Remarks { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
+
     public class ReconciledBankSummaryModel
     {
         public string BankOrCompany { get; set; }
