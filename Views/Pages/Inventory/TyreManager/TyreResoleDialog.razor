@@ -3,6 +3,7 @@
 @inject ITyreService Iservice
 @inject IInventoryItemService IInventoryservice
 @inject IStoreService IStoreservice
+@inject MudBlazor.ISnackbar snackbar
 
 <MudDialog>
     <TitleContent>
@@ -54,7 +55,7 @@
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        <MudButton form="TyreResolrDilaoge" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
+        <MudButton Disabled="@_busy" form="TyreResolrDilaoge" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -68,6 +69,7 @@
     TyreModel SelectedBatch = new();
     List<TyreModel> TyreList = new();
     Func<LinkableBatchModel, string> converter = p => p?.GrnNo;
+    private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
@@ -167,6 +169,13 @@
 
     public async Task Submit()
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -176,6 +185,8 @@
             model.Tyres = PassedListTyres.Select(s => s.TyreID).ToList();
             Iservice.ResoleBegin(model);
         }
+        await Task.Delay(2000);
+        _busy = false;
         MudDialog.Close(DialogResult.Ok(true));
     }
 }

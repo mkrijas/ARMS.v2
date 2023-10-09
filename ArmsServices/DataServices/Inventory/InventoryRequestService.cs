@@ -203,6 +203,7 @@ namespace ArmsServices.DataServices.Inventory
                     RegNo = dr.GetString("RegNo")
                 },
                 Remarks = dr.GetString("Remarks"),
+                IsCompletelyReleased = dr.GetBoolean("IsCompletelyReleased"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
