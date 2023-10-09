@@ -204,5 +204,14 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        public int OrderMoveUpward(int? Order)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Order", Order),
+            };
+            return Iservice.ExecuteNonQuery("[usp.FMS.InsuranceClaim.EventMaster.MoveUp]", parameters);           
+        }
     }
 }
