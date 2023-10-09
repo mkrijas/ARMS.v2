@@ -1,6 +1,5 @@
 ﻿@page "/ChartOfAccount"
 @inject IChartOfAccountService Iservice
-
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -8,12 +7,18 @@
 @using System
 @inject IJSRuntime jsRuntime
 
+<style>
+    .subledger {
+        color: blue;
+    }
 
-
+    .fixed {
+        position: absolute;
+    }
+</style>
 
 <MudGrid>
-
-    <MudPaper md="4">
+    <MudPaper md="4" Style="margin-top:20px;">
         <MudItem style="padding:18px; padding-top:12px;">
             <MudText Typo="Typo.h5">CHART OF ACCOUNTS <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add Ledger" Color="Color.Dark" Size="Size.Small" OnClick="@addledgerbyicon"></MudIconButton></MudText>
         </MudItem>
@@ -22,16 +27,13 @@
                 <ItemTemplate>
                     <ContextMenuTrigger MenuId="@(context.SummaryAccount ? "myMenu" : "myeditMenu")" Data="@context">
                         <MudTreeViewItem id="@context.ID" OnClick="@(()=> getcoordinates(context.ID))" @bind-Expanded="@context.IsExpanded" TextClass="@(context.SummaryAccount?"":"subledger")" LoadingIconColor="Color.Info" Value="@context" Text="@context.Title" Icon="@context.Icon" CanExpand="@(context.SummaryAccount? true : false)">
-
                         </MudTreeViewItem>
                     </ContextMenuTrigger>
                 </ItemTemplate>
             </MudTreeView>
         </MudPaper>
     </MudPaper>
-
 </MudGrid>
-
 <div id="targetBox" Class="float-left fixed" style="left: 0; top: 0;">
     @if (AllocatedBranches.Count > 0)
     {
@@ -46,32 +48,15 @@
         </MudPaper>
     }
 </div>
-
-
-
-
 <ContextMenu Id="myMenu" OnAppearing="OnAppearing">
     <Item OnClick="@ContextMenuOnClick" Id="group">Add Group</Item>
     <Item OnClick="@ContextMenuOnClick" Id="account">Add Ledger</Item>
 </ContextMenu>
-
 <ContextMenu Id="myeditMenu">
     <Item OnClick="@ContextEditMenuOnClick">Edit Ledger</Item>
 </ContextMenu>
 
-<style>
-    .subledger {
-        color: blue;
-    }
-
-    .fixed {
-        position: absolute;
-    }
-</style>
-
-
 @code {
-
 
     public class ElementCoordinates
     {
@@ -84,7 +69,6 @@
         object[] obj = { itemID, "targetBox" };
         ElementCoordinates coordinates = await jsRuntime.InvokeAsync<ElementCoordinates>("getElementCoordinates", obj);
     }
-
 
     private HashSet<TreeItemData> TreeItems { get; set; } = new HashSet<TreeItemData>();
     TreeItemData ContextmenuSource = new();
@@ -101,9 +85,7 @@
         public HashSet<TreeItemData> TreeItems { get; set; }
     }
 
-
     protected List<CoaBranchAvailabilityModel> AllocatedBranches = new();
-
     protected bool visible = true;
 
     protected override void OnInitialized()
@@ -142,14 +124,10 @@
         return parentNode.TreeItems;
     }
 
-
-
-
     protected async Task ContextMenuOnClick(ItemClickEventArgs e)
     {
         ContextmenuSource = (TreeItemData)e.Data;
         var authstate = await auth.GetAuthenticationStateAsync();
-
         var parameters = new DialogParameters
             {
                 ["model"] = new ChartOfAccountModel
@@ -159,9 +137,7 @@
                     UserInfo = { UserID = authstate.User.Identity.Name }
                 },
             };
-
         IDialogReference dialog = null;
-
         switch (e.MenuItem.Id)
         {
             case "group":
@@ -172,7 +148,6 @@
                 dialog = DialogService.Show<AddSubledgerDialog>("Add Ledger under - " + ContextmenuSource.Title, parameters);
                 break;
         }
-
         var result = await dialog.Result;
         ChartOfAccountModel UpdatedModel = (ChartOfAccountModel)result.Data;
         if (!result.Cancelled)
@@ -196,23 +171,17 @@
         }
     }
 
-
-
-
     protected async Task ContextEditMenuOnClick(ItemClickEventArgs e)
     {
         TreeItemData item = (TreeItemData)e.Data;
         if (!item.SummaryAccount)
         {
             ChartOfAccountModel model = Iservice.SelectByID(item.ID);
-
             ContextmenuSource = (TreeItemData)e.Data;
             var authstate = await auth.GetAuthenticationStateAsync();
-
             var parameters = new DialogParameters
                 {
                     ["model"] = model,
-                    //["Parent"] = item.Title
                 };
             var editledge = DialogService.Show<AddSubledgerDialog>("Edit Ledger - " + item.Title, parameters);
             var result = await editledge.Result;
@@ -220,23 +189,17 @@
             if (!result.Cancelled)
             {
                 var newresult = Iservice.Update(UpdatedModel);
-                ///////
                 item.Title = newresult.AccountName + (newresult.SummaryAccount ? "" : (" (" + newresult.AccountCode + ")"));
                 item.SummaryAccount = newresult.SummaryAccount;
                 snackbar.Add(newresult.AccountName + " updated successfully", Severity.Success);
-                ///////
                 var har = Collect(TreeItems).ToList();
             }
         }
     }
 
-
-
-
     protected async Task addledgerbyicon()
     {
         var authstate = await auth.GetAuthenticationStateAsync();
-
         var parameters = new DialogParameters
             {
                 ["model"] = new ChartOfAccountModel
@@ -246,9 +209,7 @@
                     UserInfo = { UserID = authstate.User.Identity.Name }
                 },
             };
-
-        IDialogReference dialog  = DialogService.Show<AddSubledgerDialog>("Add Ledger", parameters);              
-
+        IDialogReference dialog = DialogService.Show<AddSubledgerDialog>("Add Ledger", parameters);
         var result = await dialog.Result;
         ChartOfAccountModel UpdatedModel = (ChartOfAccountModel)result.Data;
         if (!result.Canceled)
@@ -265,9 +226,6 @@
             }
         }
     }
-
-
-
 
     //recursion through treeview
 
@@ -290,7 +248,6 @@
         }
     }
 
-
     void OnSelected(TreeItemData item)
     {
         if (item != null && !item.SummaryAccount)
@@ -305,9 +262,7 @@
 
     async Task BranchCheckedChanged(bool value, CoaBranchAvailabilityModel br)
     {
-
         var authState = await auth.GetAuthenticationStateAsync();
-
         br.IsSelected = value;
         br.UserInfo.UserID = authState.User.Identity.Name;
 

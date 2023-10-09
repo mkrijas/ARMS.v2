@@ -57,7 +57,7 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         public List<InventoryItemEntryModel> Items { get; set; } = new();
         public UserInfoModel UserInfo { get; set; } = new();
-
+        public bool? IsCompletelyReleased { get; set; }
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (Items.Count == 0)
@@ -76,5 +76,7 @@ namespace ArmsModels.BaseModels
         public decimal? ItemQty { get; set; }
         public decimal? RequestQty { get; set; }
         public decimal? AvailableQty { get; set; }
+        public decimal? PendingQty { get; set; }
+        public decimal? ReleaseQty { get; set; }
     }
 }

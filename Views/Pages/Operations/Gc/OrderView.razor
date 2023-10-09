@@ -1,19 +1,14 @@
 ﻿@page "/order"
-
+@using System.Threading;
 @inject IOrderService Iservice
 @inject IContentService Icontent
 @inject IPartyService Iparty
-
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-
 @inject NavigationManager UriHelper
 @inject IDialogService DialogService
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
-
 
 <MudGrid Spacing="4">
     <MudItem xs="12" md="12">
@@ -22,12 +17,8 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Orders</MudText>
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-
                 <MudSpacer></MudSpacer>
-
-                <MudTextField @bind-Value="searchString" Placeholder="Search Orders... "
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudTextField @bind-Value="searchString" Placeholder="Search Orders... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<OrderModel, object>(x => x.OrderName)" InitialDirection="SortDirection.Ascending">title</MudTableSortLabel></MudTh>
@@ -50,8 +41,12 @@
                     <MudTooltip Text="View Tariffs">
                         <MudFab @onclick="@(() => ViewTariff(context.OrderID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Money" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
-                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(() => Delete(context.OrderID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudTooltip Text="Edit">
+                        <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    <MudTooltip Text="Delete">
+                        <MudFab @onclick="@(() => Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -88,49 +83,49 @@
         await GetAll();
     }
 
-
     private async Task<IEnumerable<ContentModel>> Search(string searchString)
     {
         return await Task.FromResult(
             contents.Where(x => x.ContentName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
-
     private async Task GetAll()
     {
         collection = await Iservice.Select(0).ToListAsync();
     }
-
 
     private void ViewConsignees(int? id)
     {
         UriHelper.NavigateTo("consignee/" + id);
     }
 
-
     private void ViewTariff(int? id)
     {
         UriHelper.NavigateTo("tariff/" + id);
     }
 
-
-    private async Task Delete(int? id)
+    private async Task Delete(OrderModel model)
     {
         if (HasPermissionOrderServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            await Iservice.Delete(id, authprov.User.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
-            await GetAll();
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.OrderName + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                await Iservice.Delete(model.OrderID, authprov.User.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+                await GetAll();
+            }
         }
         else
         {
             bool? result = await DialogService.ShowMessageBox(
-                  "Permission denied!",
-                  "You dont have any permission to Delete Order.");
+                "Permission denied!",
+                "You dont have any permission to Delete Order.");
         }
     }
-
 
     private bool search(OrderModel model)
     {
@@ -140,7 +135,6 @@
         }
         return false;
     }
-
 
     private async Task OpenDialog(OrderModel odr)
     {
@@ -173,8 +167,8 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Add or Edit Order.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Order.");
         }
     }
 }

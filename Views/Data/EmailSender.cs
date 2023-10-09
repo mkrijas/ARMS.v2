@@ -5,10 +5,6 @@ using MimeKit.Text;
 using MimeKit;
 using System.Threading.Tasks;
 
-
-
-
-
 namespace Views.Data
 {
     public class EmailSender : IEmailSender
@@ -18,7 +14,6 @@ namespace Views.Data
         {
             this.Options = options.Value;
         }
-
 
         public Task SendEmailAsync(string email, string subject, string message)
         {
@@ -45,10 +40,7 @@ namespace Views.Data
                 smtp.Send(email);
                 smtp.Disconnect(true);
             }
-
             return Task.FromResult(true);
         }
     }
 }
-
-

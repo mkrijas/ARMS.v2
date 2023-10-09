@@ -4,6 +4,7 @@
 @inject IInventoryItemService IInventoryservice
 @inject IStoreService IStoreservice
 @inject IGstUsageIDService IusageService
+@inject MudBlazor.ISnackbar snackbar
 
 <MudDialog>
     <TitleContent>
@@ -82,7 +83,7 @@
 
     </DialogContent>
     <DialogActions>
-        <MudButton form="ResoleDeliveryID" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
+        <MudButton Disabled="@_busy" form="ResoleDeliveryID" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -98,6 +99,7 @@
 
     public TyreModel SelectedTyre { get; set; }
 
+    private bool _busy;
 
     List<TyreModel> TyreList = new();
 
@@ -274,6 +276,12 @@
     }
     public async Task Submit()
     {
+        if (_busy) {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -302,7 +310,9 @@
             model.UserInfo.UserID = user.Identity.Name;
             int ReturnValue = Iservice.ResoleDeliveryUpdate(model);
         }
-
         MudDialog.Close(DialogResult.Ok(true));
+
+        await Task.Delay(2000);
+        _busy = false;
     }
 }

@@ -18,5 +18,6 @@ namespace ArmsServices.DataServices.Finance.Transactions
         IEnumerable<InventoryReleaseModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<InventoryReleaseModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<InventoryReleaseSubViewModel> GetRequstSub(int? ID, int? StoreID);
+        IEnumerable<InventoryReleaseSubViewModel> GetRequstSubReadOnly(int? ID, int? StoreID);
     }
 }

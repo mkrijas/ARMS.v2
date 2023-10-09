@@ -7,7 +7,7 @@ namespace Views.Data
     {
         public static bool CheckPeriodOverlap(DateRange selectedRange, List<DateRange> ListOfDates)
         {
-          return  ListOfDates.Exists(dateRange => dateRange.Start <= selectedRange.End && selectedRange.Start <= dateRange.End);          
+            return ListOfDates.Exists(dateRange => dateRange.Start <= selectedRange.End && selectedRange.Start <= dateRange.End);
         }
     }
 }
