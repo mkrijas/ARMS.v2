@@ -86,7 +86,20 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-
+        public TdsAccountMappingModel CheckExist(int? CoaID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@CoaID", CoaID),
+               new SqlParameter("@Operation", "CheckExist")
+            };
+            TdsAccountMappingModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.AccountMapping.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
         public TdsAccountMappingModel Update(TdsAccountMappingModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

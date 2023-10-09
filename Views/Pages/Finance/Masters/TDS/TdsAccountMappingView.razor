@@ -244,27 +244,37 @@
         return false;
     }
 
-    private async Task AddEditAccountMapping(TdsAccountMappingModel ii)
+    private async Task AddEditAccountMapping(TdsAccountMappingModel model)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        ii.NatureOfPayment = SelectedNP.NatureOfPayment;
-        ii.TdsNPID = SelectedNP.TdsNPID;
+        model.NatureOfPayment = SelectedNP.NatureOfPayment;
+        model.TdsNPID = SelectedNP.TdsNPID;
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", ii);
-        var dialog = DialogService.Show<TdsAccountMappingDialig>(ii.TdsAccountMappedID == null ? "ADD" : "EDIT", parms);
+        parms.Add("model", model);
+        var dialog = DialogService.Show<TdsAccountMappingDialig>(model.TdsAccountMappedID == null ? "ADD" : "EDIT", parms);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
             TdsAccountMappingModel UpatedModel = (TdsAccountMappingModel)result.Data;
-            ii.UserInfo.UserID = user.Identity.Name;
+            model.UserInfo.UserID = user.Identity.Name;
             try
             {
-                Iservice.Update(UpatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                NatureOfPaymentModel igm = new NatureOfPaymentModel();
-                igm.TdsNPID = UpatedModel.TdsNPID;
-                ShowMappedAccounts(igm);
+                TdsAccountMappingModel checkexist = Iservice.CheckExist(UpatedModel.CoaID);
+                @if (checkexist.NatureOfPayment != null)
+                {
+                    bool? exist = await DialogService.ShowMessageBox(
+                        "Warning !",
+                        "Account Name : " + checkexist.AccountName + " already exist under NatureOfPayment : " + checkexist.NatureOfPayment + " ?");
+                }
+                else
+                {
+                    Iservice.Update(UpatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    NatureOfPaymentModel igm = new NatureOfPaymentModel();
+                    igm.TdsNPID = UpatedModel.TdsNPID;
+                    ShowMappedAccounts(igm);
+                }
             }
             catch (Exception ex)
             {

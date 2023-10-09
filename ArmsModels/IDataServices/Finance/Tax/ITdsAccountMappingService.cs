@@ -18,5 +18,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TdsAccountMappingModel> Select();
         IEnumerable<TdsAccountMappingModel> SelectByNP(int TdsNPID);
         IEnumerable<TdsAccountMappingModel> SelectByAccount(int CoaID);
+        TdsAccountMappingModel CheckExist(int? CoaID);
+
     }
 }
