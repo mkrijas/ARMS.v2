@@ -38,16 +38,48 @@ namespace ArmsServices.DataServices.Finance.Transactions
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InventoryRelease.Select]", parameters))
             {
-                yield return new InventoryReleaseSubViewModel()
+                if ((dr.GetDecimal("ReleaseQty") == null) || (dr.GetDecimal("ReleaseQty") < dr.GetDecimal("RequestQty")))
                 {
-                    ItemEntryID = dr.GetInt32("ItemEntryID"),
-                    //RID = dr.GetInt32("RID"),
-                    ItemID = dr.GetInt32("ItemID"),
-                    ItemDescription = dr.GetString("ItemDescription"),
-                    AvailableQty = dr.GetDecimal("AvailableQty"),
-                    RequestQty = dr.GetDecimal("RequestQty"),
-                    ItemQty = dr.GetDecimal("ReleaseQty") == null ? dr.GetDecimal("RequestQty") : dr.GetDecimal("ReleaseQty"),
-                };
+                    yield return new InventoryReleaseSubViewModel()
+                    {
+                        ItemEntryID = dr.GetInt32("ItemEntryID"),
+                        //RID = dr.GetInt32("RID"),
+                        ItemID = dr.GetInt32("ItemID"),
+                        ItemDescription = dr.GetString("ItemDescription"),
+                        AvailableQty = dr.GetDecimal("AvailableQty"),
+                        RequestQty = dr.GetDecimal("RequestQty"),
+                        PendingQty = dr.GetDecimal("ReleaseQty") != null ? (dr.GetDecimal("RequestQty") - dr.GetDecimal("ReleaseQty")) : dr.GetDecimal("RequestQty"),
+                        ReleaseQty = dr.GetDecimal("ReleaseQty"),
+                        ItemQty = dr.GetDecimal("ReleaseQty") != null ? (dr.GetDecimal("RequestQty") - dr.GetDecimal("ReleaseQty")) : dr.GetDecimal("RequestQty"),
+                    };
+                }
+            }
+        }
+
+        public IEnumerable<InventoryReleaseSubViewModel> GetRequstSubReadOnly(int? ID, int? StoreID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetSub"),
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@StoreID", StoreID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InventoryRelease.Select]", parameters))
+            {
+                if ((dr.GetDecimal("ReleaseQty")>=0))
+                {
+                    yield return new InventoryReleaseSubViewModel()
+                    {
+                        ItemEntryID = dr.GetInt32("ItemEntryID"),
+                        //RID = dr.GetInt32("RID"),
+                        ItemID = dr.GetInt32("ItemID"),
+                        ItemDescription = dr.GetString("ItemDescription"),
+                        AvailableQty = dr.GetDecimal("AvailableQty"),
+                        RequestQty = dr.GetDecimal("RequestQty"),
+                        ItemQty =  dr.GetDecimal("ReleaseQty"),
+                    };
+                }
             }
         }
 
