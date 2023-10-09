@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class ChartOfAccountModel
+    public class ChartOfAccountModel : ICloneable
     {
         public object Clone()
         {

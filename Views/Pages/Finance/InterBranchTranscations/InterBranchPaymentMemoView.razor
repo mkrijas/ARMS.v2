@@ -1,5 +1,6 @@
 ﻿@page "/InterBranchPaymentMemoView"
 @using System.Threading;
+@using Pages.Finance.Transactions.PurchaseAndPayment
 @inject IPaymentService Iservice
 @inject IPaymentInitiatedService IinitiateService
 @inject IOutstandingBillsService OBIservice
@@ -8,8 +9,6 @@
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
-
-@using Pages.Finance.Transactions.PurchaseAndPayment
 
 <style>
     .selected {
@@ -34,9 +33,7 @@
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogpayment(new PaymentMemoModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search Payment Memo..." Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
-                              @onkeyup="HandleSearchKeyUp">
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Payment Memo..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
                 </MudTextField>
                 <div class="tablefont">
                     <span style="margin-right: 10px;">Maximum Records: </span>
@@ -164,7 +161,7 @@
     public async Task OpenDialogpayment(PaymentMemoModel ppm, bool ReadOnly)
     {
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", ppm);
+        parms.Add("model", ppm.Clone());
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<InterBranchPaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
@@ -180,8 +177,8 @@
         if (HasAuthoriseDelete)
         {
             bool? result = await DialogService.ShowMessageBox(
-              "Warning !",
-              "Are you sure, you want to delete - " + model.PartyInfo.TradeName + "(" + model.DocumentDate + ")" + "?");
+                "Warning !",
+                "Are you sure, you want to delete - " + model.PartyInfo.TradeName + "(" + model.DocumentDate + ")" + "?");
             if (result == true)
             {
                 var authprov = await auth.GetAuthenticationStateAsync();
@@ -202,7 +199,6 @@
     private async Task Initiate(PaymentMemoModel pm)
     {
         PaymentInitiatedModel pi = new PaymentInitiatedModel(pm);
-
         if (pi.PaymentMemoID != null)
         {
             if (pi.AuthLevelId != 99)
@@ -212,9 +208,8 @@
             }
             pi.Bills = Iservice.GetBills(pi.PaymentMemoID).ToList();
             pi.PaymentStatus = 1;
-
             DialogParameters parms = new DialogParameters();
-            parms.Add("PI", pi);
+            parms.Add("PI", pi.Clone());
             var dialog = DialogService.Show<InitiatePaymentMemo>("Payment", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
             var result = await dialog.Result;
 

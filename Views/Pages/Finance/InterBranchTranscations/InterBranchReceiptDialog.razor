@@ -1,12 +1,9 @@
 ﻿@using Views.Pages.Finance.Transactions.PurchaseAndPayment
 @using ArmsServices.DataServices.General
 
-
 @inject IConfigTable IConfig
-
 @inject IReceiptService Iservice
 @inject IPartyService partyIservice
-
 @inject IOutstandingBillsService OutstandingIservice
 @inject ICostCenterService costIservice
 @inject TruckDataArrayModel data
@@ -19,7 +16,6 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="InterBranch Receipt" formID="IreceiptForm" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
@@ -28,7 +24,7 @@
                 <ValidationSummary />
                 <MudGrid Spacing="4">
                     <MudItem xs="12" md="6">
-                        <BranchSelector Value="@OtherBranch" ValueChanged="BranchChanged" LabelName="Target Branch receipt collected for" ></BranchSelector>
+                        <BranchSelector Value="@OtherBranch" ValueChanged="BranchChanged" LabelName="Target Branch receipt collected for"></BranchSelector>
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudSelect Label="Select Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" SelectedValuesChanged="CheckInterbranchMapping" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
@@ -55,7 +51,6 @@
                             <MudSelectItem Value="@("Prepayment")" />
                         </MudSelect>
                     </MudItem>
-                 
                     @if (model.Bills.Any())
                     {
                         <MudItem xs="12">
@@ -74,7 +69,6 @@
                                             <td>@item.InvoiceNumber - @item.InvoiceDate?.ToShortDateString()</td>
                                             <td>@item.BranchName</td>
                                             <td> <MudTextField T="decimal?" @bind-Value="item.ReceiptAmount" TextChanged="calcTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
-
                                         </tr>
                                     }
                                     <tr>
@@ -87,9 +81,7 @@
                         </MudItem>
                     }
                     <MudItem xs="12" md="12">
-                        <PaymentAccountSelector @bind-PaymentMode="@model.ReceiptMode"
-                                                @bind-ArdCode="@model.ReceiptArdCode" @bind-CoaID="@model.ReceiptCoaID"
-                                                @bind-BankCharges="@model.BankCharges" @bind-BankTool="@model.ReceiptTool" />
+                        <PaymentAccountSelector @bind-PaymentMode="@model.ReceiptMode" @bind-ArdCode="@model.ReceiptArdCode" @bind-CoaID="@model.ReceiptCoaID" @bind-BankCharges="@model.BankCharges" @bind-BankTool="@model.ReceiptTool" />
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="ReadOnly" Label="Effective Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EffectiveDate" DateFormat="dd/MM/yyyy" />
@@ -118,7 +110,7 @@
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
-                    </MudGrid>
+                </MudGrid>
             </EditForm>
         </MudPaper>
     </FormContent>
@@ -126,9 +118,27 @@
         <AutherizationStatusComponent DocTypeID="@DocTypeID" DocumentID="model.ReceiptID" OnApprove="ApproveData"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
+
 @code {
 
 
+    [Parameter]
+    public ReceiptModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    private int? branchID = null;
+    private string UserID = null;
+    private List<BranchModel> BranchList = new();
+    private bool _busy;
+    private EditContext editContext;
+
+    DialogForm dialogForm;
+    int DocTypeID = 14;
+
+    BranchModel OtherBranch;
+    List<InterBranchTransactionTypeModel> transactionTypeList = new();
+    List<BranchModel> branches = new();
+    InterBranchMappingModel InterBrMappingList { get; set; }
 
     private async Task CheckInterbranchMapping()
     {
@@ -140,31 +150,6 @@
         }
     }
 
-
-    [Parameter]
-    public ReceiptModel model { get; set; }
-    [Parameter]
-    public bool ReadOnly { get; set; }
-
-    //bool Isbill = false;
-    private int? branchID = null;
-    private string UserID = null;
-    private List<BranchModel> BranchList = new();
-
-    private bool _busy;
-
-    private EditContext editContext;
-
-    DialogForm dialogForm;
-    int DocTypeID = 14;
-
-
-    BranchModel OtherBranch;
-    List<InterBranchTransactionTypeModel> transactionTypeList = new();
-    List<BranchModel> branches = new();
-    InterBranchMappingModel InterBrMappingList { get; set; }
-
-
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -173,11 +158,10 @@
         UserID = User.Identity.Name;
 
         transactionTypeList = intermappingIservice.GetTypes().ToList();
-
         BranchList = branchIservice.Select().ToList();
-        if (model.OtherBranchID != null && BranchList.Any(s=>s.BranchID == model.OtherBranchID))
+        if (model.OtherBranchID != null && BranchList.Any(s => s.BranchID == model.OtherBranchID))
         {
-            OtherBranch =  BranchList.FirstOrDefault(s => s.BranchID == model.OtherBranchID);
+            OtherBranch = BranchList.FirstOrDefault(s => s.BranchID == model.OtherBranchID);
         }
         if (model.ReceiptID != null)
         {
@@ -185,7 +169,9 @@
             model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
         }
         else
+        {
             model.BranchID = branchID;
+        }
     }
 
     protected override void OnParametersSet()
@@ -217,13 +203,12 @@
         if (model.PartyInfo?.PartyID != null)
         {
             model.NatureOfTransaction = nt;
-        }        
+        }
         else if (nt != null)
         {
             snackbar.Add("Select Party", Severity.Warning);
             return;
         }
-
         if (nt != "Reciept")
         {
             model.Bills.Clear();
@@ -319,5 +304,4 @@
             }
         }
     }
-
 }

@@ -8,8 +8,13 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class InterBranchMappingModel:ICloneable
+    public class InterBranchMappingModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<InterBranchMappingModel>(Json);
+        }
         public InterBranchMappingModel()
         {
 
@@ -24,13 +29,9 @@ namespace ArmsModels.BaseModels
         public string InterBranchArdCode { get; set; }
         [Required]
         public int? CoaID { get; set; }
-        public object Clone()
-        {
-            string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<InterBranchMappingModel>(Json);
-        }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
+
     public class InterBranchTransactionTypeModel
     {
         public int? ID { get; set; }

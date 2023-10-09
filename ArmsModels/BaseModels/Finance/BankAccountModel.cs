@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
@@ -32,17 +33,19 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
-
-    public class OwnBankModel
+    public class OwnBankModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<CashAccountModel>(Json);
+        }
         public OwnBankModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
             _userInfo = new SharedModels.UserInfoModel();
         }
         SharedModels.UserInfoModel _userInfo;
-
-
         public int? ID { get; set; }
         [Required]
         public BankPostingGroupModel PostingGroup { get; set; }
@@ -55,8 +58,6 @@ namespace ArmsModels.BaseModels
         public ContactModel ContactInfo { get; set; } = new ContactModel();
         [Required]
         public int? BranchID { get; set; }
-        //[Required]
-        //[StringLength(8, MinimumLength = 8, ErrorMessage = "Bank Code Must be 8 characters long")]
         public string BankCode { get; set; }
         public bool IsGstRegistered { get; set; } = false;
         [RequiredIfTrue("IsGstRegistered")]
@@ -97,14 +98,18 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
-    public class UnReconciledBankEntryModel
+    public class UnReconciledBankEntryModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<UnReconciledBankEntryModel>(Json);
+        }
         public int? ID { get; set; }
         [Required]
         public int? Nature { get; set; } //SELECT  -1 as Payment,1 as Receipt
         [Required]
         public string NatureName { get { return Nature == 1 ? "Receipt" : "Payment"; } }
-
         [Required]
         public DateTime? TransactionDate { get; set; }
         [Required]
@@ -122,9 +127,7 @@ namespace ArmsModels.BaseModels
         public bool IsReconciled { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
         public virtual ReconciledBankEntryModel ReconciledInfo { get; set; } = new();
-
     }
-
     public class ReconciledBankEntryModel
     {
         public int? ID { get; set; }
@@ -141,7 +144,6 @@ namespace ArmsModels.BaseModels
         public string Remarks { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
-
     public class ReconciledBankSummaryModel
     {
         public string BankOrCompany { get; set; }

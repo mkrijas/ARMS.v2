@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class AssetModel
+    public class AssetModel : ICloneable
     {
         public object Clone()
         {
@@ -89,7 +89,7 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
-    public class AssetSubClassModel
+    public class AssetSubClassModel : ICloneable
     {
         public object Clone()
         {

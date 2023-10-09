@@ -1,5 +1,6 @@
 ﻿@using ArmsServices.DataServices.General
 @using System.Threading;
+@using Pages.Finance.Transactions.PurchaseAndPayment
 
 @inject IConfigTable IConfig
 @inject IPaymentService Iservice
@@ -12,9 +13,6 @@
 @inject IBranchService BrService
 @attribute [Authorize]
 @inject IDialogService DialogService
-
-@using Pages.Finance.Transactions.PurchaseAndPayment
-
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="InterBranch Payment Memo" formID="ibpaymentform" model="@model" _busy="_busy">
     <FormContent>
@@ -53,8 +51,7 @@
                                 <MudSelectItem Value="@("Prepayment")" />
                             }
                         </MudSelect>
-                    </MudItem>                  
-                   
+                    </MudItem>
                     <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
@@ -84,7 +81,6 @@
                                             <td>@item.BranchName</td>
                                             <td>@item.OutstandingAmount</td>
                                             <td> <MudTextField T="decimal?" @bind-Value="item.PayAmount" TextChanged="SetTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
-
                                         </tr>
                                     }
                                     <tr>
@@ -96,12 +92,11 @@
                             </MudSimpleTable>
                         </MudItem>
                     }
-
                     @if (model.NatureOfTransaction == "Deposit" || model.NatureOfTransaction == "Prepayment")
                     {
                         <MudItem xs="12" md="12">
                             <MudNumericField ReadOnly="ReadOnly" HideSpinButtons @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudNumericField>
-                        </MudItem>
+                         </MudItem>
                     }
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
@@ -123,11 +118,10 @@
     public bool ReadOnly { get; set; }
     [Parameter]
     public bool Dialog { get; set; } = true;
-    
+
     public bool _busy;
 
     private List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
-
     private int? branchID = null;
     private string UserID = null;
     private EditContext editContext;
@@ -137,19 +131,18 @@
     int DocTypeID = 7;
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
     private BranchModel OtherBranch;
     private List<InterBranchTransactionTypeModel> transactionTypeList = new();
-
     private List<BranchModel> BranchList = new();
+
     protected override async Task OnInitializedAsync()
-    {        
+    {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
-        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);        
+        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = User.Identity.Name;
 
         BranchList = BrService.Select().ToList();
@@ -159,14 +152,14 @@
         }
         if (model.PaymentMemoID != null)
         {
-            model.Bills = Iservice.GetBills(model.PaymentMemoID.Value).ToList();            
+            model.Bills = Iservice.GetBills(model.PaymentMemoID.Value).ToList();
         }
         else
         {
             model.BranchID = branchID;
             model.BusinessNature = "Supplier";
         }
-        GetBills();        
+        GetBills();
         transactionTypeList = intermappingIservice.GetTypes().ToList();
     }
 
@@ -208,10 +201,9 @@
         }
     }
 
-
     private async Task OnValidSubmit(EditContext context)
     {
-        
+
         if (HasAuthoriseEdit)
         {
             if (_busy)
@@ -243,11 +235,9 @@
         }
         else
         {
-
             bool? result = await DialogService.ShowMessageBox(
-        "Permission denied!",
-        "You dont have any permission to submit.");
-
+                "Permission denied!",
+                "You dont have any permission to submit.");
         }
     }
 
@@ -268,7 +258,6 @@
         }
     }
 
-
     private void GetBills()
     {
         List<OutstandingBillsModel> collection = new List<OutstandingBillsModel>();
@@ -278,11 +267,11 @@
             collection = OBIservice.SelectByParty(model.PartyInfo.PartyID, branchID).ToList();
         }
     }
+
     private void SetTotalAmt()
     {
         model.TotalAmount = (model.Bills.Sum(x => x.PayAmount) ?? 0);
     }
-
 
     private async Task OtherBranchChanged(BranchModel branch)
     {
@@ -291,33 +280,35 @@
         model.Bills = new();
         await nbusinesschanged(null);
     }
+
     private async Task nbusinesschanged(string val)
     {
         model.BusinessNature = val;
         await PartyChanged(null);
     }
+
     private async Task PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
         await nTransactionChanged(null);
     }
+
     private async Task nTransactionChanged(string nt)
-    {       
+    {
         model.NatureOfTransaction = nt;
         if (nt == "Payment")
         {
-            if(model.OtherBranchID == null)
+            if (model.OtherBranchID == null)
             {
                 snackbar.Add("Select branch!", Severity.Error);
                 model.NatureOfTransaction = null;
             }
             else
-            await OpenOutstandingBills();
+                await OpenOutstandingBills();
         }
         else
         {
             model.Bills.Clear();
         }
     }
-
 }

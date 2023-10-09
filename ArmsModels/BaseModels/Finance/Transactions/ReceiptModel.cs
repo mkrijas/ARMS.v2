@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,6 +9,11 @@ namespace ArmsModels.BaseModels
 {
     public class ReceiptModel : TransactionBaseModel, ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<ReceiptModel>(Json);
+        }
         public int? ReceiptID { get; set; }
         [Required]
         public string BusinessNature { get; set; }
@@ -29,12 +33,6 @@ namespace ArmsModels.BaseModels
         public DateTime? EffectiveDate { get; set; }
         public bool IsRealized { get; set; }
         public List<BillsReceiptModel> Bills { get; set; } = new();
-
-        public object Clone()
-        {
-            string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<ReceiptModel>(Json);
-        }
     }
 
     public class BillsReceiptModel
@@ -75,4 +73,3 @@ namespace ArmsModels.BaseModels
         public DateTime? ReferenceDate { get; set; }
     }
 }
-
