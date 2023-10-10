@@ -45,7 +45,7 @@ namespace Views.Pages.Operations.Gc
 
         private int _tabIndex = 0;
         private bool _tabAdded = false;
-
+        private bool _busy;
         public bool HasPermissionGcServiceEdit { get; set; } = false;
         public int DocTypeID = 46;
 
@@ -121,6 +121,13 @@ namespace Views.Pages.Operations.Gc
 
         private async Task OnValidSubmit(EditContext context)
         {
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+
             if (HasPermissionGcServiceEdit)
             {
                 model.OrderID = Order.OrderID;
@@ -156,6 +163,8 @@ namespace Views.Pages.Operations.Gc
                     "Permission denied!",
                     "You dont have any permission to Add or Edit GC.");
             }
+            await Task.Delay(2000);
+            _busy = false;
         }
 
 
