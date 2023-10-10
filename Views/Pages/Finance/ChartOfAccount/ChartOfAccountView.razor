@@ -18,11 +18,12 @@
 </style>
 
 <MudGrid>
-    <MudPaper md="4" Style="margin-top:20px;">
+    <MudPaper  Style="margin-top:20px;">
         <MudItem style="padding:18px; padding-top:12px;">
             <MudText Typo="Typo.h5">CHART OF ACCOUNTS <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add Ledger" Color="Color.Dark" Size="Size.Small" OnClick="@addledgerbyicon"></MudIconButton></MudText>
         </MudItem>
-        <MudPaper Width="350px" Elevation="0">
+        <MudPaper Width="400px" Elevation="0">
+
             <MudTreeView Color="Color.Primary" ServerData="LoadServerData" Items="TreeItems" T="TreeItemData" sele="SelectedValue" SelectedValueChanged="OnSelected">
                 <ItemTemplate>
                     <ContextMenuTrigger MenuId="@(context.SummaryAccount ? "myMenu" : "myeditMenu")" Data="@context">
@@ -31,6 +32,7 @@
                     </ContextMenuTrigger>
                 </ItemTemplate>
             </MudTreeView>
+
         </MudPaper>
     </MudPaper>
 </MudGrid>
@@ -58,21 +60,11 @@
 
 @code {
 
-    public class ElementCoordinates
-    {
-        public double X { get; set; }
-        public double Y { get; set; }
-    }
-
-    public async Task getcoordinates(int? itemID)
-    {
-        object[] obj = { itemID, "targetBox" };
-        ElementCoordinates coordinates = await jsRuntime.InvokeAsync<ElementCoordinates>("getElementCoordinates", obj);
-    }
-
     private HashSet<TreeItemData> TreeItems { get; set; } = new HashSet<TreeItemData>();
     TreeItemData ContextmenuSource = new();
     TreeItemData SelectedValue;
+    protected List<CoaBranchAvailabilityModel> AllocatedBranches = new();
+    protected bool visible = true;
 
     public class TreeItemData
     {
@@ -85,12 +77,23 @@
         public HashSet<TreeItemData> TreeItems { get; set; }
     }
 
-    protected List<CoaBranchAvailabilityModel> AllocatedBranches = new();
-    protected bool visible = true;
+    public class ElementCoordinates
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+    }
+
+
+
+    public async Task getcoordinates(int? itemID)
+    {
+        object[] obj = { itemID, "targetBox" };
+        ElementCoordinates coordinates = await jsRuntime.InvokeAsync<ElementCoordinates>("getElementCoordinates", obj);
+    }
+
 
     protected override void OnInitialized()
     {
-
         var baseGroups = Iservice.SelectBase();
         foreach (var item in baseGroups)
         {
@@ -103,6 +106,7 @@
                 });
         }
     }
+
 
     public async Task<HashSet<TreeItemData>> LoadServerData(TreeItemData parentNode)
     {
@@ -124,6 +128,8 @@
         return parentNode.TreeItems;
     }
 
+
+    //Function to create group / ledger
     protected async Task ContextMenuOnClick(ItemClickEventArgs e)
     {
         ContextmenuSource = (TreeItemData)e.Data;
@@ -150,7 +156,7 @@
         }
         var result = await dialog.Result;
         ChartOfAccountModel UpdatedModel = (ChartOfAccountModel)result.Data;
-        if (!result.Cancelled)
+        if (!result.Canceled)
         {
             try
             {
@@ -162,7 +168,7 @@
                         SummaryAccount = newledger.SummaryAccount,
                     });
                 snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
-                var har = Collect(TreeItems).ToList();
+                
             }
             catch (Exception a)
             {
@@ -186,13 +192,13 @@
             var editledge = DialogService.Show<AddSubledgerDialog>("Edit Ledger - " + item.Title, parameters);
             var result = await editledge.Result;
             ChartOfAccountModel UpdatedModel = (ChartOfAccountModel)result.Data;
-            if (!result.Cancelled)
+            if (!result.Canceled)
             {
                 var newresult = Iservice.Update(UpdatedModel);
                 item.Title = newresult.AccountName + (newresult.SummaryAccount ? "" : (" (" + newresult.AccountCode + ")"));
                 item.SummaryAccount = newresult.SummaryAccount;
-                snackbar.Add(newresult.AccountName + " updated successfully", Severity.Success);
-                var har = Collect(TreeItems).ToList();
+                snackbar.Add(newresult.AccountName + " Edited successfully", Severity.Success);
+                
             }
         }
     }
@@ -217,8 +223,19 @@
             try
             {
                 var newledger = Iservice.Update(UpdatedModel);
-                snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
-                var har = Collect(TreeItems).ToList();
+
+                ContextmenuSource = GetTreeItem(TreeItems, UpdatedModel.ParentID);
+                if (ContextmenuSource != null)
+                {
+                    ContextmenuSource.TreeItems.Add(new TreeItemData
+                        {
+                            ID = newledger.CoaID,
+                            Title = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
+                            SummaryAccount = newledger.SummaryAccount,
+                        });
+                    snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
+                }
+                
             }
             catch (Exception a)
             {
@@ -229,24 +246,12 @@
 
     //recursion through treeview
 
-    IEnumerable<TreeItemData> Collect(HashSet<TreeItemData> itemTree)
-    {
-        foreach (TreeItemData item in itemTree)
-        {
-            yield return item;
-            if (item.ID == ContextmenuSource.ID)
-            {
-                item.TreeItems = Task.Run(async () => await LoadServerData(item)).Result;
-                item.IsExpanded = true;
-                yield break;
-            }
-            if (item.TreeItems != null)
-            {
-                foreach (var child in Collect(item.TreeItems))
-                    yield return child;
-            }
-        }
-    }
+    //void LoadTreeItem(HashSet<TreeItemData> itemTree,int? ID)
+    //{
+    //    var item = itemTree.First(x => x.ID == ID);
+    //    item.TreeItems = Task.Run(async () => await LoadServerData(item)).Result;
+    //    item.IsExpanded = true;       
+    //}
 
     void OnSelected(TreeItemData item)
     {
@@ -276,5 +281,29 @@
     {
         TreeItemData item = (TreeItemData)e.Data;
         e.PreventShow = !item.SummaryAccount;
+    }
+
+
+    TreeItemData GetTreeItem(HashSet<TreeItemData> tree,int? ID)
+    {
+        if (tree != null)
+        {
+            foreach (var i in tree)
+            {
+                if (i.ID == ID)
+                {
+                    return i;
+                }
+                else
+                {
+                    var item =  GetTreeItem(i.TreeItems, ID);
+                    if (item != null)
+                    {
+                        return item;
+                    }
+                }
+            }
+        }
+        return null;
     }
 }
