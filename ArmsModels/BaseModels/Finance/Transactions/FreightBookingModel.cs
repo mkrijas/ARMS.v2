@@ -3,32 +3,40 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
-{  
-
-    public class ConsolidatedDraftBillModel : TransactionBaseModel
-    {       
+{
+    public class ConsolidatedDraftBillModel : TransactionBaseModel, ICloneable
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<ConsolidatedDraftBillModel>(Json);
+        }
         public int? DraftBillID { get; set; }
         [Required]
         public OrderModel Order { get; set; }
         [Required]
-        public TariffTypeModel TariffType { get; set; }        
-
+        public TariffTypeModel TariffType { get; set; }
         [ValidateComplexType]
-        public List<GcTariffModel> BookedGCs { get; set; }              
-              
+        public List<GcTariffModel> BookedGCs { get; set; }
     }
 
-    public class ProformaInvoiceModel : TransactionBaseModel
+    public class ProformaInvoiceModel : TransactionBaseModel, ICloneable
     {
-        public int? ProformaInvoiceID { get; set; }        
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<ProformaInvoiceModel>(Json);
+        }
+        public int? ProformaInvoiceID { get; set; }
         public int? DraftBillID { get; set; }
         public int? OrderID { get; set; }
         public decimal? FreightAmount { get; set; }
         public PartyModel Party { get; set; }
         public int? PartyCoa { get; set; }
-        public TariffTypeModel TariffType { get; set; }        
+        public TariffTypeModel TariffType { get; set; }
         public string Reference { get; set; }
         public GstModel Gst { get; set; } = new();
         public List<GcTariffModel> BookedGCs { get; set; }
@@ -39,13 +47,12 @@ namespace ArmsModels.BaseModels
         public int? BillingID { get; set; }
     }
 
-
     public class GcTariffModel
     {
-        public long? GcTariffID { get; set; }        
+        public long? GcTariffID { get; set; }
         public long? GcID { get; set; }
         public int? TariffID { get; set; }
-        public string UsageCode{ get; set; }
+        public string UsageCode { get; set; }
         public decimal? Amount { get; set; }
         public int? ConsolidatedDraftBillID { get; set; }
         public virtual DateTime? BillDate { get; set; }
@@ -56,6 +63,5 @@ namespace ArmsModels.BaseModels
         public virtual string GcNumber { get; set; }
         public virtual long? TripNumber { get; set; }
         public virtual string TariffTypeName { get; set; }
-
     }
 }
