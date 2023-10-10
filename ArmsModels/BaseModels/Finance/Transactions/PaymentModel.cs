@@ -79,8 +79,13 @@ namespace ArmsModels.BaseModels
         public DateTime? InitiatedDocumentDate { get; set; } = DateTime.Today;
     }
 
-    public class PaymentFinishModel : PaymentInitiatedModel
+    public class PaymentFinishModel : PaymentInitiatedModel, ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<CashAccountModel>(Json);
+        }
         public PaymentFinishModel()
         {
 
