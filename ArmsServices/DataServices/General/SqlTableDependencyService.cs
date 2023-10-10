@@ -2,8 +2,10 @@
 using ArmsServices.DataServices;
 using Core.IDataServices.General;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.JSInterop;
 using System;
 using TableDependency.SqlClient;
 using TableDependency.SqlClient.Base;
@@ -17,7 +19,7 @@ namespace DAL.DataServices.General
         SqlTableDependency<PushNotificationModel> tableDependency;
         private Microsoft.AspNetCore.SignalR.Client.HubConnection hubConnection;
         public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
-
+        public string ResultErrorMessage { get; set; } = string.Empty;
         private readonly IServiceProvider serviceProvider;
         public SqlTableDependencyService(IServiceProvider _serviceProvider)
         {
@@ -72,8 +74,15 @@ namespace DAL.DataServices.General
 
         private void TabledependencyError(object obj, TableDependency.SqlClient.Base.EventArgs.ErrorEventArgs e)
         {
-            Exception ex = e.Error;
-            throw ex;
+            try
+            {
+
+                Exception ex = e.Error;
+                throw ex;
+            }
+            catch (Exception ex) {
+                ResultErrorMessage = ex.Message;
+            }
         }
     }
 }
