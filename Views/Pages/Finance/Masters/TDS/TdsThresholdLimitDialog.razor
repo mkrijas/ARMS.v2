@@ -44,7 +44,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton form="formtdsThreshold" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        <MudButton Disabled="@_busy" form="formtdsThreshold" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -57,12 +57,14 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private List<NatureOfPaymentModel> naturepayment = new();
 
+    private bool _busy;
+
     protected override void OnInitialized()
     {
         naturepayment = tdsRate.SelectTdsNP().ToList();
     }
 
-    private void OnValidSubmit(EditContext context)
+    private async void OnValidSubmit(EditContext context)
     {
         if (model.NatureOfPayment == null)
         {
@@ -70,6 +72,13 @@
         }
         else
         {
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+
             DateRange dr = new DateRange(model.PeriodFrom, model.PeriodTo);
             List<TdsThresholdLimitModel> tdsList = Iservice.SelectByNP(model.NatureOfPayment?.TdsNPID ?? 0, null).ToList();
             List<DateRange> drList = new List<DateRange>();
@@ -82,6 +91,8 @@
             {
                 MudDialog.Close(model);
             }
+            await Task.Delay(2000);
+            _busy = false;
         }
     }
 
