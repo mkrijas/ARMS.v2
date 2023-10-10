@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
@@ -33,47 +34,43 @@ namespace ArmsModels.BaseModels
         [RequiredIfTrue("IsInterBranch")]
         public int? OtherBranchID { get; set; }
         public string OtherBranchName { get; set; }
-
         public string FileName { get; set; }
-        //public virtual List<FileNames> filenames { get; set; } = new List<FileNames>();
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
-    //public class FileNames
-    //{
-    //    public string FileName { get; set; }
-    //}
-
 
     public class AccountInfoViewModel
     {
         public DateTime? DocumentDate { get; set; }
-        public string DocumentNumber { get; set; }      
+        public string DocumentNumber { get; set; }
         public string CostCenter { get; set; }
         public string Dimension { get; set; }
         public string Narration { get; set; }
-        public List<AccountInfoViewSubModel> Entries { get; set; }  = new List<AccountInfoViewSubModel>();
+        public List<AccountInfoViewSubModel> Entries { get; set; } = new List<AccountInfoViewSubModel>();
     }
 
-
-
     public class AccountInfoViewSubModel
-    {        
+    {
         public string AccountName { get; set; }
         public string BranchName { get; set; }
-        public decimal? Amount {  get; set; }
+        public decimal? Amount { get; set; }
         public string drcr { get { return Amount != null && Amount < 0 ? "Cr" : "Dr"; } }
         public string Reference { get; set; }
     }
 
-    public class GstModel
-    {        
+    public class GstModel : ICloneable
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<GstModel>(Json);
+        }
         public virtual decimal? GstRate { get; set; }
         public decimal? CGST { get; set; } = 0;
         public decimal? SGST { get; set; } = 0;
         public decimal? IGST { get; set; } = 0;
         public decimal? TDS { get; set; } = 0;
 
-        public virtual decimal? TotalGst { get { return (CGST??0) + (SGST??0) + (IGST??0);  }  }
+        public virtual decimal? TotalGst { get { return (CGST ?? 0) + (SGST ?? 0) + (IGST ?? 0); } }
     }
 
     public class ChequeModel
@@ -82,7 +79,5 @@ namespace ArmsModels.BaseModels
         public string ChequeNumber { get; set; }
         public DateTime? ChequeDate { get; set; }
         public int? BankID { get; set; }
-    }    
-      
-
     }
+}

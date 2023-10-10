@@ -11,6 +11,11 @@ namespace ArmsModels.BaseModels
 {
     public class OpTranModel : TransactionBaseModel, ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<OpTranModel>(Json);
+        }
         public OpTranModel()
         {
             Transactions = new();
@@ -30,13 +35,7 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         public List<OpTranSubModel> Transactions { get; set; } = new();
         public virtual TripInfoModel TripInfo { get; set; }  // select   
-        public object Clone()
-        {
-            string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<OpTranModel>(Json);
-        }
     }
-
 
     public class OpTranSubModel
     {

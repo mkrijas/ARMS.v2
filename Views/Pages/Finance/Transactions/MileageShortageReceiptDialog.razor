@@ -15,7 +15,6 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Mileage Shortage Receipt" formID="MileageShortageReceiptForm" model="@model">
     <FormContent>
         <MudPaper Class="p-3">
@@ -25,21 +24,20 @@
                 <MudGrid>
                     <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.TripNo" Label="Trip No" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField>
-                    </MudItem>
+                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
                     </MudItem>
-
                     <MudItem xs="12" md="4">
                         <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
                     </MudItem>
-                    <MudItem  md="4">
+                    <MudItem md="4">
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.RunningKM" Label="Running KM" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RunningKM)" Disabled></MudTextField>
@@ -56,7 +54,6 @@
                     <MudItem xs="12" md="4">
                         <MudNumericField HideSpinButtons @bind-Value="model.FuelPrice" Label="Fuel Price" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.FuelPrice)"></MudNumericField>
                     </MudItem>
-
                     <MudItem xs="12" md="4">
                         <MudTooltip Text="Calculate">
                             <MudButton @onclick="CalculateTotalAmountToDeduct" Variant="Variant.Filled" Color="Color.Primary">Calculate Amount</MudButton>
@@ -70,7 +67,6 @@
                     </MudItem>
                     <MudItem xs="12">
                     </MudItem>
-
                 </MudGrid>
             </EditForm>
         </MudPaper>
@@ -78,23 +74,21 @@
     <VerificationStatus>
         <AutherizationStatusComponent DocTypeID="@DocTypeID" DocumentID="model.MileageShortageReceiptID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
-</DialogForm>
+ </DialogForm>
 
-@code {
+ @code {
+
     [Parameter]
     public MileageShortageReceiptModel model { get; set; }
     [Parameter]
     public bool ReadOnly { get; set; }
-
     private EditContext editContext;
-
     DialogForm dialogForm;
     public bool HasPermissionEdit { get; set; } = false;
     int DocTypeID = 30;
     bool IsDisableSubmit = false;
     [Parameter]
     public string TripNo { get; set; }
-
     private int? branchID = null;
     private string UserID = null;
     public GstUsageCodeModel gstusge = new();
@@ -102,10 +96,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-
 
         editContext = new EditContext(model);
         editContext.OnFieldChanged += EditContextOnFieldChanged;
@@ -115,7 +107,6 @@
         var User = authprov.User;
         branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = User.Identity.Name;
-
         if (model.MileageShortageReceiptID == null)
         {
             model.NatureOfTransaction = "Mileage Shortage";
@@ -123,11 +114,13 @@
         }
         else
         {
+
         }
     }
 
     protected override void OnParametersSet()
     {
+        
     }
 
     protected void Approve(DataApprovedStatus aprvd)
@@ -135,10 +128,10 @@
         if (aprvd.IsApprove)
         {
             model.UserInfo.UserID = UserID;
-                        try
+            try
             {
-            Iservice.Approve(model.MileageShortageReceiptID, model.UserInfo.UserID, aprvd.Remarks);
-            snackbar.Add("Approved Successfully", Severity.Success);
+                Iservice.Approve(model.MileageShortageReceiptID, model.UserInfo.UserID, aprvd.Remarks);
+                snackbar.Add("Approved Successfully", Severity.Success);
             }
             catch (Exception ex)
             {
@@ -146,13 +139,13 @@
             }
         }
     }
-    void EditContextOnFieldChanged(object obj,FieldChangedEventArgs e)
+
+    void EditContextOnFieldChanged(object obj, FieldChangedEventArgs e)
     {
         validationMessageStore.Clear();
         var fieldName = e.FieldIdentifier.FieldName;
         if (fieldName == "AllottedMileage" || fieldName == "AllottedDistance" || fieldName == "FuelPrice")
-        {           
-
+        {
             validationMessageStore.Add(e.FieldIdentifier, "Please calculate before submission!.");
             editContext.NotifyValidationStateChanged();
         }
@@ -160,7 +153,6 @@
 
     public async Task OnValidSubmit(EditContext context)
     {
-
         if (HasPermissionEdit)
         {
             model.UserInfo.UserID = UserID;
@@ -175,31 +167,27 @@
                 snackbar.Add(ex.Message, Severity.Warning);
             }
             dialogForm.Close(model);
-
         }
         else
         {
-
             bool? result = await DialogService.ShowMessageBox(
-        "Permission denied!",
-        "You dont have any permission to submit.");
-
+                "Permission denied!",
+                "You dont have any permission to submit.");
         }
     }
+
     private async Task CalculateTotalAmountToDeduct()
     {
         if (model.ConsumedFuel == null)
         {
-
             bool? result = await DialogService.ShowMessageBox(
-        "Alert",
-        "Can not calculate because consumed fuel is empty.");
+                "Alert",
+                "Can not calculate because consumed fuel is empty.");
             return;
         }
-
         var fuelConsumed = model.AllottedMileage != 0 ? (model.AllottedDistance / model.AllottedMileage) : 0;
         var fuelDifference = model.ConsumedFuel - fuelConsumed;
-        model.TotalAmount = Math.Round(Convert.ToDecimal(fuelDifference * model.FuelPrice),2);
+        model.TotalAmount = Math.Round(Convert.ToDecimal(fuelDifference * model.FuelPrice), 2);
         validationMessageStore.Clear();
         editContext.NotifyValidationStateChanged();
     }
