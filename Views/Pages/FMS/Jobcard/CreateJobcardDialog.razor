@@ -1,15 +1,12 @@
-﻿
-@attribute [Authorize]
-
+﻿@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject SignalRService signalRService
 @inject IJobcardService Iservice
 @inject IWorkshopService Iworkshop
 @inject IJobcardWorkshopService Ijw
 @inject IBreakdownService IBreakdownservice
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-
 @inject IPushNotificationService IpushNotificationService
-@inject SignalRService signalRService
 @inject ITripService Itrip
 @inject ITruckService Itruck
 @inject IDialogService DialogService
@@ -27,13 +24,9 @@
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid Spacing="2">
-@*                    @if (PeriodicMaintenanceId != null)
-                    {*@
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="@(Breakdown.BreakdownType)" Label="Breakdown Type" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField>
-                        </MudItem>
-                        
-                    @*}*@
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@(Breakdown.BreakdownType)" Label="Breakdown Type" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField>
+                    </MudItem>
                     <MudItem xs="12">
                         <MudSelect Label="Select Workshop" Value="SelectedWorkshop" ValueChanged="OnWorkshopChanged" T="WorkshopModel" ToStringFunc="@((p) => p?.WorkshopName)" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                             @foreach (var ditem in Workshops)
@@ -47,7 +40,7 @@
                         {
                             <JobInProgressView model="item" workshop="SelectedWorkshop" @ref="JipComp" SetJobs="SetJob"></JobInProgressView>
                         }
-                        </MudItem>
+                    </MudItem>
                 </MudGrid>
             </EditForm>
         </MudContainer>
@@ -57,10 +50,8 @@
         <MudButton OnClick="AddJob">Add More Jobs</MudButton>
         <MudButton OnClick="Cancel">Cancel</MudButton>
         <MudButton Disabled="@_busy" form="formJobcard" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-
     </DialogActions>
 </MudDialog>
-
 
 @code {
 
@@ -69,15 +60,11 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter] public BreakdownModel Breakdown { get; set; } = new();
     private WorkshopModel SelectedWorkshop = new();
-
     private JobInProgressView JipComp;
     private bool _busy;
-
     [Parameter]
     public int? PeriodicMaintenanceId { get; set; } = null;
     private List<WorkshopModel> Workshops = new();
-
-
     public string UserID { get; set; }
 
     #region SignaIR Notification
@@ -89,12 +76,12 @@
     {
         var e = await auth.GetAuthenticationStateAsync();
         string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
-        if(model == null)
+        if (model == null)
         {
             model = new();
         }
         model.TruckID = Breakdown.TruckID;
-        model.BreakdownID = Breakdown?.BreakdownID??null;
+        model.BreakdownID = Breakdown?.BreakdownID ?? null;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         UserID = user.Identity.Name;
@@ -106,9 +93,9 @@
     private void OnWorkshopChanged(WorkshopModel obj)
     {
         SelectedWorkshop = obj;
-        if(obj != null)
+        if (obj != null)
         {
-            model.workshop = obj.WorkshopID.ToString(); 
+            model.workshop = obj.WorkshopID.ToString();
         }
         else
         {
@@ -118,26 +105,21 @@
 
     private void SetJob()
     {
-        if (model.Jobs != null && model.Jobs.Count() != 0 && model.Jobs.Any(g=>g.RepairJobID != null) )
+        if (model.Jobs != null && model.Jobs.Count() != 0 && model.Jobs.Any(g => g.RepairJobID != null))
         {
             model.job = string.Join(",", model.Jobs.Select(g => g.RepairJobID));
-
         }
         else
         {
             model.job = null;
         }
-
         if (model.Jobs != null && model.Jobs.Count() != 0 && model.Jobs.Any(g => g.RepairJobID == null))
         {
             model.job = null;
         }
-
-        
-        if (model.Jobs != null && model.Jobs.Count() != 0 && model.Jobs.Any(g=>g.Mechanics != null && g.Mechanics.Count()!=0) )
+        if (model.Jobs != null && model.Jobs.Count() != 0 && model.Jobs.Any(g => g.Mechanics != null && g.Mechanics.Count() != 0))
         {
-            model.mechanic = string.Join(",", model.Jobs.Select(g => g.Mechanics.Select(c=>c.MechanicID) ));
-
+            model.mechanic = string.Join(",", model.Jobs.Select(g => g.Mechanics.Select(c => c.MechanicID)));
         }
         else
         {
@@ -146,7 +128,6 @@
         if (model.Jobs != null && model.Jobs.Count() != 0 && model.Jobs.Any(g => g.Mechanics == null || g.Mechanics.Count() == 0))
         {
             model.mechanic = null;
-
         }
     }
 
@@ -157,7 +138,7 @@
 
     private void AddJob()
     {
-        model.Jobs.Add(new JobInProgressModel() {JobStatus = 1});
+        model.Jobs.Add(new JobInProgressModel() { JobStatus = 1 });
     }
 
     private void DeleteJob()
@@ -168,51 +149,49 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-        if (_busy) {
+        if (_busy)
+        {
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
         _busy = true;
 
-
         var CurrentTrip = Itrip.Select(Itruck.GetCurrentTrip(Breakdown.TruckID));
         if (CurrentTrip != null && PeriodicMaintenanceId != null && !Itrip.IsClosed(CurrentTrip.TripID))
         {
             Breakdown = IBreakdownservice.Update(Breakdown);
-            model.BreakdownID = Breakdown?.BreakdownID??null;
+            model.BreakdownID = Breakdown?.BreakdownID ?? null;
             model.PMIID = PeriodicMaintenanceId;
         }
         var authprov = await auth.GetAuthenticationStateAsync();
         model.UserInfo.UserID = authprov.User.Identity.Name;
         int BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         model.BranchID = BranchID;
-
-        try {
+        try
+        {
             model.JobcardID = Iservice.Update(model).JobcardID;
             JobcardWorkshopModel Jwm = new()
-            {
-                WorkshopID = SelectedWorkshop.WorkshopID,
-                JobCardID = model.JobcardID,
-                EnteredOn = DateTime.Now,
-                UserInfo = model.UserInfo
-            };
+                {
+                    WorkshopID = SelectedWorkshop.WorkshopID,
+                    JobCardID = model.JobcardID,
+                    EnteredOn = DateTime.Now,
+                    UserInfo = model.UserInfo
+                };
             Ijw.Update(Jwm);
-
-            foreach(var item in model.Jobs)
+            foreach (var item in model.Jobs)
             {
                 item.JobCardID = model.JobcardID;
-                item.WorkshopID = SelectedWorkshop.WorkshopID;                
+                item.WorkshopID = SelectedWorkshop.WorkshopID;
                 item.UserInfo = model.UserInfo;
                 JipComp.UpdateJob(item);
             }
             snackbar.Add("Saved Successfully", Severity.Success);
-            if(PeriodicMaintenanceId != null)
+            if (PeriodicMaintenanceId != null)
             {
                 notificationMessage = new();
                 notificationMessage.DocumentID = PeriodicMaintenanceId;
                 notificationMessage.MessageGroupID = "PeriodicMaintainence";
                 notificationMessage.DocumentTypeID = 59;
-
                 currentNotificationMessages = IpushNotificationService.SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(BranchID, PeriodicMaintenanceId, 59).ToList();
                 string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
                 try
@@ -223,10 +202,9 @@
                 {
 
                 }
-
                 await signalRService.Send(notificationMessage);
             }
-            MudDialog.Close(DialogResult.Ok(model));            
+            MudDialog.Close(DialogResult.Ok(model));
         }
         catch (Exception ex)
         {
@@ -236,6 +214,3 @@
         _busy = false;
     }
 }
-
-
-

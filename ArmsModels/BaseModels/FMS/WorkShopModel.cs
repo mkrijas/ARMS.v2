@@ -1,4 +1,5 @@
 ﻿using ArmsModels.SharedModels;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -7,13 +8,17 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class WorkshopModel
+    public class WorkshopModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<WorkshopModel>(Json);
+        }
         public WorkshopModel()
         {
             UserInfo = new();
         }
-
         public int? WorkshopID { get; set; }
         [Required]
         public string WorkshopName { get; set; }
@@ -26,8 +31,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? PartyID { get; set; }
         public PartyModel Party { get; set; }
-        public int? GstID { get; set; }       
+        public int? GstID { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
-   
 }

@@ -8,14 +8,18 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class InventoryReleaseModel : TransactionBaseModel,ICloneable/*, IValidatableObject*/
+    public class InventoryReleaseModel : TransactionBaseModel, ICloneable    /*, IValidatableObject*/
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<InventoryReleaseModel>(Json);
+        }
         public InventoryReleaseModel()
         {
             NatureOfTransaction = "Release";
             Narration = "Release from inventory ";
         }
-
         public int? RID { get; set; }
         public int? RequestID { get; set; }// Optional
         [Required]
@@ -25,23 +29,15 @@ namespace ArmsModels.BaseModels
 
         [ValidateComplexType]
         public List<InventoryItemEntryModel> Items { get; set; } = new();
+    }
 
-        //public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-        //{
-        //    if (Items.Count == 0)
-        //        yield return new ValidationResult("No Items selected!");
-        //}
-
+    public class InventoryRequestModel : ICloneable
+    {
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<InventoryReleaseModel>(Json);
+            return JsonConvert.DeserializeObject<InventoryRequestModel>(Json);
         }
-    }
-
-
-    public class InventoryRequestModel
-    {
         public int? RequestID { get; set; }// Primary
         [Required]
         public DateTime? RequestDate { get; set; } = DateTime.Today;
@@ -64,7 +60,6 @@ namespace ArmsModels.BaseModels
                 yield return new ValidationResult("No Items selected!");
         }
     }
-
 
     public class InventoryReleaseSubViewModel
     {

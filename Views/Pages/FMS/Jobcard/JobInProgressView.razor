@@ -1,43 +1,37 @@
 ﻿@inject IRepairJobService Ijob
 @inject IMechanicService Imechanic
-@inject IMechanicJobService Imjp 
-@inject IJobInProgressService Ijip 
+@inject IMechanicJobService Imjp
+@inject IJobInProgressService Ijip
 @inject MudBlazor.ISnackbar snackbar
 
-    <MudGrid Spacing="4">       
-        <MudItem xs="12" md="4" >
-            <MudAutocomplete T="RepairJobModel" Variant="Variant.Outlined" Margin="Margin.Dense"  Label="Job" Value="SelectedJob" ValueChanged="JobChanged" ResetValueOnEmptyText="true"
-                             SearchFunc="SearchJob" ToStringFunc="@(e => e == null ? null : $"{e.RepairJobTitle}")"></MudAutocomplete>
-        </MudItem>
-        <MudItem xs="12" md="8">
-            <MudSelect T="MechanicModel" MultiSelection="true" Label="Assign Mechanic/s" ToStringFunc="@(p=> p.MechanicName)" 
-                       SelectedValuesChanged="mechanicChanged" SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-
-                @foreach (var item in Mechanics)
-                {
-                    <MudSelectItem T="MechanicModel" Value="@item">@item.MechanicName</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>        
-    </MudGrid>
-
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="4">
+        <MudAutocomplete T="RepairJobModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Job" Value="SelectedJob" ValueChanged="JobChanged" ResetValueOnEmptyText="true"
+                         SearchFunc="SearchJob" ToStringFunc="@(e => e == null ? null : $"{e.RepairJobTitle}")"></MudAutocomplete>
+    </MudItem>
+    <MudItem xs="12" md="8">
+        <MudSelect T="MechanicModel" MultiSelection="true" Label="Assign Mechanic/s" ToStringFunc="@(p=> p.MechanicName)"
+                   SelectedValuesChanged="mechanicChanged" SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+            @foreach (var item in Mechanics)
+            {
+                <MudSelectItem T="MechanicModel" Value="@item">@item.MechanicName</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+</MudGrid>
 
 @code {
 
     [Parameter] public JobInProgressModel model { get; set; }
     [Parameter] public WorkshopModel workshop { get; set; }
-
     [Parameter] public EventCallback<bool> SetJobs { get; set; }
     [Parameter] public bool ClearOnSelect { get; set; } = false;
     private MudAutocomplete<RepairJobModel> _autoComplete { get; set; } = new();
-
-
     public RepairJobModel SelectedJob = new();
     private WorkshopModel SelectedWorkshop = new();
     private List<RepairJobModel> jobslist = new();
     private List<MechanicModel> Mechanics = new();
     public HashSet<MechanicModel> SelectedMechanics;
-
 
     protected override void OnInitialized()
     {
@@ -46,36 +40,31 @@
         Mechanics = Imechanic.SelectByWorkshop(model?.WorkshopID).ToList();
     }
 
-
     private async Task<IEnumerable<RepairJobModel>> SearchJob(string searchString)
     {
         return await Task.FromResult(jobslist.Where(x => x.RepairJobTitle.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
-
     private async Task JobChanged(RepairJobModel obj)
     {
         SelectedJob = obj;
         model.RepairJobID = obj?.RepairJobID;
-
         await SetJobs.InvokeAsync();
     }
-
 
     private async Task mechanicChanged(IEnumerable<MechanicModel> obj)
     {
         model.Mechanics.Clear();
         SelectedMechanics = obj.ToHashSet();
-
-        foreach(var item in obj)
+        foreach (var item in obj)
         {
             model.Mechanics.Add(new MechanicJobModel
-            {
-                AssignedOn = DateTime.Now,
-                MechanicID = item.MechanicID,
-                UserInfo = model.UserInfo,
-                JipID = model.JipID,
-            });
+                {
+                    AssignedOn = DateTime.Now,
+                    MechanicID = item.MechanicID,
+                    UserInfo = model.UserInfo,
+                    JipID = model.JipID,
+                });
         }
         await SetJobs.InvokeAsync();
     }
@@ -100,7 +89,6 @@
     public void UpdateJob(JobInProgressModel job)
     {
         var Createdjob = Ijip.Update(job);
-
         foreach (var item in job.Mechanics)
         {
             item.JipID = Createdjob.JipID;
@@ -108,12 +96,4 @@
             Imjp.Update(item);
         }
     }
-
-    //public void AddMechanicToJob(JobInProgressModel job,List<MechanicModel> AssignedMechanics)
-    //{
-    //    foreach (var item in job.Mechanics)
-    //    {
-    //        Imjp.Update(item);
-    //    }
-    //}
 }
