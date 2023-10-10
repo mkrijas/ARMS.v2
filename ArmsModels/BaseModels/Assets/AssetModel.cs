@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class AssetModel
+    public class AssetModel : ICloneable
     {
         public object Clone()
         {
@@ -21,7 +21,6 @@ namespace ArmsModels.BaseModels
         public string Description { get; set; }
         public int? ParentAssetID { get; set; }
         public bool IsComplex { get; set; } = false;
-
         [StringLength(8)]
         public virtual string AssetCode { get; set; }
         public string SerialNumber { get; set; }
@@ -89,7 +88,7 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
-    public class AssetSubClassModel
+    public class AssetSubClassModel : ICloneable
     {
         public object Clone()
         {
@@ -120,8 +119,13 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
-    public class AssetPostingGroupModel
+    public class AssetPostingGroupModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AssetPostingGroupModel>(Json);
+        }
         public int? ID { get; set; }
         [Required]
         public string Title { get; set; }

@@ -1,10 +1,17 @@
 ﻿using ArmsModels.BaseModels;
+using Newtonsoft.Json;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Core.BaseModels.Finance.Transactions
 {
-    public class MileageShortageReceiptModel : TransactionBaseModel
+    public class MileageShortageReceiptModel : TransactionBaseModel, ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<MileageShortageReceiptModel>(Json);
+        }
         public MileageShortageReceiptModel()
         {
             NatureOfTransaction = "Mileage Shortage";
@@ -23,6 +30,5 @@ namespace Core.BaseModels.Finance.Transactions
         public decimal? FuelPrice { get; set; }
         [Range(1, (double)decimal.MaxValue, ErrorMessage = "Total amount must be greater than 0")]
         public override decimal? TotalAmount { get; set; } = 0;
-
     }
 }

@@ -10,14 +10,18 @@ namespace ArmsModels.BaseModels
 {
     public class PartyModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<PartyModel>(Json);
+        }
         private string _tradeName;
         public PartyModel()
-        {                   
+        {
 
         }
         public int? PartyID { get; set; } = 0;
-        public string PartyCode { get; set; }        
-
+        public string PartyCode { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
         public string TradeName
@@ -34,8 +38,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public bool PanAvailable { get; set; }
         [RequiredIfTrue("PanAvailable")]
-        [StringLength(10,MinimumLength =10,ErrorMessage = "PAN must be 10 digits!")]
-        public string PAN { get; set; }        
+        [StringLength(10, MinimumLength = 10, ErrorMessage = "PAN must be 10 digits!")]
+        public string PAN { get; set; }
         [Required]
         public bool TdsApplicable { get; set; }
         public string GstType { get; set; }// Registered,UnRegistered,Export,Deemed Export,Exempted,SEZ
@@ -69,16 +73,15 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         public List<ContactModel> Contacts { get; set; } = new();
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+    }
 
+    public class VendorPostingGroupModel : ICloneable
+    {
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<PartyModel>(Json);
+            return JsonConvert.DeserializeObject<VendorPostingGroupModel>(Json);
         }
-    } 
-
-    public class VendorPostingGroupModel
-    {
         public int? VendorPostingGroupID { get; set; }
         [Required]
         public string Title { get; set; }
@@ -94,8 +97,13 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
-    public class CustomerPostingGroupModel
+    public class CustomerPostingGroupModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<CustomerPostingGroupModel>(Json);
+        }
         public int? CustomerPostingGroupID { get; set; }
         [Required]
         public string Title { get; set; }
@@ -111,8 +119,13 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
-    public class RenterPostingGroupModel
+    public class RenterPostingGroupModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<RenterPostingGroupModel>(Json);
+        }
         public int? RenterPostingGroupID { get; set; }
         [Required]
         public string Title { get; set; }

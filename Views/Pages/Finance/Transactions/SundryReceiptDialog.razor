@@ -13,8 +13,7 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sundry Receipt" formID="sundryReceiptForm" model="@model">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sundry Receipt" formID="sundryReceiptForm" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="sundryReceiptForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
@@ -22,31 +21,30 @@
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="12">
-                        <PaymentAccountSelector @bind-PaymentMode="@model.ReceiptMode" HideBankCharges HideTool
-                        @bind-ArdCode="@model.ReceiptArdCode" @bind-CoaID="@model.ReceiptCoaID" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
+                        <PaymentAccountSelector @bind-PaymentMode="@model.ReceiptMode" HideBankCharges HideTool @bind-ArdCode="@model.ReceiptArdCode" @bind-CoaID="@model.ReceiptCoaID" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
+                    </MudItem>
+                    <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.PayerName" Label="Payer Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayerName)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
+                    </MudItem>
+                    <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="ReadOnly" Mask="@(new PatternMask("0000000000"))" @bind-Value="model.PayerContactNo" Label="Payer Contact No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayerContactNo)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
+                    </MudItem>
+                    <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
+                    </MudItem>
+                    <MudItem xs="12" md="4">
                         <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
+                    </MudItem>
+                    <MudItem xs="12" md="4">
                         <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
-                        </MudItem>
-                        <MudItem xs="12" md="12">
+                    </MudItem>
+                    <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                        </MudItem>
-                        <MudItem xs="12">
+                    </MudItem>
+                    <MudItem xs="12">
                         <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
                             <thead>
                                 <tr>
@@ -86,7 +84,6 @@
                             </tbody>
                         </MudSimpleTable>
                     </MudItem>
-
                 </MudGrid>
             </EditForm>
         </MudPaper>
@@ -97,36 +94,31 @@
 </DialogForm>
 
 @code {
+
     [Parameter]
     public SundryReceiptModel model { get; set; }
     [Parameter]
     public bool ReadOnly { get; set; }
-
     private EditContext editContext;
-
     DialogForm dialogForm;
-    public bool HasAuthoriseEdit { get; set; } = false;
-    int DocTypeID = 12;
-
     private SundryReceiptEntryModel spe = new SundryReceiptEntryModel();
-
     private int? branchID = null;
     private string UserID = null;
     public GstUsageCodeModel gstusge = new();
 
+    private bool _busy;
+    public bool HasAuthoriseEdit { get; set; } = false;
+    int DocTypeID = 12;
 
     protected override async Task OnInitializedAsync()
     {
-
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = User.Identity.Name;
-
         if (model.SundryReceiptID == null)
         {
             model.NatureOfTransaction = "Sundry Receipt";
@@ -158,9 +150,10 @@
             model.Entries.Add(spe);
             model.TotalAmount = model.Entries.Sum(x => x.Amount);
             spe = new();
-            gstusge = null; 
+            gstusge = null;
         }
     }
+
     protected void Approve(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
@@ -178,9 +171,15 @@
         }
     }
 
-
     public async Task OnValidSubmit(EditContext context)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         if (HasAuthoriseEdit)
         {
             model.UserInfo.UserID = UserID;
@@ -195,15 +194,14 @@
                 snackbar.Add(ex.Message, Severity.Warning);
             }
             dialogForm.Close(model);
-
         }
         else
         {
-
             bool? result = await DialogService.ShowMessageBox(
-        "Permission denied!",
-        "You dont have any permission to submit.");
-
+                "Permission denied!",
+                "You dont have any permission to submit.");
         }
+        await Task.Delay(2000);
+        _busy = false;
     }
 }

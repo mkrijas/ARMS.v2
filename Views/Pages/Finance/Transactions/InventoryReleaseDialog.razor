@@ -12,7 +12,7 @@
 @inject ITruckService Itruck
 @inject IStoreService storeIservice
 
-<DialogForm @ref="@dialogForm" ReadOnly="false" Title="Inventory Release" formID="inventoryReleaseForm" model="@model">
+<DialogForm @ref="@dialogForm" ReadOnly="false" Title="Inventory Release" formID="inventoryReleaseForm" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="inventoryReleaseForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
@@ -49,7 +49,6 @@
                     </MudItem>
                     @if (ReadOnly)
                     {
-
                         <MudItem xs="12">
                             <h6><u>Items</u></h6>
                             <MudGrid Justify="Justify.Center">
@@ -87,7 +86,6 @@
                                 }
                             </MudGrid>
                         </MudItem>
-
                     }
                 </MudGrid>
             </EditForm>
@@ -123,6 +121,8 @@
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
     private EditContext editContext;
     DialogForm dialogForm;
+
+    private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
@@ -188,11 +188,8 @@
                     item.ItemQty = (item.PendingQty != null && item.AvailableQty != null && (item.PendingQty > item.AvailableQty)) ? item.AvailableQty : item.PendingQty;
                 }
             }
-
-            //IsDisableStore = true;
         }
         IsDisableStore = true;
-
         if (ReadOnly)
         {
             IsDisableStore = true;
@@ -203,24 +200,7 @@
     protected override void OnParametersSet()
     {
         editContext = new EditContext(model);
-        // editContext.OnValidationRequested += OnValidationRequestedAsync;
     }
-
-    //public void AddSubList()
-    //{
-    //    Entrymodel.ItemID = SelectedItems.InventoryItemID;
-    //    if (Entrymodel.ItemID == null || Entrymodel.ItemRate == null || Entrymodel.ItemQty == null)
-    //    {
-    //        snackbar.Add("Please fill in all fields.", Severity.Success);
-    //        return;
-    //    }
-    //    model.Items.Add(Entrymodel);
-    //    decimal total = ((Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value));
-    //    model.TotalAmount = model.TotalAmount + total;
-    //    Entrymodel = new();
-    //    SelectedItems = null;
-    //    SelectedItems = new();
-    //}
 
     protected void getitemCode(InventoryItemModel item)
     {
@@ -283,7 +263,6 @@
         else
         {
             IsDisableTruck = false;
-            //IsDisableStore = false;
         }
     }
 
@@ -292,8 +271,15 @@
         model.Truck = obj;
     }
 
-    public void OnValidSubmit(EditContext context)
+    public async void OnValidSubmit(EditContext context)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         try
         {
             if (InventoryRequestSubList == null || InventoryRequestSubList.Count() == 0)
@@ -335,6 +321,8 @@
         {
             snackbar.Add(ex.Message, Severity.Error);
         }
+        await Task.Delay(2000);
+        _busy = false;
     }
 
     private void DeleteItem(InventoryItemEntryModel ItemDetails)

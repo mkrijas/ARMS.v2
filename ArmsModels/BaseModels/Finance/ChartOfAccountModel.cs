@@ -4,16 +4,21 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using ArmsModels.SharedModels;
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class ChartOfAccountModel
+    public class ChartOfAccountModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<ChartOfAccountModel>(Json);
+        }
         public ChartOfAccountModel()
         {
             UserInfo = new();
         }
-
         public int? CoaID { get; set; }
         [Required]
         public int? ParentID { get; set; }
@@ -31,7 +36,6 @@ namespace ArmsModels.BaseModels
         public DateTime? PeriodTo { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
-
 
     public class CoaBranchAvailabilityModel
     {

@@ -47,7 +47,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        <MudButton Disabled="@_busy" form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -62,14 +62,23 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private ChartOfAccountModel SelectedAccount = null;
 
+    private bool _busy;
+
     protected override void OnInitialized()
     {
         items = itemService.SearchByDescription(string.Empty).ToList();
         gstRate = gstusageIservice.GetGstRates().ToList();
     }
 
-    private void OnValidSubmit(EditContext context)
+    private async void OnValidSubmit(EditContext context)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         DateRange dr = new DateRange(model.PeriodFrom, model.PeriodTo);
         List<GstItemModel> tdsList = Iservice.SelectByItem(model.ItemID.Value).Where(x => x.HsnID != model.HsnID).ToList();
         List<DateRange> drList = new List<DateRange>();
@@ -82,6 +91,8 @@
         {
             MudDialog.Close(model);
         }
+        await Task.Delay(2000);
+        _busy = false;
     }
 
     private void Cancel()

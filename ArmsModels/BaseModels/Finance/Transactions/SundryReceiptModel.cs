@@ -3,18 +3,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels.Finance.Transactions
 {
-    public class SundryReceiptModel:TransactionBaseModel
+    public class SundryReceiptModel : TransactionBaseModel, ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<CashAccountModel>(Json);
+        }
         public int? SundryReceiptID { get; set; }
         [Required]
         public string ReceiptMode { get; set; }
         [Required]
         public string ReceiptArdCode { get; set; }
         [Required]
-        public int? ReceiptCoaID { get; set; }        
+        public int? ReceiptCoaID { get; set; }
         public string Reference { get; set; }
         [Required]
         public string PayerName { get; set; }
@@ -33,7 +39,7 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         [Required]
         public string UsageCode { get; set; }
         [Required]
-        public int? CoaID { get; set; }        
+        public int? CoaID { get; set; }
         [Required]
         public decimal? Amount { get; set; }
         public string Rederence { get; set; }

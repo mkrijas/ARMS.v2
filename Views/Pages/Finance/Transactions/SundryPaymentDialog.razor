@@ -7,7 +7,7 @@
 
 @inject ISundryPaymentService Iservice
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sundry Payment" formID="sundryPaymentForm" model="@model">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sundry Payment" formID="sundryPaymentForm" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="sundryPaymentForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
@@ -24,9 +24,7 @@
                         <MudNumericField HideSpinButtons MaxLength="10" ReadOnly="ReadOnly" @bind-Value="model.PayeeContactNo" Label="Payee Contact No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayeeContactNo)"></MudNumericField>
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <PaymentAccountSelector PaymentMode="@model.PaymentMode" PaymentModeChanged="OnChangePaymentMode"
-                                                @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID"
-                                                BankCharges="@model.BankCharges" @bind-BankTool="@model.PaymentTool" BankChargesChanged="CalculateTotalAmount" />
+                        <PaymentAccountSelector PaymentMode="@model.PaymentMode" PaymentModeChanged="OnChangePaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" BankCharges="@model.BankCharges" @bind-BankTool="@model.PaymentTool" BankChargesChanged="CalculateTotalAmount" />
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
@@ -108,24 +106,19 @@
     public SundryPaymentModel model { get; set; }
     [Parameter]
     public bool ReadOnly { get; set; }
-
     private SundryPaymentEntryModel spe { get; set; } = new();
     private GstUsageCodeModel gstusge;
-
     private int? branchID = null;
     private string UserID = null;
-
     private EditContext editContext;
-
     DialogForm dialogForm;
 
+    private bool _busy;
     public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 11;
 
     protected override async Task OnInitializedAsync()
     {
-
-
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
@@ -133,7 +126,6 @@
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         UserID = user.Identity.Name;
-
         if (model == null)
         {
             model = new()
@@ -150,11 +142,9 @@
         }
     }
 
-
     protected override void OnParametersSet()
     {
         editContext = new EditContext(model);
-        // editContext.OnValidationRequested += OnValidationRequestedAsync;
     }
 
     void UsageCodeChanged(GstUsageCodeModel uc)
@@ -189,29 +179,37 @@
             model.Entries.Add(spe);
             CalculateTotalAmount(model.BankCharges);
             spe = new();
-            gstusge  = null;
+            gstusge = null;
         }
     }
+
     public void CalculateTotalAmount(decimal? val)
     {
         model.BankCharges = val;
         if (model.PaymentMode.ToLower().Trim() == ("Cash").ToLower().Trim())
         {
             model.TotalAmount = model.Entries.Sum(x => x.Amount);
-
         }
         else
         {
             model.TotalAmount = model.Entries.Sum(x => x.Amount) + model?.BankCharges ?? 0;
         }
     }
+
     public void OnChangePaymentMode(string? val)
     {
         model.PaymentMode = val;
         CalculateTotalAmount(model.BankCharges);
     }
+
     public async Task OnValidSubmit(EditContext context)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
 
         if (HasAuthoriseEdit)
         {
@@ -220,7 +218,6 @@
                 model = Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
                 dialogForm.Close(model);
-
             }
             catch (Exception ex)
             {
@@ -229,11 +226,11 @@
         }
         else
         {
-
             bool? result = await DialogService.ShowMessageBox(
-        "Permission denied!",
-        "You dont have any permission to submit.");
-
+                "Permission denied!",
+                "You dont have any permission to submit.");
         }
+        await Task.Delay(2000);
+        _busy = false;
     }
 }

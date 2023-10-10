@@ -6,7 +6,7 @@
 @inject IDialogService DialogService
 @attribute [Authorize]
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Journal" formID="journalForm" model="@model">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Journal" formID="journalForm" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="journalForm" OnValidSubmit="OnValidSubmit" Model="model">
@@ -47,26 +47,24 @@
 </DialogForm>
 
 @code {
+
     [Parameter]
     public JournalModel model { get; set; }
     [Parameter]
     public bool ReadOnly { get; set; }
-
     private int? branchID = null;
     private string UserID = null;
+    private EditContext editContext;
+    DialogForm dialogForm;
 
+    private bool _busy;
     public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 18;
-
-    private EditContext editContext;
-
-    DialogForm dialogForm;
 
     protected void Approve(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
         {
-
             model.UserInfo.UserID = UserID;
             try
             {
@@ -82,10 +80,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
@@ -97,6 +93,13 @@
 
     public async Task OnValidSubmit()
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         if (HasAuthoriseEdit)
         {
             model.UserInfo.UserID = UserID;
@@ -111,17 +114,14 @@
             {
                 snackbar.Add(ex.Message, Severity.Warning);
             }
-
         }
         else
         {
-
             bool? result = await DialogService.ShowMessageBox(
-        "Permission denied!",
-        "You dont have any permission to submit.");
-
+                "Permission denied!",
+                "You dont have any permission to submit.");
         }
-
+        await Task.Delay(2000);
+        _busy = false;
     }
-
 }

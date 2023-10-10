@@ -4,7 +4,6 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IChartOfAccountService accountService
 @using ArmsServices.DataServices.General
-
 @inject IConfigTable IConfig
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
@@ -65,7 +64,7 @@
                                 <MudButton @onclick="CancelBankPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
                                 @if (!IsOnlyView)
                                 {
-                                    <MudButton ButtonType="ButtonType.Submit" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
+                                    <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
                                 }
                             </MudItem>
                         </MudGrid>
@@ -86,6 +85,7 @@
     private List<BankPostingGroupModel> listOfItems = new();
     BankPostingGroupModel SelectedModel = new();
     public bool value = false;
+    private bool _busy;
     public string titleValue = null;
     private List<BankPostingGroupModel> collection = new List<BankPostingGroupModel>();
     private ChartOfAccountModel SelectedAccountBankAccount = null;
@@ -145,6 +145,13 @@
 
     public async Task CreateBankPostingGroup()
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
@@ -159,6 +166,8 @@
         {
             snackbar.Add(a.Message, Severity.Error);
         }
+        await Task.Delay(2000);
+        _busy = false;
     }
 
     private async Task OpenDialog(BankPostingGroupModel ii)
@@ -168,9 +177,7 @@
 
     private void Delete(InventoryItemModel ii)
     {
-        //IIservice.Delete(ii.InventoryItemID, "Rijas");
-        //snackbar.Add("Deleted Successfully", Severity.Success);
-        //GetAll();
+
     }
 
     private void OpenDialogGroup(BankPostingGroupModel ig)
@@ -186,14 +193,13 @@
 
     void OnAppearing(MenuAppearingEventArgs e)
     {
-        //TreeItemData item = (TreeItemData)e.Data;
-        // e.PreventShow = !item.HasChildren;
+
     }
 
     protected void ContextMenuOnClickedit(ItemClickEventArgs e)
     {
         IsOnlyView = false;
-        model = (BankPostingGroupModel)e.Data;
+        model = (BankPostingGroupModel)((BankPostingGroupModel)e.Data).Clone();
         SelectedAccountBankAccount = model.BankAccount;
         SelectedAccountBankCharges = model.BankCharges;
         SelectedAccountBankProcessingFee = model.ProcessingFee;

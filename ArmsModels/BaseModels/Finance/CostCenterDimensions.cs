@@ -12,8 +12,8 @@ namespace ArmsModels.BaseModels
     {
         public CategoryModel()
         {
-        }
 
+        }
         public int? CategoryID { get; set; }
         public string CategoryName { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
@@ -28,13 +28,12 @@ namespace ArmsModels.BaseModels
     {
         public CostCenterModel()
         {
-        }
 
+        }
         public int? CostCenterID { get; set; }
         public string CostCenter { get; set; }
         public CategoryModel Category { get; set; } = new();
         public UserInfoModel UserInfo { get; set; } = new();
-
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
@@ -44,7 +43,6 @@ namespace ArmsModels.BaseModels
 
     public class DimensionModel : ICloneable
     {
-
         public int? DimensionID { get; set; }
         public string Dimension { get; set; }
         public CategoryModel Category { get; set; } = new();

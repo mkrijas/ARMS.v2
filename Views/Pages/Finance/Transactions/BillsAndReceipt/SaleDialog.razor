@@ -15,7 +15,7 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JsRuntime
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sale" formID="saleForm" model="@model">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sale" formID="saleForm" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="saleForm" Model="@model" OnValidSubmit="OnValidSubmit">
@@ -69,6 +69,7 @@
 
     public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 13;
+    private bool _busy;
 
     public GstUsageCodeModel gstusge = new();
     private GstModel taxModel = new GstModel();
@@ -83,7 +84,6 @@
         var user = authprov.User;
         branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
         UserID = user.Identity.Name;
-
         if (model?.SID != null)
         {
             model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
@@ -150,6 +150,13 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         if (HasAuthoriseEdit)
         {
             try
@@ -171,5 +178,7 @@
                 "Permission denied!",
                 "You dont have any permission to submit.");
         }
+        await Task.Delay(2000);
+        _busy = false;
     }
 }

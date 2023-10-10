@@ -7,7 +7,7 @@ using System.Reflection.Metadata;
 
 namespace ArmsModels.BaseModels
 {
-    public class AssetDocumentRequestModel
+    public class AssetDocumentRequestModel : ICloneable
     {
         public object Clone()
         {
@@ -24,7 +24,7 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; }
         public List<AssetModel> Assets { get; set; }
 
-    }   
+    }
 
     public class AssetDocumentModel
     {
@@ -46,7 +46,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? EndDate { get; set; }
         public int? NotificationID { get; set; }
-        public UserInfoModel UserInfo { get; set; }       
+        public UserInfoModel UserInfo { get; set; }
     }
 
     public class AssetDocumentTypeModel
@@ -55,7 +55,6 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
         }
-
         public int? DocumentTypeID { get; set; }
         public string DocumentTypeName { get; set; }
         public int? WarnBefore { get; set; }
@@ -63,6 +62,4 @@ namespace ArmsModels.BaseModels
         public GstUsageCodeModel UsageCode { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
-
-
 }

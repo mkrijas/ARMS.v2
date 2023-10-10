@@ -9,7 +9,6 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-
 <MudGrid>
     <MudItem xs="4" lg="4">
         <MudPaper Width="100%" Class="p-2">
@@ -33,7 +32,6 @@
             </MudList>
         </MudPaper>
     </MudItem>
-
     @if (@value == true)
     {
         <MudItem xs="8" lg="8">
@@ -72,7 +70,7 @@
                                 <MudButton @onclick="CancelAssetPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
                                 @if (!IsOnlyView)
                                 {
-                                    <MudButton ButtonType="ButtonType.Submit" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
+                                    <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
                                 }
                             </MudItem>
                         </MudGrid>
@@ -82,7 +80,6 @@
         </MudItem>
     }
 </MudGrid>
-
 <ContextMenu Id="myMenu" OnAppearing="OnAppearing">
     <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Group</Item>
 </ContextMenu>
@@ -97,14 +94,8 @@
     public string titleValue = null;
     private List<AssetPostingGroupModel> collection = new List<AssetPostingGroupModel>();
 
-    //private async Task<IEnumerable<ChartOfAccountModel>> SearchAccountsBankAccount(string searchString)
-    //{
-    //    await Task.Delay(5);
-    //    int coID =Convert.ToInt32(IConfig.GetByID("FinanceBankGroupID").ValueString);
-    //    return await Task.FromResult(accountService.SelectChildren(coID));
-    //}
-
     private bool IsOnlyView { get; set; } = false;
+    private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
@@ -131,6 +122,13 @@
 
     public async Task CreateAssetPostingGroup()
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
@@ -145,11 +143,12 @@
         {
             snackbar.Add(a.Message, Severity.Error);
         }
+        await Task.Delay(2000);
+        _busy = false;
     }
 
     private async Task OpenDialog(AssetPostingGroupModel ii)
     {
-
 
     }
 
@@ -163,17 +162,15 @@
 
     void OnAppearing(MenuAppearingEventArgs e)
     {
-        //TreeItemData item = (TreeItemData)e.Data;
-        // e.PreventShow = !item.HasChildren;
+
     }
 
     protected void ContextMenuOnClickedit(ItemClickEventArgs e)
     {
         IsOnlyView = false;
-        model = (AssetPostingGroupModel)e.Data;
+        model = (AssetPostingGroupModel)((AssetPostingGroupModel)e.Data).Clone();
         value = true;
         titleValue = "Edit Asset Posting Group";
-        //await OpenDialogGroup(ig);
     }
 
     protected void ViewDetails(MouseEventArgs e, AssetPostingGroupModel Data)
@@ -182,6 +179,5 @@
         model = Data;
         value = true;
         titleValue = "Asset Posting Group | " + Data.Title;
-        //await OpenDialogGroup(ig);
     }
 }

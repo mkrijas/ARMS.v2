@@ -1,16 +1,18 @@
 ﻿@inject AuthenticationStateProvider auth
 @inject IUnreconciledBankEntryService Iservice
+@inject MudBlazor.ISnackbar snackbar
+
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add/Edit UnRecounciled Bank Entry
         </MudText>
     </TitleContent>
-    <DialogContent>        
-            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-                <MudGrid Spacing="2">
+    <DialogContent>
+        <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+            <ObjectGraphDataAnnotationsValidator />
+            <ValidationSummary />
+            <MudGrid Spacing="2">
                 <MudItem xs="12" md="6">
                     <MudTextField @bind-Value="@(model.ArdCode)" Label="Bank Code" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="true" />
                 </MudItem>
@@ -43,29 +45,41 @@
                     <MudTextField @bind-Value="model.PaymentRemarks" Label="Payment Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PaymentRemarks)"></MudTextField>
                 </MudItem>
             </MudGrid>
-            </EditForm>  
+        </EditForm>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-10">Submit</MudButton>
+        <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-10">Submit</MudButton>
     </DialogActions>
 </MudDialog>
+
 @code {
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
     [Parameter]
     public UnReconciledBankEntryModel model { get; set; } = new();
+    private bool _busy;
 
     void Cancel()
     {
         MudDialog.Cancel();
     }
-    public async Task Submit() {
+
+    public async Task Submit()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
         Iservice.Update(model);
         MudDialog.Close(DialogResult.Ok(true));
-    }
 
+        await Task.Delay(2000);
+        _busy = false;
+    }
 }

@@ -3,19 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class DrCrNoteModel : TransactionBaseModel
+    public class DrCrNoteModel : TransactionBaseModel, ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<DrCrNoteModel>(Json);
+        }
         public int? DrCrNoteID { get; set; }
         [Required]
         public string DrCrType { get; set; }  // Debit Note , Credit Note 
         [Required]
         public string BusinessNature { get; set; } = "Select";// "Suppier,Customer,Renter"
         [Required]
-        public PartyModel Party { get; set; }       
-        public int? PartyCoaID { get; set; }        
+        public PartyModel Party { get; set; }
+        public int? PartyCoaID { get; set; }
         public string Reference { get; set; }
         [Required]
         public string ReasonCode { get; set; } // dropdownlist

@@ -3,11 +3,10 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
-
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Contra Entry" formID="cotraForm" model="@model">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Contra Entry" formID="cotraForm" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="cotraForm" OnValidSubmit="OnValidSubmit" Model="model">
@@ -25,17 +24,12 @@
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <strong>Debit/Deposit A/c</strong>
-                        <PaymentAccountSelector @bind-PaymentMode="@model.ContraModeHome"
-                                                @bind-ArdCode="@model.ArdCodeHome" @bind-CoaID="@model.CoaIDHome"
-                                                @bind-BankCharges="@model.BankCharges" HideBankCharges @bind-BankTool="@model.PaymentTool" />
+                        <PaymentAccountSelector @bind-PaymentMode="@model.ContraModeHome" @bind-ArdCode="@model.ArdCodeHome" @bind-CoaID="@model.CoaIDHome" @bind-BankCharges="@model.BankCharges" HideBankCharges @bind-BankTool="@model.PaymentTool" />
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <strong>Credit/Draw A/c</strong>
-                        <PaymentAccountSelector @bind-PaymentMode="@model.ContraModeOther"
-                        @bind-ArdCode="@model.ArdCodeOther" @bind-CoaID="@model.CoaIDOther"
-                        @bind-BankCharges="@model.BankCharges" HideBankCharges @bind-BankTool="@model.PaymentTool" />
+                        <PaymentAccountSelector @bind-PaymentMode="@model.ContraModeOther" @bind-ArdCode="@model.ArdCodeOther" @bind-CoaID="@model.CoaIDOther" @bind-BankCharges="@model.BankCharges" HideBankCharges @bind-BankTool="@model.PaymentTool" />
                     </MudItem>
-
                     @if (model.PaymentTool == "CHEQUE")
                     {
                         <MudItem xs="12" md="6">
@@ -62,25 +56,24 @@
         <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.ContraID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
+
 @code {
+
     [Parameter]
     public ContraModel model { get; set; }
     [Parameter]
     public bool ReadOnly { get; set; }
-
-    private int? branchID = null;
-    private string UserID = null;
-
     [Parameter]
     public string PageToRedirectLink { get; set; }
     public string DocNumber { get; set; }
     public DateTime? DocDate { get; set; }
     public string DocType { get; set; }
-
+    private int? branchID = null;
+    private string UserID = null;
     private EditContext editContext;
-
     DialogForm dialogForm;
 
+    private bool _busy;
     public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 3;
 
@@ -89,7 +82,6 @@
         if (aprvd.IsApprove)
         {
             model.UserInfo.UserID = UserID;
-
             try
             {
                 Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks);
@@ -121,6 +113,13 @@
 
     public async Task OnValidSubmit()
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         if (HasAuthoriseEdit)
         {
             model.IsPayment = true;
@@ -134,6 +133,7 @@
                 "Permission denied!",
                 "You dont have any permission to submit.");
         }
+        await Task.Delay(2000);
+        _busy = false;
     }
-
 }

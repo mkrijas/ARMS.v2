@@ -1,11 +1,17 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels.Finance.Transactions
 {
-    public class TaxVoucherModel : TransactionBaseModel
+    public class TaxVoucherModel : TransactionBaseModel, ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<TaxVoucherModel>(Json);
+        }
         public int? TaxVoucherID { get; set; }
         [Required]
         public AssetDocumentTypeModel DocumentType { get; set; }
@@ -16,7 +22,7 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         [Required]
         public DateTime? InvoiceDate { get; set; }
         public bool? IsAgent { get; set; } = false;
-        [RequiredIfTrue("IsAgent")]       
+        [RequiredIfTrue("IsAgent")]
         public PartyModel Agent { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsAgent == false")]
         public string PaymentMode { get; set; }
@@ -37,8 +43,6 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public virtual string AccountName { get; set; }
         public List<TaxVoucherSubModel> TaxVoucherSubList { get; set; } = new();
     }
-
-
 
     public class TaxVoucherSubModel
     {
