@@ -1,11 +1,18 @@
 ﻿using ArmsModels.BaseModels;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Core.BaseModels.Finance.Transactions
 {
-    public class OpInventoryReleaseModel:TransactionBaseModel
+    public class OpInventoryReleaseModel : TransactionBaseModel, ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<OpInventoryReleaseModel>(Json);
+        }
         public OpInventoryReleaseModel()
         {
             NatureOfTransaction = "Op Inventory Release";
@@ -16,14 +23,12 @@ namespace Core.BaseModels.Finance.Transactions
         public InventoryItemModel Item { get; set; }
         public ChartOfAccountModel DebitCOA { get; set; }
         public ChartOfAccountModel CreditCOA { get; set; }
-
         [Required]
-        public  decimal? TotalQty { get; set; }
+        public decimal? TotalQty { get; set; }
         public string Reference { get; set; }
         [ValidateComplexType]
         public List<OpInventoryReleaseSubModel> Items { get; set; } = new();
     }
-
 
     public class OpInventoryReleaseSubModel
     {
