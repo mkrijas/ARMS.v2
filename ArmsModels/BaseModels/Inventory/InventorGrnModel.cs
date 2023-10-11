@@ -8,41 +8,41 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class InventoryGrnModel : InventoryOrderBaseModel,ICloneable
+    public class InventoryGrnModel : InventoryOrderBaseModel, ICloneable
     {
-        public InventoryGrnModel(string grnNo, bool invoiced )
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<InventoryGrnModel>(Json);
+        }
+        public InventoryGrnModel(string grnNo, bool invoiced)
         {
             GrnNo = grnNo;
             Invoiced = invoiced;
         }
         public InventoryGrnModel()
         {
+
         }
         public int? GrnID { get; set; }
-        public string GrnNo { get; }        
-        public int? POID { get; set; }      
+        public string GrnNo { get; }
+        public int? POID { get; set; }
         public bool Invoiced { get; }
         [Required]
         [ValidateComplexType]
         public StoreModel Store { get; set; }
-
-        public object Clone()
-        {
-            string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<InventoryGrnModel>(Json);
-        }
     }
-
 
     public class PurchaseOrderModel : InventoryOrderBaseModel
     {
         public PurchaseOrderModel()
         {
+
         }
-        public PurchaseOrderModel(bool _grnCreated,string _poNo) 
+        public PurchaseOrderModel(bool _grnCreated, string _poNo)
         {
             GrnCreated = _grnCreated;
-            PONo = _poNo;            
+            PONo = _poNo;
         }
         public int? POID { get; set; }
         public string PONo { get; }
@@ -69,11 +69,9 @@ namespace ArmsModels.BaseModels
         }
     }
 
-
-
     public class PurchaseRequestModel : InventoryBaseModel
     {
-        public PurchaseRequestModel() { } 
+        public PurchaseRequestModel() { }
         public int PrID { get; set; }
         public string PrNo { get; set; }
     }
@@ -97,26 +95,21 @@ namespace ArmsModels.BaseModels
         public List<InventoryItemEntryModel> Entries { get; set; } = new();
     }
 
-
-    public class InventoryOrderBaseModel: InventoryBaseModel
+    public class InventoryOrderBaseModel : InventoryBaseModel
     {
         public InventoryOrderBaseModel()
         {
             UserInfo = new();
-            Entries = new();            
+            Entries = new();
         }
         [Required]
         public int? PartyID { get; set; }
         public string PartyCode { get; set; }
-
     }
-
-
-
 
     public class InventoryItemEntryModel
     {
-        public long? ItemEntryID { get; set; }        
+        public long? ItemEntryID { get; set; }
         [Required]
         public int? ItemID { get; set; }
         public virtual int? CoaID { get; set; }
