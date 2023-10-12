@@ -1,22 +1,19 @@
-﻿@inject MudBlazor.ISnackbar snackbar
+﻿@attribute [Authorize]
 @inject AuthenticationStateProvider auth
+@using System.Threading;
+@using ArmsServices.DataServices.General
+@inject MudBlazor.ISnackbar snackbar
 @inject ITripFuelService Iservice
 @inject IInventoryItemService InvService
 @inject IDimensionService dimensionIservice
 @inject ICostCenterService costIservice
-@attribute [Authorize]
 @inject IDialogService DialogService
 @inject IPartyService partyService
 @inject IGstItemService gstItemService
 @inject ITdsRateService tdsService
 @inject ITaxPurchaseService taxPurchase
-@using ArmsServices.DataServices.General
-
 @inject IConfigTable IConfig
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
-
 
 <EditForm id="formfuel" Model="@Tmodel" OnValidSubmit="OnValidSubmit">
     <ObjectGraphDataAnnotationsValidator />
@@ -30,7 +27,6 @@
         </TitleContent>
         <DialogContent>
             <MudContainer Style="min-height:300px;max-height:800px;">
-
                 <MudGrid Spacing="3">
                     <MudItem xs="12" md="4">
                         <MudDatePicker Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="Tmodel.EntryDate" />
@@ -41,7 +37,6 @@
                     <MudItem xs="12" md="4">
                         <MudTextField @bind-Value="Tmodel.Quantity" TextChanged="(()=> Tmodel.Amount = Tmodel.RatePerLitre * Tmodel.Quantity)" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.Quantity)"></MudTextField>
                     </MudItem>
-
                     @if (Tmodel.IsPurchase)
                     {
                         <MudItem xs="12">
@@ -84,14 +79,12 @@
                         </MudItem>
                     }
                 </MudGrid>
-
             </MudContainer>
         </DialogContent>
         <DialogActions>
             <MudCheckBox @bind-Checked="@Tmodel.IsPurchase" Color="Color.Primary" Label="Is Purchase?"></MudCheckBox>
             <MudButton Disabled="@_busy" form="formfuel" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
             <MudButton @onclick="Cancel" Variant="Variant.Filled" Color="Color.Primary">Cancel</MudButton>
-
         </DialogActions>
     </MudDialog>
 </EditForm>
@@ -104,22 +97,21 @@
     private List<DimensionModel> dimension = new();
     //public bool? IsPur = null;
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
     private InventoryItemModel invItem;
     private int? FuelGroupID;
-
     private bool _busy;
+
     public bool HasPermissionTripFuelServiceEdit { get; set; } = false;
     public int DocTypeID = 40;
 
     private async void OnValidSubmit()
     {
-        if (_busy) {
+        if (_busy)
+        {
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
         _busy = true;
-
         if (HasPermissionTripFuelServiceEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
@@ -127,31 +119,25 @@
             int branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
             Tmodel.PurchaseModel.BranchID = branchID;
             Tmodel.PurchaseModel.UserInfo.UserID = user.Identity.Name;
-
             TaxPurchaseItemModel item = Tmodel.PurchaseModel.Items.FirstOrDefault();
             if (item == null)
             {
                 item = new TaxPurchaseItemModel();
                 Tmodel.PurchaseModel.Items.Add(item);
             }
-
             item.ItemQty = Tmodel.Quantity;
             item.ItemID = Tmodel.FuelItemID;
-
             if (Tmodel.IsPurchase)
             {
                 Tmodel.PurchaseModel.NonStoreInventory = true;
                 item.ItemRate = Tmodel.RatePerLitre;
                 item.Amount = Tmodel.Amount;
                 item.CoaID = invItem.Group.MappedNonInventoryPurchaseHead;
-
-                item.GstRate = gstItemService.SelectByItem(Tmodel.FuelItemID ?? 0)?.FirstOrDefault()?.TaxRate??0;
-
+                item.GstRate = gstItemService.SelectByItem(Tmodel.FuelItemID ?? 0)?.FirstOrDefault()?.TaxRate ?? 0;
                 if (item.GstRate != null && item.GstRate != 0)
                 {
                     if (partyService.IsLocal(Tmodel.PurchaseModel.PartyInfo.PartyID, branchID))
                     {
-
                         item.CGST = item.Amount * item.GstRate / 200;
                         item.SGST = item.Amount * item.GstRate / 200;
                     }
@@ -160,11 +146,9 @@
                         item.IGST = item.Amount * item.GstRate / 100;
                     }
                 }
-
                 Tmodel.PurchaseModel.Narration = Tmodel.Quantity.ToString() + " Ltr";
                 var tdsRate = tdsService.GetTdsRate(Tmodel.PurchaseModel.PartyInfo.PartyID ?? 0, item.CoaID ?? 0);
                 item.TDS = item.Amount * tdsRate / 100;
-
                 try
                 {
                     Tmodel.PurchaseModel = taxPurchase.Update(Tmodel.PurchaseModel);
@@ -175,7 +159,6 @@
                     return;
                 }
             }
-
             try
             {
                 Tmodel = Iservice.Update(Tmodel);
@@ -191,13 +174,12 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Permission denied!",
-                      "You dont have any permission to Add or Edit TripFuel.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit TripFuel.");
         }
         await Task.Delay(2000);
         _busy = false;
     }
-
 
     protected override async Task OnInitializedAsync()
     {
@@ -214,19 +196,16 @@
         FuelGroupID = int.Parse(IConfig.GetByInventoryFuelGroupID().ValueString);
     }
 
-
     private void Cancel()
     {
         MudDialog.Close();
     }
-
 
     void FuelItemSelected(InventoryItemModel item)
     {
         invItem = item;
         Tmodel.FuelItemID = item?.InventoryItemID;
     }
-
 
     void ShowTaxInfo()
     {
@@ -238,10 +217,9 @@
                 SGST = item.SGST,
                 TDS = item.TDS,
                 GstRate = item.GstRate
-
             };
         DialogParameters parms = new DialogParameters();
-        parms.Add("tax", gst);
+        parms.Add("tax", gst.Clone());
         var dialog = DialogService.Show<TaxRatedialog>("Tax Details", parms);
     }
 }
