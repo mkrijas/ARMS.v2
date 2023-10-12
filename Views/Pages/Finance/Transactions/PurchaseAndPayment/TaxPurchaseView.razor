@@ -15,10 +15,10 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Tax Purchase</MudText>
                 <MudTooltip Text="New TaxPurchase">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new TaxPurchaseModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new TaxPurchaseModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudTooltip Text="Add from GRN">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddLink" @onclick="openGrn" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.AddLink" @onclick="openGrn" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Tax..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -76,7 +76,7 @@
     private int numberOfRecords = 100;
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 9;
-
+    private bool _busy;
     private string searchTerm = "";
 
     private int NumberOfRecords
@@ -139,12 +139,20 @@
 
     private async Task OpenDialog(TaxPurchaseModel tds, bool ReadOnly, bool View)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds.Clone());
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<TaxPurchaseDialog>(tds.PID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
         await GetAll(IsApproved, NumberOfRecords);
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task Delete(TaxPurchaseModel model)
@@ -181,10 +189,18 @@
 
     public async Task openGrn()
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         PurchaseOrderModel tds = new();
         DialogParameters parms = new DialogParameters();
         var dialog = DialogService.Show<InventoryGrnViewDialog>("GRN", parms, maxWidth);
         var result = await dialog.Result;
         await GetAll(IsApproved, NumberOfRecords);
+        await Task.Delay(200);
+        _busy = false;
     }
 }
