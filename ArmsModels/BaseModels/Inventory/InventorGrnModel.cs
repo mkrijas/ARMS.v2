@@ -33,8 +33,13 @@ namespace ArmsModels.BaseModels
         public StoreModel Store { get; set; }
     }
 
-    public class PurchaseOrderModel : InventoryOrderBaseModel
+    public class PurchaseOrderModel : InventoryOrderBaseModel, ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<PurchaseOrderModel>(Json);
+        }
         public PurchaseOrderModel()
         {
 
