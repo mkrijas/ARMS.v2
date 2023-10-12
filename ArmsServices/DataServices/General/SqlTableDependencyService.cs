@@ -39,12 +39,21 @@ namespace DAL.DataServices.General
         }
         public void SubscribeTableDependency(string ConnectionString)
         {
-            tableDependency = new SqlTableDependency<PushNotificationModel>(ConnectionString, "General.Notification");
+            try
+            {
 
-            tableDependency.OnChanged += TabledependencyChange;
-            tableDependency.OnError += TabledependencyError;
-            tableDependency.Start();
+                tableDependency = new SqlTableDependency<PushNotificationModel>(ConnectionString, "General.Notification");
 
+                tableDependency.OnChanged += TabledependencyChange;
+                tableDependency.OnError += TabledependencyError;
+                tableDependency.Start();
+            }
+            catch (Exception ex)
+            {
+
+                ResultErrorMessage = ex.Message;
+                Console.Write(ResultErrorMessage);
+            }
         }
 
         private async void TabledependencyChange(object obj, RecordChangedEventArgs<PushNotificationModel> e)
@@ -52,7 +61,7 @@ namespace DAL.DataServices.General
             if (e.ChangeType != TableDependency.SqlClient.Base.Enums.ChangeType.None)
             {
                 var changeEntity = e.Entity;
-                if (changeEntity != null && changeEntity.MessageGroupID != null &&( changeEntity.MessageGroupID.ToLower().Trim() == ("PeriodicMaintainence").ToLower().Trim() || changeEntity.MessageGroupID.ToLower().Trim() == ("EWayBill").ToLower().Trim()))
+                if (changeEntity != null && changeEntity.MessageGroupID != null && (changeEntity.MessageGroupID.ToLower().Trim() == ("PeriodicMaintainence").ToLower().Trim() || changeEntity.MessageGroupID.ToLower().Trim() == ("EWayBill").ToLower().Trim()))
                 {
                     if (!IsConnected)
                     {
@@ -80,8 +89,10 @@ namespace DAL.DataServices.General
                 Exception ex = e.Error;
                 throw ex;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 ResultErrorMessage = ex.Message;
+                Console.Write(ResultErrorMessage);
             }
         }
     }
