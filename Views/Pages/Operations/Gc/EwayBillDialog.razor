@@ -1,13 +1,10 @@
-﻿@inject IGcService Iservice
-
+﻿@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@using System.Threading;
+@inject IGcService Iservice
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
-
 @inject IPushNotificationService IpushNotificationService
 @inject SignalRService signalRService
 
@@ -19,12 +16,10 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-
         <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">
             <ValidationSummary />
             <MudText Typo="Typo.h6">@model.SetGcNumber</MudText>
-            <MudTabs Outlined="true" Position="Position.Right" Rounded="true" Border="true"
-                     ApplyEffectsToContainer="true" Class="mt-8" PanelClass="pa-6">
+            <MudTabs Outlined="true" Position="Position.Right" Rounded="true" Border="true" ApplyEffectsToContainer="true" Class="mt-8" PanelClass="pa-6">
                 @foreach (var wrapperitem in model.Gcs.Select((value, i) => new { i, value }))
                 {
                     var item = wrapperitem.value.EwayBill;
@@ -44,7 +39,6 @@
                 }
             </MudTabs>
         </EditForm>
-
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -56,18 +50,15 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter] public GcSetModel model { get; set; }
-
     private bool _busy;
+
     public bool HasPermissionGcServiceEdit { get; set; } = false;
     public int DocTypeID = 46;
 
-
     [Parameter]
     public int? MessageDocumentID { get; set; } = null;
-
     public string UserID { get; set; }
     public int BranchID { get; set; }
-
 
     #region SignaIR Notification
     private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
@@ -85,13 +76,11 @@
         await signalRService.StartAsync();
     }
 
-
     private void Cancel()
     {
         model = new();
         MudDialog.Cancel();
     }
-
 
     private async Task OnValidSubmit(EditContext context)
     {
@@ -101,16 +90,13 @@
             return;
         }
         _busy = true;
-
         if (HasPermissionGcServiceEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
-
             foreach (var item in model.Gcs)
             {
                 item.EwayBill.GcID = item.GcID;
                 item.EwayBill.UserInfo.UserID = authprov.User.Identity.Name;
-
                 try
                 {
                     EwayBillModel result = Iservice.UpdateEwayBill(item.EwayBill);
@@ -120,11 +106,9 @@
                         notificationMessage.DocumentID = MessageDocumentID;
                         notificationMessage.MessageGroupID = "EWayBill";
                         notificationMessage.DocumentTypeID = DocTypeID;
-
                         currentNotificationMessages = IpushNotificationService.SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(BranchID, MessageDocumentID, DocTypeID).ToList();
                         string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
                         IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
-
                         await signalRService.Send(notificationMessage);
                     }
                 }
@@ -135,7 +119,6 @@
                 }
             }
             snackbar.Add("Saved Successfully", Severity.Success);
-
             MudDialog.Close(DialogResult.Ok(model));
             model = new GcSetModel();
         }
@@ -148,7 +131,6 @@
         await Task.Delay(2000);
         _busy = false;
     }
-
 
     private void EwayBillDateChanged(EwayBillModel ewaymodel, DateTime? date)
     {
