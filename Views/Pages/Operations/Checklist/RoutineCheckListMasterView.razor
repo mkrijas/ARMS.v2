@@ -15,7 +15,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Routine Check List</MudText>
                 <MudTooltip Text="New Routine Check List">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew())" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEdit(new RoutineCheckListMasterModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
             </ToolBarContent>
@@ -57,58 +57,55 @@
     public bool HasPermissionRoutineCheckListMasterServiceDelete { get; set; } = false;
     public int DocTypeID = 42;
 
-    private async Task OpenDialogAddNew()
+    protected override async Task OnInitializedAsync()
     {
-        if (HasPermissionRoutineCheckListMasterServiceEdit)
-        {
-            RoutineCheckListMasterModel ItemMaster = new();
-            ItemMaster.UserInfo = new();
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-            if (ItemMaster.UserInfo != null)
-            {
-                ItemMaster.UserInfo.UserID = user.Identity.Name;
-            }
-            ItemMaster.BranchID = int.Parse(brancIDString);
-            List<string> ItemsNamesLists = new();
-            ItemsNamesLists = collection.Select(s => s.ItemName).ToList();
-            var model = new DialogParameters { ["model"] = ItemMaster, ["ItemsNamesLists"] = ItemsNamesLists };
-            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-            var dialog = DialogService.Show<RoutineCheckListMasterDialog>("Simple Dialog", model, options);
-            var result = await dialog.Result;
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionRoutineCheckListMasterServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionRoutineCheckListMasterServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
-            // you can check if the modal was cancelled
-            var isCancelled = result.Canceled;
-            if (!isCancelled)
-            {
-                await GetAll();
-            }
-        }
-        else
-        {
-            bool? ResultModel = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Add or Edit RoutineCheckListMaster.");
-        }
+        await GetAll();
     }
 
-    private async Task OpenDialogEdit(RoutineCheckListMasterModel ItemMaster)
+    private async Task GetAll()
+    {
+        collection = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        model.UserInfo = new();
+        if (model.UserInfo != null)
+        {
+            model.UserInfo.UserID = user.Identity.Name;
+        }
+        model.BranchID = int.Parse(brancIDString);
+        collection = Iservice.SelectItemByBranch(model.BranchID).ToList();
+    }
+
+    private async Task OpenDialogEdit(RoutineCheckListMasterModel model)
     {
         if (HasPermissionRoutineCheckListMasterServiceEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
             var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-            ItemMaster.UserInfo = new();
-            if (ItemMaster.UserInfo != null)
+            model.UserInfo = new();
+            if (model.UserInfo != null)
             {
-                ItemMaster.UserInfo.UserID = user.Identity.Name;
+                model.UserInfo.UserID = user.Identity.Name;
             }
-            ItemMaster.BranchID = int.Parse(brancIDString);
-            var model = new DialogParameters { ["model"] = ItemMaster };
+            model.BranchID = int.Parse(brancIDString);
+            List<string> ItemNamesList = new();
+            ItemNamesList = collection.Where(d => model == null
+                || (model != null && model.ItemID == null)
+                || (model != null && model.ItemName != null && d.ItemName.ToLower().Trim() != model.ItemName.ToLower().Trim()))
+                .Select(s => s.ItemName).ToList();
+            var para = new DialogParameters
+                {
+                    ["model"] = model.Clone(),
+                    ["ItemsNamesLists"] = ItemNamesList
+                };
             var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-            var dialog = DialogService.Show<RoutineCheckListMasterDialog>("Simple Dialog", model, options);
+            var dialog = DialogService.Show<RoutineCheckListMasterDialog>("Simple Dialog", para, options);
             var result = await dialog.Result;
 
             // you can check if the modal was cancelled
@@ -154,29 +151,5 @@
                 "Permission denied!",
                 "You dont have any permission to Delete RoutineCheckListMaster.");
         }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionRoutineCheckListMasterServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionRoutineCheckListMasterServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
-
-        await GetAll();
-    }
-
-    private async Task GetAll()
-    {
-        collection = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        model.UserInfo = new();
-        if (model.UserInfo != null)
-        {
-            model.UserInfo.UserID = user.Identity.Name;
-        }
-        model.BranchID = int.Parse(brancIDString);
-        collection = Iservice.SelectItemByBranch(model.BranchID).ToList();
     }
 }
