@@ -1,12 +1,10 @@
-﻿@inject IGcService Iservice
+﻿@using System.Threading;
+@inject AuthenticationStateProvider auth
+@inject IGcService Iservice
 @inject IRouteService Iroute
 @inject IOrderService Iorder
-
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
 <MudDialog>
@@ -61,9 +59,9 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter] public TruckModel Truck { get; set; }
     [Parameter] public long TripID { get; set; }
-
     private int BranchID { get; set; }
     private int SelectedCount = 0;
+    private List<SelectableCollection<GcSetModel>> collection = new();
 
     public bool HasPermissionGcServiceEdit { get; set; } = false;
     public bool HasPermissionGcServiceAppentToTrip { get; set; } = false;
@@ -74,9 +72,6 @@
         MudDialog.Cancel();
     }
 
-
-    private List<SelectableCollection<GcSetModel>> collection = new();
-
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -86,20 +81,17 @@
         await GetAll();
     }
 
-
     private async Task GetAll()
     {
         var e = await auth.GetAuthenticationStateAsync();
         string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(BranchIDString);
-
         collection.Clear();
         foreach (var item in Iservice.SelectUnAssigned(BranchID))
         {
             collection.Add(new() { model = item });
         }
     }
-
 
     protected async Task dblClickHandler(GcSetModel item)
     {
@@ -120,7 +112,6 @@
                 "You dont have any permission to AppendToTrip GC.");
         }
     }
-
 
     private async Task Load()
     {
@@ -146,13 +137,11 @@
         }
     }
 
-
     class SelectableCollection<T>
     {
         public bool Selected { get; set; } = false;
         public T model { get; set; }
     }
-
 
     private async Task Add()
     {
@@ -160,7 +149,6 @@
         {
             var parameters = new DialogParameters();
             parameters.Add("model", new GcSetModel() { BranchID = BranchID });
-
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
             var dialog = DialogService.Show<GcDialog>("Create New GC", parameters, maxWidth);
             var result = await dialog.Result;
@@ -172,8 +160,8 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Permission denied!",
-                      "You dont have any permission to Add or Edit GC.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit GC.");
         }
     }
 }
