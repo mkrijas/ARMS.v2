@@ -38,7 +38,7 @@ namespace ArmsModels.BaseModels
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<CashAccountModel>(Json);
+            return JsonConvert.DeserializeObject<OwnBankModel>(Json);
         }
         public OwnBankModel()
         {
