@@ -14,7 +14,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Sales</MudText>
                 <MudTooltip Text="New Sales">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new SaleModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new SaleModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Sale..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -67,6 +67,7 @@
     private int numberOfRecords = 100;
     private string searchTerm = "";
 
+    private bool _busy;
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 13;
 
@@ -135,6 +136,12 @@
 
     private async Task OpenDialog(SaleModel saleModel, bool ReadOnly)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", saleModel.Clone());
@@ -142,6 +149,8 @@
         var dialog = DialogService.Show<SaleDialog>(saleModel.SID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
         await GetAll(IsApproved, NumberOfRecords);
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task Delete(SaleModel model)
