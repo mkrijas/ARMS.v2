@@ -9,10 +9,15 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class TariffModel
+    public class TariffModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<TariffModel>(Json);
+        }
         public TariffModel()
-        {            
+        {
             UserInfo = new UserInfoModel();
         }
         public int? TariffID { get; set; }
@@ -28,20 +33,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public decimal? TariffRate { get; set; }
         public byte? TruckAxles { get; set; }
-        //[Required]
-        //public int? OrderID { get; set; }
-        //[Required]
-        //public int? RouteID { get; set; }
-        //[Required]
-        //public short? TariffTypeID { get; set; }
-        //[Required]
-        //public short? TariffFormulaID { get; set; }
-
-        //public virtual string OrderName { get; set; }
-        //public virtual string RouteName { get; set; }
-        //public virtual string Formula { get; set; }
-        //public virtual string TariffTypeName { get; set; }
-        public virtual string Unit { get; set; }       
+        public virtual string Unit { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
 
@@ -51,7 +43,6 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new UserInfoModel();
         }
-
         public short? FormulaID { get; set; }
         [Required]
         public string Formula { get; set; }
@@ -60,6 +51,11 @@ namespace ArmsModels.BaseModels
 
     public class TariffTypeModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<TariffTypeModel>(Json);
+        }
         public TariffTypeModel()
         {
             UserInfo = new UserInfoModel();
@@ -73,16 +69,7 @@ namespace ArmsModels.BaseModels
         public string UsageCode { get; set; }
         public bool AllowMultiple { get; set; } = true;
         public int? TariffSign { get; set; } = 1;
-        public string Area { get; set; }        
+        public string Area { get; set; }
         public UserInfoModel UserInfo { get; set; }
-
-        public object Clone()
-        {
-            string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<TariffTypeModel>(Json);
-        }
     }
-
-    
-
 }
