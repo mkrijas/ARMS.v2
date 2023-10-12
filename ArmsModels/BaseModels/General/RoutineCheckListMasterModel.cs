@@ -1,11 +1,18 @@
 ﻿using ArmsModels.SharedModels;
+using Newtonsoft.Json;
 using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels.General
 {
-    public class RoutineCheckListMasterModel
+
+    public class RoutineCheckListMasterModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<RoutineCheckListMasterModel>(Json);
+        }
         public int? ItemID { get; set; }
         public int? BranchID { get; set; }
         [Required]
@@ -17,6 +24,5 @@ namespace ArmsModels.BaseModels.General
         public DateTime? CurrentTruckLastUpdatedDate { get; set; }
         public string Description { get; set; }
         public UserInfoModel UserInfo { get; set; }
-
     }
 }
