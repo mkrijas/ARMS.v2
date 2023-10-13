@@ -17,7 +17,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Routine Check List</MudText>
                 <MudTooltip Text="New Routine Check List">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new RoutineCheckListModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new RoutineCheckListModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
             </ToolBarContent>
@@ -54,6 +54,7 @@
     List<TruckModel> TruckList = new();
     List<RoutineCheckListMasterModel> ItemList = new();
     string state = "Message box hasn't been opened yet";
+    private bool _busy;
 
     protected async override Task OnInitializedAsync()
     {
@@ -68,6 +69,12 @@
 
     private async Task OpenDialog(RoutineCheckListModel model)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -81,11 +88,13 @@
         var result = await dialog.Result;
 
         // you can check if the modal was cancelled
-        var isCancelled = result.Canceled;
+        var isCancelled = result.Cancelled;
         if (!isCancelled)
         {
             await GetAll();
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task OpenDialogDelete(RoutineCheckListModel model)
