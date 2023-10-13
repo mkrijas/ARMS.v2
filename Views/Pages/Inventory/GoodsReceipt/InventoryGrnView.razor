@@ -14,13 +14,13 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">GRN</MudText>
                 <MudTooltip Text="New Grn">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new InventoryGrnModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new InventoryGrnModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudTooltip Text="Pending Purchase Order">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddLink" @onclick="openpurchaseorder" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.AddLink" @onclick="openpurchaseorder" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudTooltip Text="Approved Data">
-                    <MudIconButton Icon="@Icons.Material.Filled.TableView" Title="Approved Data" @onclick="@(()=> OpenDialogApproved(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.TableView" Title="Approved Data" @onclick="@(()=> OpenDialogApproved(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchGrn" Placeholder="Search Grn... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -63,7 +63,7 @@
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     private string searchGrn = "";
     public bool IsApproved { get; set; } = false;
-
+    private bool _busy;
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 16;
 
@@ -99,6 +99,12 @@
 
     private async Task OpenDialog(InventoryGrnModel tds, bool ReadOnly, bool View)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
 
@@ -110,13 +116,24 @@
         var result = await dialog.Result;
 
         await GetAll(IsApproved);
+
+        await Task.Delay(200);
+        _busy = false;
     }
 
-    public void OpenDialogApproved(InventoryGrnModel p)
+    public async void OpenDialogApproved(InventoryGrnModel p)
     {
+        // if (_busy)
+        // {
+        //     snackbar.Add("Please wait while form is closing!", Severity.Warning);
+        //     return;
+        // }
+        // _busy = true;
         DialogParameters parms = new DialogParameters();
         parms.Add("model", p.Clone());
         var dialog = DialogService.Show<InventoryGrnApproveView>(p.GrnID == null ? "Approved Data" : "Approved Data", parms, maxWidth);
+        // await Task.Delay(200);
+        // _busy = false;
     }
 
     private async Task Delete(InventoryGrnModel model)
@@ -145,6 +162,12 @@
 
     public async Task openpurchaseorder()
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         PurchaseOrderModel tds = new();
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
@@ -156,6 +179,9 @@
             await GetAll(IsApproved);
         }
         await GetAll(IsApproved);
+
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private bool search(InventoryGrnModel tds)
