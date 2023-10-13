@@ -26,8 +26,13 @@ namespace ArmsModels.BaseModels
 
     }
 
-    public class AssetDocumentModel
+    public class AssetDocumentModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AssetDocumentModel>(Json);
+        }
         public AssetDocumentModel()
         {
             UserInfo = new();
@@ -46,7 +51,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? EndDate { get; set; }
         public int? NotificationID { get; set; }
-        public UserInfoModel UserInfo { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
     }
 
     public class AssetDocumentTypeModel
