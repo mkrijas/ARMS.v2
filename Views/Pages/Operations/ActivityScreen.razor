@@ -1,5 +1,10 @@
 ﻿@page "/operations"
-
+@using ArmsServices.DataServices.FMS;
+@using ArmsServices.DataServices.Operations;
+@using Pages.Operations.Truck
+@using Pages.Operations.Gc
+@using Pages.FMS.Breakdown
+@using System.Threading;
 @inject IBranchService Ibranch
 @inject ITruckService Itruck
 @inject IDriverService Idriver
@@ -10,37 +15,22 @@
 @inject IAssetDocumentService idocument
 @inject IRoutineCheckListMasterService IserviceRoutineMaster
 @inject IRoutineCheckListService IroutineCheckListService
-
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-
 @inject IDialogService DialogService
 @inject IBranchSettingsService branchSettingsService
-
-@using ArmsServices.DataServices.FMS;
-@using ArmsServices.DataServices.Operations;
-@using Pages.Operations.Truck
-@using Pages.Operations.Gc
-@using Pages.FMS.Breakdown
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
-
 <MudGrid Spacing="4">
-
     <MudItem xs="12">
         <TruckSelector Class="bg-white" Value="SelectedTruck" BranchID="branchID" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" />
     </MudItem>
-
-
     <MudItem xs="12" Class="d-flex">
         @if (CurrentTrip != null)
         {
             <MudText hidden="@HideStatus" Typo="Typo.h4" Class="mr-5"><MudIcon Icon="@Icons.Material.Filled.ModeOfTravel" Title="Trip Number" Color="Color.Primary" /> @(CurrentTrip?.TripNumberDisplay)</MudText>
         }
-
         @if (SelectedTruck != null && AssignedDriver == null)
         {
             <MudText Typo="Typo.h4" Color="Color.Error"><MudIcon Icon="@Icons.Material.Outlined.AirlineSeatReclineNormal" Title="Driver" /> UNASSAIGNED</MudText>
@@ -64,9 +54,7 @@
         {
             <MudText Typo="Typo.h4" Color="Color.Primary"> @CurrentEvent?.OriginName - @CurrentEvent?.DestinationName</MudText>
         }
-
     </MudItem>
-
     @if (!HideControls)
     {
         <MudItem xs="12" md="12">
@@ -76,13 +64,13 @@
                 {
                     <MudButton StartIcon="@Icons.Material.Outlined.AddTask" OnClick="AddConsignment" IconColor="Color.Tertiary">Load Consignment</MudButton>
                 }
-
                 <MudButton StartIcon="@Icons.Material.Outlined.PersonAddAlt1" OnClick="AssignDriver" IconColor="Color.Primary">@AssignDriverLabel</MudButton>
                 <MudButton StartIcon="@Icons.Material.Filled.ReportProblem" OnClick="ReportBreakDown" IconColor="Color.Secondary">Breakdown/Accident</MudButton>
                 @if (CurrentTrip != null && !CurrentTrip.Closed)
                 {
                     @if (Itrip.Select(CurrentTrip.TripID)?.UserInfo.RecordStatus == 4)
                     {
+
                     }
                     else
                     {
@@ -97,30 +85,24 @@
         </MudItem>
     }
 </MudGrid>
-
 @if (SelectedTruck != null)
 {
     <TripViewComponent Trip="CurrentTrip" @ref="TripViewRef" OnTripStatusUpdated="@TripStatusUpdated"></TripViewComponent>
 }
 
-
 @code {
-   
+
     [Parameter]
     public TruckModel SelectedTruck { get; set; }
-
     TripViewComponent TripViewRef;
-
     private int branchID;
     private DriverModel AssignedDriver { get; set; }
     private EventModel CurrentEvent { get; set; }
     private EventTypeModel EventType { get; set; }
     private TripModel CurrentTrip { get; set; }
-
     string TruckStatus;
     string EventButtonLabel;
     string AssignDriverLabel;
-
     private bool HideControls { get; set; } = true;
     public bool HideStatus { get; set; } = true;
     private bool DisableEventButton { get; set; } = false;
@@ -136,16 +118,13 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         branchID = int.Parse(brancIDString);
-
         OnTruckSelected(SelectedTruck);
     }
-
 
     private void GetTruckInfo()
     {
 
     }
-
 
     private void OpenTripCard()
     {
@@ -154,18 +133,15 @@
         var result = DialogService.Show<TripDetailsCard>(CurrentTrip.TripNumberDisplay.ToString() + " Details", parameters, new DialogOptions { MaxWidth = MaxWidth.Large });
     }
 
-
     private async Task UpdateEvent()
     {
         if (!IsFit())
         {
             return;
         }
-
         var parameters = new DialogParameters();
         parameters.Add("Truck", SelectedTruck);
         parameters.Add("AssignedDriver", AssignedDriver);
-
         if (EventButtonLabel == "Start New Trip")
         {
             var authprov = await auth.GetAuthenticationStateAsync();
@@ -187,20 +163,15 @@
 
                 }
             }
-
             var dialog = DialogService.Show<NewTripView>("Start Trip", parameters);
             var result = await dialog.Result;
-
-
             if (!result.Canceled)
             {
                 CurrentTrip = (TripModel)result.Data;
                 await TripViewRef.RefreshEvents();
                 truckStatusUpdated(Ievent.GetCurrentEvent(SelectedTruck.TruckID));
-
                 TripViewRef.LoadGcs();
                 await TripViewRef.LoadAllUsingCurrentTrip(CurrentTrip);
-                
             }
         }
         else
@@ -220,7 +191,6 @@
         }
     }
 
-
     private async Task CancelTrip()
     {
         if (HasPermissionTripServiceEdit)
@@ -235,11 +205,10 @@
             {
                 txt = "Do you confirm the cancellation?";
             }
-
             bool? yesno = await DialogService.ShowMessageBox(
-              "Cancel Trip",
-               txt,
-              yesText: "Cancel Trip!", cancelText: "Don't Cancel");
+                "Cancel Trip",
+                txt,
+                yesText: "Cancel Trip!", cancelText: "Don't Cancel");
             if (yesno == null)
             {
                 return;
@@ -252,11 +221,10 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Permission denied!",
-                      "You dont have any permission to Add or Edit Trip.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Trip.");
         }
     }
-
 
     private async Task ReportBreakDown()
     {
@@ -285,7 +253,6 @@
         }
     }
 
-
     private async Task AssignDriver()
     {
         var parameters = new DialogParameters();
@@ -301,7 +268,6 @@
         }
     }
 
-
     private async Task AddConsignment()
     {
         var parameters = new DialogParameters();
@@ -313,7 +279,6 @@
         var ev = Data.Data;
         TripViewRef.LoadGcs();
     }
-
 
     private void OnTruckSelected(TruckModel model)
     {
@@ -334,7 +299,6 @@
         }
     }
 
-
     private bool IsFit()
     {
         var doc = idocument.SelectByAsset(SelectedTruck.TruckID);
@@ -347,12 +311,10 @@
         return true;
     }
 
-
     protected void TripStatusUpdated(EventModel em)
     {
         truckStatusUpdated(em);
     }
-
 
     private void truckStatusUpdated(EventModel ev)
     {
@@ -360,7 +322,6 @@
         HideStatus = true;
         EventType = null;
         CurrentEvent = ev;
-
         if (SelectedTruck != null)
         {
             int? DriverID = Itruck.GetAssignedDriver(SelectedTruck.TruckID);
@@ -372,9 +333,7 @@
             {
                 HideStatus = false;
                 EventType = Ievent.GetEventType(ev.EventTypeID);
-
                 //CurrentTrip = Itrip.Select(LastEvent.TripID);
-
                 string TruckStatusAppend;
                 if (!EventType.IsStationary)
                 {
@@ -384,7 +343,6 @@
                 {
                     TruckStatusAppend = " At " + ev.OriginName;
                 }
-
                 TruckStatus = EventType?.EventStatusText + " On " + ev?.EventTime + TruckStatusAppend + " (Reported by " + Ibranch.GetBranchName(ev.BranchID) + ")";
             }
 
@@ -398,7 +356,6 @@
                 HideControls = false;
                 HideStatus = true;
                 EventButtonLabel = "Start New Trip";
-
             }
             else
             {

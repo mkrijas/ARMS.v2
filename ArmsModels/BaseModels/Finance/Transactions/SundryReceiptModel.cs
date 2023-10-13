@@ -12,7 +12,7 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<CashAccountModel>(Json);
+            return JsonConvert.DeserializeObject<SundryReceiptModel>(Json);
         }
         public int? SundryReceiptID { get; set; }
         [Required]

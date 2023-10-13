@@ -10,7 +10,7 @@ namespace ArmsModels.BaseModels
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<CashAccountModel>(Json);
+            return JsonConvert.DeserializeObject<ContactModel>(Json);
         }
         public ContactModel()
         {
