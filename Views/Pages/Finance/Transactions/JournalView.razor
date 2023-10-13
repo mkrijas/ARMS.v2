@@ -16,7 +16,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Journal</MudText>
                 <MudTooltip Text="New Journal">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new JournalModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new JournalModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Journal..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -77,6 +77,7 @@
     private List<JournalModel> collection = new List<JournalModel>();
     private int numberOfRecords = 100;
     private string searchTerm = "";
+    private bool _busy;
 
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 18;
@@ -168,6 +169,12 @@
 
     private async Task OpenDialog(JournalModel JournalModel, bool ReadOnly)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", JournalModel.Clone());
@@ -175,5 +182,7 @@
         var dialog = DialogService.Show<JournalDialog>(JournalModel.JournalID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         await GetAll(IsApproved, NumberOfRecords);
+        await Task.Delay(200);
+        _busy = false;
     }
 }
