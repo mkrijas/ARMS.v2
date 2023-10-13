@@ -12,7 +12,7 @@
     <AssetSelector Value="Asset" ValueChanged="AssetSelected" BranchID="@BranchID" Class="mx-5 my-5 bg-white" />
     @if (Asset != null)
     {
-        <MudIconButton OnClick="@(()=> Edit(new AssetDocumentModel()))" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Medium" Title="Add New" />
+        <MudIconButton OnClick="@(()=> OpenDialogEdit(new AssetDocumentModel()))" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Medium" Title="Add New" />
     }
 </MudPaper>
 <MudText Typo="Typo.h6">Active Documents</MudText>
@@ -28,7 +28,7 @@
                     <MudText Typo="Typo.body2">Doc Date:  @item.InvoiceDate?.ToShortDateString()</MudText>
                 </MudCardContent>
                 <MudCardActions>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>Edit(item))">Edit</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item))">Edit</MudButton>
                     <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> Remove(item))">Remove</MudButton>
                     <MyFileUpload FileName="@(item.DocumentType.DocumentTypeName + Guid.NewGuid().ToString())" FolderName="AssetDocuments" Label="Upload" FilePath="@item.AttachedDocument" FilePathChanged="((e)=> SaveImagePath(e,item.DocumentID))"></MyFileUpload>
                 </MudCardActions>
@@ -36,45 +36,6 @@
         </MudItem>
     }
 </MudGrid>
-<MudDialog @bind-IsVisible="visible" Options="dialogOptions">
-    <TitleContent>
-        <MudText Typo="Typo.h6">
-            <MudText Typo="Typo.h6">Add/Edit Documents</MudText>
-        </MudText>
-    </TitleContent>
-    <DialogContent>
-        <EditForm id="Docform" Model="@model" OnValidSubmit="OnValidSubmit">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-            <MudGrid Spacing="2">
-                <MudItem xs="6">
-                    <MudSelect T="AssetDocumentTypeModel" @bind-Value="@model.DocumentType" ToStringFunc="@(e => e == null ? null : $"{e.DocumentTypeName}")" Label="Type" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentType)" OffsetY="true" AdornmentColor="Color.Secondary">
-                        @foreach (var item in Dtypes)
-                        {
-                            <MudSelectItem Value="@item">@item.DocumentTypeName</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="6">
-                    <MudDatePicker PickerVariant="PickerVariant.Dialog" @bind-Date="@model.InvoiceDate" Label="Reference Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceDate)" Editable="true"></MudDatePicker>
-                </MudItem>
-                <MudItem xs="6">
-                    <MudDatePicker PickerVariant="PickerVariant.Dialog" @bind-Date="@model.StartDate" Label="Begin On" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.StartDate)" Editable="true"></MudDatePicker>
-                </MudItem>
-                <MudItem xs="6">
-                    <MudDatePicker PickerVariant="PickerVariant.Dialog" @bind-Date="@model.EndDate" Label="Expire On" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.EndDate)" Editable="true"></MudDatePicker>
-                </MudItem>
-            </MudGrid>
-        </EditForm>
-    </DialogContent>
-    <DialogActions>
-        <MudButton form="Docform" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
-        @if (model.DocumentID != null)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(model))">Delete</MudButton>
-        }
-    </DialogActions>
-</MudDialog>
 
 @code {
 
@@ -106,67 +67,6 @@
         collection = Iservice.SelectByAsset(Asset?.AssetID).ToList();
     }
 
-    private async void OnValidSubmit(EditContext context)
-    {
-        model.UserInfo.UserID = UserID;
-        var validationOls = Iservice.ValidatePeriod(model).ToList();
-        if (validationOls.Any(x => x.DocumentID != model.DocumentID))
-        {
-            snackbar.Add("Document Period cannot overlap! Please check the period ", Severity.Warning);
-            return;
-        }
-        try
-        {
-            if (Asset == null)
-            {
-                snackbar.Add("Please select asset. ", Severity.Error);
-                return;
-            }
-            if (model.Asset == null || model.Asset.AssetID == null || model.Asset.AssetID == 0)
-            {
-                model.Asset = Asset;
-            }
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            GetAll();
-            model = new();
-            visible = false;
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Error);
-        }
-    }
-
-    private void Edit(AssetDocumentModel doc)
-    {
-        visible = true;
-        model = doc;
-    }
-
-    private async Task Delete(AssetDocumentModel model)
-    {
-        bool? result = await DialogService.ShowMessageBox(
-           "Warning !",
-           "Are you sure, you want to delete - " + model.DocumentType.DocumentTypeName + " (" + model.InvoiceDate + ") ?");
-        if (result == true)
-        {
-            Iservice.Delete(model.DocumentID, UserID);
-            snackbar.Add("Deleted Successfully", Severity.Error);
-            model = new();
-            visible = false;
-        }
-        GetAll();
-    }
-
-    private async Task Remove(AssetDocumentModel model)
-    {
-        model.UserInfo.UserID = UserID;
-        Iservice.Remove(model);
-        snackbar.Add("Removed " + model.DocumentType.DocumentTypeName + " From " + Asset.Description, Severity.Success);
-        GetAll();
-    }
-
     private void AssetSelected(AssetModel selectedAsset)
     {
         Asset = selectedAsset;
@@ -177,6 +77,39 @@
     private void SaveImagePath(string filePath, int? docID)
     {
         int e = Iservice.SaveFilePath(filePath, docID);
+        GetAll();
+    }
+
+    private async Task OpenDialogEdit(AssetDocumentModel model)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo = new();
+        if (model.UserInfo != null)
+        {
+            model.UserInfo.UserID = user.Identity.Name;
+        }
+        var param = new DialogParameters
+            {
+                ["model"] = model.Clone(),
+                ["Asset"] = Asset,
+                ["Dtypes"] = Dtypes
+            };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var dialog = DialogService.Show<AssetDocumentDialog>("ADD/EDIT", param, options);
+        var result = await dialog.Result;
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+            GetAll();
+        }
+    }
+
+    private async Task Remove(AssetDocumentModel model)
+    {
+        model.UserInfo.UserID = UserID;
+        Iservice.Remove(model);
+        snackbar.Add("Removed " + model.DocumentType.DocumentTypeName + " From " + Asset.Description, Severity.Success);
         GetAll();
     }
 }
