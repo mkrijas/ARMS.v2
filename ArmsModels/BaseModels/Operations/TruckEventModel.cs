@@ -5,17 +5,21 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentValidation;
 using ArmsServices.DataServices;
-
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class EventModel
+    public class EventModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<EventModel>(Json);
+        }
         public EventModel()
         {
             UserInfo = new();
         }
-
         public long? TruckEventID { get; set; }
         [Required]
         public byte? EventTypeID { get; set; }
@@ -23,11 +27,8 @@ namespace ArmsModels.BaseModels
         public byte? NextEventTypeID { get; set; }
         [Required]
         public DateTime? EventTime { get; set; } = DateTime.Now;
-
-        ///////////////
-
         [Required]
-        [Notless("TruckID","EventTime")]
+        [Notless("TruckID", "EventTime")]
         public long? EventReading { get; set; }
         [Required]
         public int? BranchID { get; set; }
@@ -47,7 +48,6 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
-
     public class EventTypeModel
     {
         public byte? EventTypeID { get; set; }
@@ -64,7 +64,6 @@ namespace ArmsModels.BaseModels
         public string EventStatusText { get; set; }
         public byte? LimitPostEvent { get; set; }
     }
-
 
     public class EventReadingValidator : AbstractValidator<EventModel>
     {
