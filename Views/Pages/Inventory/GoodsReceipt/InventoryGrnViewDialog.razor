@@ -10,7 +10,6 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-
 <MudDialog>
     <DialogContent>
         <MudGrid Spacing="4">
@@ -47,13 +46,13 @@
     </DialogContent>
 </MudDialog>
 
-
 @code {
 
     private InventoryGrnModel model = new InventoryGrnModel();
     private List<InventoryGrnModel> collection = new List<InventoryGrnModel>();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,10 +71,17 @@
             collection.Add(item);
         }
     }
+
     private async Task OpenDialog(InventoryGrnModel tds)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds);
+        parms.Add("model", tds.Clone());
         parms.Add("ReadOnly", true);
         parms.Add("IsView", true);
         var dialog = DialogService.Show<InventoryGrnDialog>("GRN", parms, maxWidth);
@@ -85,7 +91,11 @@
             await GetAll();
         }
         await GetAll();
+
+        await Task.Delay(200);
+        _busy = false;
     }
+
     private async Task Reverse(InventoryGrnModel tds)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -101,11 +111,10 @@
         var user = authprov.User;
         model.UserInfo.UserID = user.Identity.Name;
         TaxPurchaseModel tpm = new TaxPurchaseModel()
-        {
-                GRNID = grn.GrnID,                
+            {
+                GRNID = grn.GrnID,
                 PartyInfo = partyIservice.SelectByID(grn.PartyID),
-        };        
-
+            };
         foreach (var item in Iservice.GetItemEntries(grn.GrnID.Value))
         {
             tpm.Items.Add(
@@ -116,21 +125,18 @@
                         ItemQty = item.ItemQty,
                         Amount = item.ItemRate * item.ItemQty,
                         CoaID = item.CoaID,
-                        ItemDescription = item.ItemDescription,                    
-                }
+                        ItemDescription = item.ItemDescription,
+                    }
             );
         }
         tpm.TotalAmount = tpm.Items.Sum(x => x.Amount);
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", tpm);
+        parms.Add("model", tpm.Clone());
         var dialog = DialogService.Show<TaxPurchaseDialog>(tpm.PID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
             await GetAll();
-        }        
+        }
     }
-
-    
 }
-

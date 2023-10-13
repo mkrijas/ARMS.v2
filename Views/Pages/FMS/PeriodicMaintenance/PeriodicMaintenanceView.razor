@@ -1,18 +1,15 @@
 ﻿@page "/Reminders/{id:int}"
 @page "/Reminders"
 @using Views.Pages.FMS.Jobcard;
-
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject NavigationManager navigationManager
 @inject IPeriodicMaintenanceService Iservice
 @inject ITripService Itrip
 @inject IBreakdownService ibreakdownService
 @inject ITruckService Itruck
 @inject MudBlazor.ISnackbar snackbar
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
-@inject NavigationManager navigationManager
-
 @inject IDialogService DialogService
-
 
 <MudGrid Spacing="4">
     <TruckSelector Value="SelectedTruck" ValueChanged="TruckSelected"></TruckSelector>
@@ -22,14 +19,11 @@
             <MudIconButton Icon="@Icons.Material.Filled.AddAlarm" OnClick="CreateNew" />
         </MudTooltip>
     }
-
     <MudContainer>
         <br /><br />
         <MudGrid>
             @foreach (var item in PmList)
             {
-
-
                 <MudItem xs="12" md="4">
                     <MudItem xs="11">
                         <MudCard>
@@ -40,18 +34,14 @@
                                     </CardHeaderAvatar>
                                     <CardHeaderContent>
                                         <MudText Typo="Typo.body1" GutterBottom="true"><b>@item.Title</b></MudText>
-
                                     </CardHeaderContent>
                                     <CardHeaderActions>
-
                                         <MudTooltip Text="Close Reminder">
-                                            <MudIconButton @onclick="@(() => CloseReminder(item))" Icon="@Icons.Material.Filled.Close" Color="Color.Success" />
+                                            <MudIconButton Disabled="@_busy" @onclick="@(() => CloseReminder(item))" Icon="@Icons.Material.Filled.Close" Color="Color.Success" />
                                         </MudTooltip>
-
                                     </CardHeaderActions>
                                 </MudCardHeader>
                                 <MudCardContent>
-
                                     <MudText><h6>Date:</h6>@item.NDate</MudText>
                                     <MudText><h6>Audometer:</h6>@item.NAudometer</MudText>
                                     <MudText><h6>Remarks:</h6>@item.Remarks</MudText>
@@ -70,14 +60,10 @@
                     </MudItem>
 
                 </MudItem>
-
-                //  </div>
-
             }
         </MudGrid>
     </MudContainer>
 </MudGrid>
-
 
 @code {
 
@@ -86,13 +72,12 @@
     [Parameter]
     public int? id { get; set; } = null;
     private List<TruckModel> TruckList = new();
-
     public DateTime? BreakdownTime { get; set; } = DateTime.Now;
     public string Detail { get; set; }
     public string ContactNumber { get; set; }
     public int BranchID { get; set; }
-
     private List<BreakdownModel> BreakdownList = new();
+    private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
@@ -115,13 +100,13 @@
             StateHasChanged();
         }
     }
+
     private void TruckSelected(TruckModel obj)
     {
         SelectedTruck = obj;
         if (SelectedTruck != null)
         {
             PmList = Iservice.SelectByTruck(SelectedTruck?.TruckID, 3).ToList();
-
         }
         else
         {
@@ -134,7 +119,6 @@
     private async Task CreateNew()
     {
         var authState = await auth.GetAuthenticationStateAsync();
-
         PeriodicMaintenanceInitiateModel pmModel = new PeriodicMaintenanceInitiateModel()
             {
                 TruckID = SelectedTruck?.TruckID,
@@ -143,10 +127,8 @@
                          UserID = authState.User.Identity.Name
                     }
             };
-
         var parameters = new DialogParameters();
-        parameters.Add("model", pmModel);
-
+        parameters.Add("model", pmModel.Clone());
         var dialog = DialogService.Show<PeriodicMaintenanceInitiateDialog>("Periodic Maintenance", parameters);
         var result = await dialog.Result;
         if (!result.Cancelled)
@@ -155,7 +137,6 @@
             PmList.Add(item);
         }
     }
-
 
     private async Task CreateJobcard(PeriodicMaintenanceInitiateModel item)
     {
@@ -178,7 +159,7 @@
                         UserID = authState.User.Identity.Name
                     };
                 var parameters = new DialogParameters();
-                parameters.Add("Breakdown", Breakdown);
+                parameters.Add("Breakdown", Breakdown.Clone());
                 parameters.Add("PeriodicMaintenanceId", item.PMIID);
 
                 DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
@@ -189,24 +170,26 @@
                     JobcardModel jobcard = (JobcardModel)result.Data;
                     navigationManager.NavigateTo("jobcard/" + jobcard.TruckID);
                 }
-
             }
             else
             {
                 bool? ResultModel = await DialogService.ShowMessageBox(
-                      "Can not create job!",
-                      "Can not create this job because the Truck is on a trip.");
+                    "Can not create job!",
+                    "Can not create this job because the Truck is on a trip.");
             }
-
         }
     }
 
-
     private async Task CloseReminder(PeriodicMaintenanceInitiateModel pmModel)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var parameters = new DialogParameters();
         parameters.Add("PmiModel", pmModel);
-
         var dialog = DialogService.Show<PeriodicMaintenanceCloseDialog>("Close Maintenance Reminder", parameters);
         var result = await dialog.Result;
         if (!result.Cancelled)
@@ -214,5 +197,7 @@
             PeriodicMaintenanceConcludeModel item = (PeriodicMaintenanceConcludeModel)result.Data;
             PmList.Remove(pmModel);
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 }

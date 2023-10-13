@@ -1,9 +1,8 @@
-﻿@inject IDialogService DialogService
+﻿@using System.Threading;
+@inject AuthenticationStateProvider auth
+@inject IDialogService DialogService
 @inject IGcService Iservice
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
 <div style="position:relative">
@@ -49,7 +48,6 @@
                 <MudButton @onclick="@(() => Edit(item.GcSetID))" Color="Color.Primary" Disabled="@IsLocked">EDIT</MudButton>
                 <MudButton @onclick="@(() => EwayBill(item.GcSetID))" Variant="Variant.Text" Color="@ewaycolor">Eway Bill</MudButton>
             }
-            @*  <MudButton @onclick="@(() => FillExpenses(item.GcSetID))" Variant="Variant.Text" Color="@FillExpColor">Post Inc/Exp</MudButton>*@
         </MudCardActions>
     </MudCard>
 </div>
@@ -75,6 +73,7 @@
     private Color ewaycolor = new();
     private Color FillExpColor = new();
 
+    private bool _busy;
     public bool HasPermissionGcServiceEdit { get; set; } = false;
     public bool HasPermissionGcServiceAppentToTrip { get; set; } = false;
     public int DocTypeID = 46;
@@ -114,6 +113,12 @@
 
     private async Task EwayBill(long? id)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var parameters = new DialogParameters();
         item.Gcs.ForEach(x => { x.EwayBill.EwayBillDate = x.EwayBill.EwayBillDate ?? DateTime.Today; x.EwayBill.ExpireOn = x.EwayBill.ExpireOn ?? DateTime.Today.AddDays(2); });
         parameters.Add("MessageDocumentID", MessageDocumentID);
@@ -128,14 +133,22 @@
                 setEwayBillColor();
             }
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task Edit(long? id)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         if (HasPermissionGcServiceEdit)
         {
             var parameters = new DialogParameters();
-            parameters.Add("model", item);
+            parameters.Add("model", item.Clone());
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
             var result = DialogService.Show<GcDialog>("Edit GC", parameters, maxWidth);
             var data = await result.Result;
@@ -147,6 +160,8 @@
                 "Permission denied!",
                 "You dont have any permission to Add or Edit GC.");
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task RemoveButtonClicked(long? id)

@@ -1,12 +1,10 @@
-﻿@inject IDistrictService Iservice
-@inject MudBlazor.ISnackbar snackbar
+﻿@attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@attribute [Authorize]
-
 @using System.Threading;
+@inject IDistrictService Iservice
+@inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
-
 
 <MudDialog>
     <DialogContent>
@@ -14,12 +12,7 @@
             <DataAnnotationsValidator />
             <ValidationSummary />
             <MudTextField @bind-Value="@model.DistrictName" Label="District Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DistrictName)"></MudTextField>
-
-            <MudAutocomplete T="StateModel" Label="State" Value="@SelectedState" ResetValueOnEmptyText="true"
-                             SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.StateName}")"
-                             Immediate="true" ValueChanged="StateSelected" Variant="Variant.Outlined">
-            </MudAutocomplete>
-
+            <MudAutocomplete T="StateModel" Label="State" Value="@SelectedState" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.StateName}")" Immediate="true" ValueChanged="StateSelected" Variant="Variant.Outlined"></MudAutocomplete>
         </EditForm>
     </DialogContent>
     <DialogActions>
@@ -32,12 +25,10 @@
     [Parameter]
     public DistrictModel model { get; set; }
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
     StateModel SelectedState = new();
-
     private List<StateModel> states = new();
-
     private bool _busy;
+
     public bool HasPermissionDistrictServiceEdit { get; set; } = false;
     public int DocTypeID = 54;
 
@@ -49,19 +40,16 @@
         states = Iservice.GetStates().ToList();
     }
 
-
     private async Task<IEnumerable<StateModel>> Search(string searchString)
     {
         return await Task.FromResult(states.Where(x => x.StateName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
-
     private void StateSelected(StateModel state)
     {
         SelectedState = state;
-        model.StateID = state?.StateID??null;
+        model.StateID = state?.StateID ?? null;
     }
-
 
     private async void OnValidSubmit(EditContext context)
     {
@@ -71,13 +59,11 @@
             return;
         }
         _busy = true;
-
         if (HasPermissionDistrictServiceEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
             model.UserInfo.UserID = user.Identity.Name;
-
             try
             {
                 model = Iservice.Update(model);
@@ -93,8 +79,8 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Add or Edit District.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit District.");
         }
         await Task.Delay(2000);
         _busy = false;

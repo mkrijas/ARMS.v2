@@ -12,7 +12,7 @@
         <MudTable Items="@collection" RowStyleFunc="TableRowStyle" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<PurchaseOrderModel, bool>(search)" @bind-place="model">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Purchase Order</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new PurchaseOrderModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new PurchaseOrderModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchPurchase" Placeholder="Search Purchase order... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
                 <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
@@ -54,11 +54,10 @@
     private PurchaseOrderModel model = new PurchaseOrderModel();
     private List<PurchaseOrderModel> collection = new List<PurchaseOrderModel>();
     public bool IsApproved { get; set; } = false;
-
+    private string searchPurchase = "";
+    private bool _busy;
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 17;
-
-    private string searchPurchase = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -92,11 +91,17 @@
 
     private async Task OpenDialog(PurchaseOrderModel tds, bool ReadOnly, bool View)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds);
+        parms.Add("model", tds.Clone());
         parms.Add("ReadOnly", ReadOnly);
         parms.Add("IsView", View);
         var dialog = DialogService.Show<PurchaseOrderDialog>(tds.POID == null ? "ADD" : "EDIT", parms, maxWidth);
@@ -118,6 +123,8 @@
             }
         }
         await GetAll(IsApproved);
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task Delete(PurchaseOrderModel tds)

@@ -1,9 +1,7 @@
 ﻿@page "/StockTransferItem"
-
 @using Core.BaseModels.Inventory;
 @using MudBlazor
 @using MudBlazor.Services
-
 @attribute [Authorize]
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
@@ -18,7 +16,7 @@
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">Initiate Stock Transfer</MudText>
                         <MudTooltip Text="New Stock Transfer">
-                            <MudIconButton Icon="@Icons.Material.Filled.Add" @onclick="@(()=> EditOutGoing(new StockTransferInitiationModel()))" Title="Add" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" @onclick="@(()=> EditOutGoing(new StockTransferInitiationModel()))" Title="Add" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                         </MudTooltip>
                         <MudSpacer></MudSpacer>
                     </ToolBarContent>
@@ -39,8 +37,8 @@
                             @if (context.Status != 3) @*|| context.EndModel.TransferStatus == 3 || context.EndModel.TransferStatus == 0)*@
                             {
                                 @* <MudTooltip Text="Edit">
-                                <MudFab @onclick="@(()=> EditOutGoing(context))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                                </MudTooltip> *@
+                            <MudFab @onclick="@(()=> EditOutGoing(context))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                            </MudTooltip> *@
                                 <MudTooltip Text="Remove">
                                     <MudFab @onclick="@(()=> DeleteOutGoing(context))" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" Size="Size.Small" IconSize="Size.Small" />
                                 </MudTooltip>
@@ -71,8 +69,8 @@
                             @if (context.Status == 3)  @*|| context.EndModel.TransferStatus == 3 || context.EndModel.TransferStatus == 0)*@
                             {
                                 @* <MudTooltip Text="Edit">
-                                    <MudFab @onclick="@(()=> Accept(context))" Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
-                                    </MudTooltip> *@
+                            <MudFab @onclick="@(()=> Accept(context))" Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                            </MudTooltip> *@
                                 <MudTooltip Text="Cancel Incoming">
                                     <MudFab @onclick="@(()=> Reject(context))" Color="Color.Error" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" IconSize="Size.Small" />
                                 </MudTooltip>
@@ -84,7 +82,6 @@
                     </PagerContent>
                 </MudTable>
             </MudTabPanel>
-
         </MudTabs>
     </MudItem>
 </MudGrid>
@@ -94,6 +91,7 @@
     private List<StockTransferInitiationModel> collectionOutGoing = new();
     private StockTransferInitiationModel model = new StockTransferInitiationModel();
     public int? branchID { get; set; }
+    private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
@@ -114,8 +112,14 @@
 
     private async Task EditOutGoing(StockTransferInitiationModel model)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         DialogParameters parms = new DialogParameters();
-        parms.Add("InitiationModel", model);
+        parms.Add("InitiationModel", model.Clone());
         //parms.Add("IsView", View);
         //parms.Add("IsEdit", Edit);
         var dialog = DialogService.Show<StockTransferInitiateDialog>(model.InvTranID == null ? "ADD" : "EDIT", parms);
@@ -137,6 +141,8 @@
             }
         }
         await GetAll();
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task DeleteOutGoing(StockTransferInitiationModel model)
@@ -167,7 +173,7 @@
     private async Task View(StockTransferInitiationModel model, bool View, bool Acpt)
     {
         DialogParameters parms = new DialogParameters();
-        parms.Add("InitiationModel", model);
+        parms.Add("InitiationModel", model.Clone());
         parms.Add("IsView", View);
         parms.Add("Acpt", Acpt);
         var dialog = DialogService.Show<StockTransferInitiateDialog>(Acpt == true ? "ACCEPT ITEMS" : "VIEW", parms);

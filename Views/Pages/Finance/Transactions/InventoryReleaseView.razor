@@ -26,7 +26,7 @@
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Inventory Release </MudText>
                     <MudTooltip Text="New Inventory Release">
-                        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                        <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                     </MudTooltip>
                     <MudSpacer></MudSpacer>
                 </ToolBarContent>
@@ -46,8 +46,8 @@
                         <MudTooltip Text="View">
                             <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
-                        <MudTooltip Text="Delete">
-                            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                        <MudTooltip Text="Reverse">
+                            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
                     </MudTd>
                 </RowTemplate>
@@ -66,6 +66,7 @@
     public List<int?> RequestIds { get; set; } = new();
     public int? branchID { get; set; }
     public StoreModel SelectedStore { get; set; } = new();
+    private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,7 +107,7 @@
                 var authprov = await auth.GetAuthenticationStateAsync();
                 var user = authprov.User;
                 Iservice.Delete(model.RID, user.Identity.Name);
-                snackbar.Add("Deleted Successfully", Severity.Success);
+                snackbar.Add("Transaction reversed successfully", Severity.Success);
                 GetAll();
             }
         }
@@ -118,6 +119,12 @@
 
     private async Task OpenDialog(InventoryReleaseModel model, bool ReadOnly = false)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var authprov = await auth.GetAuthenticationStateAsync();
         var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         if (RequestIds == null)
@@ -143,5 +150,7 @@
         var dialog = DialogService.Show<InventoryReleaseDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         GetAll();
+        await Task.Delay(200);
+        _busy = false;
     }
 }

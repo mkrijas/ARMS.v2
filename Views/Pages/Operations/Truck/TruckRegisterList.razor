@@ -1,59 +1,54 @@
 ﻿@page "/TruckRegisterList"
 @page "/TruckRegisterList/{SelectedTruckId:int}"
+@using System.Threading;
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
 @inject ITruckService ItruckService
-
-@using System.Threading;
+@inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
 
 <MudPaper Class="pl-5 my-5" Elevation="4">
     <MudGrid>
-        <MudItem xs="10" md="10">
+        <MudItem xs="12" md="12">
             <TruckSelector Value="SelectedTruck" ValueChanged="SelectedTruckChanged" />
-        </MudItem>
-        <MudItem xs="2" md="2">
-            <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" ButtonType="ButtonType.Submit">Fetch</MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
-
-<MudTable Items="@collection" Elevation="5">
-    <ToolBarContent>
-        <MudText Typo="Typo.h6"> @SelectedTruck?.CurrentRegistration?.RegNo  Registrations </MudText>
-        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="New" @onclick="@(()=> Edit(new TruckRegistrationModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-        <MudSpacer></MudSpacer>
-    </ToolBarContent>
-    <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<TruckRegistrationModel, object>(x=> x.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<TruckRegistrationModel, object>(x=> x.EffectFrom)" InitialDirection="SortDirection.Ascending">Valid From</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<TruckRegistrationModel, object>(x=> x.EffectTo)" InitialDirection="SortDirection.Ascending">Valid To</MudTableSortLabel></MudTh>
-        <MudTh>Actions</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Truck">@context.RegNo</MudTd>
-        <MudTd DataLabel="Valid From">@context.EffectFrom.Value.ToString("dd/MM/yyyy")</MudTd>
-        <MudTd DataLabel="Valid To">@context.EffectTo.Value.ToString("dd/MM/yyyy")</MudTd>
-        <MudTd DataLabel="">
-            <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-
-        </MudTd>
-    </RowTemplate>
-    <PagerContent>
-        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-    </PagerContent>
-</MudTable>
-
+@if (SelectedTruck != null && SelectedTruck.TruckID != null)
+{
+    <MudTable Items="@collection" Elevation="5">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6"> @SelectedTruck?.CurrentRegistration?.RegNo  Registrations </MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="New" @onclick="@(()=> Edit(new TruckRegistrationModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+            <MudSpacer></MudSpacer>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<TruckRegistrationModel, object>(x=> x.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<TruckRegistrationModel, object>(x=> x.EffectFrom)" InitialDirection="SortDirection.Ascending">Valid From</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<TruckRegistrationModel, object>(x=> x.EffectTo)" InitialDirection="SortDirection.Ascending">Valid To</MudTableSortLabel></MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Truck">@context.RegNo</MudTd>
+            <MudTd DataLabel="Valid From">@context.EffectFrom.Value.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Valid To">@context.EffectTo.Value.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="">
+                <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+        </PagerContent>
+    </MudTable>
+}
 
 @code {
 
     [Parameter]
     public TruckModel SelectedTruck { get; set; }
-
     [Parameter]
     public int? SelectedTruckID { get; set; }
-
     int BranchID;
     private List<TruckModel> TruckList = new List<TruckModel>();
     private List<TruckRegistrationModel> collection = new List<TruckRegistrationModel>();
@@ -63,7 +58,6 @@
         var authState = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authState.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
         TruckList = ItruckService.Select(null).ToList();
-
         if (SelectedTruck == null)
         {
             SelectedTruck = TruckList.FirstOrDefault(s => s.TruckID == SelectedTruckID);
@@ -71,18 +65,20 @@
         fetch();
     }
 
-
     async Task Edit(TruckRegistrationModel reg)
     {
+        if (SelectedTruck == null && SelectedTruck.TruckID == null)
+        {
+            snackbar.Add("Please select truck", Severity.Error);
+            return;
+        }
         if (reg.TruckID == null)
         {
-            reg.TruckID = SelectedTruck.TruckID;
+            reg.TruckID = SelectedTruck?.TruckID ?? null;
         }
-
         DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Large, };
         DialogParameters parms = new();
-        parms.Add("CurrentRegistration", reg);
-
+        parms.Add("CurrentRegistration", reg.Clone());
         var dialog = DialogService.Show<TruckRegisterDialog>("Registration", parms, options);
         var result = await dialog.Result;
         if (!result.Canceled)
@@ -91,13 +87,11 @@
         }
     }
 
-
     void SelectedTruckChanged(TruckModel truck)
     {
         SelectedTruck = truck;
         fetch();
     }
-
 
     void fetch()
     {

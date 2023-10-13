@@ -19,7 +19,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Bulk Inventory Release </MudText>
                 <MudTooltip Text="New Op Inventory Release">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new OpInventoryReleaseModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new OpInventoryReleaseModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Op Inventory Release..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -42,8 +42,8 @@
                 <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
                 <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
                 <MudTd DataLabel="TotalAmount">@(Math.Abs(context.TotalAmount ?? 0))</MudTd>
-                <MudTd DataLabel="">
-                    @if (@context.AuthLevelId == null)
+                    <MudTd DataLabel="">
+                        @if (@context.AuthLevelId == null)
                     {
                         <MudTooltip Text="Edit">
                             <MudFab @onclick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
@@ -76,7 +76,7 @@
     private List<OpInventoryReleaseModel> collection = new List<OpInventoryReleaseModel>();
     private int numberOfRecords = 100;
     private string searchTerm = "";
-
+    private bool _busy;
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 51;
 
@@ -135,13 +135,21 @@
 
     private async Task OpenDialog(OpInventoryReleaseModel RModel, bool ReadOnly)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", RModel);
+        parms.Add("model", RModel.Clone());
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<OpInventoryReleaseDialog>(RModel.OpInventoryReleaseID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         GetAll(IsApproved, NumberOfRecords);
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task Delete(OpInventoryReleaseModel model)

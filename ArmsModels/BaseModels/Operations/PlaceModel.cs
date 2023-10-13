@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -6,8 +7,13 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class PlaceModel
+    public class PlaceModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<PlaceModel>(Json);
+        }
         public PlaceModel()
         {
             this.District = new DistrictModel();
@@ -16,8 +22,8 @@ namespace ArmsModels.BaseModels
         public int? PlaceID { get; set; }
         public int? GstCode { get; set; }
         [Required]
-        [StringLength(maximumLength:200)]
-        public string PlaceName { get; set; }        
+        [StringLength(maximumLength: 200)]
+        public string PlaceName { get; set; }
         public int? DistrictID { get; set; }
         [Required]
         [StringLength(maximumLength: 6)]

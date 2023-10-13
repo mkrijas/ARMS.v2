@@ -1,10 +1,9 @@
-﻿@inject IContentService Iservice
-@inject MudBlazor.ISnackbar snackbar
+﻿@attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@attribute [Authorize]
-@inject IDialogService DialogService
-
 @using System.Threading;
+@inject IContentService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
 
 <MudDialog>
@@ -19,9 +18,7 @@
             <EditForm id="formContent" Model="@model" OnValidSubmit="OnValidSubmit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
-
                 <MudGrid Spacing="2">
-
                     <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="model.ContentName" Label="Content" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ContentName)"></MudTextField>
                     </MudItem>
@@ -34,19 +31,11 @@
                     <MudItem xs="12" md="12">
                         <MudTextField InputType="InputType.Number" @bind-Value="model.UnitRatio" Label="Ratio" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.UnitRatio)"></MudTextField>
                     </MudItem>
-                    @*                        <MudItem xs="12" md="12">
-                    <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
-                    </MudItem>*@
-
                 </MudGrid>
-
             </EditForm>
         </MudContainer>
     </DialogContent>
     <DialogActions>
-
-        @* <MudButton OnClick="Cancel">Cancel</MudButton>*@
-        @*<MudButton form="formContent" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>*@
         <MudButton OnClick="Cancel">Cancel</MudButton>
         <MudButton Disabled="@_busy" form="formContent" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
     </DialogActions>
@@ -56,12 +45,11 @@
 
     [Parameter]
     public ContentModel model { get; set; }
-
     private List<ContentModel> collection = new List<ContentModel>();
     public List<DistrictModel> districts = new List<DistrictModel>();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
     private bool _busy;
+
     public bool HasPermissionContentServiceEdit { get; set; } = false;
     public int DocTypeID = 55;
 
@@ -76,7 +64,6 @@
         await Task.Run(() => GetAll());
     }
 
-
     private async Task GetAll()
     {
         await foreach (var content in Iservice.Select(0))
@@ -85,30 +72,25 @@
         }
     }
 
-
     private async void OnValidSubmit(EditContext context)
     {
-        if (_busy) {
+        if (_busy)
+        {
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
         _busy = true;
-
         if (HasPermissionContentServiceEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
             model.UserInfo.UserID = user.Identity.Name;
-
             try
             {
                 model = await Iservice.Update(model);
-
-
                 snackbar.Add("Saved Successfully", Severity.Success);
                 StateHasChanged();
                 MudDialog.Close(model);
-
             }
             catch (Exception ex)
             {
@@ -118,11 +100,10 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-                     "Permission denied!",
-                     "You dont have any permission to Add or Edit Content.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Content.");
         }
         await Task.Delay(2000);
         _busy = false;
     }
-    
 }

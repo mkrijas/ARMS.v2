@@ -1,13 +1,12 @@
 ﻿@page "/tariff/{OrderID:int}"
-
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@using System.Threading;
 @inject ITariffService Iservice
 @inject IRouteService Iroute
 @inject IOrderService Iorder
 @inject MudBlazor.ISnackbar snackbar
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
 <MudGrid>
@@ -15,7 +14,7 @@
         <MudTable Items="@collection" Elevation="10" Filter="new Func<TariffModel, bool>(search)">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">@Order.OrderName Tariffs</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" OnClick="@(() => Edit(new TariffModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" OnClick="@(() => Edit(new TariffModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchString" Placeholder="Search Tariffs..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
@@ -52,7 +51,7 @@
     #region Declared Properties
 
     private string searchString = "";
-
+    private bool _busy;
     private OrderModel Order = new();
     private List<TariffModel> collection = new();
     #endregion
@@ -81,10 +80,16 @@
 
     private async Task Edit(TariffModel editModel)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         if (HasPermissionTariffServiceEdit)
         {
             DialogParameters parms = new DialogParameters();
-            parms.Add("model", editModel);
+            parms.Add("model", editModel.Clone());
             parms.Add("Order", Order);
             var dialog = DialogService.Show<TarrifDilog>("Add/Edit Tariffs", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
             var result = await dialog.Result;
@@ -111,6 +116,8 @@
                 "Permission denied!",
                 "You dont have any permission to Add or Edit Tariff.");
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task Delete(TariffModel deleteModel)

@@ -1,4 +1,8 @@
-﻿@inject ITripService Iservice
+﻿@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject SignalRService signalRService
+@inject ITripService Iservice
 @inject IPlaceService Iplace
 @inject IEventService Ievent
 @inject ITripService Itrip
@@ -8,16 +12,9 @@
 @inject IDialogService DialogService
 @inject IBranchSettingsService branchSettingsService
 @inject IConfigTable configTable;
-
 @inject MudBlazor.ISnackbar snackbar
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
-
-@using System.Threading;
-@inject IRoleService<RoleModel> Irole
-
 @inject IPushNotificationService IpushNotificationService
-@inject SignalRService signalRService
+@inject IRoleService<RoleModel> Irole
 
 <MudDialog>
     <DialogContent>
@@ -32,15 +29,12 @@
                 <DataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid Spacing="4">
-
                     <MudItem xs="12" md="12">
                         <MudText Class="subbutn"><MudIcon Icon="@Icons.Material.Filled.Transform" Title="Trip Number" />@CurrentTrip.TripNumberDisplay</MudText>
                     </MudItem>
-
                     <MudItem xs="12" md="12">
                         <MudText Class="subbutn"><MudIcon Icon="@Icons.Material.Filled.LocalShipping" Title="Truck" /> @Truck.RegNo</MudText>
                     </MudItem>
-
                     <MudItem xs="12" md="12">
                         @if (AssignedDriver == null)
                         {
@@ -52,7 +46,6 @@
                         }
                         <MudText></MudText>
                     </MudItem>
-
                     <MudItem xs="12" md="6">
                         <MudSelect Label="Select Action" T="byte?" Value="model.EventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" ValueChanged="EventSelected" Disabled="@(IsDisableSelectAction)">
                             @foreach (var item in EventTypes)
@@ -61,7 +54,6 @@
                             }
                         </MudSelect>
                     </MudItem>
-
                     <MudItem xs="12" md="6">
                         <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label=@(SelectedEvent.IsStationary?"Place":"Origin") Value="@OriginPlace" ValueChanged="@((e)=> {OriginPlace = e; model.OriginID = e.PlaceID;model.DestinationID = SelectedEvent.IsStationary ? model.OriginID : model.DestinationID;})" ResetValueOnEmptyText="true" Clearable="true"
                                          SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Disabled="true"></MudAutocomplete>
@@ -79,7 +71,6 @@
                         <MudAutocomplete Variant="Variant.Outlined" T="PlaceModel" Label="Destination" Value="Destination" ValueChanged="((e)=> {Destination =e ; model.DestinationID =e?.PlaceID??null;})" ResetValueOnEmptyText="true" Clearable="true"
                                          SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                     </MudItem>
-
                     <MudItem xs="12" md="6" hidden="@(SelectedEvent.EventTypeID != 4)">
                         <MudSelect Variant="Variant.Outlined" Label="Select GCs To Unload" MultiSelection="true" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))"
                                    T="GcSetModel" OffsetY="true" AdornmentColor="Color.Secondary" @bind-SelectedValues="SelectedGCs">
@@ -89,15 +80,12 @@
                             }
                         </MudSelect>
                     </MudItem>
-
                     <MudItem xs="12" md="6">
                         <MudNumericField HideSpinButtons @bind-Value="model.EventReading" Label="Audometer Reading" Variant="Variant.Outlined"></MudNumericField>
                          <ValidationMessage For="@(() => model.EventReading)" />
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         @*<input type="datetime-local" @bind-value="@model.EventTime"  />*@
                          <MudTextField Label="Date n Time" Format="s" Variant="Variant.Outlined" @bind-Value="@model.EventTime" InputType="InputType.DateTimeLocal"></MudTextField>
-                         @*<MyDateTimePicker Label="Event" @bind-Value="model.EventTime"></MyDateTimePicker>*@
                      </MudItem>
                  </MudGrid>
              </EditForm>
@@ -110,30 +98,24 @@
 </MudDialog>
 
 @code {
-    //Opration ID-109
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter] public TruckModel Truck { get; set; }
     [Parameter] public DriverModel AssignedDriver { get; set; }
     [Parameter] public TripModel CurrentTrip { get; set; }
     [Parameter] public EventModel model { get; set; } = new();
-
     bool IsDisableSelectAction { get; set; } = false;
     private EventModel PreEvent { get; set; }
     private bool IsLoading = false;
     private string ButtonLabel = "Select an Event";
-
     bool isSubmitting;
-
     private PlaceModel OriginPlace = new();
     private PlaceModel Destination = new();
     private long? KmReading;
-
     private List<PlaceModel> places = new();
     private List<EventTypeModel> EventTypes;
     private List<EventTypeModel> DestinationEventTypes;
     private EventTypeModel SelectedEvent = new();
-
     private List<GcSetModel> GCsToUnload = new();
     private IEnumerable<GcSetModel> SelectedGCs = new HashSet<GcSetModel>();
 
@@ -145,16 +127,13 @@
         MudDialog.Cancel();
     }
 
-
     public string UserID { get; set; }
     public int BranchID { get; set; }
-
 
     #region SignaIR Notification
     private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
     private PushNotificationModel notificationMessage = new PushNotificationModel();
     #endregion
-
 
     protected override async Task OnInitializedAsync()
     {
@@ -162,10 +141,8 @@
         HasPermissionEventServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
         EventTypes = Ievent.GetEventTypes().Where(x => x.EventTypeID != 1 && x.IsTripRelated).ToList();
-       
         places = Iplace.Select(0).ToList();
         PreEvent = model.TruckEventID == null ? Ievent.GetCurrentEvent(Truck.TruckID) : Ievent.GetPreviousEvent(model.TruckEventID);
-
         int? OriginID = null, DestinationID = null;
         DestinationEventTypes = EventTypes.Where(d => model.EventTypeID == null || model.EventTypeID != null && (d.EventTypeID > model.EventTypeID)).ToList();
         if (Truck == null)
@@ -173,8 +150,6 @@
             Truck = Itruck.SelectByID(CurrentTrip.TruckID);
         }
         AssignedDriver = AssignedDriver ?? Idriver.SelectByID(model.DriverID);
-
-
         if (model.TruckEventID == null)
         {
             KmReading = model.EventReading ?? PreEvent?.EventReading;
@@ -190,7 +165,6 @@
             SelectedEvent = Ievent.GetEventType(model.EventTypeID);
         }
         var authprov = await auth.GetAuthenticationStateAsync();
-
         if (!int.TryParse(authprov.User.Claims.First(c => c.Type == "BranchID")?.Value, out int BranchID))
         {
             snackbar.Add("Branch is Not Selected", Severity.Warning);
@@ -202,18 +176,15 @@
         model.OriginID = OriginID;
         model.DestinationID = DestinationID;
         Destination = DestinationID == null ? null : await Iplace.SelectByID(DestinationID.Value);
-
-
         if (model.TruckEventID == null)
         {
             if (Itrip.Select(model.TripID)?.UserInfo.RecordStatus == 4)
             {
-                EventSelected(Convert.ToByte( configTable.GetCloseTripEventTypeID().ValueString));
+                EventSelected(Convert.ToByte(configTable.GetCloseTripEventTypeID().ValueString));
                 IsDisableSelectAction = true;
             }
             else
             {
-
                 var limitPostEvent = EventTypes.FirstOrDefault(s => s.EventTypeID == PreEvent.EventTypeID)?.LimitPostEvent;
                 var postEvent = EventTypes.FirstOrDefault(s => s.EventTypeID == PreEvent.EventTypeID)?.DefaultNextEventTypeID;
                 if (limitPostEvent != null)
@@ -225,29 +196,24 @@
                 {
                     EventSelected(postEvent);
                 }
-
                 IsDisableSelectAction = CurrentTrip.UserInfo.RecordStatus == 4;
             }
         }
-        
         var user = authprov.User;
         UserID = user.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         await signalRService.StartAsync();
     }
 
-
     protected override async Task OnParametersSetAsync()
     {
 
     }
 
-
     private async Task<IEnumerable<PlaceModel>> SearchPlaces(string searchString)
     {
         return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
-
 
     private async Task OnValidSubmit(EditContext context)
     {
@@ -264,7 +230,6 @@
             }
             if (isSubmitting)
                 return;
-
             isSubmitting = true;
             try
             {
@@ -273,14 +238,11 @@
                     snackbar.Add("Cannot start this event without Driver", Severity.Warning);
                     return;
                 }
-
                 model.EventTypeID = SelectedEvent.EventTypeID;
-
                 if (model.EventTypeID == 5)
                 {
                     DialogParameters parms = new DialogParameters();
                     parms.Add("TripID", model.TripID);
-
                     var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Quantity", parms);
                     var result = await dialog.Result;
                     if (!result.Canceled)
@@ -302,7 +264,6 @@
                     if (IsbranchSetting)
                     {
                         DialogOptions DialogWidth = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true };
-
                         var dialog = DialogService.Show<AcceptedKMDialog>("Update Accepted KM", DialogWidth);
                         var result = await dialog.Result;
                         if (!result.Canceled)
@@ -321,7 +282,6 @@
                     return;
                 }
                 model = Ievent.Update(model);
-
                 if (SelectedEvent.EventTypeID == 4)
                 {
                     if (!SelectedGCs.Any())
@@ -334,7 +294,6 @@
                         foreach (GcSetModel item in SelectedGCs)
                         {
                             Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
-
                             if (item != null && item.Gcs != null && item.Gcs.Any(s => s.EwayBill != null && s.EwayBill.ExpireOn != null && (s.EwayBill.ExpireOn - DateTime.Now).Value.TotalHours >= 4))
                             {
                                 foreach (var EwayBill in item.Gcs.Where(s => s.EwayBill != null && s.EwayBill.ExpireOn != null && (s.EwayBill.ExpireOn - DateTime.Now).Value.TotalHours >= 4))
@@ -369,17 +328,15 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Add or Edit Event.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Event.");
         }
     }
-
 
     private bool ValidateEvent(EventModel ev)
     {
         EventModel NextEvent = new();
         NextEvent = Ievent.GetNextEvent(ev.TruckEventID);
-
         if (PreEvent != null && model.EventTime < PreEvent.EventTime)
         {
             snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
@@ -407,12 +364,10 @@
         return true;
     }
 
-
     private string GetMultiSelectionText(List<string> Gcs)
     {
         return $"{SelectedGCs.Count()}  Gc{(Gcs.Count > 1 ? "s" : "")} Selected ";
     }
-
 
     private void EventSelected(byte? e)
     {
@@ -430,6 +385,7 @@
             }
             if (SelectedEvent.EventTypeID == 5)
             {
+                
             }
         }
         else

@@ -13,7 +13,7 @@
             <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
                 <MudText Typo="Typo.h6">
                     Inventory Group
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudText>
                 @if (listOfItems?.Any() == true)
                 {
@@ -54,7 +54,7 @@
                             <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
                         <MudTooltip Text="ReOrder Level">
-                            <MudFab @onclick="@(()=> ReOrderLevel(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.ProductionQuantityLimits" Size="Size.Small" IconSize="Size.Small" />
+                            <MudFab Disabled="@_busy" @onclick="@(()=> ReOrderLevel(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.ProductionQuantityLimits" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
                     </MudTd>
                 </RowTemplate>
@@ -73,12 +73,12 @@
 @code {
 
     private string SearchItemCode = "";
-
     InventoryGroupModel model = new InventoryGroupModel();
     private MudListItem SelectedItem;
     private List<InventoryGroupModel> listOfItems = new();
     private List<InventoryItemModel> collection = new List<InventoryItemModel>();
     private string UserID = string.Empty;
+    private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
@@ -118,11 +118,17 @@
 
     private async Task OpenDialog(InventoryItemModel ii)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
 
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", ii);
+        parms.Add("model", ii.Clone());
         var dialog = DialogService.Show<InventoryItemDialog>(ii.InventoryItemID == null ? "ADD" : "EDIT", parms);
         var result = await dialog.Result;
         if (!result.Canceled)
@@ -142,6 +148,8 @@
                 snackbar.Add(ex.Message, Severity.Warning);
             }
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task Delete(InventoryItemModel model)
@@ -159,11 +167,17 @@
 
     private async Task OpenDialogGroup(InventoryGroupModel ig)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
 
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", ig);
+        parms.Add("model", ig.Clone());
         var dialog = DialogService.Show<InventoryGroupDialog>(ig.InventoryGroupID == null ? "ADD" : "EDIT", parms);
         var result = await dialog.Result;
         if (!result.Canceled)
@@ -181,6 +195,8 @@
                 snackbar.Add(ex.Message, Severity.Warning);
             }
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     void OnAppearing(MenuAppearingEventArgs e)
@@ -190,23 +206,31 @@
 
     protected async Task ContextMenuOnClickedit(ItemClickEventArgs e)
     {
-        InventoryGroupModel ig = (InventoryGroupModel)e.Data;
+        InventoryGroupModel ig = (InventoryGroupModel)((InventoryGroupModel)e.Data).Clone();
         await OpenDialogGroup(ig);
     }
 
     protected async Task ContextMenuOnClickadd(ItemClickEventArgs e)
     {
-        InventoryGroupModel ig = (InventoryGroupModel)e.Data;
+        InventoryGroupModel ig = (InventoryGroupModel)((InventoryGroupModel)e.Data).Clone();
         InventoryItemModel ii = new InventoryItemModel();
         ii.InventoryGroupID = ig.InventoryGroupID;
         await OpenDialog(ii);
     }
 
-    private void ReOrderLevel(InventoryItemModel ii)
+    private async void ReOrderLevel(InventoryItemModel ii)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         DialogParameters parms = new DialogParameters();
-        parms.Add("iimodel", ii);
+        parms.Add("iimodel", ii.Clone());
         var dialog = DialogService.Show<InventoryItemReorderLevelDialog>("Quantity Manage", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private bool search(InventoryItemModel ItemModel)

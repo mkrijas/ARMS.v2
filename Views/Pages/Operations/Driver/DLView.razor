@@ -11,7 +11,7 @@
 <MudPaper Class="p-2 my-5 d-flex justify-center">
     <MudText Typo="Typo.h5">@Driver.DriverName</MudText>
     <MudTooltip Text="New Licence">
-        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew( new()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+        <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew(new DriverLicenceModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
     </MudTooltip>
 </MudPaper>
 <MudGrid Spacing="2">
@@ -43,7 +43,7 @@
     private DriverLicenceModel model = new();
     private List<DriverLicenceModel> collection = new();
     private IBrowserFile DLImage;
-
+    private bool _busy;
     public bool HasPermissionDriverLicenceServiceEdit { get; set; } = false;
     public bool HasPermissionDriverLicenceServiceDelete { get; set; } = false;
     public int DocTypeID = 52;
@@ -65,11 +65,17 @@
 
     private async Task OpenDialogAddNew(DriverLicenceModel Drivermodel)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         if (HasPermissionDriverLicenceServiceEdit)
         {
             var parameters = new DialogParameters();
             Drivermodel.DriverID = DriverID;
-            parameters.Add("model", Drivermodel);
+            parameters.Add("model", Drivermodel.Clone());
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
             var dialog = DialogService.Show<DLDialog>("model", parameters, maxWidth);
             var result = await dialog.Result;
@@ -87,6 +93,8 @@
                 "Permission denied!",
                 "You dont have any permission to Add or Edit DriverLicence.");
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task Delete(DriverLicenceModel model)

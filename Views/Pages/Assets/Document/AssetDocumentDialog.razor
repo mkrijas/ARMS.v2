@@ -1,0 +1,132 @@
+﻿@inject AuthenticationStateProvider auth
+@inject IAssetDocumentService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudText Typo="Typo.h6">Add/Edit Documents</MudText>
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm id="Docform" Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <MudGrid>
+                <MudItem xs="6">
+                    <MudSelect T="AssetDocumentTypeModel" @bind-Value="@model.DocumentType" ToStringFunc="@(e => e == null ? null : $"{e.DocumentTypeName}")" Label="Type" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentType)" OffsetY="true" AdornmentColor="Color.Secondary">
+                        @foreach (var item in Dtypes)
+                        {
+                            <MudSelectItem Value="@item">@item.DocumentTypeName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="@model.InvoiceDate" Label="Reference Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceDate)" Editable="true"></MudDatePicker>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="@model.StartDate" Label="Begin On" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.StartDate)" Editable="true"></MudDatePicker>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="@model.EndDate" Label="Expire On" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.EndDate)" Editable="true"></MudDatePicker>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="@_busy" form="Docform" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save</MudButton>
+        @if (model.DocumentID != null)
+        {
+            <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Error" OnClick="(()=> Delete(model))">Delete</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public AssetModel Asset { get; set; }
+    [Parameter]
+    public AssetDocumentModel model { get; set; } = new();
+    [Parameter]
+    public List<AssetDocumentTypeModel> Dtypes { get; set; } = null;
+    private bool _busy;
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo = new();
+        model.Asset = Asset;
+        if (model.UserInfo != null)
+        {
+            model.UserInfo.UserID = user.Identity.Name;
+        }
+        var validationOls = Iservice.ValidatePeriod(model).ToList();
+        if (validationOls.Any(x => x.DocumentID != model.DocumentID))
+        {
+            snackbar.Add("Document Period cannot overlap! Please check the period ", Severity.Warning);
+            return;
+        }
+        try
+        {
+            if (Asset == null)
+            {
+                snackbar.Add("Please select asset. ", Severity.Error);
+                return;
+            }
+            if (model.Asset == null || model.Asset.AssetID == null || model.Asset.AssetID == 0)
+            {
+                model.Asset = Asset;
+            }
+            model = Iservice.Update(model);
+            snackbar.Add("Saved Successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+
+        await Task.Delay(2000);
+        _busy = false;
+    }
+
+    private async Task Delete(AssetDocumentModel model)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+           "Warning !",
+           "Are you sure, you want to delete - " + model.DocumentType.DocumentTypeName + " (" + model.InvoiceDate + ") ?");
+        if (result == true)
+        {
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            Iservice.Delete(model.DocumentID, model.UserInfo.UserID);
+            snackbar.Add("Deleted Successfully", Severity.Error);
+            model = new();
+            MudDialog.Close(DialogResult.Ok(true));
+            StateHasChanged();
+
+            await Task.Delay(2000);
+            _busy = false;
+        }
+    }
+}

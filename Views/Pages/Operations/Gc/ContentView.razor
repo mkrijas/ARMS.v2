@@ -1,10 +1,10 @@
 ﻿@page "/content"
+@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
 @inject IContentService Iservice
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@attribute [Authorize]
 @inject IDialogService DialogService
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
@@ -15,7 +15,7 @@
             </ToolBarContent>
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Content</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(() => Edit(new ContentModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="(() => Edit(new ContentModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchContent" Placeholder="Search here" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
             </ToolBarContent>
@@ -50,7 +50,7 @@
     public List<DistrictModel> districts = new List<DistrictModel>();
 
     private string searchContent = "";
-
+    private bool _busy;
     public bool HasPermissionContentServiceEdit { get; set; } = false;
     public bool HasPermissionContentServiceDelete { get; set; } = false;
     public int DocTypeID = 55;
@@ -100,10 +100,16 @@
 
     private async Task Edit(ContentModel model)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         if (HasPermissionContentServiceEdit)
         {
             DialogParameters parms = new DialogParameters();
-            parms.Add("model", model);
+            parms.Add("model", model.Clone());
             var dialog = DialogService.Show<Contentedit>("Edit", parms);
             var result = await dialog.Result;
 
@@ -132,6 +138,8 @@
                 "Permission denied!",
                 "You dont have any permission to Add or Edit Content.");
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task Delete(int? id)
@@ -171,21 +179,5 @@
             return true;
         }
         return false;
-    }
-
-    private async Task OpenDialog()
-    {
-        if (HasPermissionContentServiceEdit)
-        {
-            DialogParameters parms = new DialogParameters();
-            parms.Add("model", model);
-            DialogService.Show<Contentedit>("ADD CONTENT", parms);
-        }
-        else
-        {
-            bool? ResultModel = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Add or Edit Content.");
-        }
     }
 }

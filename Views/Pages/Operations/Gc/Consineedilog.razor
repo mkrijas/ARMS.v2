@@ -1,29 +1,23 @@
-﻿@inject IConsigneeService Iservice
-@inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
+﻿@using System.Threading;
 @attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IConsigneeService Iservice
+@inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
-
 @inject IPlaceService Iplace
 @inject IOrderService Iorder
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
-
 
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            Add/Edit  
-            
+            Add/Edit
             <MudRadioGroup SelectedOption="model.Consignor" T="bool" SelectedOptionChanged="OnSelectedOptionChanged">
                 <MudRadio Option="true" Color="Color.Primary" Dense="true">Consignor</MudRadio>
                 <MudRadio Option="false" Color="Color.Secondary" Dense="false">Consignee</MudRadio>
             </MudRadioGroup>
-            @*    <MudSwitch @bind-Checked="customstr" Color="Color.Error" Converter="@(new CustomStringToBoolConverter())"> <MudText Typo="Typo.h6">Add/Edit @(customstr)</MudText></MudSwitch>*@
         </MudText>
     </TitleContent>
-
     <DialogContent>
         <EditForm id="ConsigneeForm" Model="@model" OnValidSubmit="OnValidSubmit">
             <ObjectGraphDataAnnotationsValidator />
@@ -32,22 +26,16 @@
                 <MudTabPanel Text="Info" Class="p-3">
                     <MudGrid>
                         <MudItem xs="12" md="6">
-                           
                             <MudTextField @bind-Value="model.ConsigneeName" Label="@label" Variant="Variant.Outlined" For="@(() => model.ConsigneeName)"></MudTextField>
-                                
-                          
-                            
                         </MudItem>
                         <MudItem xs="12" md="6">
                             <MudNumericField HideSpinButtons MaxLength="10" @bind-Value="model.Mobile" Label="Mobile" Variant="Variant.Outlined" For="@(() => model.Mobile)"></MudNumericField>
+                         </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudAutocomplete T="PlaceModel" Label="Place" Value="Place" ValueChanged="PlaceSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined" SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudAutocomplete T="PlaceModel" Label="Place" Value="Place" ValueChanged="PlaceSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
-                                             SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudAutocomplete ReadOnly Disabled T="OrderModel" Label="Order" Value="Order" ValueChanged="OrderSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined"
-                                             SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
+                            <MudAutocomplete ReadOnly Disabled T="OrderModel" Label="Order" Value="Order" ValueChanged="OrderSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined" SearchFunc="@SearchOrders" ToStringFunc="@(e => e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
                         </MudItem>
                     </MudGrid>
                 </MudTabPanel>
@@ -62,22 +50,20 @@
     </DialogActions>
 </MudDialog>
 
- @code {
+@code {
 
     [Parameter]
     public ConsigneeModel model { get; set; }
     [Parameter]
     public OrderModel Order { get; set; }
-
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
     private PlaceModel Place = new PlaceModel();
     private List<PlaceModel> places = new List<PlaceModel>();
     private List<OrderModel> orders = new List<OrderModel>();
     public string label { get; set; } = "Consignee";
     private string searchConsignee = "";
-
     private bool _busy;
+
     public bool HasPermissionConsigneeServiceEdit { get; set; } = false;
     public int DocTypeID = 56;
 
@@ -88,16 +74,13 @@
 
         places = Iplace.Select(0).ToList();
         orders = await Iorder.Select(0).ToListAsync();
-
-        //CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
-        //customstr = cs.GetFunc(model.Consignor);
-
         Place = places.FirstOrDefault(x => x.PlaceID == model.PlaceID);
         if (Order == null)
+        {
             Order = orders.FirstOrDefault(y => y.OrderID == model.OrderID);
+        }
         model.OrderID = Order.OrderID;
     }
-
 
     private void PlaceSelected(PlaceModel _place)
     {
@@ -106,15 +89,15 @@
         model.Address.Place = _place?.PlaceName;
     }
 
-
     private void OrderSelected(OrderModel _order)
     {
         Order = _order;
         model.OrderID = _order.OrderID;
     }
+
     public void OnSelectedOptionChanged(bool value)
     {
-        if(value)
+        if (value)
         {
             label = "Consignor";
         }
@@ -125,66 +108,17 @@
         StateHasChanged();
     }
 
-    //public class CustomStringToBoolConverter : BoolConverter<string>
-    //{
-    //    public CustomStringToBoolConverter()
-    //    {
-    //        SetFunc = OnSet;
-    //        GetFunc = OnGet;
-    //    }
-
-    //    private string TrueString = "CONSIGNOR";
-    //    private string FalseString = "CONSIGNEE";
-    //    private string NullString = "SELECT";
-
-    //    private string OnGet(bool? value)
-    //    {
-    //        try
-    //        {
-    //            return (value == true) ? TrueString : FalseString;
-    //        }
-    //        catch (Exception e)
-    //        {
-    //            UpdateGetError("Conversion error: " + e.Message);
-    //            return NullString;
-    //        }
-    //    }
-
-    //    private bool? OnSet(string arg)
-    //    {
-    //        if (arg == null)
-    //            return null;
-    //        try
-    //        {
-    //            if (arg == TrueString)
-    //                return true;
-    //            if (arg == FalseString)
-    //                return false;
-    //            else
-    //                return null;
-    //        }
-    //        catch (FormatException e)
-    //        {
-    //            UpdateSetError("Conversion error: " + e.Message);
-    //            return null;
-    //        }
-    //    }
-    //}
-
-
     private async Task<IEnumerable<PlaceModel>> Search(string searchString)
     {
         return await Task.FromResult(
             places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
-
     private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
     {
         var o = orders.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
         return await Task.FromResult(o);
     }
-
 
     private async void OnValidSubmit(EditContext context)
     {
@@ -200,22 +134,19 @@
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
             model.UserInfo.UserID = user.Identity.Name;
-            //CustomStringToBoolConverter cs = new CustomStringToBoolConverter();
-            // model.Consignor = cs.SetFunc(customstr).Value;
             model.Consignor = true;
-            if(label=="Consignee")
+            if (label == "Consignee")
             {
                 model.Consignor = false;
             }
-
             await Iservice.Update(model);
             MudDialog.Close(model);
         }
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Add or Edit Consignee.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Consignee.");
         }
         await Task.Delay(2000);
         _busy = false;

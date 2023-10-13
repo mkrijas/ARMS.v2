@@ -1,14 +1,12 @@
-﻿@using ArmsModels.BaseModels.General
+﻿@using System.Threading;
+@using ArmsModels.BaseModels.General
 @using ArmsServices.DataServices.Operations
 @inject AuthenticationStateProvider auth
 @inject IRoutineCheckListMasterService Iservice
 @inject IAssetDocumentService IDocumentService
 @inject MudBlazor.ISnackbar snackbar
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
-
 
 <MudDialog>
     <TitleContent>
@@ -30,7 +28,6 @@
             <EditForm id="formRoutineCheckList" Model="@model" OnValidSubmit="Submit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
-
                 <MudItem xs="11" md="11" Class="mb-6">
                     <MudTextField @bind-Value="model.ItemName" Label="Routine Check List Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ItemName)"></MudTextField>
                 </MudItem>
@@ -54,20 +51,15 @@
 @code {
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
     [Parameter]
     public RoutineCheckListMasterModel model { get; set; } = new();
+    [Parameter]
+    public List<string> ItemsNamesLists { get; set; } = null;
+    private bool _busy;
 
     public bool HasPermissionRoutineCheckListMasterServiceEdit { get; set; } = false;
     public int DocTypeID = 42;
 
-    private bool _busy;
-
-    //Dictionary<int?, string> TransNature = new Dictionary<int?, string>()
-    //{
-    //   (1,"Receipt"),
-    //   (-1,"Payment")
-    //};
     List<AssetDocumentTypeModel> DocumentTypes = new();
 
     protected override async Task OnInitializedAsync()
@@ -76,42 +68,42 @@
         HasPermissionRoutineCheckListMasterServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
     }
 
-
     protected override void OnParametersSet()
     {
         DocumentTypes = IDocumentService.GetDocumentTypes().ToList();
     }
-
 
     void Cancel()
     {
         MudDialog.Cancel();
     }
 
-
     public async Task Submit()
     {
+        if (model.ItemName != null && ItemsNamesLists != null && ItemsNamesLists.Any(s => s != null && (s.ToLower().Trim() == model.ItemName.ToLower().Trim())))
+        {
+            snackbar.Add("Item name already exist", Severity.Error);
+            return;
+        }
         if (_busy)
         {
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
         _busy = true;
-
         if (HasPermissionRoutineCheckListMasterServiceEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
             if (model != null)
             {
-
                 model.UserInfo.UserID = user.Identity.Name;
                 try
                 {
                     Iservice.Update(model);
-
                 }
-                catch(Exception ex){
+                catch (Exception ex)
+                {
                     snackbar.Add(ex.Message, Severity.Error);
                 }
             }

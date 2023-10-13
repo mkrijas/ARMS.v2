@@ -1,10 +1,9 @@
-﻿@inject AuthenticationStateProvider auth
+﻿@using System.Threading;
+@inject AuthenticationStateProvider auth
 @inject IDriverTransferService Iservice
 @inject IBranchService Ibranchservice
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
 <MudDialog>
@@ -13,7 +12,6 @@
             <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Accept Or Reject Driver.
         </MudText>
     </TitleContent>
-
     <DialogContent>
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
             <EditForm id="formDriver" Model="@model" OnValidSubmit="Accept">
@@ -22,23 +20,23 @@
                 <MudGrid>
                     <MudItem xs="12" md="12">
                         <MudTextField Value="model.Driver.DriverName" Label="Driver" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Driver.DriverName)" Disabled></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="model.InitiatedBranch.BranchName" Label="Initiated Branch" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InitiatedBranch.BranchName)" Disabled></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudDatePicker Label="End Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DriverTransferEndModel.TransferEndDate" DateFormat="dd/MM/yyyy" />
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="model.DriverTransferEndModel.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
-                    </MudItem>
-                </MudGrid>
-            </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" OnClick="Accept" Class="px-12">Accept Driver</MudButton>
-        @if (model.DriverTransferEndModel.TransferStatus == null)
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="model.InitiatedBranch.BranchName" Label="Initiated Branch" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InitiatedBranch.BranchName)" Disabled></MudTextField>
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudDatePicker Label="End Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DriverTransferEndModel.TransferEndDate" DateFormat="dd/MM/yyyy" />
+                     </MudItem>
+                     <MudItem xs="12" md="12">
+                         <MudTextField @bind-Value="model.DriverTransferEndModel.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                     </MudItem>
+                 </MudGrid>
+             </EditForm>
+         </MudContainer>
+     </DialogContent>
+     <DialogActions>
+         <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" OnClick="Accept" Class="px-12">Accept Driver</MudButton>
+         @if (model.DriverTransferEndModel.TransferStatus == null)
         {
             <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Warning" OnClick="Reject" Class="px-12">Reject Driver</MudButton>
         }
@@ -48,11 +46,11 @@
 @code {
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
     [Parameter]
     public DriverTransferInitiationModel model { get; set; } = new();
-
+    private int branchID { get; set; } = 0;
     private bool _busy;
+
     public bool HasPermissionDriverTransferEdit { get; set; } = false;
     public int DocTypeID = 49;
 
@@ -64,14 +62,10 @@
         branchID = model?.DestinationBranch?.BranchID ?? 0;
     }
 
-
-    private int branchID { get; set; } = 0;
-
     void Cancel()
     {
         MudDialog.Cancel();
     }
-
 
     public async Task Accept()
     {
@@ -81,7 +75,6 @@
             return;
         }
         _busy = true;
-
         if (HasPermissionDriverTransferEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
@@ -89,9 +82,8 @@
             if (model.Driver == null || model.Driver.DriverID == 0)
             {
                 bool? result = await DialogService.ShowMessageBox(
-                "Warning",
-                "Please, Select driver.", yesText: "OK");
-
+                    "Warning",
+                    "Please, Select driver.", yesText: "OK");
                 return;
             }
             if (model != null)
@@ -102,7 +94,6 @@
                     model.DriverTransferEndModel.TransferStatus = true;
                     Iservice.UpdateStatus(model);
                     Snackbar.Add("Transfered succesfully", Severity.Success);
-
                 }
                 catch (Exception ex)
                 {
@@ -114,13 +105,12 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Add or Edit DriverTransfer.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit DriverTransfer.");
         }
         await Task.Delay(2000);
         _busy = false;
     }
-
 
     public async Task Reject()
     {
@@ -131,9 +121,8 @@
             if (model.Driver == null || model.Driver.DriverID == 0)
             {
                 bool? result = await DialogService.ShowMessageBox(
-                "Warning",
-                "Please, Select truck.", yesText: "OK");
-
+                    "Warning",
+                    "Please, Select truck.", yesText: "OK");
                 return;
             }
             if (model != null)
@@ -141,11 +130,9 @@
                 model.IsdriverReject = 1;
                 try
                 {
-
                     model.DriverTransferEndModel.TransferStatus = false;
                     Iservice.UpdateStatus(model);
                     Snackbar.Add("Driver Transfer Rejected", Severity.Error);
-
                 }
                 catch (Exception ex)
                 {
@@ -157,8 +144,8 @@
         else
         {
             bool? ResultModel = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Add or Edit DriverTransfer.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit DriverTransfer.");
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -6,14 +7,18 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class ConsigneeModel
+    public class ConsigneeModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<ConsigneeModel>(Json);
+        }
         public ConsigneeModel()
         {
-            UserInfo = new SharedModels.UserInfoModel();            
+            UserInfo = new SharedModels.UserInfoModel();
             Address = new AddressModel();
         }
-
         string _name;
         public int? ConsigneeID { get; set; }
         [Required]

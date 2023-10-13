@@ -1,13 +1,19 @@
 ﻿using ArmsModels.BaseModels;
 using ArmsModels.SharedModels;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Core.BaseModels.Inventory
 {
-    public class StockTransferInitiationModel
+    public class StockTransferInitiationModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<StockTransferInitiationModel>(Json);
+        }
         public int? StockTransferID { get; set; }
         public int? InvTranID { get; set; }
         public StoreModel Store { get; set; }
@@ -30,7 +36,7 @@ namespace Core.BaseModels.Inventory
             }
         }
         public List<InventoryItemEntryModel> ItemsList { get; set; } = new();
-        public decimal? TotalValue { get { return ItemsList.Sum(X => X.ItemQty * X.ItemRate);  } }
+        public decimal? TotalValue { get { return ItemsList.Sum(X => X.ItemQty * X.ItemRate); } }
         public StockTransferEndModel EndModel { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
@@ -59,6 +65,5 @@ namespace Core.BaseModels.Inventory
         public DateTime? TransferEndDate { get; set; }
         public byte? RecordStatus { get; set; }
         public List<InventoryItemEntryModel> ItemsEndList { get; set; } = new();
-
     }
 }

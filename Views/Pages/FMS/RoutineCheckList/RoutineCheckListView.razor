@@ -17,7 +17,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Routine Check List</MudText>
                 <MudTooltip Text="New Routine Check List">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogAddNew())" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new RoutineCheckListModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
             </ToolBarContent>
@@ -33,7 +33,7 @@
                 <MudTd DataLabel="Description">@context.ItemNames</MudTd>
                 <MudTd DataLabel="Actions">
                     <MudTooltip Text="Edit">
-                        <MudIconButton @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        <MudIconButton @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
                     <MudTooltip Text="Remove">
                         <MudIconButton @onclick="@(()=> OpenDialogDelete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" IconSize="Size.Small" />
@@ -54,55 +54,47 @@
     List<TruckModel> TruckList = new();
     List<RoutineCheckListMasterModel> ItemList = new();
     string state = "Message box hasn't been opened yet";
+    private bool _busy;
 
-    private async Task OpenDialogAddNew()
+    protected async override Task OnInitializedAsync()
     {
-        RoutineCheckListModel Item = new();
-        Item.UserInfo = new();
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (Item.UserInfo != null)
-        {
-            Item.UserInfo.UserID = user.Identity.Name;
-        }
-        Item.BranchID = int.Parse(brancIDString);
-        var model = new DialogParameters { ["model"] = Item };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<RoutineCheckListDialog>("Simple Dialog", model, options);
-        var result = await dialog.Result;
+        TruckList = IserviceTruck.SelectByBranch(int.Parse(brancIDString)).ToList();
+        ItemList = IserviceRoutineMaster.SelectItemByBranch(int.Parse(brancIDString)).ToList();
 
-        // you can check if the modal was cancelled
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
-        {
-            await GetAll();
-        }
+        await GetAll();
     }
 
-    private async Task OpenDialogEdit(RoutineCheckListModel Item)
+    private async Task OpenDialog(RoutineCheckListModel model)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
 
-        Item.UserInfo = new();
-        if (Item.UserInfo != null)
-        {
-            Item.UserInfo.UserID = user.Identity.Name;
-        }
-        Item.BranchID = int.Parse(brancIDString);
-        var model = new DialogParameters { ["model"] = Item };
+        model.UserInfo.UserID = user.Identity.Name;
+        model.BranchID = int.Parse(brancIDString);
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", model.Clone());
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<RoutineCheckListDialog>("Simple Dialog", model, options);
+        var dialog = DialogService.Show<RoutineCheckListDialog>("Simple Dialog", parms, options);
         var result = await dialog.Result;
 
         // you can check if the modal was cancelled
-        var isCancelled = result.Canceled;
+        var isCancelled = result.Cancelled;
         if (!isCancelled)
         {
             await GetAll();
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task OpenDialogDelete(RoutineCheckListModel model)
@@ -124,17 +116,6 @@
             }
             await GetAll();
         }
-    }
-
-    protected async override Task OnInitializedAsync()
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        TruckList = IserviceTruck.SelectByBranch(int.Parse(brancIDString)).ToList();
-        ItemList = IserviceRoutineMaster.SelectItemByBranch(int.Parse(brancIDString)).ToList();
-
-        await GetAll();
     }
 
     private async Task GetAll()
@@ -179,14 +160,5 @@
             }
             item.ItemNames = ItemNames;
         }
-    }
-
-    private void OpenDialog()
-    {
-        RoutineCheckListModel Item = new();
-
-        var model = new DialogParameters { ["model"] = Item };
-        var options = new DialogOptions { CloseOnEscapeKey = true };
-        DialogService.Show<RoutineCheckListDialog>("Simple Dialog", model, options);
     }
 }

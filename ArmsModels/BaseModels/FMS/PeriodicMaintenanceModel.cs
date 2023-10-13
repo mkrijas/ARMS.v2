@@ -4,17 +4,21 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using ArmsModels.SharedModels;
-
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
     public class PeriodicMaintenanceInitiateModel
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<PeriodicMaintenanceInitiateModel>(Json);
+        }
         public PeriodicMaintenanceInitiateModel()
         {
             UserInfo = new();
         }
-
         public int? PMIID { get; set; }
         [Required]
         public string Title { get; set; }
@@ -26,8 +30,8 @@ namespace ArmsModels.BaseModels
         public DateTime? NDate { get; set; } // Date or Audometer whichever comes first insitiate Notification
         [Required]
         public long? NAudometer { get; set; }
-        public int? NotificationID { get; set; }
         //Get when Notification is created
+        public int? NotificationID { get; set; }
         public UserInfoModel UserInfo { get; set; }
         public int? JobCardID { get; set; } = null;
     }
@@ -42,13 +46,11 @@ namespace ArmsModels.BaseModels
         public int? PMCID { get; set; }
         [Required]
         public int? PMIID { get; set; }
-        [Required]        
+        [Required]
         public DateTime? Date { get; set; }
         [Required]
-        public long? Audometer { get; set; }        
+        public long? Audometer { get; set; }
         public UserInfoModel UserInfo { get; set; }
         public virtual PeriodicMaintenanceInitiateModel Initiator { get; set; }
     }
-
 }
-

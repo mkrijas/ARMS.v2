@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
@@ -11,17 +12,16 @@ namespace ArmsModels.BaseModels
         public DriverModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
-            Address = new AddressModel() {  AddresseeName = "Name" };
+            Address = new AddressModel() { AddresseeName = "Name" };
             DriverAgent = new PartyModel();
             Contacts = new();
         }
-
         public int? DriverID { get; set; }
         public int? DriverAgentID { get; set; }
         public PartyModel DriverAgent { get; set; }
         [Required]
         public string DriverName { get; set; }
-        public int? HomeBranchID { get; set; }       
+        public int? HomeBranchID { get; set; }
         public string DriverImage { get; set; }
         [Required]
         [DataType(DataType.Date)]
@@ -29,9 +29,9 @@ namespace ArmsModels.BaseModels
         [ValidateAge(18, ErrorMessage = "Age must be 18 years or older.")]
         public DateTime? DateOfBirth { get; set; }
         [Required]
-        public string AdhaarNo { get; set; }        
+        public string AdhaarNo { get; set; }
         public string AdhaarImage { get; set; }
-        public int? AddressID { get; set; }       
+        public int? AddressID { get; set; }
         public string FestivalBonus { get; set; }
         public string AdditionalInfo { get; set; }
         [Required]
@@ -79,6 +79,7 @@ namespace ArmsModels.BaseModels
         public string Detail { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
+
     public class DriverLeaveModel
     {
         public DriverLeaveModel()
@@ -94,8 +95,14 @@ namespace ArmsModels.BaseModels
         public string Reason { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
-    public class DriverLicenceModel
+
+    public class DriverLicenceModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<DriverLicenceModel>(Json);
+        }
         public DriverLicenceModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
@@ -112,8 +119,13 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
-    public class DriverTransferInitiationModel
+    public class DriverTransferInitiationModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<DriverTransferInitiationModel>(Json);
+        }
         public int? DriverTransferID { get; set; }
         public DriverModel Driver { get; set; }
         public BranchModel InitiatedBranch { get; set; }
@@ -123,6 +135,7 @@ namespace ArmsModels.BaseModels
         public DriverTransferEndModel DriverTransferEndModel { get; set; }
         public int IsdriverReject { get; set; } = 0;
     }
+
     public class DriverTransferEndModel
     {
         public int? DriverTransferEndID { get; set; }
@@ -149,6 +162,5 @@ namespace ArmsModels.BaseModels
         public DriverModel Driver { get; set; }
         [Required]
         public string Remarks { get; set; }
-
     }
 }
