@@ -1,12 +1,11 @@
 ﻿@page "/TruckRegisterList"
 @page "/TruckRegisterList/{SelectedTruckId:int}"
+@using System.Threading;
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
 @inject ITruckService ItruckService
 @inject MudBlazor.ISnackbar snackbar
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
 <MudPaper Class="pl-5 my-5" Elevation="4">
@@ -14,12 +13,9 @@
         <MudItem xs="12" md="12">
             <TruckSelector Value="SelectedTruck" ValueChanged="SelectedTruckChanged" />
         </MudItem>
-@*        <MudItem xs="2" md="2">
-            <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" ButtonType="ButtonType.Submit">Fetch</MudButton>
-        </MudItem>*@
     </MudGrid>
 </MudPaper>
-@if(SelectedTruck!=null && SelectedTruck.TruckID != null)
+@if (SelectedTruck != null && SelectedTruck.TruckID != null)
 {
     <MudTable Items="@collection" Elevation="5">
         <ToolBarContent>
@@ -39,25 +35,20 @@
             <MudTd DataLabel="Valid To">@context.EffectTo.Value.ToString("dd/MM/yyyy")</MudTd>
             <MudTd DataLabel="">
                 <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-
             </MudTd>
         </RowTemplate>
         <PagerContent>
             <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
         </PagerContent>
     </MudTable>
-
 }
-
 
 @code {
 
     [Parameter]
     public TruckModel SelectedTruck { get; set; }
-
     [Parameter]
     public int? SelectedTruckID { get; set; }
-
     int BranchID;
     private List<TruckModel> TruckList = new List<TruckModel>();
     private List<TruckRegistrationModel> collection = new List<TruckRegistrationModel>();
@@ -67,14 +58,12 @@
         var authState = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authState.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
         TruckList = ItruckService.Select(null).ToList();
-
         if (SelectedTruck == null)
         {
             SelectedTruck = TruckList.FirstOrDefault(s => s.TruckID == SelectedTruckID);
         }
         fetch();
     }
-
 
     async Task Edit(TruckRegistrationModel reg)
     {
@@ -85,13 +74,11 @@
         }
         if (reg.TruckID == null)
         {
-            reg.TruckID = SelectedTruck?.TruckID??null;
+            reg.TruckID = SelectedTruck?.TruckID ?? null;
         }
-
         DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Large, };
         DialogParameters parms = new();
-        parms.Add("CurrentRegistration", reg);
-
+        parms.Add("CurrentRegistration", reg.Clone());
         var dialog = DialogService.Show<TruckRegisterDialog>("Registration", parms, options);
         var result = await dialog.Result;
         if (!result.Canceled)
@@ -100,13 +87,11 @@
         }
     }
 
-
     void SelectedTruckChanged(TruckModel truck)
     {
         SelectedTruck = truck;
         fetch();
     }
-
 
     void fetch()
     {

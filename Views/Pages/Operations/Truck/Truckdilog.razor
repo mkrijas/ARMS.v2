@@ -1,21 +1,18 @@
 ﻿@page "/truckadd"
-
+@using System.Threading;
+@using System.Globalization
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
 @inject TruckDataArrayModel data
 @inject IConfigTable config
 @inject ITruckService Iservice
 @inject ITruckTypeService Itrucktype
 @inject IBranchService Ibranch
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
 @inject IAssetService Iasset
-@attribute [Authorize]
-
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-
-@using System.Globalization
 <MudDialog>
     <DialogContent>
         <div style="max-height:500px;overflow-y:scroll">
@@ -29,7 +26,7 @@
                         </MudItem>
                         <MudItem xs="6">
                             <MudSelect ReadOnly Disabled Variant="Variant.Outlined" Label="Home Branch" @bind-Value="EditModel.HomeBranchID" Margin=Margin.Normal OffsetY="true" AdornmentColor="Color.Secondary">
-                                @foreach (var item in Branches)
+                                 @foreach (var item in Branches)
                                 {
                                     <MudSelectItem Value="@item.BranchID">@item.BranchName</MudSelectItem>
                                 }
@@ -89,7 +86,7 @@
                             </MudSelect>
                         </MudItem>
                         <MudItem xs="6">
-                            <AssetSelector Class="dropstyle mt-1" Label="Link Asset" Value="SelectedAsset" PassedListAssets="PassedListAssets" ValueChanged="AssetSelected" BranchID="EditModel.HomeBranchID??0" SubClassID="AssetSubClassID"  ClearOnSelect="true">
+                            <AssetSelector Class="dropstyle mt-1" Label="Link Asset" Value="SelectedAsset" PassedListAssets="PassedListAssets" ValueChanged="AssetSelected" BranchID="EditModel.HomeBranchID??0" SubClassID="AssetSubClassID" ClearOnSelect="true">
                             </AssetSelector>
                         </MudItem>
                     </MudGrid>
@@ -99,27 +96,23 @@
     </DialogContent>
     <DialogActions>
         <MudButton Disabled="@_busy" form="truckForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Truck</MudButton>
-
     </DialogActions>
-
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter]
     public TruckModel EditModel { get; set; } = new();
-
     private List<TruckTypeModel> TruckTypes = new List<TruckTypeModel>();
     private List<BranchModel> Branches = new List<BranchModel>();
     public AssetModel SelectedAsset { get; set; } = new();
     int? AssetSubClassID;
     int BranchID;
     string UserID;
-
     public List<AssetModel> PassedListAssets = new();
-
     private bool _busy;
+
     public bool HasPermissionITruckServiceEdit { get; set; } = false;
     public int DocTypeID = 37;
 
@@ -135,29 +128,27 @@
         {
             EditModel.HomeBranchID = BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
         }
-
         ConfigModel cModel = config.GetAssetSubclassForTrucks();
         AssetSubClassID = int.Parse(cModel.ValueString);
-
         TruckTypes = Itrucktype.Select(0).ToList();
         Branches = Ibranch.Select().ToList();
-
         if ((EditModel.AssetID ?? 0) != 0)
+        {
             SelectedAsset = Iasset.SelectByID(EditModel.AssetID);
+        }
         else
+        {
             SelectedAsset = null;
-
+        }
         int selectesAssetId = SelectedAsset?.AssetID ?? 0;
         PassedListAssets = Iasset.SelectLinkedAssetsOnTruck().Where(s => s.AssetID != selectesAssetId).ToList();
     }
-
 
     private void AssetSelected(AssetModel asset)
     {
         SelectedAsset = asset;
         EditModel.AssetID = asset?.AssetID;
     }
-
 
     private async void OnValidSubmit(EditContext context)
     {
@@ -167,7 +158,6 @@
             return;
         }
         _busy = true;
-
         if (HasPermissionITruckServiceEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
@@ -194,13 +184,12 @@
         else
         {
             bool? result = await DialogService.ShowMessageBox(
-               "Permission denied!",
-               "You dont have any permission to Add or Edit Truck.");
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Truck.");
         }
         await Task.Delay(2000);
         _busy = false;
     }
-
 
     void Cancel()
     {

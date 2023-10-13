@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -7,15 +8,19 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class TruckModel
+    public class TruckModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<TruckModel>(Json);
+        }
         public TruckModel()
-        {            
+        {
             CurrentRegistration = new TruckRegistrationModel();
             UserInfo = new SharedModels.UserInfoModel();
             CurrentEvent = new();
         }
-
         public int? TruckID { get; set; }
         public string RegNo { get; set; }
         public int? HomeBranchID { get; set; }
@@ -23,7 +28,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public short? TruckTypeID { get; set; }
         public string TruckType { get; set; }
-        [Required][StringLength(maximumLength:50)]
+        [Required]
+        [StringLength(maximumLength: 50)]
         public string BodyType { get; set; }
         [Required]
         [StringLength(maximumLength: 50)]
@@ -49,35 +55,31 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? AssetID { get; set; }
         SharedModels.UserInfoModel _userInfo;
-        public SharedModels.UserInfoModel UserInfo { get { return _userInfo; } set {
+        public SharedModels.UserInfoModel UserInfo
+        {
+            get { return _userInfo; }
+            set
+            {
                 _userInfo = value;
-                
                 CurrentRegistration.UserInfo = _userInfo;
-
-
-            } }
-
-   
+            }
+        }
     }
 
     public class TruckDataArrayModel
     {
         private readonly IConfiguration Configuration;
-
         public TruckDataArrayModel(IConfiguration configuration)
         {
             Configuration = configuration;
         }
-
         public const string Data = "Data";
         public string[] BodyTypes { get { return Configuration.GetSection(Data).GetSection("BodyTypes").Get<string[]>(); } }
         public string[] FuelTypes { get { return Configuration.GetSection(Data).GetSection("FuelTypes").Get<string[]>(); } }
         public string[] TransmissionTypes { get { return Configuration.GetSection(Data).GetSection("TransmissionTypes").Get<string[]>(); } }
         public string[] BankTools { get { return Configuration.GetSection(Data).GetSection("BankTools").Get<string[]>(); } }
         public string[] NatureOfTransaction { get { return Configuration.GetSection(Data).GetSection("NatureOfTransaction").Get<string[]>(); } }
-
     }
-
 
     public class TruckStatusModel
     {
