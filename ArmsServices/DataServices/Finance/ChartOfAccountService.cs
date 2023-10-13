@@ -41,7 +41,6 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-
         public IEnumerable<ChartOfAccountModel> SelectChildren(int? CoaID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -54,6 +53,41 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
+        }
+        public List<ChartOfAccountModel> CoaAllList { get; set; } = new();
+
+        public List<ChartOfAccountModel> SelectAllChildrenAndItsSub(int? CoaID)
+        {
+            ClearCoaList();
+            return SelectAllChildrenAndItsSubChildren(CoaID);
+        }
+            public void ClearCoaList()
+        {
+            CoaAllList.Clear();
+        }
+        public List<ChartOfAccountModel> SelectAllChildrenAndItsSubChildren(int? CoaID)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "children"),
+               new SqlParameter("@CoaID",CoaID),
+            };
+            ChartOfAccountModel model = new ChartOfAccountModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
+            {
+                model = GetModel(dr);
+                if (model.SummaryAccount)
+                {
+                    SelectAllChildrenAndItsSubChildren(model.CoaID);
+                }
+                else
+                {
+                    CoaAllList.Add(model);
+                }
+                
+            }
+            return CoaAllList;
         }
         public IEnumerable<ChartOfAccountModel> SelectBase()
         {

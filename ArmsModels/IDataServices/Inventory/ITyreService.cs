@@ -31,7 +31,9 @@ namespace ArmsServices.DataServices
         int ResoleCancel(int? ID, string UserID);
         IEnumerable<int?> ResoleTyresByResoleId(int? ResoleId);
         IEnumerable<TyreResoleModel> SelectTyreResoleList(int? ID);
+        IEnumerable<TyreResoleModel> SelectTyreResoleListByBranchId(int? ID);
         IEnumerable<ResoleDeliveryModel> SelectResoleDeliveryViewList(int? ID);
+        IEnumerable<ResoleDeliveryModel> SelectResoleDeliveryListByBranch(int? ID);
         IEnumerable<ResoleDeliveryTyreModel> SelectResoleDeliveryTyresList(int? ResoleID, int? DeliveryID);
         int ResoleDeliveryUpdate(ResoleDeliveryModel model);
         int UndoResoleDelivery(int? DeliveryId, string UserID);
