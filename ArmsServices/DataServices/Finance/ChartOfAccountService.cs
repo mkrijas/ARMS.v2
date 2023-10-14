@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Reflection;
 
 
 namespace ArmsServices.DataServices
@@ -56,10 +57,23 @@ namespace ArmsServices.DataServices
         }
         public List<ChartOfAccountModel> CoaAllList { get; set; } = new();
 
-        public List<ChartOfAccountModel> SelectAllChildrenAndItsSub(int? CoaID)
+        public List<ChartOfAccountModel> SelectAllChildrenAndItsSub(int? CoaID,string  searchString)
         {
             ClearCoaList();
-            return SelectAllChildrenAndItsSubChildren(CoaID);
+            if(searchString != null)
+            {
+                searchString = searchString.Trim();
+            }
+            var result = SelectAllChildrenAndItsSubChildren(CoaID);
+            if(result.Any(d => string.IsNullOrWhiteSpace(searchString) || d.AccountName != null && d.AccountName.ToLower().Trim().Contains(searchString.ToLower().Trim())))
+            {
+                return result.Where(d => string.IsNullOrWhiteSpace(searchString) || d.AccountName != null && d.AccountName.ToLower().Trim().Contains(searchString.ToLower().Trim())).ToList();
+            }
+            else
+            {
+                return new List<ChartOfAccountModel>();
+            }
+           
         }
             public void ClearCoaList()
         {
@@ -83,7 +97,9 @@ namespace ArmsServices.DataServices
                 }
                 else
                 {
-                    CoaAllList.Add(model);
+
+                        CoaAllList.Add(model);
+                   
                 }
                 
             }
