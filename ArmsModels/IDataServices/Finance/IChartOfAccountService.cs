@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         ChartOfAccountModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<ChartOfAccountModel> SelectChildren(int? CoaID);
+        List<ChartOfAccountModel> SelectAllChildrenAndItsSub(int? CoaID);
         IEnumerable<ChartOfAccountModel> SelectBase();
         IEnumerable<ChartOfAccountModel> FilterSubLedgers(string filterText);
         IEnumerable<ChartOfAccountModel> AllLedgers();
