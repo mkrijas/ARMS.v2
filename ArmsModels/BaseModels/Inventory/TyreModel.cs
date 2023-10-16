@@ -90,6 +90,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? RequestedDate { get; set; }
         public DateTime? DeliveredDate { get; set; }
+
+        public int? BranchID { get; set; }
         public int? DeliveryID { get; set; }
         [Required(ErrorMessage = "The tyre is required.")]
         [MinLength(1, ErrorMessage = "At least 1 tyre should be selected.")]
@@ -125,6 +127,7 @@ namespace ArmsModels.BaseModels
     {
         public int? ID { get; set; }
         public int? ResoleID { get; set; }
+        public int? BranchID { get; set; }
         public TyreResoleModel Resole { get; set; }
         public PartyModel Party { get; set; }
         public DateTime? RequestedDate { get; set; }

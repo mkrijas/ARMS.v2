@@ -94,6 +94,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@Party", model.Party?.PartyID??null),
                new SqlParameter("@RequestedDate", model.RequestedDate),
+               new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@Tyres", model.Tyres.Select(s=>s.Value)?.ToList()?.ToDataTable()??null),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -111,11 +112,35 @@ namespace ArmsServices.DataServices
                 yield return GetTyreResoleModel(dr);
             }
         }
+        public IEnumerable<TyreResoleModel> SelectTyreResoleListByBranchId(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByBranchID"),
+               new SqlParameter("@ID", ID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Resole.Select]", parameters))
+            {
+                yield return GetTyreResoleModel(dr);
+            }
+        }
 
         public IEnumerable<ResoleDeliveryModel> SelectResoleDeliveryViewList(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@ID", ID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tyre.Resole.NotDeliveredAndDelivered.Select]", parameters))
+            {
+                yield return GetResoleDeliveryModel(dr);
+            }
+        }
+        public IEnumerable<ResoleDeliveryModel> SelectResoleDeliveryListByBranch(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByBranchID"),
                new SqlParameter("@ID", ID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tyre.Resole.NotDeliveredAndDelivered.Select]", parameters))
@@ -148,6 +173,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UsageCode", model.UsageCode),
                new SqlParameter("@TaxIncluded", model.TaxIncluded),
                new SqlParameter("@PID", model.PID),
+               new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@ResoleDeliveryTyres", model.ResoleDeliveryTyreList.Select(s=>new {
                    ID =s.ID,
                    DeliveryID = s.DeliveryID ,
@@ -397,6 +423,7 @@ namespace ArmsServices.DataServices
                 RequestedDate = dr.GetDateTime("RequestedDate"),
                 Party = new PartyModel() { PartyID = dr.GetInt32("Party") },
                 DeliveryID = dr.GetInt32("DeliveryID"),
+                BranchID = dr.GetInt32("BranchID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
