@@ -113,9 +113,9 @@ namespace Views.Pages.Operations.Gc
                 snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
                 return;
             }
-            _busy = true;
             if (HasPermissionGcServiceEdit)
             {
+                _busy = true;
                 model.OrderID = Order.OrderID;
                 model.RouteID = Route.RouteID;
                 model.ConsignorID = Consignor.ConsigneeID;
@@ -139,15 +139,15 @@ namespace Views.Pages.Operations.Gc
                 {
                     snackbar.Add(ex.Message, Severity.Error);
                 }
+                await Task.Delay(2000);
+                _busy = false;
             }
             else
             {
                 bool? ResultModel = await DialogService.ShowMessageBox(
                     "Permission denied!",
                     "You dont have any permission to Add or Edit GC.");
-            }
-            await Task.Delay(2000);
-            _busy = false;
+            }   
         }
 
         private async Task OrderSelected(OrderModel obj)

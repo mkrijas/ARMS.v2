@@ -263,6 +263,7 @@
     private List<MechanicModel> Mechanics = new();
     private IEnumerable<MechanicModel> SelectedMechanics;
     private JobInProgressModel SelectedJob = new();
+    private bool _busy;
 
     protected async override Task OnInitializedAsync()
     {
@@ -458,6 +459,12 @@
 
     private async Task BeginInsuranceClaim()
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var asset = Iasset.SelectByTruckID(Breakdown.TruckID);
         var parameters = new DialogParameters();
         parameters.Add("BreakdownID", Breakdown.BreakdownID);
@@ -470,10 +477,18 @@
             InsuranceClaimModel InsModel = (InsuranceClaimModel)result.Data;
             Breakdown.IsClaimInitiated = true;
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task OpenExpenses()
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var parameters = new DialogParameters();
         parameters.Add("model", new TaxPurchaseModel() { NonStoreInventory = true, });
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
@@ -492,10 +507,18 @@
                 snackbar.Add("Created Successfully", Severity.Success);
             }
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task OpenInventoryRequestDialog(InventoryRequestModel model)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var authprov = await auth.GetAuthenticationStateAsync();
         var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         model.Jobcard = SelectedJobcard;
@@ -512,6 +535,8 @@
             InvRequestList = IInvRequestservice.SelectRequestReleaseByTruckID(SelectedTruck?.TruckID ?? 0).ToList();
             model = new();
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task DeleteInventoryRequest(InventoryRequestModel model)

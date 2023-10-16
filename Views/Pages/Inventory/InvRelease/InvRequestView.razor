@@ -18,7 +18,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Inventory Release </MudText>
                 <MudTooltip Text="New Inventory Release">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
             </ToolBarContent>
@@ -54,6 +54,7 @@
 
     public bool IsApproved { get; set; } = false;
     private List<InventoryRequestModel> collection = new List<InventoryRequestModel>();
+    private bool _busy;
 
     protected override void OnInitialized()
     {
@@ -95,6 +96,12 @@
 
     private async Task OpenDialog(InventoryRequestModel model)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         var authprov = await auth.GetAuthenticationStateAsync();
         var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
@@ -105,5 +112,7 @@
         var dialog = DialogService.Show<InventoryReleaseDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         GetAll();
+        await Task.Delay(200);
+        _busy = false;
     }
 }
