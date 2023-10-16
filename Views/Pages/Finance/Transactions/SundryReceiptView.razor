@@ -17,7 +17,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Sundry Receipt </MudText>
                 <MudTooltip Text="New Sundry Receipt">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new SundryReceiptModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new SundryReceiptModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Sundry Receipt..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -76,7 +76,7 @@
     private List<SundryReceiptModel> collection = new List<SundryReceiptModel>();
     private int numberOfRecords = 100;
     private string searchTerm = "";
-
+    private bool _busy;
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 12;
 
@@ -138,6 +138,12 @@
 
     private async Task OpenDialog(SundryReceiptModel RModel, bool ReadOnly)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", RModel.Clone());
@@ -145,6 +151,8 @@
         var dialog = DialogService.Show<SundryReceiptDialog>(RModel.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         await GetAll(IsApproved, NumberOfRecords);
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task Delete(SundryReceiptModel model)

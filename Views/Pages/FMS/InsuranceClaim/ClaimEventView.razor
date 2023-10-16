@@ -4,7 +4,7 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 
-<MudForm @bind-IsValid="@formValid">
+<MudForm @bind-IsValid="@formValid" @ref="form">
     <MudTable Items="@ClaimEventList" Hover="true" CanCancelEdit="true" Filter="new Func<InsuranceClaimEventMasterModel,bool>(FilterFunc)" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted">
         <ToolBarContent>
             <MudText Typo="Typo.h6">Insurance-Followup Events Master</MudText>
@@ -63,15 +63,12 @@
             <MudTd DataLabel="Description">
                 <MudButton Disabled="@(!formValid)" OnClick="(()=>ItemHasBeenCommitted(InsertElement))">Create</MudButton>
             </MudTd>
-        </FooterContent>
-        <PagerContent>
-            <MudTablePager />
-        </PagerContent>
+        </FooterContent>       
     </MudTable>
 </MudForm>
 
 @code {
-
+    MudForm form;
     bool formValid;
     private List<InsuranceClaimEventMasterModel> ClaimEventList = new();
     private InsuranceClaimEventMasterModel elementBeforeEdit;
@@ -107,18 +104,22 @@
             };
     }
 
-    private void ItemHasBeenCommitted(object element)
+    private async void ItemHasBeenCommitted(object element)
     {
         var item = (InsuranceClaimEventMasterModel)element;
         var authState = auth.GetAuthenticationStateAsync().Result;
         item.UserInfo.UserID = authState.User.Identity.Name;
         item.Order = item.Order ?? ((ClaimEventList.Max(x => x.Order) ?? 0) + 1);
-        Iservice.UpdateEventList(item);
-
-        if (item.IcemID == null)
+        try
         {
-            InsertElement = new();
+            Iservice.UpdateEventList(item);
+            //InsertElement = new();
             ClaimEventList = Iservice.GetEventList(null).ToList();
+            await form.ResetAsync();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
         }
     }
 
