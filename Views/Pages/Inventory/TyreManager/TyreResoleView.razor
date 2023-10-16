@@ -6,6 +6,8 @@
 @inject IPartyService partyIservice
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4">
@@ -49,6 +51,38 @@
     List<PartyModel> partyList = new List<PartyModel>();
     private bool _busy;
 
+    public bool HasPermissionTyreServiceCancel { get; set; } = false;
+    public int DocTypeID = 63;
+
+    protected async override Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTyreServiceCancel = await Irole.HasClaim(DocTypeID.ToString(), "Cancel", ctc.Token);
+
+        partyList = partyIservice.Select(0).ToList();
+        await GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        collection = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        var BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        collection = ITyreservice.SelectTyreResoleListByBranchId(BranchID).ToList();
+        if (partyList != null && partyList.Count() != 0)
+        {
+            foreach (var item in collection)
+            {
+                if (item.Party != null && item.Party.PartyID != null && partyList.Any(s => s.PartyID == item.Party.PartyID))
+                {
+                    item.Party = partyList.First(s => s.PartyID == item.Party.PartyID);
+                }
+            }
+        }
+    }
+
     private async Task OpenDialogEdit(TyreResoleModel TyreResole)
     {
         if (_busy)
@@ -81,55 +115,38 @@
 
     private async Task OpenDialogCancel(TyreResoleModel TyreResole)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Are you sure you want to cancel this entry?",
-            yesText: "Delete!", cancelText: "Cancel");
-        if (result != null)
+        if (HasPermissionTyreServiceCancel)
         {
-            try
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Are you sure you want to cancel this entry?",
+                yesText: "Delete!", cancelText: "Cancel");
+            if (result != null)
             {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                TyreResole.UserInfo = new();
-                if (TyreResole.UserInfo != null)
+                try
                 {
-                    TyreResole.UserInfo.UserID = user.Identity.Name;
-                    ITyreservice.ResoleCancel(TyreResole.ID, TyreResole.UserInfo.UserID);
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    TyreResole.UserInfo = new();
+                    if (TyreResole.UserInfo != null)
+                    {
+                        TyreResole.UserInfo.UserID = user.Identity.Name;
+                        ITyreservice.ResoleCancel(TyreResole.ID, TyreResole.UserInfo.UserID);
+                    }
+                    await GetAll();
+                    snackbar.Add("Cancelled Successfully", Severity.Success);
                 }
-                await GetAll();
-                snackbar.Add("Cancelled Successfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
         }
-    }
-
-    protected async override Task OnInitializedAsync()
-    {
-        partyList = partyIservice.Select(0).ToList();
-        await GetAll();
-    }
-
-    private async Task GetAll()
-    {
-        collection = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        UserID = user.Identity.Name;
-        var BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        collection = ITyreservice.SelectTyreResoleListByBranchId(BranchID).ToList();
-        if (partyList != null && partyList.Count() != 0)
+        else
         {
-            foreach (var item in collection)
-            {
-                if (item.Party != null && item.Party.PartyID != null && partyList.Any(s => s.PartyID == item.Party.PartyID))
-                {
-                    item.Party = partyList.First(s => s.PartyID == item.Party.PartyID);
-                }
-            }
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Cancel Tyre.");
         }
     }
 

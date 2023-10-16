@@ -10,10 +10,10 @@ namespace ArmsServices.DataServices
 {
     public interface IInventoryItemService
     {
-        InventoryItemModel Update(InventoryItemModel model);
+        InventoryItemModel Update(InventoryItemModel model);  //Edit
         InventoryItemModel SelectByID(int? ID);
         IEnumerable<InventoryItemModel> SelectListByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<InventoryItemModel> SelectByGroup(int? GroupID);
         IEnumerable<InventoryItemModel> SearchByItemCode(string itemCode);
         IEnumerable<InventoryItemModel> SearchByDescription(string itemDescription);

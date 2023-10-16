@@ -6,6 +6,8 @@
 @inject IPartyService partyIservice
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <h3>Resole Delivery View</h3>
@@ -23,7 +25,7 @@
                 <MudTd DataLabel="Tyre">@context.Party.TradeName</MudTd>
                 <MudTd DataLabel="Make">@context.RequestedDate</MudTd>
                 <MudTd DataLabel="Make">@(context?.Tyres?.Count() ?? 0)</MudTd>
-                @if (context.ID == null || context.ID == 0)
+                    @if (context.ID == null || context.ID == 0)
                 {
                     <MudTd DataLabel="Make">Not Delivered</MudTd>
                 }
@@ -57,6 +59,9 @@
     List<PartyModel> partyList = new List<PartyModel>();
     private bool _busy;
 
+    public bool HasPermissionTyreServiceCancel { get; set; } = false;
+    public int DocTypeID = 63;
+
     private async Task OpenDialogEdit(ResoleDeliveryModel ResoleDelivery)
     {
         if (_busy)
@@ -89,34 +94,46 @@
 
     private async Task OpenDialogCancel(ResoleDeliveryModel ResoleDelivery)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Are you sure you want to undo this entry?",
-            yesText: "Delete!", cancelText: "Cancel");
-        if (result != null)
+        if (HasPermissionTyreServiceCancel)
         {
-            try
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Are you sure you want to undo this entry?",
+                yesText: "Delete!", cancelText: "Cancel");
+            if (result != null)
             {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                ResoleDelivery.UserInfo = new();
-                if (ResoleDelivery.UserInfo != null)
+                try
                 {
-                    ResoleDelivery.UserInfo.UserID = user.Identity.Name;
-                    ITyreservice.UndoResoleDelivery(ResoleDelivery.ID, ResoleDelivery.UserInfo.UserID);
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    ResoleDelivery.UserInfo = new();
+                    if (ResoleDelivery.UserInfo != null)
+                    {
+                        ResoleDelivery.UserInfo.UserID = user.Identity.Name;
+                        ITyreservice.UndoResoleDelivery(ResoleDelivery.ID, ResoleDelivery.UserInfo.UserID);
+                    }
+                    await GetAll();
+                    snackbar.Add("Cancelled Successfully", Severity.Success);
                 }
-                await GetAll();
-                snackbar.Add("Cancelled Successfully", Severity.Success);
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Cancel Tyre.");
         }
     }
 
     protected async override Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTyreServiceCancel = await Irole.HasClaim(DocTypeID.ToString(), "Cancel", ctc.Token);
+
         partyList = partyIservice.Select(0).ToList();
         await GetAll();
     }

@@ -10,14 +10,14 @@ namespace ArmsServices.DataServices
 {
     public interface IInventoryGrnService
     {
-        InventoryGrnModel Update(InventoryGrnModel model);
+        InventoryGrnModel Update(InventoryGrnModel model);  //Edit
         InventoryGrnModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<InventoryGrnModel> SelectPending(int BranchID);
         IEnumerable<InventoryGrnModel> PendingToInvoice(int BranchID);
         IEnumerable<InventoryGrnModel> SelectByStore(int StoreID);
-        int Approve(int GrnID, string UserID, string Remarks);
-        int Reverse(int GrnID, string UserID);
+        int Approve(int GrnID, string UserID, string Remarks);  //Approve
+        int Reverse(int GrnID, string UserID);  //Reverse
         IEnumerable<InventoryItemEntryModel> GetItemEntries(int GrnID);
     }
 }

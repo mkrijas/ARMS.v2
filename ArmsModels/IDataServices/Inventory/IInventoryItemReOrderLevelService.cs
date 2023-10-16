@@ -10,7 +10,7 @@ namespace ArmsServices.DataServices
 {
     public interface IInventoryItemReOrderLevelService
     {
-        InventoryItemReOrderLevelModel Update(InventoryItemReOrderLevelModel model);
+        InventoryItemReOrderLevelModel Update(InventoryItemReOrderLevelModel model);  //Edit
         InventoryItemReOrderLevelModel SelectByID(int? ID);
         IEnumerable<InventoryItemReOrderLevelModel> SelectByItem(int? InventoryItemID, int? BranchID);
     }

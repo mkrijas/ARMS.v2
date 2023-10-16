@@ -5,6 +5,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4">
@@ -63,6 +65,27 @@
     string UserID;
     private bool _busy;
 
+    public bool HasPermissionTyreServiceDelete { get; set; } = false;
+    public int DocTypeID = 63;
+
+    protected async override Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTyreServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
+        await GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        collection = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        var BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        collection = ITyreservice.SelectByBranch(BranchID).ToList();
+    }
+
     private async Task OpenDialogEdit(TyreModel TyreMaster)
     {
         if (_busy)
@@ -107,35 +130,44 @@
 
     private async Task OpenDialogDelete(TyreModel TyreMaster)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Are you sure you want to delete this entry?",
-            yesText: "Delete!", cancelText: "Cancel");
-        if (result != null)
+        if (HasPermissionTyreServiceDelete)
         {
-            try
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Are you sure you want to delete this entry?",
+                yesText: "Delete!", cancelText: "Cancel");
+            if (result != null)
             {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                TyreMaster.UserInfo = new();
-                if (TyreMaster.UserInfo != null)
+                try
                 {
-                    TyreMaster.UserInfo.UserID = user.Identity.Name;
-                    int resultDelete = ITyreservice.Delete(TyreMaster.TyreID, TyreMaster.UserInfo.UserID);
-                    if (resultDelete != -1)
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    TyreMaster.UserInfo = new();
+                    if (TyreMaster.UserInfo != null)
                     {
-                        if (collection != null && collection.Any(s => s.TyreID == TyreMaster.TyreID))
+                        TyreMaster.UserInfo.UserID = user.Identity.Name;
+                        int resultDelete = ITyreservice.Delete(TyreMaster.TyreID, TyreMaster.UserInfo.UserID);
+                        if (resultDelete != -1)
                         {
-                            collection.Remove(collection.FirstOrDefault(s => s.TyreID == TyreMaster.TyreID));
-                            snackbar.Add("Deleted Successfully", Severity.Success);
+                            if (collection != null && collection.Any(s => s.TyreID == TyreMaster.TyreID))
+                            {
+                                collection.Remove(collection.FirstOrDefault(s => s.TyreID == TyreMaster.TyreID));
+                                snackbar.Add("Deleted Successfully", Severity.Success);
+                            }
                         }
                     }
                 }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Tyre.");
         }
     }
 
@@ -183,21 +215,6 @@
         }
         await Task.Delay(200);
         _busy = false;
-    }
-
-    protected async override Task OnInitializedAsync()
-    {
-        await GetAll();
-    }
-
-    private async Task GetAll()
-    {
-        collection = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        UserID = user.Identity.Name;
-        var BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        collection = ITyreservice.SelectByBranch(BranchID).ToList();
     }
 
     private void OpenDialog()
