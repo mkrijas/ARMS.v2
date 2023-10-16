@@ -137,7 +137,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@AccountName", model.AccountName),
+               new SqlParameter("@AccountName", model.AccountName.ToUpper()),
                new SqlParameter("@AccountDescription", model.AccountDescription),
                new SqlParameter("@CoaID", model.CoaID),
                new SqlParameter("@AccountCode", model.AccountCode),
