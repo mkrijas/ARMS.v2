@@ -36,6 +36,7 @@ using System.Security.Cryptography;
 using DAL.DataServices.General;
 using Core.IDataServices.General;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using static MudBlazor.Defaults;
 
 namespace Views
 {
@@ -61,7 +62,11 @@ namespace Views
             
             services.AddHttpClient();
             // 3rd party 
-            services.AddMudServices();
+            services.AddMudServices(config =>
+            {
+                config.SnackbarConfiguration.PositionClass = Classes.Position.BottomRight;
+
+            });
             services.AddBlazorContextMenu();
             services.AddBlazoredSessionStorage();
 
