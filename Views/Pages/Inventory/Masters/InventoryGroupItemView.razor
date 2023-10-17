@@ -84,13 +84,19 @@
 
     public bool HasPermissionInventoryItemServiceEdit { get; set; } = false;
     public bool HasPermissionInventoryItemServiceDelete { get; set; } = false;
-    public int DocTypeID = 68;
+    public int InventoryItemDocTypeID = 68;
+
+    public bool HasPermissionInventoryGroupServiceEdit { get; set; } = false;
+    public bool HasPermissionStoreServiceDelete { get; set; } = false;
+    public int InventoryGroupDocTypeID = 70;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionInventoryItemServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionInventoryItemServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionInventoryItemServiceEdit = await Irole.HasClaim(InventoryItemDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionInventoryItemServiceDelete = await Irole.HasClaim(InventoryItemDocTypeID.ToString(), "Delete", ctc.Token);
+
+        HasPermissionInventoryGroupServiceEdit = await Irole.HasClaim(InventoryGroupDocTypeID.ToString(), "Edit", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
@@ -195,36 +201,45 @@
 
     private async Task OpenDialogGroup(InventoryGroupModel ig)
     {
-        if (_busy)
+        if (HasPermissionInventoryGroupServiceEdit)
         {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is closing!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
 
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", ig.Clone());
-        var dialog = DialogService.Show<InventoryGroupDialog>(ig.InventoryGroupID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            InventoryGroupModel UpdatedModel = (InventoryGroupModel)result.Data;
-            ig.UserInfo.UserID = user.Identity.Name;
-            try
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", ig.Clone());
+            var dialog = DialogService.Show<InventoryGroupDialog>(ig.InventoryGroupID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                GIservice.Update(UpdatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                GetAll();
+                InventoryGroupModel UpdatedModel = (InventoryGroupModel)result.Data;
+                ig.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    GIservice.Update(UpdatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    GetAll();
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+            await Task.Delay(200);
+            _busy = false;
         }
-        await Task.Delay(200);
-        _busy = false;
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit InventoryGroup.");
+        }
     }
 
     void OnAppearing(MenuAppearingEventArgs e)
