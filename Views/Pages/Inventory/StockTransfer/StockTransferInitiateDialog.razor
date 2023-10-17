@@ -7,6 +7,9 @@
 @inject IInventoryItemService itemIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject IStockTransferService IStockTransferService
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -177,8 +180,16 @@
     MudDialogInstance MudDialog { get; set; }
     private bool _busy;
 
+    public bool HasPermissionStockTransferServiceEdit { get; set; } = false;
+    public bool HasPermissionStockTransferServiceAccept { get; set; } = false;
+    public int DocTypeID = 66;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionStockTransferServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionStockTransferServiceAccept = await Irole.HasClaim(DocTypeID.ToString(), "Accept", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
 
@@ -250,6 +261,7 @@
 
     public async Task OnValidSubmit()
     {
+
         if (InitiationModel.ItemsList == null)
         {
             snackbar.Add("Add at least one Entry before Submitting", Severity.Success);
@@ -270,15 +282,33 @@
                 InitiationModel.UserInfo.UserID = user.Identity.Name;
                 @if (Acpt)
                 {
-                    IStockTransferService.UpdateDelivery(InitiationModel);
-                    InitiationModel = new();
-                    snackbar.Add("Stock Accepted Successfully", Severity.Success);
+                    if (HasPermissionStockTransferServiceAccept)
+                    {
+                        IStockTransferService.UpdateDelivery(InitiationModel);
+                        InitiationModel = new();
+                        snackbar.Add("Stock Accepted Successfully", Severity.Success);
+                    }
+                    else
+                    {
+                        bool? result = await DialogService.ShowMessageBox(
+                            "Permission denied!",
+                            "You dont have any permission to Accept StockTransfer.");
+                    }
                 }
                 else
                 {
-                    IStockTransferService.Update(InitiationModel);
-                    InitiationModel = new();
-                    snackbar.Add("Saved Successfully", Severity.Success);
+                    if (HasPermissionStockTransferServiceEdit)
+                    {
+                        IStockTransferService.Update(InitiationModel);
+                        InitiationModel = new();
+                        snackbar.Add("Saved Successfully", Severity.Success);
+                    }
+                    else
+                    {
+                        bool? result = await DialogService.ShowMessageBox(
+                            "Permission denied!",
+                            "You dont have any permission to Edit StockTransfer.");
+                    }
                 }
                 MudDialog.Close(InitiationModel);
             }

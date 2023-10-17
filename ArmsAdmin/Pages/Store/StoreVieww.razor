@@ -4,6 +4,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4" style="padding-top:16px;">
@@ -43,8 +45,16 @@
 
     private string searchstore = "";
 
+    public bool HasPermissionStoreServiceEdit { get; set; } = false;
+    public bool HasPermissionStoreServiceDelete { get; set; } = false;
+    public int DocTypeID = 65;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionStoreServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionStoreServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         UserID = user.Identity.Name;
@@ -63,44 +73,62 @@
 
     private async Task OpenDialog(StoreModel st)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", st.Clone());
-        var dialog = DialogService.Show<StoreViewDialog>(st.StoreID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-
-        if (!result.Cancelled)
+        if (HasPermissionStoreServiceEdit)
         {
-            StoreModel UpatedModel = (StoreModel)result.Data;
-            model.UserInfo.UserID = user.Identity.Name;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", st.Clone());
+            var dialog = DialogService.Show<StoreViewDialog>(st.StoreID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+
+            if (!result.Cancelled)
             {
-                Iservice.Update(UpatedModel);
-                model = new();
-                snackbar.Add("Saved Successfully", Severity.Success);
-                model = new StoreModel();
-                GetAll();
+                StoreModel UpatedModel = (StoreModel)result.Data;
+                model.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    Iservice.Update(UpatedModel);
+                    model = new();
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    model = new StoreModel();
+                    GetAll();
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Store.");
         }
     }
 
     private async Task Delete(StoreModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.StoreName + " (" + model.BranchName + ") ?");
-        if (result == true)
+        if (HasPermissionStoreServiceDelete)
         {
-            Iservice.Delete(model.StoreID, UserID);
-            snackbar.Add("Deleted Successfully", Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.StoreName + " (" + model.BranchName + ") ?");
+            if (result == true)
+            {
+                Iservice.Delete(model.StoreID, UserID);
+                snackbar.Add("Deleted Successfully", Severity.Error);
+            }
+            GetAll();
         }
-        GetAll();
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Store.");
+        }
     }
 
     private bool search(StoreModel tds)

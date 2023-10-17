@@ -7,6 +7,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @inject IStockTransferService IStockTransferService
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -93,8 +95,16 @@
     public int? branchID { get; set; }
     private bool _busy;
 
+    public bool HasPermissionStockTransferServiceCancel { get; set; } = false;
+    public bool HasPermissionStockTransferServiceReject { get; set; } = false;
+    public int DocTypeID = 66;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionStockTransferServiceCancel = await Irole.HasClaim(DocTypeID.ToString(), "Cancel", ctc.Token);
+        HasPermissionStockTransferServiceReject = await Irole.HasClaim(DocTypeID.ToString(), "Reject", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         model = new();
@@ -147,17 +157,26 @@
 
     private async Task DeleteOutGoing(StockTransferInitiationModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure you want to Cancel this StockTransfer to " + model.Branch.BranchName + "?");
-        @if (result == true)
+        if (HasPermissionStockTransferServiceCancel)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            IStockTransferService.TransferCancel(model.InvTranID, user.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure you want to Cancel this StockTransfer to " + model.Branch.BranchName + "?");
+            @if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                IStockTransferService.TransferCancel(model.InvTranID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            await GetAll();
         }
-        await GetAll();
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Cancel StockTransfer.");
+        }
     }
 
     //==================================================================//
@@ -190,17 +209,26 @@
 
     private async Task Reject(StockTransferInitiationModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure you want to Reject this Order ?");
-        @if (result == true)
+        if (HasPermissionStockTransferServiceReject)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.UserInfo.UserID = user.Identity.Name;
-            IStockTransferService.RejectOrder(model);
-            snackbar.Add("Order Rejected Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure you want to Reject this Order ?");
+            @if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                model.UserInfo.UserID = user.Identity.Name;
+                IStockTransferService.RejectOrder(model);
+                snackbar.Add("Order Rejected Successfully", Severity.Success);
+            }
+            await GetAll();
         }
-        await GetAll();
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Reject StockTransfer.");
+        }
     }
 }
