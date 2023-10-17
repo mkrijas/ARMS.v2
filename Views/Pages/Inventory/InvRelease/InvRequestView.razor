@@ -11,6 +11,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IInventoryRequestService Iservice
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -56,8 +58,14 @@
     private List<InventoryRequestModel> collection = new List<InventoryRequestModel>();
     private bool _busy;
 
-    protected override void OnInitialized()
+    public bool HasPermissionInventoryRequestDelete { get; set; } = false;
+    public int DocTypeID = 67;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInventoryRequestDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         GetAll();
     }
 
@@ -74,23 +82,32 @@
 
     private async Task Delete(InventoryRequestModel model)
     {
-        try
+        if (HasPermissionInventoryRequestDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning !",
-                "Are you sure, you want to delete - " + model.RequestDate + " : " + model.Store.StoreName + " (" + model.Jobcard.JobcardNumber + ") ? ");
-            if (result == true)
+            try
             {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                Iservice.Delete(model.RequestID, user.Identity.Name);
-                snackbar.Add("Deleted Successfully", Severity.Success);
-                GetAll();
+                bool? result = await DialogService.ShowMessageBox(
+                    "Warning !",
+                    "Are you sure, you want to delete - " + model.RequestDate + " : " + model.Store.StoreName + " (" + model.Jobcard.JobcardNumber + ") ? ");
+                if (result == true)
+                {
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    Iservice.Delete(model.RequestID, user.Identity.Name);
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                    GetAll();
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
             }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete InventoryRequest.");
         }
     }
 
