@@ -110,7 +110,7 @@ namespace ArmsModels.BaseModels
         public int? TyreID { get; set; }
         public bool TaxIncluded { get; set; }
         public TyreModel Tyre { get; set; }
-        public bool Status { get; set; } = false;
+        public bool Status { get; set; } = true;
         [ExpressiveAnnotations.Attributes.RequiredIf("Status == true")]
         public decimal? Amount { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("TaxIncluded == true")]
