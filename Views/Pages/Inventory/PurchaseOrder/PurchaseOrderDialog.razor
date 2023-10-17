@@ -132,13 +132,13 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private bool _busy;
 
-    public bool HasAuthoriseEdit { get; set; } = false;
-    int DocTypeID = 17;
+    public bool HasPermissionPurchaseOrderServiceApprove { get; set; } = false;
+    public int DocTypeID = 67;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionPurchaseOrderServiceApprove = await Irole.HasClaim(DocTypeID.ToString(), "Approve", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -162,20 +162,29 @@
 
     protected async Task IsApproveData(DataApprovedStatus aprvd)
     {
-        if (aprvd.IsApprove)
+        if (HasPermissionPurchaseOrderServiceApprove)
         {
-            try
+            if (aprvd.IsApprove)
             {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                model.UserInfo.UserID = user.Identity.Name;
-                Iservice.Approve(model.POID.Value, model.UserInfo.UserID, string.Empty);
-                snackbar.Add("Approved Successfully", Severity.Success);
+                try
+                {
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    model.UserInfo.UserID = user.Identity.Name;
+                    Iservice.Approve(model.POID.Value, model.UserInfo.UserID, string.Empty);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve PurchaseOrder.");
         }
     }
 
@@ -194,31 +203,22 @@
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
-        if (HasAuthoriseEdit)
+        if (model.Entries == null || (model.Entries != null && model.Entries.Count() == 0))
         {
-            if (model.Entries == null || (model.Entries != null && model.Entries.Count() == 0))
-            {
-                snackbar.Add("Add at least one Entry before Submitting", Severity.Error);
-                return;
-            }
-            else
-            {
-                _busy = true;
-                model.PartyCode = partyinfo.PartyCode;
-                model.PartyID = partyinfo.PartyID;
-                model.PartyName = partyinfo.TradeName;
-                model.StoreID = model.Store?.StoreID ?? null;
-                MudDialog.Close(model);
-            }
-            await Task.Delay(2000);
-            _busy = false;
+            snackbar.Add("Add at least one Entry before Submitting", Severity.Error);
+            return;
         }
         else
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to submit.");
+            _busy = true;
+            model.PartyCode = partyinfo.PartyCode;
+            model.PartyID = partyinfo.PartyID;
+            model.PartyName = partyinfo.TradeName;
+            model.StoreID = model.Store?.StoreID ?? null;
+            MudDialog.Close(model);
         }
+        await Task.Delay(2000);
+        _busy = false;
     }
 
     private void Cancel()

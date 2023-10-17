@@ -136,6 +136,9 @@
     public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 16;
 
+    public bool HasPermissionPurchaseOrderServiceCancel { get; set; } = false;
+    public int PurchaseOrderDocTypeID = 67;
+
     public InventoryItemModel SelectedItems = new();
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
@@ -144,6 +147,7 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionPurchaseOrderServiceCancel = await Irole.HasClaim(DocTypeID.ToString(), "Cancel", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -241,10 +245,19 @@
         MudDialog.Cancel();
     }
 
-    private void CancelOrder()
+    private async Task CancelOrder()
     {
-        pIservice.CancelOrder(model.POID.Value, UserID, string.Empty);
-        MudDialog.Close(model);
+        if (HasPermissionPurchaseOrderServiceCancel)
+        {
+            pIservice.CancelOrder(model.POID.Value, UserID, string.Empty);
+            MudDialog.Close(model);
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Cancel PurchaseOrder.");
+        }
     }
 
     private void Delete(InventoryItemEntryModel i)
