@@ -12,9 +12,9 @@ namespace ArmsServices.DataServices
 
     public interface IInventoryGroupService
     {
-        InventoryGroupModel Update(InventoryGroupModel model);
+        InventoryGroupModel Update(InventoryGroupModel model);  //Edit
         InventoryGroupModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<InventoryGroupModel> SearchByName(string GroupName);
     }
 }

@@ -3,6 +3,9 @@
 @inject AuthenticationStateProvider auth
 @inject MudBlazor.ISnackbar snackbar
 @inject ITyreService IServices
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -50,8 +53,14 @@
     public bool IsTyreDisabled { get; set; } = false;
     private bool _busy;
 
-    protected override void OnInitialized()
+    public bool HasPermissionTyreServiceDelete { get; set; } = false;
+    public int DocTypeID = 63;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTyreServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         var Tyres = IServices.SelectUnmontedTyresByID(0);
         if (Tyres != null && Tyres.Count() != 0)
         {
@@ -94,23 +103,32 @@
 
     public async Task UnMount()
     {
-        if (_busy)
+        if (HasPermissionTyreServiceDelete)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            if (model != null)
+            {
+                model.UserInfo.UserID = user.Identity.Name;
+                IServices.Unmount(SubmitModel.Tyre.TyreID, DateTime.Now, SubmitModel.UnmountedKM, model.UserInfo.UserID);
+                snackbar.Add("Unmounted Successfully", Severity.Success);
+            }
+            MudDialog.Close(DialogResult.Ok(true));
+            await Task.Delay(2000);
+            _busy = false;
         }
-        _busy = true;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (model != null)
+        else
         {
-            model.UserInfo.UserID = user.Identity.Name;
-            IServices.Unmount(SubmitModel.Tyre.TyreID, DateTime.Now, SubmitModel.UnmountedKM, model.UserInfo.UserID);
-            snackbar.Add("Unmounted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Tyre.");
         }
-        MudDialog.Close(DialogResult.Ok(true));
-        await Task.Delay(2000);
-        _busy = false;
     }
 }

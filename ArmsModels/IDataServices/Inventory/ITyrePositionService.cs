@@ -12,7 +12,7 @@ namespace ArmsServices.DataServices
     {
         IEnumerable<TyrePositionModel> Select(int? TruckType);
         IEnumerable<TyrePositionModel> Select();
-        TyrePositionModel Update(TyrePositionModel model, int? TruckTypeID);
-        int Delete(int? ID, string UserID);
+        TyrePositionModel Update(TyrePositionModel model, int? TruckTypeID);  //Edit
+        int Delete(int? ID, string UserID);  //Delete
     }
 }

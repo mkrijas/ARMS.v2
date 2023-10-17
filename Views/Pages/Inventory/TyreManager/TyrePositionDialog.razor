@@ -84,13 +84,16 @@
     int MaxRow = 0;
     bool IsChecked = false;
     TyreTypeAndPositionMappingModel TyreMappingModel = new();
-    public bool HasPermissionEdit { get; set; } = true;
-    public int DocTypeID = 32;
     private bool _busy;
+
+    public bool HasPermissionTyreServiceEdit { get; set; } = true;
+    public int DocTypeID = 63;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTyreServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var tempTyrePositionList = Iservice.GetTyrePositionList(0);
         if (tempTyrePositionList != null && tempTyrePositionList.Count() != 0)
         {
@@ -138,14 +141,14 @@
 
     public async Task Submit()
     {
-        if (_busy)
+        if (HasPermissionTyreServiceEdit)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-        if (HasPermissionEdit)
-        {
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            _busy = true;
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
             TyreTypeAndPositionMappingModel Result = new();
@@ -166,14 +169,14 @@
                 Iservice.UpdateMappingTyrePositionAndType(Result);
             }
             MudDialog.Close(DialogResult.Ok(true));
+            await Task.Delay(2000);
+            _busy = false;
         }
         else
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to submit.");
+                "You dont have any permission to Edit Tyre.");
         }
-        await Task.Delay(2000);
-        _busy = false;
     }
 }

@@ -20,6 +20,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <style>
     .InActiveText {
@@ -265,8 +267,14 @@
     private JobInProgressModel SelectedJob = new();
     private bool _busy;
 
+    public bool HasPermissionInventoryRequestDelete { get; set; } = false;
+    public int DocTypeID = 67;
+
     protected async override Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInventoryRequestDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         Workshops = Iworkshop.Select(0).ToList();
@@ -541,29 +549,38 @@
 
     private async Task DeleteInventoryRequest(InventoryRequestModel model)
     {
-        try
+        if (HasPermissionInventoryRequestDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning !",
-                "Are you sure, you want to delete - " + model.ReleaseSubDetails?.ItemDescription + " (" + model.RequestDate?.ToShortDateString() + " / " + model.RequestNumber + ") ?");
-            if (result == true)
+            try
             {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                var value = IInvRequestservice.Delete(model.RequestID, user.Identity.Name);
-                if (value != -1)
+                bool? result = await DialogService.ShowMessageBox(
+                    "Warning !",
+                    "Are you sure, you want to delete - " + model.ReleaseSubDetails?.ItemDescription + " (" + model.RequestDate?.ToShortDateString() + " / " + model.RequestNumber + ") ?");
+                if (result == true)
                 {
-                    if (InvRequestList.Exists(s => s.RequestID == value))
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    var value = IInvRequestservice.Delete(model.RequestID, user.Identity.Name);
+                    if (value != -1)
                     {
-                        InvRequestList.Remove(InvRequestList.FirstOrDefault(s => s.RequestID == value));
+                        if (InvRequestList.Exists(s => s.RequestID == value))
+                        {
+                            InvRequestList.Remove(InvRequestList.FirstOrDefault(s => s.RequestID == value));
+                        }
                     }
+                    snackbar.Add("Deleted Successfully", Severity.Success);
                 }
-                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
             }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete InventoryRequest.");
         }
     }
 }

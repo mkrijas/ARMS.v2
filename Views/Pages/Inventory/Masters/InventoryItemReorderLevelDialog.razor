@@ -2,6 +2,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudDialog>
@@ -53,8 +55,14 @@
     private string UserID;
     private bool _busy;
 
+    public bool HasPermissionInventoryItemReOrderLevelServiceEdit { get; set; } = false;
+    public int DocTypeID = 69;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInventoryItemReOrderLevelServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
@@ -64,28 +72,37 @@
 
     private async void OnValidSubmit(EditContext context)
     {
-        if (_busy)
+        if (HasPermissionInventoryItemReOrderLevelServiceEdit)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo = new();
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+            MudDialog.Close(model);
+            await Task.Delay(2000);
+            _busy = false;
         }
-        _busy = true;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo = new();
-        model.UserInfo.UserID = user.Identity.Name;
-        try
+        else
         {
-            Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete InventoryItemReOrderLevel.");
         }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
-        }
-        MudDialog.Close(model);
-        await Task.Delay(2000);
-        _busy = false;
     }
 
     private void Cancel()

@@ -83,6 +83,11 @@ namespace ArmsModels.BaseModels
 
     public class TyreResoleModel :ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<TyreResoleModel>(Json);
+        }
         public int? ID { get; set; }
         public PartyModel Party { get; set; }
         [Required]
@@ -90,22 +95,13 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? RequestedDate { get; set; }
         public DateTime? DeliveredDate { get; set; }
-
         public int? BranchID { get; set; }
         public int? DeliveryID { get; set; }
         [Required(ErrorMessage = "The tyre is required.")]
         [MinLength(1, ErrorMessage = "At least 1 tyre should be selected.")]
         public List<int?> Tyres { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
-
-        public object Clone()
-        {
-            string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<TyreResoleModel>(Json);
-        }
-
     }
-
 
     public class ResoleDeliveryTyreModel
     {
@@ -114,7 +110,7 @@ namespace ArmsModels.BaseModels
         public int? TyreID { get; set; }
         public bool TaxIncluded { get; set; }
         public TyreModel Tyre { get; set; }
-        public bool Status { get; set; } = false;
+        public bool Status { get; set; } = true;
         [ExpressiveAnnotations.Attributes.RequiredIf("Status == true")]
         public decimal? Amount { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("TaxIncluded == true")]
@@ -122,9 +118,13 @@ namespace ArmsModels.BaseModels
         public decimal? TotalAmount { get; set; }
     }
 
-
     public class ResoleDeliveryModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<ResoleDeliveryModel>(Json);
+        }
         public int? ID { get; set; }
         public int? ResoleID { get; set; }
         public int? BranchID { get; set; }
@@ -141,13 +141,5 @@ namespace ArmsModels.BaseModels
         [Required]
         public List<ResoleDeliveryTyreModel> ResoleDeliveryTyreList = new();
         public UserInfoModel UserInfo { get; set; } = new();
-
-        public object Clone()
-        {
-            string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<ResoleDeliveryModel>(Json);
-        }
     }
-
 }
-

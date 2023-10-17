@@ -5,6 +5,9 @@
 @inject IStoreService IStoreservice
 @inject IGstUsageIDService IusageService
 @inject MudBlazor.ISnackbar snackbar
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -97,6 +100,58 @@
     List<TyreModel> TyreList = new();
     public string ValidationMessage = null;
     private bool _busy;
+
+    public bool HasPermissionTyreServiceEdit { get; set; } = false;
+    public int DocTypeID = 63;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTyreServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        var BranchID = int.Parse(brancIDString);
+        List<TyreModel> TyreListCollection = Iservice.SelectByBranch(BranchID).ToList();
+        if (model.ResoleDeliveryTyreList == null)
+        {
+            model.ResoleDeliveryTyreList = new();
+        }
+        if (model.ID == null || model.ID == 0)
+        {
+            model.PID = 0;
+        }
+        List<ResoleDeliveryTyreModel> ResoleDeliveryTyreList = Iservice.SelectResoleDeliveryTyresList(model.ResoleID, model.ID).ToList();
+        if (ResoleDeliveryTyreList != null && ResoleDeliveryTyreList.Count() != 0)
+        {
+            model.ResoleDeliveryTyreList = ResoleDeliveryTyreList;
+        }
+        List<GstUsageCodeModel> usageList = IusageService.SelectByArea(null, System.DateTime.Now).ToList();
+        if (usageList != null && usageList.Count() != 0)
+        {
+            if (usageList.Any(d => d.UsageCode == model.UsageCode))
+            {
+                CurrentUsageCode = usageList.First(d => d.UsageCode == model.UsageCode);
+            }
+        }
+        model.UsageCode = CurrentUsageCode?.UsageCode ?? null;
+        var TyresList = Iservice.SelectByBranch(null);
+        if (TyresList != null && TyresList.Count() != 0)
+        {
+            foreach (var item in model.ResoleDeliveryTyreList)
+            {
+                if (TyresList.Any(s => s.TyreID == item.TyreID))
+                {
+                    item.Tyre = TyresList.First(s => s.TyreID == item.TyreID);
+                }
+                else
+                {
+                    item.Tyre = new();
+                }
+            }
+        }
+    }
 
     public void OnChangeStatus(bool status, int? tyreId)
     {
@@ -201,52 +256,6 @@
         }
     }
 
-    protected override async Task OnInitializedAsync()
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        var BranchID = int.Parse(brancIDString);
-        List<TyreModel> TyreListCollection = Iservice.SelectByBranch(BranchID).ToList();
-        if (model.ResoleDeliveryTyreList == null)
-        {
-            model.ResoleDeliveryTyreList = new();
-        }
-        if (model.ID == null || model.ID == 0)
-        {
-            model.PID = 0;
-        }
-        List<ResoleDeliveryTyreModel> ResoleDeliveryTyreList = Iservice.SelectResoleDeliveryTyresList(model.ResoleID, model.ID).ToList();
-        if (ResoleDeliveryTyreList != null && ResoleDeliveryTyreList.Count() != 0)
-        {
-            model.ResoleDeliveryTyreList = ResoleDeliveryTyreList;
-        }
-        List<GstUsageCodeModel> usageList = IusageService.SelectByArea(null, System.DateTime.Now).ToList();
-        if (usageList != null && usageList.Count() != 0)
-        {
-            if (usageList.Any(d => d.UsageCode == model.UsageCode))
-            {
-                CurrentUsageCode = usageList.First(d => d.UsageCode == model.UsageCode);
-            }
-        }
-        model.UsageCode = CurrentUsageCode?.UsageCode ?? null;
-        var TyresList = Iservice.SelectByBranch(null);
-        if (TyresList != null && TyresList.Count() != 0)
-        {
-            foreach (var item in model.ResoleDeliveryTyreList)
-            {
-                if (TyresList.Any(s => s.TyreID == item.TyreID))
-                {
-                    item.Tyre = TyresList.First(s => s.TyreID == item.TyreID);
-                }
-                else
-                {
-                    item.Tyre = new();
-                }
-            }
-        }
-    }
-
     protected override void OnParametersSet()
     {
 
@@ -259,42 +268,55 @@
 
     public async Task Submit()
     {
-        if (_busy)
+        if (HasPermissionTyreServiceEdit)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        model.UsageCode = CurrentUsageCode.UsageCode;
-        if (model.ResoleDeliveryTyreList == null || model.ResoleDeliveryTyreList.Count() == 0)
-        {
-            ValidationMessage = "Need at lest one item to submit \n";
-            return;
-        }
-        if (model.ResoleDeliveryTyreList.Any(s => s.Status == true && s.Amount == null) || model.ResoleDeliveryTyreList.Any(s => s.TaxIncluded == false && s.Tax == null))
-        {
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            model.UsageCode = CurrentUsageCode.UsageCode;
+            if (model.DeliveryDate < model.RequestedDate)
+            {
+
+                ValidationMessage = "Delivery date should be greater than requested date. \n";
+                return;
+            }
+            if (model.ResoleDeliveryTyreList == null || model.ResoleDeliveryTyreList.Count() == 0)
+            {
+                ValidationMessage = "Need at lest one item to submit \n";
+                return;
+            }
             if (model.ResoleDeliveryTyreList.Any(s => s.Status == true && s.Amount == null))
             {
-                ValidationMessage = "Amount Should not be empty \n";
+                if (model.ResoleDeliveryTyreList.Any(s => s.Status == true && s.Amount == null))
+                {
+                    ValidationMessage = "Amount should not be empty \n";
+                }
+
+                return;
             }
-            if (model.ResoleDeliveryTyreList.Any(s => s.TaxIncluded == false && s.Tax == null))
+            _busy = true;
+            ValidationMessage = null;
+            if (model != null)
             {
-                ValidationMessage = "Amount Should not be empty \n";
+                model.UserInfo.UserID = user.Identity.Name;
+                model.BranchID = int.Parse(brancIDString);
+                int ReturnValue = Iservice.ResoleDeliveryUpdate(model);
             }
-            return;
+            MudDialog.Close(DialogResult.Ok(true));
+            await Task.Delay(2000);
+            _busy = false;
         }
-        ValidationMessage = null;
-        _busy = true;
-        if (model != null)
+        else
         {
-            model.UserInfo.UserID = user.Identity.Name;
-            model.BranchID = int.Parse(brancIDString);
-            int ReturnValue = Iservice.ResoleDeliveryUpdate(model);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Tyre.");
         }
-        MudDialog.Close(DialogResult.Ok(true));
-        await Task.Delay(2000);
-        _busy = false;
+
     }
 }

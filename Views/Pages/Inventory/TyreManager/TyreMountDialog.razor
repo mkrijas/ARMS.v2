@@ -4,6 +4,9 @@
 @inject AuthenticationStateProvider auth
 @inject ITyreService IServices
 @inject MudBlazor.ISnackbar snackbar
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -64,8 +67,14 @@
     public bool IsTyreDisabled { get; set; } = false;
     private bool _busy;
 
-    protected override void OnInitialized()
+    public bool HasPermissionTyreServiceEdit { get; set; } = false;
+    public int DocTypeID = 63;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTyreServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var Tyres = IServices.SelectUnmontedTyresByID(0);
         if (Tyres != null && Tyres.Count() != 0)
         {
@@ -136,34 +145,43 @@
 
     public async Task Mount()
     {
-        if (_busy)
+        if (HasPermissionTyreServiceEdit)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            if (model != null)
+            {
+                model.TruckID = SelectedTruck.TruckID;
+                model.TyreID = SelectedTyre.TyreID;
+                model.PositionID = SelectedTyrePosition.PositionID;
+                model.MountedOn = DateTime.Now;
+                model.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    IServices.Mount(model);
+                    snackbar.Add("Mounted Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+            MudDialog.Close(DialogResult.Ok(true));
+            await Task.Delay(2000);
+            _busy = false;
         }
-        _busy = true;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (model != null)
+        else
         {
-            model.TruckID = SelectedTruck.TruckID;
-            model.TyreID = SelectedTyre.TyreID;
-            model.PositionID = SelectedTyrePosition.PositionID;
-            model.MountedOn = DateTime.Now;
-            model.UserInfo.UserID = user.Identity.Name;
-            try
-            {
-                IServices.Mount(model);
-                snackbar.Add("Mounted Successfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Tyre.");
         }
-        MudDialog.Close(DialogResult.Ok(true));
-        await Task.Delay(2000);
-        _busy = false;
     }
 }

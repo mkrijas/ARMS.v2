@@ -8,6 +8,8 @@
 @inject IJobcardService IJobcardService
 @inject IDialogService DialogService
 @inject IInventoryItemService itemIservice
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudDialog>
     <DialogContent>
@@ -18,13 +20,13 @@
                 <MudGrid>
                     <MudItem xs="12" md="4">
                         <MudTextField @bind-Value="model.RequestNumber" Label="Request Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RequestNumber)" Disabled></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.RequestDate" DateFormat="dd/MM/yyyy" />
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudSelect Label="Select Job Card" T="JobcardModel" Value="model.Jobcard" ValueChanged="OnChangeJobcard" ToStringFunc="@(e => e == null ? null : $"{e.JobcardNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" Disabled="@SetIncomingVal">
-                            @foreach (var ditem in JobcardList)
+                     </MudItem>
+                     <MudItem xs="12" md="4">
+                         <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.RequestDate" DateFormat="dd/MM/yyyy" />
+                     </MudItem>
+                     <MudItem xs="12" md="4">
+                         <MudSelect Label="Select Job Card" T="JobcardModel" Value="model.Jobcard" ValueChanged="OnChangeJobcard" ToStringFunc="@(e => e == null ? null : $"{e.JobcardNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" Disabled="@SetIncomingVal">
+                             @foreach (var ditem in JobcardList)
                             {
                                 <MudSelectItem Value="@ditem">@ditem.JobcardNumber</MudSelectItem>
                             }
@@ -104,8 +106,14 @@
     DialogForm dialogForm;
     private bool _busy;
 
+    public bool HasPermissionInventoryRequestEdit { get; set; } = false;
+    public int DocTypeID = 67;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInventoryRequestEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
@@ -176,32 +184,41 @@
 
     public async void OnValidSubmit(EditContext context)
     {
-        if (_busy)
+        if (HasPermissionInventoryRequestEdit)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        try
-        {
-            if (model.Items.Count() == 0)
+            if (_busy)
             {
-                snackbar.Add("Add at least one item.", Severity.Error);
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
                 return;
             }
-            _busy = true;
+            try
+            {
+                if (model.Items.Count() == 0)
+                {
+                    snackbar.Add("Add at least one item.", Severity.Error);
+                    return;
+                }
+                _busy = true;
 
-            var result = Iservice.Update(model);
-            model.RequestNumber = result.RequestNumber;
-            model.RequestID = result.RequestID;
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(model);
+                var result = Iservice.Update(model);
+                model.RequestNumber = result.RequestNumber;
+                model.RequestID = result.RequestID;
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+            await Task.Delay(2000);
+            _busy = false;
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit InventoryRequest.");
         }
-        await Task.Delay(2000);
-        _busy = false;
     }
 
     private void DeleteItem(InventoryItemEntryModel ItemDetails)

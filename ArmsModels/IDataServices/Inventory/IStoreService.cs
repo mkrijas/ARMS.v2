@@ -10,9 +10,9 @@ namespace ArmsServices.DataServices
 {
     public interface IStoreService
     {
-        StoreModel Update(StoreModel model);
+        StoreModel Update(StoreModel model);  //Edit
         StoreModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<StoreModel> Select();
         IEnumerable<StoreModel> SelectByBranch(int BranchID);
         int OutFlow(int? StoreID, List<InventoryItemEntryModel> Items, string UserID);
