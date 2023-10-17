@@ -6,6 +6,8 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudGrid>
     <MudItem xs="4" lg="4">
@@ -80,8 +82,16 @@
     private string UserID = string.Empty;
     private bool _busy;
 
+    public bool HasPermissionInventoryItemServiceEdit { get; set; } = false;
+    public bool HasPermissionInventoryItemServiceDelete { get; set; } = false;
+    public int DocTypeID = 68;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInventoryItemServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionInventoryItemServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         UserID = user.Identity.Name;
@@ -118,50 +128,68 @@
 
     private async Task OpenDialog(InventoryItemModel ii)
     {
-        if (_busy)
+        if (HasPermissionInventoryItemServiceEdit)
         {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is closing!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
 
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", ii.Clone());
-        var dialog = DialogService.Show<InventoryItemDialog>(ii.InventoryItemID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            InventoryItemModel UpatedModel = (InventoryItemModel)result.Data;
-            ii.UserInfo.UserID = user.Identity.Name;
-            try
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", ii.Clone());
+            var dialog = DialogService.Show<InventoryItemDialog>(ii.InventoryItemID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                IIservice.Update(UpatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                InventoryGroupModel igm = new InventoryGroupModel();
-                igm.InventoryGroupID = UpatedModel.InventoryGroupID;
-                GetInventoryItem(igm);
+                InventoryItemModel UpatedModel = (InventoryItemModel)result.Data;
+                ii.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    IIservice.Update(UpatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    InventoryGroupModel igm = new InventoryGroupModel();
+                    igm.InventoryGroupID = UpatedModel.InventoryGroupID;
+                    GetInventoryItem(igm);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+            await Task.Delay(200);
+            _busy = false;
         }
-        await Task.Delay(200);
-        _busy = false;
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit InventoryItem.");
+        }
     }
 
     private async Task Delete(InventoryItemModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.InventoryItemCode + " (" + model.ItemDescription + ") ?");
-        if (result == true)
+        if (HasPermissionInventoryItemServiceDelete)
         {
-            IIservice.Delete(model.InventoryItemID, UserID);
-            snackbar.Add("Deleted Successfully", Severity.Error);
-            SelectedItemChanged(SelectedItem);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.InventoryItemCode + " (" + model.ItemDescription + ") ?");
+            if (result == true)
+            {
+                IIservice.Delete(model.InventoryItemID, UserID);
+                snackbar.Add("Deleted Successfully", Severity.Error);
+                SelectedItemChanged(SelectedItem);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete InventoryItem.");
         }
     }
 
