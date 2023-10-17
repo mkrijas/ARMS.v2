@@ -8,6 +8,8 @@
 @inject IInventoryGroupService inventoryGroupIservice
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudDialog>
@@ -54,8 +56,14 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private bool _busy;
 
+    public bool HasPermissionInventoryGrnServiceReverse { get; set; } = false;
+    int InventoryGrnDocTypeID = 16;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInventoryGrnServiceReverse = await Irole.HasClaim(InventoryGrnDocTypeID.ToString(), "Reverse", ctc.Token);
+
         model = new();
         await GetAll();
     }
@@ -91,18 +99,26 @@
             await GetAll();
         }
         await GetAll();
-
         await Task.Delay(200);
         _busy = false;
     }
 
     private async Task Reverse(InventoryGrnModel tds)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        Iservice.Reverse(tds.GrnID.Value, model.UserInfo.UserID);
-        MudDialog.Close(model);
+        if (HasPermissionInventoryGrnServiceReverse)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            Iservice.Reverse(tds.GrnID.Value, model.UserInfo.UserID);
+            MudDialog.Close(model);
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Reverse InventoryGrn.");
+        }
     }
 
     private async Task ToPurchase(InventoryGrnModel grn)
