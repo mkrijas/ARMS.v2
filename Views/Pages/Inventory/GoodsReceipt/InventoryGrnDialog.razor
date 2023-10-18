@@ -133,8 +133,9 @@
     private string UserID = null;
     private bool _busy;
 
-    public bool HasAuthoriseEdit { get; set; } = false;
-    int DocTypeID = 16;
+    public bool HasPermissionInventoryGrnServiceEdit { get; set; } = false;
+    public bool HasPermissionInventoryGrnServiceApprove { get; set; } = false;
+    int InventoryGrnDocTypeID = 16;
 
     public bool HasPermissionPurchaseOrderServiceCancel { get; set; } = false;
     public int PurchaseOrderDocTypeID = 17;
@@ -146,7 +147,9 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionInventoryGrnServiceEdit = await Irole.HasClaim(InventoryGrnDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionInventoryGrnServiceApprove = await Irole.HasClaim(InventoryGrnDocTypeID.ToString(), "Approve", ctc.Token);
+
         HasPermissionPurchaseOrderServiceCancel = await Irole.HasClaim(PurchaseOrderDocTypeID.ToString(), "Cancel", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -179,13 +182,13 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-        if (_busy)
+        if (HasPermissionInventoryGrnServiceEdit)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        if (HasAuthoriseEdit)
-        {
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
             if (model.Entries == null || (model.Entries != null && model.Entries.Count() == 0))
             {
                 snackbar.Add("Add at least one Entry before Submitting", Severity.Error);
@@ -219,24 +222,33 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to submit.");
+                "You dont have any permission to Edit InventoryGrn.");
         }
     }
 
-    protected void IsApproveData(DataApprovedStatus aprvd)
+    protected async Task IsApproveData(DataApprovedStatus aprvd)
     {
-        if (aprvd.IsApprove)
+        if (HasPermissionInventoryGrnServiceApprove)
         {
-            try
+            if (aprvd.IsApprove)
             {
-                model.UserInfo.UserID = UserID;
-                Iservice.Approve(model.GrnID.Value, model.UserInfo.UserID, string.Empty);
-                snackbar.Add("Approved Successfully", Severity.Success);
+                try
+                {
+                    model.UserInfo.UserID = UserID;
+                    Iservice.Approve(model.GrnID.Value, model.UserInfo.UserID, string.Empty);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve InventoryGrn.");
         }
     }
 
