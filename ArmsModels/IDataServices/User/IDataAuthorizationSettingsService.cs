@@ -13,6 +13,7 @@ namespace ArmsServices.DataServices
     {
         IEnumerable<DataAuthorizationTypeModel> GetAuthTypes();
         IDictionary<int?, string> GetDocTypes();
+        IEnumerable<DocTypeModel> GetDocTypesList();
         IEnumerable<DataAuthorizationSettingsModel> Select(int? DocTypeID);
         IEnumerable<DataAuthorizationSettingsModel> Select(string DocType);
         int? Update(DataAuthorizationSettingsModel model);
