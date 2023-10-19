@@ -1,4 +1,5 @@
 ﻿@page "/TaxPurchase"
+@page "/TaxPurchase/{id:int}"
 @using System.Threading;
 @inject ITaxPurchaseService Iservice
 @inject MudBlazor.ISnackbar snackbar
@@ -8,6 +9,8 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 @using Inventory.GoodsReceipt
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -79,6 +82,13 @@
     private bool _busy;
     private string searchTerm = "";
 
+    [Parameter]
+    public int? id { get; set; } = null;
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
+
     private int NumberOfRecords
     {
         get => numberOfRecords;
@@ -112,6 +122,11 @@
         model = new();
 
         await GetAll(IsApproved, NumberOfRecords);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.PID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.PID == id), true,true);
+        }
     }
 
     async Task ApprovedChanged(bool value)
@@ -135,6 +150,7 @@
         {
             collection = Iservice.SelectByUnapproved(brancID, NumberOfRecords, searchTerm).ToList();
         }
+        await Task.Delay(200);
     }
 
     private async Task OpenDialog(TaxPurchaseModel tds, bool ReadOnly, bool View)
@@ -147,9 +163,28 @@
         _busy = true;
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds.Clone());
+        parms.Add("PageToRedirectLink", "/TaxPurchase");
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<TaxPurchaseDialog>(tds.PID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (TaxPurchaseModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.PID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/TaxPurchase";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
         await GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;

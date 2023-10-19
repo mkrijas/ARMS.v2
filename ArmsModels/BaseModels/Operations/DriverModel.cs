@@ -74,8 +74,11 @@ namespace ArmsModels.BaseModels
         public int? FaultID { get; set; }
         public DriverModel Driver { get; set; }
         public int? BranchID { get; set; }
+        [Required]
         public DateTime? FaultDate { get; set; } = DateTime.Now;
+        [Required]
         public byte? Severity { get; set; }
+        [Required]
         public string Detail { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }

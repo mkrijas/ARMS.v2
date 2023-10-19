@@ -49,6 +49,17 @@ namespace ArmsServices.DataServices
             return DocTypes;
         }
 
+        public IEnumerable<DocTypeModel> GetDocTypesList()
+        {            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DocTypes.Select]", null))
+            {
+                yield return new DocTypeModel() 
+                {
+                Description= dr.GetString("Description"),
+                ID = dr.GetInt32("ID"),
+                };
+            }           
+        }
         public IEnumerable<DataAuthorizationSettingsModel> Select(int? DocTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
