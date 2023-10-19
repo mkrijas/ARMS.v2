@@ -36,7 +36,7 @@ namespace ArmsModels.BaseModels
         public int? MID { get; set; }
         public bool IsMemo { get; set; } = false;
         public virtual decimal? OutstandingAmount { get; set; }
-        public virtual string OutstandingAmountDisplayText { get { return Math.Abs(OutstandingAmount.Value).ToString() + " " + (OutstandingAmount.Value < 0 ? "Cr" : "Dr"); } }
+        public virtual string OutstandingAmountDisplayText { get { return Math.Abs(OutstandingAmount??0).ToString() + " " + ((OutstandingAmount??0) < 0 ? "Cr" : "Dr"); } }
         public decimal? PayAmount
         {
             get { return _PayAmount; }
