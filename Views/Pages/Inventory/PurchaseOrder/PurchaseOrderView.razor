@@ -1,4 +1,5 @@
 ﻿@page "/PurchaseOrder"
+@page "/ContraView/{id:int}"
 @using System.Threading;
 @inject IPurchaseOrderService Iservice
 @inject MudBlazor.ISnackbar snackbar
@@ -6,6 +7,9 @@
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
+
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -56,10 +60,17 @@
     public bool IsApproved { get; set; } = false;
     private string searchPurchase = "";
     private bool _busy;
+    [Parameter]
+    public int? id { get; set; } = null;
 
     public bool HasPermissionPurchaseOrderServiceEdit { get; set; } = false;
     public bool HasPermissionPurchaseOrderServiceDelete { get; set; } = false;
     public int DocTypeID = 17;
+
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
 
     protected override async Task OnInitializedAsync()
     {
@@ -69,6 +80,12 @@
 
         model = new();
         await GetAll(IsApproved);
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.POID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.POID == id), true, false);
+        }
     }
 
     async Task ApprovedChanged(bool value)
@@ -107,6 +124,7 @@
             var user = authprov.User;
             DialogParameters parms = new DialogParameters();
             parms.Add("model", tds.Clone());
+            parms.Add("PageToRedirectLink", "/ContraView");
             parms.Add("ReadOnly", ReadOnly);
             parms.Add("IsView", View);
             var dialog = DialogService.Show<PurchaseOrderDialog>(tds.POID == null ? "ADD" : "EDIT", parms, maxWidth);
@@ -117,7 +135,24 @@
                 try
                 {
                     UpatedModel.UserInfo.UserID = user.Identity.Name;
-                    Iservice.Update(UpatedModel);
+                    var ReturnData = Iservice.Update(UpatedModel);
+
+                    var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+                    int brancID = int.Parse(brancIDString);
+
+                    notificationMessage.InitiateBranch = new BranchModel() { BranchID = brancID };
+                    notificationMessage.ReceivedBranch = new BranchModel() { BranchID = brancID };
+                    notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle("Purchase Order", ReturnData.PONo, "Level 1 Verification");
+                    notificationMessage.MessageBody = IpushNotificationService.GetMessageBody("Purchase Order", ReturnData.PONo, "Level 1 Verification", ReturnData.EntryDate);
+                    notificationMessage.RedirectedTo = 0;
+                    notificationMessage.ExpiredBy = 7;
+                    notificationMessage.DocumentID = ReturnData.POID;
+                    notificationMessage.MessageGroupID = "PendingVerification";
+                    notificationMessage.PageToRedirectLink = "/ContraView";
+                    notificationMessage.ClaimValue = "Verify 1";
+                    notificationMessage.DocumentTypeID = DocTypeID;
+                    notificationMessage.MsgDate = DateTime.Now;
+                    await signalRService.Send(notificationMessage);
                     model = new();
                     snackbar.Add("Saved Successfully", Severity.Success);
                     model = new PurchaseOrderModel();
