@@ -1,4 +1,5 @@
 ﻿@page "/ProformaInvoiceView"
+@page "/ProformaInvoiceView/{id:int}"
 @using System.Threading;
 @inject IFreightBillingService Iservice
 @inject IDimensionService dimensionIservice
@@ -9,6 +10,8 @@
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 @layout BillsLayout
 
 <MudGrid Spacing="4">
@@ -69,8 +72,16 @@
     int BranchID;
     string UserID;
 
+    [Parameter]
+    public int? id { get; set; } = null;
+
     public bool HasAuthoriseDelete { get; set; } = false;
     int DocTypeID = 2;
+
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
 
     private int NumberOfRecords
     {
@@ -107,6 +118,13 @@
         BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = User.Identity.Name;
         GetPerfomaInvoice(IsApproved, NumberOfRecords);
+
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.ProformaInvoiceID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.ProformaInvoiceID == id), true);
+        }
     }
 
     void ApprovedChanged(bool value)
@@ -124,12 +142,33 @@
         DialogParameters parms = new DialogParameters();
         parms.Add("model", pfm.Clone());
         parms.Add("ReadOnly", ReadOnly);
+        parms.Add("PageToRedirectLink", "/ProformaInvoiceView");
         var dialog = DialogService.Show<ProformaInvoceDialog>("Proforma Invoce", parms, maxWidth);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
             ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;
-            Iservice.UpdateProformaInvoice(UpatedModel);
+            var SaveResult = Iservice.UpdateProformaInvoice(UpatedModel);
+
+            var ReturnData = UpatedModel;
+            if (SaveResult != -1)
+            {
+                notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+                notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+                notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+                notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+                notificationMessage.RedirectedTo = 0;
+                notificationMessage.ExpiredBy = 7;
+                notificationMessage.DocumentID = SaveResult;
+                notificationMessage.MessageGroupID = "PendingVerification";
+                notificationMessage.PageToRedirectLink = "/ProformaInvoiceView";
+                notificationMessage.ClaimValue = "Verify 1";
+                notificationMessage.DocumentTypeID = DocTypeID;
+                notificationMessage.MsgDate = DateTime.Now;
+                await signalRService.Send(notificationMessage);
+                
+            }
+
             snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
         }
         GetPerfomaInvoice(IsApproved, NumberOfRecords);
