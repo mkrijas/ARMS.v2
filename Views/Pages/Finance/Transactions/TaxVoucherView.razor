@@ -1,4 +1,5 @@
 ﻿@page "/TaxVoucherView"
+@page "/TaxVoucherView/{id:int}"
 @using System.Threading;
 @using ArmsModels.BaseModels.Finance.Transactions;
 @using ArmsServices.DataServices.Finance.Transactions;
@@ -12,6 +13,9 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject ITaxVoucherService Iservice
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
+
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -67,8 +71,15 @@
     public bool IsApproved { get; set; } = false;
     private List<TaxVoucherModel> collection = new List<TaxVoucherModel>();
     private bool _busy;
+    [Parameter]
+    public int? id { get; set; } = null;
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 19;
+
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
 
     protected override async Task OnInitializedAsync()
     {
@@ -76,6 +87,13 @@
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         await GetAll(IsApproved);
+
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.TaxVoucherID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.TaxVoucherID == id), true);
+        }
     }
 
     async Task ApprovedToggled(bool value)
@@ -138,9 +156,28 @@
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model.Clone());
+        parms.Add("PageToRedirectLink", "/TaxVoucherView");
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<TaxVoucherDialog>((model == null || model != null && model.TaxVoucherID == null || model != null && model.TaxVoucherID == 0) ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (TaxVoucherModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.TaxVoucherID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/TaxVoucherView";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
         await GetAll(IsApproved);
         await Task.Delay(200);
         _busy = false;
