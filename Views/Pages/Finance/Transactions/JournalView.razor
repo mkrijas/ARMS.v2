@@ -1,4 +1,5 @@
 ﻿@page "/JournalView"
+@page "/JournalView/{id:int}"
 @using System.Threading;
 @using System.Security.Claims;
 @using ArmsModels.Shared;
@@ -7,6 +8,8 @@
 @inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 @inject IJSRuntime JsRuntime
 @attribute [Authorize]
 
@@ -79,8 +82,15 @@
     private string searchTerm = "";
     private bool _busy;
 
+    [Parameter]
+    public int? id { get; set; } = null;
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 18;
+
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
 
     private List<Claim> clamelist = new List<Claim>();
     private List<RoleClaimsList> Claims = new();
@@ -100,6 +110,13 @@
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         await GetAll(IsApproved, NumberOfRecords);
+
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.JournalID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.JournalID == id), true);
+        }
     }
 
     private async Task GetAll(bool val, int numberOfRecords)
@@ -178,9 +195,28 @@
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", JournalModel.Clone());
+        parms.Add("PageToRedirectLink", "/JournalView");
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<JournalDialog>(JournalModel.JournalID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (JournalModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.JournalID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/JournalView";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
         await GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;
