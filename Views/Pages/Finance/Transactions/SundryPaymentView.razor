@@ -1,4 +1,5 @@
 ﻿@page "/SundryPaymentView"
+@page "/SundryPaymentView/{id:int}"
 @using System.Threading;
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -6,6 +7,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject ISundryPaymentService Iservice
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 
 <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
     <ToolBarContent>
@@ -71,9 +74,16 @@
     private string searchTerm = "";
     private bool _busy;
 
+    [Parameter]
+    public int? id { get; set; } = null;
+
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 11;
 
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
@@ -88,6 +98,12 @@
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         GetAll(IsApproved, NumberOfRecords);
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.SundryPaymentID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.SundryPaymentID == id), true);
+        }
     }
 
     void ApprovedToggled(bool value)
@@ -170,9 +186,28 @@
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model.Clone());
+        parms.Add("PageToRedirectLink", "/SundryPaymentView");
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<SundryPaymentDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (SundryPaymentModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.SundryPaymentID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/SundryPaymentView";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
         GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;
