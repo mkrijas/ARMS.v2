@@ -1,4 +1,5 @@
 ﻿@page "/SundryReceiptView"
+@page "/SundryReceiptView/{id:int}"
 @using System.Threading;
 @using ArmsModels.BaseModels.Finance.Transactions
 @inject ISundryReceiptService Iservice
@@ -10,6 +11,8 @@
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -80,6 +83,13 @@
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 12;
 
+    [Parameter]
+    public int? id { get; set; } = null;
+
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
     private int NumberOfRecords
     {
         get => numberOfRecords;
@@ -112,6 +122,12 @@
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         await GetAll(IsApproved, NumberOfRecords);
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.SundryReceiptID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.SundryReceiptID == id), true);
+        }
     }
 
     private async Task GetAll(bool val, int numberOfRecords)
@@ -147,9 +163,28 @@
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", RModel.Clone());
+        parms.Add("PageToRedirectLink", "/SundryReceiptView");
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<SundryReceiptDialog>(RModel.SundryReceiptID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (SundryReceiptModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.SundryReceiptID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/SundryReceiptView";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
         await GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;
