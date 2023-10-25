@@ -85,7 +85,7 @@ namespace ArmsServices.DataServices.FMS
                new SqlParameter("@RoutineCheckListID", model.RoutineCheckListID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@TruckID", model.TruckID),
-               new SqlParameter("@ItemIDs", model.ItemIDs),
+               new SqlParameter("@ItemIDs", model.CheckedItemLists.ToDataTable()),
                new SqlParameter("@Description", model.Description),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@RecordStatus", 3),

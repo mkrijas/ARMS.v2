@@ -28,6 +28,7 @@ namespace ArmsModels.BaseModels.FMS
         public string Description { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public List<TruckModel> TruckList { get; set; }
+        public List<IntStringValuesModel> CheckedItemLists { get; set; }
         public RoutineCheckListMasterModel RoutineCheckItem { get; set; }
         public List<RoutineCheckListMasterModel> RoutineCheckListItem { get; set; }
     }
