@@ -1,4 +1,5 @@
 ﻿@page "/Sale"
+@page "/Sale/{id:int}"
 @using System.Threading;
 @inject ISaleService Iservice
 @inject MudBlazor.ISnackbar snackbar
@@ -6,6 +7,8 @@
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 @using Inventory
 
 <MudGrid Spacing="4">
@@ -67,9 +70,17 @@
     private int numberOfRecords = 100;
     private string searchTerm = "";
 
+    [Parameter]
+    public int? id { get; set; } = null;
+
     private bool _busy;
     public bool HasAuthoriseDelete { get; set; } = false;
     public int DocTypeID = 13;
+    
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
 
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
@@ -86,6 +97,12 @@
 
         model = new();
         await GetAll(IsApproved, NumberOfRecords);
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.SID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.SID == id), true);
+        }
     }
 
     async Task ApprovedChanged(bool value)
@@ -145,9 +162,28 @@
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", saleModel.Clone());
+        parms.Add("PageToRedirectLink", "/Sale");
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<SaleDialog>(saleModel.SID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (SaleModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.SID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/Sale";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
         await GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;

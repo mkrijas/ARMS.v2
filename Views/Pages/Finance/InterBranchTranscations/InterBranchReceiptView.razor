@@ -1,4 +1,5 @@
 ﻿@page "/InterBranchReceiptView"
+@page "/InterBranchReceiptView/{id:int}"
 @inject IReceiptService Iservice
 @inject IOutstandingBillsService OutstandingIservice
 @inject ICostCenterService costIservice
@@ -8,6 +9,8 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -71,6 +74,15 @@
     private string searchTerm = "";
     private bool _busy;
 
+    [Parameter]
+    public int? id { get; set; } = null;
+    int DocTypeID = 14;
+
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
+
     private int NumberOfRecords
     {
         get => numberOfRecords;
@@ -100,6 +112,13 @@
     protected override async Task OnInitializedAsync()
     {
         await GetReceiptBill(IsApproved, NumberOfRecords);
+
+        await signalRService.StartAsync();
+        await Task.Delay(200);
+        if (id != null && collection != null && collection.Any(g => g.ReceiptID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.ReceiptID == id), true,false);
+        }
     }
 
     async Task ApprovedChanged(bool value)
@@ -136,10 +155,29 @@
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds.Clone());
+        parms.Add("PageToRedirectLink", "/InterBranchReceiptView");
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<InterBranchReceiptDialog>(tds.ReceiptID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
 
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (ReceiptModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.ReceiptID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/InterBranchReceiptView";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
         await GetReceiptBill(IsApproved, NumberOfRecords);
 
         await Task.Delay(200);

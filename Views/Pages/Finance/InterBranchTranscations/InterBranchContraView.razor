@@ -1,4 +1,5 @@
 ﻿@page "/InterBranchContraView"
+@page "/InterBranchContraView/{id:int}"
 @using ArmsModels.BaseModels.Finance.Transactions
 @inject IContraService Iservice
 @inject ICostCenterService costIservice
@@ -8,6 +9,8 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -77,6 +80,16 @@
     private string searchTerm = "";
     private bool _busy;
 
+    [Parameter]
+    public int? id { get; set; } = null;
+    public bool HasAuthoriseDelete { get; set; } = false;
+    public int DocTypeID { get; set; } = 3;
+    
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
+
     private int NumberOfRecords
     {
         get => numberOfRecords;
@@ -107,6 +120,13 @@
     {
         model = new();
         await GetAll(IsApproved, NumberOfRecords);
+
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.ContraID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.ContraID == id), false,false);
+        }
     }
 
     async Task ApprovedChanged(bool value)
@@ -177,11 +197,30 @@
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds.Clone());
+        parms.Add("PageToRedirectLink", "/InterBranchContraView");
         parms.Add("ReadOnly", ReadOnly);
         parms.Add("IsView", View);
         var dialog = DialogService.Show<InterBranchContraDialog>(tds.ContraID == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
 
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (ContraModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.ContraID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/InterBranchContraView";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
         await GetAll(IsApproved, NumberOfRecords);
 
         await Task.Delay(200);

@@ -1,4 +1,5 @@
 ﻿@page "/InventoryGrn"
+@page "/InventoryGrn/{id:int}"
 @using System.Threading;
 @using PurchaseOrder
 @attribute [Authorize]
@@ -7,6 +8,8 @@
 @inject IDialogService DialogService
 @inject IInventoryGrnService Iservice
 @inject MudBlazor.ISnackbar snackbar
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -64,9 +67,17 @@
     private string searchGrn = "";
     public bool IsApproved { get; set; } = false;
     private bool _busy;
+    
+    [Parameter]
+    public int? id { get; set; } = null;
 
     public bool HasPermissionInventoryGrnServiceDelete { get; set; } = false;
     public int InventoryGrnDocTypeID = 16;
+    
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
 
     protected override async Task OnInitializedAsync()
     {
@@ -75,6 +86,14 @@
 
         model = new();
         await GetAll(IsApproved);
+
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.GrnID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.GrnID == id), true,false);
+        }
+
     }
 
     async Task ApprovedChanged(bool value)
@@ -111,10 +130,32 @@
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds.Clone());
+        parms.Add("PageToRedirectLink", "/InventoryGrn");
         parms.Add("ReadOnly", ReadOnly);
         parms.Add("IsView", View);
         var dialog = DialogService.Show<InventoryGrnDialog>(tds.GrnID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
+
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            int brancID = int.Parse(brancIDString);
+            var ReturnData = (InventoryGrnModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = brancID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = brancID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle("Goods Receipt Note", ReturnData.GrnNo, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody("Goods Receipt Note", ReturnData.GrnNo, "Level 1 Verification", ReturnData.EntryDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.GrnID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/InventoryGrn";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = InventoryGrnDocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
 
         await GetAll(IsApproved);
 
