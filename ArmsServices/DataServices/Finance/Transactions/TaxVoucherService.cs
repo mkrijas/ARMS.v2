@@ -76,11 +76,12 @@ namespace ArmsServices.DataServices.Finance.Transactions
         //    throw new NotImplementedException();
         //}
 
-        public IEnumerable<TaxVoucherModel> Select()
+        public IEnumerable<TaxVoucherModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
+               new SqlParameter("@BranchID", BranchID)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxVoucher.Select]", parameters))
