@@ -90,12 +90,13 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<OpTranModel> SelectByApprovedTrip(long? TripID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<OpTranModel> SelectByApprovedTrip(int? BranchID, long? TripID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripID", TripID),
                new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
             };
@@ -106,12 +107,13 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<OpTranModel> SelectByUnapprovedTrip(long? TripID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<OpTranModel> SelectByUnapprovedTrip(int? BranchID, long? TripID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripID", TripID),
                new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
             };
