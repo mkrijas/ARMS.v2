@@ -1,6 +1,7 @@
 ﻿using ArmsModels.SharedModels;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels.General
@@ -26,5 +27,10 @@ namespace ArmsModels.BaseModels.General
         public string Description { get; set; }
         public string DetailDescription { get; set; }
         public UserInfoModel UserInfo { get; set; }
+    }
+    public class IntStringValuesModel 
+    {
+        public int? IntVal { get; set; }
+        public string StringVal { get; set; }
     }
 }
