@@ -92,7 +92,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@BranchID", BranchID),
                 new SqlParameter("@Operation", "ByBranch"),
             };
 
