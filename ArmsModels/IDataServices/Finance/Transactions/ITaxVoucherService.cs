@@ -12,7 +12,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
         TaxVoucherModel Update(TaxVoucherModel model);
         TaxVoucherModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
-        IEnumerable<TaxVoucherModel> Select();
+        IEnumerable<TaxVoucherModel> Select(int? BranchID);
         IEnumerable<TaxVoucherModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<TaxVoucherModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxVoucherSubModel> GetSub(int? ID);
