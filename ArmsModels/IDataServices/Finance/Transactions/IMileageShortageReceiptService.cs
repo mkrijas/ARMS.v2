@@ -10,8 +10,8 @@ namespace ArmsServices.DataServices
         MileageShortageReceiptModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<MileageShortageReceiptModel> Select();
-        IEnumerable<MileageShortageReceiptModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<MileageShortageReceiptModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
+        IEnumerable<MileageShortageReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<MileageShortageReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         int Approve(int? MileageShortageReceiptID, string UserID, string Remarks);
         int Reverse(int? SundryReceiptID, string UserID, string Remarks);
     }
