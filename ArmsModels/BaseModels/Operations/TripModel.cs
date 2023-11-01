@@ -20,10 +20,13 @@ namespace ArmsModels.BaseModels
         public string TripPrefix { get; set; }
         public long? TripNumber { get; set; }
         public string TripNumberDisplay { get { return TripPrefix + TripNumber.ToString().PadLeft(4,'0'); } }
+        public bool? StartWithLoading { get; set; } = false;
         [Required]
         public int? BranchID { get; set; }
         [Required]
         public DateTime? TripDate { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("StartWithLoading == false", ErrorMessage ="Please select destination.")]
+        public int? DestinationID { get; set; }
         public decimal? Mileage { get; set; }
         public int? RunKM { get; set; }
         public decimal? Fuel { get; set; }
