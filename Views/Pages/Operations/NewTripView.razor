@@ -52,7 +52,7 @@
                 }
                 <MudItem xs="12" md="6">
                     <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="currentEvent.NextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
-                        @foreach (var item in EventTypes)
+                        @foreach (var item in DestinationEventTypes)
                         {
                             <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
                         }
@@ -83,6 +83,7 @@
     EventModel currentEvent = new();
     private List<PlaceModel> places;
     private List<EventTypeModel> EventTypes;
+    private List<EventTypeModel> DestinationEventTypes;
     private bool _busy;
     public bool HasPermissionTripServiceEdit { get; set; } = false;
     public bool HasPermissionTripServiceDelete { get; set; } = false;
@@ -101,7 +102,8 @@
 
         places = new();
         places = Iplace.Select(0).ToList();
-        EventTypes = Ievent.GetEventTypes().ToList();
+        EventTypes = Ievent.GetEventTypes().Where(x => x.IsTripRelated).ToList();
+        DestinationEventTypes = EventTypes.Where(s => s.EventTypeID != 1 &&( startWithLoading == false && s.EventTypeID > 1 || startWithLoading == true && s.EventTypeID > 2)).ToList();
         lastEvent = Ievent.GetCurrentEvent(Truck.TruckID);
         if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 1))
         {
@@ -122,6 +124,9 @@
 
     private void EventSelected(bool startLoading)
     {
+
+        DestinationEventTypes = EventTypes.Where(s => s.EventTypeID != null && startLoading == false && s.EventTypeID > 1 || s.EventTypeID != null && startLoading == true && s.EventTypeID > 2).ToList();
+
         if (EventTypes != null && EventTypes.Count() != 0)
         {
             if (!startLoading)
@@ -129,6 +134,7 @@
                 if (EventTypes.Any(x => x.EventTypeID == 1))
                 {
                     currentEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
+                    StateHasChanged();
                 }
             }
             else
