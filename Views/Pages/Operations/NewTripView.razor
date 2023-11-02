@@ -10,7 +10,7 @@
 
 <MudDialog>
     <DialogContent>
-        <EditForm id="form" Model="@model" OnValidSubmit="OnValidSubmit">
+        <EditForm id="formStartTrip" Model="@model" OnValidSubmit="OnValidSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
             <MudGrid Spacing="4">
@@ -35,7 +35,7 @@
                         <MudText></MudText>
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudCheckBox @bind-Checked="@startWithLoading" Label="Start with Loading" @onclick="EventSelected"></MudCheckBox>
+                        <MudCheckBox Checked="@startWithLoading" Label="Start with Loading" CheckedChanged="((bool e) => EventSelected(e))"></MudCheckBox>
                     </MudItem>
                 }
                 <MudItem xs="12" md="6">
@@ -47,12 +47,12 @@
                  @if (!startWithLoading)
                 {
                     <MudItem xs="12" md="6">
-                        <MudAutocomplete T="PlaceModel" Label="Destination" @bind-Value="Destination" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                        <MudAutocomplete T="PlaceModel" Label="Destination" Value="Destination" ValueChanged="((e)=> {Destination =e ; model.DestinationID =e?.PlaceID??null;})" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
                     </MudItem>
                 }
                 <MudItem xs="12" md="6">
                     <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="currentEvent.NextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
-                        @foreach (var item in EventTypes)
+                        @foreach (var item in DestinationEventTypes)
                         {
                             <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
                         }
@@ -63,7 +63,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Disabled="@_busy" form="form" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Start Trip</MudButton>
+        <MudButton Disabled="@_busy" form="formStartTrip" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Start Trip</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -83,6 +83,7 @@
     EventModel currentEvent = new();
     private List<PlaceModel> places;
     private List<EventTypeModel> EventTypes;
+    private List<EventTypeModel> DestinationEventTypes;
     private bool _busy;
     public bool HasPermissionTripServiceEdit { get; set; } = false;
     public bool HasPermissionTripServiceDelete { get; set; } = false;
@@ -101,7 +102,8 @@
 
         places = new();
         places = Iplace.Select(0).ToList();
-        EventTypes = Ievent.GetEventTypes().ToList();
+        EventTypes = Ievent.GetEventTypes().Where(x => x.IsTripRelated).ToList();
+        DestinationEventTypes = EventTypes.Where(s => s.EventTypeID != 1 &&( startWithLoading == false && s.EventTypeID > 1 || startWithLoading == true && s.EventTypeID > 2)).ToList();
         lastEvent = Ievent.GetCurrentEvent(Truck.TruckID);
         if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 1))
         {
@@ -120,25 +122,31 @@
         return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
-    private void EventSelected()
+    private void EventSelected(bool startLoading)
     {
+
+        DestinationEventTypes = EventTypes.Where(s => s.EventTypeID != null && startLoading == false && s.EventTypeID > 1 || s.EventTypeID != null && startLoading == true && s.EventTypeID > 2).ToList();
+
         if (EventTypes != null && EventTypes.Count() != 0)
         {
-            if (!startWithLoading)
+            if (!startLoading)
+            {
+                if (EventTypes.Any(x => x.EventTypeID == 1))
+                {
+                    currentEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
+                    StateHasChanged();
+                }
+            }
+            else
             {
                 if (EventTypes.Any(x => x.EventTypeID == 2))
                 {
                     currentEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 2).DefaultNextEventTypeID;
                 }
             }
-            else
-            {
-                if (EventTypes.Any(x => x.EventTypeID == 1))
-                {
-                    currentEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
-                }
-            }
         }
+        startWithLoading = startLoading;
+        model.StartWithLoading = startLoading;
     }
 
     private async Task OnValidSubmit(EditContext context)

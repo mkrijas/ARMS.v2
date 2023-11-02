@@ -95,7 +95,7 @@ namespace ArmsServices.DataServices
 
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Fuel.Update]", parameters))
             {
-                //model = GetModel(reader);
+                model = GetModel(reader);
             }
             return model;
         }
