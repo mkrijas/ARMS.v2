@@ -44,11 +44,12 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
-        public IEnumerable<OpInventoryReleaseModel> SelectByApproved(int? NumberOfRecords, string searchTerm)
+        public IEnumerable<OpInventoryReleaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
 
@@ -59,11 +60,12 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
-        public IEnumerable<OpInventoryReleaseModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm)
+        public IEnumerable<OpInventoryReleaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
 

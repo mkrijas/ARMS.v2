@@ -55,7 +55,7 @@ namespace ArmsModels.BaseModels
         public decimal? BookValue { get; set; }
         public decimal? CurrentValue { get; set; }
         public decimal? TotalValue { get; set; }
-        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        //[ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public decimal? SpanOfYear { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public decimal? SalvageValue { get; set; }
