@@ -138,34 +138,41 @@
 
     private async Task Edit(BranchModel model)
     {
-        if (_busy)
+        try
         {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-        if (model.BranchID != null)
-        {
-            model.Address = Iaddress.SelectByID(model.Address.AddressID);
-            model.Place = await Iplace.SelectByID(model.Place.PlaceID);
-            if (model.Coa != null)
+            if (_busy)
             {
-                model.Coa = Icoa.SelectByID(model.Coa.CoaID);
+                snackbar.Add("Please wait while form is closing!", Severity.Warning);
+                return;
             }
+            _busy = true;
+            if (model.BranchID != null)
+            {
+                model.Address = Iaddress.SelectByID(model.Address.AddressID);
+                model.Place = await Iplace.SelectByID(model.Place.PlaceID);
+                if (model.Coa != null)
+                {
+                    model.Coa = Icoa.SelectByID(model.Coa.CoaID);
+                }
+            }
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", model.Clone());
+            var dialog = DialogService.Show<BranchDialog>("Add/Edit Branch", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
+            var result = await dialog.Result;
+            if (!result.Cancelled)
+            {
+                BranchModel UpdatedModel = (BranchModel)result.Data;
+                var authState = await auth.GetAuthenticationStateAsync();
+                UpdatedModel.UserInfo.UserID = authState.User.Identity.Name;
+                Iservice.Update(UpdatedModel);
+                snackbar.Add("Saved Successfully", Severity.Success);
+            }
+            await GetAll();
         }
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", model.Clone());
-        var dialog = DialogService.Show<BranchDialog>("Add/Edit Branch", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
-        var result = await dialog.Result;
-        if (!result.Cancelled)
+        catch (Exception a)
         {
-            BranchModel UpdatedModel = (BranchModel)result.Data;
-            var authState = await auth.GetAuthenticationStateAsync();
-            UpdatedModel.UserInfo.UserID = authState.User.Identity.Name;
-            Iservice.Update(UpdatedModel);
-            snackbar.Add("Saved Successfully", Severity.Success);
+            snackbar.Add(a.Message, Severity.Error);
         }
-        await GetAll();
         await Task.Delay(200);
         _busy = false;
     }
