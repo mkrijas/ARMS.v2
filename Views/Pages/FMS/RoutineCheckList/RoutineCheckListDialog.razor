@@ -37,7 +37,7 @@
                     <TruckSelector Value="model.Truck" BranchID="branchID" ValueChanged="TruckSelected" />
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
-                    <MudTextField @bind-Value="model.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Description)"></MudTextField>
+                    <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                 </MudItem>
                 <MudItem xs="11" md="11">
                     <MudGrid>
@@ -48,40 +48,38 @@
                         </MudItem>*@
                         <MudItem xs="12">
                             <MudTable Items="@ItemList" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="model" Context="context1">
-@*                                <ToolBarContent>
-                                    <MudSpacer></MudSpacer>
+                                @*                                <ToolBarContent>
+                                <MudSpacer></MudSpacer>
                                 </ToolBarContent>*@
                                 <HeaderContent>
                                     <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.ItemName)" InitialDirection="SortDirection.Ascending">Item Name</MudTableSortLabel></MudTh>
                                     <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.IsChecked)" InitialDirection="SortDirection.Ascending">Is Checked</MudTableSortLabel></MudTh>
-                                    <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.CurrentTruckLastUpdatedDate)" InitialDirection="SortDirection.Ascending">Last Updated Date</MudTableSortLabel></MudTh>
-                                    <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.IsExpired)" InitialDirection="SortDirection.Ascending">Expired</MudTableSortLabel></MudTh>
                                     <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.DetailDescription)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<RoutineCheckListMasterModel, object>(x=> x.CurrentTruckLastUpdatedDate)" InitialDirection="SortDirection.Ascending">Last Updated Date / Is Expired</MudTableSortLabel></MudTh>
                                 </HeaderContent>
                                 <RowTemplate>
                                     <MudTd DataLabel="Item Name">@context1.ItemName</MudTd>
                                     <MudTd DataLabel="Is Checked"> <MudCheckBox @bind-Checked="@context1.IsChecked" Disabled="@context1.IsDisabled"></MudCheckBox> </MudTd>
-                                    <MudTd DataLabel="Last Updated Date">@context1.CurrentTruckLastUpdatedDate</MudTd>
-                                    <MudTd DataLabel="Is Expired">@(context1.IsExpired ? "Expired" : "")</MudTd>
                                     <MudTd DataLabel="Description">  <MudTextField @bind-Value="context1.DetailDescription" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField> </MudTd>
-                                </RowTemplate>
- @*                               <PagerContent>
-                                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                                    <MudTd DataLabel="Last Updated Date"><div style="display:inline"> @(context1.CurrentTruckLastUpdatedDate) <span style="color:red"> @(context1.IsExpired ? " (Expired)" : "") </span></div></MudTd>
+                                    </RowTemplate>
+                                    @*                               <PagerContent>
+                                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
                                 </PagerContent>*@
-                            </MudTable>
-                        </MudItem>
-                        @*}*@
-                    </MudGrid>
-                </MudItem>
-            </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Disabled="@_busy" form="formRoutineCheckList" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
-    </DialogActions>
-</MudDialog>
+                                </MudTable>
+                            </MudItem>
+                            @*}*@
+                        </MudGrid>
+                    </MudItem>
+                </EditForm>
+            </MudContainer>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Disabled="@_busy" form="formRoutineCheckList" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
+        </DialogActions>
+    </MudDialog>
 
-    @code {
+@code {
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter]
@@ -104,24 +102,35 @@
             {
                 model.Truck = TruckList.First(s => s.TruckID == model.TruckID);
             }
-            foreach (var item in ItemList)
+            if (model.TruckID != null)
             {
-                if (!string.IsNullOrEmpty(model.ItemIDs))
+                List<RoutineCheckListModel> TruckListTemp = new();
+                var TruckListTempSub = Iservice.GetLastRoutineCheckListDetailsUsingID(model.RoutineCheckListID);
+                if (TruckListTempSub != null)
                 {
-                    foreach (var itemId in model.ItemIDs.Split(","))
+
+                    TruckListTemp = TruckListTempSub.ToList();
+                    foreach (var item in TruckListTemp.OrderBy(s => s.CreatedDate))
                     {
-                        int resultId = 0;
-                        int.TryParse(itemId, out resultId);
-                        if (resultId != 0 && item.ItemID == resultId)
+                        if (ItemList != null && ItemList.Count() != 0 && ItemList.Any(s => s.ItemID == item.ItemID))
                         {
-                            item.IsChecked = true;
+                            foreach (RoutineCheckListMasterModel Values in ItemList.Where(s => (int)s.ItemID == item.ItemID))
+                            {
+                                Values.CurrentTruckLastUpdatedDate = item.CreatedDate;
+                                if (item.CreatedDate != null && Values != null)
+                                {
+                                    var day1 = item.CreatedDate.Value.Day;
+                                    var day2 = DateTime.Now.Day;
+                                    var day3 = (item.CreatedDate.Value - DateTime.Now).Days;
+                                    var day4 = (item.CreatedDate.Value - DateTime.Now).TotalDays;
+                                    Values.IsExpired = ((DateTime.Now - item.CreatedDate.Value ).TotalDays > Values.ValidDays);
+                                    Values.IsChecked = true;
+                                    Values.DetailDescription = item.Description;
+                                }
+                            }
                         }
                     }
                 }
-            }
-            if (model != null && model.Truck != null)
-            {
-                await TruckSelected(model.Truck);
             }
         }
     }
@@ -138,6 +147,18 @@
 
     public async Task Submit()
     {
+        if (ItemList != null && !ItemList.Any(s => s.IsChecked))
+        {
+            snackbar.Add("Please check at least 1 item before submitting.", Severity.Error);
+            return;
+
+        }
+        if (ItemList.Any(s => s.IsExpired && (!s.IsChecked)))
+        {
+            snackbar.Add("Please check the expired item(s).", Severity.Error);
+            return;
+
+        }
         if (_busy)
         {
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
@@ -153,13 +174,12 @@
             {
                 model.TruckID = model.Truck.TruckID;
             }
-            if(ItemList.Any(d => d.IsChecked && d.ItemID != null))
+            if (ItemList.Any(d => d.IsChecked && d.ItemID != null))
             {
                 if (model.CheckedItemLists == null)
                 {
                     model.CheckedItemLists = new();
                 }
-                model.ItemIDs = String.Join(",", ItemList.Where(d => d.IsChecked).Select(s => s.ItemID));
                 model.CheckedItemLists = ItemList.Where(d => d.IsChecked).Select(s => new IntStringValuesModel() { IntVal = s.ItemID, StringVal = s.DetailDescription }).ToList();
 
             }
@@ -193,17 +213,24 @@
         }
         if (obj != null && obj.TruckID != null)
         {
-            TruckListTemp = Iservice.GetLastRoutineCheckListDetailsUsingTruckId(obj.TruckID).ToList();
-            foreach (var item in TruckListTemp.OrderBy(s => s.CreatedDate))
+            var TruckListTempSub = Iservice.GetLastRoutineCheckListDetailsUsingTruckId(obj.TruckID);
+            if (TruckListTempSub != null)
             {
-                foreach (var itemId in item.ItemIDs.Split(",").ToList())
+
+                TruckListTemp = TruckListTempSub.ToList();
+                foreach (var item in TruckListTemp.OrderBy(s => s.CreatedDate))
                 {
-                    int resultConvert = 0;
-                    if (ItemList != null && ItemList.Count() != 0 && Int32.TryParse(itemId, out resultConvert) && ItemList.Any(s => s.ItemID == Int32.Parse(itemId)))
+                    if (ItemList != null && ItemList.Count() != 0 && ItemList.Any(s => s.ItemID == item.ItemID))
                     {
-                        foreach (RoutineCheckListMasterModel Values in ItemList.Where(s => (int)s.ItemID == Int32.Parse(itemId)))
+                        foreach (RoutineCheckListMasterModel Values in ItemList.Where(s => (int)s.ItemID == item.ItemID))
                         {
                             Values.CurrentTruckLastUpdatedDate = item.CreatedDate;
+                            if (item.CreatedDate != null && Values != null)
+                            {
+                                Values.IsExpired = ((item.CreatedDate.Value.Day - DateTime.Now.Day) > Values.ValidDays);
+                                //Values.IsChecked = true;
+                                //Values.DetailDescription = item.Description;
+                            }
                         }
                     }
                 }

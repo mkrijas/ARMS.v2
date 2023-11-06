@@ -25,6 +25,8 @@ namespace ArmsModels.BaseModels.FMS
         public string ItemNames { get; set; }
         public bool IsDisabled { get; set; }
         public DateTime? CreatedDate { get; set; }
+        public string Remarks { get; set; }
+        public int? ItemID { get; set; }
         public string Description { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public List<TruckModel> TruckList { get; set; }

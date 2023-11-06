@@ -86,7 +86,7 @@ namespace ArmsServices.DataServices.FMS
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@ItemIDs", model.CheckedItemLists.ToDataTable()),
-               new SqlParameter("@Description", model.Description),
+               new SqlParameter("@Remarks", model.Remarks),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@RecordStatus", 3),
             };
@@ -107,7 +107,7 @@ namespace ArmsServices.DataServices.FMS
                 ItemIDs = dr.GetString("ItemIDs"),
                 BranchID = dr.GetInt32("BranchID"),
                 TruckID = dr.GetInt32("TruckID"),
-                Description = dr.GetString("Description"),
+                Remarks = dr.GetString("Remarks"),
                 CreatedDate = dr.GetDateTime("TimeStamp"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -119,16 +119,64 @@ namespace ArmsServices.DataServices.FMS
         }
 
 
-        public IEnumerable<RoutineCheckListModel> GetLastRoutineCheckListDetailsUsingTruckId(int? TruckId)
+        public IEnumerable<RoutineCheckListModel> GetLastRoutineCheckListDetailsUsingID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", TruckId),
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "ByID"),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RoutineCheckList.SelectByTruckID]", parameters))
             {
-                yield return GetModel(dr);
+                yield return new RoutineCheckListModel
+                {
+                    RoutineCheckListID = dr.GetInt32("RoutineCheckListID"),
+                    ItemIDs = dr.GetString("ItemIDs"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    TruckID = dr.GetInt32("TruckID"),
+                    Remarks = dr.GetString("Remarks"),
+                    Description = dr.GetString("Description"),
+                    ItemID = dr.GetInt32("ItemID"),
+                    CreatedDate = dr.GetDateTime("TimeStamp"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserId"),
+                    },
+                };
+            }
+        }
+
+
+        public IEnumerable<RoutineCheckListModel> GetLastRoutineCheckListDetailsUsingTruckId(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@Operation", "ByTruck"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RoutineCheckList.SelectByTruckID]", parameters))
+            {
+                yield return new RoutineCheckListModel
+                {
+                    RoutineCheckListID = dr.GetInt32("RoutineCheckListID"),
+                    ItemIDs = dr.GetString("ItemIDs"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    TruckID = dr.GetInt32("TruckID"),
+                    Remarks = dr.GetString("Remarks"),
+                    Description = dr.GetString("Description"),
+                    ItemID = dr.GetInt32("ItemID"),
+                    CreatedDate = dr.GetDateTime("TimeStamp"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserId"),
+                    },
+                };
             }
         }
 
