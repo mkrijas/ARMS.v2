@@ -25,8 +25,5 @@ namespace ArmsServices.DataServices
         AssetDocumentTypeModel UpdateDocumentType(AssetDocumentTypeModel model);
         IEnumerable<AssetDocumentModel> ValidatePeriod(AssetDocumentModel model);
         bool IsValid(AssetDocumentModel model, DateTime? DateToCheck);
-
-
     }
 }
-

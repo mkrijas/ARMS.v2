@@ -10,8 +10,8 @@
     <MudItem xs="12">
         <MudTable Items="@collection" Elevation="10" Filter="new Func<AssetDocumentTypeModel, bool>(search)" @bind-DocumentTypeModel="model">
             <ToolBarContent>
-                <MudText Typo="Typo.h6">Document</MudText>
-                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(0))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudText Typo="Typo.h6">Asset Document Type</MudText>
+                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchDocumentType" Placeholder="Search DocumentTypes... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
@@ -26,7 +26,7 @@
                 <MudTd DataLabel="WarnBefore">@context.WarnBefore</MudTd>
                 <MudTd DataLabel="BlockAfter">@context.BlockAfter</MudTd>
                 <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> Edit(context.DocumentTypeID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
@@ -43,8 +43,7 @@
 
     private bool _busy;
     private string searchDocumentType = "";
-    private List<AssetDocumentTypeModel>
-    collection = new();
+    private List<AssetDocumentTypeModel> collection = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -63,7 +62,7 @@
         }
     }
 
-    private async Task Edit(int? id)
+    private async Task Edit(AssetDocumentTypeModel model)
     {
         if (_busy)
         {
@@ -71,17 +70,16 @@
             return;
         }
         _busy = true;
-
-        if (id == null || id != null && id == 0)
-        {
-            model = new();
-        }
-        else
-        {
-            model = collection.First(x => x.DocumentTypeID == id);
-        }
+        // if (id == null || id != null && id == 0)
+        // {
+        //     model = new();
+        // }
+        // else
+        // {
+        //     model = collection.First(x => x.DocumentTypeID == id);
+        // }
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", model);
+        parms.Add("model", model.Clone());
         var dialog = DialogService.Show<DocumentDilog>("ADD TRUCK", parms);
         var result = await dialog.Result;
 
@@ -89,18 +87,75 @@
         var isCancelled = result.Canceled;
         if (!isCancelled)
         {
-            AssetDocumentTypeModel UpdatedModel = (AssetDocumentTypeModel)result.Data;
-            if (UpdatedModel != null)
+            try
             {
-                if (collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID))
+                AssetDocumentTypeModel UpdatedModel = (AssetDocumentTypeModel)result.Data;
+                //if (!collection.Exists(x => x.DocumentTypeName == UpdatedModel.DocumentTypeName))
+                if (UpdatedModel != null)
                 {
-                    collection[collection.FindIndex(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)] = UpdatedModel;
+                    UpdatedModel = Iservice.UpdateDocumentType(UpdatedModel);
+                    if (UpdatedModel != null)
+                    {
+                        if (collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID))
+                        {
+                            collection[collection.FindIndex(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)] = UpdatedModel;
+                        }
+                        else
+                        {
+                            collection.Add(UpdatedModel);
+                        }
+                        UpdatedModel = new();
+                    }
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    model = new AssetDocumentTypeModel();
                 }
                 else
                 {
-                    collection.Add(UpdatedModel);
+                    snackbar.Add("Error - " + UpdatedModel.DocumentTypeName + " already exist !", Severity.Error);
                 }
-                UpdatedModel = new();
+                //GetAll();
+                // if (UpdatedModel != null)
+                // {
+                //     if (collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID))
+                //     {
+                //         collection[collection.FindIndex(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)] = UpdatedModel;
+                //     }
+                //     else
+                //     {
+                //         collection.Add(UpdatedModel);
+                //     }
+                //     UpdatedModel = new();
+                // }
+                //========================
+                // if (collection.Exists(x => x.DocumentTypeName == UpdatedModel.DocumentTypeName)
+                //     && collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)
+                //     && collection.Exists(x => x.WarnBefore == UpdatedModel.WarnBefore)
+                //     && collection.Exists(x => x.BlockAfter == UpdatedModel.BlockAfter)
+                //     && collection.Exists(x => x.UsageCode == UpdatedModel.UsageCode))
+                // {
+                //     snackbar.Add("Error - " + UpdatedModel.DocumentTypeName + " already exist !", Severity.Error);
+                // }
+                // else if (collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID))
+                // {
+                //     UpdatedModel = Iservice.UpdateDocumentType(UpdatedModel);
+                //     if (UpdatedModel != null)
+                //     {
+                //         collection[collection.FindIndex(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)] = UpdatedModel;
+                //         snackbar.Add("Saved Successfully", Severity.Success);
+                //     }
+                // }
+                // else if (UpdatedModel.DocumentTypeID == null)
+                // {
+                //     UpdatedModel = Iservice.UpdateDocumentType(UpdatedModel);
+                //     collection.Add(UpdatedModel);
+                //     snackbar.Add("Saved Successfully", Severity.Success);
+                // }
+                // UpdatedModel = new();
+                //========================
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
             }
         }
         await Task.Delay(200);
@@ -124,6 +179,12 @@
                     collection.Remove(collection.FirstOrDefault(s => s.DocumentTypeID == model.DocumentTypeID));
                     snackbar.Add("Deleted Successfully", Severity.Success);
                 }
+            }
+            else
+            {
+                bool? error = await DialogService.ShowMessageBox(
+                    "Failed !",
+                    "DocumentType - " + model.DocumentTypeName + " is active with our Assets !");
             }
         }
     }

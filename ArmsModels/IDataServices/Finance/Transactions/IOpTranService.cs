@@ -16,8 +16,8 @@ namespace ArmsServices.DataServices
         OpTranModel Update(OpTranModel model);
         int Delete(long? ID, string UserID);
         IEnumerable<OpTranModel> SelectByTrip(long? TripID);
-        IEnumerable<OpTranModel> SelectByApprovedTrip(long? TripID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<OpTranModel> SelectByUnapprovedTrip(long? TripID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<OpTranModel> SelectByApprovedTrip(int? BranchID, long? TripID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<OpTranModel> SelectByUnapprovedTrip(int? BranchID, long? TripID, int? NumberOfRecords, string searchTerm);
         IEnumerable<OpTranModel> SelectByJobcard(int? JobcardID);
         OpTranModel SelectByID(long? ID);
         int Approve(int? ID, string UserID, string Remarks);

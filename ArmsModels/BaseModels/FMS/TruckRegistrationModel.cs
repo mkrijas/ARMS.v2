@@ -19,7 +19,9 @@ namespace ArmsModels.BaseModels
         [StringLength(maximumLength: 50)]
         public string RegNo { get; set; }
         public int? TruckID { get; set; }
+        [Required]
         public DateTime? EffectFrom { get; set; }
+        [Required]
         public DateTime? EffectTo { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]

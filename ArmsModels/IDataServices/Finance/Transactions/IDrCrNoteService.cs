@@ -16,8 +16,8 @@ namespace ArmsServices.DataServices
         DrCrNoteModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<DrCrNoteModel> Select();
-        IEnumerable<DrCrNoteModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<DrCrNoteModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
+        IEnumerable<DrCrNoteModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<DrCrNoteModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<DrCrNoteModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<DrCrNoteModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? ID);

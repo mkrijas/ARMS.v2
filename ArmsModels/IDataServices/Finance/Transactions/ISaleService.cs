@@ -16,8 +16,8 @@ namespace ArmsServices.DataServices
         SaleModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<SaleModel> Select();
-        IEnumerable<SaleModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<SaleModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
+        IEnumerable<SaleModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<SaleModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<SaleModel> SelectByParty(int? PartyID);
         IEnumerable<SaleModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetParticulars(int? SID);

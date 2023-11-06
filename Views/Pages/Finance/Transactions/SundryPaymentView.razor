@@ -70,6 +70,7 @@
     public bool IsApproved { get; set; } = false;
     private List<SundryPaymentModel> collection = new List<SundryPaymentModel>();
     private int numberOfRecords = 100;
+    private int? branchID = null;
 
     private string searchTerm = "";
     private bool _busy;
@@ -96,7 +97,8 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasAuthoriseDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
-
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         await signalRService.StartAsync();
@@ -117,11 +119,11 @@
         int NumberOfRecords = numberOfRecords;
         if (val)
         {
-            collection = Iservice.SelectByApproved(NumberOfRecords, searchTerm).ToList();
+            collection = Iservice.SelectByApproved(branchID, NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.SelectByUnapproved(NumberOfRecords, searchTerm).ToList();
+            collection = Iservice.SelectByUnapproved(branchID, NumberOfRecords, searchTerm).ToList();
         }
     }
 

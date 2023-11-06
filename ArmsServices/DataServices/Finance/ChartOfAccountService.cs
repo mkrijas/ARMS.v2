@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 using System.Reflection;
 
-
 namespace ArmsServices.DataServices
 {
     public class ChartOfAccountService : IChartOfAccountService
@@ -26,6 +25,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TdsRateID", ID),
                new SqlParameter("@UserID", UserID),
             };
+
             return Iservice.ExecuteNonQuery("[usp.Finance.Coa.Delete]", parameters);
         }
 
@@ -42,6 +42,7 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
         public IEnumerable<ChartOfAccountModel> SelectChildren(int? CoaID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -55,17 +56,18 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
         public List<ChartOfAccountModel> CoaAllList { get; set; } = new();
 
-        public List<ChartOfAccountModel> SelectAllChildrenAndItsSub(int? CoaID,string  searchString)
+        public List<ChartOfAccountModel> SelectAllChildrenAndItsSub(int? CoaID, string searchString)
         {
             ClearCoaList();
-            if(searchString != null)
+            if (searchString != null)
             {
                 searchString = searchString.Trim();
             }
             var result = SelectAllChildrenAndItsSubChildren(CoaID);
-            if(result.Any(d => string.IsNullOrWhiteSpace(searchString) || d.AccountName != null && d.AccountName.ToLower().Trim().Contains(searchString.ToLower().Trim())))
+            if (result.Any(d => string.IsNullOrWhiteSpace(searchString) || d.AccountName != null && d.AccountName.ToLower().Trim().Contains(searchString.ToLower().Trim())))
             {
                 return result.Where(d => string.IsNullOrWhiteSpace(searchString) || d.AccountName != null && d.AccountName.ToLower().Trim().Contains(searchString.ToLower().Trim())).ToList();
             }
@@ -73,20 +75,21 @@ namespace ArmsServices.DataServices
             {
                 return new List<ChartOfAccountModel>();
             }
-           
         }
-            public void ClearCoaList()
+
+        public void ClearCoaList()
         {
             CoaAllList.Clear();
         }
+
         public List<ChartOfAccountModel> SelectAllChildrenAndItsSubChildren(int? CoaID)
         {
-
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "children"),
                new SqlParameter("@CoaID",CoaID),
             };
+
             ChartOfAccountModel model = new ChartOfAccountModel();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
             {
@@ -97,14 +100,12 @@ namespace ArmsServices.DataServices
                 }
                 else
                 {
-
-                        CoaAllList.Add(model);
-                   
+                    CoaAllList.Add(model);
                 }
-                
             }
             return CoaAllList;
         }
+
         public IEnumerable<ChartOfAccountModel> SelectBase()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -125,6 +126,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@coaID", ID),
                new SqlParameter("@Operation", "ByID")
             };
+
             ChartOfAccountModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
             {
@@ -149,6 +151,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PeriodTo", model.PeriodTo),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Update]", parameters))
             {
                 model = GetModel(dr);
@@ -206,21 +209,6 @@ namespace ArmsServices.DataServices
             }
         }
 
-
-        //public IEnumerable<ChartOfAccountModel> AllGroups()
-        //{
-        //    List<SqlParameter> parameters = new List<SqlParameter>
-        //    {
-        //       new SqlParameter("@Operation", "AllGroups"),
-        //    };
-
-        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
-        //    {
-        //        yield return GetModel(dr);
-        //    }
-        //}
-
-
         public IEnumerable<ChartOfAccountModel> AllGroups()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -233,8 +221,6 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-
-
 
         public IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID)
         {
@@ -256,31 +242,55 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public void SelectAll(int? CoaID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation","CHECKALL"),
+               new SqlParameter("@CoaID", CoaID),
+               new SqlParameter("@UserID", UserID),
+            };
+
+            Iservice.ExecuteNonQuery("[usp.finance.COA.BranchAvailability.Update]", parameters);
+        }
+
+        public void UnSelectAll(int? CoaID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation","UNCHECKALL"),
+               new SqlParameter("@CoaID", CoaID),
+               new SqlParameter("@UserID", UserID),
+            };
+
+            Iservice.ExecuteNonQuery("[usp.finance.COA.BranchAvailability.Update]", parameters);
+        }
+
         public void AddBranch(CoaBranchAvailabilityModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation","CHECK"),
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@CoaID", model.CoaID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            Iservice.ExecuteNonQuery("[usp.Finance.Coa.BranchAvailability.Update]", parameters);
-
-
+            Iservice.ExecuteNonQuery("[usp.finance.COA.BranchAvailability.Update]", parameters);
         }
 
         public void RemoveBranch(CoaBranchAvailabilityModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation","UNCHECK"),
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@CoaID", model.CoaID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            Iservice.ExecuteNonQuery("[usp.Finance.Coa.BranchAvailability.Delete]", parameters);
+            Iservice.ExecuteNonQuery("[usp.finance.COA.BranchAvailability.Update]", parameters);
         }
 
         public IEnumerable<CoaBranchAvailabilityModel> GetSubledgersInBranch(int? BranchID, string filterText)
@@ -326,6 +336,4 @@ namespace ArmsServices.DataServices
             }
         }
     }
-
-
 }

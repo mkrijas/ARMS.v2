@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -51,6 +52,8 @@ namespace ArmsModels.BaseModels
         public DateTime? PurchaseDate { get; set; }
         public DateTime? SoldDate { get; set; }
         public EventModel CurrentEvent { get; set; }
+        [Required]
+        [ValidateComplexType]
         public TruckRegistrationModel CurrentRegistration { get; set; }
         [Required]
         public int? AssetID { get; set; }

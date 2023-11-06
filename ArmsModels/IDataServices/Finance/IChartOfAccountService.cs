@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
-
 namespace ArmsServices.DataServices
 {
     public interface IChartOfAccountService
@@ -22,6 +21,8 @@ namespace ArmsServices.DataServices
         IEnumerable<ChartOfAccountModel> AllGroups();
         IEnumerable<ChartOfAccountModel> SelectByGroup(int? GroupID);
         IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID);
+        void SelectAll(int? CoaID, string UserID);
+        void UnSelectAll(int? CoaID, string UserID);
         void AddBranch(CoaBranchAvailabilityModel model);
         void RemoveBranch(CoaBranchAvailabilityModel model);
         IEnumerable<CoaBranchAvailabilityModel> GetSubledgersInBranch(int? BranchID, string filterText);

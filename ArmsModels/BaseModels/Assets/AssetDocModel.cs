@@ -54,8 +54,13 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
-    public class AssetDocumentTypeModel
+    public class AssetDocumentTypeModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AssetDocumentTypeModel>(Json);
+        }
         public AssetDocumentTypeModel()
         {
             UserInfo = new();

@@ -15,8 +15,8 @@ namespace ArmsServices.DataServices
         SundryPaymentModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);
         IEnumerable<SundryPaymentModel> Select();
-        IEnumerable<SundryPaymentModel> SelectByApproved(int? NumberOfRecords, string searchTerm);
-        IEnumerable<SundryPaymentModel> SelectByUnapproved(int? NumberOfRecords, string searchTerm);
+        IEnumerable<SundryPaymentModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<SundryPaymentModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<SundryPaymentEntryModel> GetEntries(int? SID);
         int Approve(int? SundryPaymentID, string UserID, string Remarks);
         int Reverse(int? SundryPaymentID, string UserID, string Remarks);
