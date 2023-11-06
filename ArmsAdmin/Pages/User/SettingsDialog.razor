@@ -1,7 +1,10 @@
 ﻿@using ArmsModels.BaseModels.General;
+@using System.Threading;
 @inject IBranchSettingsService IBranchSettings
 @inject AuthenticationStateProvider auth
 @inject MudBlazor.ISnackbar snackbar
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog Class="my-dialogue pb-3">
     <DialogContent>
@@ -66,30 +69,45 @@
     private List<SettingsModel> SettingsList;
     private bool _busy;
 
+    public bool HasPermissionBranchSettingsServiceEdit { get; set; } = false;
+    int BranchSettingsDocTypeID = 72;
+
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
+
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionBranchSettingsServiceEdit = await Irole.HasClaim(BranchSettingsDocTypeID.ToString(), "Edit", ctc.Token);
 
         SettingsList = IBranchSettings.SelectByID(branchID).ToList();
     }
 
     private async Task OnValidSubmit(List<SettingsModel> context)
     {
-        if (_busy)
+        if (HasPermissionBranchSettingsServiceEdit)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            List<int?> RecordStatusList = context.Where(s => s.RecordStatus ?? false).Select(d => d.SettingsID).ToList();
+            IBranchSettings.Update(branchID, RecordStatusList, UserID);
+            snackbar.Add("Updated Successfully", Severity.Success);
+            await Task.Delay(2000);
+            _busy = false;
         }
-        _busy = true;
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        List<int?> RecordStatusList = context.Where(s => s.RecordStatus ?? false).Select(d => d.SettingsID).ToList();
-        IBranchSettings.Update(branchID, RecordStatusList, UserID);
-        snackbar.Add("Updated Successfully", Severity.Success);
-        await Task.Delay(2000);
-        _busy = false;
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit BranchSettings.");
+        }
     }
 }
