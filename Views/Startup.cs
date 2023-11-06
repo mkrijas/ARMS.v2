@@ -57,6 +57,14 @@ namespace Views
             services.AddServerSideBlazor();
             services.AddControllers();
 
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAnyOriginPolicy", builder =>
+                builder.WithOrigins("http://10.200.50.39/ReportServer/")
+                       .SetIsOriginAllowedToAllowWildcardSubdomains()
+                       .AllowAnyMethod().AllowAnyHeader().AllowCredentials()); 
+            });
+
             services.AddControllersWithViews();
             //services.AddScoped<AuthenticationStateProvider, CustomAuthenticationSatetProvider>();
             
@@ -264,7 +272,9 @@ namespace Views
 
             app.UseResponseCompression();
 
-            app.UseHttpsRedirection();          
+            app.UseHttpsRedirection();
+
+            app.UseCors("AllowAnyOriginPolicy");
 
             app.UseRouting();
             app.UseAuthentication();
