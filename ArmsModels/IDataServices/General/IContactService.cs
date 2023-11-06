@@ -13,9 +13,9 @@ namespace ArmsServices.DataServices
 {
     public interface IContactService
     {
-        ContactModel Update(ContactModel model);
+        ContactModel Update(ContactModel model);  //Edit
         ContactModel SelectByID(int? ContactID);
-        int Delete(int? ContactID, string UserID);
+        int Delete(int? ContactID, string UserID);  //Delete
         IEnumerable<ContactModel> Select(int? RefKey, string RefTable);
     }
 }

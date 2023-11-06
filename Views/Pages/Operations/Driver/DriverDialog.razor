@@ -110,13 +110,16 @@
     DriverModel existingDriver;
 
     public bool HasPermissionDriverServiceEdit { get; set; } = false;
-    public int DocTypeID = 50;
+    public int DriverServiceDocTypeID = 50;
+    public bool HasPermissionContactServiceServiceEdit { get; set; } = false;
+    public int ContactServiceDocTypeID = 71;
     private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionDriverServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDriverServiceEdit = await Irole.HasClaim(DriverServiceDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionContactServiceServiceEdit = await Irole.HasClaim(ContactServiceDocTypeID.ToString(), "Edit", ctc.Token);
 
         if (model.DriverAgentID != null && model.DriverAgentID != 0)
         {
@@ -177,11 +180,20 @@
                 var contacts = model.Contacts;
                 model = Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
-                foreach (var item in contacts)
+                if (HasPermissionContactServiceServiceEdit)
                 {
-                    item.RefKey = model.DriverID;
-                    item.UserInfo = model.UserInfo;
-                    Icontact.Update(item);
+                    foreach (var item in contacts)
+                    {
+                        item.RefKey = model.DriverID;
+                        item.UserInfo = model.UserInfo;
+                        Icontact.Update(item);
+                    }
+                }
+                else
+                {
+                    bool? ResultModel = await DialogService.ShowMessageBox(
+                        "Permission denied!",
+                        "You dont have any permission to Add or Edit Contact.");
                 }
                 MudDialog.Close(model);
             }
