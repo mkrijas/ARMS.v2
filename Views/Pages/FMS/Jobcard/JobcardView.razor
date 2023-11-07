@@ -268,12 +268,17 @@
     private bool _busy;
 
     public bool HasPermissionInventoryRequestDelete { get; set; } = false;
-    public int DocTypeID = 67;
+    public int InventoryRequestDocTypeID = 67;
+    public bool HasPermissionMechanicJobServiceAdd { get; set; } = false;
+    public bool HasPermissionMechanicJobServiceRemove { get; set; } = false;
+    public int MechanicJobTypeID = 79;
 
     protected async override Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionInventoryRequestDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionMechanicJobServiceAdd = await Irole.HasClaim(MechanicJobTypeID.ToString(), "Add", ctc.Token);
+        HasPermissionMechanicJobServiceRemove = await Irole.HasClaim(MechanicJobTypeID.ToString(), "Remove", ctc.Token);
+        HasPermissionInventoryRequestDelete = await Irole.HasClaim(InventoryRequestDocTypeID.ToString(), "Delete", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -429,10 +434,19 @@
 
     async Task RemoveMechanic(MechanicJobModel mj)
     {
-        var authProvider = await auth.GetAuthenticationStateAsync();
-        string UserID = authProvider.User.Identity.Name;
-        ImechanicJob.Remove(mj.MjID, UserID);
-        mj.EndedOn = DateTime.Now;
+        if (HasPermissionMechanicJobServiceRemove)
+        {
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            string UserID = authProvider.User.Identity.Name;
+            ImechanicJob.Remove(mj.MjID, UserID);
+            mj.EndedOn = DateTime.Now;
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Remove MechanicJob.");
+        }
     }
 
     void OpenMechanicSelector(JobInProgressModel jipModel)
@@ -446,23 +460,32 @@
 
     async Task AddMechanic()
     {
-        var authProvider = await auth.GetAuthenticationStateAsync();
-        foreach (var item in SelectedMechanics)
+        if (HasPermissionMechanicJobServiceAdd)
         {
-            ImechanicJob.Update(new MechanicJobModel()
-                {
-                    AssignedOn = DateTime.Now,
-                    JipID = SelectedJob.JipID,
-                    MechanicID = item.MechanicID,
-                    MechanicName = item.MechanicName,
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel()
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            foreach (var item in SelectedMechanics)
+            {
+                ImechanicJob.Update(new MechanicJobModel()
                     {
-                        UserID = authProvider.User.Identity.Name
-                    }
-                });
+                        AssignedOn = DateTime.Now,
+                        JipID = SelectedJob.JipID,
+                        MechanicID = item.MechanicID,
+                        MechanicName = item.MechanicName,
+                        UserInfo = new ArmsModels.SharedModels.UserInfoModel()
+                        {
+                            UserID = authProvider.User.Identity.Name
+                        }
+                    });
+            }
+            setJipList(SelectedJobcard);
+            visibleMechanicSelector = false;
         }
-        setJipList(SelectedJobcard);
-        visibleMechanicSelector = false;
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Add MechanicJob.");
+        }
     }
 
     private async Task BeginInsuranceClaim()
