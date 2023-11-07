@@ -11,9 +11,9 @@ namespace ArmsServices.DataServices
 {
     public interface IAddressService
     {
-        AddressModel Update(AddressModel model);
+        AddressModel Update(AddressModel model);  //Edit
         AddressModel SelectByID(int? AddressID);
-        int Delete(int? AddressID, string UserID);
+        int Delete(int? AddressID, string UserID);  //Delete
         IEnumerable<AddressModel> Select(int? AddressID);
     }
 }
