@@ -9,7 +9,7 @@ namespace ArmsServices.DataServices
     public interface IBranchSettingsService
     {
         IEnumerable<SettingsModel> SelectByID(int? BranchID);
-        SettingsModel Update(int? ID, List<int?> RecordStatusList, string UserID);
+        SettingsModel Update(int? ID, List<int?> RecordStatusList, string UserID);  //Edit
         bool IsEnabled(int? BranchID, int? OptionID);
     }
 }

@@ -10,9 +10,9 @@ namespace ArmsServices.DataServices
 {
     public interface IWorkshopService
     {
-        WorkshopModel Update(WorkshopModel model);
+        WorkshopModel Update(WorkshopModel model);  //Edit
         WorkshopModel SelectByID(int? ID);
-        int Delete(int? WorkshopID, string UserID);
+        int Delete(int? WorkshopID, string UserID);  //Delete
         IEnumerable<WorkshopModel> Select(int? WorkshopID);
     }
 }

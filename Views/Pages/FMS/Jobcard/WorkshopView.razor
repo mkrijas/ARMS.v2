@@ -5,6 +5,8 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudTable Items="@collection" Elevation="10" Filter="new Func<WorkshopModel, bool>(search)" @bind-model="model">
     <ToolBarContent>
@@ -42,8 +44,16 @@
     private string searchString = string.Empty;
     private bool _busy;
 
-    protected override void OnInitialized()
+    public bool HasPermissionWorkshopServiceEdit { get; set; } = false;
+    public bool HasPermissionWorkshopServiceDelete { get; set; } = false;
+    public int WorkshopDocTypeID = 74;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionWorkshopServiceEdit = await Irole.HasClaim(WorkshopDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionWorkshopServiceDelete = await Irole.HasClaim(WorkshopDocTypeID.ToString(), "Delete", ctc.Token);
+
         model = new();
         GetAll();
     }
@@ -59,69 +69,87 @@
 
     private async Task OpenDialog(WorkshopModel ws)
     {
-        if (_busy)
+        if (HasPermissionWorkshopServiceEdit)
         {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", ws.Clone());
-        var dialog = DialogService.Show<WorkshopDilogue>(ws.WorkshopID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-        if (!result.Cancelled)
-        {
-            WorkshopModel UpatedModel = (WorkshopModel)result.Data;
-            UpatedModel.UserInfo.UserID = authprov.User.Identity.Name;
-            try
+            if (_busy)
             {
-                var ResultModel = Iservice.Update(UpatedModel);
-                if (ResultModel != null)
+                snackbar.Add("Please wait while form is closing!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", ws.Clone());
+            var dialog = DialogService.Show<WorkshopDilogue>(ws.WorkshopID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
+            {
+                WorkshopModel UpatedModel = (WorkshopModel)result.Data;
+                UpatedModel.UserInfo.UserID = authprov.User.Identity.Name;
+                try
                 {
-                    if (collection.Exists(x => x.WorkshopID == ResultModel.WorkshopID))
+                    var ResultModel = Iservice.Update(UpatedModel);
+                    if (ResultModel != null)
                     {
-                        collection[collection.FindIndex(x => x.WorkshopID == ResultModel.WorkshopID)] = ResultModel;
+                        if (collection.Exists(x => x.WorkshopID == ResultModel.WorkshopID))
+                        {
+                            collection[collection.FindIndex(x => x.WorkshopID == ResultModel.WorkshopID)] = ResultModel;
+                        }
+                        else
+                        {
+                            collection.Add(ResultModel);
+                        }
+                        UpatedModel = new();
+                        ResultModel = new();
+                        model = new();
+                        snackbar.Add("Saved Successfully", Severity.Success);
                     }
-                    else
-                    {
-                        collection.Add(ResultModel);
-                    }
-                    UpatedModel = new();
-                    ResultModel = new();
-                    model = new();
-                    snackbar.Add("Saved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
                 }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+            await Task.Delay(200);
+            _busy = false;
         }
-        await Task.Delay(200);
-        _busy = false;
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Workshop.");
+        }
     }
 
     private async Task Delete(WorkshopModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.WorkshopName + " (" + model.WorkshopType + ") ?");
-        if (result == true)
+        if (HasPermissionWorkshopServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            int value = Iservice.Delete(model.WorkshopID, user.Identity.Name);
-            if (value != -1)
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.WorkshopName + " (" + model.WorkshopType + ") ?");
+            if (result == true)
             {
-                if (collection != null && collection.Any(s => s.WorkshopID == model.WorkshopID))
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                int value = Iservice.Delete(model.WorkshopID, user.Identity.Name);
+                if (value != -1)
                 {
-                    collection.Remove(collection.FirstOrDefault(s => s.WorkshopID == model.WorkshopID));
-                    snackbar.Add("Deleted Successfully", Severity.Success);
+                    if (collection != null && collection.Any(s => s.WorkshopID == model.WorkshopID))
+                    {
+                        collection.Remove(collection.FirstOrDefault(s => s.WorkshopID == model.WorkshopID));
+                        snackbar.Add("Deleted Successfully", Severity.Success);
+                    }
                 }
             }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Workshop.");
         }
     }
 
