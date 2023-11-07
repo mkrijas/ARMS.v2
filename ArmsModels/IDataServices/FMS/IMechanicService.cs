@@ -10,9 +10,9 @@ namespace ArmsServices.DataServices
 {
     public interface IMechanicService
     {
-        MechanicModel Update(MechanicModel model);
+        MechanicModel Update(MechanicModel model);  //Edit
         MechanicModel SelectByID(int? ID);
-        int Delete(int? MechanicID, string UserID);
+        int Delete(int? MechanicID, string UserID);  //Delete
         IEnumerable<MechanicModel> Select();
         IEnumerable<MechanicModel> SelectByWorkshop(int? WorkshopID);
     }
