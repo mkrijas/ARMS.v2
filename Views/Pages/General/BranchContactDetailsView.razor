@@ -4,6 +4,8 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudDialog>
     <DialogContent>
@@ -82,8 +84,14 @@
     public string titleValue = null;
     private List<ContactModel> collection = new List<ContactModel>();
 
+    public bool HasPermissionBranchServiceEdit { get; set; } = false;
+    public int BranchDocTypeID = 73;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionBranchServiceEdit = await Irole.HasClaim(BranchDocTypeID.ToString(), "Edit", ctc.Token);
+
         GetAll();
     }
 
@@ -106,14 +114,23 @@
 
     public async Task CreateContact()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        model.RefTable = "Branch";
-        Iservice.AddContact(branchID, model);
-        snackbar.Add("Successfully Submitted", Severity.Success);
-        GetAll();
-        value = false;
+        if (HasPermissionBranchServiceEdit)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            model.RefTable = "Branch";
+            Iservice.AddContact(branchID, model);
+            snackbar.Add("Successfully Submitted", Severity.Success);
+            GetAll();
+            value = false;
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Branch.");
+        }
     }
 
     void OnAppearing(MenuAppearingEventArgs e)

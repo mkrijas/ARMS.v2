@@ -101,7 +101,11 @@
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
     public bool HasPermissionOrderServiceAddRemoveOrder { get; set; } = false;
-    public int DocTypeID = 45;
+    public int OrderDocTypeID = 45;
+    public bool HasPermissionBranchServiceEdit { get; set; } = false;
+    public bool HasPermissionBranchServiceDelete { get; set; } = false;
+    public int BranchDocTypeID = 73;
+
     private bool _busy;
     private string searchBranch = "";
     private bool visibleOrders;
@@ -111,7 +115,9 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionOrderServiceAddRemoveOrder = await Irole.HasClaim(DocTypeID.ToString(), "AddRemoveOrder", ctc.Token);
+        HasPermissionOrderServiceAddRemoveOrder = await Irole.HasClaim(OrderDocTypeID.ToString(), "AddRemoveOrder", ctc.Token);
+        HasPermissionBranchServiceEdit = await Irole.HasClaim(BranchDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionBranchServiceDelete = await Irole.HasClaim(BranchDocTypeID.ToString(), "Delete", ctc.Token);
 
         await GetAll();
     }
@@ -140,42 +146,51 @@
     {
         try
         {
-            if (_busy)
+            if (HasPermissionBranchServiceEdit)
             {
-                snackbar.Add("Please wait while form is closing!", Severity.Warning);
-                return;
-            }
-            _busy = true;
-            if (model.BranchID != null)
-            {
-                model.Address = Iaddress.SelectByID(model.Address.AddressID);
-                model.Place = await Iplace.SelectByID(model.Place.PlaceID);
-                if (model.Coa != null)
+                if (_busy)
                 {
-                    model.Coa = Icoa.SelectByID(model.Coa.CoaID);
+                    snackbar.Add("Please wait while form is closing!", Severity.Warning);
+                    return;
+                }
+                _busy = true;
+                if (model.BranchID != null)
+                {
+                    model.Address = Iaddress.SelectByID(model.Address.AddressID);
+                    model.Place = await Iplace.SelectByID(model.Place.PlaceID);
+                    if (model.Coa != null)
+                    {
+                        model.Coa = Icoa.SelectByID(model.Coa.CoaID);
+                    }
+                }
+                DialogParameters parms = new DialogParameters();
+                parms.Add("model", model.Clone());
+                var dialog = DialogService.Show<BranchDialog>("Add/Edit Branch", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
+                var result = await dialog.Result;
+                if (!result.Cancelled)
+                {
+                    BranchModel UpdatedModel = (BranchModel)result.Data;
+                    if ((UpdatedModel.BranchID == null && !collection.Exists(x => x.BranchName == UpdatedModel.BranchName)) ||
+                        (UpdatedModel.BranchID != null && !collection.Exists(x => x.BranchName == UpdatedModel.BranchName && x.BranchID != UpdatedModel.BranchID)))
+                    {
+                        var authState = await auth.GetAuthenticationStateAsync();
+                        UpdatedModel.UserInfo.UserID = authState.User.Identity.Name;
+                        Iservice.Update(UpdatedModel);
+                        snackbar.Add("Saved Successfully", Severity.Success);
+                    }
+                    else
+                    {
+                        bool? value = await DialogService.ShowMessageBox(
+                           "Error !",
+                           (MarkupString)$"BranchName - <b>{UpdatedModel.BranchName}</b> already exist !");
+                    }
                 }
             }
-            DialogParameters parms = new DialogParameters();
-            parms.Add("model", model.Clone());
-            var dialog = DialogService.Show<BranchDialog>("Add/Edit Branch", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
-            var result = await dialog.Result;
-            if (!result.Cancelled)
+            else
             {
-                BranchModel UpdatedModel = (BranchModel)result.Data;
-                if ((UpdatedModel.BranchID == null && !collection.Exists(x => x.BranchName == UpdatedModel.BranchName)) ||
-                    (UpdatedModel.BranchID != null && !collection.Exists(x => x.BranchName == UpdatedModel.BranchName && x.BranchID != UpdatedModel.BranchID)))
-                {
-                    var authState = await auth.GetAuthenticationStateAsync();
-                    UpdatedModel.UserInfo.UserID = authState.User.Identity.Name;
-                    Iservice.Update(UpdatedModel);
-                    snackbar.Add("Saved Successfully", Severity.Success);
-                }
-                else
-                {
-                    bool? value = await DialogService.ShowMessageBox(
-                       "Error !",
-                       (MarkupString)$"BranchName - <b>{UpdatedModel.BranchName}</b> already exist !");
-                }
+                bool? result = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Edit Branch.");
             }
             await GetAll();
         }
@@ -224,14 +239,23 @@
 
     private async Task Delete(BranchModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete branch - " + model.BranchName + "?");
-        if (result == true)
+        if (HasPermissionBranchServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            Iservice.Delete(model.BranchID, authprov.User.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete branch - " + model.BranchName + "?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                Iservice.Delete(model.BranchID, authprov.User.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Branch.");
         }
         await GetAll();
     }
