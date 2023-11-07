@@ -8,6 +8,9 @@
 @inject ITruckService IserviceTruck
 @inject IRoutineCheckListMasterService IserviceRoutineMaster
 @inject IAssetDocumentService IDocumentService
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -42,8 +45,8 @@
                 <MudItem xs="11" md="11">
                     <MudGrid>
                         @*@foreach (var item in ItemList)
-                        {*@
-                        @*<MudItem Style="border:none; height:fit-content; border-radius:4px;" Class="m-2 mr-2 p-0 pl-2 ml-2 mt-1 mb-1">
+                        {
+                        <MudItem Style="border:none; height:fit-content; border-radius:4px;" Class="m-2 mr-2 p-0 pl-2 ml-2 mt-1 mb-1">
                         <MudCheckBox @bind-Checked="@item.IsChecked" Disabled="@item.IsDisabled">@(item.ItemName + (item.CurrentTruckLastUpdatedDate != null ? (" (" + @Convert.ToDateTime(item.CurrentTruckLastUpdatedDate).ToString("dd/MM/yyyy hh:mm") + ")") : ""))</MudCheckBox>
                         </MudItem>*@
                         <MudItem xs="12">
@@ -62,22 +65,22 @@
                                     <MudTd DataLabel="Is Checked"> <MudCheckBox @bind-Checked="@context1.IsChecked" Disabled="@context1.IsDisabled"></MudCheckBox> </MudTd>
                                     <MudTd DataLabel="Description">  <MudTextField @bind-Value="context1.DetailDescription" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField> </MudTd>
                                     <MudTd DataLabel="Last Updated Date"><div style="display:inline"> @(context1.CurrentTruckLastUpdatedDate) <span style="color:red"> @(context1.IsExpired ? " (Expired)" : "") </span></div></MudTd>
-                                    </RowTemplate>
-                                    @*                               <PagerContent>
+                                </RowTemplate>
+                                @*<PagerContent>
                                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
                                 </PagerContent>*@
-                                </MudTable>
-                            </MudItem>
-                            @*}*@
-                        </MudGrid>
-                    </MudItem>
-                </EditForm>
-            </MudContainer>
-        </DialogContent>
-        <DialogActions>
-            <MudButton Disabled="@_busy" form="formRoutineCheckList" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
-        </DialogActions>
-    </MudDialog>
+                            </MudTable>
+                        </MudItem>
+                        @*}*@
+                    </MudGrid>
+                </MudItem>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="@_busy" form="formRoutineCheckList" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
 
@@ -91,8 +94,14 @@
     private bool _busy;
     private IEnumerable<RoutineCheckListMasterModel> RoutineCheckListItem { get; set; } = new HashSet<RoutineCheckListMasterModel>();
 
+    public bool HasPermissionRoutineCheckListServiceEdit { get; set; } = false;
+    public int RoutineCheckListDocTypeID = 75;
+
     protected override async void OnInitialized()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionRoutineCheckListServiceEdit = await Irole.HasClaim(RoutineCheckListDocTypeID.ToString(), "Edit", ctc.Token);
+
         branchID = model.BranchID ?? 0;
         if (model.BranchID != null)
         {
@@ -123,7 +132,7 @@
                                     var day2 = DateTime.Now.Day;
                                     var day3 = (item.CreatedDate.Value - DateTime.Now).Days;
                                     var day4 = (item.CreatedDate.Value - DateTime.Now).TotalDays;
-                                    Values.IsExpired = ((DateTime.Now - item.CreatedDate.Value ).TotalDays > Values.ValidDays);
+                                    Values.IsExpired = ((DateTime.Now - item.CreatedDate.Value).TotalDays > Values.ValidDays);
                                     Values.IsChecked = true;
                                     Values.DetailDescription = item.Description;
                                 }
@@ -147,49 +156,57 @@
 
     public async Task Submit()
     {
-        if (ItemList != null && !ItemList.Any(s => s.IsChecked))
+        if (HasPermissionRoutineCheckListServiceEdit)
         {
-            snackbar.Add("Please check at least 1 item before submitting.", Severity.Error);
-            return;
-
-        }
-        if (ItemList.Any(s => s.IsExpired && (!s.IsChecked)))
-        {
-            snackbar.Add("Please check the expired item(s).", Severity.Error);
-            return;
-
-        }
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        if (model != null)
-        {
-            if (model.Truck != null)
+            if (ItemList != null && !ItemList.Any(s => s.IsChecked))
             {
-                model.TruckID = model.Truck.TruckID;
+                snackbar.Add("Please check at least 1 item before submitting.", Severity.Error);
+                return;
+
             }
-            if (ItemList.Any(d => d.IsChecked && d.ItemID != null))
+            if (ItemList.Any(s => s.IsExpired && (!s.IsChecked)))
             {
-                if (model.CheckedItemLists == null)
+                snackbar.Add("Please check the expired item(s).", Severity.Error);
+                return;
+
+            }
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            if (model != null)
+            {
+                if (model.Truck != null)
                 {
-                    model.CheckedItemLists = new();
+                    model.TruckID = model.Truck.TruckID;
                 }
-                model.CheckedItemLists = ItemList.Where(d => d.IsChecked).Select(s => new IntStringValuesModel() { IntVal = s.ItemID, StringVal = s.DetailDescription }).ToList();
-
+                if (ItemList.Any(d => d.IsChecked && d.ItemID != null))
+                {
+                    if (model.CheckedItemLists == null)
+                    {
+                        model.CheckedItemLists = new();
+                    }
+                    model.CheckedItemLists = ItemList.Where(d => d.IsChecked).Select(s => new IntStringValuesModel() { IntVal = s.ItemID, StringVal = s.DetailDescription }).ToList();
+                }
+                model.UserInfo.UserID = user.Identity.Name;
+                Iservice.Update(model);
             }
-            model.UserInfo.UserID = user.Identity.Name;
-            Iservice.Update(model);
-        }
-        MudDialog.Close(DialogResult.Ok(true));
+            MudDialog.Close(DialogResult.Ok(true));
 
-        await Task.Delay(2000);
-        _busy = false;
+            await Task.Delay(2000);
+            _busy = false;
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit RoutineCheckList.");
+        }
     }
 
     private async Task TruckSelected(TruckModel obj)

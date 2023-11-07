@@ -10,6 +10,8 @@
 @inject IDialogService DialogService
 @inject ITruckService IserviceTruck
 @inject IRoutineCheckListMasterService IserviceRoutineMaster
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -56,8 +58,14 @@
     string state = "Message box hasn't been opened yet";
     private bool _busy;
 
+    public bool HasPermissionRoutineCheckListServiceDelete { get; set; } = false;
+    public int RoutineCheckListDocTypeID = 75;
+
     protected async override Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionRoutineCheckListServiceDelete = await Irole.HasClaim(RoutineCheckListDocTypeID.ToString(), "Delete", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -99,22 +107,31 @@
 
     private async Task OpenDialogDelete(RoutineCheckListModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Are you sure, you want to delete - " + model.TruckName + " ?",
-            yesText: "Delete!", cancelText: "Cancel");
-        state = result == null ? "Cancelled" : "Deleted!";
-        if (state == "Deleted!")
+        if (HasPermissionRoutineCheckListServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.UserInfo = new();
-            if (model.UserInfo != null)
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Are you sure, you want to delete - " + model.TruckName + " ?",
+                yesText: "Delete!", cancelText: "Cancel");
+            state = result == null ? "Cancelled" : "Deleted!";
+            if (state == "Deleted!")
             {
-                model.UserInfo.UserID = user.Identity.Name;
-                Iservice.Delete(model.RoutineCheckListID, model.UserInfo.UserID);
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                model.UserInfo = new();
+                if (model.UserInfo != null)
+                {
+                    model.UserInfo.UserID = user.Identity.Name;
+                    Iservice.Delete(model.RoutineCheckListID, model.UserInfo.UserID);
+                }
+                await GetAll();
             }
-            await GetAll();
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete RoutineCheckList.");
         }
     }
 
