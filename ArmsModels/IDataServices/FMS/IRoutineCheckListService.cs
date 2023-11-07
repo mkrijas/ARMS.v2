@@ -10,7 +10,9 @@ namespace ArmsServices.DataServices.FMS
     {
         RoutineCheckListModel Update(RoutineCheckListModel model);
         IEnumerable<RoutineCheckListModel> SelectItemByBranch(int? Branch);
-        IEnumerable<RoutineCheckListModel> GetLastRoutineCheckListDetailsUsingTruckId(int? TruckId);
+        IEnumerable<RoutineCheckListModel> GetLastRoutineCheckListDetailsUsingTruckId(int? ID);
+        IEnumerable<RoutineCheckListModel> GetLastRoutineCheckListDetailsUsingID(int? ID);
+
         //IEnumerable<AssetModel> GetRequestedDocuments(int? RequestID);
         //AssetDocumentRequestModel SelectDocumentRequest(int? ID);
         int Delete(int? ID, string UserID);
