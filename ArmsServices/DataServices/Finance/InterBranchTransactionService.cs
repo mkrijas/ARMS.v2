@@ -68,7 +68,7 @@ namespace ArmsServices.DataServices
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.InterBranchAccount.Select]", parameters))
             {
-                 return GetModel(dr);
+                return GetModel(dr);
             }
             return null;
         }
@@ -78,15 +78,15 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
-               new SqlParameter("@ID", ID),               
+               new SqlParameter("@ID", ID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.InterBranchAccount.Select]", parameters))
             {
                 return GetModel(dr);
             }
             return null;
-        }    
-      
+        }
+
         public InterBranchMappingModel Update(InterBranchMappingModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -95,7 +95,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@InterBranchArdCode", model.InterBranchArdCode),
                new SqlParameter("@TransactionTypeID", model.TransactionTypeID),
-               new SqlParameter("@CoaID", model.CoaID),             
+               new SqlParameter("@CoaID", model.CoaID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.InterBranchAccount.Update]", parameters))
