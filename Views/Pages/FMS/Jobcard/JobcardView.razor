@@ -271,14 +271,17 @@
     public int InventoryRequestDocTypeID = 67;
     public bool HasPermissionMechanicJobServiceAdd { get; set; } = false;
     public bool HasPermissionMechanicJobServiceRemove { get; set; } = false;
-    public int MechanicJobTypeID = 79;
+    public int MechanicJobDocTypeID = 79;
+    public bool HasPermissionJobInProgressServiceEdit { get; set; } = false;
+    public int JobInProgressDocTypeID = 80;
 
     protected async override Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionMechanicJobServiceAdd = await Irole.HasClaim(MechanicJobTypeID.ToString(), "Add", ctc.Token);
-        HasPermissionMechanicJobServiceRemove = await Irole.HasClaim(MechanicJobTypeID.ToString(), "Remove", ctc.Token);
+        HasPermissionMechanicJobServiceAdd = await Irole.HasClaim(MechanicJobDocTypeID.ToString(), "Add", ctc.Token);
+        HasPermissionMechanicJobServiceRemove = await Irole.HasClaim(MechanicJobDocTypeID.ToString(), "Remove", ctc.Token);
         HasPermissionInventoryRequestDelete = await Irole.HasClaim(InventoryRequestDocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionJobInProgressServiceEdit = await Irole.HasClaim(JobInProgressDocTypeID.ToString(), "Delete", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -364,16 +367,25 @@
 
     private async Task UpdateJob(JobInProgressModel Ujip, int status)
     {
-        var authProvider = await auth.GetAuthenticationStateAsync();
-        Ujip.UserInfo.UserID = authProvider.User.Identity.Name;
-        Ujip.JobStatus = status;
-        Ujip.FinishedOn = DateTime.Now;
-        foreach (var item in Ujip.Mechanics)
+        if (HasPermissionJobInProgressServiceEdit)
         {
-            await RemoveMechanic(item);
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            Ujip.UserInfo.UserID = authProvider.User.Identity.Name;
+            Ujip.JobStatus = status;
+            Ujip.FinishedOn = DateTime.Now;
+            foreach (var item in Ujip.Mechanics)
+            {
+                await RemoveMechanic(item);
+            }
+            Ijp.Update(Ujip);
+            setJipList(SelectedJobcard);
         }
-        Ijp.Update(Ujip);
-        setJipList(SelectedJobcard);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit JobInProgress.");
+        }
     }
 
     private async Task AddJob()
