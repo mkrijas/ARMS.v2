@@ -81,6 +81,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@TripFuelID", model.TripFuelID),
                new SqlParameter("@TripID", model.TripID),
+               new SqlParameter("@AssetTransferID", model.AssetTransferID),
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@BranchID", model.PurchaseModel.BranchID),
                new SqlParameter("@EntryDate", model.EntryDate),
@@ -125,6 +126,7 @@ namespace ArmsServices.DataServices
                 Amount = reader.GetDecimal("Amount"),
                 TruckID = reader.GetInt32("TruckID"),
                 TripID = reader.GetInt64("TripID"),
+                AssetTransferID = reader.GetInt32("AssetTransferID"),
             };
         }
     }
