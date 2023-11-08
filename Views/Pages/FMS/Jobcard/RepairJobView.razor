@@ -1,8 +1,10 @@
 ﻿@page "/jobs"
-@inject IRepairJobService Iservice
+@inject IRepairWorkService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudTable Items="@collection" Elevation="10" Filter="new Func<RepairJobModel, bool>(search)" @bind-model="model">
@@ -39,8 +41,16 @@
     private string searchString = string.Empty;
     private bool _busy;
 
+    public bool HasPermissionRepairWorkServiceEdit { get; set; } = false;
+    public bool HasPermissionRepairWorkServiceDelete { get; set; } = false;
+    public int RepairWorkDocTypeID = 76;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionRepairWorkServiceEdit = await Irole.HasClaim(RepairWorkDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionRepairWorkServiceDelete = await Irole.HasClaim(RepairWorkDocTypeID.ToString(), "Delete", ctc.Token);
+
         GetAll();
     }
 
@@ -55,10 +65,19 @@
         model.UserInfo.UserID = authprov.User.Identity.Name;
         try
         {
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            collection.Add(model);
-            model = new();
+            if (HasPermissionRepairWorkServiceEdit)
+            {
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                collection.Add(model);
+                model = new();
+            }
+            else
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Edit RepairWork.");
+            }
         }
         catch (Exception ex)
         {
@@ -73,30 +92,39 @@
             snackbar.Add("Please wait while form is closing!", Severity.Warning);
             return;
         }
-        DialogParameters parms = new DialogParameters();
-        if (id != null)
+        if (HasPermissionRepairWorkServiceEdit)
         {
-            model = collection.FirstOrDefault(x => x.RepairJobID == id);
-        }
-        else
-        {
-            model = new();
-        }
-        _busy = true;
-        parms.Add("model", model);
-        var dialog = DialogService.Show<JobMasterDilogue>("Add Jobcard", parms);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            RepairJobModel editedModel = (RepairJobModel)result.Data;
-            if (collection.Exists(x => x.RepairJobID == editedModel.RepairJobID))
+            DialogParameters parms = new DialogParameters();
+            if (id != null)
             {
-                collection[collection.FindIndex(x => x.RepairJobID == editedModel.RepairJobID)] = editedModel;
+                model = collection.FirstOrDefault(x => x.RepairJobID == id);
             }
             else
             {
-                collection.Add(editedModel);
+                model = new();
             }
+            _busy = true;
+            parms.Add("model", model);
+            var dialog = DialogService.Show<JobMasterDilogue>("Add Jobcard", parms);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                RepairJobModel editedModel = (RepairJobModel)result.Data;
+                if (collection.Exists(x => x.RepairJobID == editedModel.RepairJobID))
+                {
+                    collection[collection.FindIndex(x => x.RepairJobID == editedModel.RepairJobID)] = editedModel;
+                }
+                else
+                {
+                    collection.Add(editedModel);
+                }
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit RepairWork.");
         }
         await Task.Delay(200);
         _busy = false;
@@ -104,15 +132,24 @@
 
     private async Task Delete(RepairJobModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.RepairJobTitle + " ?");
-        if (result == true)
+        if (HasPermissionRepairWorkServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            Iservice.Delete(model.RepairJobID, user.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.RepairJobTitle + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.RepairJobID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete RepairWork.");
         }
         GetAll();
     }

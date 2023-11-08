@@ -268,12 +268,23 @@
     private bool _busy;
 
     public bool HasPermissionInventoryRequestDelete { get; set; } = false;
-    public int DocTypeID = 67;
+    public int InventoryRequestDocTypeID = 67;
+    public bool HasPermissionMechanicJobServiceAdd { get; set; } = false;
+    public bool HasPermissionMechanicJobServiceRemove { get; set; } = false;
+    public int MechanicJobDocTypeID = 79;
+    public bool HasPermissionJobInProgressServiceEdit { get; set; } = false;
+    public int JobInProgressDocTypeID = 80;
+    public bool HasPermissionJobcardWorkshopServiceEdit { get; set; } = false;
+    public int JobcardWorkshopDocTypeID = 81;
 
     protected async override Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionInventoryRequestDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionMechanicJobServiceAdd = await Irole.HasClaim(MechanicJobDocTypeID.ToString(), "Add", ctc.Token);
+        HasPermissionMechanicJobServiceRemove = await Irole.HasClaim(MechanicJobDocTypeID.ToString(), "Remove", ctc.Token);
+        HasPermissionInventoryRequestDelete = await Irole.HasClaim(InventoryRequestDocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionJobInProgressServiceEdit = await Irole.HasClaim(JobInProgressDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionJobcardWorkshopServiceEdit = await Irole.HasClaim(JobcardWorkshopDocTypeID.ToString(), "Edit", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -326,49 +337,76 @@
 
     private async Task ExitWorkshop(JobcardWorkshopModel jwModel)
     {
-        if (JipList.Any(x => x.WorkshopID == jwModel.WorkshopID && x.FinishedOn == null))
+        if (HasPermissionJobcardWorkshopServiceEdit)
         {
-            snackbar.Add("Unfinished Jobs found!", Severity.Error);
-            return;
+            if (JipList.Any(x => x.WorkshopID == jwModel.WorkshopID && x.FinishedOn == null))
+            {
+                snackbar.Add("Unfinished Jobs found!", Severity.Error);
+                return;
+            }
+            jwModel.ExitOn = DateTime.Now;
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            jwModel.UserInfo.UserID = authProvider.User.Identity.Name;
+            Ijw.Update(jwModel);
+            jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
+            CurrentWorkshop = null;
         }
-        jwModel.ExitOn = DateTime.Now;
-        var authProvider = await auth.GetAuthenticationStateAsync();
-        jwModel.UserInfo.UserID = authProvider.User.Identity.Name;
-        Ijw.Update(jwModel);
-        jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
-        CurrentWorkshop = null;
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit JobcardWorkshop.");
+        }
     }
 
     private async Task EnterWorkshop()
     {
-        if (SelectedWorkshop == null || SelectedWorkshop.WorkshopID == null)
+        if (HasPermissionJobcardWorkshopServiceEdit)
         {
-            snackbar.Add("Please select workshop.", Severity.Error);
-            return;
+            if (SelectedWorkshop == null || SelectedWorkshop.WorkshopID == null)
+            {
+                snackbar.Add("Please select workshop.", Severity.Error);
+                return;
+            }
+            JobcardWorkshopModel jwEnter = new();
+            jwEnter.JobCardID = SelectedJobcard.JobcardID;
+            jwEnter.WorkshopID = SelectedWorkshop.WorkshopID;
+            jwEnter.EnteredOn = DateTime.Now;
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            jwEnter.UserInfo.UserID = authProvider.User.Identity.Name;
+            Ijw.Update(jwEnter);
+            jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
+            CurrentWorkshop = Workshops.First(y => y.WorkshopID == jwList.First(x => x.ExitOn == null).WorkshopID);
         }
-        JobcardWorkshopModel jwEnter = new();
-        jwEnter.JobCardID = SelectedJobcard.JobcardID;
-        jwEnter.WorkshopID = SelectedWorkshop.WorkshopID;
-        jwEnter.EnteredOn = DateTime.Now;
-        var authProvider = await auth.GetAuthenticationStateAsync();
-        jwEnter.UserInfo.UserID = authProvider.User.Identity.Name;
-        Ijw.Update(jwEnter);
-        jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
-        CurrentWorkshop = Workshops.First(y => y.WorkshopID == jwList.First(x => x.ExitOn == null).WorkshopID);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit JobcardWorkshop.");
+        }
     }
 
     private async Task UpdateJob(JobInProgressModel Ujip, int status)
     {
-        var authProvider = await auth.GetAuthenticationStateAsync();
-        Ujip.UserInfo.UserID = authProvider.User.Identity.Name;
-        Ujip.JobStatus = status;
-        Ujip.FinishedOn = DateTime.Now;
-        foreach (var item in Ujip.Mechanics)
+        if (HasPermissionJobInProgressServiceEdit)
         {
-            await RemoveMechanic(item);
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            Ujip.UserInfo.UserID = authProvider.User.Identity.Name;
+            Ujip.JobStatus = status;
+            Ujip.FinishedOn = DateTime.Now;
+            foreach (var item in Ujip.Mechanics)
+            {
+                await RemoveMechanic(item);
+            }
+            Ijp.Update(Ujip);
+            setJipList(SelectedJobcard);
         }
-        Ijp.Update(Ujip);
-        setJipList(SelectedJobcard);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit JobInProgress.");
+        }
     }
 
     private async Task AddJob()
@@ -429,10 +467,19 @@
 
     async Task RemoveMechanic(MechanicJobModel mj)
     {
-        var authProvider = await auth.GetAuthenticationStateAsync();
-        string UserID = authProvider.User.Identity.Name;
-        ImechanicJob.Remove(mj.MjID, UserID);
-        mj.EndedOn = DateTime.Now;
+        if (HasPermissionMechanicJobServiceRemove)
+        {
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            string UserID = authProvider.User.Identity.Name;
+            ImechanicJob.Remove(mj.MjID, UserID);
+            mj.EndedOn = DateTime.Now;
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Remove MechanicJob.");
+        }
     }
 
     void OpenMechanicSelector(JobInProgressModel jipModel)
@@ -446,23 +493,32 @@
 
     async Task AddMechanic()
     {
-        var authProvider = await auth.GetAuthenticationStateAsync();
-        foreach (var item in SelectedMechanics)
+        if (HasPermissionMechanicJobServiceAdd)
         {
-            ImechanicJob.Update(new MechanicJobModel()
-                {
-                    AssignedOn = DateTime.Now,
-                    JipID = SelectedJob.JipID,
-                    MechanicID = item.MechanicID,
-                    MechanicName = item.MechanicName,
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel()
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            foreach (var item in SelectedMechanics)
+            {
+                ImechanicJob.Update(new MechanicJobModel()
                     {
-                        UserID = authProvider.User.Identity.Name
-                    }
-                });
+                        AssignedOn = DateTime.Now,
+                        JipID = SelectedJob.JipID,
+                        MechanicID = item.MechanicID,
+                        MechanicName = item.MechanicName,
+                        UserInfo = new ArmsModels.SharedModels.UserInfoModel()
+                        {
+                            UserID = authProvider.User.Identity.Name
+                        }
+                    });
+            }
+            setJipList(SelectedJobcard);
+            visibleMechanicSelector = false;
         }
-        setJipList(SelectedJobcard);
-        visibleMechanicSelector = false;
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Add MechanicJob.");
+        }
     }
 
     private async Task BeginInsuranceClaim()

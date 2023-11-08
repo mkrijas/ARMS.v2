@@ -10,10 +10,10 @@ namespace ArmsServices.DataServices
 {
     public interface IMechanicJobService
     {
-        MechanicJobModel Update(MechanicJobModel model);
+        MechanicJobModel Update(MechanicJobModel model);  //Add
         MechanicJobModel SelectByID(int? ID);
         IEnumerable<MechanicJobModel> SelectByJob(int? JipID);
-        int Remove(int? MjID, string UserID);
+        int Remove(int? MjID, string UserID);  //Remove
         IEnumerable<MechanicJobModel> Select(int? MjID);
     }
 }

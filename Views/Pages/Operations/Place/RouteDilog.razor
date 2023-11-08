@@ -10,29 +10,37 @@
 <MudDialog>
     <DialogContent>
         <EditForm id="routeForm" Model="@routemodel" OnValidSubmit="OnValidSubmit">
-            <DataAnnotationsValidator />
+            <ObjectGraphDataAnnotationsValidator />
             <ValidationSummary />
+            @if (ValidationMessageOrgin != null)
+            {
+                <div class="validation-message">@(ValidationMessageOrgin)</div>
+            }
+            @if (ValidationMessageDestination != null)
+            {
+                <div class="validation-message">@(ValidationMessageDestination)</div>
+            }
             <MudGrid>
                 <MudItem xs="12" md="4">
-                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Origin" @bind-Value="@routemodel.Origin" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
-                                      Variant="Variant.Outlined" Immediate="true"></MudAutocomplete>
+                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Origin" Value="@routemodel.Origin" ResetValueOnEmptyText="true" SearchFunc="@Search" ValueChanged="@ValidateOrgine" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
+                                     Variant="Variant.Outlined" Immediate="true"></MudAutocomplete>
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Via" @bind-Value="@routemodel.Via" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
-                                    Variant="Variant.Outlined" Immediate="true"></MudAutocomplete>
+                                     Variant="Variant.Outlined" Immediate="true"></MudAutocomplete>
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Destination" @bind-Value="@routemodel.Destination" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
-                                    Variant="Variant.Outlined" Immediate="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add" OnAdornmentClick="AddPlace" AdornmentAriaLabel="Add Place"></MudAutocomplete>
+                    <MudAutocomplete SelectValueOnTab T="PlaceModel" Label="Destination" Value="@routemodel.Destination" ResetValueOnEmptyText="true" SearchFunc="@Search" ValueChanged="@ValidateDestination" ToStringFunc="@(e=> e==null?null : $"{e.PlaceName}")"
+                                     Variant="Variant.Outlined" Immediate="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add" OnAdornmentClick="AddPlace" AdornmentAriaLabel="Add Place"></MudAutocomplete>
                 </MudItem>
                 <MudItem xs="12" md="3">
-                    <MudTextField @bind-Value="@routemodel.Distance" Label="Distance" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.Distance)"></MudTextField>
+                    <MudNumericField HideSpinButtons="true" @bind-Value="@routemodel.Distance" Label="Distance" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.Distance)"></MudNumericField>
                 </MudItem>
                 <MudItem xs="12" md="3">
-                    <MudTextField @bind-Value="@routemodel.SpeedLimit" Label="Speed Limit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.SpeedLimit)"></MudTextField>
+                    <MudNumericField HideSpinButtons="true" @bind-Value="@routemodel.SpeedLimit" Label="Speed Limit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.SpeedLimit)"></MudNumericField>
                 </MudItem>
                 <MudItem xs="12" md="3">
-                    <MudTextField @bind-Value="@routemodel.RunningHours" Label="Running Hours" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() =>routemodel.RunningHours)"></MudTextField>
+                    <MudNumericField HideSpinButtons="true" @bind-Value="@routemodel.RunningHours" Label="Running Hours" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() =>routemodel.RunningHours)"></MudNumericField>
                 </MudItem>
                 <MudItem xs="12" md="3">
                     <MudNumericField @bind-Value="@routemodel.TollBooths" Label="No of TollBooths" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => routemodel.TollBooths)"></MudNumericField>
@@ -49,7 +57,7 @@
         </EditForm>
     </DialogContent>
     <DialogActions>
-        <MudButton Disabled="@_busy" form="routeForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Route</MudButton>
+        <MudButton Disabled="@_busy" form="routeForm" Variant="Variant.Filled" Color="Color.Success" @onclick="@(() => ValidateOrgineAndDestination())" ButtonType="ButtonType.Submit">Save Route</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -63,6 +71,8 @@
     private string searchRoute = "";
     private bool _busy;
 
+    public string ValidationMessageOrgin = null;
+    public string ValidationMessageDestination = null;
     public bool HasPermissionRouteServiceEdit { get; set; } = false;
     public int DocTypeID = 43;
 
@@ -87,11 +97,29 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
+        if (routemodel.Origin == null || routemodel.Origin.PlaceID == null || routemodel.Destination == null || routemodel.Destination.PlaceID == null)
+        {
+            if (routemodel.Origin == null || routemodel.Origin.PlaceID == null)
+            {
+                ValidationMessageOrgin = "Please select origin. \n";
+            }
+
+            if (routemodel.Destination == null || routemodel.Destination.PlaceID == null)
+            {
+                ValidationMessageDestination = "Please select destination. \n";
+            }
+            return;
+
+        }
+
         if (_busy)
         {
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
+
+        ValidationMessageOrgin = null;
+        ValidationMessageDestination = null;
         if (HasPermissionRouteServiceEdit)
         {
             if (!places.Select(x => x.PlaceName).Contains(routemodel.Origin.PlaceName))
@@ -99,12 +127,12 @@
                 snackbar.Add("Invalid Origin", Severity.Error);
                 return;
             }
-            else
-                 if (!places.Select(x => x.PlaceName).Contains(routemodel.Via.PlaceName))
-            {
-                snackbar.Add("Invalid Via", Severity.Error);
-                return;
-            }
+            //else
+            //     if (!places.Select(x => x.PlaceName).Contains(routemodel.Via.PlaceName))
+            //{
+            //    snackbar.Add("Invalid Via", Severity.Error);
+            //    return;
+            //}
             else
             if (!places.Select(x => x.PlaceName).Contains(routemodel.Destination.PlaceName))
             {
@@ -114,7 +142,20 @@
             _busy = true;
             var authprov = await auth.GetAuthenticationStateAsync();
             routemodel.UserInfo.UserID = authprov.User.Identity.Name;
-            routemodel.RouteName = routemodel.Origin.PlaceName + "-" + routemodel.Via.PlaceName + "-" + routemodel.Destination.PlaceName;
+            if (string.IsNullOrEmpty(routemodel.Via?.PlaceName??null))
+            {
+                if (routemodel.Via == null)
+                {
+                    routemodel.Via = new();
+                }
+                routemodel.Via.PlaceName = string.Empty;
+                routemodel.RouteName = routemodel.Origin.PlaceName + "-" + routemodel.Destination.PlaceName;
+            }
+            else
+            {
+                routemodel.RouteName = routemodel.Origin.PlaceName + "-" + routemodel.Via.PlaceName + "-" + routemodel.Destination.PlaceName;
+
+            }
             routemodel.MieageModifier = 1;
             try
             {
@@ -138,6 +179,54 @@
         }
     }
 
+    private void ValidateOrgine(PlaceModel obj)
+    {
+        routemodel.Origin = obj;
+        if (routemodel.Origin == null || routemodel.Origin.PlaceID == null)
+        {
+            ValidationMessageOrgin = "Please select origin. \n";
+        }
+
+        else
+        {
+            ValidationMessageOrgin = null;
+        }
+    }
+
+    private void ValidateDestination(PlaceModel obj)
+    {
+        routemodel.Destination = obj;
+        if (routemodel.Destination == null || routemodel.Destination.PlaceID == null)
+        {
+            ValidationMessageDestination = "Please select destination. \n";
+        }
+        else
+        {
+            ValidationMessageDestination = null;
+        }
+    }
+
+    private void ValidateOrgineAndDestination()
+    {
+
+        if (routemodel.Origin == null || routemodel.Origin.PlaceID == null || routemodel.Destination == null || routemodel.Destination.PlaceID == null)
+        {
+            if (routemodel.Origin == null || routemodel.Origin.PlaceID == null)
+            {
+                ValidationMessageOrgin = "Please select origin. \n";
+            }
+
+            if (routemodel.Destination == null || routemodel.Destination.PlaceID == null)
+            {
+                ValidationMessageDestination = "Please select destination. \n";
+            }
+        }
+        else
+        {
+            ValidationMessageOrgin = null;
+            ValidationMessageDestination = null;
+        }
+    }
 
     private async Task AddPlace()
     {

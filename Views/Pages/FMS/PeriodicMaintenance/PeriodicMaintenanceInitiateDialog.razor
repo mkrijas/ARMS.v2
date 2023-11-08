@@ -1,5 +1,8 @@
 ﻿@inject IPeriodicMaintenanceService Iservice
 @inject MudBlazor.ISnackbar snackbar
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -30,6 +33,15 @@
     [Parameter] public PeriodicMaintenanceInitiateModel model { get; set; }
     private bool _busy;
 
+    public bool HasPermissionPeriodicMaintenanceServiceEdit { get; set; } = false;
+    public int PeriodicMaintenanceTypeID = 77;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionPeriodicMaintenanceServiceEdit = await Irole.HasClaim(PeriodicMaintenanceTypeID.ToString(), "Edit", ctc.Token);
+    }
+
     private void Cancel()
     {
         MudDialog.Cancel();
@@ -43,10 +55,17 @@
             return;
         }
         _busy = true;
-
-        model = Iservice.Update(model);
-        MudDialog.Close(DialogResult.Ok(model));
-
+        if (HasPermissionPeriodicMaintenanceServiceEdit)
+        {
+            model = Iservice.Update(model);
+            MudDialog.Close(DialogResult.Ok(model));
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit PeriodicMaintenance.");
+        }
         await Task.Delay(2000);
         _busy = false;
     }

@@ -23,7 +23,6 @@ namespace ArmsModels.BaseModels
         public DateTime? EffectFrom { get; set; }
         [Required]
         public DateTime? EffectTo { get; set; }
-        [Required]
         [StringLength(maximumLength: 200)]
         public string RC { get; set; }  //Url of RC doc
         public bool IsValid { get { return DateTime.Today <= EffectTo && DateTime.Today >= EffectFrom; } }

@@ -10,9 +10,9 @@ namespace ArmsServices.DataServices
 {
     public interface IJobcardWorkshopService
     {
-        JobcardWorkshopModel Update(JobcardWorkshopModel model);
+        JobcardWorkshopModel Update(JobcardWorkshopModel model);  //Edit
         JobcardWorkshopModel SelectByID(int? ID);
-        int Delete(int? JwID, string UserID);
+        int Delete(int? JwID, string UserID);  //Delete
         IEnumerable<JobcardWorkshopModel> Select(int? JwID);
         IEnumerable<JobcardWorkshopModel> SelectByJobcard(int? ID);
     }

@@ -8,12 +8,12 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public class RepairJobService : IRepairJobService
+    public class RepairWorkService : IRepairWorkService
     {
 
         IDbService Iservice;
 
-        public RepairJobService(IDbService iservice)
+        public RepairWorkService(IDbService iservice)
         {
             Iservice = iservice;
         }
