@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IRepairJobService
+    public interface IRepairWorkService
     {
         RepairJobModel Update(RepairJobModel model);  //Edit
         RepairJobModel SelectByID(int? ID);
