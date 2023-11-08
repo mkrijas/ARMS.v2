@@ -10,6 +10,8 @@
 @inject ITripService Itrip
 @inject ITruckService Itruck
 @inject IDialogService DialogService
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudDialog>
     <TitleContent>
@@ -26,10 +28,10 @@
                 <MudGrid Spacing="2">
                     <MudItem xs="12">
                         <MudTextField @bind-Value="@(Breakdown.BreakdownType)" Label="Breakdown Type" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12">
-                        <MudSelect Label="Select Workshop" Value="SelectedWorkshop" ValueChanged="OnWorkshopChanged" T="WorkshopModel" ToStringFunc="@((p) => p?.WorkshopName)" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in Workshops)
+                     </MudItem>
+                     <MudItem xs="12">
+                         <MudSelect Label="Select Workshop" Value="SelectedWorkshop" ValueChanged="OnWorkshopChanged" T="WorkshopModel" ToStringFunc="@((p) => p?.WorkshopName)" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                             @foreach (var ditem in Workshops)
                             {
                                 <MudSelectItem Value="@ditem">@ditem.WorkshopName</MudSelectItem>
                             }
@@ -72,8 +74,14 @@
     private PushNotificationModel notificationMessage = new PushNotificationModel();
     #endregion
 
+    public bool HasPermissionJobcardServiceEdit { get; set; } = false;
+    public int JobcardDocTypeID = 82;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionJobcardServiceEdit = await Irole.HasClaim(JobcardDocTypeID.ToString(), "Edit", ctc.Token);
+
         var e = await auth.GetAuthenticationStateAsync();
         string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
         if (model == null)
@@ -155,60 +163,69 @@
             return;
         }
         _busy = true;
-
-        var CurrentTrip = Itrip.Select(Itruck.GetCurrentTrip(Breakdown.TruckID));
-        if (CurrentTrip != null && PeriodicMaintenanceId != null && !Itrip.IsClosed(CurrentTrip.TripID))
+        if (HasPermissionJobcardServiceEdit)
         {
-            Breakdown = IBreakdownservice.Update(Breakdown);
-            model.BreakdownID = Breakdown?.BreakdownID ?? null;
-            model.PMIID = PeriodicMaintenanceId;
-        }
-        var authprov = await auth.GetAuthenticationStateAsync();
-        model.UserInfo.UserID = authprov.User.Identity.Name;
-        int BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        model.BranchID = BranchID;
-        try
-        {
-            model.JobcardID = Iservice.Update(model).JobcardID;
-            JobcardWorkshopModel Jwm = new()
-                {
-                    WorkshopID = SelectedWorkshop.WorkshopID,
-                    JobCardID = model.JobcardID,
-                    EnteredOn = DateTime.Now,
-                    UserInfo = model.UserInfo
-                };
-            Ijw.Update(Jwm);
-            foreach (var item in model.Jobs)
+            var CurrentTrip = Itrip.Select(Itruck.GetCurrentTrip(Breakdown.TruckID));
+            if (CurrentTrip != null && PeriodicMaintenanceId != null && !Itrip.IsClosed(CurrentTrip.TripID))
             {
-                item.JobCardID = model.JobcardID;
-                item.WorkshopID = SelectedWorkshop.WorkshopID;
-                item.UserInfo = model.UserInfo;
-                JipComp.UpdateJob(item);
+                Breakdown = IBreakdownservice.Update(Breakdown);
+                model.BreakdownID = Breakdown?.BreakdownID ?? null;
+                model.PMIID = PeriodicMaintenanceId;
             }
-            snackbar.Add("Saved Successfully", Severity.Success);
-            if (PeriodicMaintenanceId != null)
+            var authprov = await auth.GetAuthenticationStateAsync();
+            model.UserInfo.UserID = authprov.User.Identity.Name;
+            int BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+            model.BranchID = BranchID;
+            try
             {
-                notificationMessage = new();
-                notificationMessage.DocumentID = PeriodicMaintenanceId;
-                notificationMessage.MessageGroupID = "PeriodicMaintainence";
-                notificationMessage.DocumentTypeID = 59;
-                currentNotificationMessages = IpushNotificationService.SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(BranchID, PeriodicMaintenanceId, 59).ToList();
-                string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
-                try
+                model.JobcardID = Iservice.Update(model).JobcardID;
+                JobcardWorkshopModel Jwm = new()
+                    {
+                        WorkshopID = SelectedWorkshop.WorkshopID,
+                        JobCardID = model.JobcardID,
+                        EnteredOn = DateTime.Now,
+                        UserInfo = model.UserInfo
+                    };
+                Ijw.Update(Jwm);
+                foreach (var item in model.Jobs)
                 {
-                    IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+                    item.JobCardID = model.JobcardID;
+                    item.WorkshopID = SelectedWorkshop.WorkshopID;
+                    item.UserInfo = model.UserInfo;
+                    JipComp.UpdateJob(item);
                 }
-                catch (Exception ex)
+                snackbar.Add("Saved Successfully", Severity.Success);
+                if (PeriodicMaintenanceId != null)
                 {
+                    notificationMessage = new();
+                    notificationMessage.DocumentID = PeriodicMaintenanceId;
+                    notificationMessage.MessageGroupID = "PeriodicMaintainence";
+                    notificationMessage.DocumentTypeID = 59;
+                    currentNotificationMessages = IpushNotificationService.SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(BranchID, PeriodicMaintenanceId, 59).ToList();
+                    string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
+                    try
+                    {
+                        IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+                    }
+                    catch (Exception ex)
+                    {
 
+                    }
+                    await signalRService.Send(notificationMessage);
                 }
-                await signalRService.Send(notificationMessage);
+                MudDialog.Close(DialogResult.Ok(model));
+
             }
-            MudDialog.Close(DialogResult.Ok(model));
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Jobcard.");
         }
         await Task.Delay(2000);
         _busy = false;
