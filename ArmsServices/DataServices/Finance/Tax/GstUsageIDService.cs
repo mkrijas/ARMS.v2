@@ -196,6 +196,7 @@ namespace ArmsServices.DataServices
                 PeriodTo = dr.GetDateTime("PeriodTo"),
                 CoaID = dr.GetInt32("AccountID"),
                 CoaDescreption = dr.GetString("AccountName"),
+                CoaAccountCode = dr.GetString("AccountCode"),
                 RID = dr.GetInt32("RID"),
                 TaxRate = dr.GetDecimal("Taxrate"),
                 SAC = dr.GetString("SAC"),
