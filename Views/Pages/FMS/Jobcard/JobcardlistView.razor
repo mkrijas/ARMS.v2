@@ -6,6 +6,8 @@
 @inject AuthenticationStateProvider auth
 @inject NavigationManager nav
 @inject IDialogService DialogService
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <MudTable Items="@collection" Elevation="10" Filter="new Func<JobcardModel, bool>(search)" @bind-model="model">
     <ToolBarContent>
@@ -39,8 +41,14 @@
     private List<JobcardModel> collection = new();
     private string searchString = string.Empty;
 
+    public bool HasPermissionJobcardServiceDelete { get; set; } = false;
+    public int JobcardDocTypeID = 82;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionJobcardServiceDelete = await Irole.HasClaim(JobcardDocTypeID.ToString(), "Edit", ctc.Token);
+
         model = new();
         await GetAll();
     }
@@ -59,15 +67,24 @@
 
     private async Task Delete(JobcardModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.JobcardNumber + " ?");
-        if (result == true)
+        if (HasPermissionJobcardServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            Iservice.Delete(model.JobcardID, user.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.JobcardNumber + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.JobcardID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Jobcard.");
         }
         GetAll();
     }
