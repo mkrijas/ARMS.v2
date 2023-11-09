@@ -87,6 +87,22 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        public InterBranchMappingModel IsEntriesAlreadyExistOrNot(InterBranchMappingModel model)
+        {
+            InterBranchMappingModel ExistModel = null;
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", model.ID),
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@TransactionTypeID", model.TransactionTypeID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.InterBranchAccount.Entries.Exist]", parameters))
+            {
+                ExistModel = GetModel(dr);
+            }
+            return ExistModel;
+        }
+
         public InterBranchMappingModel Update(InterBranchMappingModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
