@@ -10,9 +10,9 @@ namespace ArmsServices.DataServices
 {
     public interface IBreakdownService
     {
-        BreakdownModel Update(BreakdownModel model);
+        BreakdownModel Update(BreakdownModel model);  //Edit
         BreakdownModel SelectByID(int? ID);
-        int Delete(int? BreakdownID, string UserID);
+        int Delete(int? BreakdownID, string UserID);  //Delete
         IEnumerable<BreakdownModel> Select();
         IEnumerable<BreakdownModel> SelectPending(int BranchID);
     }
