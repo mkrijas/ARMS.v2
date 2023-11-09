@@ -5,6 +5,9 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @using System.IO
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -64,8 +67,14 @@
     private List<string> ImagePaths = new();
     MyFileUpload Mfu;
 
+    public bool HasPermissionInsuranceClaimServiceEdit { get; set; } = false;
+    public int InsuranceClaimDocTypeID = 83;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInsuranceClaimServiceEdit = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "Edit", ctc.Token);
+
         var e = await auth.GetAuthenticationStateAsync();
         if (BreakdownID != null)
         {
@@ -106,17 +115,25 @@
             return;
         }
         _busy = true;
-
-        try
+        if (HasPermissionInsuranceClaimServiceEdit)
         {
-            model.Images.AddRange(ImagePaths);
-            Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(DialogResult.Ok(model));
+            try
+            {
+                model.Images.AddRange(ImagePaths);
+                Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(model));
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit InsuranceClaim.");
         }
         await Task.Delay(2000);
         _busy = false;

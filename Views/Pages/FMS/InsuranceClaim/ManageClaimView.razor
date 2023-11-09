@@ -6,6 +6,9 @@
 @inject IBreakdownService Ibreakdown
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudGrid>
     <MudItem xs="4" lg="3">
@@ -58,7 +61,7 @@
                             <MudGrid>
                                 <MudItem xs="5">
                                     <MudSelect T="int?" Label="Event" Value="UpdateStatusModel.IcemID" ValueChanged="EventSelected" OffsetY="true" AdornmentColor="Color.Secondary" Variant="Variant.Outlined" Required>
-                                        @if (EventMasterSource?.Any() == true)
+                                     @if (EventMasterSource?.Any() == true)
                                         {
                                             @foreach (var item in EventMasterSource)
                                             {
@@ -69,12 +72,12 @@
                                 </MudItem>
                                 <MudItem xs="5">
                                     <MudDatePicker Label="Date of Event" @bind-Date="UpdateStatusModel.EventDate" Variant=Variant.Outlined Required></MudDatePicker>
-                                </MudItem>
-                                <MudItem xs="2">
-                                    <MudButton OnClick="UpdateStatus" Color="Color.Primary">Update</MudButton>
-                                </MudItem>
-                            </MudGrid>
-                        </MudListItem>
+                                 </MudItem>
+                                 <MudItem xs="2">
+                                     <MudButton OnClick="UpdateStatus" Color="Color.Primary">Update</MudButton>
+                                 </MudItem>
+                             </MudGrid>
+                         </MudListItem>
                     }
                 </MudList>
             </MudPaper>
@@ -106,6 +109,10 @@
     private InsuranceClaimEventStatusModel UpdateStatusModel = new();
     MyFileUpload Mfu;
 
+    public bool HasPermissionInsuranceClaimServiceEdit { get; set; } = false;
+    public bool HasPermissionInsuranceClaimServiceUpdateList { get; set; } = false;
+    public int InsuranceClaimDocTypeID = 83;
+
     protected override async Task OnInitializedAsync()
     {
         listOfItems = Iservice.Select(null).ToList();
@@ -113,6 +120,10 @@
 
     protected async Task SelectedItemChanged(object obj)
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInsuranceClaimServiceEdit = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionInsuranceClaimServiceUpdateList = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "UpdateList", ctc.Token);
+
         SelectedItem = (MudListItem)obj;
         SelectedModel = (InsuranceClaimModel)SelectedItem.Value;
         var e = await auth.GetAuthenticationStateAsync();
@@ -141,32 +152,53 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-        try
+        if (HasPermissionInsuranceClaimServiceEdit)
         {
-            Iservice.Update(SelectedModel);
-            snackbar.Add("Saved Successfully", Severity.Success);
+            try
+            {
+                Iservice.Update(SelectedModel);
+                snackbar.Add("Saved Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit InsuranceClaim.");
         }
     }
 
     private async Task UpdateStatus()
     {
-        try
+        if (HasPermissionInsuranceClaimServiceUpdateList)
         {
-            var authState = await auth.GetAuthenticationStateAsync();
-            UpdateStatusModel.UserInfo.UserID = authState.User.Identity.Name;
-            UpdateStatusModel = Iservice.UpdateClaimEvent(UpdateStatusModel);
-            ClaimEvents.Add(UpdateStatusModel);
-            UpdateStatusModel = new()
-                {
-                    InsuranceClaimID = SelectedModel.InsuranceClaimID,
-                };
-            SetEventMaster();
+            try
+            {
+                var authState = await auth.GetAuthenticationStateAsync();
+                UpdateStatusModel.UserInfo.UserID = authState.User.Identity.Name;
+                UpdateStatusModel = Iservice.UpdateClaimEvent(UpdateStatusModel);
+                ClaimEvents.Add(UpdateStatusModel);
+                UpdateStatusModel = new()
+                    {
+                        InsuranceClaimID = SelectedModel.InsuranceClaimID,
+                    };
+                SetEventMaster();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch { }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to UpdateList InsuranceClaim.");
+        }
     }
 
     private void EventSelected(int? IcemID)
@@ -182,10 +214,26 @@
 
     private async Task CloseClaim()
     {
-        var authState = await auth.GetAuthenticationStateAsync();
-        SelectedModel.IsOpen = false;
-        SelectedModel.UserInfo.UserID = authState.User.Identity.Name;
-        Iservice.Update(SelectedModel);
+        if (HasPermissionInsuranceClaimServiceEdit)
+        {
+            try
+            {
+                var authState = await auth.GetAuthenticationStateAsync();
+                SelectedModel.IsOpen = false;
+                SelectedModel.UserInfo.UserID = authState.User.Identity.Name;
+                Iservice.Update(SelectedModel);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit InsuranceClaim.");
+        }
     }
 
     private void FileUploaded(string filePath)
