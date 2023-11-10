@@ -20,22 +20,22 @@
                 <MudTextField @bind-Value="searchParty" Placeholder="Search Partys... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.PartyCode)" InitialDirection="SortDirection.Ascending">Party Code</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.RegName)" InitialDirection="SortDirection.Ascending">Party Name</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.NatureOfBusiness)" InitialDirection="SortDirection.Ascending">Nature</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.TdsApplicable)" InitialDirection="SortDirection.Ascending">TDS Applicable</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.PartyCode)" InitialDirection="SortDirection.Ascending">Party Code</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PartyModel, object>(x=> x.TradeName)" InitialDirection="SortDirection.Ascending">Trade Name</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Party">@context.RegName</MudTd>
-                <MudTd DataLabel="Distance">@context.NatureOfBusiness</MudTd>
-                <MudTd DataLabel="SpeedLimit">@context.TdsApplicable</MudTd>
-                <MudTd DataLabel="RunningHours">@context.PartyCode</MudTd>
-                <MudTd DataLabel="PartyType">@context.TradeName</MudTd>
+                <MudTd DataLabel="PartyCode">@context.PartyCode</MudTd>
+                <MudTd DataLabel="RegName">@context.RegName</MudTd>
+                <MudTd DataLabel="NatureOfBusiness">@context.NatureOfBusiness</MudTd>
+                <MudTd DataLabel="TdsApplicable">@context.TdsApplicable</MudTd>
+                <MudTd DataLabel="TradeName">@context.TradeName</MudTd>
                 <MudTd DataLabel="">
                     <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context.PartyID))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -56,11 +56,16 @@
 
     public bool HasPermissionContactServiceServiceEdit { get; set; } = false;
     public int ContactServiceDocTypeID = 71;
+    public bool HasPermissionPartyServiceEdit { get; set; } = false;
+    public bool HasPermissionPartyServiceDelete { get; set; } = false;
+    public int PartyDocTypeID = 85;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionContactServiceServiceEdit = await Irole.HasClaim(ContactServiceDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionPartyServiceEdit = await Irole.HasClaim(PartyDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionPartyServiceDelete = await Irole.HasClaim(PartyDocTypeID.ToString(), "Delete", ctc.Token);
 
         GetAll();
     }
@@ -83,41 +88,50 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        model.UserInfo.UserID = authprov.User.Identity.Name;
-        try
+        if (HasPermissionPartyServiceEdit)
         {
-            var contacts = model.Contacts;
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            if (collection.Exists(x => x.PartyID == model.PartyID))
+            var authprov = await auth.GetAuthenticationStateAsync();
+            model.UserInfo.UserID = authprov.User.Identity.Name;
+            try
             {
-                collection[collection.FindIndex(x => x.PartyID == model.PartyID)] = model;
-            }
-            else
-            {
-                collection.Add(model);
-            }
-            if (HasPermissionContactServiceServiceEdit)
-            {
-                foreach (var item in contacts)
+                var contacts = model.Contacts;
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                if (collection.Exists(x => x.PartyID == model.PartyID))
                 {
-                    item.RefKey = model.PartyID;
-                    item.UserInfo = model.UserInfo;
-                    Icontact.Update(item);
+                    collection[collection.FindIndex(x => x.PartyID == model.PartyID)] = model;
                 }
+                else
+                {
+                    collection.Add(model);
+                }
+                if (HasPermissionContactServiceServiceEdit)
+                {
+                    foreach (var item in contacts)
+                    {
+                        item.RefKey = model.PartyID;
+                        item.UserInfo = model.UserInfo;
+                        Icontact.Update(item);
+                    }
+                }
+                else
+                {
+                    bool? ResultModel = await DialogService.ShowMessageBox(
+                        "Permission denied!",
+                        "You dont have any permission to Edit Contact.");
+                }
+                model = new PartyModel();
             }
-            else
+            catch (Exception ex)
             {
-                bool? ResultModel = await DialogService.ShowMessageBox(
-                    "Permission denied!",
-                    "You dont have any permission to Add or Edit Contact.");
+                snackbar.Add(ex.Message, Severity.Warning);
             }
-            model = new PartyModel();
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Party.");
         }
     }
 
@@ -156,17 +170,32 @@
         _busy = false;
     }
 
-    private async Task Delete(int? id)
+    private async Task Delete(PartyModel model)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        int result = Iservice.Delete(id, authprov.User.Identity.Name);
-        if (result != -1)
+        if (HasPermissionPartyServiceDelete)
         {
-            if (collection != null && collection.Any(s => s.PartyID == id))
+            bool? value = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.RegName + " (" + model.PartyCode + ") ?");
+            if (value == true)
             {
-                collection.Remove(collection.FirstOrDefault(s => s.PartyID == id));
-                snackbar.Add("Deleted Successfully", Severity.Success);
+                var authprov = await auth.GetAuthenticationStateAsync();
+                int result = Iservice.Delete(model.PartyID, authprov.User.Identity.Name);
+                if (result != -1)
+                {
+                    if (collection != null && collection.Any(s => s.PartyID == model.PartyID))
+                    {
+                        collection.Remove(collection.FirstOrDefault(s => s.PartyID == model.PartyID));
+                        snackbar.Add("Deleted Successfully", Severity.Success);
+                    }
+                }
             }
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Party.");
         }
     }
 
