@@ -3,6 +3,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid>
@@ -67,8 +69,16 @@
     private List<DimensionModel> collection = new List<DimensionModel>();
     private bool _busy;
 
+    public bool HasPermissionDimensionServiceEdit { get; set; } = false;
+    public bool HasPermissionDimensionServiceDelete { get; set; } = false;
+    public int DimensionDocTypeID = 87;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionDimensionServiceEdit = await Irole.HasClaim(DimensionDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionDimensionServiceDelete = await Irole.HasClaim(DimensionDocTypeID.ToString(), "Delete", ctc.Token);
+
         GetAll();
     }
 
@@ -102,30 +112,39 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", ii.Clone());
-        var dialog = DialogService.Show<DimensionDialog>(ii.DimensionID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-
-        if (!result.Cancelled)
+        if (HasPermissionDimensionServiceEdit)
         {
-            DimensionModel UpatedModel = (DimensionModel)result.Data;
-            UpatedModel.UserInfo.UserID = user.Identity.Name;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", ii.Clone());
+            var dialog = DialogService.Show<DimensionDialog>(ii.DimensionID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+
+            if (!result.Cancelled)
             {
-                Iservice.Update(UpatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                CategoryModel igm = new CategoryModel();
-                igm.CategoryID = UpatedModel.Category.CategoryID;
-                GetInventoryItem(igm);
+                DimensionModel UpatedModel = (DimensionModel)result.Data;
+                UpatedModel.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    Iservice.Update(UpatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    CategoryModel igm = new CategoryModel();
+                    igm.CategoryID = UpatedModel.Category.CategoryID;
+                    GetInventoryItem(igm);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Dimension.");
         }
         await Task.Delay(200);
         _busy = false;
@@ -133,18 +152,27 @@
 
     private async Task Delete(DimensionModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-               "Warning !",
-               "Are you sure, you want to delete - " + model.Dimension + "?");
-        if (result == true)
+        if (HasPermissionDimensionServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            Iservice.Delete(model.DimensionID, user.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                   "Warning !",
+                   "Are you sure, you want to delete - " + model.Dimension + "?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.DimensionID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            GetAll();
+            SelectedItemChanged(SelectedItem);
         }
-        GetAll();
-        SelectedItemChanged(SelectedItem);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Dimension.");
+        }
     }
 
     private async Task OpenDialogCategory(CategoryModel ig)
@@ -156,28 +184,37 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", ig.Clone());
-        var dialog = DialogService.Show<CostCenterCategoryDialog>(ig.CategoryID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-
-        if (!result.Cancelled)
+        if (HasPermissionDimensionServiceEdit)
         {
-            CategoryModel UpdatedModel = (CategoryModel)result.Data;
-            UpdatedModel.UserInfo.UserID = user.Identity.Name;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", ig.Clone());
+            var dialog = DialogService.Show<CostCenterCategoryDialog>(ig.CategoryID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+
+            if (!result.Cancelled)
             {
-                Iservice.UpdateCategory(UpdatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                GetAll();
+                CategoryModel UpdatedModel = (CategoryModel)result.Data;
+                UpdatedModel.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    Iservice.UpdateCategory(UpdatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    GetAll();
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Dimension.");
         }
         await Task.Delay(200);
         _busy = false;
