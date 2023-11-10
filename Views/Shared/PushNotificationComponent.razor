@@ -188,24 +188,32 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var UserID = user.Identity.Name;
-        string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
-        int c = IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
-        if (c != -1)
+        try
         {
-            foreach (var item in currentNotificationMessages)
+            string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
+            int c = IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+            if (c != -1)
             {
-                if (await Irole.HasClaim(item.DocumentTypeID.ToString(), "View", ctc.Token))
+                foreach (var item in currentNotificationMessages.ToList())
                 {
-                    allNotificationMessages.Remove(allNotificationMessages.FirstOrDefault(v => v.MessageID == item.MessageID));
-                    currentNotificationMessages.Remove(currentNotificationMessages.FirstOrDefault(v => v.MessageID == item.MessageID));
+                    if (await Irole.HasClaim(item.DocumentTypeID.ToString(), "View", ctc.Token))
+                    {
+                        currentNotificationMessages.Remove(currentNotificationMessages.FirstOrDefault(v => v.MessageID == item.MessageID));
+                        allNotificationMessages.Remove(allNotificationMessages.FirstOrDefault(v => v.MessageID == item.MessageID));
+                    }
+                    else
+                    {
+                        iSAnyCanNotAknowledge = true;
+                    }
+
                 }
-                else
-                {
-                    iSAnyCanNotAknowledge = true;
-                }
+
             }
 
-
+        }
+        catch(Exception ex)
+        {
+            snackbar.Add(ex.Message,Severity.Error);    
         }
 
         if (iSAnyCanNotAknowledge)
