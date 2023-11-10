@@ -11,12 +11,12 @@ namespace ArmsServices.DataServices
 {
     public interface ICostCenterService
     {
-        CostCenterModel Update(CostCenterModel model);
+        CostCenterModel Update(CostCenterModel model);  //Edit
         CostCenterModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);        
+        int Delete(int? ID, string UserID);  //Delete     
         IEnumerable<CostCenterModel> SelectByCategory(int? CategoryID);
         IEnumerable<CostCenterModel> Select();
         IEnumerable<CategoryModel> SelectCategory();
-        CategoryModel UpdateCategory(CategoryModel model);
+        CategoryModel UpdateCategory(CategoryModel model);  //Edit
     }
 }
