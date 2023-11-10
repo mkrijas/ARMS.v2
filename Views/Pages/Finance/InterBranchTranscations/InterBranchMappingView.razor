@@ -1,9 +1,10 @@
 ﻿@page "/InterBranchMapping"
 @inject IInterBranchMappingService Iservice
 @inject MudBlazor.ISnackbar snackbar
-
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4">
@@ -54,6 +55,9 @@
     private string searchTerm = "";
     private bool _busy;
 
+    public bool HasPermissionInterBranchMappingServiceDelete { get; set; } = false;
+    public int InterBranchMappingDocTypeID = 86;
+
     private int NumberOfRecords
     {
         get => numberOfRecords;
@@ -80,8 +84,11 @@
         GetAll(NumberOfRecords);
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInterBranchMappingServiceDelete = await Irole.HasClaim(InterBranchMappingDocTypeID.ToString(), "Delete", ctc.Token);
+
         GetAll(NumberOfRecords);
     }
 
@@ -118,16 +125,25 @@
 
     private async Task Delete(InterBranchMappingModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.BranchName + " (" + model.InterBranchArdCode + ") ?");
-        if (result == true)
+        if (HasPermissionInterBranchMappingServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var User = authprov.User;
-            var UserID = User.Identity.Name;
-            Iservice.Delete(model.ID, UserID);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.BranchName + " (" + model.InterBranchArdCode + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var User = authprov.User;
+                var UserID = User.Identity.Name;
+                Iservice.Delete(model.ID, UserID);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete InterBranchMapping.");
         }
         GetAll(NumberOfRecords);
     }

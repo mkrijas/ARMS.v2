@@ -4,6 +4,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudDialog>
@@ -68,8 +70,14 @@
     public ChartOfAccountModel IntermappingCoaID = new();
     private bool _busy;
 
-    protected override void OnInitialized()
+    public bool HasPermissionInterBranchMappingServiceEdit { get; set; } = false;
+    public int InterBranchMappingDocTypeID = 86;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInterBranchMappingServiceEdit = await Irole.HasClaim(InterBranchMappingDocTypeID.ToString(), "Edit", ctc.Token);
+
         transactionTypeList = Iservice.GetTypes().ToList();
         branches = branchIservice.Select().ToList();
         if (model.CoaID != null)
@@ -96,32 +104,37 @@
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
-
-
-
-        var ExistingModel = Iservice.IsEntriesAlreadyExistOrNot(model);
-        if (ExistingModel != null)
+        if (HasPermissionInterBranchMappingServiceEdit)
         {
-            snackbar.Add("Mapping already exist. If required please modify it.", Severity.Error);
-            return;
+            var ExistingModel = Iservice.IsEntriesAlreadyExistOrNot(model);
+            if (ExistingModel != null)
+            {
+                snackbar.Add("Mapping already exist. If required please modify it.", Severity.Error);
+                return;
+            }
+            _busy = true;
+
+            model.CoaID = IntermappingCoaID?.CoaID ?? null;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Update(model);
+                model = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
+                model = new();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-
-        _busy = true;
-
-        model.CoaID = IntermappingCoaID?.CoaID ?? null;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
+        else
         {
-            Iservice.Update(model);
-            model = new();
-            snackbar.Add("Saved Successfully", Severity.Success);
-            model = new();
-        }
-        catch (Exception ex)
-        {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit InterBranchMapping.");
         }
         MudDialog.Close();
 
