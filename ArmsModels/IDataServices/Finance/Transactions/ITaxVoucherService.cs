@@ -9,14 +9,14 @@ namespace ArmsServices.DataServices.Finance.Transactions
 {
     public interface ITaxVoucherService
     {
-        TaxVoucherModel Update(TaxVoucherModel model);
+        TaxVoucherModel Update(TaxVoucherModel model);  //Edit
         TaxVoucherModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<TaxVoucherModel> Select(int? BranchID);
         IEnumerable<TaxVoucherModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<TaxVoucherModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxVoucherSubModel> GetSub(int? ID);
-        int Approve(int? TaxVoucherID, string UserID, string Remarks);
-        int Reverse(int? PID, string UserID, string Remarks);
+        int Approve(int? TaxVoucherID, string UserID, string Remarks);  //Approve
+        int Reverse(int? PID, string UserID, string Remarks);  //Reverse
     }
 }
