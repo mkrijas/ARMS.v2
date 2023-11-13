@@ -22,26 +22,26 @@
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudNumericField HideSpinButtons MaxLength="10" ReadOnly="ReadOnly" @bind-Value="model.PayeeContactNo" Label="Payee Contact No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayeeContactNo)"></MudNumericField>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <PaymentAccountSelector PaymentMode="@model.PaymentMode" PaymentModeChanged="OnChangePaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" BankCharges="@model.BankCharges" @bind-BankTool="@model.PaymentTool" BankChargesChanged="CalculateTotalAmount" />
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="4" md="4">
-                        <MudCheckBox Label="Is Deferred Expenditure?" @bind-Checked="@model.deferredExpenditure" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
-                    </MudItem>
-                    @if (model.deferredExpenditure)
+                     </MudItem>
+                     <MudItem xs="12" md="12">
+                         <PaymentAccountSelector PaymentMode="@model.PaymentMode" PaymentModeChanged="OnChangePaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" BankCharges="@model.BankCharges" @bind-BankTool="@model.PaymentTool" BankChargesChanged="CalculateTotalAmount" />
+                     </MudItem>
+                     <MudItem xs="12" md="4">
+                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                     </MudItem>
+                     <MudItem xs="12" md="4">
+                         <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
+                     </MudItem>
+                     <MudItem xs="12" md="4">
+                         <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
+                     </MudItem>
+                     <MudItem xs="12" md="12">
+                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                     </MudItem>
+                     <MudItem xs="4" md="4">
+                         <MudCheckBox Label="Is Deferred Expenditure?" @bind-Checked="@model.deferredExpenditure" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                     </MudItem>
+                     @if (model.deferredExpenditure)
                     {
                         <MudItem xs="4" md="4">
                             <MudDatePicker ReadOnly="ReadOnly" Label="Begin Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.beginDate" DateFormat="dd/MM/yyyy" />
@@ -96,7 +96,7 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.SundryPaymentID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="@SundryPaymentDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.SundryPaymentID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
@@ -119,13 +119,15 @@
     DialogForm dialogForm;
 
     private bool _busy;
-    public bool HasAuthoriseEdit { get; set; } = false;
-    int DocTypeID = 11;
+    public bool HasPermissionSundryPaymentServiceEdit { get; set; } = false;
+    public bool HasPermissionSundryPaymentServiceApprove { get; set; } = false;
+    int SundryPaymentDocTypeID = 11;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionSundryPaymentServiceEdit = await Irole.HasClaim(SundryPaymentDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionSundryPaymentServiceApprove = await Irole.HasClaim(SundryPaymentDocTypeID.ToString(), "Approve", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -162,20 +164,29 @@
         spe.CoaID = uc?.CoaID;
     }
 
-    protected void ApproveEntry(DataApprovedStatus aprvd)
+    protected async Task ApproveEntry(DataApprovedStatus aprvd)
     {
-        if (aprvd.IsApprove)
+        if (HasPermissionSundryPaymentServiceApprove)
         {
-            model.UserInfo.UserID = UserID;
-            try
+            if (aprvd.IsApprove)
             {
-                Iservice.Approve(model.SundryPaymentID, model.UserInfo.UserID, aprvd.Remarks);
-                snackbar.Add("Approved Successfully", Severity.Success);
+                model.UserInfo.UserID = UserID;
+                try
+                {
+                    Iservice.Approve(model.SundryPaymentID, model.UserInfo.UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve SundryPayment.");
         }
     }
 
@@ -219,7 +230,7 @@
         }
         _busy = true;
 
-        if (HasAuthoriseEdit)
+        if (HasPermissionSundryPaymentServiceEdit)
         {
             try
             {
@@ -236,7 +247,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to submit.");
+                "You dont have any permission to Edit SundryPayment.");
         }
         await Task.Delay(2000);
         _busy = false;

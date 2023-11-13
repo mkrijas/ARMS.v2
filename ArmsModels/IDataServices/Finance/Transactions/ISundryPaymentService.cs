@@ -11,14 +11,14 @@ namespace ArmsServices.DataServices
 {
     public interface ISundryPaymentService
     {
-        SundryPaymentModel Update(SundryPaymentModel model);
+        SundryPaymentModel Update(SundryPaymentModel model);  //Edit
         SundryPaymentModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<SundryPaymentModel> Select();
         IEnumerable<SundryPaymentModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<SundryPaymentModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<SundryPaymentEntryModel> GetEntries(int? SID);
-        int Approve(int? SundryPaymentID, string UserID, string Remarks);
-        int Reverse(int? SundryPaymentID, string UserID, string Remarks);
+        int Approve(int? SundryPaymentID, string UserID, string Remarks);  //Approve
+        int Reverse(int? SundryPaymentID, string UserID, string Remarks);  //Reverse
     }
 }
