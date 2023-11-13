@@ -10,9 +10,9 @@ namespace ArmsServices.DataServices
 {
     public interface IPaymentService
     {
-        PaymentMemoModel Update(PaymentMemoModel model);
+        PaymentMemoModel Update(PaymentMemoModel model);  //Edit
         PaymentMemoModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<PaymentMemoModel> Select(int? BranchID);
         IEnumerable<PaymentMemoModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<PaymentMemoModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
@@ -23,7 +23,7 @@ namespace ArmsServices.DataServices
         IEnumerable<PaymentMemoModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);
         IEnumerable<PaymentMemoModel> Select(int PaymentInitiatedID, int? BranchID);
         IEnumerable<BillsPaidModel> GetBills(int? PID);
-        int Approve(int? PID, string UserID, string Remarks);
-        int Reverse(int? PID, string UserID, string Remarks);
+        int Approve(int? PID, string UserID, string Remarks);  //Approve
+        int Reverse(int? PID, string UserID, string Remarks);  //Reverse
     }
 }

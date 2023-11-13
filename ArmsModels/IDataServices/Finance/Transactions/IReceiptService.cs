@@ -10,9 +10,9 @@ namespace ArmsServices.DataServices
 {
     public interface IReceiptService
     {
-        ReceiptModel Update(ReceiptModel model);
+        ReceiptModel Update(ReceiptModel model);  //Edit
         ReceiptModel SelectByID(int? ReceiptID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<ReceiptModel> Select(int? BranchID);
         IEnumerable<ReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<ReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
@@ -22,8 +22,8 @@ namespace ArmsServices.DataServices
         IEnumerable<ReceiptModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID);
         IEnumerable<ReceiptModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);
         IEnumerable<BillsReceiptModel> GetBills(int? ReceiptID);
-        int Approve(int? PID, string UserID, string remarks);
-        int Reverse(int? PID, string UserID);
+        int Approve(int? PID, string UserID, string remarks);  //Approve
+        int Reverse(int? PID, string UserID);  //Reverse
         //IEnumerable<PaymentEntryModel> GetPaymentEntries(int? PfID);
     }
 }

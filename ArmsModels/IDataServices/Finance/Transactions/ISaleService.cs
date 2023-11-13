@@ -12,9 +12,9 @@ namespace ArmsServices.DataServices
 {
     public interface ISaleService
     {
-        SaleModel Update(SaleModel model);
+        SaleModel Update(SaleModel model);  //Edit
         SaleModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<SaleModel> Select();
         IEnumerable<SaleModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<SaleModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
         IEnumerable<SaleModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetParticulars(int? SID);
         IEnumerable<TaxPurchaseItemModel> GetItems(int? PID);
-        int Approve(int? SID, string UserID, string Remarks);
-        int Reverse(int? SID, string UserID);
+        int Approve(int? SID, string UserID, string Remarks);  //Approve
+        int Reverse(int? SID, string UserID);  //Reverse
     }
 }

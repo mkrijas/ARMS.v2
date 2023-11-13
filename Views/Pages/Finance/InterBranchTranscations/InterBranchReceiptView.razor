@@ -8,6 +8,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 @inject SignalRService signalRService
 @inject IPushNotificationService IpushNotificationService
@@ -72,11 +74,12 @@
     public bool IsApproved { get; set; } = false;
     private int numberOfRecords = 100;
     private string searchTerm = "";
-    private bool _busy;
-
     [Parameter]
     public int? id { get; set; } = null;
-    int DocTypeID = 14;
+    private bool _busy;
+
+    public bool HasPermissionReceiptServiceDelete { get; set; } = false;
+    public int ReceiptDocTypeID = 14;
 
     #region SignaIR Notification
 
@@ -111,13 +114,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await GetReceiptBill(IsApproved, NumberOfRecords);
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionReceiptServiceDelete = await Irole.HasClaim(ReceiptDocTypeID.ToString(), "Edit", ctc.Token);
 
+        await GetReceiptBill(IsApproved, NumberOfRecords);
         await signalRService.StartAsync();
         await Task.Delay(200);
         if (id != null && collection != null && collection.Any(g => g.ReceiptID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.ReceiptID == id), true,false);
+            await OpenDialog(collection.FirstOrDefault(s => s.ReceiptID == id), true, false);
         }
     }
 
@@ -174,7 +179,7 @@
             notificationMessage.MessageGroupID = "PendingVerification";
             notificationMessage.PageToRedirectLink = "/InterBranchReceiptView";
             notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.DocumentTypeID = ReceiptDocTypeID;
             notificationMessage.MsgDate = DateTime.Now;
             await signalRService.Send(notificationMessage);
         }
@@ -186,18 +191,27 @@
 
     private async Task Delete(ReceiptModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
-        if (result == true)
+        if (HasPermissionReceiptServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var User = authprov.User;
-            var branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
-            var UserID = User.Identity.Name;
-            Iservice.Delete(model.ReceiptID, UserID);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var User = authprov.User;
+                var branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+                var UserID = User.Identity.Name;
+                Iservice.Delete(model.ReceiptID, UserID);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            await GetReceiptBill(IsApproved, NumberOfRecords);
         }
-        await GetReceiptBill(IsApproved, NumberOfRecords);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Receipt.");
+        }
     }
 }
