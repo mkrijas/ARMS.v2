@@ -12,6 +12,10 @@
             <EditForm id="cotraForm" OnValidSubmit="OnValidSubmit" Model="model">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
+                @if (ValidationMessage != null)
+                {
+                    <div class="validation-message">@ValidationMessage</div>
+                }
                 <MudGrid>
                     <MudItem xs="12" md="4">
                         <MudDatePicker Label="Document Date" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
@@ -28,12 +32,12 @@
                      </MudItem>
                      <MudItem xs="12" md="12">
                          <strong>Credit/Draw A/c</strong>
-                         <PaymentAccountSelector @bind-PaymentMode="@model.ContraModeOther" @bind-ArdCode="@model.ArdCodeOther" @bind-CoaID="@model.CoaIDOther" @bind-BankCharges="@model.BankCharges" HideBankCharges @bind-BankTool="@model.PaymentTool" />
+                        <PaymentAccountSelector PaymentMode="@model.ContraModeOther" PaymentModeChanged="OnPaymentModeOtherChange" @bind-ArdCode="@model.ArdCodeOther" @bind-CoaID="@model.CoaIDOther" @bind-BankCharges="@model.BankCharges" HideBankCharges BankTool="@model.PaymentTool" BankToolChanged="OnPaymentToolChange" />
                      </MudItem>
-                     @if (model.PaymentTool == "CHEQUE")
+                    @if (model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank")
                     {
                         <MudItem xs="12" md="6">
-                            <MudTextField ReadOnly="ReadOnly" @bind-Value="model.ChequeInfo.ChequeNumber" Label="ChequeNumber" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ChequeInfo.ChequeNumber)"></MudTextField>
+                            <MudTextField ReadOnly="ReadOnly" Value="model.ChequeInfo.ChequeNumber" TextChanged="OnCheckNoChange" Label="ChequeNumber" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ChequeInfo.ChequeNumber)"></MudTextField>
                         </MudItem>
                         <MudItem xs="12" md="6">
                             <MudDatePicker ReadOnly="ReadOnly" Label="ChequeDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.ChequeInfo.ChequeDate" DateFormat="dd/MM/yyyy" />
@@ -72,7 +76,7 @@
     private string UserID = null;
     private EditContext editContext;
     DialogForm dialogForm;
-
+    public string ValidationMessage { get; set; } = null;
     private bool _busy;
     public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 3;
@@ -111,6 +115,36 @@
         DocType = model.NatureOfTransaction;
     }
 
+    public void OnPaymentModeOtherChange(string PaymentModeOther)
+    {
+        model.ContraModeOther = PaymentModeOther;
+        ModifyChequeNoValidation();
+    }
+    public void OnPaymentToolChange(string PaymentTool)
+    {
+        model.PaymentTool = PaymentTool;
+        ModifyChequeNoValidation();
+    }
+    public void OnCheckNoChange(string CheckNo)
+    {
+        if(model.ChequeInfo == null)
+        {
+            model.ChequeInfo = new();
+        }
+        model.ChequeInfo.ChequeNumber = CheckNo;
+        ModifyChequeNoValidation();
+    }
+    public void ModifyChequeNoValidation()
+    {
+        if (model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank" && (model.ChequeInfo == null || string.IsNullOrEmpty(model.ChequeInfo.ChequeNumber)))
+        {
+            ValidationMessage = "Please fill the cheque NO. !";
+        }
+        else
+        {
+            ValidationMessage = null;
+        }
+    }
     public async Task OnValidSubmit()
     {
         if (_busy)
@@ -118,12 +152,23 @@
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
+
+        if (model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank" && (model.ChequeInfo == null || string.IsNullOrEmpty( model.ChequeInfo.ChequeNumber)))
+        {
+            ValidationMessage = "Please fill the cheque NO. !";
+            snackbar.Add("Please fill the cheque NO. !", Severity.Warning);
+            return;
+        }
         _busy = true;
         try
         {
             if (HasAuthoriseEdit)
             {
-                model.IsPayment = true;
+                model.IsPayment = model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank";
+                if (!model.IsPayment)
+                {
+                    model.ChequeInfo = new();
+                }
                 model.UserInfo.UserID = UserID;
                 model = Iservice.Update(model);
                 dialogForm.Close(model);
