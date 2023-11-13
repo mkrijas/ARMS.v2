@@ -55,7 +55,7 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="@model.PID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="@TaxPurchaseDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="@model.PID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
@@ -77,14 +77,16 @@
     DialogForm dialogForm;
     ValidationMessageStore messageStore;
 
-    public bool HasAuthoriseEdit { get; set; } = false;
-    int DocTypeID = 9;
+    public bool HasPermissionTaxPurchaseServiceEdit { get; set; } = false;
+    public bool HasPermissionTaxPurchaseServiceApprove { get; set; } = false;
+    int TaxPurchaseDocTypeID = 9;
     private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTaxPurchaseServiceEdit = await Irole.HasClaim(TaxPurchaseDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTaxPurchaseServiceApprove = await Irole.HasClaim(TaxPurchaseDocTypeID.ToString(), "Approve", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
@@ -148,19 +150,28 @@
         SetTotal();
     }
 
-    protected void ApproveEntry(DataApprovedStatus aprvd)
+    protected async Task ApproveEntry(DataApprovedStatus aprvd)
     {
-        if (aprvd.IsApprove)
+        if (HasPermissionTaxPurchaseServiceApprove)
         {
-            try
+            if (aprvd.IsApprove)
             {
-                Iservice.Approve(model.PID, UserID, aprvd.Remarks);
-                snackbar.Add("Approved Successfully", Severity.Success);
+                try
+                {
+                    Iservice.Approve(model.PID, UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve TaxPurchase.");
         }
     }
 
@@ -173,7 +184,7 @@
         }
         _busy = true;
 
-        if (HasAuthoriseEdit)
+        if (HasPermissionTaxPurchaseServiceEdit)
         {
             try
             {
@@ -202,7 +213,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to edit.");
+                "You dont have any permission to Edit TaxPurchase.");
         }
         await Task.Delay(2000);
         _busy = false;
