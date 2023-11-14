@@ -67,6 +67,8 @@ namespace ArmsModels.BaseModels
         public decimal? IGST { get; set; } = 0;
         public decimal? TDS { get; set; } = 0;
         public string BillReference { get; set; }
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
     }
 
     public class TaxPurchaseItemModel
@@ -89,5 +91,7 @@ namespace ArmsModels.BaseModels
         public decimal? IGST { get; set; } = 0;
         public decimal? TDS { get; set; } = 0;
         public virtual string ItemDescription { get; set; }
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
     }
 }
