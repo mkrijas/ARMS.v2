@@ -19,35 +19,49 @@
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
+                    <MudItem xs="6" md="6">
+                        <MudDatePicker @bind-Date="model.DocumentDate" ReadOnly="ReadOnly" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)"></MudDatePicker>
+                    </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudTextField Disabled @bind-Value="model.PartyInfo.TradeName" Label="Party" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-                     </MudItem>
-                     <MudItem xs="12" md="6">
-                         <MudTextField Disabled @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-                     </MudItem>
-                     <MudItem xs="12" md="6">
-                         <MudDatePicker Disabled Label="Initiated On" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.InitiatedDocumentDate" DateFormat="dd/MM/yyyy" />
-                     </MudItem>
-                     <MudItem xs="12" md="6">
-                         <MudDatePicker Disabled Label="Due On" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DueOn" DateFormat="dd/MM/yyyy" />
-                     </MudItem>
-                     <MudItem xs="6" md="6">
-                         <MudDatePicker @bind-Date="model.DocumentDate" ReadOnly="ReadOnly" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)"></MudDatePicker>
-                     </MudItem>
-                     <MudItem xs="12" md="12">
-                         <PaymentAccountSelector @bind-PaymentMode="@model.PaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" BankCharges="@model.BankCharges" BankChargesChanged="BankChargesChanged" @bind-BankTool="@model.PaymentTool" />
-                     </MudItem>
-                     <MudItem xs="12" md="12">
-                         <MudTextField @bind-Value="model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                     </MudItem>
-                 </MudGrid>
-             </EditForm>
-         </MudPaper>
-     </FormContent>
-     <VerificationStatus>
+                        <MudTextField Disabled @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Disabled Label="Initiated On" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.InitiatedDocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Disabled Label="Due On" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DueOn" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <PaymentAccountSelector @bind-PaymentMode="@model.PaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" BankCharges="@model.BankCharges" BankChargesChanged="BankChargesChanged" @bind-BankTool="@model.PaymentTool" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTable Class="mb-3" T="PaymentMemoModel" Items="@model.SelectedMemos" Hover="true"
+                                  SelectOnRowClick Context="memos">
+                            <HeaderContent>
+                                <MudTh>Memo Date</MudTh>
+                                <MudTh>Party</MudTh>
+                                <MudTh>Amount</MudTh>
+                                <MudTh>Reference</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="DocumentDate">@memos.DocumentDate</MudTd>
+                                <MudTd DataLabel="Party">@memos.PartyInfo.TradeName</MudTd>
+                                <MudTd DataLabel="Amount">@memos.TotalAmount</MudTd>
+                                <MudTd DataLabel="Reference">@memos.Reference</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
         <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.PaymentFinalizeID" OnApprove="Approve"></AutherizationStatusComponent>
-     </VerificationStatus>
- </DialogForm>
+    </VerificationStatus>
+</DialogForm>
 
  @code {
 
@@ -81,7 +95,7 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
@@ -100,25 +114,25 @@
         editContext = new EditContext(model);
     }
 
-    public async Task GetPaymentEntryDetails()
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        int NumberOfRecords = numberOfRecords;
-        List<PaymentMemoModel> ppmm = new List<PaymentMemoModel>();
-        List<PaymentFinishModel> pfm = new List<PaymentFinishModel>();
-        if (model.PaymentFinalizeID != null)
-        {
-            pfm = Iservice.Select(brancID, model.PaymentFinalizeID, NumberOfRecords, searchTerm).ToList();
-            foreach (var item in pfm)
-            {
-                PaymentFinishModel f = new();
-                model.DocumentDate = item.DocumentDate;
-                model.Narration = item.Narration;
-            }
-        }
-    }
+    //public async Task GetPaymentEntryDetails()
+    //{
+    //    var authprov = await auth.GetAuthenticationStateAsync();
+    //    var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+    //    int brancID = int.Parse(brancIDString);
+    //    int NumberOfRecords = numberOfRecords;
+    //    List<PaymentMemoModel> ppmm = new List<PaymentMemoModel>();
+    //    List<PaymentFinishModel> pfm = new List<PaymentFinishModel>();
+    //    if (model.PaymentFinalizeID != null)
+    //    {
+    //        pfm = Iservice.Select(brancID, model.PaymentFinalizeID, NumberOfRecords, searchTerm).ToList();
+    //        foreach (var item in pfm)
+    //        {
+    //            PaymentFinishModel f = new();
+    //            model.DocumentDate = item.DocumentDate;
+    //            model.Narration = item.Narration;
+    //        }
+    //    }
+    //}
 
     private async Task OnValidSubmit(EditContext context)
     {
@@ -132,14 +146,13 @@
         if (HasAuthoriseEdit)
         {
             model.UserInfo.UserID = UserID;
-
             try
             {
                 Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
                 dialogForm.Close(model);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 snackbar.Add(ex.Message, Severity.Error);
             }

@@ -21,7 +21,8 @@ namespace ArmsServices.DataServices
         IEnumerable<PaymentMemoModel> SelectInterBranchByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<PaymentMemoModel> SelectByParty(int? PartyID, int? BranchID);
         IEnumerable<PaymentMemoModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);
-        IEnumerable<PaymentMemoModel> Select(int PaymentInitiatedID, int? BranchID);
+        IEnumerable<PaymentMemoModel> SelectInitiated(int? PaymentInitiatedID);
+        IEnumerable<PaymentMemoModel> SelectPending(int? BranchID);
         IEnumerable<BillsPaidModel> GetBills(int? PID);
         int Approve(int? PID, string UserID, string Remarks);
         int Reverse(int? PID, string UserID, string Remarks);
