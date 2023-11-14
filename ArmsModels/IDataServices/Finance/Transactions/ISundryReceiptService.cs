@@ -10,13 +10,13 @@ namespace ArmsServices.DataServices
 {
     public interface ISundryReceiptService
     {
-        SundryReceiptModel Update(SundryReceiptModel model);
+        SundryReceiptModel Update(SundryReceiptModel model);  //Edit
         SundryReceiptModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<SundryReceiptModel> Select();
         IEnumerable<SundryReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<SundryReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<SundryReceiptEntryModel> GetEntries(int? SID);
-        int Approve(int? SundryReceiptID, string UserID, string Remarks);
+        int Approve(int? SundryReceiptID, string UserID, string Remarks);  //Approve
     }
 }

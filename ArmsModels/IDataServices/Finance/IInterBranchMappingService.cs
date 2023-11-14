@@ -10,9 +10,10 @@ namespace ArmsServices.DataServices
 {
     public interface IInterBranchMappingService
     {
-        InterBranchMappingModel Update(InterBranchMappingModel model);
+        InterBranchMappingModel Update(InterBranchMappingModel model);  //Edit
         InterBranchMappingModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        InterBranchMappingModel IsEntriesAlreadyExistOrNot(InterBranchMappingModel model);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<InterBranchMappingModel> Select(int? NumberOfRecords, string searchTerm);
         InterBranchMappingModel Select(int? BranchID,int? FundTypeID);
         IEnumerable<InterBranchTransactionTypeModel> GetTypes();

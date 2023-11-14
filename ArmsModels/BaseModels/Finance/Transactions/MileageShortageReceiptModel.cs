@@ -22,6 +22,7 @@ namespace Core.BaseModels.Finance.Transactions
         public string Reference { get; set; }
         public string TripNo { get; set; }
         public long? TripID { get; set; }
+        public int? AssetTransferID { get; set; }
         public decimal? RunningKM { get; set; }
         public decimal? ConsumedFuel { get; set; }
         public int? DriverID { get; set; }

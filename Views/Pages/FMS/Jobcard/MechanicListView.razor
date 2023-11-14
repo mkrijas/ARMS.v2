@@ -3,6 +3,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudTable Items="@collection" Elevation="10" Filter="new Func<MechanicModel, bool>(search)" @bind-model="model">
@@ -39,8 +41,14 @@
     private string searchString = string.Empty;
     private bool _busy;
 
+    public bool HasPermissionMechanicServiceDelete { get; set; } = false;
+    public int MechanicTypeID = 78;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionMechanicServiceDelete = await Irole.HasClaim(MechanicTypeID.ToString(), "Delete", ctc.Token);
+
         model = new();
         GetAll();
     }
@@ -88,6 +96,8 @@
 
     private async Task Delete(MechanicModel model)
     {
+        if(HasPermissionMechanicServiceDelete)
+        {
         bool? result = await DialogService.ShowMessageBox(
             "Warning !",
             "Are you sure, you want to delete - " + model.MechanicName + " (" + model.WorkshopName + ") ?");
@@ -97,6 +107,13 @@
             var user = authprov.User;
             Iservice.Delete(model.MechanicID, user.Identity.Name);
             snackbar.Add("Deleted Successfully", Severity.Success);
+        }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Mechanic.");
         }
         GetAll();
     }

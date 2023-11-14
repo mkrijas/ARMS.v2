@@ -152,7 +152,7 @@ namespace Views
             services.AddScoped<IBreakdownService, BreakdownService>();
             services.AddScoped<IWorkshopService, WorkshopService>();
             services.AddScoped<IJobcardService, JobcardService>();
-            services.AddScoped<IRepairJobService, RepairJobService>();
+            services.AddScoped<IRepairWorkService, RepairWorkService>();
             services.AddScoped<IJobcardWorkshopService, JobcardWorkshopService>();
             services.AddScoped<IJobInProgressService, JobInProgressService>();
             services.AddScoped<IMechanicService, MechanicService>();

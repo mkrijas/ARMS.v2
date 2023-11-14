@@ -4,6 +4,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 @inject IConfigTable IConfig
 
@@ -52,8 +54,14 @@
     private List<ChartOfAccountModel> Coa = new();
     private bool _busy;
 
-    protected override void OnInitialized()
+    public bool HasPermissionCashAccountServiceEdit { get; set; } = false;
+    public int CashAccountDocTypeID = 90;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionCashAccountServiceEdit = await Irole.HasClaim(CashAccountDocTypeID.ToString(), "Edit", ctc.Token);
+
         Coa = ICoaservice.SelectByGroup(int.Parse(IConfig.GetByFinanceCashGroupID().ValueString)).ToList();
     }
 
@@ -66,20 +74,29 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        model.BranchID = int.Parse(brancIDString);
-        model.UserInfo.UserID = user.Identity.Name;
-        try
+        if (HasPermissionCashAccountServiceEdit)
         {
-            Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(model);
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            model.BranchID = int.Parse(brancIDString);
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit CashAccount.");
         }
         await Task.Delay(2000);
         _busy = false;

@@ -3,6 +3,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4">
@@ -55,8 +57,14 @@
     DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     private bool _busy;
 
+    public bool HasPermissionCashAccountServiceEnableDisable { get; set; } = false;
+    public int CashAccountDocTypeID = 90;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionCashAccountServiceEnableDisable = await Irole.HasClaim(CashAccountDocTypeID.ToString(), "Enable/Disable", ctc.Token);
+
         await GetAll();
     }
 
@@ -91,27 +99,36 @@
 
     public async Task DisableAccount(bool? IsDisabled, int? CashAccountID)
     {
-        if (collection.Any(s => s.CashAccountID == CashAccountID))
+        if (HasPermissionCashAccountServiceEnableDisable)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User.Identity.Name;
-            int result = Iservice.DisableAccount(IsDisabled, CashAccountID, user);
-            if (result != -1)
+            if (collection.Any(s => s.CashAccountID == CashAccountID))
             {
-                collection.First(s => s.CashAccountID == CashAccountID).IsDisabled = IsDisabled;
-                if (IsDisabled == true)
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User.Identity.Name;
+                int result = Iservice.DisableAccount(IsDisabled, CashAccountID, user);
+                if (result != -1)
                 {
-                    snackbar.Add("Disabled " + collection.First(s => s.CashAccountID == CashAccountID).Title + " Succesfully.", Severity.Success);
+                    collection.First(s => s.CashAccountID == CashAccountID).IsDisabled = IsDisabled;
+                    if (IsDisabled == true)
+                    {
+                        snackbar.Add("Disabled " + collection.First(s => s.CashAccountID == CashAccountID).Title + " Succesfully.", Severity.Success);
+                    }
+                    else
+                    {
+                        snackbar.Add("Enabled " + collection.First(s => s.CashAccountID == CashAccountID).Title + " Succesfully.", Severity.Success);
+                    }
                 }
                 else
                 {
-                    snackbar.Add("Enabled " + collection.First(s => s.CashAccountID == CashAccountID).Title + " Succesfully.", Severity.Success);
+                    snackbar.Add("error occurred while disabling.", Severity.Error);
                 }
             }
-            else
-            {
-                snackbar.Add("error occurred while disabling.", Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Enable/Disable CashAccount.");
         }
     }
 }

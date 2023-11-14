@@ -106,7 +106,7 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.PaymentMemoID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="@PaymentDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.PaymentMemoID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
@@ -127,13 +127,15 @@
     private EditContext editContext;
     DialogForm dialogForm;
 
-    public bool HasAuthoriseEdit { get; set; } = false;
     [Parameter]
     public string PageToRedirectLink { get; set; }
     public string DocNumber { get; set; }
     public DateTime? DocDate { get; set; }
     public string DocType { get; set; }
-    int DocTypeID = 7;
+
+    public bool HasPermissionPaymentServiceEdit { get; set; } = false;
+    public bool HasPermissionPaymentServiceApprove { get; set; } = false;
+    public int PaymentDocTypeID = 7;
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private BranchModel OtherBranch;
@@ -143,7 +145,8 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionPaymentServiceEdit = await Irole.HasClaim(PaymentDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionPaymentServiceApprove = await Irole.HasClaim(PaymentDocTypeID.ToString(), "Approve", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
@@ -212,8 +215,7 @@
 
     private async Task OnValidSubmit(EditContext context)
     {
-
-        if (HasAuthoriseEdit)
+        if (HasPermissionPaymentServiceEdit)
         {
             if (_busy)
             {
@@ -246,24 +248,33 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to submit.");
+                "You dont have any permission to Edit Payment.");
         }
     }
 
-    protected void Approve(DataApprovedStatus aprvd)
+    protected async Task Approve(DataApprovedStatus aprvd)
     {
-        if (aprvd.IsApprove)
+        if (HasPermissionPaymentServiceApprove)
         {
-            model.UserInfo.UserID = UserID;
-            try
+            if (aprvd.IsApprove)
             {
-                Iservice.Approve(model.PaymentMemoID, model.UserInfo.UserID, aprvd.Remarks);
-                snackbar.Add("Approved Successfully", Severity.Success);
+                model.UserInfo.UserID = UserID;
+                try
+                {
+                    Iservice.Approve(model.PaymentMemoID, model.UserInfo.UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve Payment.");
         }
     }
 

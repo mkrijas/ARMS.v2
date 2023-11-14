@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
-
 namespace ArmsServices.DataServices
 {
     public interface IAccountInfoService
@@ -15,4 +14,3 @@ namespace ArmsServices.DataServices
         IEnumerable<AccountInfoViewSubModel> Entries(int? MID);
     }
 }
-

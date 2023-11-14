@@ -6,6 +6,8 @@
 @inject IDialogService DialogService
 @using System
 @inject IJSRuntime jsRuntime
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 
 <style>
     .subledger {
@@ -70,6 +72,10 @@
     protected bool visible = true;
     private bool _busy;
 
+    public bool HasPermissionChartOfAccountServiceEdit { get; set; } = false;
+    public bool HasPermissionChartOfAccountServiceUpdateSelect { get; set; } = false;
+    public int ChartOfAccountDocTypeID = 89;
+
     public class TreeItemData
     {
         public string Title { get; set; }
@@ -93,8 +99,12 @@
         ElementCoordinates coordinates = await jsRuntime.InvokeAsync<ElementCoordinates>("getElementCoordinates", obj);
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionChartOfAccountServiceEdit = await Irole.HasClaim(ChartOfAccountDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionChartOfAccountServiceUpdateSelect = await Irole.HasClaim(ChartOfAccountDocTypeID.ToString(), "UpdateSelect", ctc.Token);
+
         var baseGroups = Iservice.SelectBase();
         foreach (var item in baseGroups)
         {
@@ -155,32 +165,42 @@
                 dialog = DialogService.Show<AddSubledgerDialog>("Add Ledger under - " + ContextmenuSource.Title, parameters);
                 break;
         }
-        var result = await dialog.Result;
-        ChartOfAccountModel UpdatedModel = (ChartOfAccountModel)result.Data;
-        if (!result.Canceled)
+
+        if (HasPermissionChartOfAccountServiceEdit)
         {
-            try
+            var result = await dialog.Result;
+            ChartOfAccountModel UpdatedModel = (ChartOfAccountModel)result.Data;
+            if (!result.Canceled)
             {
-                var newledger = Iservice.Update(UpdatedModel);
-                //ContextmenuSource.TreeItems = await LoadServerData(ContextmenuSource);
-                ContextmenuSource = GetTreeItem(TreeItems, UpdatedModel.ParentID);
-                if (ContextmenuSource.TreeItems == null)
+                try
                 {
-                    ContextmenuSource.TreeItems = new HashSet<TreeItemData>();
-                }
-                ContextmenuSource.TreeItems.Add(new TreeItemData
+                    var newledger = Iservice.Update(UpdatedModel);
+                    //ContextmenuSource.TreeItems = await LoadServerData(ContextmenuSource);
+                    ContextmenuSource = GetTreeItem(TreeItems, UpdatedModel.ParentID);
+                    if (ContextmenuSource.TreeItems == null)
                     {
-                        ID = newledger.CoaID,
-                        Title = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
-                        SummaryAccount = newledger.SummaryAccount,
-                        Icon = newledger.SummaryAccount == false ? Icons.Material.Filled.Book : null,
-                    });
-                snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
+                        ContextmenuSource.TreeItems = new HashSet<TreeItemData>();
+                    }
+                    ContextmenuSource.TreeItems.Add(new TreeItemData
+                        {
+                            ID = newledger.CoaID,
+                            Title = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
+                            SummaryAccount = newledger.SummaryAccount,
+                            Icon = newledger.SummaryAccount == false ? Icons.Material.Filled.Book : null,
+                        });
+                    snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
+                }
+                catch (Exception a)
+                {
+                    snackbar.Add(a.Message, Severity.Error);
+                }
             }
-            catch (Exception a)
-            {
-                snackbar.Add(a.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit ChartOfAccount.");
         }
     }
 
@@ -197,15 +217,25 @@
                     ["model"] = model.Clone(),
                 };
             var editledge = DialogService.Show<AddSubledgerDialog>("Edit Ledger - " + item.Title, parameters);
-            var result = await editledge.Result;
-            ChartOfAccountModel UpdatedModel = (ChartOfAccountModel)result.Data;
-            if (!result.Canceled)
+
+            if (HasPermissionChartOfAccountServiceEdit)
             {
-                var newresult = Iservice.Update(UpdatedModel);
-                item.Title = newresult.AccountName + (newresult.SummaryAccount ? "" : (" (" + newresult.AccountCode + ")"));
-                item.SummaryAccount = newresult.SummaryAccount;
-                item.Icon = Icons.Material.Filled.Book;
-                snackbar.Add(newresult.AccountName + " Edited successfully", Severity.Success);
+                var result = await editledge.Result;
+                ChartOfAccountModel UpdatedModel = (ChartOfAccountModel)result.Data;
+                if (!result.Canceled)
+                {
+                    var newresult = Iservice.Update(UpdatedModel);
+                    item.Title = newresult.AccountName + (newresult.SummaryAccount ? "" : (" (" + newresult.AccountCode + ")"));
+                    item.SummaryAccount = newresult.SummaryAccount;
+                    item.Icon = Icons.Material.Filled.Book;
+                    snackbar.Add(newresult.AccountName + " Edited successfully", Severity.Success);
+                }
+            }
+            else
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Edit ChartOfAccount.");
             }
         }
     }
@@ -230,30 +260,40 @@
                 },
             };
         IDialogReference dialog = DialogService.Show<AddSubledgerDialog>("Add Ledger", parameters);
-        var result = await dialog.Result;
-        ChartOfAccountModel UpdatedModel = (ChartOfAccountModel)result.Data;
-        if (!result.Canceled)
+
+        if (HasPermissionChartOfAccountServiceEdit)
         {
-            try
+            var result = await dialog.Result;
+            ChartOfAccountModel UpdatedModel = (ChartOfAccountModel)result.Data;
+            if (!result.Canceled)
             {
-                var newledger = Iservice.Update(UpdatedModel);
-                ContextmenuSource = GetTreeItem(TreeItems, UpdatedModel.ParentID);
-                if (ContextmenuSource != null)
+                try
                 {
-                    ContextmenuSource.TreeItems.Add(new TreeItemData
-                        {
-                            ID = newledger.CoaID,
-                            Title = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
-                            SummaryAccount = newledger.SummaryAccount,
-                            Icon = newledger.SummaryAccount == false ? Icons.Material.Filled.Book : null,
-                        });
-                    snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
+                    var newledger = Iservice.Update(UpdatedModel);
+                    ContextmenuSource = GetTreeItem(TreeItems, UpdatedModel.ParentID);
+                    if (ContextmenuSource != null)
+                    {
+                        ContextmenuSource.TreeItems.Add(new TreeItemData
+                            {
+                                ID = newledger.CoaID,
+                                Title = newledger.AccountName + (newledger.SummaryAccount ? "" : (" (" + newledger.AccountCode + ")")),
+                                SummaryAccount = newledger.SummaryAccount,
+                                Icon = newledger.SummaryAccount == false ? Icons.Material.Filled.Book : null,
+                            });
+                        snackbar.Add(newledger.AccountName + " added successfully", Severity.Success);
+                    }
+                }
+                catch (Exception a)
+                {
+                    snackbar.Add(a.Message, Severity.Error);
                 }
             }
-            catch (Exception a)
-            {
-                snackbar.Add(a.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit ChartOfAccount.");
         }
         await Task.Delay(200);
         _busy = false;
@@ -268,7 +308,8 @@
     //    item.IsExpanded = true;
     //}
 
-    public bool allSelected { get; set; } = false;
+    //public bool allSelected { get; set; } = false;
+    public bool allSelected { get { return AllocatedBranches.All(ab => ab.IsSelected); } }
     public int? AllSelectCoaId;
 
     public void OnSelected(TreeItemData item)
@@ -277,7 +318,7 @@
         {
             AllocatedBranches = Iservice.GetAllocatedBranches(item.ID).ToList();
             AllSelectCoaId = AllocatedBranches.FirstOrDefault()?.CoaID;
-            allSelected = AllocatedBranches.All(ab => ab.IsSelected);
+            //allSelected = AllocatedBranches.All(ab => ab.IsSelected);
         }
         else
         {
@@ -287,39 +328,57 @@
 
     async Task SelectAll(bool a)
     {
-        foreach (var item in AllocatedBranches)
+        if (HasPermissionChartOfAccountServiceUpdateSelect)
         {
-            item.IsSelected = a;
-        }
-        allSelected = a;
+            foreach (var item in AllocatedBranches)
+            {
+                item.IsSelected = a;
+            }
+            //allSelected = a;
 
-        var authState = await auth.GetAuthenticationStateAsync();
-        var UserID = authState.User.Identity.Name;
-        if (a)
-        {
-            Iservice.SelectAll(AllSelectCoaId, UserID);
+            var authState = await auth.GetAuthenticationStateAsync();
+            var UserID = authState.User.Identity.Name;
+            if (a)
+            {
+                Iservice.SelectAll(AllSelectCoaId, UserID);
+            }
+            else if (!a)
+            {
+                Iservice.UnSelectAll(AllSelectCoaId, UserID);
+            }
         }
-        else if (!a)
+        else
         {
-            Iservice.UnSelectAll(AllSelectCoaId, UserID);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to UpdateSelect ChartOfAccount.");
         }
     }
 
     async Task BranchCheckedChanged(bool value, CoaBranchAvailabilityModel br)
     {
-        var authState = await auth.GetAuthenticationStateAsync();
-        br.IsSelected = value;
-        br.UserInfo.UserID = authState.User.Identity.Name;
-
-        if (value)
+        if (HasPermissionChartOfAccountServiceUpdateSelect)
         {
-            Iservice.AddBranch(br);
-            allSelected = AllocatedBranches.All(ab => ab.IsSelected);
+            var authState = await auth.GetAuthenticationStateAsync();
+            br.IsSelected = value;
+            br.UserInfo.UserID = authState.User.Identity.Name;
+
+            if (value)
+            {
+                Iservice.AddBranch(br);
+                // allSelected = AllocatedBranches.All(ab => ab.IsSelected);
+            }
+            else
+            {
+                Iservice.RemoveBranch(br);
+                //allSelected = AllocatedBranches.All(ab => ab.IsSelected);
+            }
         }
         else
         {
-            Iservice.RemoveBranch(br);
-            allSelected = AllocatedBranches.All(ab => ab.IsSelected);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to UpdateSelect ChartOfAccount.");
         }
     }
 

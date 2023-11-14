@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
-    public interface IRepairJobService
+    public interface IRepairWorkService
     {
-        RepairJobModel Update(RepairJobModel model);
+        RepairJobModel Update(RepairJobModel model);  //Edit
         RepairJobModel SelectByID(int? ID);
-        int Delete(int? RepairJobID, string UserID);
+        int Delete(int? RepairJobID, string UserID);  //Delete
         IEnumerable<RepairJobModel> Select(int? RepairJobID);
     }
 }

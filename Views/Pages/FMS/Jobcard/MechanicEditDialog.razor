@@ -3,6 +3,9 @@
 @inject IWorkshopService Iworkshop
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <DialogContent>
@@ -43,8 +46,14 @@
     private List<WorkshopModel> Workshops = new();
     private bool _busy;
 
+    public bool HasPermissionMechanicServiceEdit { get; set; } = false;
+    public int MechanicTypeID = 78;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionMechanicServiceEdit = await Irole.HasClaim(MechanicTypeID.ToString(), "Edit", ctc.Token);
+
         Workshops = Iworkshop.Select(null).ToList();
         SelectedWorkshop = Workshops.FirstOrDefault(x => x.WorkshopID == model?.WorkshopID);
     }
@@ -72,11 +81,19 @@
         model.UserInfo.UserID = authprov.User.Identity.Name;
         try
         {
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(DialogResult.Ok(model));
-
-            model = new();
+            if (HasPermissionMechanicServiceEdit)
+            {
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(model));
+                model = new();
+            }
+            else
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Edit Mechanic.");
+            }
         }
         catch (Exception ex)
         {

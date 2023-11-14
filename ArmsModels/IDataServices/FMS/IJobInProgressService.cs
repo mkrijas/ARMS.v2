@@ -10,9 +10,9 @@ namespace ArmsServices.DataServices
 {
     public interface IJobInProgressService
     {
-        JobInProgressModel Update(JobInProgressModel model);
+        JobInProgressModel Update(JobInProgressModel model);  //Edit
         JobInProgressModel SelectByID(int? ID);
-        int Delete(int? JipID, string UserID);
+        int Delete(int? JipID, string UserID);  //Delete
         IEnumerable<JobInProgressModel> Select(int? JipID);
         IEnumerable<JobInProgressModel> SelectByJobcard(int? JobcardID);
     }

@@ -96,18 +96,21 @@ namespace ArmsServices.DataServices
                 Payable = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("Payable"),
+                    ParentID = dr.GetInt32("PayableParentID"),
                     AccountCode = dr.GetString("PayableCoaCode"),
                     AccountName = dr.GetString("PayableCoa"),
                 },
                 PrePayment = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("PrePayment"),
+                    ParentID = dr.GetInt32("PrePaymentParentID"),
                     AccountCode = dr.GetString("PrePaymentCoaCode"),
                     AccountName = dr.GetString("PrePaymentCoa"),
                 },
                 Deposit = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("Deposit"),
+                    ParentID = dr.GetInt32("DepositParentID"),
                     AccountCode = dr.GetString("DepositCoaCode"),
                     AccountName = dr.GetString("DepositCoa"),
                 },

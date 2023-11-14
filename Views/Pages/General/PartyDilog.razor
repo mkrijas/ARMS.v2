@@ -11,6 +11,9 @@
 @inject NavigationManager nav
 @inject IBankAccountService bankAccountService
 @inject IAddressService addressService
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -40,7 +43,7 @@
                                         <MudTextField @bind-Value="model.PartyCode" Label="Party Code" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PartyCode)" Disabled></MudTextField>
                                      </MudItem>
                                      <MudItem xs="12" md="6">
-                                         <MudTextField @bind-Value="model.TradeName" Label="Trade Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TradeName)"></MudTextField>
+                                         <MudTextField @bind-Value="model.TradeName" Label="Legal Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TradeName)"></MudTextField>
                                      </MudItem>
                                      <MudItem xs="12" md="6">
                                          <MudTextField @bind-Value="model.RegName" Label="Reg Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RegName)"></MudTextField>
@@ -180,12 +183,12 @@
                                     </MudItem>
                                     <MudItem xs="12" md="6">
                                         <MudNumericField HideSpinButtons @bind-Value="model.Address.PinCode" Label="Pincode" Variant="Variant.Outlined" MaxLength="6" Margin="Margin.Dense" For="@(() => model.Address.PinCode)" />
-                                    </MudItem>
-                                </MudGrid>
-                            </MudContainer>
-                        </MudPaper>
-                    </MudItem>
-                    @if (IsShowBankInformation == true)
+                                     </MudItem>
+                                 </MudGrid>
+                             </MudContainer>
+                         </MudPaper>
+                     </MudItem>
+                     @if (IsShowBankInformation == true)
                     {
                         <MudItem xs="12" md="12">
                             <h6>BankAccount Informations</h6>
@@ -216,10 +219,10 @@
                                              <MudTextField @bind-Value="model.BankAccount.BankBranch" Label="Bank Branch" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BankAccount.BankBranch)" />
                                          </MudItem>
                                          <br />
-                                    </MudGrid>
-                                </MudContainer>
-                            </MudPaper>
-                        </MudItem>
+                                     </MudGrid>
+                                 </MudContainer>
+                             </MudPaper>
+                         </MudItem>
                     }
                     <MudItem xs="12" md="12">
                         <h6>Contact Informations</h6>
@@ -253,28 +256,28 @@
                                                     <td><MudTextField Label="Contact Name" @bind-Value="contactModel.ContactName" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => contactModel.ContactName)"></MudTextField></td>
                                                     <td><MudTextField Label="Additional Info" @bind-Value="contactModel.AdditionalInfo" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => contactModel.AdditionalInfo)"></MudTextField></td>
                                                     <td><MudNumericField HideSpinButtons MaxLength="10" Label="Phone" @bind-Value="contactModel.Phone" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => contactModel.Phone)"></MudNumericField></td>
-                                                    <td><MudTextField Label="Email" @bind-Value="contactModel.Email" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => contactModel.Email)"></MudTextField></td>
-                                                    <td><MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" /></td>
-                                                </tr>
-                                            </tbody>
-                                        </MudSimpleTable>
-                                    </MudItem>
-                                </MudGrid>
-                            </MudContainer>
-                        </MudPaper>
-                    </MudItem>
-                </MudGrid>
-                <ObjectGraphDataAnnotationsValidator />
-                <ValidationSummary />
-            </EditForm>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Disabled="@_busy" form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-    </DialogActions>
-</MudDialog>
+                                                     <td><MudTextField Label="Email" @bind-Value="contactModel.Email" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => contactModel.Email)"></MudTextField></td>
+                                                     <td><MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" /></td>
+                                                 </tr>
+                                             </tbody>
+                                         </MudSimpleTable>
+                                     </MudItem>
+                                 </MudGrid>
+                             </MudContainer>
+                         </MudPaper>
+                     </MudItem>
+                 </MudGrid>
+                 <ObjectGraphDataAnnotationsValidator />
+                 <ValidationSummary />
+             </EditForm>
+         </MudContainer>
+     </DialogContent>
+     <DialogActions>
+         <MudButton Disabled="@_busy" form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+     </DialogActions>
+ </MudDialog>
 
-@code {
+ @code {
 
     [Parameter]
     public PartyModel model { get; set; }
@@ -287,6 +290,9 @@
     private bool _busy;
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
+    public bool HasPermissionPartyServiceEdit { get; set; } = false;
+    public int PartyDocTypeID = 85;
+
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -295,22 +301,30 @@
             return;
         }
         _busy = true;
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        model.Contacts = Contactlist;
-        try
+        if (HasPermissionPartyServiceEdit)
         {
-            model.GstNo = model.GstNo.ToUpper();
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(model);
-            model = new();
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            model.Contacts = Contactlist;
+            try
+            {
+                model.GstNo = model.GstNo.ToUpper();
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(model);
+                model = new();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Party.");
         }
         await Task.Delay(2000);
         _busy = false;
@@ -336,6 +350,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionPartyServiceEdit = await Irole.HasClaim(PartyDocTypeID.ToString(), "Edit", ctc.Token);
+
         if (VendorList != null)
         {
             VendorList.Clear();
@@ -411,7 +428,7 @@
 
     public void AddItems()
     {
-        if (contactModel.ContactName == null || contactModel.AdditionalInfo == null || contactModel.Phone == null || contactModel.Email == null)
+        if (contactModel.ContactName == null || contactModel.AdditionalInfo == null || contactModel.Phone == null)
         {
             snackbar.Add("Please fill all entries.", Severity.Error);
             return;

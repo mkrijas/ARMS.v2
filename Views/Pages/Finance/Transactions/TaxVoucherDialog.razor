@@ -112,7 +112,7 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.TaxVoucherID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="@TaxVoucherDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.TaxVoucherID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
@@ -139,15 +139,17 @@
     private List<AssetDocumentTypeModel> DocumentTypeList = new();
     private EditContext editContext;
     DialogForm dialogForm;
-
     private bool _busy;
-    public bool HasAuthoriseEdit { get; set; } = false;
-    int DocTypeID = 19;
+
+    public bool HasPermissionTaxVoucherServiceEdit { get; set; } = false;
+    public bool HasPermissionTaxVoucherServiceApprove { get; set; } = false;
+    int TaxVoucherDocTypeID = 19;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTaxVoucherServiceEdit = await Irole.HasClaim(TaxVoucherDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTaxVoucherServiceApprove = await Irole.HasClaim(TaxVoucherDocTypeID.ToString(), "Approve", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -191,20 +193,29 @@
         editContext = new EditContext(model);
     }
 
-    protected void ApproveEntry(DataApprovedStatus aprvd)
+    protected async Task ApproveEntry(DataApprovedStatus aprvd)
     {
-        if (aprvd.IsApprove)
+        if (HasPermissionTaxVoucherServiceApprove)
         {
-            model.UserInfo.UserID = UserID;
-            try
+            if (aprvd.IsApprove)
             {
-                Iservice.Approve(model.TaxVoucherID, model.UserInfo.UserID, aprvd.Remarks);
-                snackbar.Add("Approved Successfully", Severity.Success);
+                model.UserInfo.UserID = UserID;
+                try
+                {
+                    Iservice.Approve(model.TaxVoucherID, model.UserInfo.UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve TaxVoucher.");
         }
     }
 
@@ -272,7 +283,7 @@
         }
         _busy = true;
 
-        if (HasAuthoriseEdit)
+        if (HasPermissionTaxVoucherServiceEdit)
         {
             try
             {
@@ -289,7 +300,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to submit.");
+                "You dont have any permission to Edit TaxVoucher.");
         }
         await Task.Delay(2000);
         _busy = false;

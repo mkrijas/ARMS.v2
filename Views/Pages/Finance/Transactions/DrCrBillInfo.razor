@@ -9,12 +9,22 @@
         <MudContainer Style="max-height: 500px; overflow-y: scroll">
             <MudList Clickable="true" Color="@Color.Primary" @bind-SelectedItem="selectedListItem" @bind-SelectedValue="SelectedObject">
                 <MudListSubheader>
-                    Selected Document :
-                    <MudChip Color="Color.Default">
-                        @(((BillInfoModel)SelectedObject)?.DocumentNumber ?? "Select a Bill")
-                    </MudChip>
+                    <MudGrid>
+                        <MudItem md="4" lg="4" sm="4">
+                                Selected Document :
+                                <MudChip Color="Color.Default">
+                                    @(((BillInfoModel)SelectedObject)?.DocumentNumber ?? "Select a Bill")
+                                </MudChip>
+                        </MudItem>
+                        <MudItem md="6" lg="6" sm="6" Class="pb-8">
+                                <MudTextField @bind-Value="searchDocumentNo" Placeholder="Search Document No... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="pb-3 mb-3"></MudTextField>
+                        </MudItem>
+                        <MudItem md="2" lg="2" sm="2">
+                            <MudButton OnClick="Search" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Button">Search</MudButton>
+                        </MudItem>
+                    </MudGrid>
                 </MudListSubheader>
-                @foreach (BillInfoModel bill in collection)
+                @foreach (BillInfoModel bill in FilterCollection)
                 {
                     <MudDivider></MudDivider>
                     <MudListItem Icon="@Icons.Material.Filled.Bookmark" Text="@bill.DocumentNumber" Value="@bill">
@@ -42,9 +52,11 @@
     [Parameter]
     public string CrDrType { get; set; }
     private List<BillInfoModel> collection = new List<BillInfoModel>();
+    private List<BillInfoModel> FilterCollection = new List<BillInfoModel>();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     MudListItem selectedListItem;
     Object SelectedObject;
+    private string searchDocumentNo = "";
     private bool _busy;
 
     protected override async Task OnInitializedAsync()
@@ -57,8 +69,13 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         int BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         collection = Iservice.GetBillInfo(BranchID, CrDrType, PartyID, string.Empty).ToList();
+        FilterCollection = collection.Where(s => s.DocumentNumber != null && s.DocumentNumber.Contains(searchDocumentNo, StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(searchDocumentNo)).ToList();
     }
 
+    private void Search()
+    {
+        FilterCollection = collection.Where(s => s.DocumentNumber != null && s.DocumentNumber.Contains(searchDocumentNo, StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(searchDocumentNo)).ToList();
+    }
     private void Cancel() => MudDialog.Cancel();
 
     private async Task Submit()

@@ -11,12 +11,12 @@ namespace ArmsServices.DataServices
 {
     public interface IDimensionService
     {
-        DimensionModel Update(DimensionModel model);
+        DimensionModel Update(DimensionModel model);  //Edit
         DimensionModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<DimensionModel> SelectByCategory(int? CategoryID);
         IEnumerable<DimensionModel> Select();
         IEnumerable<CategoryModel> SelectCategory();
-        CategoryModel UpdateCategory(CategoryModel model);
+        CategoryModel UpdateCategory(CategoryModel model);  //Edit
     }
 }

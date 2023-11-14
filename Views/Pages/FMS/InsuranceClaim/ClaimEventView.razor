@@ -3,6 +3,9 @@
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudForm @bind-IsValid="@formValid" @ref="form">
     <MudTable Items="@ClaimEventList" Hover="true" CanCancelEdit="true" Filter="new Func<InsuranceClaimEventMasterModel,bool>(FilterFunc)" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted">
@@ -39,35 +42,36 @@
             </MudTd>
             <MudTd DataLabel="Title">
                 <MudTextField @bind-Value="@context.Title" Required />
-            </MudTd>
-            <MudTd DataLabel="Is Mandatory">
-                <MudCheckBox @bind-Checked="@context.IsMandatory" />
-            </MudTd>
-            <MudTd DataLabel="Description">
-                <MudTextField @bind-Value="@context.Description" Required />
-            </MudTd>
-        </RowEditingTemplate>
-        <FooterContent>
-            <MudTd DataLabel="Order">
-                New
-            </MudTd>
-            <MudTd DataLabel="Title">
-                <MudTextField @bind-Value="@InsertElement.Title" Required />
-            </MudTd>
-            <MudTd DataLabel="Is Mandatory">
-                <MudCheckBox @bind-Checked="@InsertElement.IsMandatory" />
-            </MudTd>
-            <MudTd DataLabel="Description">
-                <MudTextField @bind-Value="@InsertElement.Description" Required />
-            </MudTd>
-            <MudTd DataLabel="Description">
-                <MudButton Disabled="@(!formValid)" OnClick="(()=>ItemHasBeenCommitted(InsertElement))">Create</MudButton>
-            </MudTd>
-        </FooterContent>       
-    </MudTable>
-</MudForm>
+             </MudTd>
+             <MudTd DataLabel="Is Mandatory">
+                 <MudCheckBox @bind-Checked="@context.IsMandatory" />
+             </MudTd>
+             <MudTd DataLabel="Description">
+                 <MudTextField @bind-Value="@context.Description" Required />
+             </MudTd>
+         </RowEditingTemplate>
+         <FooterContent>
+             <MudTd DataLabel="Order">
+                 New
+             </MudTd>
+             <MudTd DataLabel="Title">
+                 <MudTextField @bind-Value="@InsertElement.Title" Required />
+             </MudTd>
+             <MudTd DataLabel="Is Mandatory">
+                 <MudCheckBox @bind-Checked="@InsertElement.IsMandatory" />
+             </MudTd>
+             <MudTd DataLabel="Description">
+                 <MudTextField @bind-Value="@InsertElement.Description" Required />
+             </MudTd>
+             <MudTd DataLabel="Description">
+                 <MudButton Disabled="@(!formValid)" OnClick="(()=>ItemHasBeenCommitted(InsertElement))">Create</MudButton>
+             </MudTd>
+         </FooterContent>
+     </MudTable>
+ </MudForm>
 
-@code {
+ @code {
+
     MudForm form;
     bool formValid;
     private List<InsuranceClaimEventMasterModel> ClaimEventList = new();
@@ -78,17 +82,41 @@
     private HashSet<InsuranceClaimEventMasterModel> selectedItems1 = new();
     private HashSet<InsuranceClaimEventMasterModel> selectedItems2 = new();
 
+    public bool HasPermissionInsuranceClaimServiceUpdateList { get; set; } = false;
+    public bool HasPermissionInsuranceClaimServiceUpdateOrder { get; set; } = false;
+    public int InsuranceClaimDocTypeID = 83;
+
     private string searchString = "";
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInsuranceClaimServiceUpdateList = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "UpdateList", ctc.Token);
+        HasPermissionInsuranceClaimServiceUpdateOrder = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "UpdateList", ctc.Token);
+
         ClaimEventList = Iservice.GetEventList(null).ToList();
     }
 
-    void MoveUp(int? Order)
+    private async Task MoveUp(int? Order)
     {
-        int retVal = Iservice.OrderMoveUpward(Order);
-        ClaimEventList = Iservice.GetEventList(null).ToList();
+        if (HasPermissionInsuranceClaimServiceUpdateOrder)
+        {
+            try
+            {
+                int retVal = Iservice.OrderMoveUpward(Order);
+                ClaimEventList = Iservice.GetEventList(null).ToList();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to UpdateOrder InsuranceClaim.");
+        }
     }
 
     private void BackupItem(object element)
@@ -106,20 +134,29 @@
 
     private async void ItemHasBeenCommitted(object element)
     {
-        var item = (InsuranceClaimEventMasterModel)element;
-        var authState = auth.GetAuthenticationStateAsync().Result;
-        item.UserInfo.UserID = authState.User.Identity.Name;
-        item.Order = item.Order ?? ((ClaimEventList.Max(x => x.Order) ?? 0) + 1);
-        try
+        if (HasPermissionInsuranceClaimServiceUpdateList)
         {
-            Iservice.UpdateEventList(item);
-            //InsertElement = new();
-            ClaimEventList = Iservice.GetEventList(null).ToList();
-            await form.ResetAsync();
+            var item = (InsuranceClaimEventMasterModel)element;
+            var authState = auth.GetAuthenticationStateAsync().Result;
+            item.UserInfo.UserID = authState.User.Identity.Name;
+            item.Order = item.Order ?? ((ClaimEventList.Max(x => x.Order) ?? 0) + 1);
+            try
+            {
+                Iservice.UpdateEventList(item);
+                //InsertElement = new();
+                ClaimEventList = Iservice.GetEventList(null).ToList();
+                await form.ResetAsync();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to UpdateList InsuranceClaim.");
         }
     }
 

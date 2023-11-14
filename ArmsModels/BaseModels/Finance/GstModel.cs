@@ -23,6 +23,7 @@ namespace ArmsModels.BaseModels
         [Required(ErrorMessage = "The Account field is required!")]
         public int? CoaID { get; set; }
         public virtual string CoaDescreption { get; set; }
+        public virtual string CoaAccountCode { get; set; }
         [Required]
         public string Area { get; set; } = "All"; // Operation,Maintenance,All
         [Required]

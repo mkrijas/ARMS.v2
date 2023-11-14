@@ -11,9 +11,9 @@ namespace ArmsServices.DataServices
 {
     public interface ICashAccountService
     {
-        CashAccountModel Update(CashAccountModel model);
-        int Delete(int? CashAccountID, string UserID);
-        int DisableAccount(bool? IsDisable, int? CashAccountID, string UserID);
+        CashAccountModel Update(CashAccountModel model);  //Edit
+        int Delete(int? CashAccountID, string UserID);  //Delete
+        int DisableAccount(bool? IsDisable, int? CashAccountID, string UserID);  // Enable/Disable
         IEnumerable<CashAccountModel> Select();
         CashAccountModel SelectByID(int ID);
         IEnumerable<CashAccountModel> SelectByBranch(int BranchID);

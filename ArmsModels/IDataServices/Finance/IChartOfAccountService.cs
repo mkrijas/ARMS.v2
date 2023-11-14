@@ -10,9 +10,9 @@ namespace ArmsServices.DataServices
 {
     public interface IChartOfAccountService
     {
-        ChartOfAccountModel Update(ChartOfAccountModel model);
+        ChartOfAccountModel Update(ChartOfAccountModel model);  //Edit
         ChartOfAccountModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<ChartOfAccountModel> SelectChildren(int? CoaID);
         List<ChartOfAccountModel> SelectAllChildrenAndItsSub(int? CoaID, string searchString);
         IEnumerable<ChartOfAccountModel> SelectBase();
@@ -21,10 +21,10 @@ namespace ArmsServices.DataServices
         IEnumerable<ChartOfAccountModel> AllGroups();
         IEnumerable<ChartOfAccountModel> SelectByGroup(int? GroupID);
         IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID);
-        void SelectAll(int? CoaID, string UserID);
-        void UnSelectAll(int? CoaID, string UserID);
-        void AddBranch(CoaBranchAvailabilityModel model);
-        void RemoveBranch(CoaBranchAvailabilityModel model);
+        void SelectAll(int? CoaID, string UserID);  //UpdateSelect
+        void UnSelectAll(int? CoaID, string UserID);  //UpdateSelect
+        void AddBranch(CoaBranchAvailabilityModel model);  //UpdateSelect
+        void RemoveBranch(CoaBranchAvailabilityModel model);  //UpdateSelect
         IEnumerable<CoaBranchAvailabilityModel> GetSubledgersInBranch(int? BranchID, string filterText);
         IEnumerable<PaymentCodeModel> GetPaymentCodes(int? BranchID, string PaymentMode);
     }

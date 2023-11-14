@@ -3,6 +3,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid>
@@ -67,8 +69,16 @@
     private List<CostCenterModel> collection = new List<CostCenterModel>();
     private bool _busy;
 
+    public bool HasPermissionCostCenterServiceEdit { get; set; } = false;
+    public bool HasPermissionCostCenterServiceDelete { get; set; } = false;
+    public int CostCenterDocTypeID = 88;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionCostCenterServiceEdit = await Irole.HasClaim(CostCenterDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionCostCenterServiceDelete = await Irole.HasClaim(CostCenterDocTypeID.ToString(), "Delete", ctc.Token);
+
         GetAll();
     }
 
@@ -102,29 +112,38 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", ii.Clone());
-        var dialog = DialogService.Show<CostCenterDialog>(ii.CostCenterID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-        if (!result.Cancelled)
+        if (HasPermissionCostCenterServiceEdit)
         {
-            CostCenterModel UpatedModel = (CostCenterModel)result.Data;
-            UpatedModel.UserInfo.UserID = user.Identity.Name;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", ii.Clone());
+            var dialog = DialogService.Show<CostCenterDialog>(ii.CostCenterID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
             {
-                UpatedModel = Iservice.Update(UpatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                CategoryModel igm = new CategoryModel();
-                igm.CategoryID = UpatedModel.Category.CategoryID;
-                GetInventoryItem(igm);
+                CostCenterModel UpatedModel = (CostCenterModel)result.Data;
+                UpatedModel.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    UpatedModel = Iservice.Update(UpatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    CategoryModel igm = new CategoryModel();
+                    igm.CategoryID = UpatedModel.Category.CategoryID;
+                    GetInventoryItem(igm);
 
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit CostCenter.");
         }
         await Task.Delay(200);
         _busy = false;
@@ -132,18 +151,27 @@
 
     private async Task Delete(CostCenterModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.CostCenter + " ?");
-        if (result == true)
+        if (HasPermissionCostCenterServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var UserID = authprov.User.Identity.Name;
-            Iservice.Delete(model.CostCenterID, UserID);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.CostCenter + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var UserID = authprov.User.Identity.Name;
+                Iservice.Delete(model.CostCenterID, UserID);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            GetAll();
+            await SelectedItemChanged(SelectedItem);
         }
-        GetAll();
-        await SelectedItemChanged(SelectedItem);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                    "You dont have any permission to Delete CostCenter.");
+        }
     }
 
     private async Task OpenDialogCategory(CategoryModel ig)
@@ -155,26 +183,35 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", ig.Clone());
-        var dialog = DialogService.Show<CostCenterCategoryDialog>(ig.CategoryID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-        if (!result.Cancelled)
+        if (HasPermissionCostCenterServiceEdit)
         {
-            CategoryModel UpdatedModel = (CategoryModel)result.Data;
-            UpdatedModel.UserInfo.UserID = user.Identity.Name;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", ig.Clone());
+            var dialog = DialogService.Show<CostCenterCategoryDialog>(ig.CategoryID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
             {
-                Iservice.UpdateCategory(UpdatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                GetAll();
+                CategoryModel UpdatedModel = (CategoryModel)result.Data;
+                UpdatedModel.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    Iservice.UpdateCategory(UpdatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    GetAll();
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit CostCenter.");
         }
         await Task.Delay(200);
         _busy = false;

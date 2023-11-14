@@ -4,6 +4,7 @@
 @using ArmsServices.DataServices.General
 @using Microsoft.AspNetCore.SignalR.Client;
 @using Views.Data
+@using Core.BaseModels.Finance.Transactions;
 @using Pages.Operations.Expenses
 
 @inject IAssetService Iassetservice
@@ -18,6 +19,7 @@
 @inject IDialogService DialogService
 @inject IBranchService Ibranchservice
 @inject NavigationManager NavigationManager
+@inject SignalRService signalRService
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
@@ -115,10 +117,13 @@
                                     </CardHeaderContent>
                                     <CardHeaderActions>
                                         <MudTooltip Text="Add Fuel">
-                                            <MudIconButton Icon="@Icons.Material.Filled.LocalGasStation" Size="Size.Large" Color="Color.Success" @onclick="@(()=> OpenFuelForm())" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.LocalGasStation" Size="Size.Large" Color="Color.Success" @onclick="@(()=> OpenFuelForm(new TripFuelModel(){AssetTransferID = item.AssetTransferID}))" />
                                         </MudTooltip>
                                         <MudTooltip Text="Add Expenses">
                                             <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenExpenseForm(new OpTranModel(){AssetTransferID = item.AssetTransferID}))" />
+                                        </MudTooltip>
+                                        <MudTooltip Text="Add Mileage Shortage Receipt">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Toll" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenMileageShortageReceipt(new MileageShortageReceiptModel(){AssetTransferID = item.AssetTransferID}))" />
                                         </MudTooltip>
                                         <MudTooltip Text="Accept/Reject">
                                             <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddTask" Size="Size.Medium" IconSize="Size.Small" />
@@ -168,14 +173,20 @@
 @code {
 
     int CurrentBranchId = 0;
-
     private List<BranchModel> BranchList = new();
+
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+
+    #endregion
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true, CloseOnEscapeKey = true };
     private List<OpTranModel> OptranList = new();
     private List<TripFuelModel> TFuelList = new();
     public int? SubClassID { get; set; } = new();
     public int? TruckID { get; set; } = new();
-    int? AssetSubClassID;
+    int? AssetTrucksSubClassID;
+    public int DocTypeID = 49;
 
     private bool _busy;
 
@@ -185,76 +196,13 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-
         CurrentBranchId = int.Parse(brancIDString);
-
-        hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
-        hubConnection.On<BranchModel, BranchModel, string, string, int, string>("ReceiveMessage", (InitiateBranch, ReceivedBranch, MessageTitle, MessageBody, RedirectedTo, MsgDatest) =>
-        {
-            allNotificationMessages.Add(new PushNotificationModel()
-                {
-                    MSgId = allNotificationMessages.Count() + 1,
-                    MessageID = 0,
-                    InitiateBranch = InitiateBranch,
-                    ReceivedBranch = ReceivedBranch,
-                    MessageTitle = MessageTitle,
-                    MessageBody = MessageBody,
-                    RedirectedTo = RedirectedTo,
-                    MsgDateString = MsgDatest
-                });
-            currentNotificationMessages = allNotificationMessages.Where(s => (s.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-            InvokeAsync(() => StateHasChanged());
-        });
-        await hubConnection.StartAsync();
+        await signalRService.StartAsync();
+       
 
         await GetAllOutGoing();
         await GetAllIncoming();
     }
-
-    #region SignaIR Notification
-
-    private List<PushNotificationModel> allNotificationMessages = new List<PushNotificationModel>();
-    private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
-    private HubConnection hubConnection;
-    private string BoxCss = "none";
-
-    private async Task Send()
-    {
-        PushNotificationModel PushNotificationMessage = new()
-            {
-                InitiateBranch = notificationMessage.InitiateBranch,
-                ReceivedBranch = notificationMessage.ReceivedBranch,
-                MessageTitle = notificationMessage.MessageTitle,
-                MessageBody = notificationMessage.MessageBody,
-                ExpiredBy = 7,
-            };
-
-        var result = IpushNotificationService.UpdatePushNotification(PushNotificationMessage);
-
-        await hubConnection.SendAsync("SendMessages",
-        result.MessageID,
-        notificationMessage.InitiateBranch,
-        notificationMessage.ReceivedBranch,
-        notificationMessage.MessageTitle,
-        notificationMessage.MessageBody,
-        0,
-        notificationMessage.MsgDatest);
-        notificationMessage.InitiateBranch = new();
-        notificationMessage.ReceivedBranch = new();
-        notificationMessage.MessageTitle = "";
-        notificationMessage.MessageBody = "";
-    }
-
-    public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
-
-    private void NotificationHideShow()
-    {
-        if (BoxCss == "none") BoxCss = "block";
-        else BoxCss = "none";
-    }
-
-    #endregion
 
     private async Task GetAll()
     {
@@ -308,23 +256,25 @@
 
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
         var dialog = DialogService.Show<AssetTransferInitiationDialog>("Simple Dialog", modelOutGoing, options);
-
         var result = await dialog.Result;
-
         var isCancelled = result.Cancelled;
         if (!isCancelled)
         {
-            if (IsConnected)
-            {
-                var ReturnData = (AssetTransferInitiationModel)result.Data;
-                notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiatedBranch?.BranchID ?? 0)) ?? null;
-                notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
-                notificationMessage.MessageTitle = "Asset name " + (ReturnData?.Asset?.Description ?? "") + " is transfered to this branch.";
-                notificationMessage.MessageBody = "Asset name " + (ReturnData?.Asset?.Description ?? "") + " is transfered from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " to this branch on " + (DateTime.Now).ToString() + ".";
-                notificationMessage.RedirectedTo = 0;
-                notificationMessage.MsgDate = DateTime.Now;
-                await Send();
-            }
+            var ReturnData = (AssetTransferInitiationModel)result.Data;
+            notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiatedBranch?.BranchID ?? 0)) ?? null;
+            notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
+            notificationMessage.MessageTitle = "Asset " + (ReturnData?.Asset?.Description ?? "") + " is transfered to this branch.";
+            notificationMessage.MessageBody = "Asset " + (ReturnData?.Asset?.Description ?? "") + " is transfered from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " to this branch on " + (DateTime.Now).ToString() + ".";
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.AssetTransferID;
+            notificationMessage.MessageGroupID = "AssetTransfer";
+            notificationMessage.PageToRedirectLink = "/AssetTransferView";
+            notificationMessage.ClaimValue = "Edit";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+
             await GetAll();
         }
         await Task.Delay(200);
@@ -349,8 +299,8 @@
                 var UserID = user.Identity.Name;
                 SubClassID = Iassetservice.SelectByID(AssetTransferInitiation.Asset.AssetID).SubClass.AssetSubClassID;
                 ConfigModel cModel = config.GetAssetSubclassForTrucks();
-                AssetSubClassID = int.Parse(cModel.ValueString);
-                if (SubClassID == AssetSubClassID)
+                AssetTrucksSubClassID = int.Parse(cModel.ValueString);
+                if (SubClassID == AssetTrucksSubClassID)
                 {
                     TruckID = Itruckservice.SelectByAsset(AssetTransferInitiation.Asset.AssetID).TruckID;
                     Iservice.DeleteInitiation(AssetTransferInitiation.AssetTransferID, BranchID, AssetTransferInitiation.Asset.AssetID, TruckID, UserID);
@@ -395,6 +345,13 @@
 
     private async Task OpenDialogEditIncoming(AssetTransferInitiationModel AssetTransferEnd)
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -425,23 +382,27 @@
 
         if (!isCancelled)
         {
-            if (IsConnected)
+            var ReturnData = (AssetTransferInitiationModel)result.Data;
+            if (ReturnData.IsAssetReject == 1)
             {
-                var ReturnData = (AssetTransferInitiationModel)result.Data;
-                if (ReturnData.IsAssetReject == 1)
-                {
-
-                    notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
-                    notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiatedBranch?.BranchID ?? 0)) ?? null;
-                    notificationMessage.MessageTitle = "Asset name " + (ReturnData?.Asset?.Description ?? "") + " is rejected.";
-                    notificationMessage.MessageBody = "Truck name " + (ReturnData?.Asset?.Description ?? "") + " is rejected from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " on " + (DateTime.Now).ToString() + ".";
-                    notificationMessage.RedirectedTo = 0;
-                    notificationMessage.MsgDate = DateTime.Now;
-                    await Send();
-                }
+                notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
+                notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiatedBranch?.BranchID ?? 0)) ?? null;
+                notificationMessage.MessageTitle = "Asset " + (ReturnData?.Asset?.Description ?? "") + " is rejected.";
+                notificationMessage.MessageBody = "Asset " + (ReturnData?.Asset?.Description ?? "") + " is rejected from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " on " + (DateTime.Now).ToString() + ".";
+                notificationMessage.RedirectedTo = 0;
+                notificationMessage.MsgDate = DateTime.Now;
+                notificationMessage.ExpiredBy = 7;
+                notificationMessage.DocumentID = ReturnData.AssetTransferID;
+                notificationMessage.MessageGroupID = "AssetTransfer";
+                notificationMessage.PageToRedirectLink = "/AssetTransferView";
+                notificationMessage.ClaimValue = "Edit";
+                notificationMessage.DocumentTypeID = DocTypeID;
+                await signalRService.Send(notificationMessage);
             }
             await GetAll();
         }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private async Task GetAllIncoming()
@@ -466,10 +427,10 @@
         }
     }
 
-    private async Task OpenFuelForm()
+    private async Task OpenFuelForm(TripFuelModel fuelModel)
     {
         DialogParameters parms = new DialogParameters();
-        parms.Add("Tmodel", new TripFuelModel() { AssetTransferID = modelIncoming.AssetTransferID });
+        parms.Add("Tmodel", new TripFuelModel() { AssetTransferID = fuelModel.AssetTransferID });
         var dialog = DialogService.Show<TripsFuelDialog>("ADD FUEL", parms, maxWidth);
         var result = await dialog.Result;
     }
@@ -480,6 +441,19 @@
         tranModel.PaymentMode = "Cash"; tranModel.Area = "Operation";
         parms.Add("model", tranModel.Clone());
         var dialog = DialogService.Show<Finance.Transactions.OpTranDialog>("ADD", parms, maxWidth);
+        var result = await dialog.Result;
+    }
+
+    private async Task OpenMileageShortageReceipt(MileageShortageReceiptModel morModel)
+    {
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", new MileageShortageReceiptModel() 
+            { 
+                AssetTransferID = morModel.AssetTransferID
+
+            });
+        var dialog = DialogService.Show<Finance.Transactions.MileageShortageReceiptDialog>("ADD", parms, maxWidth);
         var result = await dialog.Result;
     }
 

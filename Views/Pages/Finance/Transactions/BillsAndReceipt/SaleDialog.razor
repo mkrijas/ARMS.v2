@@ -51,7 +51,7 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.SID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="@SaleDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.SID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
@@ -71,10 +71,11 @@
     public string DocNumber { get; set; }
     public DateTime? DocDate { get; set; }
     public string DocType { get; set; }
-
-    public bool HasAuthoriseEdit { get; set; } = false;
-    int DocTypeID = 13;
     private bool _busy;
+
+    public bool HasPermissionSaleServiceEdit { get; set; } = false;
+    public bool HasPermissionSaleServiceApprove { get; set; } = false;
+    public int SaleDocTypeID = 13;
 
     public GstUsageCodeModel gstusge = new();
     private GstModel taxModel = new GstModel();
@@ -83,7 +84,8 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionSaleServiceEdit = await Irole.HasClaim(SaleDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionSaleServiceApprove = await Irole.HasClaim(SaleDocTypeID.ToString(), "Approve", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
@@ -140,19 +142,28 @@
         SetTotal();
     }
 
-    protected void Approve(DataApprovedStatus aprvd)
+    protected async Task Approve(DataApprovedStatus aprvd)
     {
-        if (aprvd.IsApprove)
+        if (HasPermissionSaleServiceApprove)
         {
-            try
+            if (aprvd.IsApprove)
             {
-                Iservice.Approve(model.SID, UserID, aprvd.Remarks);
-                snackbar.Add("Approved Successfully", Severity.Success);
+                try
+                {
+                    Iservice.Approve(model.SID, UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve Sale.");
         }
     }
 
@@ -165,7 +176,7 @@
         }
         _busy = true;
 
-        if (HasAuthoriseEdit)
+        if (HasPermissionSaleServiceEdit)
         {
             try
             {
@@ -184,7 +195,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to submit.");
+                "You dont have any permission to Edit Sale.");
         }
         await Task.Delay(2000);
         _busy = false;

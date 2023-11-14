@@ -12,9 +12,9 @@ namespace ArmsServices.DataServices
 {
     public interface IPartyService
     {       
-        PartyModel Update(PartyModel model);
+        PartyModel Update(PartyModel model);  //Edit
         PartyModel SelectByID(int? ID);
-        int Delete(int? PartyID, string UserID);
+        int Delete(int? PartyID, string UserID);  //Delete
         IEnumerable<PartyModel> Select(int? PartyID);
         IEnumerable<PartyModel> SelectByCode(string PartyCode,string NatureOfBusiness);     
         IEnumerable<ContactModel> GetContacts(int? PartyID);

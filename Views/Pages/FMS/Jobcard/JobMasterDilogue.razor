@@ -1,7 +1,10 @@
-﻿@inject IRepairJobService Iservice
+﻿@inject IRepairWorkService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -46,8 +49,14 @@
     private string searchString = string.Empty;
     private bool _busy;
 
+    public bool HasPermissionRepairWorkServiceEdit { get; set; } = false;
+    public int RepairWorkDocTypeID = 76;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionRepairWorkServiceEdit = await Irole.HasClaim(RepairWorkDocTypeID.ToString(), "Edit", ctc.Token);
+
         GetAll();
     }
 
@@ -73,11 +82,20 @@
         model.UserInfo.UserID = authprov.User.Identity.Name;
         try
         {
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            collection.Add(model);
-            MudDialog.Close(model);
-            model = new();
+            if (HasPermissionRepairWorkServiceEdit)
+            {
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                collection.Add(model);
+                MudDialog.Close(model);
+                model = new();
+            }
+            else
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Edit RepairWork.");
+            }
         }
         catch (Exception ex)
         {
