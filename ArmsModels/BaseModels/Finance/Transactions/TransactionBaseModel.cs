@@ -48,7 +48,7 @@ namespace ArmsModels.BaseModels
     public class AccountInfoViewSubModel
     {
         public string AccountName { get; set; }
-        public string BranchName { get; set;         
+        public string BranchName { get; set; }       
         public decimal? Amount { get; set; }
         public string drcr { get { return Amount != null && Amount < 0 ? "Cr" : "Dr"; } }
         public string Reference { get; set; }
