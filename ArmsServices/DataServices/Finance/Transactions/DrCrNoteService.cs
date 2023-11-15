@@ -150,6 +150,8 @@ namespace ArmsServices.DataServices
                     PID = dr.GetInt32("DrCrID"),
                     TDS = dr.GetDecimal("TDS"),
                     TpiID = dr.GetInt64("DrCriID"),
+                    CostCenter = dr.GetInt32("CostCenter"),
+                    Dimension = dr.GetInt32("Dimension"),
                 };
             }
         }
