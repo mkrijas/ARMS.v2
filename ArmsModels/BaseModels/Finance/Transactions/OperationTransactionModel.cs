@@ -50,5 +50,7 @@ namespace ArmsModels.BaseModels
         public decimal? Amount { get; set; }
         public decimal? Quantity { get; set; }
         public string Unit { get; set; }
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
     }
 }

@@ -32,6 +32,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? EffectiveDate { get; set; }
         public bool IsRealized { get; set; }
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
         public List<BillsReceiptModel> Bills { get; set; } = new();
     }
 
