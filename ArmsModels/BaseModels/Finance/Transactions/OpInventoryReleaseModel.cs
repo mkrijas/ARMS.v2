@@ -40,5 +40,7 @@ namespace Core.BaseModels.Finance.Transactions
         public virtual string TruckRegNo { get; set; }
         [Required]
         public decimal? ItemQty { get; set; }
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
     }
 }
