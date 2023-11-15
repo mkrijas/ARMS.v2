@@ -149,6 +149,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@LimitToPeriod",model.LimitToPeriod),
                new SqlParameter("@PeriodFrom", model.PeriodFrom),
                new SqlParameter("@PeriodTo", model.PeriodTo),
+               new SqlParameter("@IsDimensionMandatory", model.IsDimensionMandatory),
+               new SqlParameter("@IsCostCenterMandatory", model.IsCostCenterMandatory),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -173,6 +175,8 @@ namespace ArmsServices.DataServices
                 CoaID = dr.GetInt32("CoaID"),
                 ParentID = dr.GetInt32("ParentID"),
                 SummaryAccount = dr.GetBoolean("SummaryAccount"),
+                IsCostCenterMandatory = dr.GetBoolean("IsCostCenterMandatory"),
+                IsDimensionMandatory = dr.GetBoolean("IsDimensionMandatory"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
