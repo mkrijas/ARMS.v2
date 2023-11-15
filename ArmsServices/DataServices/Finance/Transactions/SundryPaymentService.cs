@@ -104,8 +104,10 @@ namespace ArmsServices.DataServices
                     UsageCode = dr.GetString("UsageCode"),
                     Amount = dr.GetDecimal("Amount"),
                     Reference = dr.GetString("Reference"),
-                    CostCenter = dr.GetInt32("CostCenter"),
-                    Dimension = dr.GetInt32("Dimension"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID")
                 };
             }
         }

@@ -155,8 +155,10 @@ namespace ArmsServices.DataServices
                     Quantity = dr.GetDecimal("Quantity"),
                     Reference = dr.GetString("Reference"),
                     Unit = dr.GetString("Unit"),
-                    CostCenter=dr.GetInt32("CostCenter"),
-                    Dimension=dr.GetInt32("Dimension"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID")
                 };
             }
         }

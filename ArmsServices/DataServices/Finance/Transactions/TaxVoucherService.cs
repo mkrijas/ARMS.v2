@@ -55,8 +55,10 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     Amount = dr.GetDecimal("Amount"),
                     AssetID = dr.GetInt32("AssetID"),
                     Asset = new AssetModel() { AssetID = dr.GetInt32("AssetID"), Description = dr.GetString("Description") },
-                    CostCenter = dr.GetInt32("CostCenter"),
-                    Dimension = dr.GetInt32("Dimension"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID"),
                     Reference = dr.GetString("Reference"),
                 };
             }

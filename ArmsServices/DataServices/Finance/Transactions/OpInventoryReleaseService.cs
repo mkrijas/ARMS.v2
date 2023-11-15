@@ -120,8 +120,10 @@ namespace DAL.DataServices.Finance.Transactions
                     TripID = dr.GetInt64("TripID"),
                     ItemQty = dr.GetDecimal("ItemQty"),
                     TripNo = dr.GetString("TripNo"),
-                    CostCenter = dr.GetInt32("CostCenter"),
-                    Dimension = dr.GetInt32("Dimension"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID")
                 };
             }
         }
