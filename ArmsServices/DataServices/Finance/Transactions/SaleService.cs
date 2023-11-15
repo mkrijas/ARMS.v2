@@ -98,7 +98,6 @@ namespace ArmsServices.DataServices
                     TpiID = dr.GetInt64("SiID"),
                     CostCenter = dr.GetInt32("CostCenter"),
                     Dimension = dr.GetInt32("Dimension"),
-                    
                 };
             }
         }
