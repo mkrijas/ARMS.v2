@@ -39,6 +39,8 @@ namespace ArmsModels.BaseModels
         public TariffTypeModel TariffType { get; set; }
         public string Reference { get; set; }
         public GstModel Gst { get; set; } = new();
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
         public List<GcTariffModel> BookedGCs { get; set; }
     }
 
