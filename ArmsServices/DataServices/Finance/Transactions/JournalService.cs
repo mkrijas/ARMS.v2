@@ -132,6 +132,30 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<JournalSubModel> GetSubList(int? JournalID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetSubList"),
+               new SqlParameter("@JournalID", JournalID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Journal.Select]", parameters))
+            {
+                yield return new JournalSubModel()
+                {
+                    Reference = dr.GetString("Reference"),
+                    Debit = new ChartOfAccountModel() { CoaID = dr.GetInt32("DebitCoaID"), AccountName = dr.GetString("Debit") },
+                    Credit = new ChartOfAccountModel() { CoaID = dr.GetInt32("CreditCoaID"), AccountName = dr.GetString("Credit") },
+                    Amount = dr.GetDecimal("Amount"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID")
+                };
+            }
+        }
+
         public JournalModel Update(JournalModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

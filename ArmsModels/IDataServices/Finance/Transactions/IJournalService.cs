@@ -24,6 +24,7 @@ namespace ArmsServices.DataServices
         IEnumerable<JournalModel> SelectByPeriod(DateTime? begin, DateTime? end);       
         int Approve(int? ID, string UserID, string Remarks);
         int Reverse(int? ID, string UserID, string Remarks);
+        public IEnumerable<JournalSubModel> GetSubList(int? JournalID);
     }
 }
 
