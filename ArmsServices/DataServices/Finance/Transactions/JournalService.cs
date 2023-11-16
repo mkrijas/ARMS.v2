@@ -101,9 +101,6 @@ namespace ArmsServices.DataServices
             }
         }
 
-
-
-
         public JournalModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -141,9 +138,6 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@JournalID", model.JournalID),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
-               new SqlParameter("@DebitCoaID", model.Debit.CoaID),
-               new SqlParameter("@CreditCoaID", model.Credit.CoaID),
-               new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@MID", model.MID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
@@ -152,6 +146,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@TaxVoucherSub", model.JournalSubList.ToDataTable()),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Journal.Update]", parameters))
             {
@@ -165,10 +160,6 @@ namespace ArmsServices.DataServices
             return new JournalModel
             {
                 JournalID = dr.GetInt32("JournalID"),
-
-                Reference = dr.GetString("Reference"),
-                Debit = new ChartOfAccountModel() { CoaID = dr.GetInt32("DebitCoaID"), AccountName = dr.GetString("Debit") },
-                Credit = new ChartOfAccountModel() { CoaID = dr.GetInt32("CreditCoaID"), AccountName = dr.GetString("Credit") },
                 BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
@@ -179,7 +170,6 @@ namespace ArmsServices.DataServices
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 Narration = dr.GetString("Narration"),
-
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
