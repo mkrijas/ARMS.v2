@@ -37,6 +37,9 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
         }
+        public string SlipNo { get; set; }
+        public string RefferenceNo { get; set; }
+        public decimal? Amount { get; set; }
         public string AttachedDocument { get; set; }
         public int? RequestID { get; set; }
         public int? DocumentID { get; set; }
