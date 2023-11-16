@@ -16,26 +16,46 @@
                     <MudItem xs="12" md="4">
                         <MudDatePicker Label="DocumentDate" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <CoaSelector @bind-Value="model.Debit" LabelName="Debit Ac" ReadOnly="ReadOnly" />
-                    </MudItem>
-                    <MudItem xs="12" md="12">
-                        <CoaSelector @bind-Value="model.Credit" LabelName="Credit Ac" ReadOnly="ReadOnly" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <DimensionSelector @bind-Value="model.Dimension" ReadOnly="@ReadOnly" />
-                    </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <h6><u>Items</u></h6>
+                        <MudGrid Justify="Justify.Center">
+                            <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Debit Ac</u></strong> </span></MudItem>
+                            <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Credit Ac</u></strong> </span></MudItem>
+                            <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Cost Center</u></strong> </span></MudItem>
+                            <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Dimension</u></strong> </span></MudItem>
+                            <MudItem xs="2" Class="d-flex align-center"><span><strong><u>Amount</u></strong> </span></MudItem>
+                            <MudItem xs="2" Class="d-flex align-center"><span><strong><u>Reference</u></strong> </span></MudItem>
+                            <MudItem xs="2"></MudItem>
+                            @foreach (var item in model.JournalSubList)
+                            {
+                                <MudItem xs="2"> @item.Debit </MudItem>
+                                <MudItem xs="2"> @item.Credit </MudItem>
+                                <MudItem xs="2"> @item.CostCenterVal</MudItem>
+                                <MudItem xs="2"> @item.DimensionVal</MudItem>
+                                <MudItem xs="2"> @item.Amount </MudItem>
+                                <MudItem xs="2"> @item.Reference </MudItem>
+                                <MudItem xs="1" Class="d-flex">
+                                    @if (!ReadOnly)
+                                    {
+                                        <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteSubList(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+
+                                    }
+                                </MudItem>
+                            }
+                            @if (!ReadOnly)
+                            {
+                                <MudItem xs="2"><CoaSelector @bind-Value="JournalSub.Debit" LabelName="Debit Ac" ReadOnly="ReadOnly" /></MudItem>
+                                <MudItem xs="2"><CoaSelector @bind-Value="JournalSub.Credit" LabelName="Credit Ac" ReadOnly="ReadOnly" /></MudItem>
+                                <MudItem xs="3"><CostCenterSelector @bind-Value="JournalSub.CostCenter" ReadOnly="@ReadOnly" /></MudItem>
+                                <MudItem xs="3"><DimensionSelector @bind-Value="JournalSub.Dimension" ReadOnly="@ReadOnly" /></MudItem>
+                                <MudItem xs="3"><MudNumericField HideSpinButtons Label="Item Rate" @bind-Value="@JournalSub.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField></MudItem>
+                                <MudItem xs="4"><MudTextField ReadOnly="ReadOnly" @bind-Value="@JournalSub.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudItem>
+                                <MudItem xs="1" Class="d-flex align-center"><MudIconButton Title="Add" OnClick="AddSubList" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" /></MudItem>
+                            }
+                        </MudGrid>
                     </MudItem>
                 </MudGrid>
             </EditForm>
@@ -52,6 +72,7 @@
     public JournalModel model { get; set; }
     [Parameter]
     public bool ReadOnly { get; set; }
+    private JournalSubModel JournalSub { get; set; } = new();
     private int? branchID = null;
     private string UserID = null;
     private EditContext editContext;
@@ -61,7 +82,7 @@
     public string DocNumber { get; set; }
     public DateTime? DocDate { get; set; }
     public string DocType { get; set; }
-
+    public List<JournalSubModel> SubList { get; set; }
     private bool _busy;
     public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 18;
@@ -97,6 +118,41 @@
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
+    }
+
+    private void DeleteSubList(JournalSubModel JournalSub)
+    {
+        if (model.JournalSubList.Exists(x => x.JournalSubID == JournalSub.JournalSubID))
+        {
+            int rowIndex = model.JournalSubList.IndexOf(JournalSub);
+            model.JournalSubList.RemoveAt(rowIndex);
+            model.TotalAmount = model.JournalSubList.Sum(x => x.Amount);
+        }
+    }
+
+    public void AddSubList()
+    {
+        if (JournalSub.Debit == null)
+        {
+            snackbar.Add("Please select Debit Ac", Severity.Error);
+            return;
+        }
+        if (JournalSub.Credit == null)
+        {
+            snackbar.Add("Please select Credit Ac", Severity.Error);
+            return;
+        }
+        if (JournalSub.Amount == null)
+        {
+            snackbar.Add("Please add Amount.", Severity.Error);
+            return;
+        }
+        if (dialogForm.validate(JournalSub, editContext))
+        {
+            model.JournalSubList.Add(JournalSub);
+            model.TotalAmount = model.JournalSubList.Sum(x => x.Amount);
+            JournalSub = new();
+        }
     }
 
     public async Task OnValidSubmit()
