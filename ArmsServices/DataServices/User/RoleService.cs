@@ -191,7 +191,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RoleID", role.RoleID),
                new SqlParameter("ClaimType",claim.Type),
                new SqlParameter("ClaimValue",claim.Value),
-               new SqlParameter("UserID",role.UserInfo.UserID)
+               new SqlParameter("UserID",role.UserInfo.UserID),
+               new SqlParameter("Operation","Check"),
             };
 
             Iservice.ExecuteNonQuery("[usp.user.RoleClaims.Update]", parameters);
@@ -206,7 +207,8 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@RoleID", role.RoleID),
                new SqlParameter("ClaimType",claim.Type),
-               new SqlParameter("ClaimValue",claim.Value)
+               new SqlParameter("ClaimValue",claim.Value),
+               new SqlParameter("Operation","UnCheck"),
             };
 
             Iservice.ExecuteNonQuery("[usp.user.RoleClaims.Delete]", parameters);
@@ -219,8 +221,6 @@ namespace ArmsServices.DataServices
                 RoleID = reader.GetString("RoleID"),
                 RoleNo = reader.GetInt32("RoleNo"),
                 RoleDesc = reader.GetString("RoleDesc"),
-
-
             };
         }
         public IEnumerable<RoleModel> Select(string RoleID)
@@ -260,6 +260,16 @@ namespace ArmsServices.DataServices
                 Claims.Add(new Claim(dr.GetString("ClaimType"), dr.GetString("ClaimValue")));
             };
             return Task.FromResult(Claims);
+        }
+
+        public Task<bool> SelectAllPermissions(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> DeSelectAllPermissions(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
     }
 }

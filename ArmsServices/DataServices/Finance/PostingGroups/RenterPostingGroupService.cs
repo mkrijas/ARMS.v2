@@ -97,20 +97,23 @@ namespace ArmsServices.DataServices
                 Rent = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("Rent"),
+                    ParentID = dr.GetInt32("RentParentID"),
                     AccountCode = dr.GetString("RentCoaCode"),
                     AccountName = dr.GetString("RentCoa"),
-                },
-                Other = new ChartOfAccountModel()
-                {
-                    CoaID = dr.GetInt32("Other"),
-                    AccountCode = dr.GetString("OtherCoaCode"),
-                    AccountName = dr.GetString("OtherCoa"),
                 },
                 Deposit = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("Deposit"),
+                    ParentID = dr.GetInt32("DepositParentID"),
                     AccountCode = dr.GetString("DepositCoaCode"),
                     AccountName = dr.GetString("DepositCoa"),
+                },
+                Other = new ChartOfAccountModel()
+                {
+                    CoaID = dr.GetInt32("Other"),
+                    ParentID = dr.GetInt32("OtherParentID"),
+                    AccountCode = dr.GetString("OtherCoaCode"),
+                    AccountName = dr.GetString("OtherCoa"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

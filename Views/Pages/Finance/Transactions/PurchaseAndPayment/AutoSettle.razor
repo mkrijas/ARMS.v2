@@ -4,6 +4,8 @@
 @inject NavigationManager uriHelper;
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudPaper Class="p-3 mb-3">
@@ -54,6 +56,15 @@
     private List<OutstandingBillsModel> collection = new();
     private HashSet<OutstandingBillsModel> selectedItems = new();
 
+    public bool HasPermissionOutstandingBillsServiceAutoSettle { get; set; } = false;
+    public int OutstandingBillsDocTypeID = 91;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionOutstandingBillsServiceAutoSettle = await Irole.HasClaim(OutstandingBillsDocTypeID.ToString(), "AutoSettle", ctc.Token);
+    }
+
     public async Task fetch()
     {
         await GetOutstandingBillDetails();
@@ -69,33 +80,42 @@
 
     private async Task Settle()
     {
-        if (selectedItems.Any())
+        if (HasPermissionOutstandingBillsServiceAutoSettle)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
-            model.UserInfo.UserID = user.Identity.Name;
-            List<BillsPaidModel> selBills = new();
-            foreach (var item in selectedItems)
+            if (selectedItems.Any())
             {
-                selBills.Add(new BillsPaidModel()
-                    {
-                        BpID = item.BoID,
-                        MID = item.MID,
-                        PayAmount = item.OutstandingAmount,
-                        IsMemo = item.isMemo,
-                    });
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                model.BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+                model.UserInfo.UserID = user.Identity.Name;
+                List<BillsPaidModel> selBills = new();
+                foreach (var item in selectedItems)
+                {
+                    selBills.Add(new BillsPaidModel()
+                        {
+                            BpID = item.BoID,
+                            MID = item.MID,
+                            PayAmount = item.OutstandingAmount,
+                            IsMemo = item.isMemo,
+                        });
+                }
+                try
+                {
+                    int? result = Iservice.AutoSettle(model, selBills);
+                    await GetOutstandingBillDetails();
+                    snackbar.Add("AutoSettled Successfully ", Severity.Success);//value = "visible";
+                }
+                catch
+                {
+                    snackbar.Add("Something went wrong! ", Severity.Error);
+                }
             }
-            try
-            {
-                int? result = Iservice.AutoSettle(model, selBills);
-                await GetOutstandingBillDetails();
-                snackbar.Add("AutoSettled Successfully ", Severity.Success);//value = "visible";
-            }
-            catch
-            {
-                snackbar.Add("Something went wrog! ", Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to AutoSettle OutstandingBills.");
         }
     }
 }

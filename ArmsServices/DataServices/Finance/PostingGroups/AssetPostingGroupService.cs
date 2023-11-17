@@ -98,36 +98,42 @@ namespace ArmsServices.DataServices
                 Capitalization = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("CapitalizationID"),
+                    ParentID = dr.GetInt32("CapitalizationParentID"),
                     AccountCode = dr.GetString("CapitalizationCoaCode"),
                     AccountName = dr.GetString("CapitalizationCoa"),
                 },
                 CWIP = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("CWIPID"),
+                    ParentID = dr.GetInt32("CWIPParentID"),
                     AccountCode = dr.GetString("CWIPCoaCode"),
                     AccountName = dr.GetString("CWIPCoa"),
                 },
                 Depreciation = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("DepreciationID"),
+                    ParentID = dr.GetInt32("DepreciationParentID"),
                     AccountCode = dr.GetString("DepreciationCoaCode"),
                     AccountName = dr.GetString("DepreciationCoa"),
                 },
                 AccummulatedDepreciation = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("AccummulatedDepreciationID"),
+                    ParentID = dr.GetInt32("AccummulatedDepreciationParentID"),
                     AccountCode = dr.GetString("AccummulatedDepreciationCoaCode"),
                     AccountName = dr.GetString("AccummulatedDepreciationCoa"),
                 },
                 Revaluation = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("RevaluationID"),
+                    ParentID = dr.GetInt32("RevaluationParentID"),
                     AccountCode = dr.GetString("RevaluationCoaCode"),
                     AccountName = dr.GetString("RevaluationCoa"),
                 },
                 RevaluationReserve = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("RevaluationReserveID"),
+                    ParentID = dr.GetInt32("RevaluationReserveParentID"),
                     AccountCode = dr.GetString("RevaluationReserveCoaCode"),
                     AccountName = dr.GetString("RevaluationReserveCoa"),
                 },
