@@ -150,6 +150,8 @@ namespace ArmsServices.DataServices
                     PID = dr.GetInt32("DrCrID"),
                     TDS = dr.GetDecimal("TDS"),
                     TpiID = dr.GetInt64("DrCriID"),
+                    CostCenter = dr.GetInt32("CostCenter"),
+                    Dimension = dr.GetInt32("Dimension"),
                 };
             }
         }
@@ -272,9 +274,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@MID", model.MID),               
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
-               new SqlParameter("@Particulars", model.Particulars.ToDataTable()),               
-               new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@Particulars", model.Particulars.ToDataTable()), 
                new SqlParameter("@Items", model.Items.ToDataTable()),
                new SqlParameter("@PartyCoaID", model.PartyCoaID),
                new SqlParameter("@PartyID", model.Party.PartyID),
@@ -307,10 +307,8 @@ namespace ArmsServices.DataServices
                 DocumentNumber = dr.GetString("DocumentNumber"),                
                 MID = dr.GetInt32("MID"),
                 FileName = dr.GetString("FilePath"),
-                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
-                CostCenter = dr.GetInt32("CostCenter"),
-                BusinessNature = dr.GetString("NatureOfFirm"),
-                Dimension = dr.GetInt32("Dimension"),              
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
+                BusinessNature = dr.GetString("NatureOfFirm"),                            
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),

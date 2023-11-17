@@ -34,6 +34,8 @@ namespace ArmsModels.BaseModels
         public DateTime? PeriodFrom { get; set; }
         [RequiredIfTrue("LimitToPeriod", ErrorMessage = "Select the End date")]
         public DateTime? PeriodTo { get; set; }
+        public bool IsCostCenterMandatory { get; set; }
+        public bool IsDimensionMandatory { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 

@@ -1,0 +1,135 @@
+﻿@inject IPaymentInitiatedService iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@using System.Text;
+@inject IJSRuntime JSRuntime
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Initiate Payment  : @docNum
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm id="InitiatePaymentForm" Model="@PI" OnValidSubmit="OnValidSubmit">
+            <ObjectGraphDataAnnotationsValidator />
+            <ValidationSummary />
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudDatePicker ReadOnly="@ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="PI.InitiatedDocumentDate" DateFormat="dd/MM/yyyy" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField ReadOnly Value="PI.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                </MudItem>                
+                <MudItem xs="12" md="6">
+                    <MudDatePicker ReadOnly="@ReadOnly" Label="Due On" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="PI.DueOn" DateFormat="dd/MM/yyyy" />
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+
+        <MudTable Class="mb-3" T="PaymentMemoModel" Items="@PI.SelectedMemos" Hover="true"
+                  SelectOnRowClick>
+            <HeaderContent>
+                <MudTh>Memo Date</MudTh>
+                <MudTh>Party</MudTh>
+                <MudTh>Amount</MudTh>
+                <MudTh>Reference</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
+                <MudTd DataLabel="Party">@context.PartyInfo.TradeName</MudTd>
+                <MudTd DataLabel="Amount">@context.TotalAmount</MudTd>
+                <MudTd DataLabel="Reference">@context.Reference</MudTd>
+            </RowTemplate>
+
+        </MudTable>
+        @if(ReadOnly)
+        {           
+          <AutherizationStatusComponent DocTypeID="15" DocDate="@PI.InitiatedDocumentDate" DocType="PaymentInitiate" DocNumber="@PI.DocumentNumber" DocumentID="@PI.PaymentInitiatedID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(()=> MudDialog.Cancel())">Cancel</MudButton>
+        @if(!ReadOnly)
+        {
+            <MudButton Disabled="@_busy" form="InitiatePaymentForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="@ExportToCsv">Export Memos</MudButton>            
+        }
+    </DialogActions>
+</MudDialog>
+@code {
+
+
+    [Parameter]
+    public PaymentInitiatedModel PI { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; } = true;
+
+    private bool _busy;
+    string docNum;
+    string UserID;
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }    
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+
+        if (PI.PaymentInitiatedID == null)
+        {
+            docNum = "New";
+        }
+        else
+        {
+            docNum = PI.DocumentNumber;
+        }
+    }
+
+    private async Task OnValidSubmit()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        MudDialog.Close(PI); 
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+
+    protected void ApproveEntry(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+            try
+            {
+                iservice.Approve(PI.PaymentInitiatedID, UserID, aprvd.Remarks);
+                snackbar.Add("Approved Successfully", Severity.Success);
+                PI.AuthLevelId = 99;
+                PI.AuthStatus = "Approved";
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+
+    private async Task ExportToCsv()
+    {
+        List<PaymentMemoPrintDetailModel> data =  iservice.GetPaymentMemoPrintDetails(PI.PaymentInitiatedID).ToList();
+        var excelBytes = ExcelService.GenerateExcelWorkbook(data);
+        await JSRuntime.InvokeVoidAsync("saveAsFile", $"test_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.xlsx", Convert.ToBase64String(excelBytes));
+    }
+
+
+  
+}

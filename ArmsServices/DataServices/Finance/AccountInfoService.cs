@@ -48,7 +48,9 @@ namespace ArmsServices.DataServices
                     Amount = dr.GetDecimal("Amount"),
                     AccountName =  dr.GetString("AccountName"),
                     BranchName = dr.GetString("BranchName"),
-                    Reference = dr.GetString("EntryReference")
+                    Reference = dr.GetString("EntryReference"),
+                    CostCenter = dr.GetString("CostCenter"),
+                    Dimension = dr.GetString("Dimension")
                 };
             }
         }
@@ -56,9 +58,7 @@ namespace ArmsServices.DataServices
         private AccountInfoViewModel GetModel(IDataRecord dr,int? MID)
         {
             return new AccountInfoViewModel()
-            {
-               CostCenter = dr.GetString("CostCenter"),
-               Dimension = dr.GetString("Dimension"),
+            {               
                DocumentDate = dr.GetDateTime("DocDate"),
                DocumentNumber = dr.GetString("DocNumber"),
                Narration = dr.GetString("Narration"),

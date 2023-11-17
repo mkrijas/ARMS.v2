@@ -101,9 +101,6 @@ namespace ArmsServices.DataServices
             }
         }
 
-
-
-
         public JournalModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -135,25 +132,55 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<JournalSubModel> GetSubList(int? JournalID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetSubList"),
+               new SqlParameter("@JournalID", JournalID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Journal.Select]", parameters))
+            {
+                yield return new JournalSubModel()
+                {
+                    JournalSubID = dr.GetInt32("JournalSubID"),
+                    JournalID = dr.GetInt32("JournalID"),
+                    Reference = dr.GetString("Reference"),
+                    Debit = new ChartOfAccountModel() 
+                    { 
+                        CoaID = dr.GetInt32("DebitCoaID"), 
+                        AccountName = dr.GetString("Debit") 
+                    },
+                    Credit = new ChartOfAccountModel() 
+                    { 
+                        CoaID = dr.GetInt32("CreditCoaID"), 
+                        AccountName = dr.GetString("Credit") 
+                    },
+                    Amount = dr.GetDecimal("Amount"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID")
+                };
+            }
+        }
+
         public JournalModel Update(JournalModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@JournalID", model.JournalID),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
-               new SqlParameter("@DebitCoaID", model.Debit.CoaID),
-               new SqlParameter("@CreditCoaID", model.Credit.CoaID),
-               new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@MID", model.MID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
-               new SqlParameter("@DocumentNumber", model.DocumentNumber),
-               new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@DocumentNumber", model.DocumentNumber),               
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@JournalSub", model.JournalSubList.ToDataTable()),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Journal.Update]", parameters))
             {
@@ -167,23 +194,16 @@ namespace ArmsServices.DataServices
             return new JournalModel
             {
                 JournalID = dr.GetInt32("JournalID"),
-
-                Reference = dr.GetString("Reference"),
-                Debit = new ChartOfAccountModel() { CoaID = dr.GetInt32("DebitCoaID"), AccountName = dr.GetString("Debit") },
-                Credit = new ChartOfAccountModel() { CoaID = dr.GetInt32("CreditCoaID"), AccountName = dr.GetString("Credit") },
                 BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),
-                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
-                CostCenter = dr.GetInt32("CostCenter"),
-                FileName= dr.GetString("FilePath"),
-                Dimension = dr.GetInt32("Dimension"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
+                FileName= dr.GetString("FilePath"),                
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 Narration = dr.GetString("Narration"),
-
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

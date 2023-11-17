@@ -85,24 +85,17 @@ namespace ArmsServices.DataServices
         PaymentFinishModel GetModel(IDataRecord dr)
         {
             return new PaymentFinishModel()
-            {
-                BranchID = dr.GetInt32("BranchID"),
-                PaymentMemoID = dr.GetInt32("PaymentMemoID"),
+            {                
+                BranchID = dr.GetInt32("BranchID"),                
                 PaymentFinalizeID = dr.GetInt32("PaymentFinalizeID"),
                 PaymentInitiatedID = dr.GetInt32("PaymentInitiatedID"),
-                DueOn = dr.GetDateTime("DueOn"),                
-                PaymentStatus = dr.GetByte("PaymentStatus"),
+                DueOn = dr.GetDateTime("DueOn"), 
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 EffectiveDate = dr.GetDateTime("EffectiveDate"),
-                InitiatedDocumentDate = dr.GetDateTime("InitiatedDocumentDate"),                
-                PartyInfo = new PartyModel() { PartyID = dr.GetInt32("PartyID"), TradeName = dr.GetString("TradeName") },
+                InitiatedDocumentDate = dr.GetDateTime("InitiatedDocumentDate"), 
                 MID = dr.GetInt32("MID"),
-                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
-                CostCenter = dr.GetInt32("CostCenter"),
-                Dimension = dr.GetInt32("Dimension"),
-                FileName = dr.GetString("FilePath"),
-                BusinessNature = dr.GetString("BusinessNature"),
-                PartyCoaID = dr.GetInt32("PartyCoaID"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
+                FileName = dr.GetString("FilePath"),                
                 OtherBranchID = dr.GetInt32("OtherBranchID"),
                 IsInterBranch = dr.GetBoolean(""),
                 InterBranchTranID = dr.GetInt32("InterBranchTranID"),

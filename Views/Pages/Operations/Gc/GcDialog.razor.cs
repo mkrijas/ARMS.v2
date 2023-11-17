@@ -83,7 +83,7 @@ namespace Views.Pages.Operations.Gc
         }
         private void GetFreight(GcSetModel GcSet)
         {
-            GcSet.Gcs.ForEach(x => x.Freight = Iservice.GetFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
+            GcSet.Gcs.ForEach(x => x.Freight = Iservice.GetPrimaryFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
         }
 
         private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)

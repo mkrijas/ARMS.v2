@@ -8,9 +8,9 @@ namespace ArmsServices.DataServices
 {
     public interface IPaymentFinalizeService
     {
-        int Approve(int? PID, string UserID, string Remarks);
+        int Approve(int? PID, string UserID, string Remarks);  //Approve
         IEnumerable<PaymentFinishModel> Select(int? BranchID, int? FinalizeID, int? NumberOfRecords, string searchTerm);
         IEnumerable<PaymentFinishModel> SelectByPeriod(int? BranchID, DateTime Begin, DateTime End);
-        int? Update(PaymentFinishModel model);
+        int? Update(PaymentFinishModel model);  //Edit
     }
 }

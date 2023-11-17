@@ -119,7 +119,11 @@ namespace DAL.DataServices.Finance.Transactions
                     TruckRegNo = dr.GetString("RegNo"),
                     TripID = dr.GetInt64("TripID"),
                     ItemQty = dr.GetDecimal("ItemQty"),
-                    TripNo = dr.GetString("TripNo")
+                    TripNo = dr.GetString("TripNo"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID")
                 };
             }
         }
@@ -143,8 +147,6 @@ namespace DAL.DataServices.Finance.Transactions
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),
-               new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@ItemID", model.Item?.InventoryItemID??0),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
@@ -175,8 +177,6 @@ namespace DAL.DataServices.Finance.Transactions
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 MID = dr.GetInt32("MID"),
-                CostCenter = dr.GetInt32("CostCenter"),
-                Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
 

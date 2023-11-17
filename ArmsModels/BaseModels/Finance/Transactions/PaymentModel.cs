@@ -24,9 +24,23 @@ namespace ArmsModels.BaseModels
         public PartyModel PartyInfo { get; set; }
         public int? PartyCoaID { get; set; }
         public string Reference { get; set; }
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
         [Required]
         public byte? PaymentStatus { get; set; } = 0; // 0 - generated; 1 - initiated; 2 - completed;
         public List<BillsPaidModel> Bills { get; set; } = new();
+    }
+
+    public class PaymentMemoPrintDetailModel
+    {
+        public int? PaymentMemoID { get; set; }
+        public string DocNumber { get; set; }
+        public string PartyName { get; set; }
+        public string IfscCode { get; set; }
+        public string BankAccount { get; set; }
+        public string BeneficiaryName { get; set; }
+        public decimal? Amount { get; set; }
+        public DateTime? DueOn { get; set; }       
     }
 
     public class BillsPaidModel
@@ -51,66 +65,32 @@ namespace ArmsModels.BaseModels
         public virtual DateTime? InvoiceDate { get; set; }
     }
 
-    public class PaymentInitiatedModel : PaymentMemoModel, ICloneable
-    {
-        public object Clone()
-        {
-            string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<PaymentInitiatedModel>(Json);
-        }
-        public PaymentInitiatedModel(PaymentMemoModel ToCopy)
-        {
-            Type type = typeof(PaymentMemoModel);
-
-            foreach (System.Reflection.PropertyInfo pi in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
-            {
-                object Value = type.GetProperty(pi.Name).GetValue(ToCopy, null);
-                if (Value != null)
-                    this.GetType().GetProperty(pi.Name).SetValue(this, Value, null);
-            }
-        }
-        public PaymentInitiatedModel()
-        {
-
-        }
+    public class PaymentInitiatedModel :  ICloneable
+    {           
         public int? PaymentInitiatedID { get; set; }
         [Required]
         public DateTime? DueOn { get; set; }
         [Required]
         public DateTime? InitiatedDocumentDate { get; set; } = DateTime.Today;
-    }
+        public string DocumentNumber { get; set; }
+        public int? BranchID { get; set; }
+        public decimal? TotalAmount { get; set; }
+        public List<PaymentMemoModel> SelectedMemos { get; set; } = new();
+        public int? AuthLevelId { get; set; }
+        public string AuthStatus { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }        
 
-    public class PaymentFinishModel : PaymentInitiatedModel, ICloneable
-    {
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<PaymentFinishModel>(Json);
+            return JsonConvert.DeserializeObject<PaymentInitiatedModel>(Json);
         }
-        public PaymentFinishModel()
-        {
 
-        }
-        public PaymentFinishModel(PaymentMemoModel ToCopy)
-        {
-            Type type = typeof(PaymentMemoModel);
-            foreach (System.Reflection.PropertyInfo pi in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
-            {
-                object Value = type.GetProperty(pi.Name).GetValue(ToCopy, null);
-                if (Value != null)
-                    this.GetType().GetProperty(pi.Name).SetValue(this, Value, null);
-            }
-        }
-        public PaymentFinishModel(PaymentInitiatedModel ToCopy)
-        {
-            Type type = typeof(PaymentMemoModel);
-            foreach (System.Reflection.PropertyInfo pi in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
-            {
-                object Value = type.GetProperty(pi.Name).GetValue(ToCopy, null);
-                if (Value != null)
-                    this.GetType().GetProperty(pi.Name).SetValue(this, Value, null);
-            }
-        }
+    }
+
+    public class PaymentFinishModel : TransactionBaseModel, ICloneable
+    {  
+        
         public int? PaymentFinalizeID { get; set; }
         [Required]
         public string PaymentMode { get; set; }  // Bank,Cash   
@@ -122,5 +102,30 @@ namespace ArmsModels.BaseModels
         public int? PaymentCoaID { get; set; }
         [Required]
         public DateTime? EffectiveDate { get; set; } = DateTime.Today;
+        public int? PaymentInitiatedID { get; set; }
+        
+        public DateTime? DueOn { get; set; }
+        
+        public DateTime? InitiatedDocumentDate { get; set; } = DateTime.Today;
+        
+        public List<PaymentMemoModel> SelectedMemos { get; set; } = new();
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<PaymentFinishModel>(Json);
+        }
+        //public PaymentFinishModel(PaymentMemoModel ToCopy)
+        //{
+        //    Type type = typeof(PaymentMemoModel);
+        //    foreach (System.Reflection.PropertyInfo pi in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+        //    {
+        //        object Value = type.GetProperty(pi.Name).GetValue(ToCopy, null);
+        //        if (Value != null)
+        //            this.GetType().GetProperty(pi.Name).SetValue(this, Value, null);
+        //    }
+        //}
+        public PaymentFinishModel()
+        {           
+        }
     }
 }

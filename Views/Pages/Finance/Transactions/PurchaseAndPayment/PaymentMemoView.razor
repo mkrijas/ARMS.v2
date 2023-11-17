@@ -68,13 +68,7 @@
                         <MudTooltip Text="Verify">
                             <MudFab @onclick="@(()=> OpenDialogpayment(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
-                    }
-                    @if (@context.AuthLevelId == 99 && context.PaymentStatus == 0)
-                    {
-                        <MudTooltip Text="Initiate PaymentMemo">
-                            <MudFab @onclick="@(()=> Initiate(context))" Color="Color.Success" Icon="@Icons.Material.Filled.Payment" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip>
-                    }
+                    }                   
                     <MudTooltip Text="view">
                         <MudFab @onclick="@(()=> OpenDialogpayment(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                     </MudTooltip>
@@ -237,53 +231,5 @@
         }
     }
 
-    private async Task Initiate(PaymentMemoModel pm)
-    {
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
-            return;
-        }
-
-        if (HasPermissionPaymentInitiatedServiceInitiate)
-        {
-            PaymentInitiatedModel pi = new PaymentInitiatedModel(pm);
-            if (pi.PaymentMemoID != null)
-            {
-                if (pi.AuthLevelId != 99)
-                {
-                    snackbar.Add(pm.DocumentNumber + "is Not Approved!", Severity.Error);
-                    return;
-                }
-                _busy = true;
-                pi.Bills = Iservice.GetBills(pi.PaymentMemoID).ToList();
-                pi.PaymentStatus = 1;
-                DialogParameters parms = new DialogParameters();
-                parms.Add("PI", pi.Clone());
-                var dialog = DialogService.Show<InitiatePaymentMemo>("Payment", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
-                var result = await dialog.Result;
-                if (!result.Canceled)
-                {
-                    PaymentInitiatedModel UpdatedModel = (PaymentInitiatedModel)result.Data;
-                    UpdatedModel.UserInfo.UserID = UserID;
-                    UpdatedModel.BranchID = branchID;
-                    IinitiateService.Update(UpdatedModel);
-                    GetAll(IsApproved, NumberOfRecords);
-                }
-            }
-            else
-            {
-                snackbar.Add("Please Select Memo", Severity.Success);
-                return;
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Initiate PaymentInitiated.");
-        }
-        await Task.Delay(200);
-        _busy = false;
-    }
+   
 }

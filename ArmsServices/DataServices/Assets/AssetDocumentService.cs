@@ -28,6 +28,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AssetID", model.Asset.AssetID),
                new SqlParameter("@ReferenceDate", model.InvoiceDate),
                new SqlParameter("@NotificationID", model.NotificationID),
+               new SqlParameter("@ReceiptNo", model.ReceiptNo),
+               new SqlParameter("@Refference", model.Refference),
+               new SqlParameter("@Amount", model.Amount),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Update]", parameters))
@@ -172,6 +175,9 @@ namespace ArmsServices.DataServices
                     AssetID = dr.GetInt32("AssetID"),
                 },
                 NotificationID = dr.GetInt32("NotificationID"),
+                ReceiptNo = dr.GetString("ReceiptNo"),
+                Refference = dr.GetString("Refference"),
+                Amount = dr.GetDecimal("NotificationID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
