@@ -144,9 +144,19 @@ namespace ArmsServices.DataServices
             {
                 yield return new JournalSubModel()
                 {
+                    JournalSubID = dr.GetInt32("JournalSubID"),
+                    JournalID = dr.GetInt32("JournalID"),
                     Reference = dr.GetString("Reference"),
-                    Debit = new ChartOfAccountModel() { CoaID = dr.GetInt32("DebitCoaID"), AccountName = dr.GetString("Debit") },
-                    Credit = new ChartOfAccountModel() { CoaID = dr.GetInt32("CreditCoaID"), AccountName = dr.GetString("Credit") },
+                    Debit = new ChartOfAccountModel() 
+                    { 
+                        CoaID = dr.GetInt32("DebitCoaID"), 
+                        AccountName = dr.GetString("Debit") 
+                    },
+                    Credit = new ChartOfAccountModel() 
+                    { 
+                        CoaID = dr.GetInt32("CreditCoaID"), 
+                        AccountName = dr.GetString("Credit") 
+                    },
                     Amount = dr.GetDecimal("Amount"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),
@@ -170,7 +180,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-               new SqlParameter("@TaxVoucherSub", model.JournalSubList.ToDataTable()),
+               new SqlParameter("@JournalSub", model.JournalSubList.ToDataTable()),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Journal.Update]", parameters))
             {

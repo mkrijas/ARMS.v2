@@ -25,10 +25,12 @@ namespace ArmsModels.BaseModels
     {
         public int? JournalSubID { get; set; }
         public int? JournalID { get; set; }
+        public int? DebitCoaID { get; set; }
         [Required]
-        public ChartOfAccountModel Debit { get; set; }
+        public virtual ChartOfAccountModel Debit { get; set; }
+        public int? CreditCoaID { get; set; }
         [Required]
-        public ChartOfAccountModel Credit { get; set; }
+        public virtual ChartOfAccountModel Credit { get; set; }
         public decimal? Amount { get; set; }
         public string Reference { get; set; }
         public int? CostCenter { get; set; }
