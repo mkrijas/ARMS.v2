@@ -98,18 +98,21 @@ namespace ArmsServices.DataServices
                 Receivable = new ChartOfAccountModel()
                 {
                     CoaID  = dr.GetInt32("Recievable"),
+                    ParentID = dr.GetInt32("RecievableParentID"),
                     AccountCode = dr.GetString("RecievableCoaCode"),
                     AccountName = dr.GetString("RecievableCoa"),
                 },
                 PrePayment = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("PrePayment"),
+                    ParentID = dr.GetInt32("PrePaymentParentID"),
                     AccountCode = dr.GetString("PrePaymentCoaCode"),
                     AccountName = dr.GetString("PrePaymentCoa"),
                 },
                 Deposit = new ChartOfAccountModel()
                 {
                     CoaID = dr.GetInt32("Deposit"),
+                    ParentID = dr.GetInt32("DepositParentID"),
                     AccountCode = dr.GetString("DepositCoaCode"),
                     AccountName = dr.GetString("DepositCoa"),
                 },

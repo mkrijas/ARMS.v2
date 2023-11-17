@@ -100,7 +100,7 @@
     public int? id { get; set; } = null;
     private int? branchID = null;
     private string UserID = null;
-    
+
     #region SignaIR Notification
 
     private PushNotificationModel notificationMessage = new PushNotificationModel();
@@ -121,6 +121,9 @@
 
     public bool HasPermissionPaymentServiceDelete { get; set; } = false;
     public int PaymentDocTypeID = 7;
+
+    public bool HasPermissionPaymentInitiatedServiceInitiate { get; set; } = false;
+    public int PaymentInitiatedDocTypeID = 15;
 
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
@@ -145,6 +148,7 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionPaymentServiceDelete = await Irole.HasClaim(PaymentDocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionPaymentInitiatedServiceInitiate = await Irole.HasClaim(PaymentInitiatedDocTypeID.ToString(), "Initiate", ctc.Token);
 
         model = new();
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -241,34 +245,43 @@
             return;
         }
 
-        PaymentInitiatedModel pi = new PaymentInitiatedModel(pm);
-        if (pi.PaymentMemoID != null)
+        if (HasPermissionPaymentInitiatedServiceInitiate)
         {
-            if (pi.AuthLevelId != 99)
+            PaymentInitiatedModel pi = new PaymentInitiatedModel(pm);
+            if (pi.PaymentMemoID != null)
             {
-                snackbar.Add(pm.DocumentNumber + "is Not Approved!", Severity.Error);
-                return;
+                if (pi.AuthLevelId != 99)
+                {
+                    snackbar.Add(pm.DocumentNumber + "is Not Approved!", Severity.Error);
+                    return;
+                }
+                _busy = true;
+                pi.Bills = Iservice.GetBills(pi.PaymentMemoID).ToList();
+                pi.PaymentStatus = 1;
+                DialogParameters parms = new DialogParameters();
+                parms.Add("PI", pi.Clone());
+                var dialog = DialogService.Show<InitiatePaymentMemo>("Payment", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
+                var result = await dialog.Result;
+                if (!result.Canceled)
+                {
+                    PaymentInitiatedModel UpdatedModel = (PaymentInitiatedModel)result.Data;
+                    UpdatedModel.UserInfo.UserID = UserID;
+                    UpdatedModel.BranchID = branchID;
+                    IinitiateService.Update(UpdatedModel);
+                    GetAll(IsApproved, NumberOfRecords);
+                }
             }
-            _busy = true;
-            pi.Bills = Iservice.GetBills(pi.PaymentMemoID).ToList();
-            pi.PaymentStatus = 1;
-            DialogParameters parms = new DialogParameters();
-            parms.Add("PI", pi.Clone());
-            var dialog = DialogService.Show<InitiatePaymentMemo>("Payment", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
-            var result = await dialog.Result;
-            if (!result.Canceled)
+            else
             {
-                PaymentInitiatedModel UpdatedModel = (PaymentInitiatedModel)result.Data;
-                UpdatedModel.UserInfo.UserID = UserID;
-                UpdatedModel.BranchID = branchID;
-                IinitiateService.Update(UpdatedModel);
-                GetAll(IsApproved, NumberOfRecords);
+                snackbar.Add("Please Select Memo", Severity.Success);
+                return;
             }
         }
         else
         {
-            snackbar.Add("Please Select Memo", Severity.Success);
-            return;
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Initiate PaymentInitiated.");
         }
         await Task.Delay(200);
         _busy = false;
