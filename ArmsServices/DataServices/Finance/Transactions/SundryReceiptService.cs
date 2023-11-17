@@ -92,7 +92,11 @@ namespace ArmsServices.DataServices
                     CoaID = dr.GetInt32("CoaID"),
                     UsageCode = dr.GetString("UsageCode"),
                     Amount = dr.GetDecimal("Amount"),
-                    Rederence = dr.GetString("Reference")
+                    Reference = dr.GetString("Reference"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID")
                 };
             }
         }
@@ -138,8 +142,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),
                new SqlParameter("@entries", model.Entries.ToDataTable()),
-               new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -169,8 +171,6 @@ namespace ArmsServices.DataServices
                 DocumentNumber = dr.GetString("DocNumber"),
                 MID = dr.GetInt32("MID"),
                 FileName = dr.GetString("FilePath"),
-                CostCenter = dr.GetInt32("CostCenter"),
-                Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
 

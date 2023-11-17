@@ -55,6 +55,10 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     Amount = dr.GetDecimal("Amount"),
                     AssetID = dr.GetInt32("AssetID"),
                     Asset = new AssetModel() { AssetID = dr.GetInt32("AssetID"), Description = dr.GetString("Description") },
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID"),
                     Reference = dr.GetString("Reference"),
                 };
             }
@@ -158,8 +162,6 @@ namespace ArmsServices.DataServices.Finance.Transactions
                new SqlParameter("@InvoiceDate", model.InvoiceDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
-               new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
                new SqlParameter("@FromDate", model.FromDate),
@@ -200,8 +202,6 @@ namespace ArmsServices.DataServices.Finance.Transactions
                 InvoiceDate = dr.GetDateTime("InvoiceDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
-                CostCenter = dr.GetInt32("CostCenter"),
-                Dimension = dr.GetInt32("Dimension"),
                 Narration = dr.GetString("Narration"),
                 FileName = dr.GetString("FilePath"),
                 DocumentType = new AssetDocumentTypeModel()

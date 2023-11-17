@@ -34,8 +34,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@MID", model.MID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@FilePath", model.FileName),
@@ -156,7 +154,11 @@ namespace ArmsServices.DataServices
                     Amount = dr.GetDecimal("Amount"),
                     Quantity = dr.GetDecimal("Quantity"),
                     Reference = dr.GetString("Reference"),
-                    Unit = dr.GetString("Unit")
+                    Unit = dr.GetString("Unit"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID")
                 };
             }
         }
@@ -187,8 +189,6 @@ namespace ArmsServices.DataServices
             return new OpTranModel
             {
                 DocumentDate = dr.GetDateTime("DocumentDate"),
-                Dimension = dr.GetInt32("Dimension"),
-                CostCenter = dr.GetInt32("CostCenter"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),                
                 Area = dr.GetString("Area"),
                 JobCardID = dr.GetInt32("JobCardID"),

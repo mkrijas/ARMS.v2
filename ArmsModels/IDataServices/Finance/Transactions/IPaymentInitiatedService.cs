@@ -9,9 +9,11 @@ namespace ArmsServices.DataServices
     public interface IPaymentInitiatedService
     {
         IEnumerable<PaymentInitiatedModel> PendingForCompletion(int? BranchID, string searchTerm);
-        int? Update(PaymentInitiatedModel model);  //Initiate
-        int? Reverse(int? ID, string UserID);  //Reverse
+        int? Update(PaymentInitiatedModel model);
+        int? Reverse(int? ID, string UserID);
+        int? Approve(int? ID, string UserID, string Remarks);
         IEnumerable<PaymentInitiatedModel> Select(int? BranchID);   
         IEnumerable<PaymentInitiatedModel> SelectInitiatedBetween(int? BranchID, DateTime Begin, DateTime End);
+        IEnumerable<PaymentMemoPrintDetailModel> GetPaymentMemoPrintDetails(int? ID);
     }
 }

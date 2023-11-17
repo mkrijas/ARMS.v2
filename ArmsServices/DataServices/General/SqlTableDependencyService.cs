@@ -47,6 +47,7 @@ namespace DAL.DataServices.General
                 tableDependency.OnChanged += TabledependencyChange;
                 tableDependency.OnError += TabledependencyError;
                 tableDependency.Start();
+                
             }
             catch (Exception ex)
             {

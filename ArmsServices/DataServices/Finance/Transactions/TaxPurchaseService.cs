@@ -38,7 +38,6 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@PID", ID),
                new SqlParameter("@UserID", UserID),
-
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Delete]", parameters);
         }
@@ -68,6 +67,10 @@ namespace ArmsServices.DataServices
                     UsageCode = dr.GetString("UsageCode"),
                     UsageCodeDescription = dr.GetString("UsageDescription"),
                     TpeID = dr.GetInt64("TpeID"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID")
                 };
             }
         }
@@ -97,6 +100,10 @@ namespace ArmsServices.DataServices
                     TDS = dr.GetDecimal("TDS"),
                     TpiID = dr.GetInt64("TpiID"),
                     ItemDescription = dr.GetString("ItemDescription"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID")
                 };
             }
         }
@@ -223,9 +230,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InvoiceDate", model.InvoiceDate),
                new SqlParameter("@InvoiceNo", model.InvoiceNo),
                new SqlParameter("@FilePath", model.FileName),
-               new SqlParameter("@IsCredit", model.IsCredit),
-               new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@IsCredit", model.IsCredit),               
                new SqlParameter("@Items", model.Items.ToDataTable()),
                new SqlParameter("@NonStoreInventory", model.NonStoreInventory),
                new SqlParameter("@PartyID", model.PartyInfo.PartyID),
@@ -257,9 +262,7 @@ namespace ArmsServices.DataServices
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 MID = dr.GetInt32("MID"),
-                FileName = dr.GetString("FilePath"),
-                CostCenter = dr.GetInt32("CostCenter"),
-                Dimension = dr.GetInt32("Dimension"),
+                FileName = dr.GetString("FilePath"),                
                 NonStoreInventory = dr.GetBoolean("NonStoreInventory"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),

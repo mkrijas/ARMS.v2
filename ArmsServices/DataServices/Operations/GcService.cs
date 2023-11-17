@@ -305,7 +305,7 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
-        public decimal? GetFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty, decimal? Frt)
+        public decimal? GetPrimaryFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty, decimal? Frt)
         {
             decimal? Freight = 0;
             if (Frt == null)
@@ -315,7 +315,12 @@ namespace ArmsServices.DataServices
                     List<TariffModel> tariffs = Itariff.GetTariffs("FREIGHT", OrderID, RouteID, Axles).ToList();
                     foreach (TariffModel item in tariffs)
                     {
-                        Freight += Qty * item.TariffRate;
+                        switch (item.Formula.FormulaID)
+                        {
+                            case 3:
+                                Freight += Qty * item.TariffRate;
+                                break;                              
+                        }   
                     }
                 }
                 return Freight;

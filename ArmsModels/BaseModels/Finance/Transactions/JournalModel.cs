@@ -17,11 +17,25 @@ namespace ArmsModels.BaseModels
             return JsonConvert.DeserializeObject<JournalModel>(Json);
         }
         public JournalModel() { }
+        public int? JournalID { get; set; }        
+        public List<JournalSubModel> JournalSubList { get; set; } = new();
+    }
+
+    public class JournalSubModel
+    {
+        public int? JournalSubID { get; set; }
         public int? JournalID { get; set; }
+        public int? DebitCoaID { get; set; }
         [Required]
-        public ChartOfAccountModel Debit { get; set; }
+        public virtual ChartOfAccountModel Debit { get; set; }
+        public int? CreditCoaID { get; set; }
         [Required]
-        public ChartOfAccountModel Credit { get; set; }
+        public virtual ChartOfAccountModel Credit { get; set; }
+        public decimal? Amount { get; set; }
         public string Reference { get; set; }
+        public int? CostCenter { get; set; }
+        public virtual string CostCenterVal { get; set; }
+        public int? Dimension { get; set; }
+        public virtual string DimensionVal { get; set; }
     }
 }

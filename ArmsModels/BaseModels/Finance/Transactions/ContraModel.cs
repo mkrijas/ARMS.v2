@@ -33,5 +33,7 @@ namespace ArmsModels.BaseModels
         public ChequeModel ChequeInfo { get; set; } = new();
         public string EntryReference { get; set; }
         public bool IsPayment { get; set; }
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
     }
 }

@@ -190,11 +190,13 @@ namespace ArmsServices.DataServices
                     BranchID = dr.GetInt32("BranchID"),                    
                     Order = new OrderModel()
                     {
-                        OrderID = dr.GetInt32("OrderID")
+                        OrderID = dr.GetInt32("OrderID"),
+                        OrderName = dr.GetString("OrderName"),
                     },
                     TariffType = new TariffTypeModel()
                     {
                         TariffTypeID = dr.GetInt16("TariffTypeID"),
+                        TariffTypeName = dr.GetString("TariffTypeName"),
                         UsageCode = dr.GetString("UsageCode"),
                     },
                     DocumentDate = dr.GetDateTime("DocumentDate"),

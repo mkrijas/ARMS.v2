@@ -42,6 +42,10 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public int? CoaID { get; set; }
         [Required]
         public decimal? Amount { get; set; }
-        public string Rederence { get; set; }
+        public string Reference { get; set; }
+        public int? CostCenter { get; set; }
+        public virtual string CostCenterVal { get; set; }
+        public int? Dimension { get; set; }
+        public virtual string DimensionVal { get; set; }
     }
 }

@@ -64,6 +64,9 @@ namespace ArmsServices.DataServices
                     BranchID = dr.GetInt32("BranchID"),
                     UsageCode = dr.GetString("UsageCode"),
                     TpeID = dr.GetInt64("TpeID"),
+                    CostCenter = dr.GetInt32("CostCenter"),
+                    Dimension = dr.GetInt32("Dimension"),
+                    UsageCodeDescription = dr.GetString("UsageCodeDescription"),
                 };
             }
         }
@@ -93,6 +96,8 @@ namespace ArmsServices.DataServices
                     PID = dr.GetInt32("SID"),
                     TDS = dr.GetDecimal("TCS"),
                     TpiID = dr.GetInt64("SiID"),
+                    CostCenter = dr.GetInt32("CostCenter"),
+                    Dimension = dr.GetInt32("Dimension"),
                 };
             }
         }
@@ -207,9 +212,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@Particulars", model.Particulars.ToDataTable()),
-               new SqlParameter("@IsCredit", model.IsCredit),
-               new SqlParameter("@CostCenter", model.CostCenter),
-               new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@IsCredit", model.IsCredit),               
                new SqlParameter("@Items", model.Items.ToDataTable()),
                new SqlParameter("@CustomerID", model.PartyInfo.PartyID),
                new SqlParameter("@FilePath", model.FileName),
@@ -236,9 +239,7 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 IsCredit = dr.GetBoolean("IsCredit"),
-                MID = dr.GetInt32("MID"),
-                CostCenter = dr.GetInt32("CostCenter"),
-                Dimension = dr.GetInt32("Dimension"),
+                MID = dr.GetInt32("MID"),                
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 FileName = dr.GetString("FilePath"),
                 AuthStatus = dr.GetString("AuthStatus"),

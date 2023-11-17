@@ -79,6 +79,7 @@ namespace ArmsModels.BaseModels
         public bool IsPurchase { get; set; } = false;
         public TaxPurchaseModel PurchaseModel { get; set; } = new();
         public string UsageID { get; set; }
-
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
     }
 }

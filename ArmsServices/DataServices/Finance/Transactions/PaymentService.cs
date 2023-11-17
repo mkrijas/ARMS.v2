@@ -174,13 +174,12 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<PaymentMemoModel> Select(int PaymentInitiatedID, int? BranchID)
+        public IEnumerable<PaymentMemoModel> SelectInitiated(int? PaymentInitiatedID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByPIID"),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@PiID", PaymentInitiatedID),
+               new SqlParameter("@Operation", "ByPIID"),               
+               new SqlParameter("@PIID", PaymentInitiatedID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
@@ -307,6 +306,18 @@ namespace ArmsServices.DataServices
             };
         }
 
+        public IEnumerable<PaymentMemoModel> SelectPending(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByPending"),
+               new SqlParameter("@BranchID", BranchID),               
+            };
 
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
     }
 }

@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
+using System.Linq;
 using System;
+using System.Reflection;
 
 namespace ArmsServices.DataServices
 {
@@ -18,15 +20,16 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PaymentInitiatedID", model.PaymentInitiatedID),
-               new SqlParameter("@PaymentMemoID", model.PaymentMemoID),
+               new SqlParameter("@Memos", model.SelectedMemos.Select(x => x.PaymentMemoID.Value).ToList().ToDataTable()),
                new SqlParameter("@InitiatedDocumentDate", model.InitiatedDocumentDate),
                new SqlParameter("@DueOn", model.DueOn),
+               new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Initiate]", parameters))
             {
-                model.PaymentInitiatedID = dr.GetInt32("PiID");
+                model.PaymentInitiatedID = dr.GetInt32("PaymentInitiatedID");
             }
             return model.PaymentInitiatedID;
         }
@@ -82,11 +85,12 @@ namespace ArmsServices.DataServices
             {
                 BranchID = dr.GetInt32("BranchID"),
                 DueOn = dr.GetDateTime("DueOn"),
-                PaymentInitiatedID = dr.GetInt32("PaymentInitiatedID"),
-                PaymentMemoID = dr.GetInt32("PaymentMemoID"),
+                PaymentInitiatedID = dr.GetInt32("PaymentInitiatedID"),                
                 DocumentNumber = dr.GetString("InitiatedDocumentNumber"),
                 InitiatedDocumentDate = dr.GetDateTime("InitiatedDocumentDate"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
+                AuthLevelId = dr.GetInt32("AuthLevelID"),
+                AuthStatus = dr.GetString("AuthStatus"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -105,6 +109,42 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Initiate.Reverse]", parameters);
 
+        }
+
+        public int? Approve(int? ID, string UserID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PIID", ID),
+               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Initiate.Approve]", parameters);
+            
+        }
+
+        public IEnumerable<PaymentMemoPrintDetailModel> GetPaymentMemoPrintDetails(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetMemoPrintDetails"),               
+               new SqlParameter("@PaymentInitiatedID", ID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Initiate.Select]", parameters))
+            {
+                yield return new PaymentMemoPrintDetailModel()
+                {
+                    Amount = dr.GetDecimal("TotalAmount"),
+                    BankAccount = dr.GetString("AccountNumber"),
+                    BeneficiaryName = dr.GetString("BeneficiaryName"),
+                    IfscCode = dr.GetString("IfscCode"),
+                    PartyName = dr.GetString("tradeName"),
+                    PaymentMemoID = dr.GetInt32("PaymentMemoID"),
+                    DocNumber = dr.GetString("DocNumber"),
+                    DueOn = dr.GetDateTime("DueOn")
+                };
+            }
         }
     }
 }

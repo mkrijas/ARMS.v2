@@ -21,10 +21,9 @@ namespace ArmsModels.BaseModels
         public string NatureOfTransaction { get; set; } //Deposit,Purchase,Payment,Receipt,Prepayment,BankCharges,Main,Depreciation,CWIP,Capitalization
         [Required]
         public int? BranchID { get; set; }
+        public virtual decimal? TotalTaxableAmount { get; set; }
         [Required]
-        public virtual decimal? TotalAmount { get; set; }
-        public int? CostCenter { get; set; }
-        public int? Dimension { get; set; }
+        public virtual decimal? TotalAmount { get; set; }        
         [Required]
         public string Narration { get; set; }
         public int? AuthLevelId { get; set; }
@@ -41,9 +40,7 @@ namespace ArmsModels.BaseModels
     public class AccountInfoViewModel
     {
         public DateTime? DocumentDate { get; set; }
-        public string DocumentNumber { get; set; }
-        public string CostCenter { get; set; }
-        public string Dimension { get; set; }
+        public string DocumentNumber { get; set; }        
         public string Narration { get; set; }
         public List<AccountInfoViewSubModel> Entries { get; set; } = new List<AccountInfoViewSubModel>();
     }
@@ -51,10 +48,12 @@ namespace ArmsModels.BaseModels
     public class AccountInfoViewSubModel
     {
         public string AccountName { get; set; }
-        public string BranchName { get; set; }
+        public string BranchName { get; set; }       
         public decimal? Amount { get; set; }
         public string drcr { get { return Amount != null && Amount < 0 ? "Cr" : "Dr"; } }
         public string Reference { get; set; }
+        public string CostCenter { get; set; }
+        public string Dimension { get; set; }
     }
 
     public class GstModel : ICloneable
