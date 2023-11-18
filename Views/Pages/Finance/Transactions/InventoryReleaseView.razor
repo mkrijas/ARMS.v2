@@ -5,8 +5,9 @@
 @using Microsoft.AspNetCore.Components.Authorization;
 @using MudBlazor;
 @using Views.Pages.Finance.Transactions;
-
+@using System.Threading;
 @attribute [Authorize]
+@inject IRoleService<RoleModel> Irole
 @inject AuthenticationStateProvider auth
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
@@ -68,8 +69,14 @@
     public StoreModel SelectedStore { get; set; } = new();
     private bool _busy;
 
+    public bool HasPermissionInventoryReleaseServiceDelete { get; set; } = false;
+    public int InventoryReleaseDocTypeID = 97;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInventoryReleaseServiceDelete = await Irole.HasClaim(InventoryReleaseDocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
     }
@@ -97,23 +104,32 @@
 
     private async Task Delete(InventoryReleaseModel model)
     {
-        try
+        if (HasPermissionInventoryReleaseServiceDelete)
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning !",
-                "Are you sure, you want to delete - " + model.Store.StoreName + " (" + model.Jobcard.JobcardNumber + ") ?");
-            if (result == true)
+            try
             {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                Iservice.Delete(model.RID, user.Identity.Name);
-                snackbar.Add("Transaction reversed successfully", Severity.Success);
-                GetAll();
+                bool? result = await DialogService.ShowMessageBox(
+                    "Warning !",
+                    "Are you sure, you want to delete - " + model.Store.StoreName + " (" + model.Jobcard.JobcardNumber + ") ?");
+                if (result == true)
+                {
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    Iservice.Delete(model.RID, user.Identity.Name);
+                    snackbar.Add("Transaction reversed successfully", Severity.Success);
+                    GetAll();
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
             }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete InventoryRelease.");
         }
     }
 
