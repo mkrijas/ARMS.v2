@@ -11,17 +11,17 @@ namespace ArmsServices.DataServices
 {
     public interface IFreightBillingService
     {
-        int? UpdateFinalInvoice(BillingModel model);
-        int? UpdateProformaInvoice(ProformaInvoiceModel model);
-        int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks);
-        int? ReverseProformaInvoice(int? ProformaInvoiceID, string userID);
-        int? UpdateConsolidatedDraftBill(ConsolidatedDraftBillModel model);
+        int? UpdateFinalInvoice(BillingModel model);  
+        int? UpdateProformaInvoice(ProformaInvoiceModel model);  //EditProformaInvoice
+        int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks);  //Approve
+        int? ReverseProformaInvoice(int? ProformaInvoiceID, string userID);  //ReverseProformaInvoice
+        int? UpdateConsolidatedDraftBill(ConsolidatedDraftBillModel model);  //EditConsolidatedDraftBill
         BillingModel SelectFinalInvoice(int? ID);
         ProformaInvoiceModel SelectProformaInvoice(int? ID);
         ConsolidatedDraftBillModel SelectConsolidatedDraftBill(int? ID);
         int ReverseFinalInvoice(int? ID, string UserID, string Remarks);
-        int DeleteProformaInvoice(int? ID,string UserID, string Remarks);
-        int ReverseConsolidatedDraftBill(int? ID, string UserID);
+        int DeleteProformaInvoice(int? ID,string UserID, string Remarks);  //Delete
+        int ReverseConsolidatedDraftBill(int? ID, string UserID);  //ReverseConsolidatedDraftBill
         IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID,int? BranchId);
         IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? NumberOfRecords, string searchTerm);
         IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? ID, int? NumberOfRecords, string searchTerm);
