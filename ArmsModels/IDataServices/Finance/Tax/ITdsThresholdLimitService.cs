@@ -6,14 +6,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
-
 namespace ArmsServices.DataServices
 {
     public interface ITdsThresholdLimitService
     {
-        TdsThresholdLimitModel Update(TdsThresholdLimitModel model);
+        TdsThresholdLimitModel Update(TdsThresholdLimitModel model);  //Edit
         TdsThresholdLimitModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<TdsThresholdLimitModel> Select();
         IEnumerable<TdsThresholdLimitModel> SelectByNP(int TdsNPID, DateTime? EntryDate);
     }
