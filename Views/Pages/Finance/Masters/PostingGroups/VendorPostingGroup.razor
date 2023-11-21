@@ -7,6 +7,8 @@
 @inject IConfigTable IConfig
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid>
@@ -84,12 +86,17 @@
     public bool value = false;
     public string titleValue = null;
     private List<VendorPostingGroupModel> collection = new List<VendorPostingGroupModel>();
-
     private bool IsOnlyView { get; set; } = false;
     private bool _busy;
 
+    public bool HasPermissionVendorPostingGroupServiceEdit { get; set; } = false;
+    public int VendorPostingGroupDocTypeID = 103;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionVendorPostingGroupServiceEdit = await Irole.HasClaim(VendorPostingGroupDocTypeID.ToString(), "Edit", ctc.Token);
+
         GetAll();
     }
 
@@ -120,20 +127,29 @@
         }
         _busy = true;
 
-        IsOnlyView = false;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
+        if (HasPermissionVendorPostingGroupServiceEdit)
         {
-            Iservice.Update(model);
-            snackbar.Add("Successfully Submitted", Severity.Success);
-            GetAll();
-            value = false;
+            IsOnlyView = false;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Update(model);
+                snackbar.Add("Successfully Submitted", Severity.Success);
+                GetAll();
+                value = false;
+            }
+            catch (Exception a)
+            {
+                snackbar.Add(a.Message, Severity.Error);
+            }
         }
-        catch (Exception a)
+        else
         {
-            snackbar.Add(a.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit VendorPostingGroup.");
         }
         await Task.Delay(2000);
         _busy = false;
