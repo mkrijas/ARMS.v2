@@ -4,6 +4,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
@@ -55,8 +57,14 @@
     private List<UnReconciledBankEntryModel> collection = new();
     private bool _busy;
 
+    public bool HasPermissionUnreconciledBankEntryServiceDelete { get; set; } = false;
+    public int UnreconciledBankEntryDocTypeID = 108;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionUnreconciledBankEntryServiceDelete = await Irole.HasClaim(UnreconciledBankEntryDocTypeID.ToString(), "Delete", ctc.Token);
+
         if (bankModel != null)
         {
             model.BankID = (bankModel.ID != null ? (int)bankModel?.ID : 0);
@@ -100,17 +108,26 @@
 
     private async Task Delete(UnReconciledBankEntryModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.Nature + " (" + model.TransactionDate + ") ?");
-        if (result == true)
+        if (HasPermissionUnreconciledBankEntryServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.UserInfo.UserID = user.Identity.Name;
-            Iservice.Delete(model.ID, model.UserInfo.UserID);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.Nature + " (" + model.TransactionDate + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                model.UserInfo.UserID = user.Identity.Name;
+                Iservice.Delete(model.ID, model.UserInfo.UserID);
+            }
+            GetAll();
         }
-        GetAll();
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete UnreconciledBankEntry.");
+        }
     }
 
     private void GetAll()
