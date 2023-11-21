@@ -1,9 +1,10 @@
 ﻿@page "/BankAccountOwnView"
 @inject IBankAccountOwnService Iservice
 @inject MudBlazor.ISnackbar snackbar
-
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 @inject Microsoft.AspNetCore.Components.NavigationManager navigationManager
@@ -74,8 +75,14 @@
     DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     private bool _busy;
 
+    public bool HasPermissionBankAccountOwnServiceEdit { get; set; } = false;
+    public int BankAccountOwnDocTypeID = 109;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionBankAccountOwnServiceEdit = await Irole.HasClaim(BankAccountOwnDocTypeID.ToString(), "Edit", ctc.Token);
+
         model = new();
         await GetAll();
     }
@@ -102,23 +109,32 @@
         }
         _busy = true;
 
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", ownBank.Clone());
-        var dialog = DialogService.Show<BankAccountOwnDialog>(ownBank.ID == null ? "ADD" : "EDIT", parms, mediumWidth);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+        if (HasPermissionBankAccountOwnServiceEdit)
         {
-            try
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", ownBank.Clone());
+            var dialog = DialogService.Show<BankAccountOwnDialog>(ownBank.ID == null ? "ADD" : "EDIT", parms, mediumWidth);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                OwnBankModel UpdatedModel = (OwnBankModel)result.Data;
-                Iservice.Update(UpdatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                await GetAll();
+                try
+                {
+                    OwnBankModel UpdatedModel = (OwnBankModel)result.Data;
+                    Iservice.Update(UpdatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    await GetAll();
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit BankAccountOwn.");
         }
         await Task.Delay(200);
         _busy = false;
