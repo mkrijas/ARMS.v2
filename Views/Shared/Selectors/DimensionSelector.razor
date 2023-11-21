@@ -1,9 +1,9 @@
 ﻿@inject IDimensionService dimensionIservice
 
-<MudSelect ReadOnly="ReadOnly" Label="Dimension" @bind-Value="@Value" T="int?" 
-Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top"
+<MudSelect ReadOnly="ReadOnly" Label="Dimension" Value="@Value" ValueChanged="SelectedDimension" T="int?"
+           Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top"
            AdornmentColor="Color.Secondary"For="@(() => Value)" >
-    @foreach (var ditem in dimensions)
+    @foreach (var ditem in Dimensions)
     {
         <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
     }
@@ -27,15 +27,41 @@ Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direc
     }
 
     [Parameter]
+    public string ValueText
+    {
+        get => _valueText;
+        set
+        {
+            if (_valueText == value) return;
+            _valueText = value;
+            ValueTextChanged.InvokeAsync(value);
+        }
+    }
+
+    [Parameter]
     public EventCallback<int?> ValueChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ValueTextChanged { get; set; }
 
     private int? _value;
 
-    private List<DimensionModel> dimensions = new();
+    private string _valueText;
+
+    private List<DimensionModel> Dimensions = new();
 
     protected override void OnInitialized()
     {
-        dimensions = dimensionIservice.Select().ToList();
+        Dimensions = dimensionIservice.Select().ToList();
+        if (Dimensions.Any(x => x.DimensionID == Value))
+        {
+            ValueText = Dimensions.FirstOrDefault(x => x.DimensionID == Value).Dimension;
+        }
     }
 
+    async Task SelectedDimension(int? val)
+    {
+        Value = val;
+        ValueText = Dimensions.FirstOrDefault(x => x.DimensionID == Value).Dimension;
+    }
 }
