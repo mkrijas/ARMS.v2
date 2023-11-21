@@ -7,17 +7,16 @@ using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 using System.Reflection;
 
-
 namespace ArmsServices.DataServices
 {
     public interface IGstItemService
     {
-        GstItemModel Update(GstItemModel model);
+        GstItemModel Update(GstItemModel model);  //Edit
         GstItemModel SelectByID(int ID);
         GstItemModel SelectByItem(int ItemID, DateTime? entryDate);
         IEnumerable<GstItemModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate);
         IEnumerable<GstItemModel> FilterByText(string FilterText, DateTime? entryDate);
-        int Delete(int ID, string UserID);
+        int Delete(int ID, string UserID);  //Delete
         IEnumerable<GstItemModel> SelectByItem(int ItemID);
         IEnumerable<GstItemModel> Select(DateTime? entryDate);
         IEnumerable<GstItemModel> SelectByDate(DateTime? entryDate);
