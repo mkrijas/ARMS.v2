@@ -6,14 +6,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
-
 namespace ArmsServices.DataServices
 {
     public interface ITdsRateService
     {
-        TdsRateModel Update(TdsRateModel model);
+        TdsRateModel Update(TdsRateModel model);  //Edit
         TdsRateModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<TdsRateModel> SelectByIDT(int? ID);
         IEnumerable<TdsRateModel> Select(int? AssesseeType,int? TdsNPID, DateTime? EntryDate);
         IEnumerable<NatureOfPaymentModel> SelectTdsNP();

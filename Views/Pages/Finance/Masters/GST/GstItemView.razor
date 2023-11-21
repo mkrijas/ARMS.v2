@@ -3,6 +3,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4">
@@ -45,13 +47,20 @@
 
     private GstItemModel model = new GstItemModel();
     private List<GstItemModel> collection = new List<GstItemModel>();
-
-    private bool _busy;
     private string searchItem = "";
     public bool GstItemToggle { get; set; } = false;
+    private bool _busy;
+
+    public bool HasPermissionGstItemServiceEdit { get; set; } = false;
+    public bool HasPermissionGstItemServiceDelete { get; set; } = false;
+    public int GstItemDocTypeID = 102;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionGstItemServiceEdit = await Irole.HasClaim(GstItemDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionGstItemServiceDelete = await Irole.HasClaim(GstItemDocTypeID.ToString(), "Delete", ctc.Token);
+
         model = new();
         GstItemToggled(false);
     }
@@ -65,28 +74,37 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds.Clone());
-        var dialog = DialogService.Show<GstItemDialog>(tds.HsnID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-        if (!result.Cancelled)
+        if (HasPermissionGstItemServiceEdit)
         {
-            GstItemModel UpatedModel = (GstItemModel)result.Data;
-            UpatedModel.UserInfo.UserID = user.Identity.Name;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", tds.Clone());
+            var dialog = DialogService.Show<GstItemDialog>(tds.HsnID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
             {
-                Iservice.Update(UpatedModel);
-                model = new();
-                snackbar.Add("Saved Successfully", Severity.Success);
-                model = new GstItemModel();
-                GstItemToggled(GstItemToggle);
+                GstItemModel UpatedModel = (GstItemModel)result.Data;
+                UpatedModel.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    Iservice.Update(UpatedModel);
+                    model = new();
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    model = new GstItemModel();
+                    GstItemToggled(GstItemToggle);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit GstItem.");
         }
         await Task.Delay(200);
         _busy = false;
@@ -94,19 +112,28 @@
 
     private async Task Delete(GstItemModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.ItemCode + " (" + model.ItemDescription + ") ?");
-        if (result == true)
+        if (HasPermissionGstItemServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            var value = Iservice.Delete(model.HsnID.Value, user.Identity.Name);
-            if (value != -1)
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.ItemCode + " (" + model.ItemDescription + ") ?");
+            if (result == true)
             {
-                snackbar.Add("Deleted Successfully", Severity.Success);
-                GstItemToggled(GstItemToggle);
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                var value = Iservice.Delete(model.HsnID.Value, user.Identity.Name);
+                if (value != -1)
+                {
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                    GstItemToggled(GstItemToggle);
+                }
             }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete GstItem.");
         }
     }
 

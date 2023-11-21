@@ -3,6 +3,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4">
@@ -49,13 +51,20 @@
 
     private GstUsageCodeModel model = new GstUsageCodeModel();
     private List<GstUsageCodeModel> collection = new List<GstUsageCodeModel>();
-
-    private bool _busy;
     public bool SelectAll = false;
     private string searchGstUsageID = "";
+    private bool _busy;
 
-    protected override void OnInitialized()
+    public bool HasPermissionGstUsageIDServiceEdit { get; set; } = false;
+    public bool HasPermissionGstUsageIDServiceDelete { get; set; } = false;
+    public int GstUsageIDDocTypeID = 101;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionGstUsageIDServiceEdit = await Irole.HasClaim(GstUsageIDDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionGstUsageIDServiceDelete = await Irole.HasClaim(GstUsageIDDocTypeID.ToString(), "Delete", ctc.Token);
+
         model = new();
         GetAll(SelectAll);
     }
@@ -69,28 +78,37 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds.Clone());
-        var dialog = DialogService.Show<GstUsageIDDialog>(tds.Id == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+        if (HasPermissionGstUsageIDServiceEdit)
         {
-            GstUsageCodeModel UpatedModel = (GstUsageCodeModel)result.Data;
-            UpatedModel.UserInfo.UserID = user.Identity.Name;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", tds.Clone());
+            var dialog = DialogService.Show<GstUsageIDDialog>(tds.Id == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                Iservice.Update(UpatedModel);
-                model = new();
-                snackbar.Add("Saved Successfully", Severity.Success);
-                model = new GstUsageCodeModel();
-                GetAll(SelectAll);
+                GstUsageCodeModel UpatedModel = (GstUsageCodeModel)result.Data;
+                UpatedModel.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    Iservice.Update(UpatedModel);
+                    model = new();
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    model = new GstUsageCodeModel();
+                    GetAll(SelectAll);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit GstUsageID.");
         }
         await Task.Delay(200);
         _busy = false;
@@ -98,17 +116,26 @@
 
     private async Task Delete(GstUsageCodeModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.UsageCode + " (" + model.Description + ") ?");
-        if (result == true)
+        if (HasPermissionGstUsageIDServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User.Identity.Name;
-            Iservice.Delete(model.Id, user);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.UsageCode + " (" + model.Description + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User.Identity.Name;
+                Iservice.Delete(model.Id, user);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            GetAll(SelectAll);
         }
-        GetAll(SelectAll);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete GstUsageID.");
+        }
     }
 
     private bool search(GstUsageCodeModel tds)

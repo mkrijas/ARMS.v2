@@ -1,5 +1,5 @@
-﻿@page "/VendorPostingGroup"
-@inject IVendorPostingGroupService Iservice
+﻿@page "/AssetPostingGroup"
+@inject IAssetPostingGroupService Iservice
 @inject IChartOfAccountService accountService
 @inject MudBlazor.ISnackbar snackbar
 @inject IChartOfAccountService accountService
@@ -7,6 +7,8 @@
 @inject IConfigTable IConfig
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid>
@@ -14,7 +16,7 @@
         <MudPaper Width="100%" Class="p-2">
             <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
                 <MudText Typo="Typo.h6" style="padding: 4px; margin-top: -8px; margin-bottom: -22px; margin-left: 8px;">
-                    Vendor Posting Group
+                    Asset Posting Group
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudText>
                 <br />
@@ -39,26 +41,35 @@
                 <MudContainer>
                     <h4 style="padding-top:18px;">@titleValue</h4>
                     <br />
-                    <EditForm Model="model" OnValidSubmit="CreateVendorPostingGroup">
+                    <EditForm Model="model" OnValidSubmit="CreateAssetPostingGroup">
                         <ObjectGraphDataAnnotationsValidator />
                         <MudGrid Spacing="4">
                             <MudItem xs="12" lg="12">
                                 <MudTextField @bind-Value="model.Title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)" Disabled="IsOnlyView"></MudTextField>
                             </MudItem>
                             <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Payable" LabelName="Account For Vendor Payable" IsDisable="IsOnlyView" />
+                                <CoaSelector @bind-Value="model.Capitalization" LabelName="Capitalization" IsDisable="IsOnlyView" />
                             </MudItem>
                             <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.PrePayment" LabelName="Account For Vendor PrePayment" IsDisable="IsOnlyView" />
+                                <CoaSelector @bind-Value="model.CWIP" LabelName="CWIP" IsDisable="IsOnlyView" />
                             </MudItem>
                             <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Deposit" LabelName="Account For Vendor Deposit" IsDisable="IsOnlyView" />
+                                <CoaSelector @bind-Value="model.AccummulatedDepreciation" LabelName="Accummulated Depreciation" IsDisable="IsOnlyView" />
+                            </MudItem>
+                            <MudItem xs="12" md="12">
+                                <CoaSelector @bind-Value="model.Depreciation" LabelName="Depreciation" IsDisable="IsOnlyView" />
+                            </MudItem>
+                            <MudItem xs="12" md="12">
+                                <CoaSelector @bind-Value="model.Revaluation" LabelName="Revaluation" IsDisable="IsOnlyView" />
+                            </MudItem>
+                            <MudItem xs="12" md="12">
+                                <CoaSelector @bind-Value="model.RevaluationReserve" LabelName="Revaluation Reserve" IsDisable="IsOnlyView" />
                             </MudItem>
                             <MudItem xs="12" md="6">
                                 <ValidationSummary />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudButton @onclick="CancelVendorPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
+                                <MudButton @onclick="CancelAssetPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
                                 @if (!IsOnlyView)
                                 {
                                     <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
@@ -77,26 +88,31 @@
 
 @code {
 
-    VendorPostingGroupModel model = new VendorPostingGroupModel();
+    AssetPostingGroupModel model = new AssetPostingGroupModel();
     private MudListItem SelectedItem;
-    private List<VendorPostingGroupModel> listOfItems = new();
-    VendorPostingGroupModel SelectedModel = new();
+    private List<AssetPostingGroupModel> listOfItems = new();
+    AssetPostingGroupModel SelectedModel = new();
     public bool value = false;
     public string titleValue = null;
-    private List<VendorPostingGroupModel> collection = new List<VendorPostingGroupModel>();
-
+    private List<AssetPostingGroupModel> collection = new List<AssetPostingGroupModel>();
     private bool IsOnlyView { get; set; } = false;
     private bool _busy;
 
+    public bool HasPermissionAssetPostingGroupServiceEdit { get; set; } = false;
+    public int AssetPostingGroupDocTypeID = 107;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetPostingGroupServiceEdit = await Irole.HasClaim(AssetPostingGroupDocTypeID.ToString(), "Edit", ctc.Token);
+
         GetAll();
     }
 
     protected async Task SelectedItemChanged(object obj)
     {
         SelectedItem = (MudListItem)obj;
-        SelectedModel = (VendorPostingGroupModel)SelectedItem.Value;
+        SelectedModel = (AssetPostingGroupModel)SelectedItem.Value;
     }
 
     private void GetAll()
@@ -104,14 +120,14 @@
         listOfItems = Iservice.Select().ToList();
     }
 
-    public void CancelVendorPostingGroup()
+    public void CancelAssetPostingGroup()
     {
         IsOnlyView = false;
         value = false;
         model = new();
     }
 
-    public async Task CreateVendorPostingGroup()
+    public async Task CreateAssetPostingGroup()
     {
         if (_busy)
         {
@@ -120,36 +136,44 @@
         }
         _busy = true;
 
-        IsOnlyView = false;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
+        if (HasPermissionAssetPostingGroupServiceEdit)
         {
-            Iservice.Update(model);
-            snackbar.Add("Successfully Submitted", Severity.Success);
-            GetAll();
-            value = false;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Update(model);
+                snackbar.Add("Successfully Submitted", Severity.Success);
+                GetAll();
+                value = false;
+            }
+            catch (Exception a)
+            {
+                snackbar.Add(a.Message, Severity.Error);
+            }
         }
-        catch (Exception a)
+        else
         {
-            snackbar.Add(a.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit AssetPostingGroup.");
         }
         await Task.Delay(2000);
         _busy = false;
     }
 
-    private async Task OpenDialog(VendorPostingGroupModel ii)
+    private async Task OpenDialog(AssetPostingGroupModel ii)
     {
 
     }
 
-    private void OpenDialogGroup(VendorPostingGroupModel ig)
+    private void OpenDialogGroup(AssetPostingGroupModel ig)
     {
         IsOnlyView = false;
         value = true;
         model = new();
-        titleValue = "Add Vendor Posting Group";
+        titleValue = "Add Asset Posting Group";
     }
 
     void OnAppearing(MenuAppearingEventArgs e)
@@ -160,16 +184,16 @@
     protected void ContextMenuOnClickedit(ItemClickEventArgs e)
     {
         IsOnlyView = false;
-        model = (VendorPostingGroupModel)((VendorPostingGroupModel)e.Data).Clone();
+        model = (AssetPostingGroupModel)((AssetPostingGroupModel)e.Data).Clone();
         value = true;
-        titleValue = "Edit Vendor Posting Group";
+        titleValue = "Edit Asset Posting Group";
     }
 
-    protected void ViewDetails(MouseEventArgs e, VendorPostingGroupModel Data)
+    protected void ViewDetails(MouseEventArgs e, AssetPostingGroupModel Data)
     {
         IsOnlyView = true;
         model = Data;
         value = true;
-        titleValue = "Vendor Posting Group | " + Data.Title;
+        titleValue = "Asset Posting Group | " + Data.Title;
     }
 }

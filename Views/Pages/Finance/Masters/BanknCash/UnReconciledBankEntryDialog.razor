@@ -1,6 +1,10 @@
-﻿@inject AuthenticationStateProvider auth
-@inject IUnreconciledBankEntryService Iservice
+﻿@inject IUnreconciledBankEntryService Iservice
 @inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -59,6 +63,15 @@
     public UnReconciledBankEntryModel model { get; set; } = new();
     private bool _busy;
 
+    public bool HasPermissionUnreconciledBankEntryServiceEdit { get; set; } = false;
+    public int UnreconciledBankEntryDocTypeID = 108;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionUnreconciledBankEntryServiceEdit = await Irole.HasClaim(UnreconciledBankEntryDocTypeID.ToString(), "Edit", ctc.Token);
+    }
+
     void Cancel()
     {
         MudDialog.Cancel();
@@ -73,12 +86,20 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        Iservice.Update(model);
-        MudDialog.Close(DialogResult.Ok(true));
-
+        if (HasPermissionUnreconciledBankEntryServiceEdit)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            Iservice.Update(model);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit UnreconciledBankEntry.");
+        }
         await Task.Delay(2000);
         _busy = false;
     }

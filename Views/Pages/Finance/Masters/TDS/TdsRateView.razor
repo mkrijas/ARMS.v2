@@ -3,6 +3,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4">
@@ -26,30 +28,37 @@
                 <MudTd DataLabel="NatureOfPayment">@context.TdsNP.NatureOfPayment</MudTd>
                 <MudTd DataLabel="AssesseeTypeName">@context.AssesseeType.AssesseeTypeName</MudTd>
                 <MudTd DataLabel="PeriodFrom">@(context.PeriodFrom?.ToShortDateString())</MudTd>
-                <MudTd DataLabel="PeriodTo">@(context.PeriodTo?.ToShortDateString())</MudTd>
-                <MudTd DataLabel="TaxRate">@context.TaxRate</MudTd>
-                <MudTd DataLabel="">
-                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+                    <MudTd DataLabel="PeriodTo">@(context.PeriodTo?.ToShortDateString())</MudTd>
+                    <MudTd DataLabel="TaxRate">@context.TaxRate</MudTd>
+                    <MudTd DataLabel="">
+                        <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                </PagerContent>
+            </MudTable>
+        </MudItem>
+    </MudGrid>
 
     @code {
 
     private TdsRateModel model = new TdsRateModel();
     private List<TdsRateModel> collection = new List<TdsRateModel>();
-
     private string searchTds = "";
     private bool _busy;
 
-    protected override void OnInitialized()
+    public bool HasPermissionTdsRateServiceEdit { get; set; } = false;
+    public bool HasPermissionTdsRateServiceDelete { get; set; } = false;
+    public int TdsRateDocTypeID = 99;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTdsRateServiceEdit = await Irole.HasClaim(TdsRateDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTdsRateServiceDelete = await Irole.HasClaim(TdsRateDocTypeID.ToString(), "Delete", ctc.Token);
+
         model = new();
         GetAll();
     }
@@ -71,26 +80,36 @@
             return;
         }
         _busy = true;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds.Clone());
-        var dialog = DialogService.Show<TdsRateDialog>(tds.TdsRateID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+
+        if (HasPermissionTdsRateServiceEdit)
         {
-            TdsRateModel UpatedModel = (TdsRateModel)result.Data;
-            UpatedModel.UserInfo.UserID = user.Identity.Name;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", tds.Clone());
+            var dialog = DialogService.Show<TdsRateDialog>(tds.TdsRateID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                Iservice.Update(UpatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                GetAll();
+                TdsRateModel UpatedModel = (TdsRateModel)result.Data;
+                UpatedModel.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    Iservice.Update(UpatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    GetAll();
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit TdsRate.");
         }
         await Task.Delay(200);
         _busy = false;
@@ -98,17 +117,26 @@
 
     private async Task Delete(TdsRateModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.AssesseeType.AssesseeTypeName + " (" + model.PeriodFrom + " - " + model.PeriodTo + ") ?");
-        if (result == true)
+        if (HasPermissionTdsRateServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            Iservice.Delete(model.TdsRateID, user.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.AssesseeType.AssesseeTypeName + " (" + model.PeriodFrom + " - " + model.PeriodTo + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.TdsRateID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            GetAll();
         }
-        GetAll();
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete TdsRate.");
+        }
     }
 
     private bool search(TdsRateModel tds)

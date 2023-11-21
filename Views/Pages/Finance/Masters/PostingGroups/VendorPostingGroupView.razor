@@ -1,5 +1,5 @@
-﻿@page "/RenterPostingGroup"
-@inject IRenterPostingGroupService Iservice
+﻿@page "/VendorPostingGroup"
+@inject IVendorPostingGroupService Iservice
 @inject IChartOfAccountService accountService
 @inject MudBlazor.ISnackbar snackbar
 @inject IChartOfAccountService accountService
@@ -7,6 +7,8 @@
 @inject IConfigTable IConfig
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid>
@@ -14,7 +16,7 @@
         <MudPaper Width="100%" Class="p-2">
             <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
                 <MudText Typo="Typo.h6" style="padding: 4px; margin-top: -8px; margin-bottom: -22px; margin-left: 8px;">
-                    Renter Posting Group
+                    Vendor Posting Group
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudText>
                 <br />
@@ -39,26 +41,26 @@
                 <MudContainer>
                     <h4 style="padding-top:18px;">@titleValue</h4>
                     <br />
-                    <EditForm Model="model" OnValidSubmit="CreateRenterPostingGroup">
+                    <EditForm Model="model" OnValidSubmit="CreateVendorPostingGroup">
                         <ObjectGraphDataAnnotationsValidator />
                         <MudGrid Spacing="4">
                             <MudItem xs="12" lg="12">
                                 <MudTextField @bind-Value="model.Title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)" Disabled="IsOnlyView"></MudTextField>
                             </MudItem>
                             <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Rent" LabelName="Account for Rent" IsDisable="IsOnlyView" />
+                                <CoaSelector @bind-Value="model.Payable" LabelName="Account For Vendor Payable" IsDisable="IsOnlyView" />
                             </MudItem>
                             <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Deposit" LabelName="Account for Rent Deposit" IsDisable="IsOnlyView" />
+                                <CoaSelector @bind-Value="model.PrePayment" LabelName="Account For Vendor PrePayment" IsDisable="IsOnlyView" />
                             </MudItem>
                             <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Other" LabelName="Account for Rent Other Expenses" IsDisable="IsOnlyView" />
+                                <CoaSelector @bind-Value="model.Deposit" LabelName="Account For Vendor Deposit" IsDisable="IsOnlyView" />
                             </MudItem>
                             <MudItem xs="12" md="6">
                                 <ValidationSummary />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudButton @onclick="CancelRenterPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
+                                <MudButton @onclick="CancelVendorPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
                                 @if (!IsOnlyView)
                                 {
                                     <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
@@ -77,26 +79,31 @@
 
 @code {
 
-    RenterPostingGroupModel model = new RenterPostingGroupModel();
+    VendorPostingGroupModel model = new VendorPostingGroupModel();
     private MudListItem SelectedItem;
-    private List<RenterPostingGroupModel> listOfItems = new();
-    RenterPostingGroupModel SelectedModel = new();
+    private List<VendorPostingGroupModel> listOfItems = new();
+    VendorPostingGroupModel SelectedModel = new();
     public bool value = false;
     public string titleValue = null;
-    private List<RenterPostingGroupModel> collection = new List<RenterPostingGroupModel>();
-
+    private List<VendorPostingGroupModel> collection = new List<VendorPostingGroupModel>();
     private bool IsOnlyView { get; set; } = false;
     private bool _busy;
 
+    public bool HasPermissionVendorPostingGroupServiceEdit { get; set; } = false;
+    public int VendorPostingGroupDocTypeID = 103;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionVendorPostingGroupServiceEdit = await Irole.HasClaim(VendorPostingGroupDocTypeID.ToString(), "Edit", ctc.Token);
+
         GetAll();
     }
 
     protected async Task SelectedItemChanged(object obj)
     {
         SelectedItem = (MudListItem)obj;
-        SelectedModel = (RenterPostingGroupModel)SelectedItem.Value;
+        SelectedModel = (VendorPostingGroupModel)SelectedItem.Value;
     }
 
     private void GetAll()
@@ -104,14 +111,14 @@
         listOfItems = Iservice.Select().ToList();
     }
 
-    public async Task CancelRenterPostingGroup()
+    public void CancelVendorPostingGroup()
     {
         IsOnlyView = false;
         value = false;
         model = new();
     }
 
-    public async Task CreateRenterPostingGroup()
+    public async Task CreateVendorPostingGroup()
     {
         if (_busy)
         {
@@ -120,35 +127,45 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
+        if (HasPermissionVendorPostingGroupServiceEdit)
         {
-            Iservice.Update(model);
-            snackbar.Add("Successfully Submitted", Severity.Success);
-            GetAll();
-            value = false;
+            IsOnlyView = false;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Update(model);
+                snackbar.Add("Successfully Submitted", Severity.Success);
+                GetAll();
+                value = false;
+            }
+            catch (Exception a)
+            {
+                snackbar.Add(a.Message, Severity.Error);
+            }
         }
-        catch (Exception a)
+        else
         {
-            snackbar.Add(a.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit VendorPostingGroup.");
         }
         await Task.Delay(2000);
         _busy = false;
     }
 
-    private async Task OpenDialog(RenterPostingGroupModel ii)
+    private async Task OpenDialog(VendorPostingGroupModel ii)
     {
 
     }
 
-    private void OpenDialogGroup(RenterPostingGroupModel ig)
+    private void OpenDialogGroup(VendorPostingGroupModel ig)
     {
         IsOnlyView = false;
         value = true;
         model = new();
-        titleValue = "Add Renter Posting Group";
+        titleValue = "Add Vendor Posting Group";
     }
 
     void OnAppearing(MenuAppearingEventArgs e)
@@ -159,16 +176,16 @@
     protected void ContextMenuOnClickedit(ItemClickEventArgs e)
     {
         IsOnlyView = false;
-        model = (RenterPostingGroupModel)((RenterPostingGroupModel)e.Data).Clone();
+        model = (VendorPostingGroupModel)((VendorPostingGroupModel)e.Data).Clone();
         value = true;
-        titleValue = "Edit Renter Posting Group";
+        titleValue = "Edit Vendor Posting Group";
     }
 
-    protected void ViewDetails(MouseEventArgs e, RenterPostingGroupModel Data)
+    protected void ViewDetails(MouseEventArgs e, VendorPostingGroupModel Data)
     {
         IsOnlyView = true;
         model = Data;
         value = true;
-        titleValue = "Renter Posting Group | " + Data.Title;
+        titleValue = "Vendor Posting Group | " + Data.Title;
     }
 }

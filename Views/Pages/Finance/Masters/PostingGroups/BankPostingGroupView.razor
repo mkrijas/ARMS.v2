@@ -7,6 +7,8 @@
 @inject IConfigTable IConfig
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid>
@@ -84,13 +86,16 @@
     private MudListItem SelectedItem;
     private List<BankPostingGroupModel> listOfItems = new();
     BankPostingGroupModel SelectedModel = new();
-    public bool value = false;
-    private bool _busy;
-    public string titleValue = null;
     private List<BankPostingGroupModel> collection = new List<BankPostingGroupModel>();
     private ChartOfAccountModel SelectedAccountBankAccount = null;
     private ChartOfAccountModel SelectedAccountBankCharges = null;
     private ChartOfAccountModel SelectedAccountBankProcessingFee = null;
+    public string titleValue = null;
+    public bool value = false;
+    private bool _busy;
+
+    public bool HasPermissionBankPostingGroupServiceEdit { get; set; } = false;
+    public int BankPostingGroupDocTypeID = 106;
 
     private async Task<IEnumerable<ChartOfAccountModel>> SearchAccountsBankAccount(string searchString)
     {
@@ -111,6 +116,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionBankPostingGroupServiceEdit = await Irole.HasClaim(BankPostingGroupDocTypeID.ToString(), "Edit", ctc.Token);
+
         GetAll();
     }
 
@@ -153,19 +161,28 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
+        if (HasPermissionBankPostingGroupServiceEdit)
         {
-            Iservice.Update(model);
-            snackbar.Add("Successfully Submitted", Severity.Success);
-            GetAll();
-            value = false;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Update(model);
+                snackbar.Add("Successfully Submitted", Severity.Success);
+                GetAll();
+                value = false;
+            }
+            catch (Exception a)
+            {
+                snackbar.Add(a.Message, Severity.Error);
+            }
         }
-        catch (Exception a)
+        else
         {
-            snackbar.Add(a.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit BankPostingGroup.");
         }
         await Task.Delay(2000);
         _busy = false;

@@ -1,5 +1,4 @@
-﻿
-using ArmsModels.BaseModels;
+﻿using ArmsModels.BaseModels;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
@@ -8,11 +7,10 @@ using System;
 
 namespace ArmsServices.DataServices
 {
-
     public interface IUnreconciledBankEntryService
     {
-        UnReconciledBankEntryModel Update(UnReconciledBankEntryModel model);
-        int Delete(int? ID, string UserID);
+        UnReconciledBankEntryModel Update(UnReconciledBankEntryModel model);  //Edit
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<UnReconciledBankEntryModel> Select(int? BankID, bool ShowOnlyUnreconciled);
         IEnumerable<UnReconciledBankEntryModel> SelectByBranch(int? BranchID);        
         ReconciledBankEntryModel GetRecociledInfo(int? UnreconciledEntryID);
