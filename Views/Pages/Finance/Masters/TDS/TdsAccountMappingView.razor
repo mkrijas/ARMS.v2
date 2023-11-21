@@ -143,11 +143,17 @@
     public bool HasPermissionTdsThresholdLimitServiceDelete { get; set; } = false;
     public int TdsThresholdLimitDocTypeID = 98;
 
+    public bool HasPermissionTdsRateServiceEdit { get; set; } = false;
+    public bool HasPermissionTdsRateServiceDelete { get; set; } = false;
+    public int TdsRateDocTypeID = 99;
+
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionTdsThresholdLimitServiceEdit = await Irole.HasClaim(TdsThresholdLimitDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionTdsThresholdLimitServiceDelete = await Irole.HasClaim(TdsThresholdLimitDocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionTdsRateServiceEdit = await Irole.HasClaim(TdsRateDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTdsRateServiceDelete = await Irole.HasClaim(TdsRateDocTypeID.ToString(), "Delete", ctc.Token);
 
         GetAll();
     }
@@ -210,19 +216,28 @@
 
     private async Task DeleteTdsRate(TdsRateModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.AssesseeType.AssesseeTypeName + " (" + model.PeriodFrom + " - " + model.PeriodTo + ") ?");
-        if (result == true)
+        if (HasPermissionTdsRateServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            var value = ITdsRateservice.Delete(model.TdsRateID, user.Identity.Name);
-            if (value != -1)
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.AssesseeType.AssesseeTypeName + " (" + model.PeriodFrom + " - " + model.PeriodTo + ") ?");
+            if (result == true)
             {
-                snackbar.Add("Deleted Successfully", Severity.Success);
-                TdsrateToggled(TdsRateToggle);
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                var value = ITdsRateservice.Delete(model.TdsRateID, user.Identity.Name);
+                if (value != -1)
+                {
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                    TdsrateToggled(TdsRateToggle);
+                }
             }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete TdsRate.");
         }
     }
 
@@ -318,29 +333,39 @@
             return;
         }
         _busy = true;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        tds.TdsNP = SelectedNP;
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds.Clone());
-        var dialog = DialogService.Show<TdsRateDialog>(tds.TdsRateID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+
+        if (HasPermissionTdsRateServiceEdit)
         {
-            TdsRateModel UpatedModel = (TdsRateModel)result.Data;
-            UpatedModel.UserInfo.UserID = user.Identity.Name;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            tds.TdsNP = SelectedNP;
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", tds.Clone());
+            var dialog = DialogService.Show<TdsRateDialog>(tds.TdsRateID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                ITdsRateservice.Update(UpatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                NatureOfPaymentModel igm = new NatureOfPaymentModel();
-                igm.TdsNPID = UpatedModel.TdsNP.TdsNPID;
-                TdsrateToggled(TdsRateToggle);
+                TdsRateModel UpatedModel = (TdsRateModel)result.Data;
+                UpatedModel.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    ITdsRateservice.Update(UpatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    NatureOfPaymentModel igm = new NatureOfPaymentModel();
+                    igm.TdsNPID = UpatedModel.TdsNP.TdsNPID;
+                    TdsrateToggled(TdsRateToggle);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit TdsRate.");
         }
         await Task.Delay(200);
         _busy = false;
