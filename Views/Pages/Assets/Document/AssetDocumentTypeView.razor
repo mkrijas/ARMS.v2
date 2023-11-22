@@ -1,9 +1,10 @@
 ﻿@page "/DocumentType"
 @inject IAssetDocumentService Iservice
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4">
@@ -45,8 +46,16 @@
     private string searchDocumentType = "";
     private List<AssetDocumentTypeModel> collection = new();
 
+    public bool HasPermissionAssetDocumentServiceEditType { get; set; } = false;
+    public bool HasPermissionAssetDocumentServiceDeleteType { get; set; } = false;
+    public int AssetDocumentDocTypeID = 113;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetDocumentServiceEditType = await Irole.HasClaim(AssetDocumentDocTypeID.ToString(), "EditType", ctc.Token);
+        HasPermissionAssetDocumentServiceDeleteType = await Irole.HasClaim(AssetDocumentDocTypeID.ToString(), "DeleteType", ctc.Token);
+
         await Task.Run(() => GetAll());
     }
 
@@ -70,93 +79,103 @@
             return;
         }
         _busy = true;
-        // if (id == null || id != null && id == 0)
-        // {
-        //     model = new();
-        // }
-        // else
-        // {
-        //     model = collection.First(x => x.DocumentTypeID == id);
-        // }
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", model.Clone());
-        var dialog = DialogService.Show<DocumentDilog>("ADD TRUCK", parms);
-        var result = await dialog.Result;
 
-        // you can check if the modal was cancelled
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
+        if (HasPermissionAssetDocumentServiceEditType)
         {
-            try
+            // if (id == null || id != null && id == 0)
+            // {
+            //     model = new();
+            // }
+            // else
+            // {
+            //     model = collection.First(x => x.DocumentTypeID == id);
+            // }
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", model.Clone());
+            var dialog = DialogService.Show<DocumentDilog>("ADD TRUCK", parms);
+            var result = await dialog.Result;
+
+            // you can check if the modal was cancelled
+            var isCancelled = result.Canceled;
+            if (!isCancelled)
             {
-                AssetDocumentTypeModel UpdatedModel = (AssetDocumentTypeModel)result.Data;
-                //if (!collection.Exists(x => x.DocumentTypeName == UpdatedModel.DocumentTypeName))
-                if (UpdatedModel != null)
+                try
                 {
-                    UpdatedModel = Iservice.UpdateDocumentType(UpdatedModel);
+                    AssetDocumentTypeModel UpdatedModel = (AssetDocumentTypeModel)result.Data;
+                    //if (!collection.Exists(x => x.DocumentTypeName == UpdatedModel.DocumentTypeName))
                     if (UpdatedModel != null)
                     {
-                        if (collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID))
+                        UpdatedModel = Iservice.UpdateDocumentType(UpdatedModel);
+                        if (UpdatedModel != null)
                         {
-                            collection[collection.FindIndex(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)] = UpdatedModel;
+                            if (collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID))
+                            {
+                                collection[collection.FindIndex(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)] = UpdatedModel;
+                            }
+                            else
+                            {
+                                collection.Add(UpdatedModel);
+                            }
+                            UpdatedModel = new();
                         }
-                        else
-                        {
-                            collection.Add(UpdatedModel);
-                        }
-                        UpdatedModel = new();
+                        snackbar.Add("Saved Successfully", Severity.Success);
+                        model = new AssetDocumentTypeModel();
                     }
-                    snackbar.Add("Saved Successfully", Severity.Success);
-                    model = new AssetDocumentTypeModel();
+                    else
+                    {
+                        snackbar.Add("Error - " + UpdatedModel.DocumentTypeName + " already exist !", Severity.Error);
+                    }
+                    //GetAll();
+                    // if (UpdatedModel != null)
+                    // {
+                    //     if (collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID))
+                    //     {
+                    //         collection[collection.FindIndex(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)] = UpdatedModel;
+                    //     }
+                    //     else
+                    //     {
+                    //         collection.Add(UpdatedModel);
+                    //     }
+                    //     UpdatedModel = new();
+                    // }
+                    //========================
+                    // if (collection.Exists(x => x.DocumentTypeName == UpdatedModel.DocumentTypeName)
+                    //     && collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)
+                    //     && collection.Exists(x => x.WarnBefore == UpdatedModel.WarnBefore)
+                    //     && collection.Exists(x => x.BlockAfter == UpdatedModel.BlockAfter)
+                    //     && collection.Exists(x => x.UsageCode == UpdatedModel.UsageCode))
+                    // {
+                    //     snackbar.Add("Error - " + UpdatedModel.DocumentTypeName + " already exist !", Severity.Error);
+                    // }
+                    // else if (collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID))
+                    // {
+                    //     UpdatedModel = Iservice.UpdateDocumentType(UpdatedModel);
+                    //     if (UpdatedModel != null)
+                    //     {
+                    //         collection[collection.FindIndex(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)] = UpdatedModel;
+                    //         snackbar.Add("Saved Successfully", Severity.Success);
+                    //     }
+                    // }
+                    // else if (UpdatedModel.DocumentTypeID == null)
+                    // {
+                    //     UpdatedModel = Iservice.UpdateDocumentType(UpdatedModel);
+                    //     collection.Add(UpdatedModel);
+                    //     snackbar.Add("Saved Successfully", Severity.Success);
+                    // }
+                    // UpdatedModel = new();
+                    //========================
                 }
-                else
+                catch (Exception ex)
                 {
-                    snackbar.Add("Error - " + UpdatedModel.DocumentTypeName + " already exist !", Severity.Error);
+                    snackbar.Add(ex.Message, Severity.Warning);
                 }
-                //GetAll();
-                // if (UpdatedModel != null)
-                // {
-                //     if (collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID))
-                //     {
-                //         collection[collection.FindIndex(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)] = UpdatedModel;
-                //     }
-                //     else
-                //     {
-                //         collection.Add(UpdatedModel);
-                //     }
-                //     UpdatedModel = new();
-                // }
-                //========================
-                // if (collection.Exists(x => x.DocumentTypeName == UpdatedModel.DocumentTypeName)
-                //     && collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)
-                //     && collection.Exists(x => x.WarnBefore == UpdatedModel.WarnBefore)
-                //     && collection.Exists(x => x.BlockAfter == UpdatedModel.BlockAfter)
-                //     && collection.Exists(x => x.UsageCode == UpdatedModel.UsageCode))
-                // {
-                //     snackbar.Add("Error - " + UpdatedModel.DocumentTypeName + " already exist !", Severity.Error);
-                // }
-                // else if (collection.Exists(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID))
-                // {
-                //     UpdatedModel = Iservice.UpdateDocumentType(UpdatedModel);
-                //     if (UpdatedModel != null)
-                //     {
-                //         collection[collection.FindIndex(x => x.DocumentTypeID == UpdatedModel.DocumentTypeID)] = UpdatedModel;
-                //         snackbar.Add("Saved Successfully", Severity.Success);
-                //     }
-                // }
-                // else if (UpdatedModel.DocumentTypeID == null)
-                // {
-                //     UpdatedModel = Iservice.UpdateDocumentType(UpdatedModel);
-                //     collection.Add(UpdatedModel);
-                //     snackbar.Add("Saved Successfully", Severity.Success);
-                // }
-                // UpdatedModel = new();
-                //========================
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to EditType AssetDocument.");
         }
         await Task.Delay(200);
         _busy = false;
@@ -164,28 +183,37 @@
 
     private async Task Delete(AssetDocumentTypeModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.DocumentTypeName + " ?");
-        if (result == true)
+        if (HasPermissionAssetDocumentServiceDeleteType)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            int value = Iservice.DeleteType(model.DocumentTypeID, user.Identity.Name);
-            if (value != -1)
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.DocumentTypeName + " ?");
+            if (result == true)
             {
-                if (collection != null && collection.Any(s => s.DocumentTypeID == model.DocumentTypeID))
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                int value = Iservice.DeleteType(model.DocumentTypeID, user.Identity.Name);
+                if (value != -1)
                 {
-                    collection.Remove(collection.FirstOrDefault(s => s.DocumentTypeID == model.DocumentTypeID));
-                    snackbar.Add("Deleted Successfully", Severity.Success);
+                    if (collection != null && collection.Any(s => s.DocumentTypeID == model.DocumentTypeID))
+                    {
+                        collection.Remove(collection.FirstOrDefault(s => s.DocumentTypeID == model.DocumentTypeID));
+                        snackbar.Add("Deleted Successfully", Severity.Success);
+                    }
+                }
+                else
+                {
+                    bool? error = await DialogService.ShowMessageBox(
+                        "Failed !",
+                        "DocumentType - " + model.DocumentTypeName + " is active with our Assets !");
                 }
             }
-            else
-            {
-                bool? error = await DialogService.ShowMessageBox(
-                    "Failed !",
-                    "DocumentType - " + model.DocumentTypeName + " is active with our Assets !");
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to DeleteType AssetDocument.");
         }
     }
 

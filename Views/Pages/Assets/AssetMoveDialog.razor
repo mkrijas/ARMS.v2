@@ -5,6 +5,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudDialog>
@@ -107,8 +109,14 @@
     private AssetModel SelectedParentAsset = null;
     private bool _busy;
 
-    protected override void OnInitialized()
+    public bool HasPermissionAssetServiceMove { get; set; } = false;
+    public int AssetDocTypeID = 112;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetServiceMove = await Irole.HasClaim(AssetDocTypeID.ToString(), "Move", ctc.Token);
+
         if (model.ParentAssetID != null)
         {
             fetch = true;
@@ -146,35 +154,43 @@
             return;
         }
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        string mode = "Attach";
-        if (Buttontxt == "Remove")
+        if (HasPermissionAssetServiceMove)
         {
-            mode = "Detach";
-        }
-        _busy = true;
-        try
-        {
-            if (assetModel == null || assetModel.AssetID == null)
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            int brancID = int.Parse(brancIDString);
+            string mode = "Attach";
+            if (Buttontxt == "Remove")
             {
-                if (SelectedParentAsset != null)
-                {
-                    assetModel = Iservice.SelectByID(SelectedParentAsset.AssetID);
-                }
+                mode = "Detach";
             }
-            Iservice.MoveAsset(model.AssetID, assetModel.AssetID, mode, user.Identity.Name);
-            snackbar.Add("Moved Successfully", Severity.Success);
-            model = new();
+            _busy = true;
+            try
+            {
+                if (assetModel == null || assetModel.AssetID == null)
+                {
+                    if (SelectedParentAsset != null)
+                    {
+                        assetModel = Iservice.SelectByID(SelectedParentAsset.AssetID);
+                    }
+                }
+                Iservice.MoveAsset(model.AssetID, assetModel.AssetID, mode, user.Identity.Name);
+                snackbar.Add("Moved Successfully", Severity.Success);
+                model = new();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+            MudDialog.Close();
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Move Asset.");
         }
-        MudDialog.Close();
-
         await Task.Delay(2000);
         _busy = false;
     }

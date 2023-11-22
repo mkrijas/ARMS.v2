@@ -6,6 +6,8 @@
 @inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
 @inject ITaxVoucherService Iservice
+@inject ICostCenterService costIservice
+@inject IDimensionService dimensionIservice
 @inject IAssetDocumentService IDocumentService
 @inject IGstUsageIDService usageService
 @inject IDialogService DialogService
@@ -13,7 +15,7 @@
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Tax Voucher" formID="taxVoucherForm" model="@model" _busy="_busy">
     <FormContent>
-        <MudPaper Class="p-3">
+        <MudPaper Class="p-3" Width="1200px" Style=" overflow-y: scroll;">
             <EditForm id="taxVoucherForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
@@ -58,14 +60,14 @@
                     }
                     <MudItem xs="12" md="6">
                         <MudTextField @bind-Value="model.TotalAmount" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)" Disabled></MudTextField>
-                     </MudItem>
-                     <MudItem xs="12" md="6">
-                         <MudGrid>
-                             <MudItem xs="11" md="11">
-                                 <MudTextField @bind-Value="model.TotalTax" Label="Total Tax" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalTax)" Disabled></MudTextField>
-                             </MudItem>
-                             <MudItem xs="1" md="1">
-                                 @if (model.IsAgent.Value)
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudGrid>
+                            <MudItem xs="11" md="11">
+                                <MudTextField @bind-Value="model.TotalTax" Label="Total Tax" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalTax)" Disabled></MudTextField>
+                            </MudItem>
+                            <MudItem xs="1" md="1">
+                                @if (model.IsAgent.Value)
                                 {
                                     <MudIconButton Title="Show Taxes" Color="Color.Info" @onclick="@(()=> OpenDialogTaxRates(model))" Icon="@Icons.Material.Filled.CurrencyExchange" Size="Size.Small" />
                                 }
@@ -73,39 +75,47 @@
                         </MudGrid>
                     </MudItem>
                     <MudItem xs="12">
-                        <h6><u>Items</u></h6>
-                        <MudGrid Justify="Justify.Center">
-                            <MudItem xs="3" Class="d-flex align-center"><span> <strong> <u>Asset</u></strong> </span></MudItem>
-                            <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Cost Center</u></strong> </span></MudItem>
-                            <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Dimension</u></strong> </span></MudItem>
-                            <MudItem xs="2" Class="d-flex align-center"><span><strong><u>Amount</u></strong> </span></MudItem>
-                            <MudItem xs="2" Class="d-flex align-center"><span><strong><u>Reference</u></strong> </span></MudItem>
-                            <MudItem xs="1"></MudItem>
-                            @foreach (var item in model.TaxVoucherSubList)
-                            {
-                                <MudItem xs="3"> @item.Asset.Description </MudItem>
-                                <MudItem xs="2"> @item.CostCenterVal</MudItem>
-                                <MudItem xs="2"> @item.DimensionVal</MudItem>
-                                <MudItem xs="2"> @item.Amount </MudItem>
-                                <MudItem xs="2"> @item.Reference </MudItem>
-                                <MudItem xs="1" Class="d-flex">
-                                    @if (!ReadOnly)
-                                    {
-                                        <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteSubList(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-
-                                    }
-                                </MudItem>
-                            }
-                            @if (!ReadOnly)
-                            {
-                                <MudItem xs="3"><AssetSelector @bind-Value="TaxVoucherSub.Asset" PassedListAssets="@(model.TaxVoucherSubList.Select(s=>s.Asset).ToList())" BranchID="branchID.Value" /></MudItem>
-                                <MudItem xs="2"><CostCenterSelector @bind-Value="TaxVoucherSub.CostCenter" ReadOnly="@ReadOnly" /></MudItem>
-                                <MudItem xs="2"><DimensionSelector @bind-Value="TaxVoucherSub.Dimension" ReadOnly="@ReadOnly" /></MudItem>
-                                <MudItem xs="2"><MudNumericField HideSpinButtons Label="Item Rate" @bind-Value="@TaxVoucherSub.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField></MudItem>
-                                <MudItem xs="2"><MudTextField ReadOnly="ReadOnly" @bind-Value="@TaxVoucherSub.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudItem>
-                                <MudItem xs="1" Class="d-flex align-center"><MudIconButton Title="Add" OnClick="AddSubList" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" /></MudItem>
-                            }
-                        </MudGrid>
+                        <MudContainer Style="max-height: 450px;max-width: 1230px;  overflow-y: scroll;">
+                            <MudTable Items="@model.TaxVoucherSubList" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="model" Context="SubContext">
+                                <ToolBarContent>
+                                    <div style="width:150%;">
+                                        <MudText Typo="Typo.h6"> Items </MudText>
+                                    </div>
+                                </ToolBarContent>
+                                <HeaderContent>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.AssetName)" InitialDirection="SortDirection.Ascending"> Asset Name </MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.SlipNo)" InitialDirection="SortDirection.Ascending"> Slip No </MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.Reference)" InitialDirection="SortDirection.Ascending"> Reference </MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending"> Amount </MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.UsageCode)" InitialDirection="SortDirection.Ascending"> Usage Code </MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.CostCenterVal)" InitialDirection="SortDirection.Ascending"> Cost Center </MudTableSortLabel></MudTh>
+                                    <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.DimensionVal)" InitialDirection="SortDirection.Ascending"> Dimension </MudTableSortLabel></MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd DataLabel="Asset Name">@SubContext.AssetName | @SubContext.AssetCode</MudTd>
+                                    <MudTd DataLabel="Slip No">@SubContext.SlipNo</MudTd>
+                                    <MudTd DataLabel="Reference">@SubContext.Reference</MudTd>
+                                    <MudTd DataLabel="Amount">@SubContext.Amount</MudTd>
+                                    <MudTd DataLabel="Usage Code">@SubContext.UsageCode</MudTd>
+                                    <MudTd DataLabel="Cost Center">
+                                        <MudSelect ReadOnly="ReadOnly" Label="Select CostCenter" @bind-Value="@SubContext.CostCenterMod" T="CostCenterModel" ToStringFunc="@(e => e == null ? null : $"{e.CostCenter}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                            @foreach (var ditem in costCenter)
+                                            {
+                                                <MudSelectItem Value="@ditem">@ditem.CostCenter</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudTd>
+                                    <MudTd DataLabel="Dimension">
+                                        <MudSelect ReadOnly="ReadOnly" Label="Select Dimension" @bind-Value="@SubContext.DimensionMod" T="DimensionModel" ToStringFunc="@(e => e == null ? null : $"{e.Dimension}")"  Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                            @foreach (var ditem in dimension)
+                                            {
+                                                <MudSelectItem Value="@ditem">@ditem.Dimension</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudContainer>
                     </MudItem>
                 </MudGrid>
             </EditForm>
@@ -136,6 +146,8 @@
     private string UserID = null;
     public int SubAssetModel { get; set; }
     public List<TaxVoucherSubModel> SubList { get; set; }
+    private List<CostCenterModel> costCenter = new();
+    private List<DimensionModel> dimension = new();
     private List<AssetDocumentTypeModel> DocumentTypeList = new();
     private EditContext editContext;
     DialogForm dialogForm;
@@ -155,6 +167,8 @@
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         UserID = user.Identity.Name;
+        costCenter = costIservice.Select().ToList();
+        dimension = dimensionIservice.Select().ToList();
         if (model == null || model != null && model.TaxVoucherID == null || model != null && model.TaxVoucherID == 0)
         {
             if (model == null)
@@ -221,7 +235,7 @@
 
     public void AddSubList()
     {
-        if (TaxVoucherSub.Asset == null)
+        if (TaxVoucherSub.DocumentID == null)
         {
             snackbar.Add("Please select Asset", Severity.Error);
             return;
@@ -240,10 +254,29 @@
         }
     }
 
-    public void OnChangeDocumentType(AssetDocumentTypeModel obj)
+    public async Task OnChangeDocumentType(AssetDocumentTypeModel obj)
     {
         model.DocumentType = obj;
         AddTax();
+        if (model.DocumentType != null)
+        {
+            DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            DialogParameters parms = new DialogParameters();
+            parms.Add("DocumentType", model.DocumentType);
+            var dialog = DialogService.Show<AssetDocumentSelectDialoge>("Select Document", parms, mediumWidth);
+            var result = await dialog.Result;
+            var isCancelled = result.Cancelled;
+            if (!isCancelled)
+            {
+                var ReturnData = (TaxVoucherModel)result.Data;
+
+                if (ReturnData != null && ReturnData.TaxVoucherSubList != null && ReturnData.TaxVoucherSubList.Where(d => d.IsSelect == true) != null && ReturnData.TaxVoucherSubList.Where(d => d.IsSelect == true).Count() != 0)
+                {
+                    model.TaxVoucherSubList = ReturnData.TaxVoucherSubList.Where(d => d.IsSelect == true).ToList();
+                }
+            }
+
+        }
     }
 
     public void OnChangeAgent(PartyModel obj)
@@ -287,6 +320,17 @@
         {
             try
             {
+
+                if (model.TaxVoucherSubList != null && model.TaxVoucherSubList.Count() != 0)
+                {
+                    foreach (var item in model.TaxVoucherSubList)
+                    {
+
+                        item.CostCenter = item.CostCenterMod?.CostCenterID ?? null;
+                        item.Dimension = item.DimensionMod?.DimensionID ?? null;
+                    }
+                    model.TotalAmount = model.TaxVoucherSubList.Sum(s => s.Amount);
+                }
                 model = Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
                 dialogForm.Close(model);
@@ -377,8 +421,4 @@
         return false;
     }
 
-    void SubElementSelected(AssetModel Asset)
-    {
-        TaxVoucherSub.Asset = Asset;
-    }
 }

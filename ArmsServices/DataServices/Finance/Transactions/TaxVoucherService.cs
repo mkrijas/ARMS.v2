@@ -53,8 +53,58 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     TaxVoucherSubID = dr.GetInt32("TaxVoucherSubID"),
                     TaxVoucherID = dr.GetInt32("TaxVoucherID"),
                     Amount = dr.GetDecimal("Amount"),
-                    AssetID = dr.GetInt32("AssetID"),
-                    Asset = new AssetModel() { AssetID = dr.GetInt32("AssetID"), Description = dr.GetString("Description") },
+                    DocumentID = dr.GetInt32("DocumentID"),
+                    DocumentName = dr.GetString("DocumentName"),
+                    AssetName = dr.GetString("AssetName"),
+                    AssetCode = dr.GetString("AssetCode"),
+                    SlipNo = dr.GetString("SlipNo"),
+                    UsageCode = dr.GetString("UsageCode"),
+                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    CostCenterMod = new CostCenterModel()
+                    {
+                         CostCenterID = dr.GetInt32("CostCenterID"),
+                          CostCenter = dr.GetString("CostCenter"),
+
+                    },
+                    DimensionVal = dr.GetString("Dimension"),
+                    Dimension = dr.GetInt32("DimensionID"),
+                    DimensionMod = new DimensionModel()
+                    {
+                         DimensionID = dr.GetInt32("DimensionID"),
+                          Dimension = dr.GetString("Dimension"),
+                    },
+                    Reference = dr.GetString("Reference"),
+                };
+            }
+        }
+
+
+
+        public IEnumerable<TaxVoucherSubModel> GetNotPostedSubDocuments(int? DocumentTypeID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetNotFinancialyPosted"),
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
+            {
+                yield return new TaxVoucherSubModel()
+                {
+                    TaxVoucherSubID = dr.GetInt32("TaxVoucherSubID"),
+                    TaxVoucherID = dr.GetInt32("TaxVoucherID"),
+                    Amount = dr.GetDecimal("Amount"),
+                    DocumentID = dr.GetInt32("DocumentID"),
+                    DocumentName = dr.GetString("DocumentName") ,
+                    AssetID = dr.GetInt32("AssetID") ,
+                    AssetName = dr.GetString("AssetName") ,
+                    AssetCode = dr.GetString("AssetCode") ,
+                    SlipNo = dr.GetString("SlipNo") , 
+                    UsageCode = dr.GetString("UsageCode"), 
+                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),
                     CostCenter = dr.GetInt32("CostCenterID"),
@@ -74,11 +124,6 @@ namespace ArmsServices.DataServices.Finance.Transactions
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxVoucher.Reverse]", parameters);
         }
-
-        //public int Reverse(int? PID, string UserID)
-        //{
-        //    throw new NotImplementedException();
-        //}
 
         public IEnumerable<TaxVoucherModel> Select(int? BranchID)
         {
@@ -141,19 +186,22 @@ namespace ArmsServices.DataServices.Finance.Transactions
 
         public TaxVoucherModel Update(TaxVoucherModel model)
         {
-            List<TaxVoucherSubSendModel> taxVoucherSubListFormated = new();
-            foreach (var item in model.TaxVoucherSubList)
+            //List<TaxVoucherSubSendModel> taxVoucherSubListFormated = new();
+            //foreach (var item in model.TaxVoucherSubList)
+            //{
+            //    taxVoucherSubListFormated.Add(new()
+            //    {
+            //        TaxVoucherSubID = item.TaxVoucherSubID,
+            //        TaxVoucherID = item.TaxVoucherID,
+            //        DocumentID = item.DocumentID,
+            //        Amount = item.Amount,
+            //        Reference = item.Reference
+            //    });
+            //}
+            try
             {
-                taxVoucherSubListFormated.Add(new()
-                {
-                    TaxVoucherSubID = item.TaxVoucherSubID,
-                    TaxVoucherID = item.TaxVoucherID,
-                    AssetID = item.Asset?.AssetID ?? 0,
-                    Amount = item.Amount,
-                    Reference = item.Reference
-                });
-            }
-            List<SqlParameter> parameters = new List<SqlParameter>
+
+                List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TaxVoucherID", model.TaxVoucherID),
                new SqlParameter("@BranchID", model.BranchID),
@@ -180,13 +228,18 @@ namespace ArmsServices.DataServices.Finance.Transactions
                new SqlParameter("@CGST", model.CGST),
                new SqlParameter("@IGST", model.IGST),
                new SqlParameter("@TDS", model.TDS),
-               new SqlParameter("@TaxVoucherSub", taxVoucherSubListFormated?.ToDataTable()??null),
+               new SqlParameter("@TaxVoucherSub", model.TaxVoucherSubList?.ToDataTable()??null),
 
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxVoucher.Update]", parameters))
-            {
-                model = GetModel(dr);
+                foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxVoucher.Update]", parameters))
+                {
+                    model = GetModel(dr);
+                }
+            }
+            catch (Exception ex) 
+            { 
+            
             }
             return model;
         }

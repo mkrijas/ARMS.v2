@@ -1,0 +1,130 @@
+﻿@using System.Threading;
+@using ArmsModels.BaseModels.Finance.Transactions;
+@using ArmsServices.DataServices.Finance.Transactions;
+@attribute [Authorize]
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
+@inject ITaxVoucherService Iservice
+@inject IAssetDocumentService IDocumentService
+@inject IGstUsageIDService usageService
+@inject IDialogService DialogService
+@inject ITdsRateService tdsService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudText Typo="Typo.h6">Select Voucher</MudText>
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+
+        <MudContainer Style="max-height: 450px; overflow-y: scroll">
+@*            <EditForm id="AssetDocumentSelectForm" Model="@model" OnValidSubmit="OnValidSubmit">
+                <MudGrid>
+                    <MudItem xs="12">*@
+                        <MudTable Items="@model.TaxVoucherSubList" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="model" Context="SubContext">
+                            <HeaderContent>
+                                <MudTh>IsSelect</MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.AssetName)" InitialDirection="SortDirection.Ascending">AssetName</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.SlipNo)" InitialDirection="SortDirection.Ascending">SlipNo</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.Reference)" InitialDirection="SortDirection.Ascending">Reference</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<TaxVoucherSubModel, object>(x=> x.UsageCode)" InitialDirection="SortDirection.Ascending">UsageCode</MudTableSortLabel></MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="IsSelect"><MudCheckBox @bind-Checked="@SubContext.IsSelect" Label=""></MudCheckBox></MudTd>
+                                <MudTd DataLabel="AssetName">@SubContext.AssetName | @SubContext.AssetCode</MudTd>
+                                <MudTd DataLabel="SlipNo">@SubContext.SlipNo</MudTd>
+                                <MudTd DataLabel="Reference">@SubContext.Reference</MudTd>
+                                <MudTd DataLabel="Amount">@SubContext.Amount</MudTd>
+                                <MudTd DataLabel="UsageCode">@SubContext.UsageCode</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+@*                    </MudItem>
+                </MudGrid>
+            </EditForm>*@
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Button" OnClick="OnValidSubmit">Select</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [Parameter]
+    public TaxVoucherModel model { get; set; } = new();
+    [Parameter]
+    public AssetDocumentTypeModel DocumentType { get; set; } = new();
+    private TaxVoucherSubModel TaxVoucherSub { get; set; } = new();
+    private int? branchID = null;
+    private string UserID = null;
+    public List<TaxVoucherSubModel> SubList { get; set; }
+    private EditContext editContext;
+    DialogForm dialogForm;
+    private bool _busy;
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+
+    public bool HasPermissionTaxVoucherServiceEdit { get; set; } = false;
+    public bool HasPermissionTaxVoucherServiceApprove { get; set; } = false;
+    int TaxVoucherDocTypeID = 19;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTaxVoucherServiceEdit = await Irole.HasClaim(TaxVoucherDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTaxVoucherServiceApprove = await Irole.HasClaim(TaxVoucherDocTypeID.ToString(), "Approve", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        if (DocumentType != null && DocumentType.DocumentTypeID != 0)
+        {
+            var resultList = Iservice.GetNotPostedSubDocuments(DocumentType.DocumentTypeID);
+            if (resultList != null && resultList.Count() != 0)
+            {
+                model.TaxVoucherSubList = resultList.ToList();
+            }
+
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        editContext = new EditContext(model);
+    }
+
+    public async Task OnValidSubmit()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        if (HasPermissionTaxVoucherServiceEdit)
+        {
+            try
+            {
+                MudDialog.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit TaxVoucher.");
+        }
+        await Task.Delay(2000);
+        _busy = false;
+    }
+
+}

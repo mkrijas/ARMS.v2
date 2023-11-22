@@ -13,7 +13,6 @@ namespace ArmsServices.DataServices
     public class AssetSettingsService : IAssetSettingsService
     {
         IDbService Iservice;
-
         public AssetSettingsService(IDbService iservice)
         {
             Iservice = iservice;
@@ -97,10 +96,5 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.Settings.Update]", parameters);
         }
-
-
     }
-
 }
-
-

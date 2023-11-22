@@ -1,7 +1,11 @@
-﻿@inject AuthenticationStateProvider auth
-@inject IAssetDocumentRequestService Iservice
+﻿@inject IAssetDocumentRequestService Iservice
 @inject IAssetDocumentService IDocumentService
 @inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -86,9 +90,13 @@
     public AssetDocumentRequestModel model { get; set; } = new();
     public AssetModel SelectedAsset { get; set; }
     public List<AssetModel> PassedListAssets { get; set; }
-    private bool _busy;
     List<AssetDocumentTypeModel> DocumentTypes = new();
     public int BranchID { get; set; } = 0;
+    private bool _busy;
+
+    public bool HasPermissionAssetDocumentRequestServiceEdit { get; set; } = false;
+    public int AssetDocumentRequestDocTypeID = 114;
+
     public void SetAssets()
     {
         if (PassedListAssets == null)
@@ -128,6 +136,14 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetDocumentRequestServiceEdit = await Irole.HasClaim(AssetDocumentRequestDocTypeID.ToString(), "Edit", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        BranchID = int.Parse(brancIDString);
+
         if (model.DocumentType == null)
         {
             model.DocumentType = new();
@@ -140,11 +156,6 @@
                 PassedListAssets.AddRange(model.Assets);
             }
         }
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        BranchID = int.Parse(brancIDString);
     }
 
     protected override void OnParametersSet()
@@ -166,21 +177,30 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        if (model != null)
+        if (HasPermissionAssetDocumentRequestServiceEdit)
         {
-            if (model.Assets != null)
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            if (model != null)
             {
-                model.Assets.Clear();
+                if (model.Assets != null)
+                {
+                    model.Assets.Clear();
+                }
+                else
+                {
+                    model.Assets = new();
+                }
+                model.Assets.AddRange(PassedListAssets);
+                model.UserInfo.UserID = user.Identity.Name;
+                Iservice.Update(model);
             }
-            else
-            {
-                model.Assets = new();
-            }
-            model.Assets.AddRange(PassedListAssets);
-            model.UserInfo.UserID = user.Identity.Name;
-            Iservice.Update(model);
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit AssetDocumentRequest.");
         }
         MudDialog.Close(DialogResult.Ok(true));
         await Task.Delay(2000);

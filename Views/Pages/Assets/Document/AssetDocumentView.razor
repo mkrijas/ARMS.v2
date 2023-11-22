@@ -2,8 +2,10 @@
 @inject IAssetDocumentService Iservice
 @inject IAssetService IAsset
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
 
 @using System.Text.RegularExpressions
@@ -52,8 +54,16 @@
 
     private DialogOptions dialogOptions = new() { FullWidth = true };
 
+    public bool HasPermissionAssetDocumentServiceEdit { get; set; } = false;
+    public bool HasPermissionAssetDocumentServiceRemove { get; set; } = false;
+    public int AssetDocumentDocTypeID = 113;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetDocumentServiceEdit = await Irole.HasClaim(AssetDocumentDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionAssetDocumentServiceRemove = await Irole.HasClaim(AssetDocumentDocTypeID.ToString(), "Remove", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         UserID = user.Identity.Name;
@@ -75,10 +85,19 @@
         GetAll();
     }
 
-    private void SaveImagePath(string filePath, int? docID)
+    private async Task SaveImagePath(string filePath, int? docID)
     {
-        int e = Iservice.SaveFilePath(filePath, docID);
-        GetAll();
+        if (HasPermissionAssetDocumentServiceEdit)
+        {
+            int e = Iservice.SaveFilePath(filePath, docID);
+            GetAll();
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit AssetDocument.");
+        }
     }
 
     private async Task OpenDialogEdit(AssetDocumentModel model)
@@ -116,9 +135,18 @@
 
     private async Task Remove(AssetDocumentModel model)
     {
-        model.UserInfo.UserID = UserID;
-        Iservice.Remove(model);
-        snackbar.Add("Removed " + model.DocumentType.DocumentTypeName + " From " + Asset.Description, Severity.Success);
-        GetAll();
+        if (HasPermissionAssetDocumentServiceRemove)
+        {
+            model.UserInfo.UserID = UserID;
+            Iservice.Remove(model);
+            snackbar.Add("Removed " + model.DocumentType.DocumentTypeName + " From " + Asset.Description, Severity.Success);
+            GetAll();
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Remove AssetDocument.");
+        }
     }
 }

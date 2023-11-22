@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
         IEnumerable<TaxVoucherModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<TaxVoucherModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxVoucherSubModel> GetSub(int? ID);
+        IEnumerable<TaxVoucherSubModel> GetNotPostedSubDocuments(int? DocumentTypeID);
         int Approve(int? TaxVoucherID, string UserID, string Remarks);  //Approve
         int Reverse(int? PID, string UserID, string Remarks);  //Reverse
     }
