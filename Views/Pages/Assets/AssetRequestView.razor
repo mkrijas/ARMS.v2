@@ -49,10 +49,41 @@
     private List<AssetDocumentRequestModel> collection = new();
     private bool _busy;
 
+    public bool HasPermissionAssetDocumentRequestServiceDelete { get; set; } = false;
+    public int AssetDocumentRequestDocTypeID = 114;
+
     string state = "Message box hasn't been opened yet";
+
     protected override void OnParametersSet()
     {
         GetAll();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetDocumentRequestServiceDelete = await Irole.HasClaim(AssetDocumentRequestDocTypeID.ToString(), "Delete", ctc.Token);
+
+        GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        collection = new();
+        model.UserInfo = new();
+        if (model.UserInfo != null)
+        {
+            model.UserInfo.UserID = user.Identity.Name;
+        }
+        model.BranchID = int.Parse(brancIDString);
+        foreach (var item in Iservice.SelectPendingByBranch(model.BranchID))
+        {
+            collection.Add(item);
+        }
     }
 
     private async Task OpenDialogAddNew()
@@ -126,46 +157,31 @@
 
     private async Task OpenDialogDelete(AssetDocumentRequestModel AssetRequest)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Are you sure you want to delete this entry?",
-            yesText: "Delete!", cancelText: "Cancel");
-        state = result == null ? "Cancelled" : "Deleted!";
-        if (state == "Deleted!")
+        if (HasPermissionAssetDocumentRequestServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            AssetRequest.UserInfo = new();
-            if (AssetRequest.UserInfo != null)
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Are you sure you want to delete this entry?",
+                yesText: "Delete!", cancelText: "Cancel");
+            state = result == null ? "Cancelled" : "Deleted!";
+            if (state == "Deleted!")
             {
-                AssetRequest.UserInfo.UserID = user.Identity.Name;
-                Iservice.Delete(AssetRequest.ID, AssetRequest.UserInfo.UserID);
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                AssetRequest.UserInfo = new();
+                if (AssetRequest.UserInfo != null)
+                {
+                    AssetRequest.UserInfo.UserID = user.Identity.Name;
+                    Iservice.Delete(AssetRequest.ID, AssetRequest.UserInfo.UserID);
+                }
+                GetAll();
             }
-            GetAll();
         }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        GetAll();
-    }
-
-    private async Task GetAll()
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-
-        collection = new();
-        model.UserInfo = new();
-        if (model.UserInfo != null)
+        else
         {
-            model.UserInfo.UserID = user.Identity.Name;
-        }
-        model.BranchID = int.Parse(brancIDString);
-        foreach (var item in Iservice.SelectPendingByBranch(model.BranchID))
-        {
-            collection.Add(item);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete AssetDocumentRequest.");
         }
     }
 }
