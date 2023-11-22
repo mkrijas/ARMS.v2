@@ -46,12 +46,18 @@ namespace ArmsModels.BaseModels
 
     public class DistrictModel
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<DistrictModel>(Json);
+        }
         public int? DistrictID { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
         public string DistrictName { get; set; }
         [Required]
         public int? StateID { get; set; }
+        public virtual StateModel State { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }

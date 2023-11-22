@@ -1,0 +1,122 @@
+﻿@page "/district"
+@inject IDistrictService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Elevation="10" Filter="new Func<DistrictModel, bool>(search)" @bind-district="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">District</MudText>
+                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new DistrictModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchDistrict" Placeholder="Search District... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<DistrictModel, object>(x=> x.DistrictName)" InitialDirection="SortDirection.Ascending">District</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DistrictModel, object>(x=> x.State.StateName)" InitialDirection="SortDirection.Ascending">State</MudTableSortLabel></MudTh>
+                <MudTh>Action</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="District">@context.DistrictName</MudTd>
+                    <MudTd DataLabel="State">@context.State.StateName</MudTd>
+                    <MudTd DataLabel="">
+                        <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                </PagerContent>
+            </MudTable>
+        </MudItem>
+    </MudGrid>
+
+    @code {
+
+    private DistrictModel model = new DistrictModel();
+    public List<DistrictModel> collection = new List<DistrictModel>();
+
+    private string searchDistrict = "";
+    private bool _busy;
+    public bool HasPermissionPlaceServiceEdit { get; set; } = false;
+    public bool HasPermissionPlaceServiceDelete { get; set; } = false;
+    public int DocTypeID = 54;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionPlaceServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionPlaceServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
+        await GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        collection = Iservice.Select(0).ToList();
+    }
+
+    private async void Delete(DistrictModel model)
+    {
+        if (HasPermissionPlaceServiceDelete)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.DistrictName + " ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.DistrictID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            await GetAll();
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Place.");
+        }
+    }
+
+    private bool search(DistrictModel district)
+    {
+        if (district.DistrictName != null && district.DistrictName.Contains(searchDistrict, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private async Task OpenDialog(DistrictModel model)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        if (HasPermissionPlaceServiceEdit)
+        {
+            DialogParameters parms = new DialogParameters();
+            parms.Add("districtmodel", model.Clone());
+            var dialog = DialogService.Show<DistrictDialogue>("District", parms);
+            var result = await dialog.Result;
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Place.");
+        }
+        await GetAll();
+        await Task.Delay(200);
+        _busy = false;
+    }
+}

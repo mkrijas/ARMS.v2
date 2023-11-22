@@ -65,6 +65,11 @@ namespace ArmsServices.DataServices
                     DistrictID = dr.GetInt32("DistrictID"),
                     DistrictName = dr.GetString("DistrictName"),
                     StateID = dr.GetInt32("StateID"),
+                    State = new StateModel()
+                    {
+                        StateID = dr.GetInt32("StateID"),
+                        StateName = dr.GetString("StateName"),
+                    },
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = dr.GetByte("RecordStatus"),
