@@ -147,16 +147,13 @@ namespace ArmsServices.DataServices
                     JournalSubID = dr.GetInt32("JournalSubID"),
                     JournalID = dr.GetInt32("JournalID"),
                     Reference = dr.GetString("Reference"),
-                    Debit = new ChartOfAccountModel() 
+                    CoaID = dr.GetInt32("CoaID"),
+                    Coa = new ChartOfAccountModel() 
                     { 
-                        CoaID = dr.GetInt32("DebitCoaID"), 
-                        AccountName = dr.GetString("Debit") 
+                        CoaID = dr.GetInt32("CoaID"), 
+                        AccountName = dr.GetString("AccountName") 
                     },
-                    Credit = new ChartOfAccountModel() 
-                    { 
-                        CoaID = dr.GetInt32("CreditCoaID"), 
-                        AccountName = dr.GetString("Credit") 
-                    },
+                    DrCrType = dr.GetInt32("DrCrType"),
                     Amount = dr.GetDecimal("Amount"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),
