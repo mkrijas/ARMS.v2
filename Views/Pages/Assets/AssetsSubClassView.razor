@@ -3,6 +3,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid Spacing="4">
@@ -39,11 +41,16 @@
     private AssetSubClassModel model = new AssetSubClassModel();
     private List<AssetSubClassModel> collection = new List<AssetSubClassModel>();
     DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-
     private bool _busy;
+
+    public bool HasPermissionAssetClassServiceEdit { get; set; } = false;
+    public int AssetClassDocTypeID = 115;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetClassServiceEdit = await Irole.HasClaim(AssetClassDocTypeID.ToString(), "Edit", ctc.Token);
+
         model = new();
         GetAll();
     }
@@ -62,25 +69,33 @@
         }
         _busy = true;
 
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", acm.Clone());
-        var dialog = DialogService.Show<AssetSubClassDialog>(acm.AssetSubClassID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+        if (HasPermissionAssetClassServiceEdit)
         {
-            try
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", acm.Clone());
+            var dialog = DialogService.Show<AssetSubClassDialog>(acm.AssetSubClassID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                AssetSubClassModel UpdatedModel = (AssetSubClassModel)result.Data;
-                Iservice.UpdateSubClass(UpdatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
+                try
+                {
+                    AssetSubClassModel UpdatedModel = (AssetSubClassModel)result.Data;
+                    Iservice.UpdateSubClass(UpdatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+            GetAll();
         }
-        GetAll();
-
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit AssetClass.");
+        }
         await Task.Delay(200);
         _busy = false;
     }
