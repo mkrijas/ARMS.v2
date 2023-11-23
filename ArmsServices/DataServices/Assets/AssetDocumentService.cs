@@ -177,7 +177,7 @@ namespace ArmsServices.DataServices
                 NotificationID = dr.GetInt32("NotificationID"),
                 ReceiptNo = dr.GetString("ReceiptNo"),
                 Refference = dr.GetString("Refference"),
-                Amount = dr.GetDecimal("NotificationID"),
+                Amount = dr.GetDecimal("Amount"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -251,6 +251,35 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+
+        public bool? IsCostCenterIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+            };
+            bool? result = false;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.COA.CostCentor.Manadatory]", parameters))
+            {
+                result = dr.GetBoolean("Result");
+
+            }
+            return result;
+        }
+        public bool? IsDimensionIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+            };
+            bool? result = false;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentType.Dimension.Manadatory]", parameters))
+            {
+                result = dr.GetBoolean("Result");
+
+            }
+            return result;
+        }
         public bool IsValid(AssetDocumentModel model, DateTime? DateToCheck)
         {
             if (!(model.StartDate?.Date <= DateToCheck?.Date && model.EndDate?.Date >= DateToCheck?.Date))

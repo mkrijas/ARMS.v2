@@ -102,14 +102,14 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     AssetID = dr.GetInt32("AssetID") ,
                     AssetName = dr.GetString("AssetName") ,
                     AssetCode = dr.GetString("AssetCode") ,
-                    SlipNo = dr.GetString("SlipNo") , 
+                    SlipNo = dr.GetString("ReceiptNo") , 
                     UsageCode = dr.GetString("UsageCode"), 
                     InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),
                     CostCenter = dr.GetInt32("CostCenterID"),
                     Dimension = dr.GetInt32("DimensionID"),
-                    Reference = dr.GetString("Reference"),
+                    Reference = dr.GetString("Refference"),
                 };
             }
         }
