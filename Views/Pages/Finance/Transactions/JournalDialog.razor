@@ -20,39 +20,53 @@
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
                     <MudItem xs="12">
-                        <MudGrid>
-                            <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Debit Ac</u></strong> </span></MudItem>
-                            <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Credit Ac</u></strong> </span></MudItem>
+                        <MudGrid Justify="Justify.Center">
+                            <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Account</u></strong> </span></MudItem>
+                            <MudItem xs="2" Class="d-flex align-center"><span><strong><u>Reference</u></strong> </span></MudItem>
+                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Amount</u></strong> </span></MudItem>
                             <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Cost Center</u></strong> </span></MudItem>
                             <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Dimension</u></strong> </span></MudItem>
-                            <MudItem xs="1" Class="d-flex align-center"><span><strong><u>Amount</u></strong> </span></MudItem>
-                            <MudItem xs="2" Class="d-flex align-center"><span><strong><u>Reference</u></strong> </span></MudItem>
                             <MudItem xs="1"></MudItem>
                             @foreach (var item in model.JournalSubList)
                             {
-                                <MudItem xs="2"> @item.Debit.AccountName </MudItem>
-                                <MudItem xs="2"> @item.Credit.AccountName </MudItem>
+                                <MudItem xs="2"> @item.Coa.AccountName </MudItem>
+                                <MudItem xs="2"> @item.Reference </MudItem>
+                                <MudItem xs="3"> @item.Amount @item.DrCrText </MudItem>
                                 <MudItem xs="2"> @item.CostCenterVal</MudItem>
                                 <MudItem xs="2"> @item.DimensionVal</MudItem>
-                                <MudItem xs="1"> @item.Amount </MudItem>
-                                <MudItem xs="2"> @item.Reference </MudItem>
                                 <MudItem xs="1" Class="d-flex">
                                     @if (!ReadOnly)
                                     {
                                         <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteSubList(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-
                                     }
                                 </MudItem>
                             }
                             @if (!ReadOnly)
                             {
-                                <MudItem xs="2"><CoaSelector @bind-Value="JournalSub.Debit" LabelName="Debit Ac" ReadOnly="ReadOnly" /></MudItem>
-                                <MudItem xs="2"><CoaSelector @bind-Value="JournalSub.Credit" LabelName="Credit Ac" ReadOnly="ReadOnly" /></MudItem>
-                                <MudItem xs="2"><CostCenterSelector @bind-Value="JournalSub.CostCenter" @bind-ValueText="@JournalSub.CostCenterVal" ReadOnly="@ReadOnly" /></MudItem>
-                                <MudItem xs="2"><DimensionSelector @bind-Value="JournalSub.Dimension" @bind-ValueText="@JournalSub.DimensionVal" ReadOnly="@ReadOnly" /></MudItem>
-                                <MudItem xs="1"><MudNumericField HideSpinButtons Label="Item Rate" @bind-Value="@JournalSub.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField></MudItem>
-                                <MudItem xs="2"><MudTextField ReadOnly="ReadOnly" @bind-Value="@JournalSub.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudItem>
-                                <MudItem xs="1" Class="d-flex align-center"><MudIconButton Title="Add" OnClick="AddSubList" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" /></MudItem>
+                                <MudItem xs="2">
+                                    <CoaSelector @bind-Value="@JournalSub.Coa" LabelName="Account" />
+                                </MudItem>
+                                <MudItem xs="2">
+                                    <MudTextField @bind-Value="@JournalSub.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                                </MudItem>
+                                <MudItem xs="2">
+                                    <MudNumericField HideSpinButtons Label="Amount" @bind-Value="@JournalSub.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                                 </MudItem>
+                                <MudItem xs="1">
+                                    <MudSelect T="int?" Label="Dr/cr" @bind-Value="@JournalSub.DrCrType" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                        <MudSelectItem T="int?" Value="1">Dr</MudSelectItem>
+                                        <MudSelectItem T="int?" Value="-1">Cr</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="2">
+                                    <CostCenterSelector @bind-Value="JournalSub.CostCenter" @bind-ValueText="@JournalSub.CostCenterVal" />
+                                </MudItem>
+                                <MudItem xs="2">
+                                    <DimensionSelector @bind-Value="JournalSub.Dimension" @bind-ValueText="@JournalSub.DimensionVal" />
+                                </MudItem>
+                                <MudItem xs="1" Class="d-flex align-center">
+                                    <MudIconButton Title="Add" OnClick="AddSubList" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                                </MudItem>
                             }
                         </MudGrid>
                     </MudItem>
@@ -74,6 +88,7 @@
     private JournalSubModel JournalSub { get; set; } = new();
     private int? branchID = null;
     private string UserID = null;
+    private decimal? CheckEqual;
     private EditContext editContext;
     DialogForm dialogForm;
     [Parameter]
@@ -164,20 +179,21 @@
         {
             int rowIndex = model.JournalSubList.IndexOf(JournalSub);
             model.JournalSubList.RemoveAt(rowIndex);
-            model.TotalAmount = model.JournalSubList.Sum(x => x.Amount);
+            model.TotalAmount = model.JournalSubList.Where(y => y.DrCrType == 1).Sum(x => x.Amount);
+            CheckEqual = model.JournalSubList.Sum(x => x.DrCrType * x.Amount);
         }
     }
 
     public void AddSubList()
     {
-        if (JournalSub.Debit == null)
+        if (JournalSub.Coa == null)
         {
-            snackbar.Add("Please select Debit Ac", Severity.Error);
+            snackbar.Add("Please select Account", Severity.Error);
             return;
         }
-        if (JournalSub.Credit == null)
+        if (JournalSub.DrCrType == null)
         {
-            snackbar.Add("Please select Credit Ac", Severity.Error);
+            snackbar.Add("Please select Dr/Cr", Severity.Error);
             return;
         }
         if (JournalSub.Amount == null)
@@ -185,12 +201,10 @@
             snackbar.Add("Please add Amount.", Severity.Error);
             return;
         }
-        if (dialogForm.validate(JournalSub, editContext))
-        {
-            model.JournalSubList.Add(JournalSub);
-            model.TotalAmount = model.JournalSubList.Sum(x => x.Amount);
-            JournalSub = new();
-        }
+        model.JournalSubList.Add(JournalSub);
+        model.TotalAmount = model.JournalSubList.Where(y => y.DrCrType == 1).Sum(x => x.Amount);
+        CheckEqual = model.JournalSubList.Sum(x => x.DrCrType * x.Amount);
+        JournalSub = new();
     }
 
     public async Task OnValidSubmit()
@@ -200,22 +214,27 @@
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
-        _busy = true;
-
         if (HasPermissionJournalServiceEdit)
         {
             model.UserInfo.UserID = UserID;
             try
             {
+                if (CheckEqual != 0)
+                {
+                    snackbar.Add("Please check the amount", Severity.Warning);
+                    return;
+                }
+                _busy = true;
                 foreach (var item in model.JournalSubList)
                 {
-                    item.DebitCoaID = item.Debit.CoaID;
-                    item.CreditCoaID = item.Credit.CoaID;
+                    item.CoaID = item.Coa.CoaID;
                 }
                 Iservice.Update(model);
                 model = new();
                 snackbar.Add("Saved Successfully", Severity.Success);
                 dialogForm.Close(model);
+                await Task.Delay(2000);
+                _busy = false;
             }
             catch (Exception ex)
             {
@@ -228,7 +247,5 @@
                 "Permission denied!",
                 "You dont have any permission to Edit Journal.");
         }
-        await Task.Delay(2000);
-        _busy = false;
     }
 }

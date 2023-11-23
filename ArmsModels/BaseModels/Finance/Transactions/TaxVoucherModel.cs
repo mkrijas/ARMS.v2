@@ -48,14 +48,23 @@ namespace ArmsModels.BaseModels.Finance.Transactions
     {
         public int? TaxVoucherSubID { get; set; }
         public int? TaxVoucherID { get; set; }
-        public decimal? Amount { get; set; }
-        public int? AssetID { get; set; }
+        public int? DocumentID { get; set; }
+        public string SlipNo { get; set; }
         public string Reference { get; set; }
+        public decimal? Amount { get; set; }
+        public DateTime? InvoiceDate { get; set; }
         public int? CostCenter { get; set; }
-        public virtual string CostCenterVal { get; set; }
         public int? Dimension { get; set; }
+        public virtual bool? IsSelect { get; set; } = false;
+        public virtual int? AssetID { get; set; }
+        public virtual string AssetName { get; set; }
+        public virtual string AssetCode { get; set; }
+        public virtual string CostCenterVal { get; set; }
+        public virtual CostCenterModel CostCenterMod { get; set; }
+        public virtual DimensionModel DimensionMod { get; set; }
         public virtual string DimensionVal { get; set; }
-        public AssetModel Asset { get; set; }
+        public virtual string DocumentName { get; set; }
+        public virtual string UsageCode { get; set; }
 
     }
 
@@ -64,7 +73,7 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public int? TaxVoucherSubID { get; set; }
         public int? TaxVoucherID { get; set; }
         public decimal? Amount { get; set; }
-        public int? AssetID { get; set; }
+        public int? DocumentID { get; set; }
         public string Reference { get; set; }
 
     }
