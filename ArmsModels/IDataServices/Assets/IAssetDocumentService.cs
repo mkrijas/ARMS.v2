@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
         int Delete(int? ID, string UserID);  //Delete
         int DeleteType(int? ID, string UserID);  //DeleteType
         int Remove(AssetDocumentModel model);  //Remove
+        int LinkDocumentTypeAndTaxPurchase(int? DocumentTypeID, int? TaxPurchaseID);
         IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate, DateTime? endDate);
         IEnumerable<AssetDocumentModel> SelectWithPast(int? AssetID);
         IEnumerable<AssetDocumentModel> SelectByAsset(int? AssetID);

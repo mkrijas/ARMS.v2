@@ -115,6 +115,17 @@ namespace ArmsServices.DataServices
         }
 
 
+        public int LinkDocumentTypeAndTaxPurchase(int? DocumentTypeID,int? TaxPurchaseID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+               new SqlParameter("@TaxPurchaseID", TaxPurchaseID)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Asset.Document.TaxPurchase.Link.Update]", parameters);
+        }
+
+
         public IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate, DateTime? endDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
