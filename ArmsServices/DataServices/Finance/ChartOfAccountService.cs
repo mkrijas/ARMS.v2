@@ -246,6 +246,35 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public bool? IsCostCenterIsMadatoryForGivenCoaID(int? CoaID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@CoaID", CoaID),
+            };
+            bool? result = false;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.COA.CostCentor.Manadatory]", parameters))
+            {
+                result = dr.GetBoolean("Result");
+                       
+            }
+            return result;
+        }
+        public bool? IsDimensionIsMadatoryForGivenCoaID(int? CoaID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@CoaID", CoaID),
+            };
+            bool? result = false;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.COA.Dimension.Manadatory]", parameters))
+            {
+                result = dr.GetBoolean("Result");
+                       
+            }
+            return result;
+        }
+
         public void SelectAll(int? CoaID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

@@ -21,6 +21,8 @@ namespace ArmsServices.DataServices
         IEnumerable<ChartOfAccountModel> AllGroups();
         IEnumerable<ChartOfAccountModel> SelectByGroup(int? GroupID);
         IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID);
+        bool? IsCostCenterIsMadatoryForGivenCoaID(int? CoaID);
+        bool? IsDimensionIsMadatoryForGivenCoaID(int? CoaID);
         void SelectAll(int? CoaID, string UserID);  //UpdateSelect
         void UnSelectAll(int? CoaID, string UserID);  //UpdateSelect
         void AddBranch(CoaBranchAvailabilityModel model);  //UpdateSelect

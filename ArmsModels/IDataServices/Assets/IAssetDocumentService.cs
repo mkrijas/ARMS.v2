@@ -23,5 +23,7 @@ namespace ArmsServices.DataServices
         AssetDocumentTypeModel UpdateDocumentType(AssetDocumentTypeModel model);  //EditType
         IEnumerable<AssetDocumentModel> ValidatePeriod(AssetDocumentModel model);
         bool IsValid(AssetDocumentModel model, DateTime? DateToCheck);
+        bool? IsCostCenterIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID);
+        bool? IsDimensionIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID);
     }
 }
