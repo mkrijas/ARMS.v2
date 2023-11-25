@@ -24,6 +24,7 @@ namespace ArmsModels.BaseModels
         public virtual string OrderName { get; set; }
         [Required]
         public int? RouteID { get; set; }
+        public DateTime? OrderTime { get; set; } = DateTime.Today;
         public virtual string RouteName { get; set; }
         public DateTime? GcDate { get; set; } = DateTime.Today;
         [Required]
@@ -79,6 +80,7 @@ namespace ArmsModels.BaseModels
         public decimal? BillQuantity { get; set; }
         public virtual decimal? UnloadedQuantity { get; set; }
         public string PassNumber { get; set; }
+        public DateTime? OrderTime { get; set; } = DateTime.Today;
         public virtual EwayBillModel EwayBill { get; set; }
         [Required]
         public virtual decimal? EFreight { get; set; } = 200;
