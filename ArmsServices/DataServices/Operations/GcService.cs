@@ -223,7 +223,7 @@ namespace ArmsServices.DataServices
                 GcNumber = dr.GetInt32("GcNo"),
                 GcPrefix = dr.GetString("GcPrefix"),
                 GcType = dr.GetInt16("GcType"),
-                OrderTime = dr.GetDateTime("OrderTime")
+                OrderTime = dr.GetDateTime("OrderTime"),
                 GcTypeName = dr.HasColumn("GcTypeName") ? dr.GetString("GcTypeName") : null,
                 PassNumber = dr.GetString("PassNumber"),
                 Freight = dr.GetDecimal("Freight"),
