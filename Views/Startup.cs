@@ -216,7 +216,7 @@ namespace Views
             services.AddScoped<IReceiptService, ReceiptService>();
             services.AddScoped<IDrCrNoteService, DrCrNoteService>();
             services.AddScoped<ISaleService, SaleService>();
-            //services.AddScoped<IJournalService, JournalService>();
+            services.AddScoped<IJournalService, JournalService>();
             services.AddScoped<IInventoryReleaseService, InventoryReleaseService>();
 
             //------------FINANCE POSTING GROUP-------------------
