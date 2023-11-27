@@ -32,22 +32,29 @@
                         <MudDatePicker Disabled Label="Due On" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DueOn" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <PaymentAccountSelector @bind-PaymentMode="@model.PaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" BankCharges="@model.BankCharges" BankChargesChanged="BankChargesChanged" @bind-BankTool="@model.PaymentTool" />
+                        <PaymentAccountSelector @bind-PaymentMode="@model.PaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID"  @bind-BankTool="@model.PaymentTool" HideBankCharges />
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudTable Class="mb-3" T="PaymentMemoModel" Items="@model.SelectedMemos" Hover="true"
-                                  SelectOnRowClick Context="memos">
+                        <MudTable Class="mb-3" T="PaymentMemoModel" Items="@model.SelectedMemos" Hover="true" SelectOnRowClick Context="memos">
                             <HeaderContent>
                                 <MudTh>Memo Date</MudTh>
                                 <MudTh>Party</MudTh>
                                 <MudTh>Amount</MudTh>
                                 <MudTh>Reference</MudTh>
+                                <MudTh>Bank Charges</MudTh>
+                                <MudTh></MudTh>
                             </HeaderContent>
                             <RowTemplate>
                                 <MudTd DataLabel="DocumentDate">@memos.DocumentDate</MudTd>
                                 <MudTd DataLabel="Party">@memos.PartyInfo.TradeName</MudTd>
                                 <MudTd DataLabel="Amount">@memos.TotalAmount</MudTd>
                                 <MudTd DataLabel="Reference">@memos.Reference</MudTd>
+                                <MudTd DataLabel="BankCharges">
+                                    <MudTextField Disabled="@ReadOnly" @bind-Value="@memos.BankCharges" Label="Bank Charges (if any)" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                                </MudTd>
+                                <MudTd>
+                                    <MudFab @onclick="@(()=> OpenMemo(memos))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                                </MudTd>
                             </RowTemplate>
                         </MudTable>
                     </MudItem>
@@ -87,10 +94,7 @@
     public bool HasAuthoriseEdit { get; set; } = false;
     int DocTypeID = 8;
 
-    void BankChargesChanged(decimal? amount)
-    {
-        model.BankCharges = amount;
-    }
+    
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,7 +107,6 @@
         UserID = User.Identity.Name;
         model.BranchID = branchID;
         model.DocumentDate = DateTime.Today;
-
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
@@ -114,26 +117,15 @@
         editContext = new EditContext(model);
     }
 
-    //public async Task GetPaymentEntryDetails()
-    //{
-    //    var authprov = await auth.GetAuthenticationStateAsync();
-    //    var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-    //    int brancID = int.Parse(brancIDString);
-    //    int NumberOfRecords = numberOfRecords;
-    //    List<PaymentMemoModel> ppmm = new List<PaymentMemoModel>();
-    //    List<PaymentFinishModel> pfm = new List<PaymentFinishModel>();
-    //    if (model.PaymentFinalizeID != null)
-    //    {
-    //        pfm = Iservice.Select(brancID, model.PaymentFinalizeID, NumberOfRecords, searchTerm).ToList();
-    //        foreach (var item in pfm)
-    //        {
-    //            PaymentFinishModel f = new();
-    //            model.DocumentDate = item.DocumentDate;
-    //            model.Narration = item.Narration;
-    //        }
-    //    }
-    //}
-
+    public async Task OpenMemo(PaymentMemoModel ppm)
+    {      
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", ppm.Clone());
+        parms.Add("PageToRedirectLink", "/PaymentMemoView");
+        parms.Add("ReadOnly", true);
+        var dialog = DialogService.Show<PaymentMemoDialog>("MEMO", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+        var result = await dialog.Result;        
+    }
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)

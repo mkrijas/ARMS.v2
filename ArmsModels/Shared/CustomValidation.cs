@@ -71,7 +71,6 @@ namespace ArmsModels.BaseModels
         }
     }
 
-
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public class AtLeastOneRequiredAttribute : ValidationAttribute
     {

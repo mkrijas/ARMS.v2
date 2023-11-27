@@ -29,15 +29,15 @@
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x=> x.PartyInfo.TradeName)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x=> x.PaymentMode)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentFinishModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Total Amount</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="PaymentStatus">@context.DocumentDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="PaymentMemoID">@context.DocumentNumber</MudTd>
-                <MudTd DataLabel="PaymentStatus">@context.PartyInfo?.TradeName</MudTd>
-                <MudTd DataLabel="PaymentMemoID">@context.TotalAmount</MudTd>
+                <MudTd DataLabel="DocDate">@context.DocumentDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="DocNumber">@context.DocumentNumber</MudTd>
+                <MudTd DataLabel="PaymentMode">@context.PaymentMode</MudTd>
+                <MudTd DataLabel="Amount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
                     <MudTooltip Text="View">
                         <MudFab @onclick="@(()=> View(context))" Color="Color.Primary" Title="View" Icon="@Icons.Material.Filled.Fullscreen" Size="Size.Small" IconSize="Size.Small" />
@@ -84,7 +84,7 @@
             if (numberOfRecords != value)
             {
                 numberOfRecords = value;
-                _ = ReloadTable();
+                ReloadTable();
             }
         }
     }
@@ -93,11 +93,11 @@
     {
         if (e.Key == "Enter")
         {
-            await ReloadTable();
+            ReloadTable();
         }
     }
 
-    private async Task ReloadTable()
+    private void ReloadTable()
     {
         GetAll(NumberOfRecords);
     }
@@ -113,10 +113,10 @@
         GetAll(NumberOfRecords);
         await Task.Delay(200);
         await signalRService.StartAsync();
-        if (id != null && collection != null && collection.Any(g => g.PaymentFinalizeID == id))
-        {
-            await OpenDialog(collection.FirstOrDefault(s => s.PaymentFinalizeID == id), true);
-        }
+        //if (id != null && collection != null && collection.Any(g => g.PaymentFinalizeID == id))
+        //{
+        //    await OpenDialog(collection.FirstOrDefault(s => s.PaymentFinalizeID == id), true);
+        //}
     }
 
     private void GetAll(int numberOfRecords)
@@ -148,6 +148,7 @@
             return;
         }
         _busy = true;
+        model.SelectedMemos =  ImemoService.SelectInitiated(model.PaymentInitiatedID).ToList();
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model.Clone());
         parms.Add("ReadOnly", true);
@@ -157,40 +158,40 @@
         _busy = false;
     }
 
-    private async Task OpenDialog(PaymentFinishModel tds, bool ReadOnly)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
+    //private async Task OpenDialog(PaymentFinishModel tds, bool ReadOnly)
+    //{
+    //    var authprov = await auth.GetAuthenticationStateAsync();
+    //    var user = authprov.User;
 
-        PaymentFinishModel pfm = new PaymentFinishModel(ImemoService.SelectByID(tds.PaymentMemoID));
-        pfm.PaymentInitiatedID = tds.PaymentInitiatedID;
-        pfm.InitiatedDocumentDate = tds.InitiatedDocumentDate;
-        pfm.DueOn = tds.DueOn;
-        pfm.UserInfo = tds.UserInfo;
+    //    PaymentFinishModel pfm = new PaymentFinishModel(ImemoService.SelectByID(tds.PaymentMemoID));
+    //    pfm.PaymentInitiatedID = tds.PaymentInitiatedID;
+    //    pfm.InitiatedDocumentDate = tds.InitiatedDocumentDate;
+    //    pfm.DueOn = tds.DueOn;
+    //    pfm.UserInfo = tds.UserInfo;
 
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", pfm);
-        parms.Add("PageToRedirectLink", "/PaymentsListView");
-        parms.Add("ReadOnly", ReadOnly);
-        var dialog = DialogService.Show<PaymentFinishDilaog>("Payment", parms, maxWidth);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            var ReturnData = (PaymentFinishModel)result.Data;
-            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-            notificationMessage.RedirectedTo = 0;
-            notificationMessage.ExpiredBy = 7;
-            notificationMessage.DocumentID = ReturnData.PaymentFinalizeID;
-            notificationMessage.MessageGroupID = "PendingVerification";
-            notificationMessage.PageToRedirectLink = "/PaymentsListView";
-            notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = DocTypeID;
-            notificationMessage.MsgDate = DateTime.Now;
-            await signalRService.Send(notificationMessage);
-            GetAll(NumberOfRecords);
-        }
-    }
+    //    DialogParameters parms = new DialogParameters();
+    //    parms.Add("model", pfm);
+    //    parms.Add("PageToRedirectLink", "/PaymentsListView");
+    //    parms.Add("ReadOnly", ReadOnly);
+    //    var dialog = DialogService.Show<PaymentFinishDilaog>("Payment", parms, maxWidth);
+    //    var result = await dialog.Result;
+    //    if (!result.Canceled)
+    //    {
+    //        var ReturnData = (PaymentFinishModel)result.Data;
+    //        notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+    //        notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+    //        notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+    //        notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+    //        notificationMessage.RedirectedTo = 0;
+    //        notificationMessage.ExpiredBy = 7;
+    //        notificationMessage.DocumentID = ReturnData.PaymentFinalizeID;
+    //        notificationMessage.MessageGroupID = "PendingVerification";
+    //        notificationMessage.PageToRedirectLink = "/PaymentsListView";
+    //        notificationMessage.ClaimValue = "Verify 1";
+    //        notificationMessage.DocumentTypeID = DocTypeID;
+    //        notificationMessage.MsgDate = DateTime.Now;
+    //        await signalRService.Send(notificationMessage);
+    //        GetAll(NumberOfRecords);
+    //    }
+    //}
 }

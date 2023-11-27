@@ -24,6 +24,7 @@ namespace ArmsModels.BaseModels
         public PartyModel PartyInfo { get; set; }
         public int? PartyCoaID { get; set; }
         public string Reference { get; set; }
+        public decimal? BankCharges { get; set; }
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
         [Required]
@@ -97,7 +98,7 @@ namespace ArmsModels.BaseModels
         public string PaymentTool { get; set; }  // Cheque,DD
         [Required]
         public string PaymentArdCode { get; set; }
-        public decimal? BankCharges { get; set; }
+        //public decimal? BankCharges { get; set; }
         [Required]
         public int? PaymentCoaID { get; set; }
         [Required]

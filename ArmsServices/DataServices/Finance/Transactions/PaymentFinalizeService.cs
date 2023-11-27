@@ -15,18 +15,31 @@ namespace ArmsServices.DataServices
         }
         public int? Update(PaymentFinishModel model)
         {
+            DataTable dt = new DataTable();
+            dt.Columns.Add("ID");
+            dt.Columns.Add("Amount");
+            foreach (var item in model.SelectedMemos) {
+            if(item.BankCharges!= null && item.BankCharges > 0)
+                {
+                    DataRow row = dt.NewRow();
+                    row["ID"] = item.PaymentMemoID;
+                    row["Amount"] = item.BankCharges;
+                    dt.Rows.Add(row);
+                }
+            }
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PaymentInitiatedID", model.PaymentInitiatedID),
                new SqlParameter("@PaymentFinalizeID", model.PaymentFinalizeID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
-               new SqlParameter("@TotalAmount", model.TotalAmount),               
+               new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@CoaID", model.PaymentCoaID),
                new SqlParameter("@PaymentArdCode", model.PaymentArdCode),
                new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@PaymentTool", model.PaymentTool),
-               new SqlParameter("@BankCharges", model.BankCharges),
+               new SqlParameter("BankCharges", dt),
                new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -44,7 +57,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByID"),
                new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@PfID", PfID),
+               new SqlParameter("@ID", PfID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
 
@@ -100,13 +113,12 @@ namespace ArmsServices.DataServices
                 IsInterBranch = dr.GetBoolean(""),
                 InterBranchTranID = dr.GetInt32("InterBranchTranID"),
                 PaymentArdCode = dr.GetString("ArdCode"),
-                PaymentCoaID = dr.GetInt32("CoaID"),
-                BankCharges = dr.GetDecimal("BankCharges"),
+                PaymentCoaID = dr.GetInt32("CoaID"),                
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 Narration = dr.GetString("Narration"),
                 PaymentMode = dr.GetString("PaymentMode"),
                 PaymentTool = dr.GetString("PaymentTool"),
-                TotalAmount = dr.GetDecimal("TotalAmount"),
+                TotalAmount = dr.GetDecimal("TotalAmount"),                
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
