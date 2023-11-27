@@ -130,6 +130,7 @@ namespace ArmsServices.DataServices
                 CoaID = dr.GetInt32("CoaID"),
                 InterBranchArdCode = dr.GetString("InterBranchArdCode"),
                 TransactionTypeID = dr.GetInt32("TransactionTypeID"),
+                TransactionTypeName = dr.GetString("TransactionTypeName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
