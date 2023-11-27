@@ -17,12 +17,12 @@ namespace ArmsModels.BaseModels
         }
         public InterBranchMappingModel()
         {
-
             UserInfo = new SharedModels.UserInfoModel();
         }
         public int? ID { get; set; }
         [Required]
         public int? TransactionTypeID { get; set; }
+        public virtual string TransactionTypeName { get; set; }
         [Required]
         public int? BranchID { get; set; }
         public virtual string BranchName { get; set; }
