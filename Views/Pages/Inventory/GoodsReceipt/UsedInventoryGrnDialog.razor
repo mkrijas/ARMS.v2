@@ -1,7 +1,7 @@
 ﻿@using System.Threading;
 @using Views.Pages.Finance.Transactions
 @inject IInventoryGrnService Iservice
-@inject IPartyService partyIservice
+@inject ITruckService truckIservice
 @inject IInventoryItemService itemIservice
 @inject IStoreService storeIservice
 @inject IPurchaseOrderService pIservice
@@ -16,7 +16,7 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
-            Create Goods Reciept Note
+            Used Goods Reciept Note
         </MudText>
         @if (IsView)
         {
@@ -30,7 +30,7 @@
                 <ValidationSummary />
                 <MudGrid Spacing="2">
                     <MudItem xs="12" md="12">
-                        <PartySelector ReadOnly="ReadOnly" @bind-Value="partyinfo" NatureOfBusiness="Supplier"></PartySelector>
+                        <TruckSelector IsDisabled="ReadOnly" @bind-Value="truckinfo" BranchID="@branchID"></TruckSelector>
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="ReadOnly" Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EntryDate" DateFormat="dd/MM/yyyy" />
@@ -55,10 +55,9 @@
                                     <th>@model.TotalValue</th>
                                 </tr>
                                 <tr>
-                                    <th>Items</th>
+                                    <th colspan="2">Items</th>
                                     <th>Quantity</th>
                                     <th>Rate</th>
-                                    <th>GST</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -66,10 +65,9 @@
                                 @foreach (var item in model.Entries)
                                 {
                                     <tr>
-                                        <td>@(itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode) | @(itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.ItemDescription)</td>
+                                        <td colspan="2">@(itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode) | @(itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.ItemDescription)</td>
                                         <td>@item.ItemQty</td>
                                         <td>@item.ItemRate</td>
-                                        <td>@item.ItemGstVal</td>
                                         <td>
                                             @if (!ReadOnly)
                                             {
@@ -84,7 +82,6 @@
                                         <td colspan="2"><InventoryItemSelector Value="SelectedItems" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" /></td>
                                         <td><MudTextField @bind-Value="Entrymodel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField></td>
                                         <td><MudTextField @bind-Value="Entrymodel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemRate)"></MudTextField></td>
-                                        <td></td>
                                         <td><MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" /></td>
                                     </tr>
                                 }
@@ -128,7 +125,7 @@
     public bool IsView { get; set; }
     private List<StoreModel> store = new();
     private List<InventoryItemModel> itm = new();
-    public PartyModel partyinfo = new();
+    public TruckModel truckinfo = new();
     private int? branchID = null;
     private string UserID = null;
     private bool _busy;
@@ -172,13 +169,13 @@
         if (model.GrnID != null)
         {
             model.Entries = Iservice.GetItemEntries(model.GrnID.Value).ToList();
-            partyinfo = partyIservice.SelectByID(model.PartyID);
-            model.PartyID = partyinfo.PartyID;
+            truckinfo = truckIservice.SelectByID(model.TruckID);
+            model.TruckID = truckinfo.TruckID;
         }
         else if (model.POID != null)
         {
-            partyinfo = partyIservice.SelectByID(model.PartyID);
-            model.PartyID = partyinfo.PartyID;
+            truckinfo = truckIservice.SelectByID(model.TruckID);
+            model.TruckID = truckinfo.TruckID;
         }
         else
         {
@@ -187,7 +184,7 @@
 
         DocNumber = model.GrnNo;
         DocDate = model.EntryDate;
-        DocType = "Goods Receipt Note";
+        DocType = "Used Goods Receipt Note";
     }
 
     private async Task OnValidSubmit(EditContext context)
@@ -206,10 +203,9 @@
             }
             else
             {
-                model.PartyCode = partyinfo.PartyCode;
-                model.PartyID = partyinfo.PartyID;
-                model.PartyName = partyinfo.TradeName;
-                model.UsedInventory = 0;
+                model.PartyID = 0;
+                model.TruckID = truckinfo.TruckID;
+                model.UsedInventory = 1;
                 model.StoreID = model.Store?.StoreID ?? null;
                 model.UserInfo.UserID = UserID;
                 _busy = true;
@@ -306,40 +302,17 @@
         }
     }
 
-    public decimal getgstrate(int itemID)
-    {
-        List<GstItemModel> gstitem = new();
-        gstitem = gstIservice.SelectByItem(itemID).ToList();
-        decimal gstrate = gstitem[0].TaxRate.Value;
-        return gstrate;
-    }
-
     private void AddItems()
     {
-        model.PartyID = partyinfo.PartyID;
+        model.TruckID = truckinfo.TruckID;
         Entrymodel.ItemID = SelectedItems.InventoryItemID;
-        if (Entrymodel.ItemID == null || Entrymodel.ItemRate == null || Entrymodel.ItemQty == null)
+        if (Entrymodel.ItemID == null || Entrymodel.ItemQty == null)
         {
             snackbar.Add("Please fill in all Fields", Severity.Error);
             return;
         }
-        decimal gstrt = 0;
-        decimal gstrate = 0;
-        try
-        {
-            gstrt = getgstrate(Entrymodel.ItemID.Value);
-        }
-        catch (Exception)
-        {
-            gstrt = 0;
-        }
-        if (gstrt != 0)
-        {
-            gstrate = (((Entrymodel.ItemRate.Value) * (Entrymodel.ItemQty.Value)) * gstrt) / 100;
-        }
-        Entrymodel.ItemGstVal = gstrate;
         model.Entries.Add(Entrymodel);
-        decimal total = ((Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value) + (Entrymodel.ItemGstVal.Value));
+        decimal total = (Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value);
         model.TotalValue = model.TotalValue + total;
         Entrymodel = new();
         SelectedItems = null;

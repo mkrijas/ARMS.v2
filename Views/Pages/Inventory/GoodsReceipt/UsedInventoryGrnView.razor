@@ -1,5 +1,5 @@
-﻿@page "/InventoryGrn"
-@page "/InventoryGrn/{id:int}"
+﻿@page "/UsedInventoryGrn"
+@page "/UsedInventoryGrn/{id:int}"
 @using System.Threading;
 @using PurchaseOrder
 @attribute [Authorize]
@@ -15,15 +15,9 @@
     <MudItem xs="12">
         <MudTable Items="@collection" RowStyleFunc="TableRowStyle" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<InventoryGrnModel, bool>(search)" @bind-place="model">
             <ToolBarContent>
-                <MudText Typo="Typo.h6">GRN</MudText>
-                <MudTooltip Text="New Grn">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new InventoryGrnModel(){UsedInventory=0},false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip>
-                <MudTooltip Text="Pending Purchase Order">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.AddLink" @onclick="openpurchaseorder" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                </MudTooltip>
-                <MudTooltip Text="Approved Data">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.TableView" Title="Approved Data" @onclick="@(()=> OpenDialogApproved(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudText Typo="Typo.h6">Used GRN</MudText>
+                <MudTooltip Text="Used Grn">
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new InventoryGrnModel(){UsedInventory=1},false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchGrn" Placeholder="Search Grn... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -32,15 +26,13 @@
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.GrnNo)" InitialDirection="SortDirection.Ascending">GRN No</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.EntryDate)" InitialDirection="SortDirection.Ascending">Entry Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<InventoryGrnModel, object>(x=> x.PartyName)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="GrnNO">@context.GrnNo</MudTd>
-                <MudTd DataLabel="EntryDate">@context.EntryDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="Party">@context.PartyName</MudTd>
-                <MudTd DataLabel="">
-                    @if (@context.AuthLevelID == null)
+                    <MudTd DataLabel="EntryDate">@context.EntryDate?.ToShortDateString()</MudTd>
+                    <MudTd DataLabel="">
+                        @if (@context.AuthLevelID == null)
                     {
                         <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                         <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
@@ -67,13 +59,13 @@
     private string searchGrn = "";
     public bool IsApproved { get; set; } = false;
     private bool _busy;
-    
+
     [Parameter]
     public int? id { get; set; } = null;
 
     public bool HasPermissionInventoryGrnServiceDelete { get; set; } = false;
     public int InventoryGrnDocTypeID = 16;
-    
+
     #region SignaIR Notification
 
     private PushNotificationModel notificationMessage = new PushNotificationModel();
@@ -91,7 +83,7 @@
         await signalRService.StartAsync();
         if (id != null && collection != null && collection.Any(g => g.GrnID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.GrnID == id), true,false);
+            await OpenDialog(collection.FirstOrDefault(s => s.GrnID == id), true, false);
         }
 
     }
@@ -109,11 +101,11 @@
         int brancID = int.Parse(brancIDString);
         if (val)
         {
-            collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID == 99 && x.UsedInventory == 0).ToList();
+            collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID == 99 && x.UsedInventory == 1).ToList();
         }
         else
         {
-            collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID != 99 && x.UsedInventory == 0).ToList();
+            collection = Iservice.SelectPending(brancID).Where(x => x.AuthLevelID != 99 && x.UsedInventory== 1).ToList();
         }
     }
 
@@ -133,7 +125,7 @@
         parms.Add("PageToRedirectLink", "/InventoryGrn");
         parms.Add("ReadOnly", ReadOnly);
         parms.Add("IsView", View);
-        var dialog = DialogService.Show<InventoryGrnDialog>(tds.GrnID == null ? "ADD" : "EDIT", parms, maxWidth);
+        var dialog = DialogService.Show<UsedInventoryGrnDialog>(tds.GrnID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
 
         var isCancelled = result.Cancelled;
@@ -163,21 +155,6 @@
         _busy = false;
     }
 
-    public async void OpenDialogApproved(InventoryGrnModel p)
-    {
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", p.Clone());
-        var dialog = DialogService.Show<InventoryGrnApproveView>(p.GrnID == null ? "Approved Data" : "Approved Data", parms, maxWidth);
-        await Task.Delay(200);
-        _busy = false;
-    }
-
     private async Task Delete(InventoryGrnModel model)
     {
         if (HasPermissionInventoryGrnServiceDelete)
@@ -200,30 +177,6 @@
                 "Permission denied!",
                 "You dont have any permission to delete InventoryGrn.");
         }
-    }
-
-    public async Task openpurchaseorder()
-    {
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-        PurchaseOrderModel tds = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        DialogParameters parms = new DialogParameters();
-        var dialog = DialogService.Show<PurchaseOrderViewDialog>("Purchase Order", parms, maxWidth);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            await GetAll(IsApproved);
-        }
-        await GetAll(IsApproved);
-
-        await Task.Delay(200);
-        _busy = false;
     }
 
     private bool search(InventoryGrnModel tds)
