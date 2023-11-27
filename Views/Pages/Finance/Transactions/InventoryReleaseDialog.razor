@@ -1,7 +1,9 @@
 ﻿@using ArmsModels.BaseModels.Finance.Transactions;
 @using ArmsServices.DataServices.Finance.Transactions;
 @using ArmsServices.DataServices.Inventory;
+@using System.Threading;
 @attribute [Authorize]
+@inject IRoleService<RoleModel> Irole
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @inject IInventoryReleaseService Iservice
@@ -121,11 +123,16 @@
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
     private EditContext editContext;
     DialogForm dialogForm;
-
     private bool _busy;
+
+    public bool HasPermissionInventoryReleaseServiceEdit { get; set; } = false;
+    public int InventoryReleaseDocTypeID = 97;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInventoryReleaseServiceEdit = await Irole.HasClaim(InventoryReleaseDocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
@@ -279,52 +286,61 @@
             return;
         }
 
-        try
+        if (HasPermissionInventoryReleaseServiceEdit)
         {
-            if (InventoryRequestSubList == null || InventoryRequestSubList.Count() == 0)
+            try
             {
-                snackbar.Add("No items in the request", Severity.Error);
-                return;
-            }
-            if (model.Items == null)
-            {
-                model.Items = new();
-            }
-            else if (model.Items.Count() != 0)
-            {
-                model.Items.Clear();
-            }
-            foreach (var item in InventoryRequestSubList)
-            {
-                if (item.ItemQty > item.AvailableQty || item.ItemQty > item.RequestQty || (item.PendingQty != null && item.ItemQty > item.PendingQty) || item.ItemQty < 0)
+                if (InventoryRequestSubList == null || InventoryRequestSubList.Count() == 0)
                 {
-                    snackbar.Add(("You enterd invalid Qty in " + item.ItemDescription + "."), Severity.Error);
-                    model.Items.Clear();
+                    snackbar.Add("No items in the request", Severity.Error);
                     return;
                 }
-                if (item != null && item.ItemID != 0 && item.ItemQty > 0)
+                if (model.Items == null)
                 {
-                    model.Items.Add(new InventoryItemEntryModel()
-                        {
-                            ItemEntryID = item.ItemEntryID,
-                            ItemID = item.ItemID,
-                            ItemQty = item.ItemQty
-                        });
+                    model.Items = new();
                 }
+                else if (model.Items.Count() != 0)
+                {
+                    model.Items.Clear();
+                }
+                foreach (var item in InventoryRequestSubList)
+                {
+                    if (item.ItemQty > item.AvailableQty || item.ItemQty > item.RequestQty || (item.PendingQty != null && item.ItemQty > item.PendingQty) || item.ItemQty < 0)
+                    {
+                        snackbar.Add(("You enterd invalid Qty in " + item.ItemDescription + "."), Severity.Error);
+                        model.Items.Clear();
+                        return;
+                    }
+                    if (item != null && item.ItemID != 0 && item.ItemQty > 0)
+                    {
+                        model.Items.Add(new InventoryItemEntryModel()
+                            {
+                                ItemEntryID = item.ItemEntryID,
+                                ItemID = item.ItemID,
+                                ItemQty = item.ItemQty
+                            });
+                    }
+                }
+                _busy = true;
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                dialogForm.Close(model);
             }
-            _busy = true;
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            dialogForm.Close(model);
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+            finally
+            {
+                await Task.Delay(2000);
+                _busy = false;
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
-        }
-        finally
-        {
-            await Task.Delay(2000);
-            _busy = false;
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit InventoryRelease.");
         }
     }
 

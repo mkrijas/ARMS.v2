@@ -17,6 +17,6 @@ namespace ArmsServices.DataServices
         IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID);
         IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end);
         // int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills);
-        int? AutoSettle(OutstandingBillsModel model, List<BillsPaidModel> Bills);
+        int? AutoSettle(OutstandingBillsModel model, List<BillsPaidModel> Bills);  //AutoSettle
     }
 }

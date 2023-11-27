@@ -37,6 +37,11 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
         }
+        [Required]
+        public string ReceiptNo { get; set; }
+        public string Refference { get; set; }
+        [Required]
+        public decimal? Amount { get; set; }
         public string AttachedDocument { get; set; }
         public int? RequestID { get; set; }
         public int? DocumentID { get; set; }

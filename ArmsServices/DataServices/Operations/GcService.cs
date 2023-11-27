@@ -30,6 +30,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@GcDate", model.GcDate??DateTime.Today),
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@RouteID", model.RouteID),
+               new SqlParameter("@OrderTime", model.OrderTime),
                new SqlParameter("@PaidBy", model.PaidBy),
                new SqlParameter("@Gcs", model.Gcs.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -171,7 +172,7 @@ namespace ArmsServices.DataServices
                 set.SetGcNumber = set.SetGcNumber + (IsFirst ? gc.GcPrefix : ", ") + gc.GcNumber;
                 set.SetBillQuantity = set.SetBillQuantity + gc.BillQuantity;
                 set.SetUnloadQuantity = set.SetUnloadQuantity + gc.UnloadedQuantity;
-              
+                set.OrderTime = gc.OrderTime;
                 set.Gcs.Add(gc);
             }
 
@@ -222,11 +223,13 @@ namespace ArmsServices.DataServices
                 GcNumber = dr.GetInt32("GcNo"),
                 GcPrefix = dr.GetString("GcPrefix"),
                 GcType = dr.GetInt16("GcType"),
+                OrderTime = dr.GetDateTime("OrderTime"),
                 GcTypeName = dr.HasColumn("GcTypeName") ? dr.GetString("GcTypeName") : null,
                 PassNumber = dr.GetString("PassNumber"),
                 Freight = dr.GetDecimal("Freight"),
                 EFreight = dr.GetDecimal("Freight"),
                 UnloadedQuantity = dr.GetDecimal("UnloadedQuantity"),
+                
                 EwayBill = new EwayBillModel
                 {
                     EwayBillDate = dr.GetDateTime("EwayBillDate"),

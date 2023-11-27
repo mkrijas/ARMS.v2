@@ -32,9 +32,9 @@
                      </MudItem>
                      <MudItem xs="12" md="12">
                          <strong>Credit/Draw A/c</strong>
-                        <PaymentAccountSelector PaymentMode="@model.ContraModeOther" PaymentModeChanged="OnPaymentModeOtherChange" @bind-ArdCode="@model.ArdCodeOther" @bind-CoaID="@model.CoaIDOther" @bind-BankCharges="@model.BankCharges" HideBankCharges BankTool="@model.PaymentTool" BankToolChanged="OnPaymentToolChange" />
+                         <PaymentAccountSelector PaymentMode="@model.ContraModeOther" PaymentModeChanged="OnPaymentModeOtherChange" @bind-ArdCode="@model.ArdCodeOther" @bind-CoaID="@model.CoaIDOther" @bind-BankCharges="@model.BankCharges" HideBankCharges BankTool="@model.PaymentTool" BankToolChanged="OnPaymentToolChange" />
                      </MudItem>
-                    @if (model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank")
+                     @if (model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank")
                     {
                         <MudItem xs="12" md="6">
                             <MudTextField ReadOnly="ReadOnly" Value="model.ChequeInfo.ChequeNumber" TextChanged="OnCheckNoChange" Label="ChequeNumber" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ChequeInfo.ChequeNumber)"></MudTextField>
@@ -57,7 +57,7 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.ContraID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="@ContraDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.ContraID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
@@ -78,30 +78,42 @@
     DialogForm dialogForm;
     public string ValidationMessage { get; set; } = null;
     private bool _busy;
-    public bool HasAuthoriseEdit { get; set; } = false;
-    int DocTypeID = 3;
 
-    protected void Approve(DataApprovedStatus aprvd)
+    public bool HasPermissionContraServiceEdit { get; set; } = false;
+    public bool HasPermissionContraServiceApprove { get; set; } = false;
+    public int ContraDocTypeID = 3;
+
+    protected async Task Approve(DataApprovedStatus aprvd)
     {
-        if (aprvd.IsApprove)
+        if (HasPermissionContraServiceApprove)
         {
-            model.UserInfo.UserID = UserID;
-            try
+            if (aprvd.IsApprove)
             {
-                Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks);
-                snackbar.Add("Approved Successfully", Severity.Success);
+                model.UserInfo.UserID = UserID;
+                try
+                {
+                    Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve Contra.");
         }
     }
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasAuthoriseEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionContraServiceEdit = await Irole.HasClaim(ContraDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionContraServiceApprove = await Irole.HasClaim(ContraDocTypeID.ToString(), "Approve", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
@@ -127,7 +139,7 @@
     }
     public void OnCheckNoChange(string CheckNo)
     {
-        if(model.ChequeInfo == null)
+        if (model.ChequeInfo == null)
         {
             model.ChequeInfo = new();
         }
@@ -153,16 +165,16 @@
             return;
         }
 
-        if (model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank" && (model.ChequeInfo == null || string.IsNullOrEmpty( model.ChequeInfo.ChequeNumber)))
+        if (HasPermissionContraServiceEdit)
         {
-            ValidationMessage = "Please fill the cheque NO. !";
-            snackbar.Add("Please fill the cheque NO. !", Severity.Warning);
-            return;
-        }
-        _busy = true;
-        try
-        {
-            if (HasAuthoriseEdit)
+            if (model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank" && (model.ChequeInfo == null || string.IsNullOrEmpty(model.ChequeInfo.ChequeNumber)))
+            {
+                ValidationMessage = "Please fill the cheque NO. !";
+                snackbar.Add("Please fill the cheque NO. !", Severity.Warning);
+                return;
+            }
+            _busy = true;
+            try
             {
                 model.IsPayment = model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank";
                 if (!model.IsPayment)
@@ -173,17 +185,18 @@
                 model = Iservice.Update(model);
                 dialogForm.Close(model);
             }
-            else
+            catch (Exception ex)
             {
-                bool? result = await DialogService.ShowMessageBox(
-                    "Permission denied!",
-                    "You dont have any permission to submit.");
+                snackbar.Add(ex.Message, Severity.Error);
             }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Contra.");
         }
+
         await Task.Delay(2000);
         _busy = false;
     }

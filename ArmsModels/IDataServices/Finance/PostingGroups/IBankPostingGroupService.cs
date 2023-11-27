@@ -6,15 +6,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
-
 namespace ArmsServices.DataServices
 {
     public interface IBankPostingGroupService
     {
-        BankPostingGroupModel Update(BankPostingGroupModel model);
+        BankPostingGroupModel Update(BankPostingGroupModel model);  //Edit
         BankPostingGroupModel SelectByID(int? ID);
         BankPostingGroupModel SelectByBank(int? BankID);
-        int Delete(int? ID, string UserID);        
+        int Delete(int? ID, string UserID);  //Delete
         IEnumerable<BankPostingGroupModel> Select();        
     }
 }

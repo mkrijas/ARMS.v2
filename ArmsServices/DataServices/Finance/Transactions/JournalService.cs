@@ -101,9 +101,6 @@ namespace ArmsServices.DataServices
             }
         }
 
-
-
-
         public JournalModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -135,15 +132,43 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<JournalSubModel> GetSubList(int? JournalID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetSubList"),
+               new SqlParameter("@JournalID", JournalID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Journal.Select]", parameters))
+            {
+                yield return new JournalSubModel()
+                {
+                    JournalSubID = dr.GetInt32("JournalSubID"),
+                    JournalID = dr.GetInt32("JournalID"),
+                    Reference = dr.GetString("Reference"),
+                    CoaID = dr.GetInt32("CoaID"),
+                    Coa = new ChartOfAccountModel() 
+                    { 
+                        CoaID = dr.GetInt32("CoaID"), 
+                        AccountName = dr.GetString("AccountName") 
+                    },
+                    DrCrType = dr.GetInt32("DrCrType"),
+                    Amount = dr.GetDecimal("Amount"),
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID")
+                };
+            }
+        }
+
         public JournalModel Update(JournalModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@JournalID", model.JournalID),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
-               new SqlParameter("@DebitCoaID", model.Debit.CoaID),
-               new SqlParameter("@CreditCoaID", model.Credit.CoaID),
-               new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@MID", model.MID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
@@ -152,6 +177,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@JournalSub", model.JournalSubList.ToDataTable()),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Journal.Update]", parameters))
             {
@@ -165,10 +191,6 @@ namespace ArmsServices.DataServices
             return new JournalModel
             {
                 JournalID = dr.GetInt32("JournalID"),
-
-                Reference = dr.GetString("Reference"),
-                Debit = new ChartOfAccountModel() { CoaID = dr.GetInt32("DebitCoaID"), AccountName = dr.GetString("Debit") },
-                Credit = new ChartOfAccountModel() { CoaID = dr.GetInt32("CreditCoaID"), AccountName = dr.GetString("Credit") },
                 BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
@@ -179,7 +201,6 @@ namespace ArmsServices.DataServices
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 Narration = dr.GetString("Narration"),
-
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

@@ -10,15 +10,12 @@ namespace ArmsServices.DataServices
 {
     public interface IAssetClassService
     {
-        AssetClassModel UpdateClass(AssetClassModel model);
-        AssetSubClassModel UpdateSubClass(AssetSubClassModel model);
+        AssetClassModel UpdateClass(AssetClassModel model);  //Edit
+        AssetSubClassModel UpdateSubClass(AssetSubClassModel model);  //Edit
         IEnumerable<AssetSubClassModel> SelectSubClasses(int? ID);
         IEnumerable<AssetSubClassModel> SelectSubClassesByClass(int? ID);
         IEnumerable<AssetClassModel> SelectClasses();
-        int DeleteClass(int? AssetClassID, string UserID);
-        int DeleteSubClass(int? AssetSubClassID, string UserID);
+        int DeleteClass(int? AssetClassID, string UserID);  //Delete
+        int DeleteSubClass(int? AssetSubClassID, string UserID);  //Delete
     }
 }
-   
-
-     

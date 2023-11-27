@@ -1,4 +1,7 @@
-﻿@inject AuthenticationStateProvider auth
+﻿@attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject AuthenticationStateProvider auth
 @inject IAssetDocumentService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
@@ -31,6 +34,15 @@
                 <MudItem xs="6">
                     <MudDatePicker @bind-Date="@model.EndDate" Label="Expire On" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.EndDate)" Editable="true"></MudDatePicker>
                 </MudItem>
+                <MudItem xs="6" md="6">
+                    <MudTextField @bind-Value="@model.ReceiptNo" Label="Slip No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ReceiptNo)"></MudTextField>
+                </MudItem>
+                <MudItem xs="6" md="6">
+                    <MudTextField @bind-Value="@model.Refference" Label="Refference No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Refference)"></MudTextField>
+                </MudItem>
+                <MudItem xs="6" md="6">
+                    <MudTextField @bind-Value="@model.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Amount)"></MudTextField>
+                </MudItem>
             </MudGrid>
         </EditForm>
     </DialogContent>
@@ -55,6 +67,17 @@
     public List<AssetDocumentTypeModel> Dtypes { get; set; } = null;
     private bool _busy;
 
+    public bool HasPermissionAssetDocumentServiceEdit { get; set; } = false;
+    public bool HasPermissionAssetDocumentServiceDelete { get; set; } = false;
+    public int AssetDocumentDocTypeID = 113;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetDocumentServiceEdit = await Irole.HasClaim(AssetDocumentDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionAssetDocumentServiceDelete = await Irole.HasClaim(AssetDocumentDocTypeID.ToString(), "Delete", ctc.Token);
+    }
+
     private async void OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -62,73 +85,89 @@
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
+        _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo = new();
-        model.Asset = Asset;
-        if (model.UserInfo != null)
+        if (HasPermissionAssetDocumentServiceEdit)
         {
-            model.UserInfo.UserID = user.Identity.Name;
-        }
-        var validationOls = Iservice.ValidatePeriod(model).ToList();
-        if (validationOls.Any(x => x.DocumentID != model.DocumentID))
-        {
-            snackbar.Add("Document Period cannot overlap! Please check the period ", Severity.Warning);
-            return;
-        }
-        try
-        {
-            if (Asset == null)
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo = new();
+            model.Asset = Asset;
+            if (model.UserInfo != null)
             {
-                snackbar.Add("Please select asset. ", Severity.Error);
+                model.UserInfo.UserID = user.Identity.Name;
+            }
+            var validationOls = Iservice.ValidatePeriod(model).ToList();
+            if (validationOls.Any(x => x.DocumentID != model.DocumentID))
+            {
+                snackbar.Add("Document Period cannot overlap! Please check the period ", Severity.Warning);
+                _busy = false;
                 return;
             }
-            _busy = true;
-            if (model.Asset == null || model.Asset.AssetID == null || model.Asset.AssetID == 0)
+            try
             {
-                model.Asset = Asset;
+                if (Asset == null)
+                {
+                    snackbar.Add("Please select asset. ", Severity.Error);
+                    _busy = false;
+                    return;
+                }
+                if (model.Asset == null || model.Asset.AssetID == null || model.Asset.AssetID == 0)
+                {
+                    model.Asset = Asset;
+                }
+                model = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
             }
-            model = Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(DialogResult.Ok(true));
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit AssetDocument.");
         }
-        finally
-        {
-            await Task.Delay(2000);
-            _busy = false;
-        }
+        await Task.Delay(2000);
+        _busy = false;
     }
 
     private async Task Delete(AssetDocumentModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-           "Warning !",
-           "Are you sure, you want to delete - " + model.DocumentType.DocumentTypeName + " (" + model.InvoiceDate + ") ?");
-        if (result == true)
+        if (_busy)
         {
-            if (_busy)
-            {
-                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-                return;
-            }
-            _busy = true;
-
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.UserInfo.UserID = user.Identity.Name;
-            Iservice.Delete(model.DocumentID, model.UserInfo.UserID);
-            snackbar.Add("Deleted Successfully", Severity.Error);
-            model = new();
-            MudDialog.Close(DialogResult.Ok(true));
-            StateHasChanged();
-
-            await Task.Delay(2000);
-            _busy = false;
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
         }
+        _busy = true;
+
+        if (HasPermissionAssetDocumentServiceDelete)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+               "Warning !",
+               "Are you sure, you want to delete - " + model.DocumentType.DocumentTypeName + " (" + model.InvoiceDate + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                model.UserInfo.UserID = user.Identity.Name;
+                Iservice.Delete(model.DocumentID, model.UserInfo.UserID);
+                snackbar.Add("Deleted Successfully", Severity.Error);
+                model = new();
+                MudDialog.Close(DialogResult.Ok(true));
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete AssetDocument.");
+        }
+        await Task.Delay(2000);
+        _busy = false;
     }
 }

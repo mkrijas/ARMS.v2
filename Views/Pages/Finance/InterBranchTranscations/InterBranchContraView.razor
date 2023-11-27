@@ -8,6 +8,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 @inject SignalRService signalRService
 @inject IPushNotificationService IpushNotificationService
@@ -78,13 +80,14 @@
     private List<ContraModel> collection = new List<ContraModel>();
     private int numberOfRecords = 100;
     private string searchTerm = "";
-    private bool _busy;
-
     [Parameter]
     public int? id { get; set; } = null;
-    public bool HasAuthoriseDelete { get; set; } = false;
-    public int DocTypeID { get; set; } = 3;
-    
+    private bool _busy;
+
+    public bool HasPermissionContraServiceDelete { get; set; } = false;
+    public bool HasPermissionContraServiceApprove { get; set; } = false;
+    public int ContraDocTypeID = 3;
+
     #region SignaIR Notification
 
     private PushNotificationModel notificationMessage = new PushNotificationModel();
@@ -118,14 +121,17 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionContraServiceDelete = await Irole.HasClaim(ContraDocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionContraServiceApprove = await Irole.HasClaim(ContraDocTypeID.ToString(), "Approve", ctc.Token);
+
         model = new();
         await GetAll(IsApproved, NumberOfRecords);
-
         await Task.Delay(200);
         await signalRService.StartAsync();
         if (id != null && collection != null && collection.Any(g => g.ContraID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.ContraID == id), false,false);
+            await OpenDialog(collection.FirstOrDefault(s => s.ContraID == id), false, false);
         }
     }
 
@@ -154,34 +160,52 @@
 
     private async Task Delete(ContraModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
-        if (result == true)
+        if (HasPermissionContraServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var User = authprov.User;
-            var UserID = User.Identity.Name;
-            Iservice.Delete(model.ContraID, UserID);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var User = authprov.User;
+                var UserID = User.Identity.Name;
+                Iservice.Delete(model.ContraID, UserID);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            await GetAll(IsApproved, NumberOfRecords);
         }
-        await GetAll(IsApproved, NumberOfRecords);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Contra.");
+        }
     }
 
     private async Task Approve(ContraModel tds)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
+        if (HasPermissionContraServiceApprove)
         {
-            Iservice.Approve(tds.ContraID, model.UserInfo.UserID, "");
-            snackbar.Add("Approved Successfully", Severity.Success);
-            await GetAll(IsApproved, NumberOfRecords);
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Approve(tds.ContraID, model.UserInfo.UserID, "");
+                snackbar.Add("Approved Successfully", Severity.Success);
+                await GetAll(IsApproved, NumberOfRecords);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve Contra.");
         }
     }
 
@@ -217,7 +241,7 @@
             notificationMessage.MessageGroupID = "PendingVerification";
             notificationMessage.PageToRedirectLink = "/InterBranchContraView";
             notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = DocTypeID;
+            notificationMessage.DocumentTypeID = ContraDocTypeID;
             notificationMessage.MsgDate = DateTime.Now;
             await signalRService.Send(notificationMessage);
         }

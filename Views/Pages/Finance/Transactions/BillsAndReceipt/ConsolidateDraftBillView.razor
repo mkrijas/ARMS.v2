@@ -69,15 +69,9 @@
     [Parameter]
     public int? id { get; set; } = null;
 
-    int DocTypeID = 1;
-
-    public bool ConsolidatedBillsHasAuthoriseEdit { get; set; } = false;
-    public bool ConsolidatedBillsHasAuthoriseDelete { get; set; } = false;
-    public bool ConsolidatedBillsHasAuthoriseView { get; set; } = false;
-    public bool ProformaInvoiceHasAuthoriseEdit { get; set; } = false;
-
-    public int ConsolidatedBillsDocTypeID { get; set; } = 1;
-    public int ProformaInvoiceHasDocTypeID { get; set; } = 2;
+    public bool HasPermissionFreightBillingServiceEditProformaInvoice { get; set; } = false;
+    public bool HasPermissionFreightBillingServiceReverseConsolidatedDraftBill { get; set; } = false;
+    public int FreightBillingDocTypeID = 2;
 
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
@@ -101,10 +95,8 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        ConsolidatedBillsHasAuthoriseEdit = await Irole.HasClaim(ConsolidatedBillsDocTypeID.ToString(), "Edit", ctc.Token);
-        ConsolidatedBillsHasAuthoriseDelete = await Irole.HasClaim(ConsolidatedBillsDocTypeID.ToString(), "Delete", ctc.Token);
-        ConsolidatedBillsHasAuthoriseView = await Irole.HasClaim(ConsolidatedBillsDocTypeID.ToString(), "View", ctc.Token);
-        ProformaInvoiceHasAuthoriseEdit = await Irole.HasClaim(ProformaInvoiceHasDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionFreightBillingServiceEditProformaInvoice = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "EditProformaInvoice", ctc.Token);
+        HasPermissionFreightBillingServiceReverseConsolidatedDraftBill = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "ReverseConsolidatedDraftBill", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -126,7 +118,7 @@
 
     async Task Reverse(ConsolidatedDraftBillModel model)
     {
-        if (ConsolidatedBillsHasAuthoriseDelete)
+        if (HasPermissionFreightBillingServiceReverseConsolidatedDraftBill)
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Warning !",
@@ -141,60 +133,69 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to reverse.");
+                "You dont have any permission to ReverseConsolidatedDraftBill FreightBilling.");
         }
     }
 
     public async Task CreateProformaInvoice(ConsolidatedDraftBillModel cdm)
     {
-        var gst = Iservice.GetGstRate(cdm.DraftBillID);
-
-        ProformaInvoiceModel pfm = new ProformaInvoiceModel()
-            {
-                BranchID = branchID,
-                FreightAmount = cdm.TotalAmount,
-                DraftBillID = cdm.DraftBillID,
-                OrderID = cdm.Order.OrderID,
-                TariffType = cdm.TariffType,
-                Gst = gst,
-                TotalAmount = cdm.TotalAmount + gst.TotalGst,
-                UserInfo = new() { UserID = UserID },
-            };
-
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", pfm);
-        parms.Add("PageToRedirectLink", "/ConsolidatedBills");
-        parms.Add("ReadOnly", false);
-        var dialog = DialogService.Show<ProformaInvoceDialog>("Proforma Invoce", parms, maxWidth);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+        if (HasPermissionFreightBillingServiceEditProformaInvoice)
         {
-            ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;
-            int? ReturnVal = Iservice.UpdateProformaInvoice(UpatedModel);
-            if(ReturnVal != -1)
-            {
-                var ReturnData = (ProformaInvoiceModel)result.Data;
-                notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-                notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-                notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-                notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-                notificationMessage.RedirectedTo = 0;
-                notificationMessage.ExpiredBy = 7;
-                notificationMessage.DocumentID = ReturnVal;
-                notificationMessage.MessageGroupID = "PendingVerification";
-                notificationMessage.PageToRedirectLink = "/ConsolidatedBills";
-                notificationMessage.ClaimValue = "Verify 1";
-                notificationMessage.DocumentTypeID = DocTypeID;
-                notificationMessage.MsgDate = DateTime.Now;
-                await signalRService.Send(notificationMessage);
-                snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
-                GetConsolidatedDraftBill();
+            var gst = Iservice.GetGstRate(cdm.DraftBillID);
 
-            }
-            else
+            ProformaInvoiceModel pfm = new ProformaInvoiceModel()
+                {
+                    BranchID = branchID,
+                    FreightAmount = cdm.TotalAmount,
+                    DraftBillID = cdm.DraftBillID,
+                    OrderID = cdm.Order.OrderID,
+                    TariffType = cdm.TariffType,
+                    Gst = gst,
+                    TotalAmount = cdm.TotalAmount + gst.TotalGst,
+                    UserInfo = new() { UserID = UserID },
+                };
+
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", pfm);
+            parms.Add("PageToRedirectLink", "/ConsolidatedBills");
+            parms.Add("ReadOnly", false);
+            var dialog = DialogService.Show<ProformaInvoiceDialog>("Proforma Invoice", parms, maxWidth);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                snackbar.Add("Error occured while saving. ", Severity.Error);//value = "visible";
+                ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;
+                int? ReturnVal = Iservice.UpdateProformaInvoice(UpatedModel);
+                if (ReturnVal != -1)
+                {
+                    var ReturnData = (ProformaInvoiceModel)result.Data;
+                    notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+                    notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+                    notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+                    notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+                    notificationMessage.RedirectedTo = 0;
+                    notificationMessage.ExpiredBy = 7;
+                    notificationMessage.DocumentID = ReturnVal;
+                    notificationMessage.MessageGroupID = "PendingVerification";
+                    notificationMessage.PageToRedirectLink = "/ConsolidatedBills";
+                    notificationMessage.ClaimValue = "Verify 1";
+                    notificationMessage.DocumentTypeID = FreightBillingDocTypeID;
+                    notificationMessage.MsgDate = DateTime.Now;
+                    await signalRService.Send(notificationMessage);
+                    snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
+                    GetConsolidatedDraftBill();
+
+                }
+                else
+                {
+                    snackbar.Add("Error occured while saving. ", Severity.Error);//value = "visible";
+                }
             }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to EditProformaInvoice FreightBilling.");
         }
     }
 }

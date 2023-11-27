@@ -4,6 +4,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudItem xs="12">
@@ -43,12 +45,19 @@
 
     private TdsThresholdLimitModel model = new TdsThresholdLimitModel();
     private List<TdsThresholdLimitModel> collection = new List<TdsThresholdLimitModel>();
-
     private string searchTds = "";
     private bool _busy;
 
+    public bool HasPermissionTdsThresholdLimitServiceEdit { get; set; } = false;
+    public bool HasPermissionTdsThresholdLimitServiceDelete { get; set; } = false;
+    public int TdsThresholdLimitDocTypeID = 98;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTdsThresholdLimitServiceEdit = await Irole.HasClaim(TdsThresholdLimitDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTdsThresholdLimitServiceDelete = await Irole.HasClaim(TdsThresholdLimitDocTypeID.ToString(), "Delete", ctc.Token);
+
         model = new();
         GetAll();
     }
@@ -70,27 +79,37 @@
             return;
         }
         _busy = true;
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
 
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds.Clone());
-        var dialog = DialogService.Show<TdsThresholdLimitDialog>(tds.TdsTLID == null ? "ADD" : "EDIT", parms);
-        var result = await dialog.Result;
-        if (!result.Cancelled)
+        if (HasPermissionTdsThresholdLimitServiceEdit)
         {
-            TdsThresholdLimitModel UpatedModel = (TdsThresholdLimitModel)result.Data;
-            UpatedModel.UserInfo.UserID = user.Identity.Name;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", tds.Clone());
+            var dialog = DialogService.Show<TdsThresholdLimitDialog>(tds.TdsTLID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
             {
-                Iservice.Update(UpatedModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                GetAll();
+                TdsThresholdLimitModel UpatedModel = (TdsThresholdLimitModel)result.Data;
+                UpatedModel.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    Iservice.Update(UpatedModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    GetAll();
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit TdsThresholdLimit.");
         }
         await Task.Delay(200);
         _busy = false;
@@ -98,17 +117,26 @@
 
     private async Task Delete(TdsThresholdLimitModel model)
     {
-        bool? result = await DialogService.ShowMessageBox(
-              "Warning !",
-              "Are you sure, you want to delete - " + model.NatureOfPayment.NatureOfPayment + " (" + model.PeriodFrom + " - " + model.PeriodTo + ") ?");
-        if (result == true)
+        if (HasPermissionTdsThresholdLimitServiceDelete)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            Iservice.Delete(model.TdsTLID, user.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
+            bool? result = await DialogService.ShowMessageBox(
+                  "Warning !",
+                  "Are you sure, you want to delete - " + model.NatureOfPayment.NatureOfPayment + " (" + model.PeriodFrom + " - " + model.PeriodTo + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.TdsTLID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            GetAll();
         }
-        GetAll();
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete TdsThresholdLimit.");
+        }
     }
 
     private bool search(TdsThresholdLimitModel ts)

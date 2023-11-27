@@ -11,6 +11,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudDialog>
@@ -180,7 +182,6 @@
     public bool ReadOnly { get; set; }
     [Parameter]
     public bool IsView { get; set; }
-
     [Parameter]
     public string PageToRedirectLink { get; set; }
     public string DocNumber { get; set; }
@@ -201,23 +202,35 @@
     private string hmbarnchName, OrouteName;
     private int? branchID = null;
     private string UserID = null;
-
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    protected void IsApproveData(DataApprovedStatus aprvd)
+    public bool HasPermissionContraServiceEdit { get; set; } = false;
+    public bool HasPermissionContraServiceApprove { get; set; } = false;
+    public int ContraDocTypeID = 3;
+
+    protected async Task IsApproveData(DataApprovedStatus aprvd)
     {
-        if (aprvd.IsApprove)
+        if (HasPermissionContraServiceApprove)
         {
-            model.UserInfo.UserID = UserID;
-            try
+            if (aprvd.IsApprove)
             {
-                Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks);
-                snackbar.Add("Approved Successfully", Severity.Success);
+                model.UserInfo.UserID = UserID;
+                try
+                {
+                    Iservice.Approve(model.ContraID, model.UserInfo.UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve Contra.");
         }
     }
 
@@ -305,6 +318,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionContraServiceEdit = await Irole.HasClaim(ContraDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionContraServiceApprove = await Irole.HasClaim(ContraDocTypeID.ToString(), "Approve", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
@@ -371,24 +388,33 @@
         }
         _busy = true;
 
-        try
+        if (HasPermissionContraServiceEdit)
         {
-            model.CoaIDHome = accountRuleDefinitionH.CoaID;
-            model.ArdCodeHome = accountRuleDefinitionH.ArdCode;
-            model.CoaIDOther = accountRuleDefinitionO.CoaID;
-            model.ArdCodeOther = accountRuleDefinitionO.ArdCode;
-            model.BranchID = branchID;
-            model.IsPayment = Ispayment;
-            model.IsInterBranch = true;
-            model.NatureOfTransaction = "Contra";
-            model.UserInfo.UserID = UserID;
-            Iservice.Update(model);
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close();
+            try
+            {
+                model.CoaIDHome = accountRuleDefinitionH.CoaID;
+                model.ArdCodeHome = accountRuleDefinitionH.ArdCode;
+                model.CoaIDOther = accountRuleDefinitionO.CoaID;
+                model.ArdCodeOther = accountRuleDefinitionO.ArdCode;
+                model.BranchID = branchID;
+                model.IsPayment = Ispayment;
+                model.IsInterBranch = true;
+                model.NatureOfTransaction = "Contra";
+                model.UserInfo.UserID = UserID;
+                Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Contra.");
         }
 
         await Task.Delay(2000);

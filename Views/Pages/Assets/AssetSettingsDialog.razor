@@ -1,6 +1,10 @@
 ﻿@using ArmsModels.BaseModels.General;
 @inject IAssetSettingsService Iservice
+@attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject AuthenticationStateProvider auth
+@inject IDialogService DialogService
 
 <MudDialog Class="my-dialogue pb-3">
     <DialogContent>
@@ -32,8 +36,14 @@
     public int? SubClassID { get; set; }
     private List<AssetSettingsModel> SettingsList;
 
+    public bool HasPermissionAssetSettingsServiceEdit { get; set; } = false;
+    public int AssetSettingsDocTypeID = 111;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetSettingsServiceEdit = await Irole.HasClaim(AssetSettingsDocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
 
@@ -42,11 +52,20 @@
 
     private async Task OnValueChanged(AssetSettingsModel obj, bool value)
     {
-        if (SettingsList.Any(s => s.SettingsID == obj.SettingsID))
+        if (HasPermissionAssetSettingsServiceEdit)
         {
-            SettingsList.First(s => s.SettingsID == obj.SettingsID).IsActive = value;
+            if (SettingsList.Any(s => s.SettingsID == obj.SettingsID))
+            {
+                SettingsList.First(s => s.SettingsID == obj.SettingsID).IsActive = value;
 
-            Iservice.Update(SettingsList.First(s => s.SettingsID == obj.SettingsID), UserID);
+                Iservice.Update(SettingsList.First(s => s.SettingsID == obj.SettingsID), UserID);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit AssetSettings.");
         }
     }
 }

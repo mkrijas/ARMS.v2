@@ -5,6 +5,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudDialog>
@@ -115,17 +117,17 @@
                                     </MudItem>
                                     <MudItem xs="12" md="4">
                                         <MudTextField @bind-Value="model.SpanOfYear" Label="Span Of Year" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.SpanOfYear)" Disabled></MudTextField>
-                                    </MudItem>
-                                    <MudItem xs="12" md="4">
-                                        <MudTextField @bind-Value="model.SalvageValue" Label="Salvage Value" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.SalvageValue)"></MudTextField>
-                                    </MudItem>
-                                    <MudItem xs="12" md="4">
-                                        <MudTextField @bind-Value="model.CurrentValue" Label="Current Value" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="true"></MudTextField>
-                                    </MudItem>
-                                </MudGrid>
-                            </MudContainer>
-                        </MudPaper>
-                    </MudItem>
+                                     </MudItem>
+                                     <MudItem xs="12" md="4">
+                                         <MudTextField @bind-Value="model.SalvageValue" Label="Salvage Value" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.SalvageValue)"></MudTextField>
+                                     </MudItem>
+                                     <MudItem xs="12" md="4">
+                                         <MudTextField @bind-Value="model.CurrentValue" Label="Current Value" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="true"></MudTextField>
+                                     </MudItem>
+                                 </MudGrid>
+                             </MudContainer>
+                         </MudPaper>
+                     </MudItem>
                 }
             </MudGrid>
         </MudContainer>
@@ -148,8 +150,14 @@
     private bool _busy;
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
+    public bool HasPermissionAssetServiceEdit { get; set; } = false;
+    public int AssetDocTypeID = 112;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetServiceEdit = await Irole.HasClaim(AssetDocTypeID.ToString(), "Edit", ctc.Token);
+
         assetclassList = assetclassIservice.SelectClasses().ToList();
         vendorListList = partyIservice.GetVendors(string.Empty).ToList();
         gstRate = gstIservice.GetGstRates().ToList();
@@ -192,7 +200,7 @@
     {
         if (model.ProjectedDisposalDate != null && model.DepreciationStartingDate != null)
         {
-            int spanOfYear = ((model.ProjectedDisposalDate.Value.Year  ) - (model.DepreciationStartingDate.Value.Year));
+            int spanOfYear = ((model.ProjectedDisposalDate.Value.Year) - (model.DepreciationStartingDate.Value.Year));
             model.SpanOfYear = spanOfYear;
         }
     }
@@ -211,23 +219,31 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-
-        model.BranchID = brancID;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
+        if (HasPermissionAssetServiceEdit)
         {
-            Iservice.UpdateAsset(model);
-            MudDialog.Close(model);
-            model = new();
-            snackbar.Add("Saved Successfully", Severity.Success);
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            int brancID = int.Parse(brancIDString);
+            model.BranchID = brancID;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.UpdateAsset(model);
+                MudDialog.Close(model);
+                model = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Asset.");
         }
         await Task.Delay(2000);
         _busy = false;

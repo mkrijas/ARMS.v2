@@ -7,7 +7,6 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject IConfigTable config
-
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
@@ -100,14 +99,20 @@
     public int? SubClassID { get; set; } = new();
     public int? TruckID { get; set; } = new();
     int? AssetTrucksSubClassID;
-    private bool _busy;
     private List<BranchModel> DestinationBranchList = new();
     [Parameter]
     public List<AssetModel> ChildAssets { get; set; } = new();
     private int BranchID { get; set; } = 0;
+    private bool _busy;
+
+    public bool HasPermissionAssetTransferServiceEdit { get; set; } = false;
+    public int AssetTransferDocTypeID = 110;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetTransferServiceEdit = await Irole.HasClaim(AssetTransferDocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         if (model.UserInfo == null)
@@ -149,58 +154,65 @@
             Snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
+        _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (model.Asset.AssetID == null)
+        if (HasPermissionAssetTransferServiceEdit)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var User = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            if (model.Asset.AssetID == null)
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Please, Select asset.", yesText: "OK");
+                _busy = false;
+                return;
+            }
+            if (model != null)
+            {
+                try
+                {
+                    model.InitiatedBranch.BranchID = int.Parse(brancIDString);
+                    model.UserInfo.UserID = User.Identity.Name;
+                    if (model.DestinationBranch.BranchID == null)
+                    {
+                        bool? result = await DialogService.ShowMessageBox(
+                              "Warning",
+                              "Select branch !.",
+                              yesText: "OK");
+                        _busy = false;
+                        return;
+                    }
+                    ConfigModel cModel = config.GetAssetSubclassForTrucks();
+                    AssetTrucksSubClassID = int.Parse(cModel.ValueString);
+                    if (SubClassID == AssetTrucksSubClassID)
+                    {
+                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
+                        Iservice.UpdateOutgoing(model, TruckID);
+                    }
+                    else
+                    {
+                        _busy = true;
+                        Iservice.UpdateOutgoing(model, null);
+                    }
+                    Snackbar.Add("Transferred successfully", Severity.Success);
+                    MudDialog.Close(model);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+        }
+        else
         {
             bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Please, Select asset.", yesText: "OK");
-
-            return;
+                "Permission denied!",
+                "You dont have any permission to Edit AssetTransfer.");
         }
-        if (model != null)
-        {
-
-            try
-            {
-                model.InitiatedBranch.BranchID = int.Parse(brancIDString);
-                model.UserInfo.UserID = User.Identity.Name;
-                if (model.DestinationBranch.BranchID == null)
-                {
-                    bool? result = await DialogService.ShowMessageBox(
-                          "Warning",
-                          "Select branch !.",
-                          yesText: "OK");
-                    return;
-                }
-                ConfigModel cModel = config.GetAssetSubclassForTrucks();
-                AssetTrucksSubClassID = int.Parse(cModel.ValueString);
-                if (SubClassID == AssetTrucksSubClassID)
-                {
-                    TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
-                    Iservice.UpdateOutgoing(model, TruckID);
-                }
-                else
-                {
-                    _busy = true;
-                    Iservice.UpdateOutgoing(model, null);
-                }
-                Snackbar.Add("Transferred successfully", Severity.Success);
-                MudDialog.Close(model);
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
-            finally
-            {
-                await Task.Delay(2000);
-                _busy = false;
-            }
-        }
+        await Task.Delay(2000);
+        _busy = false;
     }
 
     private void AssetSelected(AssetModel obj)

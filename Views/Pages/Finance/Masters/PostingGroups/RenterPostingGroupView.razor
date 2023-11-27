@@ -1,5 +1,5 @@
-﻿@page "/AssetPostingGroup"
-@inject IAssetPostingGroupService Iservice
+﻿@page "/RenterPostingGroup"
+@inject IRenterPostingGroupService Iservice
 @inject IChartOfAccountService accountService
 @inject MudBlazor.ISnackbar snackbar
 @inject IChartOfAccountService accountService
@@ -7,6 +7,8 @@
 @inject IConfigTable IConfig
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
 <MudGrid>
@@ -14,7 +16,7 @@
         <MudPaper Width="100%" Class="p-2">
             <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
                 <MudText Typo="Typo.h6" style="padding: 4px; margin-top: -8px; margin-bottom: -22px; margin-left: 8px;">
-                    Asset Posting Group
+                    Renter Posting Group
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudText>
                 <br />
@@ -39,35 +41,26 @@
                 <MudContainer>
                     <h4 style="padding-top:18px;">@titleValue</h4>
                     <br />
-                    <EditForm Model="model" OnValidSubmit="CreateAssetPostingGroup">
+                    <EditForm Model="model" OnValidSubmit="CreateRenterPostingGroup">
                         <ObjectGraphDataAnnotationsValidator />
                         <MudGrid Spacing="4">
                             <MudItem xs="12" lg="12">
                                 <MudTextField @bind-Value="model.Title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)" Disabled="IsOnlyView"></MudTextField>
                             </MudItem>
                             <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Capitalization" LabelName="Capitalization" IsDisable="IsOnlyView" />
+                                <CoaSelector @bind-Value="model.Rent" LabelName="Account for Rent" IsDisable="IsOnlyView" />
                             </MudItem>
                             <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.CWIP" LabelName="CWIP" IsDisable="IsOnlyView" />
+                                <CoaSelector @bind-Value="model.Deposit" LabelName="Account for Rent Deposit" IsDisable="IsOnlyView" />
                             </MudItem>
                             <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.AccummulatedDepreciation" LabelName="Accummulated Depreciation" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Depreciation" LabelName="Depreciation" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.Revaluation" LabelName="Revaluation" IsDisable="IsOnlyView" />
-                            </MudItem>
-                            <MudItem xs="12" md="12">
-                                <CoaSelector @bind-Value="model.RevaluationReserve" LabelName="Revaluation Reserve" IsDisable="IsOnlyView" />
+                                <CoaSelector @bind-Value="model.Other" LabelName="Account for Rent Other Expenses" IsDisable="IsOnlyView" />
                             </MudItem>
                             <MudItem xs="12" md="6">
                                 <ValidationSummary />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudButton @onclick="CancelAssetPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
+                                <MudButton @onclick="CancelRenterPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
                                 @if (!IsOnlyView)
                                 {
                                     <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
@@ -86,26 +79,31 @@
 
 @code {
 
-    AssetPostingGroupModel model = new AssetPostingGroupModel();
+    RenterPostingGroupModel model = new RenterPostingGroupModel();
     private MudListItem SelectedItem;
-    private List<AssetPostingGroupModel> listOfItems = new();
-    AssetPostingGroupModel SelectedModel = new();
+    private List<RenterPostingGroupModel> listOfItems = new();
+    RenterPostingGroupModel SelectedModel = new();
     public bool value = false;
     public string titleValue = null;
-    private List<AssetPostingGroupModel> collection = new List<AssetPostingGroupModel>();
-
+    private List<RenterPostingGroupModel> collection = new List<RenterPostingGroupModel>();
     private bool IsOnlyView { get; set; } = false;
     private bool _busy;
 
+    public bool HasPermissionRenterPostingGroupServiceEdit { get; set; } = false;
+    public int RenterPostingGroupDocTypeID = 104;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionRenterPostingGroupServiceEdit = await Irole.HasClaim(RenterPostingGroupDocTypeID.ToString(), "Edit", ctc.Token);
+
         GetAll();
     }
 
     protected async Task SelectedItemChanged(object obj)
     {
         SelectedItem = (MudListItem)obj;
-        SelectedModel = (AssetPostingGroupModel)SelectedItem.Value;
+        SelectedModel = (RenterPostingGroupModel)SelectedItem.Value;
     }
 
     private void GetAll()
@@ -113,14 +111,14 @@
         listOfItems = Iservice.Select().ToList();
     }
 
-    public void CancelAssetPostingGroup()
+    public async Task CancelRenterPostingGroup()
     {
         IsOnlyView = false;
         value = false;
         model = new();
     }
 
-    public async Task CreateAssetPostingGroup()
+    public async Task CreateRenterPostingGroup()
     {
         if (_busy)
         {
@@ -129,35 +127,44 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
-        try
+        if (HasPermissionRenterPostingGroupServiceEdit)
         {
-            Iservice.Update(model);
-            snackbar.Add("Successfully Submitted", Severity.Success);
-            GetAll();
-            value = false;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Update(model);
+                snackbar.Add("Successfully Submitted", Severity.Success);
+                GetAll();
+                value = false;
+            }
+            catch (Exception a)
+            {
+                snackbar.Add(a.Message, Severity.Error);
+            }
         }
-        catch (Exception a)
+        else
         {
-            snackbar.Add(a.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit RenterPostingGroup.");
         }
         await Task.Delay(2000);
         _busy = false;
     }
 
-    private async Task OpenDialog(AssetPostingGroupModel ii)
+    private async Task OpenDialog(RenterPostingGroupModel ii)
     {
 
     }
 
-    private void OpenDialogGroup(AssetPostingGroupModel ig)
+    private void OpenDialogGroup(RenterPostingGroupModel ig)
     {
         IsOnlyView = false;
         value = true;
         model = new();
-        titleValue = "Add Asset Posting Group";
+        titleValue = "Add Renter Posting Group";
     }
 
     void OnAppearing(MenuAppearingEventArgs e)
@@ -168,16 +175,16 @@
     protected void ContextMenuOnClickedit(ItemClickEventArgs e)
     {
         IsOnlyView = false;
-        model = (AssetPostingGroupModel)((AssetPostingGroupModel)e.Data).Clone();
+        model = (RenterPostingGroupModel)((RenterPostingGroupModel)e.Data).Clone();
         value = true;
-        titleValue = "Edit Asset Posting Group";
+        titleValue = "Edit Renter Posting Group";
     }
 
-    protected void ViewDetails(MouseEventArgs e, AssetPostingGroupModel Data)
+    protected void ViewDetails(MouseEventArgs e, RenterPostingGroupModel Data)
     {
         IsOnlyView = true;
         model = Data;
         value = true;
-        titleValue = "Asset Posting Group | " + Data.Title;
+        titleValue = "Renter Posting Group | " + Data.Title;
     }
 }

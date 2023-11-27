@@ -28,6 +28,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AssetID", model.Asset.AssetID),
                new SqlParameter("@ReferenceDate", model.InvoiceDate),
                new SqlParameter("@NotificationID", model.NotificationID),
+               new SqlParameter("@ReceiptNo", model.ReceiptNo),
+               new SqlParameter("@Refference", model.Refference),
+               new SqlParameter("@Amount", model.Amount),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Update]", parameters))
@@ -112,6 +115,17 @@ namespace ArmsServices.DataServices
         }
 
 
+        public int LinkDocumentTypeAndTaxPurchase(int? DocumentTypeID,int? TaxPurchaseID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+               new SqlParameter("@TaxPurchaseID", TaxPurchaseID)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Asset.Document.TaxPurchase.Link.Update]", parameters);
+        }
+
+
         public IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate, DateTime? endDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -172,6 +186,9 @@ namespace ArmsServices.DataServices
                     AssetID = dr.GetInt32("AssetID"),
                 },
                 NotificationID = dr.GetInt32("NotificationID"),
+                ReceiptNo = dr.GetString("ReceiptNo"),
+                Refference = dr.GetString("Refference"),
+                Amount = dr.GetDecimal("Amount"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -245,6 +262,35 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+
+        public bool? IsCostCenterIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+            };
+            bool? result = false;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.COA.CostCentor.Manadatory]", parameters))
+            {
+                result = dr.GetBoolean("Result");
+
+            }
+            return result;
+        }
+        public bool? IsDimensionIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+            };
+            bool? result = false;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentType.Dimension.Manadatory]", parameters))
+            {
+                result = dr.GetBoolean("Result");
+
+            }
+            return result;
+        }
         public bool IsValid(AssetDocumentModel model, DateTime? DateToCheck)
         {
             if (!(model.StartDate?.Date <= DateToCheck?.Date && model.EndDate?.Date >= DateToCheck?.Date))

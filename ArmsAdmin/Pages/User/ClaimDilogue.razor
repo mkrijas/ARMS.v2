@@ -35,7 +35,7 @@
             <MudContainer Style="min-height:300px;max-height: 70vh; overflow-y:auto">
                 <MudTable Style="overflow-y:hidden" Class="mb-3" Items="@Claims" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<roleClaimView, bool>(search)" @bind-place="roleClaimModel">
                     <ToolBarContent>
-                        <MudCheckBox T="bool" CheckedChanged="@SetAllPermissions" Class="mr-2" Checked="@SetAllPermssionsVal" Label="Select All Permissions" Color="Color.Primary"></MudCheckBox>
+                        <MudCheckBox T="bool" CheckedChanged="@SetAllPermissions" Class="mr-2" Checked="SetAllPermssionsVal" Label="Select All Permissions" Color="Color.Primary"></MudCheckBox>
                         <MudSpacer></MudSpacer>
                         <MudTextField @bind-Value="searchClaim" Placeholder="Search Claim... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
                     </ToolBarContent>
@@ -96,6 +96,7 @@
         UserClaimList = await rolemngr.GetClaimsAsync(RoleModel);
         await Task.Run(() => GetAll());
         GetClaim();
+        SetValue();
     }
 
     private void GetAll()
@@ -117,6 +118,20 @@
                     ClaimType = claimType,
                     ClaimValues = new(clamelist.Where(x => x.Type == claimType).Select(y => y.Value).ToList())
                 });
+        }
+    }
+
+    public void SetValue()
+    {
+        int UserClaimListCount = UserClaimList.Count;
+        int clamelistCount = clamelist.Count;
+        if (UserClaimListCount == clamelistCount)
+        {
+            SetAllPermssionsVal = true;
+        }
+        else
+        {
+            SetAllPermssionsVal = false;
         }
     }
 
@@ -162,11 +177,36 @@
                 await rolemngr.RemoveClaimAsync(RoleModel, claim);
                 UserClaimList.Remove(UserClaimList.FirstOrDefault(s => s.Type == claim.Type && s.Value == claim.Value));
             }
+            SetValue();
         }
         catch (Exception ex)
         {
             snackbar.Add(ex.Message, Severity.Error);
         }
+    }
+
+    private async Task SetAllPermissions(bool val)
+    {
+        SetAllPermssionsVal = val;
+        Progressing = true;
+
+        if (val)
+        {
+            Irole.SelectAllPermissions(RoleModel);
+            UserClaimList.Clear();
+            foreach (var i in clamelist)
+            {
+                UserClaimList.Add(i);  
+            }           
+        }
+        else
+        {
+            Irole.DeSelectAllPermissions(RoleModel);
+            UserClaimList.Clear();
+        }
+
+        Progressing = false;
+        StateHasChanged();
     }
 
     private bool search(roleClaimView roleClaim)
@@ -180,17 +220,4 @@
         return false;
     }
 
-    private async Task SetAllPermissions(bool val)
-    {
-        SetAllPermssionsVal = val;
-        Progressing = true;
-        foreach (var item in Claims)
-        {
-            foreach (var claimValue in item.ClaimValues)
-            {
-                await Roleupdate(val, item.ClaimType, claimValue);
-            }
-        }
-        Progressing = false;
-    }
 }

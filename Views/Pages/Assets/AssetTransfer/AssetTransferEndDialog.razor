@@ -111,8 +111,16 @@
     int? AssetSubClassID;
     private bool _busy;
 
-    protected override void OnInitialized()
+    public bool HasPermissionAssetTransferServiceAccept { get; set; } = false;
+    public bool HasPermissionAssetTransferServiceReject { get; set; } = false;
+    public int AssetTransferDocTypeID = 110;
+
+    protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetTransferServiceAccept = await Irole.HasClaim(AssetTransferDocTypeID.ToString(), "Accept", ctc.Token);
+        HasPermissionAssetTransferServiceReject = await Irole.HasClaim(AssetTransferDocTypeID.ToString(), "Reject", ctc.Token);
+
         branchID = model?.DestinationBranch?.BranchID ?? 0;
         Checklist = Iservice.GetCheckList(model.AssetTransferID).ToList();
         SubClassID = Iassetservice.SelectByID(model.Asset.AssetID).SubClass.AssetSubClassID;
@@ -136,34 +144,43 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        if (model != null)
+        if (HasPermissionAssetTransferServiceAccept)
         {
-            model.IsAssetReject = 0;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            if (model != null)
             {
-                List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
-                model.UserInfo.UserID = user.Identity.Name;
-                model.AssetTransferEndModel.TransferStatus = true;
-                if (SubClassID == AssetSubClassID)
+                model.IsAssetReject = 0;
+                try
                 {
-                    TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
-                    Iservice.UpdateStatus(model, TruckID, RecievedList);
+                    List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
+                    model.UserInfo.UserID = user.Identity.Name;
+                    model.AssetTransferEndModel.TransferStatus = true;
+                    if (SubClassID == AssetSubClassID)
+                    {
+                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
+                        Iservice.UpdateStatus(model, TruckID, RecievedList);
+                    }
+                    else
+                    {
+                        Iservice.UpdateStatus(model, null, RecievedList);
+                    }
+                    Snackbar.Add("Transfered succesfully", Severity.Success);
                 }
-                else
+                catch (Exception ex)
                 {
-                    Iservice.UpdateStatus(model, null, RecievedList);
+                    Snackbar.Add(ex.Message, Severity.Error);
                 }
-                Snackbar.Add("Transfered succesfully", Severity.Success);
             }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
+            MudDialog.Close(model);
         }
-        MudDialog.Close(model);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Accept AssetTransfer.");
+        }
         await Task.Delay(200);
         _busy = false;
     }
@@ -177,35 +194,43 @@
         }
         _busy = true;
 
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        if (model != null)
+        if (HasPermissionAssetTransferServiceReject)
         {
-            model.IsAssetReject = 1;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            if (model != null)
             {
-                List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
-                model.UserInfo.UserID = user.Identity.Name;
-                model.AssetTransferEndModel.TransferStatus = false;
-                if (SubClassID == AssetSubClassID)
+                model.IsAssetReject = 1;
+                try
                 {
-                    TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
-                    Iservice.UpdateStatus(model, TruckID, RecievedList);
-                }
-                else
-                {
-                    Iservice.UpdateStatus(model, null, RecievedList);
-                }
-                Snackbar.Add("Asset Transfer Rejected", Severity.Error);
+                    List<int?> RecievedList = context.Where(s => s.IsRecieved ?? false).Select(d => d.SettingsID).ToList();
+                    model.UserInfo.UserID = user.Identity.Name;
+                    model.AssetTransferEndModel.TransferStatus = false;
+                    if (SubClassID == AssetSubClassID)
+                    {
+                        TruckID = Itruckservice.SelectByAsset(model.Asset.AssetID).TruckID;
+                        Iservice.UpdateStatus(model, TruckID, RecievedList);
+                    }
+                    else
+                    {
+                        Iservice.UpdateStatus(model, null, RecievedList);
+                    }
+                    Snackbar.Add("Asset Transfer Rejected", Severity.Error);
 
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add(ex.Message, Severity.Error);
+                }
             }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
+            MudDialog.Close(model);
         }
-        MudDialog.Close(model);
-
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Reject AssetTransfer.");
+        }
         await Task.Delay(2000);
         _busy = false;
     }
