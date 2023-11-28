@@ -285,6 +285,7 @@ namespace ArmsServices.DataServices
                 AuthStatus = dr.GetString("AuthStatus"),
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
+                BankCharges = dr.GetDecimal("BankCharges"),
                 Narration = dr.GetString("Narration"),
                 InterBranchTranID = dr.GetInt32("InterBranchTranID"),
                 IsInterBranch = dr.GetBoolean("IsInterBranch"),

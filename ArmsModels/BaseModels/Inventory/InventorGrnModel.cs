@@ -27,6 +27,8 @@ namespace ArmsModels.BaseModels
         public int? GrnID { get; set; }
         public string GrnNo { get; }
         public int? POID { get; set; }
+        [RequiredIf("UsedInventory",1)]
+        public int? TruckID { get; set; }        
         public bool Invoiced { get; }
         [Required]
         [ValidateComplexType]
@@ -107,9 +109,10 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
             Entries = new();
         }
-        [Required]
+        [RequiredIf("UsedInventory",0)]
         public int? PartyID { get; set; }
         public string PartyCode { get; set; }
+        public int? UsedInventory { get; set; }
     }
 
     public class InventoryItemEntryModel
