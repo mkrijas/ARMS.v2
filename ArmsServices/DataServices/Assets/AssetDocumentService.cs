@@ -115,7 +115,7 @@ namespace ArmsServices.DataServices
         }
 
 
-        public int LinkDocumentTypeAndTaxPurchase(int? DocumentTypeID,int? TaxPurchaseID)
+        public int LinkDocumentTypeAndTaxPurchase(int? DocumentTypeID, int? TaxPurchaseID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -213,7 +213,7 @@ namespace ArmsServices.DataServices
                         Id = dr.GetInt32("UsageID"),
                         Area = dr.GetString("Area"),
                         Description = dr.GetString("Description"),
-                        UsageCode=dr.GetString("UsageCode")
+                        UsageCode = dr.GetString("UsageCode")
                     },
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
@@ -270,7 +270,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentTypeID", DocumentTypeID),
             };
             bool? result = false;
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.COA.CostCentor.Manadatory]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentType.CostCentor.Manadatory]", parameters))
             {
                 result = dr.GetBoolean("Result");
 
