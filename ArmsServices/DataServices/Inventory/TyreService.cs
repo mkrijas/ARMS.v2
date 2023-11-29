@@ -63,13 +63,14 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Mount]", parameters);
         }
 
-        public int Unmount(int? TyreID, DateTime? UnmountedOn, int? UnmountedKm, string UserID)
+        public int Unmount(int? TyreID, DateTime? UnmountedOn, int? UnmountedKm,StoreModel Store, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TyreID", TyreID),
                new SqlParameter("@UnmountedKM", UnmountedKm),
                new SqlParameter("@UnmountedOn", UnmountedOn),
+               new SqlParameter("StoreID", Store.StoreID),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.UnMount]", parameters);

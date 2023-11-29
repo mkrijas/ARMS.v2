@@ -25,7 +25,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TyrePositionModel> GetTyrePositionList(int? ID = null);
         IEnumerable<TyrePositionModel> GetTyrePositionListUsingTruckTypeId(int? TruckTypeId = null);
         int Mount(TyreMountedModel model);  //Edit
-        int Unmount(int? TyreID, DateTime? UnmountedOn, int? UnmountedKm, string UserID);  //Delete
+        int Unmount(int? TyreID, DateTime? UnmountedOn, int? UnmountedKm, StoreModel Store, string UserID);  //Delete
         int Unmount(string UserID, int? MountedID, DateTime? UnmountedOn, int? UnmountedKm);  //Delete
         int ResoleBegin(TyreResoleModel model);  //Edit
         int ResoleCancel(int? ID, string UserID);  //Cancel
