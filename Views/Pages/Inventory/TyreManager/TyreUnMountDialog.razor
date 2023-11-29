@@ -18,17 +18,22 @@
             <EditForm id="formUnMount" Model="@SubmitModel" OnValidSubmit="UnMount">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
-                <MudItem xs="11" md="11" Class="mb-6">
-                    <MudSelect T="TyreModel" Variant="Variant.Outlined" Disabled="IsTyreDisabled" Margin="Margin.Dense" Label="Tyre" @bind-Value="@SubmitModel.Tyre" ToStringFunc="@(e => e== null ? null : $"{e.TyreSerialNumber}")">
-                        @foreach (TyreModel Tyre in TyreList)
-                        {
-                            <MudSelectItem Value="@Tyre">@Tyre.TyreSerialNumber</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="11" md="11" Class="mb-6">
-                    <MudTextField @bind-Value="@SubmitModel.UnmountedKM" Label="UnMounted KM" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-                </MudItem>
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" md="12" Class="mb-6">
+                        <MudSelect T="TyreModel" Variant="Variant.Outlined" Disabled="IsTyreDisabled" Margin="Margin.Dense" Label="Tyre" @bind-Value="@SubmitModel.Tyre" ToStringFunc="@(e => e== null ? null : $"{e.TyreSerialNumber}")">
+                            @foreach (TyreModel Tyre in TyreList)
+                            {
+                                <MudSelectItem Value="@Tyre">@Tyre.TyreSerialNumber</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="@SubmitModel.UnmountedKM" Label="UnMounted KM" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <StoreSelector @bind-Value="SubmitModel.Store" VariantParameter="Variant.Outlined" MarginParameter="Margin.Dense" BranchID="@branchID.Value"></StoreSelector>
+                    </MudItem>
+                </MudGrid>
             </EditForm>
         </MudContainer>
     </DialogContent>
@@ -52,6 +57,7 @@
     public bool IsTruckDisabled { get; set; } = false;
     public bool IsTyreDisabled { get; set; } = false;
     private bool _busy;
+    private int? branchID = null;
 
     public bool HasPermissionTyreServiceDelete { get; set; } = false;
     public int DocTypeID = 63;
@@ -60,7 +66,9 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionTyreServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
-
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        branchID = int.Parse(brancIDString);
         var Tyres = IServices.SelectUnmontedTyresByID(0);
         if (Tyres != null && Tyres.Count() != 0)
         {
@@ -117,7 +125,7 @@
             if (model != null)
             {
                 model.UserInfo.UserID = user.Identity.Name;
-                IServices.Unmount(SubmitModel.Tyre.TyreID, DateTime.Now, SubmitModel.UnmountedKM, model.UserInfo.UserID);
+                IServices.Unmount(SubmitModel.Tyre.TyreID, DateTime.Now, SubmitModel.UnmountedKM, SubmitModel.Store, model.UserInfo.UserID);
                 snackbar.Add("Unmounted Successfully", Severity.Success);
             }
             MudDialog.Close(DialogResult.Ok(true));
