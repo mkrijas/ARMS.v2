@@ -64,16 +64,16 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     CostCenterVal = dr.GetString("CostCenter"),
                     CostCenterMod = new CostCenterModel()
                     {
-                         CostCenterID = dr.GetInt32("CostCenterID"),
-                          CostCenter = dr.GetString("CostCenter"),
+                        CostCenterID = dr.GetInt32("CostCenterID"),
+                        CostCenter = dr.GetString("CostCenter"),
 
                     },
                     DimensionVal = dr.GetString("Dimension"),
                     Dimension = dr.GetInt32("DimensionID"),
                     DimensionMod = new DimensionModel()
                     {
-                         DimensionID = dr.GetInt32("DimensionID"),
-                          Dimension = dr.GetString("Dimension"),
+                        DimensionID = dr.GetInt32("DimensionID"),
+                        Dimension = dr.GetString("Dimension"),
                     },
                     Reference = dr.GetString("Reference"),
                 };
@@ -98,12 +98,12 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     TaxVoucherID = dr.GetInt32("TaxVoucherID"),
                     Amount = dr.GetDecimal("Amount"),
                     DocumentID = dr.GetInt32("DocumentID"),
-                    DocumentName = dr.GetString("DocumentName") ,
-                    AssetID = dr.GetInt32("AssetID") ,
-                    AssetName = dr.GetString("AssetName") ,
-                    AssetCode = dr.GetString("AssetCode") ,
-                    SlipNo = dr.GetString("ReceiptNo") , 
-                    UsageCode = dr.GetString("UsageCode"), 
+                    DocumentName = dr.GetString("DocumentName"),
+                    AssetID = dr.GetInt32("AssetID"),
+                    AssetName = dr.GetString("AssetName"),
+                    AssetCode = dr.GetString("AssetCode"),
+                    SlipNo = dr.GetString("ReceiptNo"),
+                    UsageCode = dr.GetString("UsageCode"),
                     InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),
@@ -237,9 +237,9 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     model = GetModel(dr);
                 }
             }
-            catch (Exception ex) 
-            { 
-            
+            catch (Exception ex)
+            {
+
             }
             return model;
         }
