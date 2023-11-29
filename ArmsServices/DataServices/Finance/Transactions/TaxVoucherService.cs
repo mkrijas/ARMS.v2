@@ -57,7 +57,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     DocumentName = dr.GetString("DocumentName"),
                     AssetName = dr.GetString("AssetName"),
                     AssetCode = dr.GetString("AssetCode"),
-                    SlipNo = dr.GetString("SlipNo"),
+                    SlipNo = dr.GetString("ReceiptNo"),
                     UsageCode = dr.GetString("UsageCode"),
                     InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     CostCenter = dr.GetInt32("CostCenterID"),
@@ -75,7 +75,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                         DimensionID = dr.GetInt32("DimensionID"),
                         Dimension = dr.GetString("Dimension"),
                     },
-                    Reference = dr.GetString("Reference"),
+                    Reference = dr.GetString("Refference"),
                 };
             }
         }
