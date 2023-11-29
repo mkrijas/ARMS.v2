@@ -1,0 +1,79 @@
+﻿@page "/GeneralSettings"
+@using ArmsModels.BaseModels.General;
+@using System.Threading;
+@layout AdminMainLayout
+@attribute [Authorize]
+@inject IGeneralSettingsService IGeneralSettings
+@inject AuthenticationStateProvider auth
+@inject MudBlazor.ISnackbar snackbar
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+<MudGrid style="padding-top:16px;">
+    <MudItem xs="12" md="12">
+        <MudTable Items="@collection">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">General Settings</MudText>
+                <MudSpacer></MudSpacer>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh Style="width:40%; text-align:center;">SETTINGS</MudTh>
+                <MudTh Style="width:30%; text-align:center;">SETTINGS VALUE</MudTh>
+                <MudTh Style="width:30%;"></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Options" Style="text-align:center;">@context.SettingName</MudTd>
+                <MudTd DataLabel="Value">
+                    @if (context.ValueOptionsList?.Count == 2 && context.ValueOptionsList.Contains("True") && context.ValueOptionsList.Contains("False"))
+                    {
+                        <MudCheckBox T="bool" Checked="@(bool.Parse(context.Value))" CheckedChanged="(bool e) => Submit(e.ToString(), context)"></MudCheckBox>
+                    }
+                    @if (context.ValueOptionsList == null && context.ValueOptionsList?.Count != 2)
+                    {
+                        <MudTextField Style="width:80%" Value="@context.Value" ValueChanged="(string a) => Submit(a, context)" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                    }
+                    @if (context.ValueOptionsList != null && context.ValueOptionsList?.Count > 2)
+                    {
+                        <MudItem Style="width:80%">
+                            <MudSelect Value="@context.Value" ValueChanged="(string newValue) => Submit(newValue, context)" Variant=" Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter">
+                                @foreach (var item in context.ValueOptionsList)
+                                {
+                                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                    }
+                </MudTd>
+                <MudTd></MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    private List<GeneralSettingsModel> collection = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        collection = IGeneralSettings.Select().ToList();
+    }
+
+    private async Task Submit(string? newValue, GeneralSettingsModel model)
+    {
+        try
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            model.UserInfo.UserID = user.Identity.Name;
+            model.Value = newValue;
+            IGeneralSettings.Update(model);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

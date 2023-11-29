@@ -145,10 +145,11 @@ namespace Views
             services.AddScoped<IExpenseMappingServices, ExpenseMappingServices>();
             services.AddScoped<IPushNotificationService, PushNotificationService>();            
             services.AddScoped<ITripFuelService, TripFuelService>();
-        #endregion
+            services.AddScoped<IGeneralSettingsService, GeneralSettingsService>();
+            #endregion
 
 
-        #region ------------FMS---------------
+            #region ------------FMS---------------
             services.AddScoped<IBreakdownService, BreakdownService>();
             services.AddScoped<IWorkshopService, WorkshopService>();
             services.AddScoped<IJobcardService, JobcardService>();
