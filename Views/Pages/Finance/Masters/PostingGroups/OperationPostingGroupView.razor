@@ -1,0 +1,105 @@
+﻿@page "/OperationPostingGroup"
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+@inject IOperationPostingGroupService IOperationPostingGroupService
+@inject MudBlazor.ISnackbar snackbar
+
+<MudForm @bind-IsValid="@formValid" @ref="form">
+    <MudTable Items="@OperationPostingList" Hover="true" CanCancelEdit="true" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Operation Posting Group</MudText>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<OperationPostingGroupModel, object>(x=>x.Title)">TITLE</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<OperationPostingGroupModel, object>(x=>x.UsageCode)">USAGECODE</MudTableSortLabel></MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd></MudTd>
+            <MudTd DataLabel="Title">@context.Title</MudTd>
+            <MudTd DataLabel="UsageCode">@context.UsageCode.UsageCode || @context.UsageCode.Description</MudTd>
+            <MudTd></MudTd>
+        </RowTemplate>
+        <RowEditingTemplate>
+            <MudTd></MudTd>
+            <MudTd DataLabel="Title">
+                <MudTextField @bind-Value="@context.Title" Variant="Variant.Outlined" Margin="Margin.Dense" Required />
+            </MudTd>
+            <MudTd DataLabel="UsageCode">
+                <UsageCodeSelector @bind-Value="@context.UsageCode" LabelName="Select Usage Code" Required/>
+            </MudTd>
+            <MudTd></MudTd>
+        </RowEditingTemplate>
+        <FooterContent>
+            <MudTd Style="text-align:center" DataLabel="New">
+                New
+            </MudTd>
+            <MudTd DataLabel="Title">
+                 <MudTextField @bind-Value="@InsertElement.Title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" Required />
+            </MudTd>
+            <MudTd DataLabel="UsageCode">
+                 <UsageCodeSelector @bind-Value="@InsertElement.UsageCode" LabelName="Select Usage Code" Required/>
+            </MudTd>
+            <MudTd DataLabel="Create">
+                <MudButton Disabled="@(!formValid)" OnClick="(()=>ItemHasBeenCommitted(InsertElement))">Create</MudButton>
+            </MudTd>
+        </FooterContent>
+    </MudTable>
+</MudForm>
+
+ @code {
+
+    MudForm form;
+    bool formValid;
+    private List<OperationPostingGroupModel> OperationPostingList = new();
+    private OperationPostingGroupModel elementBeforeEdit;
+    private OperationPostingGroupModel InsertElement = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        OperationPostingList = IOperationPostingGroupService.Select().ToList();
+    }
+
+    private void BackupItem(object element)
+    {
+        var item = (OperationPostingGroupModel)element;
+        elementBeforeEdit = new()
+            {
+                Id = item.Id,
+                Title = item.Title,
+                UsageCode = item.UsageCode,
+            };
+    }
+
+    private void ResetItemToOriginalValues(object element)
+    {
+        var item = (OperationPostingGroupModel)element;
+        item.Id = elementBeforeEdit.Id;
+        item.Title = elementBeforeEdit.Title;
+        item.UsageCode = elementBeforeEdit.UsageCode;
+    }
+
+    private async void ItemHasBeenCommitted(object element)
+    {
+        OperationPostingGroupModel item = (OperationPostingGroupModel)element;
+        try
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            item.UserInfo.UserID = authprov.User.Identity.Name;
+
+            IOperationPostingGroupService.Update(item);
+            //InsertElement = new();
+            OperationPostingList = IOperationPostingGroupService.Select().ToList();
+            await form.ResetAsync();
+            snackbar.Add("Successfully Submitted", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

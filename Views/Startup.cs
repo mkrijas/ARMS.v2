@@ -229,9 +229,10 @@ namespace Views
             services.AddScoped<ICashAccountService, CashAccountService>();
             services.AddScoped<IAssetPostingGroupService, AssetPostingGroupService>();
             services.AddScoped<IUnreconciledBankEntryService, UnreconciledBankEntryService>();
+            services.AddScoped<IOperationPostingGroupService, OperationPostingGroupService>();
             #endregion
 
-        #region------------ASSETS-------------------
+            #region------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
             services.AddScoped<IAssetTransferService, AssetTransferService>();
