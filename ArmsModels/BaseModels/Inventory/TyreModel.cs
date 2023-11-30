@@ -78,6 +78,7 @@ namespace ArmsModels.BaseModels
         public TyreModel Tyre { get; set; } = new();
         [Required]
         public int? UnmountedKM { get; set; }
+        public StoreModel Store { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
 

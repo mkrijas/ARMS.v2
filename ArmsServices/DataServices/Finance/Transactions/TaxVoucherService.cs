@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             {
                new SqlParameter("@TaxVoucherID", TaxVoucherID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remark)
+               new SqlParameter("@Narration", Remark)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxVoucher.Approve]", parameters);
         }
@@ -57,25 +57,25 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     DocumentName = dr.GetString("DocumentName"),
                     AssetName = dr.GetString("AssetName"),
                     AssetCode = dr.GetString("AssetCode"),
-                    SlipNo = dr.GetString("SlipNo"),
+                    SlipNo = dr.GetString("ReceiptNo"),
                     UsageCode = dr.GetString("UsageCode"),
                     InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     CostCenter = dr.GetInt32("CostCenterID"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     CostCenterMod = new CostCenterModel()
                     {
-                         CostCenterID = dr.GetInt32("CostCenterID"),
-                          CostCenter = dr.GetString("CostCenter"),
+                        CostCenterID = dr.GetInt32("CostCenterID"),
+                        CostCenter = dr.GetString("CostCenter"),
 
                     },
                     DimensionVal = dr.GetString("Dimension"),
                     Dimension = dr.GetInt32("DimensionID"),
                     DimensionMod = new DimensionModel()
                     {
-                         DimensionID = dr.GetInt32("DimensionID"),
-                          Dimension = dr.GetString("Dimension"),
+                        DimensionID = dr.GetInt32("DimensionID"),
+                        Dimension = dr.GetString("Dimension"),
                     },
-                    Reference = dr.GetString("Reference"),
+                    Reference = dr.GetString("Refference"),
                 };
             }
         }
@@ -98,12 +98,12 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     TaxVoucherID = dr.GetInt32("TaxVoucherID"),
                     Amount = dr.GetDecimal("Amount"),
                     DocumentID = dr.GetInt32("DocumentID"),
-                    DocumentName = dr.GetString("DocumentName") ,
-                    AssetID = dr.GetInt32("AssetID") ,
-                    AssetName = dr.GetString("AssetName") ,
-                    AssetCode = dr.GetString("AssetCode") ,
-                    SlipNo = dr.GetString("ReceiptNo") , 
-                    UsageCode = dr.GetString("UsageCode"), 
+                    DocumentName = dr.GetString("DocumentName"),
+                    AssetID = dr.GetInt32("AssetID"),
+                    AssetName = dr.GetString("AssetName"),
+                    AssetCode = dr.GetString("AssetCode"),
+                    SlipNo = dr.GetString("ReceiptNo"),
+                    UsageCode = dr.GetString("UsageCode"),
                     InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),
@@ -120,7 +120,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             {
                new SqlParameter("@PID", PID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remarks)
+               new SqlParameter("@Narration", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxVoucher.Reverse]", parameters);
         }
@@ -237,9 +237,9 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     model = GetModel(dr);
                 }
             }
-            catch (Exception ex) 
-            { 
-            
+            catch (Exception ex)
+            {
+
             }
             return model;
         }

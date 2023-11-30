@@ -24,7 +24,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@SID", SID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remarks)
+               new SqlParameter("@Narration", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Approve]", parameters);
         }
@@ -57,16 +57,16 @@ namespace ArmsServices.DataServices
                     IGST = dr.GetDecimal("IGST"),
                     SGST = dr.GetDecimal("SGST"),
                     CoaID = dr.GetInt32("CoaID"),
-                    PID = dr.GetInt32("PID"),
+                    PID = dr.GetInt32("SID"),
                     TDS = dr.GetDecimal("TCS"),
                     GstRate = dr.GetDecimal("GstRate"),
                     BillReference = dr.GetString("BillReference"),
                     BranchID = dr.GetInt32("BranchID"),
                     UsageCode = dr.GetString("UsageCode"),
-                    TpeID = dr.GetInt64("TpeID"),
-                    CostCenter = dr.GetInt32("CostCenter"),
-                    Dimension = dr.GetInt32("Dimension"),
-                    UsageCodeDescription = dr.GetString("UsageCodeDescription"),
+                    TpeID = dr.GetInt64("SeID"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID"),
+                    //UsageCodeDescription = dr.GetString("UsageCodeDescription"),
                 };
             }
         }
@@ -88,7 +88,7 @@ namespace ArmsServices.DataServices
                     CGST = dr.GetDecimal("CGST"),
                     IGST = dr.GetDecimal("IGST"),
                     SGST = dr.GetDecimal("SGST"),
-                    ItemID = dr.GetInt32("ItemID"),
+                    ItemID = dr.GetInt32("InventoryItemID"),
                     CoaID = dr.GetInt32("CoaID"),
                     GstRate = dr.GetDecimal("GstRate"),
                     ItemQty = dr.GetDecimal("ItemQty"),
@@ -96,8 +96,8 @@ namespace ArmsServices.DataServices
                     PID = dr.GetInt32("SID"),
                     TDS = dr.GetDecimal("TCS"),
                     TpiID = dr.GetInt64("SiID"),
-                    CostCenter = dr.GetInt32("CostCenter"),
-                    Dimension = dr.GetInt32("Dimension"),
+                    CostCenter = dr.GetInt32("CostCenterID"),
+                    Dimension = dr.GetInt32("DimensionID"),
                 };
             }
         }

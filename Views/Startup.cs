@@ -37,6 +37,8 @@ using DAL.DataServices.General;
 using Core.IDataServices.General;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using static MudBlazor.Defaults;
+using Core.IDataServices.Finance.LedgerViews;
+using DAL.DataServices.Finance.LedgerViews;
 
 namespace Views
 {
@@ -145,10 +147,11 @@ namespace Views
             services.AddScoped<IExpenseMappingServices, ExpenseMappingServices>();
             services.AddScoped<IPushNotificationService, PushNotificationService>();            
             services.AddScoped<ITripFuelService, TripFuelService>();
-        #endregion
+            services.AddScoped<IGeneralSettingsService, GeneralSettingsService>();
+            #endregion
 
 
-        #region ------------FMS---------------
+            #region ------------FMS---------------
             services.AddScoped<IBreakdownService, BreakdownService>();
             services.AddScoped<IWorkshopService, WorkshopService>();
             services.AddScoped<IJobcardService, JobcardService>();
@@ -216,7 +219,7 @@ namespace Views
             services.AddScoped<IReceiptService, ReceiptService>();
             services.AddScoped<IDrCrNoteService, DrCrNoteService>();
             services.AddScoped<ISaleService, SaleService>();
-            //services.AddScoped<IJournalService, JournalService>();
+            services.AddScoped<IJournalService, JournalService>();
             services.AddScoped<IInventoryReleaseService, InventoryReleaseService>();
 
             //------------FINANCE POSTING GROUP-------------------
@@ -228,9 +231,14 @@ namespace Views
             services.AddScoped<ICashAccountService, CashAccountService>();
             services.AddScoped<IAssetPostingGroupService, AssetPostingGroupService>();
             services.AddScoped<IUnreconciledBankEntryService, UnreconciledBankEntryService>();
+
+            //-----------FINANCE VIEWS GROUP---------------------
+
+            services.AddScoped<IPartyLedgerViewService, PartyLedgerViewService>();
+            services.AddScoped<IOperationPostingGroupService, OperationPostingGroupService>();
             #endregion
 
-        #region------------ASSETS-------------------
+            #region------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
             services.AddScoped<IAssetTransferService, AssetTransferService>();

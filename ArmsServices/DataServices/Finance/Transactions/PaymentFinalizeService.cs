@@ -89,7 +89,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@pfID", PfID),
-               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("@Narration", Remarks),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Finish.Approve]", parameters);

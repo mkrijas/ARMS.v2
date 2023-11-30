@@ -48,7 +48,7 @@
 //               new SqlParameter("@InitiationBranchID", model.InitiationBranch.BranchID),
 //               new SqlParameter("@DestinationBranchID", model.DestinationBranch.BranchID),
 //               new SqlParameter("@EventReading", model.TruckEvent.EventReading),
-//               new SqlParameter("@Remarks", model.Remarks),
+//               new SqlParameter("@Narration", model.Narration),
 //               new SqlParameter("@UserID", model.TruckEvent.UserInfo.UserID),
 //               new SqlParameter("@EventID", model.TruckEvent.TruckEventID),
 //               new SqlParameter("@RecordStatus", 3),
@@ -85,7 +85,7 @@
 //               new SqlParameter("@InitiationBranchID", model.InitiationBranch.BranchID),
 //               new SqlParameter("@BranchID", model.DestinationBranch.BranchID),
 //               new SqlParameter("@EventReading", model.TruckTransferEndModel.TruckEvent.EventReading),
-//               new SqlParameter("@Remarks", model.TruckTransferEndModel.Remarks),
+//               new SqlParameter("@Narration", model.TruckTransferEndModel.Narration),
 //               new SqlParameter("@UserID", model.TruckTransferEndModel.TruckEvent.UserInfo.UserID),
 //               new SqlParameter("@RecordStatus", 3),
 //               new SqlParameter("@Status", model.TruckTransferEndModel.TransferStatus),
@@ -144,7 +144,7 @@
 //                        },
 //                    },
 //                },
-//                Remarks = dr.GetString("Remarks"),
+//                Narration = dr.GetString("Narration"),
 //                Truck = new TruckModel()
 //                {
 //                    TruckID = dr.GetInt32("TruckID"),
