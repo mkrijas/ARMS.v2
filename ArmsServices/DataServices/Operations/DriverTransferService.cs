@@ -54,7 +54,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InitiatedBranchID", model.InitiatedBranch?.BranchID??null),
                new SqlParameter("@DestinationBranchID", model.DestinationBranch.BranchID),
                new SqlParameter("@TransferInitiatedDate", model.TransferInitiatedDate),
-               new SqlParameter("@Remarks", model.Remarks),
+               new SqlParameter("@Narration", model.Remarks),
                new SqlParameter("@RecordStatus", 3),
             };
 
@@ -95,7 +95,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InitiatedBranchID", model.InitiatedBranch.BranchID),
                new SqlParameter("@BranchID", model.DestinationBranch.BranchID),
                new SqlParameter("@TransferEndDate", model.DriverTransferEndModel.TransferEndDate),
-               new SqlParameter("@Remarks", model.DriverTransferEndModel.Remarks),
+               new SqlParameter("@Narration", model.DriverTransferEndModel.Remarks),
                new SqlParameter("@RecordStatus", 3),
                new SqlParameter("@Status", model.DriverTransferEndModel.TransferStatus),
             };
@@ -134,7 +134,7 @@ namespace ArmsServices.DataServices
                     TransferEndDate = dr.GetDateTime("TransferEndDate"),
 
                 },
-                Remarks = dr.GetString("Remarks"),
+                Remarks = dr.GetString("Narration"),
                 Driver = new DriverModel()
                 {
                     DriverID = dr.GetInt32("DriverID"),

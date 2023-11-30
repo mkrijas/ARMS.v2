@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             {
                new SqlParameter("@TaxVoucherID", TaxVoucherID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remark)
+               new SqlParameter("@Narration", Remark)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxVoucher.Approve]", parameters);
         }
@@ -120,7 +120,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             {
                new SqlParameter("@PID", PID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remarks)
+               new SqlParameter("@Narration", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxVoucher.Reverse]", parameters);
         }

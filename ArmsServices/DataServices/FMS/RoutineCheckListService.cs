@@ -86,7 +86,7 @@ namespace ArmsServices.DataServices.FMS
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@ItemIDs", model.CheckedItemLists.ToDataTable()),
-               new SqlParameter("@Remarks", model.Remarks),
+               new SqlParameter("@Narration", model.Remarks),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@RecordStatus", 3),
             };
@@ -107,7 +107,7 @@ namespace ArmsServices.DataServices.FMS
                 ItemIDs = dr.GetString("ItemIDs"),
                 BranchID = dr.GetInt32("BranchID"),
                 TruckID = dr.GetInt32("TruckID"),
-                Remarks = dr.GetString("Remarks"),
+                Remarks = dr.GetString("Narration"),
                 CreatedDate = dr.GetDateTime("TimeStamp"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -135,7 +135,7 @@ namespace ArmsServices.DataServices.FMS
                     ItemIDs = dr.GetString("ItemIDs"),
                     BranchID = dr.GetInt32("BranchID"),
                     TruckID = dr.GetInt32("TruckID"),
-                    Remarks = dr.GetString("Remarks"),
+                    Remarks = dr.GetString("Narration"),
                     Description = dr.GetString("Description"),
                     ItemID = dr.GetInt32("ItemID"),
                     CreatedDate = dr.GetDateTime("TimeStamp"),
@@ -166,7 +166,7 @@ namespace ArmsServices.DataServices.FMS
                     ItemIDs = dr.GetString("ItemIDs"),
                     BranchID = dr.GetInt32("BranchID"),
                     TruckID = dr.GetInt32("TruckID"),
-                    Remarks = dr.GetString("Remarks"),
+                    Remarks = dr.GetString("Narration"),
                     Description = dr.GetString("Description"),
                     ItemID = dr.GetInt32("ItemID"),
                     CreatedDate = dr.GetDateTime("TimeStamp"),

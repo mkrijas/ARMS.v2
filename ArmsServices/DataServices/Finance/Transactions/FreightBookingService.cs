@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BillingID", ID),
-               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("@Narration", Remarks),
                new SqlParameter("@UserID", UserID),
 
             };
@@ -491,7 +491,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BillingID", ID),
-               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("@Narration", Remarks),
                new SqlParameter("@UserID", UserID),
 
             };
@@ -547,7 +547,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ProformaInvoiceID", ProformaInvoiceID),
                new SqlParameter("@UserID", userID),
-               new SqlParameter("@Remarks", Remarks)
+               new SqlParameter("@Narration", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Approve]", parameters);
         }

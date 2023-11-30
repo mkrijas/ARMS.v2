@@ -1,96 +1,106 @@
 ﻿@page "/PartyLedgerView"
+@page "/PartyLedgerView/{PartyID:int}"
 @using ArmsModels.BaseModels.Finance.Report;
+@using Core.BaseModels.Finance.LedgerViews;
+@using Core.IDataServices.Finance.LedgerViews;
 @using Microsoft.JSInterop
 @using Microsoft.AspNetCore.Components
 @using Views.Data;
 @using System.Text;
 @using System.Net;
 @inject AuthenticationStateProvider auth
-@inject IBranchService Ibranchservice
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
-
+@inject IPartyLedgerViewService PartyLedgerViewService
+@inject IPartyService partyIservice
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
             <MudGrid>
-                <MudItem xs="6" md="6">
-                    <PartySelector @bind-Value="SelectedParty" LabelName="Select Party" IsFetchAll="true" />
+                <MudItem xs="12" md="4" lg="4">
+                    <PartySelector @bind-Value="SelectedParty" />
                 </MudItem>
-                <MudItem xs="4" md="4">
+                <MudItem xs="12" md="3" lg="3">
                     <MudDatePicker Label="Start Date" @bind-Date="@(StartDate)" />
                 </MudItem>
-                <MudItem xs="4" md="4">
+                <MudItem xs="12" md="3" lg="3">
                     <MudDatePicker Label="End Date" @bind-Date="@(EndDate)" />
                 </MudItem>
-                <MudItem xs="2" md="2">
-                    <MudButton Style="margin-top:9%;" Variant="Variant.Filled" Color="@(IsMoreParameterHasValues ?Color.Success:Color.Primary)" OnClick="OpenDialogAddOrEditReference">
-                        Add More @(IsMoreParameterHasValues ? "(Has Value)" : "")
-                    </MudButton>
+                <MudItem xs="12" md="2" lg="2">
+                    <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Success" OnClick="ReloadCollection">Load Data</MudButton>
                 </MudItem>
-                <MudItem xs="2" md="2">
-                    <MudButton Style="margin-top:9%;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
-                </MudItem>
+
+
             </MudGrid>
         </MudPaper>
     </MudItem>
 </MudGrid>
-<MudGrid Style="@(ShowReport?"":"Display:none")">
-    <MudItem xs="12">
-        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters></ReportViewer>
-    </MudItem>
-</MudGrid>
+<MudGrid>
+    <MudItem xs="12" md="12" lg="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Party Ledger Collection</MudText>
+                <MudSpacer></MudSpacer>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyLedgerViewModel, object>(x=> x.AccountName)" InitialDirection="SortDirection.Ascending">Account Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyLedgerViewModel, object>(x=> x.Date)" InitialDirection="SortDirection.Ascending">Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyLedgerViewModel, object>(x=> x.Narration)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyLedgerViewModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PartyLedgerViewModel, object>(x=> x.Refference)" InitialDirection="SortDirection.Ascending">Refference</MudTableSortLabel></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Account Name">@context.AccountName</MudTd>
+                <MudTd DataLabel="Date">@(context.Date?.ToString())</MudTd>
+                    <MudTd DataLabel="Remarks">@context.Narration</MudTd>
+                    <MudTd DataLabel="Amount">@(Math.Abs(context.Amount ?? 0)) @(context.DrCrText)</MudTd>
+                    <MudTd DataLabel="Refference"> @(context.Refference)</MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                </PagerContent>
+            </MudTable>
+        </MudItem>
+    </MudGrid>
 
-@code {
+    @code {
 
-    public Dictionary<string, string> ReportParameters { get; set; } = new();
-    public DateTime? StartDate { get; set; } = DateTime.Now;
+    public DateTime? StartDate { get; set; } = DateTime.Now.AddMonths(-1);
     public DateTime? EndDate { get; set; } = DateTime.Now;
-    public int? BranchID { get; set; } = 0;
-    public BranchModel SelectedBranch { get; set; } = new();
+    [Parameter]
+    public int? PartyID { get; set; } = null;
     public PartyModel SelectedParty = new();
-    public bool ShowReport { get; set; } = false;
-    public string ReportName { get; set; }
     public LedgerTransactionsReportMoreParameterModel MoreParameter { get; set; } = new();
-    private List<BranchModel> DestinationBranchList = new();
     public bool IsMoreParameterHasValues { get; set; } = false;
+    private List<PartyLedgerViewModel> collection = new List<PartyLedgerViewModel>();
+
+    private List<PartyModel> partyList = new();
 
     protected override void OnInitialized()
     {
-        DestinationBranchList = Ibranchservice.Select().ToList();
+
+        partyList = partyIservice.SelectByCode(null, null).ToList();
+        if (PartyID != null && partyList.Any(s => s.PartyID == PartyID))
+        {
+            SelectedParty = partyList.FirstOrDefault(s => s.PartyID == PartyID);
+        }
+        if (SelectedParty != null && SelectedParty.PartyID != null)
+        {
+            var result = PartyLedgerViewService.SelectByPartyIDAndDate(SelectedParty.PartyID, StartDate, EndDate);
+            if (result != null)
+            {
+                collection = result.ToList();
+            }
+
+        }
     }
 
-    private async Task OpenDialogAddOrEditReference()
-    {
-        var model = new DialogParameters { ["model"] = MoreParameter };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        //var dialog = DialogService.Show<LedgerTransactionsReportMoreParameterDialog>("More parameters", model, options);
-        //var result = await dialog.Result;
-        //var isCancelled = result.Cancelled;
-        //if (!isCancelled)
-        //{
-        //    MoreParameter = (LedgerTransactionsReportMoreParameterModel)result.Data;
-        //    if (MoreParameter.Reference != null && MoreParameter.Reference != "")
-        //    {
-        //        IsMoreParameterHasValues = true;
-        //    }
-        //    else
-        //    {
-        //        IsMoreParameterHasValues = false;
-        //    }
-        //}
-    }
 
-    public void RenderReportViewer()
+    public void ReloadCollection()
     {
         if (SelectedParty == null || SelectedParty.PartyID == 0)
         {
             Snackbar.Add("Please select party", Severity.Error);
-            return;
-        }
-        if (SelectedBranch == null || SelectedBranch.BranchID == null)
-        {
-            Snackbar.Add("Please select branch.", Severity.Error);
             return;
         }
         if (StartDate == null)
@@ -103,13 +113,11 @@
             Snackbar.Add("Please select end date.", Severity.Error);
             return;
         }
-        //ShowReport = true;
-        //ReportName = "rpt.Finance.AccountLedgerTransactions";
-        //ReportParameters.Clear();
-        //ReportParameters.Add("AccountID", SelectedParty.PartyID.ToString());
-        //ReportParameters.Add("BranchID", SelectedBranch.BranchID.ToString());
-        //ReportParameters.Add("StartDate", StartDate.Value.ToString("yyyy/MM/dd"));
-        //ReportParameters.Add("EndDate", EndDate.Value.ToString("yyyy/MM/dd"));
-        //ReportParameters.Add("Refference", MoreParameter != null ? MoreParameter.Reference : "");
+
+        var result = PartyLedgerViewService.SelectByPartyIDAndDate(SelectedParty.PartyID, StartDate, EndDate);
+        if (result != null)
+        {
+            collection = result.ToList();
+        }
     }
 }

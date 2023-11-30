@@ -73,7 +73,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@MechanicID", model.MechanicID),
                new SqlParameter("@MechanicName", model.MechanicName),
-               new SqlParameter("@Remarks", model.Remarks),
+               new SqlParameter("@Narration", model.Remarks),
                new SqlParameter("@WorkshopID", model.WorkshopID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -91,7 +91,7 @@ namespace ArmsServices.DataServices
             {
                 MechanicID = dr.GetInt32("MechanicID"),
                 MechanicName = dr.GetString("MechanicName"),
-                Remarks = dr.GetString("Remarks"),
+                Remarks = dr.GetString("Narration"),
                 WorkshopID = dr.GetInt32("WorkshopID"),
                 WorkshopName = dr.GetString("WorkshopName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
