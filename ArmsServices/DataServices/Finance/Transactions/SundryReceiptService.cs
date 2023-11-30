@@ -121,7 +121,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@SundryReceiptID", SundryReceiptID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remarks)
+               new SqlParameter("@Narration", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryReceipt.Approve]", parameters);
         }

@@ -132,7 +132,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@SundryPaymentID", SundryPaymentID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remarks)
+               new SqlParameter("@Narration", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPayment.Approve]", parameters);
         }
@@ -142,7 +142,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@SundryPaymentID", SundryPaymentID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remarks)
+               new SqlParameter("@Narration", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPayment.Reverse]", parameters);
         }

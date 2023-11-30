@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PaymentMemoID", PID),
-               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("@Narration", Remarks),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Approve]", parameters);
@@ -71,7 +71,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PaymentMemoID", PID),
-               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("@Narration", Remarks),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Approve]", parameters);

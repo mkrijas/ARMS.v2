@@ -76,7 +76,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InitiatedBranchID", model.InitiatedBranch?.BranchID??null),
                new SqlParameter("@DestinationBranchID", model.DestinationBranch.BranchID),
                new SqlParameter("@TransferInitiatedDate", model.TransferInitiatedDate),
-               new SqlParameter("@Remarks", model.Remarks),
+               new SqlParameter("@Narration", model.Remarks),
                new SqlParameter("@RecordStatus", 3),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@CheckList", model.CheckList.ToDataTable()),
@@ -129,7 +129,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InitiatedBranchID", model.InitiatedBranch.BranchID),
                new SqlParameter("@BranchID", model.DestinationBranch.BranchID),
                new SqlParameter("@TransferEndDate", model.AssetTransferEndModel.TransferEndDate),
-               new SqlParameter("@Remarks", model.AssetTransferEndModel.Remarks),
+               new SqlParameter("@Narration", model.AssetTransferEndModel.Remarks),
                new SqlParameter("@RecordStatus", 3),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@Status", model.AssetTransferEndModel.TransferStatus),
@@ -168,7 +168,7 @@ namespace ArmsServices.DataServices
                     //TransferEndDate = dr.GetDateTime("TransferEndDate"),
 
                 },
-                Remarks = dr.GetString("Remarks"),
+                Remarks = dr.GetString("Narration"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
