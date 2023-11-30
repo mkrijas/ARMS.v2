@@ -6,6 +6,7 @@ namespace ArmsModels.BaseModels
     public class OperationPostingGroupModel
     {
         public int? Id { get; set; }
+        public string ADCode { get; set; }
         [Required]
         public string Title { get; set; }
         [Required]

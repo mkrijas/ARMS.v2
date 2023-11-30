@@ -31,6 +31,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.Id),
+               new SqlParameter("@ADCode", model.ADCode),
                new SqlParameter("@Title", model.Title),
                new SqlParameter("@UsageCode",model.UsageCode.UsageCode),
                new SqlParameter("@CoaID",model.UsageCode.CoaID),
@@ -48,6 +49,7 @@ namespace ArmsServices.DataServices
             return new OperationPostingGroupModel
             {
                 Id = dr.GetInt32("ID"),
+                ADCode = dr.GetString("ADCode"),
                 Title = dr.GetString("Title"),
                 UsageCode = new GstUsageCodeModel()
                 {
