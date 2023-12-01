@@ -2,7 +2,7 @@
 
 namespace Core.BaseModels.Finance.LedgerViews
 {
-    public class PartyLedgerViewModel
+    public class LedgerViewsModel
     {
         public string AccountName { get; set; }
         public DateTime? Date { get; set; }

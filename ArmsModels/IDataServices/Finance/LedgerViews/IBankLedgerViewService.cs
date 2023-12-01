@@ -4,8 +4,8 @@ using System;
 
 namespace Core.IDataServices.Finance.LedgerViews
 {
-    public interface IPartyLedgerViewService
+    public interface IBankLedgerViewService
     {
-        IEnumerable<LedgerViewsModel> SelectByPartyIDAndDate(int? PartyID, DateTime? FromDate, DateTime? ToDate);
+        IEnumerable<LedgerViewsModel> SelectByBankIDAndDate(int? BankID, DateTime? FromDate, DateTime? ToDate);
     }
 }

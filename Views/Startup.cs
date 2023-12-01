@@ -231,11 +231,13 @@ namespace Views
             services.AddScoped<ICashAccountService, CashAccountService>();
             services.AddScoped<IAssetPostingGroupService, AssetPostingGroupService>();
             services.AddScoped<IUnreconciledBankEntryService, UnreconciledBankEntryService>();
+            services.AddScoped<IOperationPostingGroupService, OperationPostingGroupService>();
 
             //-----------FINANCE VIEWS GROUP---------------------
 
             services.AddScoped<IPartyLedgerViewService, PartyLedgerViewService>();
-            services.AddScoped<IOperationPostingGroupService, OperationPostingGroupService>();
+            services.AddScoped<IAssetLedgerViewService, AssetLedgerViewService>();
+            services.AddScoped<IBankLedgerViewService, BankLedgerViewService>();
             #endregion
 
             #region------------ASSETS-------------------

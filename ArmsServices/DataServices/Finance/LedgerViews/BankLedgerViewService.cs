@@ -1,33 +1,33 @@
-﻿using ArmsModels.BaseModels;
-using ArmsServices;
-using Core.IDataServices.Finance.LedgerViews;
+﻿using ArmsServices;
+using Core.BaseModels.Finance.LedgerViews;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
 using System;
-using Core.BaseModels.Finance.LedgerViews;
+using Core.IDataServices.Finance.LedgerViews;
 
 namespace DAL.DataServices.Finance.LedgerViews
 {
-    public class PartyLedgerViewService : IPartyLedgerViewService
+    public class BankLedgerViewService: IBankLedgerViewService
     {
 
         IDbService Iservice;
 
-        public PartyLedgerViewService(IDbService iservice)
+        public BankLedgerViewService(IDbService iservice)
         {
             Iservice = iservice;
         }
 
-        public IEnumerable<LedgerViewsModel> SelectByPartyIDAndDate(int? PartyID, DateTime? FromDate, DateTime? ToDate)
+
+        public IEnumerable<LedgerViewsModel> SelectByBankIDAndDate(int? BankID, DateTime? FromDate, DateTime? ToDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@BankID", BankID),
                new SqlParameter("@FromDate", FromDate),
                new SqlParameter("@ToDate", ToDate),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Report.Ledger.SelectByArdCode.Party]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Report.Ledger.SelectByArdCode.Bank]", parameters))
             {
                 yield return new LedgerViewsModel()
                 {
@@ -39,6 +39,5 @@ namespace DAL.DataServices.Finance.LedgerViews
                 };
             }
         }
-
     }
 }
