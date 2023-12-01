@@ -98,7 +98,7 @@ namespace DAL.DataServices.Finance.Transactions
             {
                new SqlParameter("@MileageShortageReceiptID", MileageShortageReceiptID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Narration", Remarks)
+               new SqlParameter("@Remarks", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.MileageShortageReceipt.Approve]", parameters);
         }
@@ -109,7 +109,7 @@ namespace DAL.DataServices.Finance.Transactions
             {
                new SqlParameter("@MileageShortageReceiptID", MileageShortageReceiptID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Narration", Remarks)
+               new SqlParameter("@Remarks", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.MileageShortageReceipt.Reverse]", parameters);
         }

@@ -24,7 +24,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@JournalID", ID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Narration", Remarks)
+               new SqlParameter("@Remarks", Remarks)
                //new SqlParameter("@Status", 1)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Journal.Approve]", parameters);
@@ -46,7 +46,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
-               new SqlParameter("@Narration", Remarks),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID)
 
             };

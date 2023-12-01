@@ -106,7 +106,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentTypeId", model.DocTypeID),
                new SqlParameter("@DocumentID", model.DocumentID),
                new SqlParameter("@AuthLevelID", model.AuthLevelID),
-               new SqlParameter("@Narration", model.Remarks),
+               new SqlParameter("@Remarks", model.Remarks),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DataAuthorization.Update]", parameters))
@@ -124,7 +124,7 @@ namespace ArmsServices.DataServices
                 DocumentID = dr.GetInt32("DocumentID"),
                 DocTypeID = dr.GetInt32("DTid"),
                 AuthLevelID = dr.GetInt32("AuthLevelID"),
-                Remarks = dr.GetString("Narration"),
+                Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

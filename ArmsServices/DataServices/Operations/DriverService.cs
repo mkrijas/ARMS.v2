@@ -69,7 +69,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@DriverID", DriverID),
-               new SqlParameter("@Narration", Remarks),
+               new SqlParameter("@Remarks", Remarks),
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.Driver.Resign]", parameters);
         }
@@ -201,7 +201,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DriverID", DriverID),
                new SqlParameter("@EndDate", DateTime.Today),
                new SqlParameter("@UserID", userID),
-               new SqlParameter("@Narration", Remarks),
+               new SqlParameter("@Remarks", Remarks),
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.WorkPeriods.Resign]", parameters);
         }

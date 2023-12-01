@@ -32,7 +32,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@DrCrNoteID", ID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Narration", Remarks)
+               new SqlParameter("@Remarks", Remarks)
                //new SqlParameter("@Status", 1)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Approve]", parameters);
@@ -161,7 +161,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
-               new SqlParameter("@Narration", Remarks),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID)
              
             };

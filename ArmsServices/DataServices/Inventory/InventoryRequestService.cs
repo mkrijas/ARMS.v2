@@ -169,7 +169,7 @@ namespace ArmsServices.DataServices.Inventory
                new SqlParameter("@StoreID", model.Store.StoreID),
                new SqlParameter("@JobcardID", model.Jobcard?.JobcardID??0),
                new SqlParameter("@TruckID", model.Truck?.TruckID??0),
-               new SqlParameter("@Narration", model.Remarks),
+               new SqlParameter("@Remarks", model.Remarks),
                new SqlParameter("@Items", ItemsListFormated?.ToDataTable()??null),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -202,7 +202,7 @@ namespace ArmsServices.DataServices.Inventory
                     TruckID = dr.GetInt32("TruckID"),
                     RegNo = dr.GetString("RegNo")
                 },
-                Remarks = dr.GetString("Narration"),
+                Remarks = dr.GetString("Remarks"),
                 IsCompletelyReleased = dr.GetBoolean("IsCompletelyReleased"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -243,7 +243,7 @@ namespace ArmsServices.DataServices.Inventory
                     RequestQty = dr.GetDecimal("RequestQty"),
                     ItemQty = dr.GetDecimal("ReleaseQty"),
                 },
-                Remarks = dr.GetString("Narration"),
+                Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

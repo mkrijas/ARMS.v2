@@ -27,7 +27,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@PID", PID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Narration", Remark)
+               new SqlParameter("@Remarks", Remark)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Approve]", parameters);
         }
@@ -114,7 +114,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@PID", PID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Narration", Remarks)
+               new SqlParameter("@Remarks", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Reverse]", parameters);
         }

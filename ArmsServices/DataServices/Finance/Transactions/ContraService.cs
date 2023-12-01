@@ -131,7 +131,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ContraID", ID),
-               new SqlParameter("@Narration", Remarks),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
                
             };
@@ -143,7 +143,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ContraID", ID),
-               new SqlParameter("@Narration", Remarks),
+               new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Contra.Reverse]", parameters);

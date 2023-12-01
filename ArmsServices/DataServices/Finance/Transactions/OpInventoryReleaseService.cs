@@ -96,7 +96,7 @@ namespace DAL.DataServices.Finance.Transactions
             {
                new SqlParameter("@OpInventoryReleaseID", OpInventoryReleaseID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Narration", Remarks)
+               new SqlParameter("@Remarks", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.OpInventoryRelease.Approve]", parameters);
         }
@@ -133,7 +133,7 @@ namespace DAL.DataServices.Finance.Transactions
             {
                new SqlParameter("@OpInventoryReleaseID", OpInventoryReleaseID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Narration", Remarks)
+               new SqlParameter("@Remarks", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.OpInventoryRelease.Reverse]", parameters);
         }

@@ -69,7 +69,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentType", model.DocumentType.DocumentTypeID),
                new SqlParameter("@StartDate", model.StartDate),
                new SqlParameter("@EndDate", model.EndDate),
-               new SqlParameter("@Narration", model.Remarks),
+               new SqlParameter("@Remarks", model.Remarks),
                new SqlParameter("@PaymentMemoID", model.PaymentMemoID),
                new SqlParameter("@Assets", model.Assets.Select(x=> x.AssetID.Value).ToList().ToDataTable() ),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -92,7 +92,7 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 StartDate = dr.GetDateTime("StartDate"),
                 EndDate = dr.GetDateTime("EndDate"),
-                Remarks = dr.GetString("Narration"),
+                Remarks = dr.GetString("Remarks"),
                 DocumentType = new AssetDocumentTypeModel()
                 {
                     DocumentTypeID = dr.GetInt32("DocumentTypeID"),

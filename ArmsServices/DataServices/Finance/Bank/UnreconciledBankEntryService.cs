@@ -44,7 +44,7 @@ namespace ArmsServices.DataServices
 
                     ID = dr.GetInt32("RecID"),
                     ReconciledDate = dr.GetDateTime("ReconciledDate"),
-                    Remarks = dr.GetString("Narration"),
+                    Remarks = dr.GetString("Remarks"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = dr.GetByte("RecRecordStatus"),
@@ -69,7 +69,7 @@ namespace ArmsServices.DataServices
                 {
                     ID = dr.GetInt32("ID"),
                     ReconciledDate = dr.GetDateTime("ReconciledDate"),
-                    Remarks = dr.GetString("Narration"),
+                    Remarks = dr.GetString("Remarks"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = dr.GetByte("RecordStatus"),
@@ -191,7 +191,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@IsExisting",reconciledBankEntry.IsExisting),
                new SqlParameter("@ReconciledDate",reconciledBankEntry.ReconciledDate),
                new SqlParameter("@AccountEntryID",reconciledBankEntry.AccountEntryID),
-               new SqlParameter("@Narration",reconciledBankEntry.Remarks),
+               new SqlParameter("@Remarks",reconciledBankEntry.Remarks),
                new SqlParameter("@UserID",reconciledBankEntry.UserInfo.UserID),
             };
             ReconciledBankEntryModel reconciledBankModel = new();
@@ -245,7 +245,7 @@ namespace ArmsServices.DataServices
 
                     ID = dr.GetInt32("RecID"),
                     ReconciledDate = dr.GetDateTime("ReconciledDate"),
-                    Remarks = dr.GetString("Narration"),
+                    Remarks = dr.GetString("Remarks"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {
                         RecordStatus = dr.GetByte("RecRecordStatus"),
@@ -273,7 +273,7 @@ namespace ArmsServices.DataServices
                 ReconciledDate = dr.GetDateTime("ReconciledDate"),
                 AccountEntryID = dr.GetInt64("AccountEntryID"),
                 AccountEntryName = dr.GetString("AccountEntryName"),
-                Remarks = dr.GetString("Narration"),
+                Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

@@ -169,7 +169,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Narration", Remarks)
+               new SqlParameter("@Remarks", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Approve]", parameters);
         }
@@ -179,7 +179,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Narration", Remarks)
+               new SqlParameter("@Remarks", Remarks)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Reverse]", parameters);
         }
