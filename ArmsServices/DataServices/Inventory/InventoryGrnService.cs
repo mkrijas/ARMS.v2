@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@GrnID", GrnID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("@Narration", Remarks),
                new SqlParameter("@Operation","Approve")
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Approve]", parameters);
@@ -103,7 +103,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UsedInventory",model.UsedInventory),
                new SqlParameter("@TotalValue",model.TotalValue),
                new SqlParameter("@Reference",model.Reference),
-               new SqlParameter("@Remarks",model.Remarks),
+               new SqlParameter("@Narration",model.Remarks),
                new SqlParameter("@StoreID",model.StoreID),
                new SqlParameter("entries",model.Entries.ToDataTable()),
                new SqlParameter("@UserID",model.UserInfo.UserID),
@@ -134,7 +134,7 @@ namespace ArmsServices.DataServices
                 PartyName = dr.GetString("TradeName"),
                 TotalValue = dr.GetDecimal("TotalValue"),
                 Reference = dr.GetString("Reference"),
-                Remarks = dr.GetString("Remarks"),
+                Remarks = dr.GetString("Narration"),
                 StoreID = dr.GetInt32("StoreID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

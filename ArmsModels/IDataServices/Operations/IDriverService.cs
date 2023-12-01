@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
         DriverModel Update(DriverModel model);  //Edit
         int Delete(int? DriverID, string UserID);  //Delete
 
-        //int Resign(int? DriverID, string Remarks);  
+        //int Resign(int? DriverID, string Narration);  
         IEnumerable<DriverModel> Select();
         IEnumerable<DriverModel> SelectByBranch(int BranchID);
         DriverModel SelectByID(int? DriverID);

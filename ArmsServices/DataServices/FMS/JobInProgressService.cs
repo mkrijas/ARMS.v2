@@ -78,7 +78,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@CreatedOn", model.CreatedOn),
                new SqlParameter("@FinishedOn", model.FinishedOn),
                new SqlParameter("@JobStatus", model.JobStatus),
-               new SqlParameter("@Remarks", model.Remarks),
+               new SqlParameter("@Narration", model.Remarks),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -101,7 +101,7 @@ namespace ArmsServices.DataServices
                 CreatedOn = dr.GetDateTime("CreatedOn"),
                 FinishedOn = dr.GetDateTime("FinishedOn"),
                 JobStatus = dr.GetInt32("JobStatus"),
-                Remarks = dr.GetString("Remarks"),
+                Remarks = dr.GetString("Narration"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
