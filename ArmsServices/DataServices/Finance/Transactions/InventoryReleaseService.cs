@@ -56,6 +56,35 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        public IEnumerable<InventoryReleaseSubViewModel> GetRequstSubUsed(int? ID, int? StoreID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetSubUsed"),
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@StoreID", StoreID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InventoryRelease.Select]", parameters))
+            {
+                if ((dr.GetDecimal("ReleaseQty") == null) || (dr.GetDecimal("ReleaseQty") < dr.GetDecimal("RequestQty")))
+                {
+                    yield return new InventoryReleaseSubViewModel()
+                    {
+                        ItemEntryID = dr.GetInt32("ItemEntryID"),
+                        //RID = dr.GetInt32("RID"),
+                        ItemID = dr.GetInt32("ItemID"),
+                        ItemDescription = dr.GetString("ItemDescription"),
+                        AvailableQty = dr.GetDecimal("AvailableQty"),
+                        RequestQty = dr.GetDecimal("RequestQty"),
+                        PendingQty = dr.GetDecimal("ReleaseQty") != null ? (dr.GetDecimal("RequestQty") - dr.GetDecimal("ReleaseQty")) : dr.GetDecimal("RequestQty"),
+                        ReleaseQty = dr.GetDecimal("ReleaseQty"),
+                        ItemQty = dr.GetDecimal("ReleaseQty") != null ? (dr.GetDecimal("RequestQty") - dr.GetDecimal("ReleaseQty")) : dr.GetDecimal("RequestQty"),
+                    };
+                }
+            }
+        }
+
         public IEnumerable<InventoryReleaseSubViewModel> GetRequstSubReadOnly(int? ID, int? StoreID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -193,6 +222,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@JobcardID", model.Jobcard?.JobcardID??0),
                new SqlParameter("@TruckID", model.Truck?.TruckID??0),
+               new SqlParameter("@IsUsedItem",model.IsUsedItem),
                new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@Items", model.Items?.ToDataTable()??null),
@@ -228,6 +258,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     TruckID = dr.GetInt32("TruckID"),
                     RegNo = dr.GetString("RegNo")
                 },
+                IsUsedItem = dr.GetBoolean("IsUsedItem"),
                 Narration = dr.GetString("Narration"),
                 FileName = dr.GetString("FilePath"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

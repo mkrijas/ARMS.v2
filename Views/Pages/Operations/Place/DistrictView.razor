@@ -5,6 +5,7 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 @using System.Threading;
+@using System.Data.SqlClient;
 @inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
@@ -71,11 +72,27 @@
                 "Are you sure, you want to delete - " + model.DistrictName + " ?");
             if (result == true)
             {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                Iservice.Delete(model.DistrictID, user.Identity.Name);
-                StateHasChanged();
-                snackbar.Add("Deleted Successfully", Severity.Success);
+                try
+                {
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    Iservice.Delete(model.DistrictID, user.Identity.Name);
+                    StateHasChanged();
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
+                catch (SqlException ex)
+                {
+                    if (ex.Number == 547)
+                    {
+                        bool? value = await DialogService.ShowMessageBox(
+                            "Warning !",
+                            model.DistrictName + " is already in use !");
+                    }
+                    else
+                    {
+                        snackbar.Add(ex.Message, Severity.Warning);
+                    }
+                }
             }
             await GetAll();
         }

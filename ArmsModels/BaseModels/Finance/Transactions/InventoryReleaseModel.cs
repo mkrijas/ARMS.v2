@@ -26,7 +26,7 @@ namespace ArmsModels.BaseModels
         public StoreModel Store { get; set; }
         public JobcardModel Jobcard { get; set; } // Optional ,  Active Jobcards
         public TruckModel Truck { get; set; } //Optional
-
+        public bool IsUsedItem { get; set; }
         [ValidateComplexType]
         public List<InventoryItemEntryModel> Items { get; set; } = new();
     }

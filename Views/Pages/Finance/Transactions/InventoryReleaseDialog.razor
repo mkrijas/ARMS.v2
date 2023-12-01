@@ -46,6 +46,9 @@
                     <MudItem xs="12" md="4">
                         <TruckSelector @bind-Value="@model.Truck" BranchID="@branchID" IsDisabled="@IsDisableTruck"></TruckSelector>
                     </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudCheckBox CheckedChanged="((bool e)=>SetUsedItem(e))" Checked="model.IsUsedItem" ReadOnly="@ReadOnly" Label="Used Item" Color="Color.Primary"></MudCheckBox>
+                    </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="@model.Narration" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="ReadOnly"></MudTextField>
                     </MudItem>
@@ -54,7 +57,7 @@
                         <MudItem xs="12">
                             <h6><u>Items</u></h6>
                             <MudGrid Justify="Justify.Center">
-                                <MudItem xs="4" Class="d-flex align-center"><span> <strong> <u>Asset</u></strong> </span></MudItem>
+                                <MudItem xs="4" Class="d-flex align-center"><span> <strong> <u>Item</u></strong> </span></MudItem>
                                 <MudItem xs="4" Class="d-flex align-center"><span><strong><u>Requst Qty</u></strong> </span></MudItem>
                                 <MudItem xs="4" Class="d-flex align-center"><span><strong><u>Release Qty</u></strong> </span></MudItem>
                                 @foreach (var item in InventoryRequestSubList)
@@ -71,7 +74,7 @@
                         <MudItem xs="12">
                             <h6><u>Items</u></h6>
                             <MudGrid Justify="Justify.Center">
-                                <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Asset</u></strong> </span></MudItem>
+                                <MudItem xs="2" Class="d-flex align-center"><span> <strong> <u>Item</u></strong> </span></MudItem>
                                 <MudItem xs="2" Class="d-flex align-center"><span><strong><u>Requst Qty</u></strong> </span></MudItem>
                                 <MudItem xs="2" Class="d-flex align-center"><span><strong><u>Available Qty</u></strong> </span></MudItem>
                                 <MudItem xs="2" Class="d-flex align-center"><span><strong><u>Released Qty</u></strong> </span></MudItem>
@@ -189,7 +192,14 @@
             }
             else
             {
-                InventoryRequestSubList = Iservice.GetRequstSub(model.RequestID, model.Store.StoreID).ToList();
+                if(!model.IsUsedItem)
+                {
+                    InventoryRequestSubList = Iservice.GetRequstSub(model.RequestID, model.Store.StoreID).ToList();                    
+                }
+                if(model.IsUsedItem)
+                {
+                    InventoryRequestSubList = Iservice.GetRequstSub(model.RequestID, model.Store.StoreID).ToList();
+                }
                 foreach (var item in InventoryRequestSubList)
                 {
                     item.ItemQty = (item.PendingQty != null && item.AvailableQty != null && (item.PendingQty > item.AvailableQty)) ? item.AvailableQty : item.PendingQty;
@@ -229,6 +239,19 @@
         model.Jobcard = obj;
     }
 
+    public void SetUsedItem(bool val)
+    {
+        model.IsUsedItem = val;
+        if (model.Store != null && !model.IsUsedItem)
+        {
+            InventoryRequestSubList = Iservice.GetRequstSub(model.RequestID, model.Store.StoreID).ToList();
+        }
+        if (model.Store != null && model.IsUsedItem)
+        {
+            InventoryRequestSubList = Iservice.GetRequstSubUsed(model.RequestID, model.Store.StoreID).ToList();
+        }
+    }
+
     public void OnChangeSelectedInventoryRequest(InventoryRequestModel obj)
     {
         SelectInventoryRequest = obj;
@@ -262,9 +285,13 @@
             {
                 InventoryRequestSubList.Clear();
             }
-            if (obj.Store != null)
+            if (obj.Store != null && !model.IsUsedItem)
             {
                 InventoryRequestSubList = Iservice.GetRequstSub(obj.RequestID, obj.Store.StoreID).ToList();
+            }
+            if (obj.Store != null && model.IsUsedItem)
+            {
+                InventoryRequestSubList = Iservice.GetRequstSubUsed(obj.RequestID, obj.Store.StoreID).ToList();
             }
         }
         else
