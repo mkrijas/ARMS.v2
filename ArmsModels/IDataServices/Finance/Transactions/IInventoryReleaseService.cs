@@ -11,7 +11,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
     {
         InventoryReleaseModel Update(InventoryReleaseModel model);  //Edit
         InventoryReleaseModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);  //Delete
+        int Delete(int? ID, bool IsUsedItem, string UserID);  //Delete
         IEnumerable<InventoryReleaseModel> Select();
         public IEnumerable<InventoryReleaseModel> SelectByStoreID(int? StoreID);
         public IEnumerable<InventoryReleaseModel> SelectByStoreAndBranchID(int? StoreID,int? BranchID);

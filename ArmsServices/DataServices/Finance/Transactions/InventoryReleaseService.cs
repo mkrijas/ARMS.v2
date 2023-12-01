@@ -16,11 +16,12 @@ namespace ArmsServices.DataServices.Finance.Transactions
             Iservice = iservice;
         }
 
-        public int Delete(int? ID, string UserID)
+        public int Delete(int? ID, bool IsUsedItem, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
+               new SqlParameter("IsUsedItem", IsUsedItem),
                new SqlParameter("@UserID", UserID),
 
             };
