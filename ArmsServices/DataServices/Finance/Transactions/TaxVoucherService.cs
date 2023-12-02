@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             {
                new SqlParameter("@TaxVoucherID", TaxVoucherID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Narration", Remark)
+               new SqlParameter("@Remarks", Remark)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxVoucher.Approve]", parameters);
         }
