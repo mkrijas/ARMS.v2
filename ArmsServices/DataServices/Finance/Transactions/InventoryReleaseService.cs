@@ -21,7 +21,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
-               new SqlParameter("IsUsedItem", IsUsedItem),
+               new SqlParameter("@IsUsedItem", IsUsedItem),
                new SqlParameter("@UserID", UserID),
 
             };
