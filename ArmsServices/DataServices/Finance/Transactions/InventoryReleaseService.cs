@@ -224,6 +224,8 @@ namespace ArmsServices.DataServices.Finance.Transactions
                new SqlParameter("@JobcardID", model.Jobcard?.JobcardID??0),
                new SqlParameter("@TruckID", model.Truck?.TruckID??0),
                new SqlParameter("@IsUsedItem",model.IsUsedItem),
+               new SqlParameter("@CostCenter", model.CostCenter),
+               new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@Items", model.Items?.ToDataTable()??null),
@@ -260,6 +262,8 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     RegNo = dr.GetString("RegNo")
                 },
                 IsUsedItem = dr.GetBoolean("IsUsedItem"),
+                CostCenter = dr.GetInt32("CostCenter"),
+                Dimension = dr.GetInt32("Dimension"),
                 Narration = dr.GetString("Narration"),
                 FileName = dr.GetString("FilePath"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
