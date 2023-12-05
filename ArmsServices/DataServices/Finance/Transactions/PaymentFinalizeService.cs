@@ -13,16 +13,19 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
         public int? Update(PaymentFinishModel model)
         {
             DataTable dt = new DataTable();
             dt.Columns.Add("ID");
+            dt.Columns.Add("Reference");
             dt.Columns.Add("Amount");
             foreach (var item in model.SelectedMemos) {
             if(item.BankCharges!= null && item.BankCharges > 0)
                 {
                     DataRow row = dt.NewRow();
                     row["ID"] = item.PaymentMemoID;
+                    row["Reference"] = item.Reference;
                     row["Amount"] = item.BankCharges;
                     dt.Rows.Add(row);
                 }
@@ -60,9 +63,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", PfID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
-
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Finish.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -129,6 +130,5 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-
     }
 }

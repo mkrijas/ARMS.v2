@@ -11,6 +11,8 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 @using System.Globalization
+@using OfficeOpenXml;
+@using System.IO;
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Payment" formID="PaymentForm" model="@model" _busy="_busy">
     <FormContent>
@@ -32,7 +34,7 @@
                         <MudDatePicker Disabled Label="Due On" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DueOn" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <PaymentAccountSelector @bind-PaymentMode="@model.PaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID"  @bind-BankTool="@model.PaymentTool" HideBankCharges />
+                        <PaymentAccountSelector @bind-PaymentMode="@model.PaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" @bind-BankTool="@model.PaymentTool" HideBankCharges />
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTable Class="mb-3" T="PaymentMemoModel" Items="@model.SelectedMemos" Hover="true" SelectOnRowClick Context="memos">
@@ -48,7 +50,9 @@
                                 <MudTd DataLabel="DocumentDate">@memos.DocumentDate</MudTd>
                                 <MudTd DataLabel="Party">@memos.PartyInfo.TradeName</MudTd>
                                 <MudTd DataLabel="Amount">@memos.TotalAmount</MudTd>
-                                <MudTd DataLabel="Reference">@memos.Reference</MudTd>
+                                <MudTd DataLabel="Reference">
+                                    <MudTextField Disabled="@ReadOnly" @bind-Value="@memos.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                                </MudTd>
                                 <MudTd DataLabel="BankCharges">
                                     <MudTextField Disabled="@ReadOnly" @bind-Value="@memos.BankCharges" Label="Bank Charges (if any)" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                                 </MudTd>
@@ -56,6 +60,13 @@
                                     <MudFab @onclick="@(()=> OpenMemo(memos))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                                 </MudTd>
                             </RowTemplate>
+                            <FooterContent>
+                                <MudItem xs="12" Style="width: 372px; text-wrap : nowrap; margin-left: 160%; padding: 16px">
+                                    <h6>Upload Payment Memo File : </h6>
+                                    <InputFile @ref="fileInput" OnChange="HandleXLSXFileButtonSelected" />
+                                    <MudButton OnClick="UploadXLSXFile" Variant="Variant.Filled">Upload</MudButton>
+                                </MudItem>
+                            </FooterContent>
                         </MudTable>
                     </MudItem>
                     <MudItem xs="12" md="12">
@@ -70,7 +81,7 @@
     </VerificationStatus>
 </DialogForm>
 
- @code {
+@code {
 
     [Parameter]
     public PaymentFinishModel model { get; set; }
@@ -97,7 +108,9 @@
     public bool HasPermissionPaymentFinalizeServiceApprove { get; set; } = false;
     public int PaymentFinalizeDocTypeID = 8;
 
-    
+    private InputFile fileInput;
+    private MemoryStream memoryStream = new MemoryStream();
+    private List<PaymentMemoPrintDetailModel> XLSXcollection = new List<PaymentMemoPrintDetailModel>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -121,15 +134,90 @@
         editContext = new EditContext(model);
     }
 
+    private async Task HandleXLSXFileButtonSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (file != null)
+        {
+            try
+            {
+                memoryStream = new MemoryStream();
+                XLSXcollection.Clear();
+                memoryStream.SetLength(0); // Reset the stream before reading new file data
+                await file.OpenReadStream().CopyToAsync(memoryStream);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+
+    private void UploadXLSXFile()
+    {
+        try
+        {
+            memoryStream.Position = 0;
+
+            using (ExcelPackage package = new ExcelPackage(memoryStream))
+            {
+                ExcelWorksheet worksheet = package.Workbook.Worksheets[0]; // Access the first worksheet
+                int rowCount = worksheet.Dimension.Rows;
+                int colCount = worksheet.Dimension.Columns;
+                XLSXcollection.Clear();
+
+                int PMcolNum = 0, BankChargesColNum = 0, ReferenceColNum = 0;
+
+                for (int row = 1; row <= rowCount; row++)
+                {
+                    if (row == 1)
+                    {
+                        for (int col = 1; col <= colCount; col++)
+                        {
+                            if (worksheet.Cells[row, col].Value?.ToString() == "PaymentMemoID")
+                            {
+                                PMcolNum = col;
+                            }
+                            else if (worksheet.Cells[row, col].Value?.ToString() == "Reference")
+                            {
+                                ReferenceColNum = col;
+                            }
+                            else if (worksheet.Cells[row, col].Value?.ToString() == "BankCharges")
+                            {
+                                BankChargesColNum = col;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int col = 1; col <= colCount; col++)
+                        {
+                            var pmModel = model.SelectedMemos.First(x => x.PaymentMemoID == int.Parse(worksheet.Cells[row, PMcolNum].Value?.ToString()));
+                            pmModel.BankCharges = decimal.Parse(worksheet.Cells[row, BankChargesColNum].Value?.ToString());
+                            pmModel.Reference = worksheet.Cells[row, ReferenceColNum].Value?.ToString();
+                            StateHasChanged();
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
     public async Task OpenMemo(PaymentMemoModel ppm)
-    {      
+    {
         DialogParameters parms = new DialogParameters();
         parms.Add("model", ppm.Clone());
         parms.Add("PageToRedirectLink", "/PaymentMemoView");
         parms.Add("ReadOnly", true);
         var dialog = DialogService.Show<PaymentMemoDialog>("MEMO", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
-        var result = await dialog.Result;        
+        var result = await dialog.Result;
     }
+
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)

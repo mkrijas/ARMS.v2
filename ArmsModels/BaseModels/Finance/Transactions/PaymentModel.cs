@@ -37,11 +37,13 @@ namespace ArmsModels.BaseModels
         public int? PaymentMemoID { get; set; }
         public string DocNumber { get; set; }
         public string PartyName { get; set; }
-        public string IfscCode { get; set; }
-        public string BankAccount { get; set; }
         public string BeneficiaryName { get; set; }
+        public string BankAccount { get; set; }
+        public string IfscCode { get; set; }
+        public string Reference { get; set; }
+        public decimal BankCharges { get; set; }
         public decimal? Amount { get; set; }
-        public DateTime? DueOn { get; set; }       
+        public DateTime? DueOn { get; set; }
     }
 
     public class BillsPaidModel
@@ -51,7 +53,7 @@ namespace ArmsModels.BaseModels
         public int? MID { get; set; }
         public bool IsMemo { get; set; } = false;
         public virtual decimal? OutstandingAmount { get; set; }
-        public virtual string OutstandingAmountDisplayText { get { return Math.Abs(OutstandingAmount??0).ToString() + " " + ((OutstandingAmount??0) < 0 ? "Cr" : "Dr"); } }
+        public virtual string OutstandingAmountDisplayText { get { return Math.Abs(OutstandingAmount ?? 0).ToString() + " " + ((OutstandingAmount ?? 0) < 0 ? "Cr" : "Dr"); } }
         public decimal? PayAmount
         {
             get { return _PayAmount; }
@@ -66,8 +68,8 @@ namespace ArmsModels.BaseModels
         public virtual DateTime? InvoiceDate { get; set; }
     }
 
-    public class PaymentInitiatedModel :  ICloneable
-    {           
+    public class PaymentInitiatedModel : ICloneable
+    {
         public int? PaymentInitiatedID { get; set; }
         [Required]
         public DateTime? DueOn { get; set; }
@@ -79,19 +81,16 @@ namespace ArmsModels.BaseModels
         public List<PaymentMemoModel> SelectedMemos { get; set; } = new();
         public int? AuthLevelId { get; set; }
         public string AuthStatus { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }        
-
+        public SharedModels.UserInfoModel UserInfo { get; set; }
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<PaymentInitiatedModel>(Json);
         }
-
     }
 
     public class PaymentFinishModel : TransactionBaseModel, ICloneable
-    {  
-        
+    {
         public int? PaymentFinalizeID { get; set; }
         [Required]
         public string PaymentMode { get; set; }  // Bank,Cash   
@@ -104,29 +103,17 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? EffectiveDate { get; set; } = DateTime.Today;
         public int? PaymentInitiatedID { get; set; }
-        
         public DateTime? DueOn { get; set; }
-        
         public DateTime? InitiatedDocumentDate { get; set; } = DateTime.Today;
-        
         public List<PaymentMemoModel> SelectedMemos { get; set; } = new();
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<PaymentFinishModel>(Json);
         }
-        //public PaymentFinishModel(PaymentMemoModel ToCopy)
-        //{
-        //    Type type = typeof(PaymentMemoModel);
-        //    foreach (System.Reflection.PropertyInfo pi in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
-        //    {
-        //        object Value = type.GetProperty(pi.Name).GetValue(ToCopy, null);
-        //        if (Value != null)
-        //            this.GetType().GetProperty(pi.Name).SetValue(this, Value, null);
-        //    }
-        //}
+
         public PaymentFinishModel()
-        {           
+        {
         }
     }
 }
