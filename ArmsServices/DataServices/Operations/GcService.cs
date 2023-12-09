@@ -57,11 +57,11 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@GcSetID", model.GcSetID),
                new SqlParameter("@UnloadingQuantity", model.TotalUnloadingQuantity),
-              
+
             };
-           return Iservice.ExecuteNonQuery("[usp.GcSet.UpdateUnloadingQuantity]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.GcSet.UpdateUnloadingQuantity]", parameters);
         }
-            public List<GcSetModel> Select(int? BranchID)
+        public List<GcSetModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -117,6 +117,25 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
+        public List<GcModel> SelectChartData(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "BarChart"),
+               new SqlParameter("@BranchID", BranchID)
+            };
+            return GetChartData(parameters);
+        }
+        private List<GcModel> GetChartData(List<SqlParameter> parameters)
+        {
+            List<GcModel> list = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ChartData.Select]", parameters))
+            {
+                GcModel gc = GetGcModel(dr);
+                list.Add(gc);
+            }
+            return list;
+        }
         public List<GcSetModel> SelectedUnloadEvent(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -126,7 +145,7 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
-        
+
         public IEnumerable<GcTypeModel> SelectGcTypes()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.GcType.Select]", null))
@@ -175,7 +194,6 @@ namespace ArmsServices.DataServices
                 set.OrderTime = gc.OrderTime;
                 set.Gcs.Add(gc);
             }
-
             return list;
         }
 
@@ -217,9 +235,10 @@ namespace ArmsServices.DataServices
             {
                 GcID = dr.GetInt64("GcID"),
                 GcSetID = dr.GetInt64("GcSetID"),
-                BillDate = dr.GetDateTime("BillDate"),
+                BillDate = dr?.GetDateTime("BillDate"),
                 BillNumber = dr.GetString("BillNumber"),
                 BillQuantity = dr.GetDecimal("BillQuantity"),
+                TotalBillQuantity = dr.GetDecimal("TotalBillQuantity"),
                 GcNumber = dr.GetInt32("GcNo"),
                 GcPrefix = dr.GetString("GcPrefix"),
                 GcType = dr.GetInt16("GcType"),
@@ -229,7 +248,7 @@ namespace ArmsServices.DataServices
                 Freight = dr.GetDecimal("Freight"),
                 EFreight = dr.GetDecimal("Freight"),
                 UnloadedQuantity = dr.GetDecimal("UnloadedQuantity"),
-                
+
                 EwayBill = new EwayBillModel
                 {
                     EwayBillDate = dr.GetDateTime("EwayBillDate"),
@@ -290,7 +309,7 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@ExpireOn",model.ExpireOn),
                 new SqlParameter("@UserID",model.UserInfo.UserID),
             };
-            foreach(IDataRecord dr in   Iservice.GetDataReader("[usp.Gc.EwayBill.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.EwayBill.Update]", parameters))
             {
                 return new EwayBillModel()
                 {
@@ -322,8 +341,8 @@ namespace ArmsServices.DataServices
                         {
                             case 3:
                                 Freight += Qty * item.TariffRate;
-                                break;                              
-                        }   
+                                break;
+                        }
                     }
                 }
                 return Freight;

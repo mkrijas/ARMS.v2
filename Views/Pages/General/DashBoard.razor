@@ -1,34 +1,68 @@
 ﻿@page "/dashboard"
+@attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@inject ITruckService truckService
+@inject ITruckService TruckService
+@inject IGcService GcService
+@inject IJSRuntime JSRuntime
 
 <MudPaper Class="pa-4">
-    <MudChart ChartType="ChartType.Pie" InputData="@data" @bind-SelectedIndex="Indexed" InputLabels="@labels" ChartOptions="@ops" Width="300px" Height="300px" />
+    @* <MudToolBar>
+        <MudText Typo="Typo.h5" Style="font-weight:450">DASHBOARD</MudText>
+    </MudToolBar>
+    <MudDivider />
+    <MudItem Style="display: flex; margin: 16px;">
+        <MudPaper Style="box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);padding:12px; margin:6px;">
+            <MudItem Style="">
+                <MudText Typo="Typo.h6" Style="margin-bottom: 24px;">TRUCK STATUS</MudText>
+                <MudItem id="PieChart" style="width: 100%; height: 80%;"></MudItem>
+            </MudItem>
+        </MudPaper>
+        <MudPaper Style="height :420; box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);padding:12px; margin:6px;">
+            <MudItem>
+                <MudText Typo="Typo.h6">CONSIGNMENT LOAD GRAPH</MudText>
+                <MudItem id="BarGraph" style="width: 100%;"></MudItem>
+                <MudText Align="Align.Center">Daily Inflation in Consignment</MudText><button></button>
+            </MudItem>
+        </MudPaper>
+    </MudItem> *@
 </MudPaper>
-<MudText Typo="Typo.h6">Selected portion of the chart: @Indexed</MudText>
 
 @code {
 
-    string[] labels;
-    double[] data;
-    string[] xLabels;
-    ChartOptions ops = new ChartOptions();
-    List<TruckStatusModel> Status = new List<TruckStatusModel>();
+    string[] PieLabels;
+    double[] PieData;
+    string[] BarLabels;
+    string[] BarData;
+    private int BranchID;
+
+    List<TruckStatusModel> TruckStatusData = new List<TruckStatusModel>();
+    List<GcModel> ConsignmentLoadData = new List<GcModel>();
 
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
-        if (int.TryParse(User.Claims.First(x => x.Type == "BranchID").Value, out int BranchID))
-        {
-            Status = truckService.GetTruckStatus(BranchID).ToList();
-        }
-        labels = Status.Select(x => x.StatusText + " " + x.LoadStatus).ToArray();
-        data = Status.Select(x => (double)x.NoOfTrucks).ToArray();
-        // ops.ChartPalette = Status.Select(x => x.NoOfTrucks.ToString()).ToArray();
+
+        string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
+        BranchID = int.Parse(BranchIDString);
+
+        TruckStatusData = TruckService.GetTruckStatus(BranchID).ToList();
+        ConsignmentLoadData = GcService.SelectChartData(BranchID).ToList();
+
+        PieLabels = TruckStatusData.Select(x => x.StatusText + " " + x.LoadStatus).ToArray();
+        PieData = TruckStatusData.Select(x => (double)x.NoOfTrucks).ToArray();
+
+        BarLabels = ConsignmentLoadData.Select(x => x.BillDate.Value.ToString("dd MMM yyyy")).ToArray();
+        BarData = ConsignmentLoadData.Select(x => (x.TotalBillQuantity.Value.ToString())).ToArray();
     }
 
-    private int Indexed = -1;
-    //default value cannot be 0 -> first selectedindex is 0.
-    //Random random = new Random();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("ChartResult.PieChart", PieLabels, PieData);
+            await JSRuntime.InvokeVoidAsync("ChartResult.BarGraph", BarLabels, BarData);
+            StateHasChanged();
+        }
+    }
 }

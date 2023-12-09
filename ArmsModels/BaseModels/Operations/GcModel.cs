@@ -78,6 +78,7 @@ namespace ArmsModels.BaseModels
         [Required]
         [Range(1, double.MaxValue)]
         public decimal? BillQuantity { get; set; }
+        public decimal? TotalBillQuantity { get; set; }
         public virtual decimal? UnloadedQuantity { get; set; }
         public string PassNumber { get; set; }
         public DateTime? OrderTime { get; set; } = DateTime.Today;
