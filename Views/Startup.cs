@@ -39,6 +39,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using static MudBlazor.Defaults;
 using Core.IDataServices.Finance.LedgerViews;
 using DAL.DataServices.Finance.LedgerViews;
+using Microsoft.AspNetCore.Http;
 
 namespace Views
 {
@@ -240,6 +241,14 @@ namespace Views
             services.AddScoped<IBankLedgerViewService, BankLedgerViewService>();
             #endregion
 
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAny",
+                    builder => builder.AllowAnyOrigin()
+                                      .AllowAnyHeader()
+                                      .AllowAnyMethod());
+            });
+
             #region------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
@@ -293,6 +302,27 @@ namespace Views
             app.UseStaticFiles();
 
             app.UseSqlTableDependency<SqlTableDependencyService>(connectionString);
+
+
+            // Configure proxy
+
+
+            //app.UseEndpoints(endpoints =>
+            //{
+            //    endpoints.MapReverseProxy("proxy", proxyPipeline =>
+            //    {
+            //        // Replace with your Reporting Services server URL
+            //        proxyPipeline.UseProxyLoadBalancing();
+            //        proxyPipeline.Use((context, next) =>
+            //        {
+            //            context.Request.Headers.Add("X-Forwarded-Host", context.Request.Host.Host);
+            //            return next();
+            //        });
+            //    });
+            //});
+
+            app.UseCors("AllowAny");
+            app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
             //app.UseStaticFiles(new StaticFileOptions()
             //{
             //    FileProvider = new PhysicalFileProvider(
@@ -316,5 +346,7 @@ namespace Views
                 
             });
         }
+
+
     }
 }

@@ -16,6 +16,17 @@ namespace ArmsServices.DataServices.Finance.Transactions
             Iservice = iservice;
         }
 
+        public int Approve(int? RID, string UserID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RID", RID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Remarks", Remarks)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.InventoryRelease.Approve]", parameters);
+        }
+
         public int Delete(int? ID, bool IsUsedItem, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -266,6 +277,8 @@ namespace ArmsServices.DataServices.Finance.Transactions
                 Dimension = dr.GetInt32("Dimension"),
                 Narration = dr.GetString("Narration"),
                 FileName = dr.GetString("FilePath"),
+                AuthLevelId = dr.GetInt32("AuthLevelId"),
+                AuthStatus = dr.GetString("AuthStatus"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
