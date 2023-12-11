@@ -66,12 +66,8 @@ namespace ArmsModels.BaseModels
             EwayBill = new();
         }
         public long? GcID { get; set; }
-        public virtual long? GcSetID { get; set; }
-        public virtual string GcPrefix { get; set; }
-        public virtual long? GcNumber { get; set; }
         [Required]
         public short? GcType { get; set; }
-        public virtual string GcTypeName { get; set; }
         [Required]
         public DateTime? BillDate { get; set; } = DateTime.Today;
         public string BillNumber { get; set; }
@@ -79,15 +75,20 @@ namespace ArmsModels.BaseModels
         [Range(1, double.MaxValue)]
         public decimal? BillQuantity { get; set; }
         public decimal? TotalBillQuantity { get; set; }
-        public virtual decimal? UnloadedQuantity { get; set; }
         public string PassNumber { get; set; }
-        public DateTime? OrderTime { get; set; } = DateTime.Today;
+        [Required]
+        public decimal? Freight { get; set; }
+
+
+        public virtual string GcTypeName { get; set; }
+        public virtual long? GcSetID { get; set; }
+        public virtual string GcPrefix { get; set; }
+        public virtual long? GcNumber { get; set; }
         public virtual EwayBillModel EwayBill { get; set; }
         [Required]
         public virtual decimal? EFreight { get; set; } = 200;
-        [Required]
-
-        public decimal? Freight { get; set; }
+        public virtual decimal? UnloadedQuantity { get; set; }
+        public virtual DateTime? OrderTime { get; set; } = DateTime.Today;
 
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
 

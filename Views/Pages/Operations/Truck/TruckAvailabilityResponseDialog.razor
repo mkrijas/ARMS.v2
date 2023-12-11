@@ -1,0 +1,118 @@
+﻿@using System.Threading;
+@using Core.BaseModels.Operations;
+@using Core.IDataServices.Operations;
+@inject AuthenticationStateProvider auth
+@inject ITruckAvailabilityService Iservice
+@inject IBranchService Ibranchservice
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Accep Or Reject Truck.
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Approve">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="model.Truck.RegNo" Label="Truck" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Truck.RegNo)" Disabled></MudTextField>
+                </MudItem>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Approve" Class="px-12">Approve</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reject" Class="px-12">Reject</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public RequestApprovalHistoryModel model { get; set; } = new();
+    private int branchID { get; set; } = 0;
+    private int? BranchID { get; set; } = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        BranchID = int.Parse(brancIDString);
+        model.RespondedBranchID = BranchID;
+        branchID = model?.RespondedBranch?.BranchID ?? 0;
+    }
+
+    protected override void OnParametersSet()
+    {
+
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public async Task Approve()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model.Truck == null || model.Truck.TruckID == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Please, Select truck.", yesText: "OK");
+            return;
+        }
+        if (model != null)
+        {
+            model.RespondedUserInfo = new();
+            model.IsApproved = true;
+            model.RespondedUserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.UpdateStatus(model);
+                Snackbar.Add("Accepted succesfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        MudDialog.Close(model);
+    }
+
+    public async Task Reject()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model.Truck == null || model.Truck.TruckID == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Please, Select truck.", yesText: "OK");
+            return;
+        }
+        if (model != null)
+        {
+            model.RespondedUserInfo = new();
+            model.IsApproved = false;
+            model.RespondedUserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.UpdateStatus(model);
+                Snackbar.Add("Rejected succesfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        MudDialog.Close(model);
+    }
+} 

@@ -40,6 +40,8 @@ using static MudBlazor.Defaults;
 using Core.IDataServices.Finance.LedgerViews;
 using DAL.DataServices.Finance.LedgerViews;
 using Microsoft.AspNetCore.Http;
+using Core.IDataServices.Operations;
+using DAL.DataServices.Operations;
 
 namespace Views
 {
@@ -149,6 +151,7 @@ namespace Views
             services.AddScoped<IPushNotificationService, PushNotificationService>();            
             services.AddScoped<ITripFuelService, TripFuelService>();
             services.AddScoped<IGeneralSettingsService, GeneralSettingsService>();
+            services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>();
             #endregion
 
 

@@ -1,0 +1,105 @@
+﻿ @using System.Threading;
+@using Core.BaseModels.Operations;
+@using Core.IDataServices.Operations;
+@inject AuthenticationStateProvider auth
+@inject ITruckAvailabilityService Iservice
+@inject IBranchService Ibranchservice
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog>
+    <TitleContent>
+        @if (model.RequestApprovalHistoryID == null || model.RequestApprovalHistoryID == 0)
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Truck Request.
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Truck Request.
+            </MudText>
+        }
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudItem xs="12" md="12">
+                    <TruckSelector Value="model.Truck" Filter="@filter" VariantParameter="Variant.Outlined" MarginParameter="Margin.Normal" BranchID="BranchID" ValueChanged="TruckSelected" />
+                </MudItem>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Request</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public RequestApprovalHistoryModel model { get; set; } = new();
+    private List<int?> UnAssignedTruckIds = new();
+    private string filter { get; set; } = "UnAssigned";
+    private int? BranchID { get; set; } = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        BranchID = int.Parse(brancIDString);
+        model.RequestedBranchID = BranchID;
+    }
+
+    protected override void OnParametersSet()
+    {
+
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public async Task Submit()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model.Truck == null || model.Truck.TruckID == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Please, Select truck.", yesText: "OK");
+            return;
+        }
+        if (model != null)
+        {
+            if (model.RequestedUserInfo == null)
+            {
+                model.RequestedUserInfo = new();
+            }
+            model.RequestedUserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.UpdateOutgoing(model);
+                Snackbar.Add("Transfered succesfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        MudDialog.Close(model);
+    }
+
+    private void TruckSelected(TruckModel obj)
+    {
+        model.Truck = obj;
+    }
+} 

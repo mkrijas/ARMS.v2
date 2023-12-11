@@ -1,13 +1,14 @@
-﻿@*@page "/TruckAvailabilityView"
+﻿@page "/TruckAvailabilityView"
 @using ArmsModels.BaseModels.General
-@using ArmsServices.DataServices.General
+@using Core.BaseModels.Operations;
+@using Core.IDataServices.Operations;
 @using Microsoft.AspNetCore.SignalR.Client;
 @using System.Threading;
 @using Views.Data
 @using System.Threading;
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@inject ITruckTransferService Iservice
+@inject ITruckAvailabilityService Iservice
 @inject IPushNotificationService IpushNotificationService
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
@@ -19,29 +20,23 @@
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
-            <MudTabPanel Text="Truck Transfer Outgoing">
+            <MudTabPanel Text="Truck Request Outgoing">
                 <MudTable Items="@collectionOutGoing" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="modelOutGoing">
                     <ToolBarContent>
-                        <MudText Typo="Typo.h6">Initiate Transfer</MudText>
+                        <MudText Typo="Typo.h6">Initiate Request</MudText>
                         <MudTooltip Text="New Truck Transfer">
-                            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEditOutGoing(new TruckTransferInitiationModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEditOutGoing(new RequestApprovalHistoryModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                         </MudTooltip>
                         <MudSpacer></MudSpacer>
                     </ToolBarContent>
                     <HeaderContent>
-                        <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.Truck.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.DestinationBranch.BranchName)" InitialDirection="SortDirection.Ascending">Destination Branch</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.TruckEvent.EventReading)" InitialDirection="SortDirection.Ascending">Start KM</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.TruckTransferEndModel.StatusText)" InitialDirection="SortDirection.Ascending">Status</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.Remarks)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<RequestApprovalHistoryModel, object>(x=> x.Truck.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<RequestApprovalHistoryModel, object>(x=> x.ApprovedStatus)" InitialDirection="SortDirection.Ascending">Approved Status</MudTableSortLabel></MudTh>
                         <MudTh>Actions</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="Truck">@context.Truck.RegNo</MudTd>
-                        <MudTd DataLabel="Destination Branch">@context.DestinationBranch.BranchName</MudTd>
-                        <MudTd DataLabel="Start KM">@context.TruckEvent.EventReading</MudTd>
-                        <MudTd DataLabel="Status">@context.TruckTransferEndModel.StatusText</MudTd>
-                        <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+                        <MudTd DataLabel="Remarks">@context.ApprovedStatus</MudTd>
                         <MudTd DataLabel="">
                             <MudTooltip Text="Edit">
                                 <MudIconButton @onclick="@(()=> OpenDialogEditOutGoing(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
@@ -56,22 +51,16 @@
                     </PagerContent>
                 </MudTable>
             </MudTabPanel>
-            <MudTabPanel Text="Truck Transfer Incoming">
+            <MudTabPanel Text="Truck Approve/ Reject">
                 <MudTable Items="@collectionIncoming" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="modelIncoming">
                     <HeaderContent>
-                        <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.Truck.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.InitiationBranch.BranchName)" InitialDirection="SortDirection.Ascending">Initiation Branch</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.TruckTransferEndModel.StatusText)" InitialDirection="SortDirection.Ascending">Transfer Status</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.TruckEvent.EventReading)" InitialDirection="SortDirection.Ascending">Start KM</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<TruckTransferInitiationModel, object>(x=> x.Remarks)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<RequestApprovalHistoryModel, object>(x=> x.Truck.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<RequestApprovalHistoryModel, object>(x=> x.ApprovedStatus)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
                         <MudTh>Actions</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="Truck">@context.Truck.RegNo</MudTd>
-                        <MudTd DataLabel="Initiation Branch">@context.InitiationBranch.BranchName</MudTd>
-                        <MudTd DataLabel="Transfer Status">@context.TruckTransferEndModel.StatusText</MudTd>
-                        <MudTd DataLabel="Start KM">@context.TruckEvent.EventReading</MudTd>
-                        <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+                        <MudTd DataLabel="Approved Status">@context.ApprovedStatus</MudTd>
                         <MudTd DataLabel="">
                             <MudTooltip Text="Edit">
                                 <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
@@ -130,50 +119,47 @@
 
     #region Outgoing
 
-    private TruckTransferInitiationModel modelOutGoing = new();
-    private List<TruckTransferInitiationModel> collectionOutGoing = new();
+    private RequestApprovalHistoryModel modelOutGoing = new();
+    private List<RequestApprovalHistoryModel> collectionOutGoing = new();
     string state = "Message box hasn't been opened yet";
 
-    private async Task OpenDialogEditOutGoing(TruckTransferInitiationModel TruckTransferInitiation)
+    private async Task OpenDialogEditOutGoing(RequestApprovalHistoryModel TruckTransferInitiation)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (TruckTransferInitiation.TruckEvent == null)
+        TruckTransferInitiation.RequestedUserInfo = new();
+        if (TruckTransferInitiation.RequestedUserInfo != null)
         {
-            TruckTransferInitiation.TruckEvent = new();
+            TruckTransferInitiation.RequestedUserInfo.UserID = user.Identity.Name;
         }
-        TruckTransferInitiation.TruckEvent.UserInfo = new();
-        if (TruckTransferInitiation.TruckEvent.UserInfo != null)
+        if (TruckTransferInitiation.RespondedBranch == null)
         {
-            TruckTransferInitiation.TruckEvent.UserInfo.UserID = user.Identity.Name;
+            TruckTransferInitiation.RespondedBranch = new();
         }
-        if (TruckTransferInitiation.InitiationBranch == null)
+        if (TruckTransferInitiation.RespondedBranch == null)
         {
-            TruckTransferInitiation.InitiationBranch = new();
+            TruckTransferInitiation.RespondedBranch = new();
         }
-        if (TruckTransferInitiation.DestinationBranch == null)
-        {
-            TruckTransferInitiation.DestinationBranch = new();
-        }
-        TruckTransferInitiation.InitiationBranch.BranchID = int.Parse(brancIDString);
+        TruckTransferInitiation.RespondedBranch.BranchID = int.Parse(brancIDString);
+        TruckTransferInitiation.RequestedBranchID = int.Parse(brancIDString);
         var modelOutGoing = new DialogParameters { ["model"] = TruckTransferInitiation.Clone() };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<TruckTransferInitiationDialog>("Simple Dialog", modelOutGoing, options);
+        var dialog = DialogService.Show<TruckAvailabilityRequestDialog>("Simple Dialog", modelOutGoing, options);
         var result = await dialog.Result;
         var isCancelled = result.Cancelled;
         if (!isCancelled)
         {
-            var ReturnData = (TruckTransferInitiationModel)result.Data;
-            notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiationBranch?.BranchID ?? 0)) ?? null;
-            notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
+            var ReturnData = (RequestApprovalHistoryModel)result.Data;
+            notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.RequestedBranchID ?? 0)) ?? null;
+            notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.RespondedBranchID ?? 0)) ?? null;
             notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered to this branch.";
             notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " to this branch on " + (DateTime.Now).ToString() + ".";
             notificationMessage.RedirectedTo = 0;
             notificationMessage.ExpiredBy = 7;
-            notificationMessage.DocumentID = ReturnData.TruckTransferInitiationID;
+            notificationMessage.DocumentID = ReturnData.RequestApprovalHistoryID;
             notificationMessage.MessageGroupID = "TruckTransfer";
-            notificationMessage.PageToRedirectLink = "/TruckTransferView";
+            notificationMessage.PageToRedirectLink = "/TruckAvailabilityView";
             notificationMessage.ClaimValue = "Edit";
             notificationMessage.DocumentTypeID = DocTypeID;
             notificationMessage.MsgDate = DateTime.Now;
@@ -183,7 +169,7 @@
         }
     }
 
-    private async Task OpenDialogDeleteOutGoing(TruckTransferInitiationModel TruckTransferInitiation)
+    private async Task OpenDialogDeleteOutGoing(RequestApprovalHistoryModel TruckTransferInitiation)
     {
         bool? result = await DialogService.ShowMessageBox(
             "Warning",
@@ -194,17 +180,13 @@
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
-            if (TruckTransferInitiation.TruckEvent == null)
+            TruckTransferInitiation.RequestedUserInfo = new();
+            if (TruckTransferInitiation.RequestedUserInfo != null)
             {
-                TruckTransferInitiation.TruckEvent = new();
-            }
-            TruckTransferInitiation.TruckEvent.UserInfo = new();
-            if (TruckTransferInitiation.TruckEvent.UserInfo != null)
-            {
-                TruckTransferInitiation.TruckEvent.UserInfo.UserID = user.Identity.Name;
+                TruckTransferInitiation.RequestedUserInfo.UserID = user.Identity.Name;
                 try
                 {
-                    Iservice.DeleteInitiation(TruckTransferInitiation.TruckTransferInitiationID, TruckTransferInitiation.TruckEvent.TruckEventID, TruckTransferInitiation.TruckEvent.UserInfo.UserID);
+                    Iservice.DeleteRequest(TruckTransferInitiation.RequestApprovalHistoryID, TruckTransferInitiation.RequestedUserInfo.UserID);
                 }
                 catch (Exception ex)
                 {
@@ -221,21 +203,13 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (modelOutGoing.TruckEvent == null)
+        if (modelOutGoing.RespondedBranch == null)
         {
-            modelOutGoing.TruckEvent = new();
+            modelOutGoing.RespondedBranch = new();
         }
-        modelOutGoing.TruckEvent.UserInfo = new();
-        if (modelOutGoing.TruckEvent.UserInfo != null)
-        {
-            modelOutGoing.TruckEvent.UserInfo.UserID = user.Identity.Name;
-        }
-        if (modelOutGoing.InitiationBranch == null)
-        {
-            modelOutGoing.InitiationBranch = new();
-        }
-        modelOutGoing.InitiationBranch.BranchID = int.Parse(brancIDString);
-        foreach (var item in Iservice.SelectOutgoingTrucks(modelOutGoing.InitiationBranch.BranchID))
+        modelOutGoing.RespondedBranch.BranchID = int.Parse(brancIDString);
+        modelOutGoing.RequestedBranchID = int.Parse(brancIDString);
+        foreach (var item in Iservice.SelectOutgoingRequests(null,modelOutGoing.RequestedBranchID))
         {
             collectionOutGoing.Add(item);
         }
@@ -244,52 +218,45 @@
 
     #region Incoming
 
-    private TruckTransferInitiationModel modelIncoming = new();
-    private List<TruckTransferInitiationModel> collectionIncoming = new();
+    private RequestApprovalHistoryModel modelIncoming = new();
+    private List<RequestApprovalHistoryModel> collectionIncoming = new();
 
-    private async Task OpenDialogEditIncoming(TruckTransferInitiationModel TruckTransferEnd)
+    private async Task OpenDialogEditIncoming(RequestApprovalHistoryModel ResponseRequest)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (TruckTransferEnd.TruckTransferEndModel == null)
+        ResponseRequest.RespondedUserInfo = new();
+        if (ResponseRequest.RespondedUserInfo != null)
         {
-            TruckTransferEnd.TruckTransferEndModel = new();
+            ResponseRequest.RespondedUserInfo.UserID = user.Identity.Name;
         }
-        if (TruckTransferEnd.TruckTransferEndModel.TruckEvent == null)
+        if (ResponseRequest.RespondedBranch == null)
         {
-            TruckTransferEnd.TruckTransferEndModel.TruckEvent = new();
+            ResponseRequest.RespondedBranch = new();
         }
-        TruckTransferEnd.TruckTransferEndModel.TruckEvent.UserInfo = new();
-        if (TruckTransferEnd.TruckTransferEndModel.TruckEvent.UserInfo != null)
-        {
-            TruckTransferEnd.TruckTransferEndModel.TruckEvent.UserInfo.UserID = user.Identity.Name;
-        }
-        if (TruckTransferEnd.DestinationBranch == null)
-        {
-            TruckTransferEnd.DestinationBranch = new();
-        }
-        TruckTransferEnd.DestinationBranch.BranchID = int.Parse(brancIDString);
-        var modelIncoming = new DialogParameters { ["model"] = TruckTransferEnd.Clone() };
+        ResponseRequest.RespondedBranch.BranchID = int.Parse(brancIDString);
+        ResponseRequest.RespondedBranchID = int.Parse(brancIDString);
+        var modelIncoming = new DialogParameters { ["model"] = ResponseRequest.Clone() };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<TruckTransferEndDialog>("Simple Dialog", modelIncoming, options);
+        var dialog = DialogService.Show<TruckAvailabilityResponseDialog>("Simple Dialog", modelIncoming, options);
         var result = await dialog.Result;
         var isCancelled = result.Cancelled;
         if (!isCancelled)
         {
-            var ReturnData = (TruckTransferInitiationModel)result.Data;
-            if (ReturnData.IstruckReject == 1)
+            var ReturnData = (RequestApprovalHistoryModel)result.Data;
+            if (ReturnData.IsApproved == true)
             {
-                notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.DestinationBranch?.BranchID ?? 0)) ?? null;
-                notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.InitiationBranch?.BranchID ?? 0)) ?? null;
+                notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData.RespondedBranchID ?? 0)) ?? null;
+                notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData.RequestedBranchID ?? 0)) ?? null;
                 notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected.";
                 notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " on " + (DateTime.Now).ToString() + ".";
                 notificationMessage.RedirectedTo = 0;
                 notificationMessage.MsgDate = DateTime.Now;
                 notificationMessage.ExpiredBy = 7;
-                notificationMessage.DocumentID = ReturnData.TruckTransferInitiationID;
+                notificationMessage.DocumentID = ReturnData.RequestApprovalHistoryID;
                 notificationMessage.MessageGroupID = "TruckTransfer";
-                notificationMessage.PageToRedirectLink = "/TruckTransferView";
+                notificationMessage.PageToRedirectLink = "/TruckAvailabilityView";
                 notificationMessage.ClaimValue = "Edit";
                 notificationMessage.DocumentTypeID = DocTypeID;
                 await signalRService.Send(notificationMessage);
@@ -304,29 +271,17 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (modelIncoming.TruckTransferEndModel == null)
+        modelIncoming.RespondedUserInfo.UserID = user.Identity.Name;
+        if (modelIncoming.RequestedBranch == null)
         {
-            modelIncoming.TruckTransferEndModel = new();
+            modelIncoming.RequestedBranch = new();
         }
-        if (modelIncoming.TruckTransferEndModel.TruckEvent == null)
+        modelIncoming.RequestedBranch.BranchID = int.Parse(brancIDString);
+        modelIncoming.RespondedBranchID = int.Parse(brancIDString);
+        foreach (var item in Iservice.SelectIncomingTrucks(null, modelIncoming.RespondedBranchID ?? 0))
         {
-            modelIncoming.TruckTransferEndModel.TruckEvent = new();
-        }
-        modelIncoming.TruckTransferEndModel.TruckEvent.UserInfo = new();
-        modelIncoming.TruckTransferEndModel.TruckEvent.UserInfo.UserID = user.Identity.Name;
-        if (modelIncoming.DestinationBranch == null)
-        {
-            modelIncoming.DestinationBranch = new();
-        }
-        modelIncoming.DestinationBranch.BranchID = int.Parse(brancIDString);
-        foreach (var item in Iservice.SelectIncomingTrucks(modelIncoming.DestinationBranch?.BranchID ?? 0))
-        {
-            if (item.TruckEvent == null)
-            {
-                item.TruckEvent = new();
-            }
             collectionIncoming.Add(item);
         }
     }
     #endregion
-} *@
+} 
