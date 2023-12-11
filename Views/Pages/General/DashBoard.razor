@@ -6,9 +6,9 @@
 @inject IJSRuntime JSRuntime
 @using System
 
-<MudPaper>
+@* <MudPaper>
     <MudToolBar>
-        <MudText Typo="Typo.h5" Style="font-weight:450px;">DASHBOARD</MudText>
+        <MudText Typo="Typo.h5" Style="font-weight:500;">DASHBOARD</MudText>
     </MudToolBar>
     <MudDivider />
     <MudGrid>
@@ -22,11 +22,11 @@
                         <MudSelectItem Value="3">Last Month</MudSelectItem>
                     </MudSelect>
                 </MudToolBar>
-                <MudItem id="BarGraph" style="padding:20px; width: 100%;"></MudItem>
-                <MudText Align="Align.Center" Style="padding: 12px; font-weight:500;">Daily Inflation in Consignment</MudText>
+                <MudItem id="BarGraph" style="padding:20px; padding-bottom:0px; width:100%;"></MudItem>
+                <MudText Align="Align.Center" Style="padding:12px; font-weight:500;">@ConsignmentTitle Inflation in Consignment</MudText>
             </MudPaper>
         </MudItem>
-        <MudItem sm="6" Style="margin:16px; margin-top:0px; padding-top:0px;">
+        <MudItem sm="4" Style="margin:16px; margin-top:0px; padding-top:0px;">
             <MudPaper Elevation="2" Style="margin:16px;">
                 <MudToolBar Style="justify-content:left;">
                     <MudText Style="width:500px;" Typo="Typo.h6">TRUCK STATUS</MudText>
@@ -35,10 +35,10 @@
             </MudPaper>
         </MudItem>
     </MudGrid>
-</MudPaper>
+</MudPaper> *@
 
 @code {
-
+    string ConsignmentTitle = "";
     string[] PieLabels;
     double[] PieData;
     string[] BarLabels;
@@ -58,9 +58,16 @@
         var User = authprov.User;
         string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(BranchIDString);
+    }
 
-        //TruckStatus();
-        //ConsignmentLoad(FromDate, ToDate);
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await TruckStatus();
+            await SelectedValueChanged(1);
+            StateHasChanged();
+        }
     }
 
     public async Task TruckStatus()
@@ -84,36 +91,31 @@
         StateHasChanged();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await TruckStatus();
-            await SelectedValueChanged(1);
-        }
-    }
-
     public async Task SelectedValueChanged(int val)
     {
+        StateHasChanged();
         SelectedPeriod = val;
         DateTime? From = null, To = null;
         DateTime today = DateTime.Today;
         switch (val)
         {
             case 1:
-                From = DateTime.Today.AddDays(-10);
+                From = DateTime.Today.AddDays(-9);
                 To = DateTime.Today;
+                ConsignmentTitle = "Last 10 Days";
                 break;
             case 2:
                 DateTime firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
                 From = firstDayOfMonth;
                 To = today;
+                ConsignmentTitle = "Current Month";
                 break;
             case 3:
                 DateTime firstDayOfLastMonth = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
                 DateTime lastDayOfLastMonth = firstDayOfLastMonth.AddMonths(1).AddDays(-1);
                 From = firstDayOfLastMonth;
                 To = lastDayOfLastMonth;
+                ConsignmentTitle = "Last Month";
                 break;
         }
         await ConsignmentLoad(From, To);

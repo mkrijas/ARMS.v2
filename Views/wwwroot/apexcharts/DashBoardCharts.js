@@ -112,8 +112,19 @@ window.ChartResult = {
                 }
             }
         };
-
         var chart = new ApexCharts(document.querySelector("#BarGraph"), options);
-        chart.render();
+        if (chart) {
+            chart.render();
+        }
+        if (chart && chart.updateOptions) {
+            chart.updateOptions({
+                series: [{
+                    data: data
+                }],
+                xaxis: {
+                    categories: labels
+                }
+            });
+        }
     }
 };

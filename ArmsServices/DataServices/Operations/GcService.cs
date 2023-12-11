@@ -131,7 +131,7 @@ namespace ArmsServices.DataServices
         private List<GcModel> GetChartData(List<SqlParameter> parameters)
         {
             List<GcModel> list = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ChartData.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.DashBoard.ChartData.Select]", parameters))
             {
                 GcModel gc = GetGcModel(dr);
                 list.Add(gc);
