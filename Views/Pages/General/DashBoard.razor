@@ -4,27 +4,37 @@
 @inject ITruckService TruckService
 @inject IGcService GcService
 @inject IJSRuntime JSRuntime
+@using System
 
-<MudPaper Class="pa-4">
-    @* <MudToolBar>
-        <MudText Typo="Typo.h5" Style="font-weight:450">DASHBOARD</MudText>
+<MudPaper>
+    <MudToolBar>
+        <MudText Typo="Typo.h5" Style="font-weight:450px;">DASHBOARD</MudText>
     </MudToolBar>
     <MudDivider />
-    <MudItem Style="display: flex; margin: 16px;">
-        <MudPaper Style="box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);padding:12px; margin:6px;">
-            <MudItem Style="">
-                <MudText Typo="Typo.h6" Style="margin-bottom: 24px;">TRUCK STATUS</MudText>
-                <MudItem id="PieChart" style="width: 100%; height: 80%;"></MudItem>
-            </MudItem>
-        </MudPaper>
-        <MudPaper Style="height :420; box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);padding:12px; margin:6px;">
-            <MudItem>
-                <MudText Typo="Typo.h6">CONSIGNMENT LOAD GRAPH</MudText>
-                <MudItem id="BarGraph" style="width: 100%;"></MudItem>
-                <MudText Align="Align.Center">Daily Inflation in Consignment</MudText><button></button>
-            </MudItem>
-        </MudPaper>
-    </MudItem> *@
+    <MudGrid>
+        <MudItem sm="12" Style="margin:16px; margin-bottom:0px;">
+            <MudPaper Elevation="2" Style="margin:16px; margin-bottom:0px; padding-bottom:0px;">
+                <MudToolBar Style="justify-content:left;">
+                    <MudText Style="width:500px;" Typo="Typo.h6">CONSIGNMENT LOAD GRAPH</MudText>
+                    <MudSelect Style="padding-left:80%;" Margin="Margin.Dense" Variant="Variant.Outlined" Value="@SelectedPeriod" T="int" ValueChanged="(Value) => SelectedValueChanged(Value)">
+                        <MudSelectItem Value="1">Last 10 Days</MudSelectItem>
+                        <MudSelectItem Value="2">Current Month</MudSelectItem>
+                        <MudSelectItem Value="3">Last Month</MudSelectItem>
+                    </MudSelect>
+                </MudToolBar>
+                <MudItem id="BarGraph" style="padding:20px; width: 100%;"></MudItem>
+                <MudText Align="Align.Center" Style="padding: 12px; font-weight:500;">Daily Inflation in Consignment</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem sm="6" Style="margin:16px; margin-top:0px; padding-top:0px;">
+            <MudPaper Elevation="2" Style="margin:16px;">
+                <MudToolBar Style="justify-content:left;">
+                    <MudText Style="width:500px;" Typo="Typo.h6">TRUCK STATUS</MudText>
+                </MudToolBar>
+                <MudItem id="PieChart" style="padding:20px; width: 100%; height: 80%;"></MudItem>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 </MudPaper>
 
 @code {
@@ -34,6 +44,10 @@
     string[] BarLabels;
     string[] BarData;
     private int BranchID;
+    DateTime? FromDate = null;
+    DateTime? ToDate = null;
+
+    int SelectedPeriod = 1;
 
     List<TruckStatusModel> TruckStatusData = new List<TruckStatusModel>();
     List<GcModel> ConsignmentLoadData = new List<GcModel>();
@@ -42,27 +56,67 @@
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
-
         string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(BranchIDString);
 
+        //TruckStatus();
+        //ConsignmentLoad(FromDate, ToDate);
+    }
+
+    public async Task TruckStatus()
+    {
         TruckStatusData = TruckService.GetTruckStatus(BranchID).ToList();
-        ConsignmentLoadData = GcService.SelectChartData(BranchID).ToList();
 
         PieLabels = TruckStatusData.Select(x => x.StatusText + " " + x.LoadStatus).ToArray();
         PieData = TruckStatusData.Select(x => (double)x.NoOfTrucks).ToArray();
 
+        await JSRuntime.InvokeVoidAsync("ChartResult.PieChart", PieLabels, PieData);
+    }
+
+    public async Task ConsignmentLoad(DateTime? From, DateTime? To)
+    {
+        ConsignmentLoadData = GcService.SelectChartData(BranchID, From, To).ToList();
+
         BarLabels = ConsignmentLoadData.Select(x => x.BillDate.Value.ToString("dd MMM yyyy")).ToArray();
         BarData = ConsignmentLoadData.Select(x => (x.TotalBillQuantity.Value.ToString())).ToArray();
+
+        await JSRuntime.InvokeVoidAsync("ChartResult.BarGraph", BarLabels, BarData);
+        StateHasChanged();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await JSRuntime.InvokeVoidAsync("ChartResult.PieChart", PieLabels, PieData);
-            await JSRuntime.InvokeVoidAsync("ChartResult.BarGraph", BarLabels, BarData);
-            StateHasChanged();
+            await TruckStatus();
+            await SelectedValueChanged(1);
         }
+    }
+
+    public async Task SelectedValueChanged(int val)
+    {
+        SelectedPeriod = val;
+        DateTime? From = null, To = null;
+        DateTime today = DateTime.Today;
+        switch (val)
+        {
+            case 1:
+                From = DateTime.Today.AddDays(-10);
+                To = DateTime.Today;
+                break;
+            case 2:
+                DateTime firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
+                From = firstDayOfMonth;
+                To = today;
+                break;
+            case 3:
+                DateTime firstDayOfLastMonth = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
+                DateTime lastDayOfLastMonth = firstDayOfLastMonth.AddMonths(1).AddDays(-1);
+                From = firstDayOfLastMonth;
+                To = lastDayOfLastMonth;
+                break;
+        }
+        await ConsignmentLoad(From, To);
+        StateHasChanged();
     }
 }

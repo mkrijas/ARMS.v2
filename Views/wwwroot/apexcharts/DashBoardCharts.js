@@ -32,7 +32,8 @@ window.ChartResult = {
                 data: data
             }],
             chart: {
-                width: 510,
+                width: 1710,
+                height: 300,
                 type: 'bar',
             },
             margin: {

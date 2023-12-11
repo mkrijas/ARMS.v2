@@ -117,11 +117,13 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
-        public List<GcModel> SelectChartData(int? BranchID)
+        public List<GcModel> SelectChartData(int? BranchID, DateTime? From, DateTime? To)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "BarChart"),
+               new SqlParameter("@FromDate",From),
+               new SqlParameter("@ToDate",To),
                new SqlParameter("@BranchID", BranchID)
             };
             return GetChartData(parameters);
