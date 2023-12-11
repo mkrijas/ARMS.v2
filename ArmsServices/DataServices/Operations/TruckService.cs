@@ -274,12 +274,13 @@ namespace ArmsServices.DataServices
             return TripID;
         }
 
-        public IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer = "All")
+        public IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer = "All",string HomeOrOperation = "Operation")
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@Operation", Filer),
+               new SqlParameter("@HomeOrOperation", HomeOrOperation),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Truck.Select]", parameters))

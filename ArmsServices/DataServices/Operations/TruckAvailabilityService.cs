@@ -109,11 +109,11 @@ namespace DAL.DataServices.Operations
                     BranchID = dr.GetInt32("RequestedBranchID"),
                     BranchName = dr.GetString("RequestedBranchName"),
                 },
-                RespondedBranchID = dr.GetInt32("DestinationBranchID"),
+                RespondedBranchID = dr.GetInt32("RespondedBranchID"),
                 RespondedBranch = new BranchModel()
                 {
-                    BranchID = dr.GetInt32("DestinationBranchID"),
-                    BranchName = dr.GetString("DestinationBranchName"),
+                    BranchID = dr.GetInt32("RespondedBranchID"),
+                    BranchName = dr.GetString("RespondedBranchName"),
                 },
                 RequestedUserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
