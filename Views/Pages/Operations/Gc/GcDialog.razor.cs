@@ -130,7 +130,7 @@ namespace Views.Pages.Operations.Gc
                     model = Iservice.Update(model);
                     snackbar.Add("Saved Successfully", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(model));
-                    model = new GcSetModel();
+                   
                     Route = new RouteModel();
                     Consignor = new ConsigneeModel();
                     Consignee = new ConsigneeModel();

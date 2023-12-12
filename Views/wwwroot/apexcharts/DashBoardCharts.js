@@ -32,7 +32,8 @@ window.ChartResult = {
                 data: data
             }],
             chart: {
-                width: 510,
+                width: 1710,
+                height: 300,
                 type: 'bar',
             },
             margin: {
@@ -111,8 +112,19 @@ window.ChartResult = {
                 }
             }
         };
-
         var chart = new ApexCharts(document.querySelector("#BarGraph"), options);
-        chart.render();
+        if (chart) {
+            chart.render();
+        }
+        if (chart && chart.updateOptions) {
+            chart.updateOptions({
+                series: [{
+                    data: data
+                }],
+                xaxis: {
+                    categories: labels
+                }
+            });
+        }
     }
 };

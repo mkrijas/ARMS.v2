@@ -117,11 +117,13 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
-        public List<GcModel> SelectChartData(int? BranchID)
+        public List<GcModel> SelectChartData(int? BranchID, DateTime? From, DateTime? To)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "BarChart"),
+               new SqlParameter("@FromDate",From),
+               new SqlParameter("@ToDate",To),
                new SqlParameter("@BranchID", BranchID)
             };
             return GetChartData(parameters);
@@ -129,7 +131,7 @@ namespace ArmsServices.DataServices
         private List<GcModel> GetChartData(List<SqlParameter> parameters)
         {
             List<GcModel> list = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ChartData.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.DashBoard.ChartData.Select]", parameters))
             {
                 GcModel gc = GetGcModel(dr);
                 list.Add(gc);

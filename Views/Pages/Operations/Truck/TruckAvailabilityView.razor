@@ -1,4 +1,5 @@
 ﻿@page "/TruckAvailabilityView"
+@page "/TruckAvailabilityView/{id:int}"
 @using ArmsModels.BaseModels.General
 @using Core.BaseModels.Operations;
 @using Core.IDataServices.Operations;
@@ -15,6 +16,7 @@
 @inject IBranchService IbranchService
 @inject NavigationManager NavigationManager
 @inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 @inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
@@ -80,17 +82,15 @@
 
     int CurrentBranchId = 0;
     private List<BranchModel> BranchList = new();
+    [Parameter]
+    public int? id { get; set; } = null;
+    int DocTypeID = 3;
 
     #region SignaIR Notification
 
+    private IEnumerable<PushNotificationModel> allNotificationMessages = null;
+    private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
     private PushNotificationModel notificationMessage = new PushNotificationModel();
-    int DocTypeID = 33;
-
-    //void Receive(PushNotificationModel pushNotificationModel)
-    //{
-    //    currentNotificationMessages = allNotificationMessages.Where(s => (s.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-    //    InvokeAsync(() => StateHasChanged());
-    //}
 
     #endregion
 
@@ -102,13 +102,18 @@
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         CurrentBranchId = int.Parse(brancIDString);
         BranchList = IbranchService.Select().ToList();
-        await signalRService.StartAsync();
         //hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
         //signalRService.RegisterReceivedMessage(e => Receive(e));
         //await hubConnection.StartAsync();
 
         await GetAllOutGoing();
         await GetAllIncoming();
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collectionIncoming != null && collectionIncoming.Any(g => g.RequestApprovalHistoryID == id))
+        {
+            await OpenDialogEditIncoming(collectionIncoming.FirstOrDefault(s => s.RequestApprovalHistoryID == id));
+        }
     }
 
     private async Task GetAll()
@@ -153,12 +158,12 @@
             var ReturnData = (RequestApprovalHistoryModel)result.Data;
             notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.RequestedBranchID ?? 0)) ?? null;
             notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData?.RespondedBranchID ?? 0)) ?? null;
-            notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered to this branch.";
-            notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is transfered from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " to this branch on " + (DateTime.Now).ToString() + ".";
+            notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Requested.";
+            notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Requested from " + (ReturnData?.RequestedBranch?.BranchName ?? "") + " on " + (DateTime.Now).ToString() + ".";
             notificationMessage.RedirectedTo = 0;
             notificationMessage.ExpiredBy = 7;
             notificationMessage.DocumentID = ReturnData.RequestApprovalHistoryID;
-            notificationMessage.MessageGroupID = "TruckTransfer";
+            notificationMessage.MessageGroupID = "TruckRequestApproval";
             notificationMessage.PageToRedirectLink = "/TruckAvailabilityView";
             notificationMessage.ClaimValue = "Edit";
             notificationMessage.DocumentTypeID = DocTypeID;
@@ -209,7 +214,7 @@
         }
         modelOutGoing.RespondedBranch.BranchID = int.Parse(brancIDString);
         modelOutGoing.RequestedBranchID = int.Parse(brancIDString);
-        foreach (var item in Iservice.SelectOutgoingRequests(null,modelOutGoing.RequestedBranchID))
+        foreach (var item in Iservice.SelectOutgoingRequests(null, modelOutGoing.RequestedBranchID))
         {
             collectionOutGoing.Add(item);
         }
@@ -231,12 +236,13 @@
         {
             ResponseRequest.RespondedUserInfo.UserID = user.Identity.Name;
         }
-        if (ResponseRequest.RespondedBranch == null)
+        if (ResponseRequest.RespondedBranch == null || ResponseRequest.RespondedBranch.BranchID == null || ResponseRequest.RespondedBranchID == null)
         {
             ResponseRequest.RespondedBranch = new();
+            ResponseRequest.RespondedBranch.BranchID = int.Parse(brancIDString);
+            ResponseRequest.RespondedBranchID = int.Parse(brancIDString);
         }
-        ResponseRequest.RespondedBranch.BranchID = int.Parse(brancIDString);
-        ResponseRequest.RespondedBranchID = int.Parse(brancIDString);
+
         var modelIncoming = new DialogParameters { ["model"] = ResponseRequest.Clone() };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
         var dialog = DialogService.Show<TruckAvailabilityResponseDialog>("Simple Dialog", modelIncoming, options);
@@ -245,24 +251,53 @@
         if (!isCancelled)
         {
             var ReturnData = (RequestApprovalHistoryModel)result.Data;
+
+            allNotificationMessages = IpushNotificationService.SelectUnAknowledgedAndNonTimeElapsedNotifications(ResponseRequest.RespondedBranch.BranchID);
+            currentNotificationMessages = allNotificationMessages.Any(y => (y?.ReceivedBranch?.BranchID ?? 0) == ResponseRequest.RespondedBranch.BranchID) ? allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == ResponseRequest.RespondedBranch.BranchID).ToList() : null;
+
+            if (currentNotificationMessages != null && currentNotificationMessages.Any(g => g.DocumentID == ReturnData.RequestApprovalHistoryID && g.DocumentTypeID == DocTypeID && g.MessageID != null))
+            {
+
+                string MessageIDs = String.Join(",", currentNotificationMessages.Where(g => g.DocumentID == ReturnData.RequestApprovalHistoryID && g.DocumentTypeID == DocTypeID && g.MessageID != null).Select(d => d.MessageID).ToList());
+                try
+                {
+                    if (!string.IsNullOrEmpty(MessageIDs))
+                    {
+                        IpushNotificationService.AknowledgedSelectedItems(MessageIDs, user.Identity.Name);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add("Error while sending message!", Severity.Error);
+                }
+            }
+            string messageTitle = string.Empty;
+            string messageBody = string.Empty;
             if (ReturnData.IsApproved == true)
             {
-                notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData.RespondedBranchID ?? 0)) ?? null;
-                notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData.RequestedBranchID ?? 0)) ?? null;
-                notificationMessage.MessageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected.";
-                notificationMessage.MessageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is rejected from " + (notificationMessage?.InitiateBranch?.BranchName ?? "") + " on " + (DateTime.Now).ToString() + ".";
-                notificationMessage.RedirectedTo = 0;
-                notificationMessage.MsgDate = DateTime.Now;
-                notificationMessage.ExpiredBy = 7;
-                notificationMessage.DocumentID = ReturnData.RequestApprovalHistoryID;
-                notificationMessage.MessageGroupID = "TruckTransfer";
-                notificationMessage.PageToRedirectLink = "/TruckAvailabilityView";
-                notificationMessage.ClaimValue = "Edit";
-                notificationMessage.DocumentTypeID = DocTypeID;
-                await signalRService.Send(notificationMessage);
+                messageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Approved.";
+                messageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Approved" + ((ReturnData.RequestedBranch != null && ReturnData.RequestedBranch.BranchName != null) ? (" from branch " + ReturnData.RequestedBranch.BranchName + ((ReturnData.RespondedUserInfo != null && ReturnData.RespondedUserInfo.UserID != null) ? (" by user " + ReturnData.RespondedUserInfo.UserID + ".") : ".")) : ".") + " on " + (DateTime.Now).ToString() + ".";
             }
-            await GetAll();
+            else if (ReturnData.IsApproved == false)
+            {
+                messageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Rejected.";
+                messageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Rejected" + ((ReturnData.RequestedBranch != null && ReturnData.RequestedBranch.BranchName != null) ? (" from branch " + ReturnData.RequestedBranch.BranchName + ((ReturnData.RespondedUserInfo != null && ReturnData.RespondedUserInfo.UserID != null) ? (" by user " + ReturnData.RespondedUserInfo.UserID + ".") : ".")) : ".") + " on " + (DateTime.Now).ToString() + ".";
+            }
+            notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData.RespondedBranchID ?? 0)) ?? null;
+            notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData.RequestedBranchID ?? 0)) ?? null;
+            notificationMessage.MessageTitle = messageTitle;
+            notificationMessage.MessageBody = messageBody;
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.MsgDate = DateTime.Now;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.RequestApprovalHistoryID;
+            notificationMessage.MessageGroupID = "TruckRequestApproval";
+            notificationMessage.PageToRedirectLink = "/TruckAvailabilityView";
+            notificationMessage.ClaimValue = "Edit";
+            notificationMessage.DocumentTypeID = DocTypeID;
+            await signalRService.Send(notificationMessage);
         }
+        await GetAll();
     }
 
     private async Task GetAllIncoming()

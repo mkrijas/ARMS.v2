@@ -11,7 +11,7 @@ namespace Core.BaseModels.Operations
         public int? TrucKID { get; set; }
         public int? BranchID { get; set; }
     }
-    public class RequestApprovalHistoryModel :ICloneable
+    public class RequestApprovalHistoryModel : ICloneable
     {
         public int? RequestApprovalHistoryID { get; set; }
         public int? TruckID { get; set; }
@@ -25,7 +25,26 @@ namespace Core.BaseModels.Operations
         public DateTime? RespondedDate { get; set; }
         public UserInfoModel RespondedUserInfo { get; set; } = new();
         public bool? IsApproved { get; set; }
-        public string ApprovedStatus { get; set; }
+        private string _ApprovedStatus = string.Empty;
+        public string ApprovedStatus
+        {
+            get
+            {
+                if (IsApproved == null)
+                {
+                    _ApprovedStatus = "Pedding";
+                }
+                else if(IsApproved == true)
+                {
+                    _ApprovedStatus = "Approved";
+                }
+                else
+                {
+                    _ApprovedStatus = "Rejected";
+                }
+                return _ApprovedStatus;
+            }
+        }
 
         public object Clone()
         {
