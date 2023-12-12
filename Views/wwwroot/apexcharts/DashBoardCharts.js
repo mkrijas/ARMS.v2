@@ -5,17 +5,18 @@ window.ChartResult = {
             series: data,
             labels: labels,
             chart: {
-                width: 500,
+                width: '100%',
+                height: '100%',
                 type: 'pie',
             },
             responsive: [{
-                breakpoint: 480,
+                breakpoint: 200,
                 options: {
                     chart: {
-                        width: 200
+                        minWidth: 300
                     },
                     legend: {
-                        position: 'bottom'
+                        position: 'center'
                     }
                 }
             }]
@@ -32,8 +33,8 @@ window.ChartResult = {
                 data: data
             }],
             chart: {
-                width: 1710,
-                height: 300,
+                width: '100%',
+                height: '100%',
                 type: 'bar',
             },
             margin: {

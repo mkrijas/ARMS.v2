@@ -154,8 +154,11 @@ namespace Views
             services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>();
             #endregion
 
+        #region ------------Dashboard---------------
+            services.AddScoped<IDashboardService, DashboardService>();
+        #endregion
 
-            #region ------------FMS---------------
+        #region ------------FMS---------------
             services.AddScoped<IBreakdownService, BreakdownService>();
             services.AddScoped<IWorkshopService, WorkshopService>();
             services.AddScoped<IJobcardService, JobcardService>();
