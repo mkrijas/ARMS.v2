@@ -66,6 +66,25 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        public InventoryItemModel GetUsedItemAvailability(int StoreID, int ItemID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@StoreID", StoreID),
+               new SqlParameter("@ItemID", ItemID),
+               new SqlParameter("@Operation", "GetUsedItemAvailability"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Select]", parameters))
+            {
+                return new InventoryItemModel()
+                {
+                    InventoryItemID = ItemID,
+                    QtyAvailable = dr.GetDecimal("QtyAvailable"),
+                };
+            }
+            return null;
+        }
+
         public int OutFlow(int? StoreID, List<InventoryItemEntryModel> Items, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
