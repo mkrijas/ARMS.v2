@@ -127,5 +127,31 @@ window.ChartResult = {
                 }
             });
         }
+    },
+
+    DonutChart: function (labels, data) {
+        var options = {
+            series: data,
+            labels: labels,
+            chart: {
+                width: '100%',
+                height: '100%',
+                type: 'donut',
+            },
+            responsive: [{
+                breakpoint: 200,
+                options: {
+                    chart: {
+                        minWidth: 300
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }]
+        }
+
+        var chart = new ApexCharts(document.querySelector("#DonutChart"), options);
+        chart.render();
     }
 };
