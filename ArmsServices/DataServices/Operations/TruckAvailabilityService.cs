@@ -92,6 +92,19 @@ namespace DAL.DataServices.Operations
             return null;
         }
 
+        public IEnumerable<int?> GetAllTruckIdsByBranchID(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+                    {
+                       new SqlParameter("@BranchID", BranchID)
+                    };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Request.TrickIds.Select]", parameters))
+            {
+                yield return dr.GetInt32("TruckID");
+            }
+        }
+
         private RequestApprovalHistoryModel GetModel(IDataRecord dr)
         {
             return new RequestApprovalHistoryModel

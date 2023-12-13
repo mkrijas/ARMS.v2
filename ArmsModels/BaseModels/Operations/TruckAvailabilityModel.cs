@@ -32,7 +32,7 @@ namespace Core.BaseModels.Operations
             {
                 if (IsApproved == null)
                 {
-                    _ApprovedStatus = "Pedding";
+                    _ApprovedStatus = "Pending";
                 }
                 else if(IsApproved == true)
                 {
