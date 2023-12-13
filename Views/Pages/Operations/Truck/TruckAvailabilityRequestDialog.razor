@@ -1,4 +1,4 @@
-﻿ @using System.Threading;
+﻿@using System.Threading;
 @using Core.BaseModels.Operations;
 @using Core.IDataServices.Operations;
 @inject AuthenticationStateProvider auth
@@ -29,7 +29,7 @@
                 <DataAnnotationsValidator />
                 <ValidationSummary />
                 <MudItem xs="12" md="12">
-                    <TruckSelector Value="model.Truck" Filter="@filter" HomeOrOperation="Home" VariantParameter="Variant.Outlined" MarginParameter="Margin.Normal" BranchID="BranchID" ValueChanged="TruckSelected" />
+                    <TruckSelector Value="model.Truck" Filter="@filter" HomeOrOperation="Home" TruckIDsToRemove="@SelectedTruckIDs" VariantParameter="Variant.Outlined" MarginParameter="Margin.Normal" ValueChanged="TruckSelected" />
                 </MudItem>
             </EditForm>
         </MudContainer>
@@ -44,8 +44,11 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter]
     public RequestApprovalHistoryModel model { get; set; } = new();
+    [Parameter]
+    public List<int?> SelectedTruckIDs { get; set; } = new();
     private List<int?> UnAssignedTruckIds = new();
-    private string filter { get; set; } = "UnAssigned";
+    private List<int?> CurrentBranchTruckIDs = new();
+    private string filter { get; set; } = "All";
     private int? BranchID { get; set; } = 0;
 
     protected override async Task OnInitializedAsync()
@@ -55,6 +58,11 @@
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(brancIDString);
         model.RequestedBranchID = BranchID;
+        var result = Iservice.GetAllTruckIdsByBranchID(BranchID);
+        if (result != null)
+        {
+            CurrentBranchTruckIDs = result.ToList();
+        }
     }
 
     protected override void OnParametersSet()
@@ -76,6 +84,11 @@
             bool? result = await DialogService.ShowMessageBox(
                 "Warning",
                 "Please, Select truck.", yesText: "OK");
+            return;
+        }
+        if (CurrentBranchTruckIDs != null && CurrentBranchTruckIDs.Any(s => s == model.Truck.TruckID))
+        {
+            Snackbar.Add("Truck exists in current branch.", Severity.Error);
             return;
         }
         bool throwException = false;
