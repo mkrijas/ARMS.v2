@@ -12,5 +12,6 @@ namespace ArmsServices.DataServices
     public interface IDashboardService
     {
         List<DashboardModel> SelectChartData(int? BranchID, DateTime? From, DateTime? To);
+        List<DashboardModel> SelectDonutData();
     }
 }

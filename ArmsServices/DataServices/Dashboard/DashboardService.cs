@@ -17,13 +17,23 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "BarChart"),
+               new SqlParameter("@Operation", "ConsignmentLoadChart"),
                new SqlParameter("@FromDate",From),
                new SqlParameter("@ToDate",To),
                new SqlParameter("@BranchID", BranchID)
             };
             return GetChartData(parameters);
         }
+
+        public List<DashboardModel> SelectDonutData()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "DriverAvailabilityChart"),
+            };
+            return GetChartData(parameters);
+        }
+
         private List<DashboardModel> GetChartData(List<SqlParameter> parameters)
         {
             List<DashboardModel> list = new();
@@ -38,8 +48,10 @@ namespace ArmsServices.DataServices
         {
             return new DashboardModel
             {
+                Label = dr.GetString("DataLabel"),
+                Data = dr.GetInt32("TotalData"),
                 BillDate = dr?.GetDateTime("BillDate"),
-                TotalBillQuantity = dr.GetDecimal("TotalBillQuantity"),
+                Total = dr.GetDecimal("Total"),
             };
         }
     }

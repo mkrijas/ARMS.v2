@@ -254,7 +254,15 @@ namespace Views
                                       .AllowAnyHeader()
                                       .AllowAnyMethod());
             });
-
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                    builder => builder
+                        .WithOrigins("http://10.200.50.39:8484/") // Add the origin of your Blazor application
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials());
+            });
             #region------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
@@ -299,8 +307,6 @@ namespace Views
 
             app.UseHttpsRedirection();
 
-            app.UseCors("AllowAnyOriginPolicy");
-
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
@@ -328,6 +334,7 @@ namespace Views
             //});
 
             app.UseCors("AllowAny");
+            app.UseCors("CorsPolicy");
             app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
             //app.UseStaticFiles(new StaticFileOptions()
             //{
