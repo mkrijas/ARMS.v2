@@ -334,6 +334,7 @@ namespace Views
             //});
 
             app.UseCors("AllowAny");
+            app.UseCors("AllowAnyOriginPolicy");
             app.UseCors("CorsPolicy");
             app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
             //app.UseStaticFiles(new StaticFileOptions()
