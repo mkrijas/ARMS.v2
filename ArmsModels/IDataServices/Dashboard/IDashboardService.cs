@@ -6,12 +6,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
-
 namespace ArmsServices.DataServices
 {
     public interface IDashboardService
     {
         List<DashboardModel> SelectChartData(int? BranchID, DateTime? From, DateTime? To);
-        List<DashboardModel> SelectDonutData();
+        List<DashboardModel> SelectDonutData(int? BranchID);
+        List<DashboardModel> SelectLineChart(int? BranchID, DateTime? To);
     }
 }

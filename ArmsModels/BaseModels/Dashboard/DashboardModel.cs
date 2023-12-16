@@ -6,7 +6,8 @@ namespace ArmsModels.BaseModels
     {
         public string Label { get; set; }
         public int? Data {  get; set; }
-        public DateTime? BillDate { get; set; } = null;
-        public virtual decimal? Total { get; set; }
+        public DateTime? DateList { get; set; } = null;
+        public decimal? Total { get; set; }
+        public decimal? CumulativeFrequency { get; set; }
     }
 }

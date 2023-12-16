@@ -6,53 +6,67 @@
 @inject IJSRuntime JSRuntime
 @using System
 
-@* <MudPaper>
+<MudPaper>
     <MudToolBar>
         <MudText Typo="Typo.h5" Style="font-weight:500;">DASHBOARD</MudText>
     </MudToolBar>
     <MudDivider />
-    <MudGrid>
-        <MudItem sm="12" Style="margin:16px; margin-bottom:0px;">
-            <MudPaper Style="margin:16px; margin-bottom:0px; padding-bottom:0px; box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);">
+    <MudGrid Style="padding:36px; padding-bottom: 22px;">
+        <MudItem sm="12">
+            <MudPaper Style=" box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
                 <MudToolBar Style="justify-content:left;">
                     <MudText Style="width:500px;" Typo="Typo.h6">CONSIGNMENT TONNAGE GRAPH</MudText>
-                    <MudSelect Style="padding-left:80%;" Margin="Margin.Dense" Variant="Variant.Outlined" Value="@SelectedPeriod" T="int" ValueChanged="(Value) => SelectedValueChanged(Value)">
+                    <MudSelect Style="padding-left:80%;" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" Variant="Variant.Outlined" Value="@SelectedPeriod" T="int" ValueChanged="(Value) => SelectedValueChanged(Value)">
                         <MudSelectItem Value="1">Last 10 Days</MudSelectItem>
                         <MudSelectItem Value="2">Current Month</MudSelectItem>
                         <MudSelectItem Value="3">Last Month</MudSelectItem>
                     </MudSelect>
                 </MudToolBar>
                 <MudItem id="BarGraph" style="padding:20px; padding-bottom:0px; width:100%;"></MudItem>
-                <MudText Align="Align.Center" Style="padding:12px; font-weight:500;">@ConsignmentTitle Inflation in Consignment Tonnage</MudText>
+                <MudText Align="Align.Center" Style="padding:12px; font-weight:500;">Consignment in @ConsignmentTitle</MudText>
             </MudPaper>
         </MudItem>
-        <MudItem sm="4" Style="margin:16px; margin-top:0px; padding-top:0px; padding-right: 0px; margin-right: 0px;">
-            <MudPaper Style="margin:16px;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);">
+        <MudItem sm="6">
+            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
                 <MudToolBar Style="justify-content:left;">
                     <MudText Style="width:500px;" Typo="Typo.h6">TRUCK STATUS</MudText>
                 </MudToolBar>
                 <MudItem id="PieChart" style="padding:20px; width: 100%; height: auto;"></MudItem>
             </MudPaper>
         </MudItem>
-        <MudItem sm="4" Style="margin:16px; margin-top:0px; padding-top:0px;padding-left: 0px; margin-left: 0px; padding-right: 0px; margin-right: 0px;">
-            <MudPaper Style="margin:16px;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);">
+        <MudItem sm="6">
+            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
                 <MudToolBar Style="justify-content:left;">
                     <MudText Style="width:500px;" Typo="Typo.h6">DRIVER STATUS</MudText>
                 </MudToolBar>
                 <MudItem id="DonutChart" style="padding:20px; width: 100%; height: auto;"></MudItem>
             </MudPaper>
         </MudItem>
+        <MudItem sm="12">
+            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
+                <MudToolBar Style="justify-content:left;">
+                    <MudText Style="width:500px;" Typo="Typo.h6">FREIGHT STATUS</MudText>
+                </MudToolBar>
+                <MudItem id="LineGraph" style="padding:20px; width:100%;"></MudItem>
+                <MudText Align="Align.Center" Style="padding:12px; font-weight:500;">Cumulative Freight in @FreightMonth</MudText>
+            </MudPaper>
+        </MudItem>
     </MudGrid>
-</MudPaper> *@
+</MudPaper>
 
 @code {
+
     string ConsignmentTitle = "";
+    string FreightMonth = "";
     string[] PieLabels;
     double[] PieData;
     string[] BarLabels;
     string[] BarData;
     string[] DonutLabels;
     int?[] DonutData;
+    string[] Linelabels;
+    decimal?[] Linedata;
+    decimal?[] LineCumulativedata;
     private int BranchID;
     DateTime? FromDate = null;
     DateTime? ToDate = null;
@@ -62,6 +76,7 @@
     List<TruckStatusModel> TruckStatusData = new List<TruckStatusModel>();
     List<DashboardModel> ConsignmentLoadData = new List<DashboardModel>();
     List<DashboardModel> DriverStatusData = new List<DashboardModel>();
+    List<DashboardModel> FreightStatusData = new List<DashboardModel>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,6 +93,7 @@
             await SelectedValueChanged(1);
             await TruckStatus();
             await DriverStatus();
+            await FreightStatus();
             StateHasChanged();
         }
     }
@@ -96,7 +112,7 @@
     {
         ConsignmentLoadData = DashboardService.SelectChartData(BranchID, From, To).ToList();
 
-        BarLabels = ConsignmentLoadData.Select(x => x.BillDate.Value.ToString("dd MMM yyyy")).ToArray();
+        BarLabels = ConsignmentLoadData.Select(x => x.DateList.Value.ToString("dd MMM yyyy")).ToArray();
         BarData = ConsignmentLoadData.Select(x => (x.Total.Value.ToString())).ToArray();
 
         await JSRuntime.InvokeVoidAsync("ChartResult.BarGraph", BarLabels, BarData);
@@ -105,12 +121,25 @@
 
     public async Task DriverStatus()
     {
-        DriverStatusData = DashboardService.SelectDonutData();
+        DriverStatusData = DashboardService.SelectDonutData(BranchID);
 
         DonutLabels = DriverStatusData.Select(x => x.Label).ToArray();
         DonutData = DriverStatusData.Select(x => x.Data).ToArray();
 
         await JSRuntime.InvokeVoidAsync("ChartResult.DonutChart", DonutLabels, DonutData);
+    }
+
+    public async Task FreightStatus()
+    {
+        DateTime today = DateTime.Today;
+        FreightMonth = today.ToString("MMMM");
+        FreightStatusData = DashboardService.SelectLineChart(BranchID, today).ToList();
+
+        Linelabels = FreightStatusData.Select(x => x.DateList.Value.ToString("dd MMM yyyy")).ToArray();
+        Linedata = FreightStatusData.Select(x => x.Total).ToArray();
+        LineCumulativedata = FreightStatusData.Select(x => x.CumulativeFrequency).ToArray();
+
+        await JSRuntime.InvokeVoidAsync("ChartResult.LineGraph", Linelabels, Linedata, LineCumulativedata);
     }
 
     public async Task SelectedValueChanged(int val)

@@ -13,6 +13,7 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
         public List<DashboardModel> SelectChartData(int? BranchID, DateTime? From, DateTime? To)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -24,12 +25,24 @@ namespace ArmsServices.DataServices
             };
             return GetChartData(parameters);
         }
-
-        public List<DashboardModel> SelectDonutData()
+        
+        public List<DashboardModel> SelectDonutData(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "DriverAvailabilityChart"),
+               new SqlParameter("@BranchID", BranchID)
+            };
+            return GetChartData(parameters);
+        }
+
+        public List<DashboardModel> SelectLineChart(int? BranchID, DateTime? To)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "FreightStatusGraph"),
+               new SqlParameter("@ToDate",To),
+               new SqlParameter("@BranchID", BranchID)
             };
             return GetChartData(parameters);
         }
@@ -44,14 +57,16 @@ namespace ArmsServices.DataServices
             }
             return list;
         }
+
         private DashboardModel GetDashboardModel(IDataRecord dr)
         {
             return new DashboardModel
             {
                 Label = dr.GetString("DataLabel"),
                 Data = dr.GetInt32("TotalData"),
-                BillDate = dr?.GetDateTime("BillDate"),
+                DateList = dr?.GetDateTime("DateList"),
                 Total = dr.GetDecimal("Total"),
+                CumulativeFrequency = dr.GetDecimal("CumulativeFrequency")
             };
         }
     }
