@@ -16,6 +16,25 @@
     .mud-table-container {
         overflow: revert;
     }
+
+    .d-flex {
+        display: flex;
+    }
+
+    .flex-wrap {
+        flex-wrap: wrap;
+    }
+
+    .panels-container {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .panel {
+        min-width: 300px; /* Adjust this value as needed */
+        background-color: #f5f5f5;
+        margin-right: 15px;
+    }
 </style>
 
 <MudDialog Class="my-dialogue pb-3">
@@ -45,11 +64,31 @@
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="Claim Type">@context.DocType</MudTd>
-                        <MudTd DataLabel="Value">
-                            @foreach (var item in @context.ClaimValues)
+                        <MudTd DataLabel="Value" Class="d-flex flex-wrap">
+                            <MudExpansionPanels>
+                            @if (context.ClaimValuesEditGroup != null && context.ClaimValuesEditGroup.Any())
                             {
-                                <MudCheckBox CheckedChanged="@((bool val) => Roleupdate(val,context.ClaimType,item))" Class="mr-2" Checked="@UserClaimList.Any(x=> x.Type == @context.ClaimType && x.Value == item)" Label="@item" Color="Color.Primary"></MudCheckBox>
+                                <MudExpansionPanel Text="Role" Class="panel mb-2">
+                                    @foreach (var item in @context.ClaimValuesEditGroup)
+                                    {
+                                        <span class="mr-5">
+                                            <MudCheckBox CheckedChanged="@((bool val) => Roleupdate(val, context.ClaimType, item))" Class="mr-1" Checked="@UserClaimList.Any(x => x.Type == @context.ClaimType && x.Value == item)" Label="@item" Color="Color.Primary" />
+                                        </span>
+                                    }
+                                </MudExpansionPanel>
                             }
+                            @if (context.ClaimValuesApprovalGroup != null && context.ClaimValuesApprovalGroup.Any())
+                            {
+                                <MudExpansionPanel Text="Approval" Class="panel mb-2">
+                                    @foreach (var item in @context.ClaimValuesApprovalGroup)
+                                    {
+                                        <span class="mr-5">
+                                            <MudCheckBox CheckedChanged="@((bool val) => Roleupdate(val, context.ClaimType, item))" Class="mr-1" Checked="@UserClaimList.Any(x => x.Type == @context.ClaimType && x.Value == item)" Label="@item" Color="Color.Primary" />
+                                        </span>
+                                    }
+                                </MudExpansionPanel>
+                            }
+                            </MudExpansionPanels>
                         </MudTd>
                     </RowTemplate>
                     <PagerContent>
@@ -84,7 +123,8 @@
     {
         public string DocType { get; set; }
         public string ClaimType { get; set; }
-        public List<string> ClaimValues { get; set; } = new();
+        public List<string> ClaimValuesEditGroup { get; set; } = new();
+        public List<string> ClaimValuesApprovalGroup { get; set; } = new();
     }
 
     private List<roleClaimView> Claims = new();
@@ -116,7 +156,8 @@
                 {
                     DocType = doctypes.FirstOrDefault(s => s.Key.ToString() == claimType).Value,
                     ClaimType = claimType,
-                    ClaimValues = new(clamelist.Where(x => x.Type == claimType).Select(y => y.Value).ToList())
+                    ClaimValuesEditGroup = new(clamelist.Where(x => x.Type == claimType && x.Issuer == "EditGroup").Select(y => y.Value).ToList()),
+                    ClaimValuesApprovalGroup = new(clamelist.Where(x => x.Type == claimType && x.Issuer == "ApprovalGroup").Select(y => y.Value).ToList()),
                 });
         }
     }
@@ -196,8 +237,8 @@
             UserClaimList.Clear();
             foreach (var i in clamelist)
             {
-                UserClaimList.Add(i);  
-            }           
+                UserClaimList.Add(i);
+            }
         }
         else
         {

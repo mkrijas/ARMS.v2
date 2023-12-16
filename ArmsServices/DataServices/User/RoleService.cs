@@ -281,7 +281,7 @@ namespace ArmsServices.DataServices
             IList<Claim> Claims = new List<Claim>();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.user.ClaimsMaster.Select]", null))
             {
-                Claims.Add(new Claim(dr.GetString("ClaimType"), dr.GetString("ClaimValue")));
+                Claims.Add(new Claim(dr.GetString("ClaimType"), dr.GetString("ClaimValue"), dr.GetString("ClaimGroup"), dr.GetString("ParentGroup")));
             };
             return Task.FromResult(Claims);
         }
