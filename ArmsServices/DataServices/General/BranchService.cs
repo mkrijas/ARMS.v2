@@ -149,6 +149,23 @@ namespace ArmsServices.DataServices
             return result.BranchName;
         }
 
+        public IEnumerable<UserBranchRoleModel> GetUsersNRoles(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Branch.UserRole.Select]", parameters))
+            {
+                yield return new UserBranchRoleModel
+                {
+                    User = new UserModel() { UserID = dr.GetString("UserID") , UserName = dr.GetString("UserName")},
+                    Branch = new BranchModel() { BranchID = dr.GetInt32("BranchID"), BranchName = dr.GetString("BranchName") },
+                    Role = new RoleModel() { RoleID = dr.GetString("RoleID") },
+                };
+            }
+        }
+
         public BranchModel ValidateGstNo(int? PlaceID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
