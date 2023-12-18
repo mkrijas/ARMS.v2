@@ -66,7 +66,7 @@ namespace ArmsServices.DataServices
                 Data = dr.GetInt32("TotalData"),
                 DateList = dr?.GetDateTime("DateList"),
                 Total = dr.GetDecimal("Total"),
-                CumulativeFrequency = dr.GetDecimal("CumulativeFrequency")
+                CumulativeTarget = dr.GetDecimal("CumulativeTarget")
             };
         }
     }

@@ -8,6 +8,6 @@ namespace ArmsModels.BaseModels
         public int? Data {  get; set; }
         public DateTime? DateList { get; set; } = null;
         public decimal? Total { get; set; }
-        public decimal? CumulativeFrequency { get; set; }
+        public decimal? CumulativeTarget { get; set; }
     }
 }
