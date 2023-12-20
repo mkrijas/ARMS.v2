@@ -2,6 +2,7 @@
 @using System.IO
 @using Microsoft.AspNetCore.Hosting;
 @inject IWebHostEnvironment _env;
+@inject MudBlazor.ISnackbar snackbar
 
 @using System.Security.AccessControl
 @using MimeTypes
@@ -24,18 +25,21 @@
             FilePathChanged.InvokeAsync(value);
         }
     }
-
+    [Parameter] public bool AcceptOnlyPdf { get; set; } = false;
 
     [Parameter]
     public EventCallback<string> FilePathChanged { get; set; }
 
     private string _filepath;
 
-
-
     private async Task UploadImage(InputFileChangeEventArgs e)
     {
         IBrowserFile DocImage = e.File;
+        if (AcceptOnlyPdf && !IsPdfFile(DocImage.ContentType))
+        {
+            snackbar.Add("Only Allows PDF Files", Severity.Warning);
+            return;
+        }
 
         string PhysicalPath = Path.Combine(_env.WebRootPath, "ArmsStaticFiles", FolderName);
         string VirtualPath = Path.Combine("ArmsStaticFiles", FolderName);
@@ -44,6 +48,11 @@
         { 
             FilePath = Path.Combine(VirtualPath, result); 
         }
+    }
+
+    private bool IsPdfFile(string contentType)
+    {
+        return contentType.ToLower() == "application/pdf";
     }
 
     private async Task<string> UploadImage(IBrowserFile file, string filename, string physicalPath)
