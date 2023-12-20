@@ -14,6 +14,7 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 @inject IInventoryItemService itemIservice
+@inject IOperationPostingGroupService IOperationPostingGroupService
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Trip Settlement" formID="Optranform" model="@model" _busy="_busy">
     <FormContent>
@@ -35,7 +36,7 @@
                          <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
                              <thead>
                                  <tr>
-                                     <th>UsageCode</th>
+                                     <th>Operation Head</th>
                                      <th>Reference</th>
                                      <th>Cost Center</th>
                                      <th>Dimension</th>
@@ -46,7 +47,7 @@
                                  </tr>
                              </thead>
                              <tbody>
-                                 @foreach (var item in model.Transactions)
+                                @foreach (var item in model.Transactions)
                                 {
                                     <tr>
                                         <td>@item.ExpenseUsageCode</td>
@@ -65,15 +66,19 @@
                                 @if (!ReadOnly)
                                 {
                                     <tr>
-                                        <td><UsageCodeSelector Value="@gstusge" ValueChanged="UsageCodeChanged"></UsageCodeSelector></td>
+                                        <td>
+                                            <MudAutocomplete T="OperationPostingGroupModel" Label="Operation" Value="opTranSubModel.OperationPostingGroupModel" ValueChanged="AddOperationPostingGroup"
+                                                             ResetValueOnEmptyText="true" SearchFunc="@SearchOperationPostingGroup" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                             ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ADCode,e.Title))"></MudAutocomplete>
+                                        </td>
                                         <td><MudTextField @bind-Value="opTranSubModel.Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Reference)"></MudTextField></td>
                                         <td><CostCenterSelector @bind-Value="opTranSubModel.CostCenter" @bind-ValueText="@opTranSubModel.CostCenterVal" ReadOnly="@ReadOnly" /></td>
                                         <td><DimensionSelector @bind-Value="opTranSubModel.Dimension" @bind-ValueText="@opTranSubModel.DimensionVal" ReadOnly="@ReadOnly" /></td>
                                         <td><MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Amount)"></MudNumericField></td>
-                                         <td><MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Quantity)"></MudNumericField></td>
-                                         <td><MudTextField @bind-Value="opTranSubModel.Unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Unit)"></MudTextField></td>
-                                         <td><MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" /></td>
-                                    </tr>
+                                        <td><MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Quantity)"></MudNumericField></td>
+                                        <td><MudTextField @bind-Value="opTranSubModel.Unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => opTranSubModel.Unit)"></MudTextField></td>
+                                        <td><MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" /></td>
+                                     </tr>
                                 }
                                 <tr>
                                     <td colspan="2">Total</td>
@@ -112,6 +117,7 @@
     DialogForm dialogForm;
     public GstUsageCodeModel gstusge = new();
     private OpTranSubModel opTranSubModel = new();
+    private List<OperationPostingGroupModel> OperationPostingList = new();
     private bool _busy;
 
     public bool HasPermissionOpTranServiceEdit { get; set; } = false;
@@ -147,6 +153,8 @@
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
+
+        OperationPostingList = IOperationPostingGroupService.Select().ToList();
     }
 
     protected override void OnParametersSet()
@@ -154,11 +162,15 @@
         editContext = new EditContext(model);
     }
 
-    void UsageCodeChanged(GstUsageCodeModel uc)
+    void AddOperationPostingGroup(OperationPostingGroupModel uc)
     {
-        gstusge = uc;
-        opTranSubModel.ExpenseUsageCode = uc?.UsageCode;
-        opTranSubModel.CoaID = uc?.CoaID;
+        opTranSubModel.OperationPostingGroupModel = uc;
+    }
+
+    private async Task<IEnumerable<OperationPostingGroupModel>> SearchOperationPostingGroup(string searchString)
+    {
+        return await Task.FromResult(OperationPostingList.Where(x => x.ADCode.Contains(searchString ?? string.Empty, StringComparison.InvariantCultureIgnoreCase) ||
+                                                                x.Title.Contains(searchString ?? string.Empty, StringComparison.InvariantCultureIgnoreCase)));
     }
 
     protected async Task OnApprove(DataApprovedStatus aprvd)
@@ -191,11 +203,12 @@
 
     public void AddItems()
     {
-        opTranSubModel.ExpenseUsageCode = gstusge.UsageCode;
+        //opTranSubModel.ExpenseUsageCode = gstusge.UsageCode;
+        opTranSubModel.ExpenseUsageCode = opTranSubModel.OperationPostingGroupModel.ADCode;
         model.Transactions.Add(opTranSubModel);
         model.TotalAmount = model.TotalAmount + (opTranSubModel.Amount * opTranSubModel.Quantity);
         opTranSubModel = new();
-        gstusge = new();
+        //gstusge = new();
         SetTotal();
     }
 
