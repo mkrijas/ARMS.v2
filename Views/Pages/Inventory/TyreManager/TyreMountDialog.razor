@@ -1,8 +1,10 @@
-﻿@using ArmsModels.BaseModels.General
-@using System.ComponentModel.DataAnnotations
+﻿@using ArmsModels.BaseModels.General;
+@using ArmsServices.DataServices.Inventory;
+@using System.ComponentModel.DataAnnotations;
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @inject ITyreService IServices
+@inject IInventoryRequestService IInventoryRequestservice
 @inject MudBlazor.ISnackbar snackbar
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
@@ -28,6 +30,14 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
+                    <MudSelect Label="Select Request" T="InventoryRequestModel" Value="SelectInventoryRequest" ValueChanged="OnChangeSelectedInventoryRequest" ToStringFunc="@(e => e == null ? null : $"{e.RequestNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        @foreach (var ditem in InventoryRequestList)
+                        {
+                            <MudSelectItem Value="@ditem">@ditem.RequestNumber</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
                     <TruckSelector Value="SelectedTruck" ValueChanged="OnValueChanged" IsDisabled="IsTruckDisabled"></TruckSelector>
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
@@ -40,6 +50,12 @@
                 </MudItem>
                 <MudItem xs="11" md="11" Class="mb-6">
                     <MudTextField @bind-Value="@model.MountedKM" Label="Mount KM" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <CostCenterSelector @bind-Value="model.CostCenter" />
+                </MudItem>
+                <MudItem xs="11" md="11" Class="mb-6">
+                    <DimensionSelector @bind-Value="model.Dimension" />
                 </MudItem>
             </EditForm>
         </MudContainer>
@@ -63,6 +79,8 @@
     public TyrePositionModel SelectedTyrePosition { get; set; } = new();
     List<TyreModel> TyreList = new();
     List<TyrePositionModel> TyrePositionListForMountAndUnMount = new();
+    private List<InventoryRequestModel> InventoryRequestList = new List<InventoryRequestModel>();
+    public InventoryRequestModel SelectInventoryRequest { get; set; }
     public bool IsTruckDisabled { get; set; } = false;
     public bool IsTyreDisabled { get; set; } = false;
     private bool _busy;
@@ -101,6 +119,7 @@
             model.TruckID = SelectedTruck.TruckID;
             TyrePositionListForMountAndUnMount = IServices.GetTyrePositionListUsingTruckTypeId(SelectedTruck.TruckTypeID).ToList();
         }
+        InventoryRequestList = IInventoryRequestservice.Select().Where(d => !((d.IsCompletelyReleased != null && d.IsCompletelyReleased.Value && d.RequestID != model.RequestID))).ToList();
     }
 
     private void OnValueChanged(TruckModel obj)
@@ -117,6 +136,18 @@
                 TyrePositionListForMountAndUnMount.Clear();
             }
             TyrePositionListForMountAndUnMount = IServices.GetTyrePositionListUsingTruckTypeId(SelectedTruck.TruckTypeID).ToList();
+        }
+    }
+
+    public void OnChangeSelectedInventoryRequest(InventoryRequestModel obj)
+    {
+        SelectInventoryRequest = obj;
+        model.RequestID = obj?.RequestID ?? null;
+        if (obj != null)
+        {
+            SelectedTruck.TruckID = obj.Truck.TruckID;
+            model.TruckID = SelectedTruck.TruckID;
+            IsTruckDisabled = true;
         }
     }
 
@@ -184,4 +215,4 @@
                 "You dont have any permission to Edit Tyre.");
         }
     }
-}
+    }

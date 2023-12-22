@@ -56,8 +56,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@MountedKM", model.MountedKM),
                new SqlParameter("@MountedOn", model.MountedOn),
                new SqlParameter("@PositionID", model.PositionID),
+               new SqlParameter("@RequestID", model.RequestID),
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@TyreID", model.TyreID),
+               new SqlParameter("@CostCenter", model.CostCenter),
+               new SqlParameter("@Dimension", model.Dimension),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Mount]", parameters);
