@@ -19,5 +19,6 @@ namespace ArmsServices.DataServices
         StockTransferInitiationModel SelectSandB(int? InvTranID);
         int TransferCancel(int? InvTranID, string UserID);  //Cancel
         StockTransferInitiationModel RejectOrder(StockTransferInitiationModel model);  //Reject
+        int Approve(int? ID, string UserID, string Remarks);
     }
 }

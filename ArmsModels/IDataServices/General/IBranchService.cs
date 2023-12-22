@@ -19,5 +19,6 @@ namespace ArmsServices.DataServices
         int AddContact(int? BranchID, ContactModel contact);  //Edit
         IEnumerable<ContactModel> GetContacts(int? PartyID);
         BranchModel ValidateGstNo(int? PlaceID);
+        string GetGstNo(int? BranchID);
     }
 }

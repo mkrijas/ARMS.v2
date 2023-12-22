@@ -29,14 +29,14 @@
                         <MudTh>Actions</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd DataLabel="Destination Branch">@context.Branch.BranchName</MudTd>
-                        <MudTd DataLabel="Initiated Date">@context.InitiatedDate</MudTd>
-                        <MudTd DataLabel="Status">@context.EndModel.DisplayTransferStatus</MudTd>
+                        <MudTd DataLabel="Destination Branch">@context.OtherBranchName</MudTd>
+                        <MudTd DataLabel="Initiated Date">@context.DocumentDate</MudTd>
+                        <MudTd DataLabel="Status">@context?.DisplayStatus</MudTd>
                         <MudTd DataLabel="Actions">
                             <MudTooltip Text="View Items">
-                                <MudFab @onclick="@(()=> View(context,true,false))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                                <MudFab @onclick="@(()=> View(context,true))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                             </MudTooltip>
-                            @if (context.Status != 3) @*|| context.EndModel.TransferStatus == 3 || context.EndModel.TransferStatus == 0)*@
+                            @if (context.Status != 3)
                             {
                                 @* <MudTooltip Text="Edit">
                             <MudFab @onclick="@(()=> EditOutGoing(context))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
@@ -61,12 +61,12 @@
                         <MudTh>Actions</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd DataLabel="Initiated Branch">@context.Branch.BranchName</MudTd>
-                        <MudTd DataLabel="Initiated Date">@context.InitiatedDate</MudTd>
-                        <MudTd DataLabel="Status">@context.EndModel.DisplayTransferStatus</MudTd>
+                        <MudTd DataLabel="Initiated Branch">@context.OtherBranchName</MudTd>
+                        <MudTd DataLabel="Initiated Date">@context.DocumentDate</MudTd>
+                        <MudTd DataLabel="Status">@context?.DisplayStatus</MudTd>
                         <MudTd DataLabel="Actions">
                             <MudTooltip Text="View Items">
-                                <MudFab @onclick="@(()=> View(context,true,true))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                                <MudFab @onclick="@(()=> View(context,true))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                             </MudTooltip>
                             @if (context.Status == 3)  @*|| context.EndModel.TransferStatus == 3 || context.EndModel.TransferStatus == 0)*@
                             {
@@ -87,6 +87,7 @@
         </MudTabs>
     </MudItem>
 </MudGrid>
+
 
 @code {
 
@@ -130,7 +131,7 @@
         _busy = true;
         DialogParameters parms = new DialogParameters();
         parms.Add("InitiationModel", model.Clone());
-        //parms.Add("IsView", View);
+        parms.Add("ReadOnly", false);
         //parms.Add("IsEdit", Edit);
         var dialog = DialogService.Show<StockTransferInitiateDialog>(model.InvTranID == null ? "ADD" : "EDIT", parms);
         var result = await dialog.Result;
@@ -161,7 +162,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Warning !",
-                "Are you sure you want to Cancel this StockTransfer to " + model.Branch.BranchName + "?");
+                "Are you sure you want to Cancel this StockTransfer to " + model.OtherBranchName + "?");
             @if (result == true)
             {
                 var authprov = await auth.GetAuthenticationStateAsync();
@@ -189,15 +190,17 @@
         SelectedStore = obj;
     }
 
-    private async Task View(StockTransferInitiationModel model, bool View, bool Acpt)
+    private async Task View(StockTransferInitiationModel model, bool ReadOnly)
     {
-        DialogParameters parms = new DialogParameters();
+        DialogParameters parms = new DialogParameters();        
         parms.Add("InitiationModel", model.Clone());
-        parms.Add("IsView", View);
-        parms.Add("Acpt", Acpt);
-        var dialog = DialogService.Show<StockTransferInitiateDialog>(Acpt == true ? "ACCEPT ITEMS" : "VIEW", parms);
+        parms.Add("ReadOnly", ReadOnly);
+        var dialog = DialogService.Show<StockTransferInitiateDialog>("Stock-Transfer", parms);
         var result = await dialog.Result;
-        await GetAll();
+        if(!result.Cancelled)
+        {
+            await GetAll();
+        }        
     }
 
     //================== CollectionInComing Functions ==================//

@@ -1,0 +1,185 @@
+﻿@inject AuthenticationStateProvider auth
+@inject IStockTransferService IService
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IRoleService<RoleModel> Irole
+
+@using ArmsServices.DataServices.Finance.Transactions;
+@using Core.BaseModels.Inventory;
+@using Views.Pages.Finance.Transactions
+@using System.Threading;
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Accept Stock-Transfer" formID="stockTransferEndForm" model="@InitiationModel" _busy="_busy">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm id="stockTransferEndForm" Model="@InitiationModel" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="5">
+                        <MudText>    @InitiationModel.OtherBranchName</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="2">
+                        <Center>
+                            <MudIcon Style="margin-top:10px" Icon="@Icons.Material.Filled.East"></MudIcon>
+                        </Center>
+                    </MudItem>
+                    <MudItem xs="12" md="5">
+                        <StoreSelector @bind-Value="@InitiationModel.Store" BranchID="@branchID.Value"></StoreSelector>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <CostCenterSelector @bind-Value="InitiationModel.CostCenter" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <DimensionSelector @bind-Value="InitiationModel.Dimension" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="@InitiationModel.Narration" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="ReadOnly"></MudTextField>
+                    </MudItem>
+                    <br />
+                    <MudItem xs="12" md="12">
+                        <MudSimpleTable Elevation="1" Hover="true" Dense="true" FixedHeader="true">
+                            <thead>
+                                <tr>
+                                    <th>Items</th>
+                                    <th>Quantity</th>
+                                    <th>Rate</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in InitiationModel.ItemsList)
+                                {
+                                    <tr>
+                                        <td>@item.ItemDescription</td>
+                                        <td>@item.ItemQty</td>
+                                        <td>@item.ItemRate</td>
+                                        <td>
+                                          
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@InitiationModel.DocumentDate" DocType="@DocType" DocNumber="@InitiationModel.DocumentNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="InitiationModel.StockTransferID" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
+
+
+
+
+@code {
+
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    [Parameter]
+    public StockTransferInitiationModel InitiationModel { get; set; } = new();
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+
+
+    DialogForm dialogForm;
+    bool _busy;
+
+    int? branchID;
+    string UserID;
+
+
+    bool HasPermissionStockTransferServiceEdit = false;
+    bool HasPermissionStockTransferServiceAccept = false;
+    int DocTypeID = 66;
+    string DocType;
+    string PageToRedirectLink;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionStockTransferServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionStockTransferServiceAccept = await Irole.HasClaim(DocTypeID.ToString(), "Accept", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = authprov.User.Identity.Name;
+
+        InitiationModel.ItemsList = IService.SelectItemsList(InitiationModel?.InvTranID).ToList();
+        InitiationModel.TotalAmount = GetTotal();
+
+    }
+
+    public async Task OnValidSubmit()
+    {       
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        try
+        {
+            InitiationModel.UserInfo.UserID = UserID;
+
+            if (HasPermissionStockTransferServiceAccept)
+            {
+                IService.UpdateDelivery(InitiationModel);
+                InitiationModel = new();
+                snackbar.Add("Stock Accepted Successfully", Severity.Success);
+                MudDialog.Close(InitiationModel);
+            }
+            else
+            {
+                throw new Exception("You dont have any permission to Accept StockTransfer.");
+            }
+        }
+        catch (Exception ex)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                   ex.Message );
+        }
+        await Task.Delay(2000);
+        _busy = false;
+    }
+
+    decimal? GetTotal()
+    {
+        var isTaxable = InitiationModel.IsTaxable;
+        return InitiationModel.ItemsList.Sum(s => (s.ItemQty * s.ItemRate) * (1 + (isTaxable ? (s.ItemGstVal / 100) : 0)));
+    }
+
+    protected async Task Approve(DataApprovedStatus aprvd)
+    {
+        try
+        {
+            if (HasPermissionStockTransferServiceEdit)
+            {
+                if (aprvd.IsApprove)
+                {
+                    IService.Approve(InitiationModel.StockTransferID, UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+            }
+            else
+            {
+                throw new Exception("You dont have any permission to Approve OpInventoryRelease.");
+            }
+        }
+        catch (Exception ex)
+        {
+            bool? result = await DialogService.ShowMessageBox("Permission denied!", ex.Message);
+        }
+    }
+    
+    private void CloseDialog()
+    {
+        MudDialog.Close();
+    }
+
+    
+}

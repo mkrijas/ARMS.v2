@@ -1,267 +1,185 @@
-﻿@using ArmsServices.DataServices.Finance.Transactions;
-@using Core.BaseModels.Inventory;
-@using Views.Pages.Finance.Transactions
-@inject AuthenticationStateProvider auth
+﻿@inject AuthenticationStateProvider auth
 @inject IInventoryReleaseService inventoryReleaseService
 @inject IBranchService branchservice
 @inject IInventoryItemService itemIservice
+@inject IGstItemService Igst
+@inject IStockTransferService IService
+
 @inject MudBlazor.ISnackbar snackbar
-@inject IStockTransferService IStockTransferService
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-<MudDialog>
-    <TitleContent>
-        @if (IsView)
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> View Items
-            </MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add/Edit Stock Transfer
-            </MudText>
-        }
-    </TitleContent>
-    <DialogContent>
-        <MudContainer>
-            <MudPaper Class="p-3" Elevation="0">
-                <EditForm id="form" Model="@InitiationModel" OnValidSubmit="OnValidSubmit">
-                    <MudGrid>
-                        <MudItem xs="12" md="5">
-                            @if (Acpt)
-                            {
-                                <BranchSelector IsDisabled="true" LabelName="Initiated Branch" Value="SelectedBranch" ValueChanged="BranchChanged"></BranchSelector>
-                            }
-                            else
-                            {
-                                <StoreSelector IsDisabled="@(IsView ? true : false)" Value="SelectedStore" ValueChanged="StoreChanged" BranchID="@branchID.Value"></StoreSelector>
-                            }
-                        </MudItem>
-                        <MudItem xs="12" md="2">
-                            <Center>
-                                <MudIcon Style="margin-top:10px" Icon="@Icons.Material.Filled.East"></MudIcon>
-                            </Center>
-                        </MudItem>
-                        <MudItem xs="12" md="5">
-                            @if (Acpt)
-                            {
-                                <StoreSelector Value="SelectedStore" ValueChanged="StoreChanged" BranchID="@branchID.Value"></StoreSelector>
-                            }
-                            else
-                            {
-                                <BranchSelector IsDisabled="@(IsView ? true : false)" LabelName="@(IsView ? "Selected Destination Branch" : "Select Destination Branch")" Value="SelectedBranch" ValueChanged="BranchChanged"></BranchSelector>
-                            }
-                        </MudItem>
-                        <br />
-                        <MudItem xs="12" md="12">
+@using ArmsServices.DataServices.Finance.Transactions;
+@using Core.BaseModels.Inventory;
+@using Views.Pages.Finance.Transactions
+@using System.Threading;
 
-                            <MudSimpleTable Elevation="1" Hover="true" Dense="true" FixedHeader="true">
-                                <thead>
-                                    <tr>
-                                        <th></th>
-                                        <th>Total</th>
-                                        <th>@InitiationModel.TotalValue</th>
-                                        <th></th>
-                                        @if (Acpt)
-                                        {
-                                        }
-                                        else
-                                        {
-                                            <th></th>
-                                        }
-                                    </tr>
-                                    <tr>
-                                        <th>Items</th>
-                                        @if (IsView)
-                                        {
-                                            <th>Initiated Quantity</th>
-                                        }
-                                        else
-                                        {
-                                            <th>Quantity</th>
-                                        }
-                                        <th>Rate</th>
-                                        @if (!IsView)
-                                        {
-                                            <th>Action</th>
-                                        }
-                                        @if (Acpt)
-                                        {
-                                            <th>Delivered Quantity</th>
-                                        }
-                                        else
-                                        {
-                                            <th></th>
-                                        }
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in InitiationModel.ItemsList)
-                                    {
-                                        <tr>
-                                            <td>@(itm.First(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode)</td>
-                                            <td>@item.ItemQty</td>
-                                            <td>@item.ItemRate</td>
-                                            <td>
-                                                @if (!IsView)
-                                                {
-                                                    <MudFab Color="Color.Error" @onclick="@(()=> Delete(item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                                                }
-                                                @if (Acpt)
-                                                {
-                                                    <MudTextField @bind-Value="item.ItemGstVal" Label="" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.ItemGstVal)"></MudTextField>
-                                                }
-                                                @if (IsView && !Acpt)
-                                                {
-                                                    <MudText>@item.ItemGstVal</MudText>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                    @if (!IsView)
-                                    {
-                                        <tr>
-                                            <td colspan="2"><InventoryItemSelector Value="SelectedItems" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" /></td>
-                                            <td><MudTextField @bind-Value="ItemsModel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => ItemsModel.ItemQty)"></MudTextField></td>
-                                            <td><MudTextField @bind-Value="ItemsModel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => ItemsModel.ItemRate)"></MudTextField></td>
-                                            <td><MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" /></td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </MudSimpleTable>
-                        </MudItem>
-                    </MudGrid>
-                </EditForm>
-            </MudPaper>
-        </MudContainer>
-    </DialogContent>
-    <DialogActions>
-        @if (IsView)
-        {
-            @if (Acpt)
-            {
-                <MudButton @onclick="CloseDialog" Variant="Variant.Filled" Color="Color.Error" Class="px-12">Cancel</MudButton>
-                <MudButton Disabled="@_busy" form="form" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Success" Class="px-12">Accept Order</MudButton>
-            }
-            else
-            {
-                <MudButton @onclick="CloseDialog" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">OK</MudButton>
-            }
-        }
-        else
-        {
-            <MudButton Disabled="@_busy" form="form" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-12">Submit</MudButton>
-        }
-    </DialogActions>
-</MudDialog>
+
+
+
+            <DialogForm @ref="@dialogForm"  ReadOnly="@ReadOnly" Title="Initiate Stock Transfer" formID="stockTransferForm" model="@InitiationModel" _busy="_busy">
+                <FormContent>
+                    <MudPaper Class="p-3">
+                        <EditForm id="stockTransferForm" Model="@InitiationModel" OnValidSubmit="OnValidSubmit">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <MudGrid>
+                                <MudItem xs="12" md="12">
+                                    <MudCheckBox  ReadOnly Checked="@InitiationModel.IsLocal" Label="Local" />
+                                    <MudCheckBox ReadOnly Checked="@InitiationModel.IsTaxable" Label="Taxable" />
+                                </MudItem>
+                                <MudItem xs="12" md="5">
+                                        <StoreSelector IsDisabled="@(ReadOnly)" @bind-Value="@InitiationModel.Store" BranchID="@branchID.Value"></StoreSelector>
+                                    
+                                </MudItem>
+                                <MudItem xs="12" md="2">
+                                    <Center>
+                                        <MudIcon Style="margin-top:10px" Icon="@Icons.Material.Filled.East"></MudIcon>
+                                    </Center>
+                                </MudItem>
+                                <MudItem xs="12" md="5">  
+                                    <BranchSelector  LabelName="Destination Branch" ValueChanged="@BranchSelected" Value="@SelectedBranch"></BranchSelector>
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <CostCenterSelector @bind-Value="InitiationModel.CostCenter" ReadOnly="@ReadOnly" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <DimensionSelector @bind-Value="InitiationModel.Dimension" ReadOnly="@ReadOnly" />
+                                </MudItem>
+                                <MudItem xs="12" md="12">
+                                    <MudTextField @bind-Value="@InitiationModel.Narration" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="ReadOnly"></MudTextField>
+                                </MudItem>
+                                <br />
+                                <MudItem xs="12" md="12">
+
+                                    <MudSimpleTable Elevation="1" Hover="true" Dense="true" FixedHeader="true">
+                                        <thead>                                           
+                                            <tr>
+                                                <th colspan="2">Items</th>
+                                                <th>Quantity</th>                                                
+                                                <th>Rate</th>
+                                                <th>Tax %</th>
+                                                <th>Action</th>                                               
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in InitiationModel.ItemsList)
+                                            {
+                                                <tr>
+                                                    <td colspan="2">@item.ItemDescription</td>
+                                                    <td>@item.ItemQty</td>
+                                                    <td>@item.ItemRate</td>
+                                                    <td>
+                                                       <MudText hidden="@(!InitiationModel.IsTaxable)"> @item.ItemGstVal</MudText>  
+                                                    </td>
+                                                    <td>      
+                                                       <MudFab hidden="@ReadOnly" Color="Color.Error" @onclick="@(()=> Delete(item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                                    </td>
+                                                </tr>
+                                            }                                            
+                                            @if (!ReadOnly)
+                                            {
+                                                <tr>
+                                                    <td colspan="2">
+                                                        <InventoryItemSelector Value="SelectedItem" ValueChanged="@((InventoryItemModel newValue) => ItemSelected(newValue))" />
+                                                    </td>
+                                                    <td><MudTextField @bind-Value="ItemsModel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => ItemsModel.ItemQty)"></MudTextField></td>
+                                                    <td colspan="2"><MudTextField @bind-Value="ItemsModel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => ItemsModel.ItemRate)"></MudTextField></td>
+                                                    <td><MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" /></td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </MudSimpleTable>
+                                </MudItem>
+                            </MudGrid>
+                        </EditForm>
+                    </MudPaper>
+                </FormContent>
+                <VerificationStatus>
+                    <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@InitiationModel.DocumentDate" DocType="@DocType" DocNumber="@InitiationModel.DocumentNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="InitiationModel.StockTransferID" OnApprove="Approve"></AutherizationStatusComponent>
+                </VerificationStatus>
+                
+            </DialogForm>
+
+
 
 @code {
 
-    public StoreModel SelectedStore { get; set; } = new();
-    private List<InventoryReleaseModel> InitiatedStore = new List<InventoryReleaseModel>();
-    public int? branchID { get; set; }
-    public BranchModel SelectedBranch { get; set; } = new();
-    private List<BranchModel> BranchCollection = new List<BranchModel>();
-    private List<InventoryItemModel> itm = new();
-    private List<InventoryItemEntryModel> items = new();
-    public InventoryItemModel SelectedItems = new();
     [Parameter]
-    public bool Acpt { get; set; }
-    [Parameter]
-    public bool IsView { get; set; }
+    public bool ReadOnly { get; set; }
     [Parameter]
     public StockTransferInitiationModel InitiationModel { get; set; } = new();
-    public InventoryItemEntryModel ItemsModel { get; set; } = new();
+
     [CascadingParameter]
     MudDialogInstance MudDialog { get; set; }
-    private bool _busy;
 
-    public bool HasPermissionStockTransferServiceEdit { get; set; } = false;
-    public bool HasPermissionStockTransferServiceAccept { get; set; } = false;
-    public int DocTypeID = 66;
+    //private EditContext editContext;
+    DialogForm dialogForm;
+    bool _busy;
+
+    //List<InventoryReleaseModel> InitiatedStore = new List<InventoryReleaseModel>();
+    InventoryItemEntryModel ItemsModel { get; set; } = new();
+    int? branchID;
+    string UserID;
+
+    //List<BranchModel> BranchCollection = new List<BranchModel>();
+    BranchModel SelectedBranch;
+    //List<InventoryItemModel> InventoryItems = new();
+    List<InventoryItemEntryModel> EnteredItems = new();
+    InventoryItemModel SelectedItem = new();
+
+    bool HasPermissionStockTransferServiceEdit = false;
+    bool HasPermissionStockTransferServiceAccept = false;
+    int DocTypeID = 66;
+    string DocType;
+    string PageToRedirectLink;
+    string HomeGst, TargetGst;
 
     protected override async Task OnInitializedAsync()
-    {
+    {       
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionStockTransferServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionStockTransferServiceAccept = await Irole.HasClaim(DocTypeID.ToString(), "Accept", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = authprov.User.Identity.Name;
 
-        @if (IsView)
+        HomeGst = branchservice.GetGstNo(branchID);
+
+        //InventoryItems = itemIservice.SelectListByID(null).ToList();
+        if(InitiationModel.StockTransferID != null)
         {
-            @if (!Acpt)
-            {
-                InitiationModel = IStockTransferService.SelectSandB(InitiationModel?.InvTranID);
-            }
-            SelectedStore = new() { StoreName = InitiationModel.Store.StoreName };
+            InitiationModel.ItemsList = IService.SelectItemsList(InitiationModel?.InvTranID).ToList();
+            SelectedBranch = branchservice.SelectByID(InitiationModel.OtherBranchID);
+            
 
-            SelectedBranch = new() { BranchName = InitiationModel.Branch.BranchName };
-
-            InitiationModel.ItemsList = IStockTransferService.SelectItemsList(InitiationModel?.InvTranID).ToList();
-        }
-        itm = itemIservice.SearchByDescription(string.Empty).ToList();
-    }
-
-    private void StoreChanged(StoreModel obj)
-    {
-        SelectedStore = obj;
-        InitiationModel.Store = SelectedStore;
-        GetStore();
-    }
-
-    private void GetStore()
-    {
-        if (SelectedStore != null && SelectedStore.StoreID != 0)
-        {
-            InitiatedStore = inventoryReleaseService.SelectByStoreID(SelectedStore.StoreID).ToList();
         }
         else
         {
-            if (InitiatedStore != null)
-            {
-                InitiatedStore.Clear();
-            }
+            InitiationModel.NatureOfTransaction = "StockTransferOut";
+            InitiationModel.BranchID = branchID;
         }
     }
 
-    private void BranchChanged(BranchModel obj)
+
+    protected override async Task OnParametersSetAsync()
     {
-        @if (Acpt)
-        {
-            SelectedBranch = new() { BranchName = InitiationModel.Branch.BranchName };
-        }
-        else
-        {
-            SelectedBranch = obj;
-            InitiationModel.Branch = SelectedBranch;
-            GetBranch();
-        }
+        InitiationModel.TotalAmount = GetTotal();
     }
 
-    private void GetBranch()
+    void BranchSelected(BranchModel e)
     {
-        if (SelectedBranch != null && SelectedBranch.BranchID != 0)
-        {
-            BranchCollection = branchservice.Select().ToList();
-        }
-        else
-        {
-            if (BranchCollection != null)
-            {
-                BranchCollection.Clear();
-            }
-        }
+        SelectedBranch = e; 
+        InitiationModel.OtherBranchID = e?.BranchID;
+        TargetGst = branchservice.GetGstNo(e?.BranchID);
+        InitiationModel.IsLocal = HomeGst.Substring(0, 2) == TargetGst.Substring(0, 2);
+        InitiationModel.IsTaxable = HomeGst != TargetGst;
+        InitiationModel.TotalAmount = GetTotal();
     }
 
     public async Task OnValidSubmit()
     {
-
         if (InitiationModel.ItemsList == null)
         {
             snackbar.Add("Add at least one Entry before Submitting", Severity.Success);
@@ -275,70 +193,83 @@
                 return;
             }
             _busy = true;
+
+            InitiationModel.UserInfo.UserID = UserID;
             try
             {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                InitiationModel.UserInfo.UserID = user.Identity.Name;
-                @if (Acpt)
+                if (HasPermissionStockTransferServiceEdit)
                 {
-                    if (HasPermissionStockTransferServiceAccept)
-                    {
-                        IStockTransferService.UpdateDelivery(InitiationModel);
-                        InitiationModel = new();
-                        snackbar.Add("Stock Accepted Successfully", Severity.Success);
-                    }
-                    else
-                    {
-                        bool? result = await DialogService.ShowMessageBox(
-                            "Permission denied!",
-                            "You dont have any permission to Accept StockTransfer.");
-                    }
+                    IService.Update(InitiationModel);
+                    InitiationModel = new();
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    MudDialog.Close(InitiationModel);
                 }
                 else
                 {
-                    if (HasPermissionStockTransferServiceEdit)
-                    {
-                        IStockTransferService.Update(InitiationModel);
-                        InitiationModel = new();
-                        snackbar.Add("Saved Successfully", Severity.Success);
-                    }
-                    else
-                    {
-                        bool? result = await DialogService.ShowMessageBox(
-                            "Permission denied!",
-                            "You dont have any permission to Edit StockTransfer.");
-                    }
+                    throw new Exception("You dont have any permission to Edit StockTransfer.");
                 }
-                MudDialog.Close(InitiationModel);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+                bool? result = await DialogService.ShowMessageBox(
+                        "Permission denied!", ex.Message);
+            }                               
+
             await Task.Delay(2000);
             _busy = false;
         }
     }
 
-    private void AddItems()
+    protected async Task Approve(DataApprovedStatus aprvd)
     {
-        ItemsModel.ItemID = SelectedItems.InventoryItemID;
+        try
+        {
+            if (HasPermissionStockTransferServiceEdit)
+            {
+                if (aprvd.IsApprove)
+                {
+                    IService.Approve(InitiationModel.StockTransferID, UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+            }
+            else
+            {
+                throw new Exception("You dont have any permission to Approve OpInventoryRelease.");
+            }
+        }
+        catch (Exception ex)
+        {
+            bool? result = await DialogService.ShowMessageBox("Permission denied!", ex.Message);
+        }
+    }
+
+    private void AddItems()
+    {        
         if (ItemsModel.ItemID == null || ItemsModel.ItemRate == null || ItemsModel.ItemQty == null)
         {
             snackbar.Add("Please fill in all Fields", Severity.Error);
             return;
         }
+        ItemsModel.ItemGstVal = Igst.SelectByItem(ItemsModel.ItemID.Value, InitiationModel.DocumentDate).TaxRate;
         InitiationModel.ItemsList.Add(ItemsModel);
-        ItemsModel = new();
-        SelectedItems = null;
-        SelectedItems = new();
+        InitiationModel.TotalAmount = GetTotal();
+        ItemsModel = new();        
+        SelectedItem = null;
+    }
+
+
+    decimal? GetTotal()
+    {
+        var isTaxable = InitiationModel.IsTaxable;       
+        var totamt = InitiationModel.ItemsList.Sum(s => (s.ItemQty * s.ItemRate) * (1 + (isTaxable ? (s.ItemGstVal / 100) : 0)));
+        return totamt;
     }
 
     private void Delete(InventoryItemEntryModel i)
     {
         int rowIndex = InitiationModel.ItemsList.IndexOf(i);
         InitiationModel.ItemsList.RemoveAt(rowIndex);
+        InitiationModel.TotalAmount = GetTotal();
     }
 
     private void CloseDialog()
@@ -346,22 +277,10 @@
         MudDialog.Close();
     }
 
-    protected void getitemCode(InventoryItemModel item)
+    protected void ItemSelected(InventoryItemModel item)
     {
-        if (item != null)
-        {
-            if (SelectedItems != null && SelectedItems.InventoryItemID == null)
-            {
-                SelectedItems = item;
-            }
-            else
-            {
-                SelectedItems = new InventoryItemModel();
-            }
-        }
-        else
-        {
-
-        }
+        SelectedItem = item;
+        ItemsModel.ItemID = item?.InventoryItemID;
+        ItemsModel.ItemDescription = item?.ItemDescription;
     }
 }
