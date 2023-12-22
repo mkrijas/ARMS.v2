@@ -11,7 +11,6 @@ namespace DAL.DataServices.Finance.LedgerViews
 {
     public class PartyLedgerViewService : IPartyLedgerViewService
     {
-
         IDbService Iservice;
 
         public PartyLedgerViewService(IDbService iservice)
@@ -27,6 +26,7 @@ namespace DAL.DataServices.Finance.LedgerViews
                new SqlParameter("@FromDate", FromDate),
                new SqlParameter("@ToDate", ToDate),
             };
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Report.Ledger.SelectByArdCode.Party]", parameters))
             {
                 yield return new LedgerViewsModel()
@@ -39,6 +39,5 @@ namespace DAL.DataServices.Finance.LedgerViews
                 };
             }
         }
-
     }
 }
