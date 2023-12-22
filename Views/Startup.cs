@@ -42,6 +42,8 @@ using DAL.DataServices.Finance.LedgerViews;
 using Microsoft.AspNetCore.Http;
 using Core.IDataServices.Operations;
 using DAL.DataServices.Operations;
+using Core.IDataServices.Finance;
+using DAL.DataServices.Finance;
 
 namespace Views
 {
@@ -239,6 +241,7 @@ namespace Views
             services.AddScoped<IAssetPostingGroupService, AssetPostingGroupService>();
             services.AddScoped<IUnreconciledBankEntryService, UnreconciledBankEntryService>();
             services.AddScoped<IOperationPostingGroupService, OperationPostingGroupService>();
+            services.AddScoped<ICancellationReasonCodeService, CancellationReasonCodeService>();
 
             //-----------FINANCE VIEWS GROUP---------------------
 

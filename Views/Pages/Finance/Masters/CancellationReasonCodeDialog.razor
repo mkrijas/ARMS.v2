@@ -1,0 +1,165 @@
+﻿@*@inject MudBlazor.ISnackbar snackbar
+@inject IPlaceService Iplace
+@inject IBranchService IBranchService
+@inject IDataAuthorizationSettingsService IDataAuthorizationService
+@using System.Globalization;
+@using Core.BaseModels.Finance;
+
+
+
+<MudDialog DisableSidePadding="true">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add/Edit Branch
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <div Style="padding:20px;">
+            <MudContainer>
+                <MudGrid>
+                    <MudGrid xs="12">
+                        <EditForm id="mainForm" Model="@model" OnValidSubmit="OnValidSubmit">
+                            <FluentValidationValidator />
+                            <ValidationSummary />
+                            <ObjectGraphDataAnnotationsValidator />
+                            <MudGrid>
+                                <MudItem xs="12">
+                                    <MudAutocomplete FullWidth Label="Document Type" Value="SelectedDocType" ValueChanged="ValueChanged" T="DocTypeModel" SearchFunc="@Search" ToStringFunc="@((e) => e?.Description)"
+                                                     Variant="Variant.Outlined" Margin="Margin.Dense" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                    </MudAutocomplete>
+                                </MudItem>
+                                <MudItem xs="12" md="12" lg="12">
+
+                                    <MudGrid Justify="Justify.Center">
+                                        <MudItem xs="12"><span class="HeadText">Reason Code</span></MudItem>
+                                        @foreach (var item in ReasonCodeList)
+                                        {
+                                            <MudItem xs="11">@item.ReasonCodeDescription</MudItem>
+                                            <MudItem xs="1">
+                                                @if (!ReadOnly)
+                                                {
+                                                    <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteReasonCodes(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                                }
+                                            </MudItem>
+                                        }
+                                        @if (!ReadOnly)
+                                        {
+
+                                            <MudItem xs="2"><MudTextField Label="Bill Reference" @bind-Value="Model.BillReference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudItem>
+                                            <MudItem xs="2">
+                                                <CostCenterSelector @bind-Value="@Model.CostCenter" @bind-ValueText="@Model.CostCenterVal" ReadOnly="@ReadOnly"></CostCenterSelector>
+                                            </MudItem>
+                                            <MudItem xs="2">
+                                                <DimensionSelector @bind-Value="@Model.Dimension" @bind-ValueText="@Model.DimensionVal" ReadOnly="@ReadOnly"></DimensionSelector>
+                                            </MudItem>
+                                            <MudItem xs="2"><MudNumericField HideSpinButtons Label="Amount" @bind-Value="Model.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField></MudItem>
+
+                                            <MudItem xs="1" Class="d-flex align-center"><MudIconButton Title="Add" OnClick="ADD" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" /></MudItem>
+
+                                        }
+                                    </MudGrid>
+                                </MudItem>
+                            </MudGrid>
+                        </EditForm>
+                    </MudGrid>
+                </MudGrid>
+            </MudContainer>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <div style="padding-right:12px; padding-bottom:12px;">
+            <MudButton Disabled="@_busy" form="mainForm" Variant="Variant.Filled" Color="Color.Dark" ButtonType="ButtonType.Submit">Save Branch</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public List<CancellationReasonCode> ReasonCodeList { get; set; }
+
+    [Parameter]
+    public CancellationReasonCodesByDocumentType model { get; set; }
+
+    public CancellationReasonCodesByDocumentType Model { get; set; } = new();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private List<PlaceModel> places = new List<PlaceModel>();
+    private bool _busy;
+
+    private DocTypeModel SelectedDocType;
+
+    private List<DocTypeModel> doctypelist;
+
+    protected override async Task OnInitializedAsync()
+    {
+        doctypelist = IDataAuthorizationService.GetDocTypesList().ToList();
+        places = Iplace.Select(0).ToList();
+    }
+
+    private async Task<IEnumerable<DocTypeModel>> Search(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5);
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return doctypelist;
+        return doctypelist.Where(x => x.Description.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+    private async Task OnValidSubmit(EditContext context)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        string formattedValue = "";
+        foreach (var item in words)
+        {
+            var temp = item;
+            if (formattedValue != "")
+            {
+                formattedValue = formattedValue + " " + item[0].ToString().ToUpper() + (item.Substring(1, (item.Length - 1)).ToString().ToLower());
+            }
+            else
+            {
+                formattedValue = item[0].ToString().ToUpper() + (item.Substring(1, (item.Length - 1)).ToString().ToLower());
+            }
+        }
+        _busy = false;
+        MudDialog.Close(model);
+        await Task.Delay(2000);
+    }
+    
+    void ValueChanged(DocTypeModel val)
+    {
+        SelectedDocType = val;
+        GetAll();
+    }
+    private async Task DeleteReasonCodes(TaxPurchaseExpenseModel i)
+    {
+        int rowIndex = ReasonCodeList.IndexOf(i);
+        ReasonCodeList.RemoveAt(rowIndex);
+        await OnDelete.InvokeAsync();
+    }
+
+    public async Task ADD()
+    {
+        Model.BranchID = BranchID;
+        if (AddTax() && editContext.Validate())
+        {
+            await OnReasonCodeAdded.InvokeAsync(Model);
+            Model = new();
+            gstusge = null;
+        }
+        else
+        {
+            snackbar.Add("Entered particulars are invalid.", Severity.Error);
+        }
+    }
+
+
+
+}*@
