@@ -1,13 +1,7 @@
-﻿@page "/OperationTruckStatusByBranchReport"
-@using Microsoft.JSInterop
-@using Microsoft.AspNetCore.Components
-@using Views.Data;
-@using System.Text;
-@using System.Net;
+﻿@page "/PartyLedgerReport"
+@inject ISnackbar Snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@inject IBranchService Ibranchservice
-@inject ISnackbar Snackbar
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -16,10 +10,16 @@
                 <MudItem xs="6">
                     <BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@OtherBranchChanged"></BranchSelector>
                 </MudItem>
-                <MudItem xs="5">
-                    <MudDatePicker Label="Date" @bind-Date="@(SelectedDateTime)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudItem xs="6">
+                    <PartySelector label="Select Party" Value="SelectedParty" ValueChanged="@OtherPartyChanged"></PartySelector>
                 </MudItem>
-                <MudItem xs="1">
+                <MudItem xs="4">
+                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="4">
                     <MudButton Style="margin-top: 4px;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
                 </MudItem>
             </MudGrid>
@@ -33,16 +33,26 @@
 </MudGrid>
 
 @code {
+
     public Dictionary<string, string> ReportParameters { get; set; } = new();
-    public DateTime? SelectedDateTime { get; set; } = DateTime.Now;
+    public DateTime? FromDate { get; set; } = DateTime.Now;
+    public DateTime? ToDate { get; set; } = DateTime.Now;
     public int? BranchID { get; set; } = 0;
     public BranchModel SelectedBranch { get; set; } = new();
+    public PartyModel SelectedParty { get; set; } = new();
+    public string PartyCode { get; set; }
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
 
     private async Task OtherBranchChanged(BranchModel branch)
     {
         SelectedBranch = branch;
+    }
+
+    private async Task OtherPartyChanged(PartyModel party)
+    {
+        SelectedParty = party;
+        PartyCode = party.PartyCode;
     }
 
     public void RenderReportViewer()
@@ -52,16 +62,24 @@
             Snackbar.Add("Please select branch.", Severity.Error);
             return;
         }
-        if (SelectedDateTime == null)
+        if (FromDate == null)
         {
-            Snackbar.Add("Please select date.", Severity.Error);
+            Snackbar.Add("Please select From Date.", Severity.Error);
+            return;
+        }
+        if (ToDate == null)
+        {
+            Snackbar.Add("Please select To Date.", Severity.Error);
             return;
         }
 
         ShowReport = true;
-        ReportName = "rpt.Operation.TruckStatusByBranch";
+        ReportName = "rpt.Finance.PartyLedgerReport";
         ReportParameters.Clear();
+        ReportParameters.Add("PartyID",SelectedParty.PartyID.ToString());
+        ReportParameters.Add("ArdCode", PartyCode);
         ReportParameters.Add("BranchID", SelectedBranch.BranchID.ToString());
-        ReportParameters.Add("SelectedDateTime", SelectedDateTime.Value.ToString("yyyy/MM/dd"));
+        ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
+        ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
     }
 }

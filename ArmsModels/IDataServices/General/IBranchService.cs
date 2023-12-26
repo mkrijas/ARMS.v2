@@ -20,5 +20,6 @@ namespace ArmsServices.DataServices
         IEnumerable<ContactModel> GetContacts(int? PartyID);
         public IEnumerable<UserBranchRoleModel> GetUsersNRoles(int? BranchID);
         BranchModel ValidateGstNo(int? PlaceID);
+        string GetGstNo(int? BranchID);
     }
 }

@@ -166,6 +166,11 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public string GetGstNo(int? BranchID)
+        {           
+            return SelectByID(BranchID).GstNo;           
+        }
+
         public BranchModel ValidateGstNo(int? PlaceID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
