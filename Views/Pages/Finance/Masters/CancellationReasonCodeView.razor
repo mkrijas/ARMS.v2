@@ -1,10 +1,9 @@
-﻿@*@page "/CancellationReasonCodeView"
+﻿@page "/CancellationReasonCodeView"
 @using System.Threading;
 @using ArmsAdmin.Pages.User;
 @using Core.BaseModels.Finance;
 @using Core.IDataServices.Finance;
 @using DAL.DataServices.Finance;
-@layout AdminMainLayout
 @inject ICancellationReasonCodeService Iservice
 @inject IPlaceService Iplace
 @inject IOrderService Iorder
@@ -22,7 +21,7 @@
         {
             <MudTable Items="@collection" Dense="true" Filter="new Func<CancellationReasonCodesByDocumentType, bool>(search)">
                 <ToolBarContent>
-                    <MudText Typo="Typo.h6">Branches</MudText>
+                    <MudText Typo="Typo.h6">Document Type Reason Code</MudText>
                     <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(() => Edit(new CancellationReasonCodesByDocumentType()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                     <MudSpacer></MudSpacer>
                     <MudTextField @bind-Value="searchBranch" Placeholder="Search Branchs... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -35,7 +34,7 @@
                     <MudTd DataLabel="Document Type">@context.DocumentTypeName</MudTd>
                     <MudTd DataLabel="">
                         <MudFab @onclick="@(() => Edit(context))" Title="Edit" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                        <MudFab @onclick="@(() => Delete(context))" Title="Delete" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                        @*<MudFab @onclick="@(() => Delete(context))" Title="Delete" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />*@
                     </MudTd>
                 </RowTemplate>
                 <PagerContent>
@@ -106,20 +105,19 @@
                 if (!result.Cancelled)
                 {
                     CancellationReasonCodesByDocumentType UpdatedModel = (CancellationReasonCodesByDocumentType)result.Data;
-                    if ((UpdatedModel.ReasonCodeID == null && !collection.Exists(x => x.ReasonCodeID == UpdatedModel.ReasonCodeID)) ||
-                        (UpdatedModel.ReasonCodeID != null && !collection.Exists(x => x.BranchName == UpdatedModel.BranchName && x.BranchID != UpdatedModel.BranchID)))
+                    if (UpdatedModel != null)
                     {
+
                         var authState = await auth.GetAuthenticationStateAsync();
+                        if (UpdatedModel.UserInfo == null)
+                        {
+                            UpdatedModel.UserInfo = new();
+                        }
                         UpdatedModel.UserInfo.UserID = authState.User.Identity.Name;
                         Iservice.Update(UpdatedModel);
                         snackbar.Add("Saved Successfully", Severity.Success);
                     }
-                    else
-                    {
-                        bool? value = await DialogService.ShowMessageBox(
-                           "Error !",
-                           (MarkupString)$"BranchName - <b>{UpdatedModel.BranchName}</b> already exist !");
-                    }
+
                 }
             }
             else
@@ -167,11 +165,10 @@
 
     private bool search(CancellationReasonCodesByDocumentType model)
     {
-        if (model.ReasonCodeID != null && model.BranchName.Contains(searchBranch, StringComparison.OrdinalIgnoreCase))
+        if (searchBranch == string.Empty || model.DocumentTypeName != null && model.DocumentTypeName.Contains(searchBranch, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
         return false;
     }
 }
-*@
