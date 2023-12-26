@@ -34,7 +34,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ADCode", model.ADCode),
                new SqlParameter("@Title", model.Title),
                new SqlParameter("@UsageCode",model.UsageCode.UsageCode),
-               new SqlParameter("@CoaID",model.UsageCode.CoaID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.PostingGroup.Operation.Update]", parameters))
@@ -53,7 +52,6 @@ namespace ArmsServices.DataServices
                 Title = dr.GetString("Title"),
                 UsageCode = new GstUsageCodeModel()
                 {
-                    CoaID = dr.GetInt32("CoaID"),
                     UsageCode = dr.GetString("UsageCode"),
                     Description = dr.GetString("Description"),
                 },

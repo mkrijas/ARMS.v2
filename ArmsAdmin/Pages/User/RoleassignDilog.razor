@@ -15,6 +15,7 @@
                 <h5>Assign new role for @UserRmodel.UserName</h5>
                 <hr />
                 <div class="d-flex flex-column" style="height:70vh; overflow-x:auto;">
+                    <MudCheckBox @bind-Checked="@selectAllBranches" Label="Set All Branches" />
                     <MudTable Items="@collection" Elevation="0">
                         <HeaderContent>
                             <MudTh Style="display:none;"><MudTableSortLabel SortBy="new Func<UserBranchRoleModel, object>(x=> x.IsSelected)" InitialDirection="SortDirection.Ascending">Check</MudTableSortLabel></MudTh>
@@ -25,15 +26,15 @@
                         <RowTemplate>
                             <MudTd DataLabel="Select" Style="display:none;"><MudCheckBox @bind-Checked="@context.IsSelected" Disabled="true"></MudCheckBox></MudTd>
                             <MudTd DataLabel="Branch">@context.Branch.BranchName</MudTd>
-                            <MudTd DataLabel="RoleNo">
-                                <MudSelect T="string" Label="Select Role" Value="@context.Role.RoleID" ValueChanged="((e)=> OnRoleIdSet(e,context))" OffsetY="true" AdornmentColor="Color.Secondary">
-                                    @foreach (var item in rolecollection)
+                                <MudTd DataLabel="RoleNo">
+                                    <MudSelect T="string" Label="Select Role" Value="@context.Role.RoleID" ValueChanged="((e)=> OnRoleIdSet(e,context))" OffsetY="true" AdornmentColor="Color.Secondary">
+                                        @foreach (var item in rolecollection)
                                     {
                                         <MudSelectItem Value="@item.RoleID">@item.RoleID</MudSelectItem>
                                     }
                                 </MudSelect>
                             </MudTd>
-                            <MudTd DataLabel="">
+                            <MudTd DataLabel="Delete">
                                 <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                             </MudTd>
                         </RowTemplate>
@@ -55,7 +56,7 @@
     private List<RoleModel> rolecollection = new List<RoleModel>();
 
     private string searchUser = "";
-
+    private bool selectAllBranches;
     private UserBranchRoleModel usbr = new UserBranchRoleModel();
     private List<UserBranchRoleModel> collection = new List<UserBranchRoleModel>();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
@@ -67,7 +68,16 @@
 
     public void OnRoleIdSet(string RoleId, UserBranchRoleModel SelectedModel)
     {
-        if ((!String.IsNullOrWhiteSpace(RoleId)) && SelectedModel != null)
+        if (selectAllBranches)
+        {
+            // Set the role for all branches
+            foreach (var branchRoleModel in collection)
+            {
+                branchRoleModel.Role.RoleID = RoleId;
+            }
+            OnValidSubmit(null); // Pass null or a default value to indicate "All Branches" role change
+        }
+        else if ((!String.IsNullOrWhiteSpace(RoleId)) && SelectedModel != null)
         {
             SelectedModel.Role.RoleID = RoleId;
             OnValidSubmit(SelectedModel);
@@ -108,8 +118,8 @@
             var user = authprov.User.Identity.Name;
             Iservice.DeleteBranchesNRoles(Context, user);
             snackbar.Add("Deleted Successfully", Severity.Success);
+            GetAll();
         }
-        GetAll();
     }
 
     private async void OnValidSubmit(UserBranchRoleModel context)
@@ -118,7 +128,13 @@
         var user = authprov.User;
         try
         {
-            if (collection != null && collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty && context != null && context.Role != null && s.Role.RoleID == context.Role.RoleID) != null && collection.Where(s => s.Role != null).Count() != 0)
+            if (selectAllBranches)
+            {
+                // Set roles for all branches
+                Iservice.SetBranchesNRoles(collection.Where(s => s.Role != null).ToList(), user.Identity.Name);
+                snackbar.Add("Saved Successfully", Severity.Success);
+            }
+            else if (collection != null && collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty && context != null && context.Role != null && s.Role.RoleID == context.Role.RoleID) != null && collection.Where(s => s.Role != null).Count() != 0)
             {
                 Iservice.SetBranchesNRoles(collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty).ToList(), user.Identity.Name);
                 snackbar.Add("Saved Successfully", Severity.Success);

@@ -2,36 +2,53 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject ITruckService TruckService
-@inject IGcService GcService
+@inject IDashboardService DashboardService
 @inject IJSRuntime JSRuntime
 @using System
 
 <MudPaper>
     <MudToolBar>
-        <MudText Typo="Typo.h5" Style="font-weight:450px;">DASHBOARD</MudText>
+        <MudText Typo="Typo.h5" Style="font-weight:500;">DASHBOARD</MudText>
     </MudToolBar>
     <MudDivider />
-    <MudGrid>
-        <MudItem sm="12" Style="margin:16px; margin-bottom:0px;">
-            <MudPaper Elevation="2" Style="margin:16px; margin-bottom:0px; padding-bottom:0px;">
+    <MudGrid Style="padding:36px; padding-bottom: 22px;">
+        <MudItem sm="12">
+            <MudPaper Style=" box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
                 <MudToolBar Style="justify-content:left;">
-                    <MudText Style="width:500px;" Typo="Typo.h6">CONSIGNMENT LOAD GRAPH</MudText>
-                    <MudSelect Style="padding-left:80%;" Margin="Margin.Dense" Variant="Variant.Outlined" Value="@SelectedPeriod" T="int" ValueChanged="(Value) => SelectedValueChanged(Value)">
+                    <MudText Style="width:500px;" Typo="Typo.h6">CONSIGNMENT TONNAGE GRAPH</MudText>
+                    <MudSelect Style="padding-left:80%;" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" Variant="Variant.Outlined" Value="@SelectedPeriod" T="int" ValueChanged="(Value) => SelectedValueChanged(Value)">
                         <MudSelectItem Value="1">Last 10 Days</MudSelectItem>
                         <MudSelectItem Value="2">Current Month</MudSelectItem>
                         <MudSelectItem Value="3">Last Month</MudSelectItem>
                     </MudSelect>
                 </MudToolBar>
-                <MudItem id="BarGraph" style="padding:20px; width: 100%;"></MudItem>
-                <MudText Align="Align.Center" Style="padding: 12px; font-weight:500;">Daily Inflation in Consignment</MudText>
+                <MudItem id="BarGraph" style="padding:20px; padding-bottom:0px; width:100%;"></MudItem>
+                <MudText Align="Align.Center" Style="padding:12px; font-weight:500;">Consignment in @ConsignmentTitle</MudText>
             </MudPaper>
         </MudItem>
-        <MudItem sm="6" Style="margin:16px; margin-top:0px; padding-top:0px;">
-            <MudPaper Elevation="2" Style="margin:16px;">
+        <MudItem sm="6">
+            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
                 <MudToolBar Style="justify-content:left;">
                     <MudText Style="width:500px;" Typo="Typo.h6">TRUCK STATUS</MudText>
                 </MudToolBar>
-                <MudItem id="PieChart" style="padding:20px; width: 100%; height: 80%;"></MudItem>
+                <MudItem id="PieChart" style="padding:20px; width: 100%; height: auto;"></MudItem>
+            </MudPaper>
+        </MudItem>
+        <MudItem sm="6">
+            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
+                <MudToolBar Style="justify-content:left;">
+                    <MudText Style="width:500px;" Typo="Typo.h6">DRIVER STATUS</MudText>
+                </MudToolBar>
+                <MudItem id="DonutChart" style="padding:20px; width: 100%; height: auto;"></MudItem>
+            </MudPaper>
+        </MudItem>
+        <MudItem sm="12">
+            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
+                <MudToolBar Style="justify-content:left;">
+                    <MudText Style="width:500px;" Typo="Typo.h6">FREIGHT STATUS</MudText>
+                </MudToolBar>
+                <MudItem id="LineGraph" style="padding:20px; width:100%;"></MudItem>
+                <MudText Align="Align.Center" Style="padding:12px; font-weight:500;">Cumulative Freight in @FreightMonth</MudText>
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -39,10 +56,17 @@
 
 @code {
 
+    string ConsignmentTitle = "";
+    string FreightMonth = "";
     string[] PieLabels;
     double[] PieData;
     string[] BarLabels;
     string[] BarData;
+    string[] DonutLabels;
+    int?[] DonutData;
+    string[] Linelabels;
+    decimal?[] Linedata;
+    decimal?[] LineCumulativedata;
     private int BranchID;
     DateTime? FromDate = null;
     DateTime? ToDate = null;
@@ -50,7 +74,9 @@
     int SelectedPeriod = 1;
 
     List<TruckStatusModel> TruckStatusData = new List<TruckStatusModel>();
-    List<GcModel> ConsignmentLoadData = new List<GcModel>();
+    List<DashboardModel> ConsignmentLoadData = new List<DashboardModel>();
+    List<DashboardModel> DriverStatusData = new List<DashboardModel>();
+    List<DashboardModel> FreightStatusData = new List<DashboardModel>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -58,9 +84,18 @@
         var User = authprov.User;
         string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(BranchIDString);
+    }
 
-        //TruckStatus();
-        //ConsignmentLoad(FromDate, ToDate);
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await SelectedValueChanged(1);
+            await TruckStatus();
+            await DriverStatus();
+            await FreightStatus();
+            StateHasChanged();
+        }
     }
 
     public async Task TruckStatus()
@@ -75,45 +110,63 @@
 
     public async Task ConsignmentLoad(DateTime? From, DateTime? To)
     {
-        ConsignmentLoadData = GcService.SelectChartData(BranchID, From, To).ToList();
+        ConsignmentLoadData = DashboardService.SelectChartData(BranchID, From, To).ToList();
 
-        BarLabels = ConsignmentLoadData.Select(x => x.BillDate.Value.ToString("dd MMM yyyy")).ToArray();
-        BarData = ConsignmentLoadData.Select(x => (x.TotalBillQuantity.Value.ToString())).ToArray();
+        BarLabels = ConsignmentLoadData.Select(x => x.DateList.Value.ToString("dd MMM yyyy")).ToArray();
+        BarData = ConsignmentLoadData.Select(x => (x.Total.Value.ToString())).ToArray();
 
         await JSRuntime.InvokeVoidAsync("ChartResult.BarGraph", BarLabels, BarData);
         StateHasChanged();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    public async Task DriverStatus()
     {
-        if (firstRender)
-        {
-            await TruckStatus();
-            await SelectedValueChanged(1);
-        }
+        DriverStatusData = DashboardService.SelectDonutData(BranchID);
+
+        DonutLabels = DriverStatusData.Select(x => x.Label).ToArray();
+        DonutData = DriverStatusData.Select(x => x.Data).ToArray();
+
+        await JSRuntime.InvokeVoidAsync("ChartResult.DonutChart", DonutLabels, DonutData);
+    }
+
+    public async Task FreightStatus()
+    {
+        DateTime today = DateTime.Today;
+        FreightMonth = today.ToString("MMMM");
+        FreightStatusData = DashboardService.SelectLineChart(BranchID, today).ToList();
+
+        Linelabels = FreightStatusData.Select(x => x.DateList.Value.ToString("dd MMM yyyy")).ToArray();
+        Linedata = FreightStatusData.Select(x => x.Total).ToArray();
+        LineCumulativedata = FreightStatusData.Select(x => x.CumulativeTarget).ToArray();
+
+        await JSRuntime.InvokeVoidAsync("ChartResult.LineGraph", Linelabels, Linedata, LineCumulativedata);
     }
 
     public async Task SelectedValueChanged(int val)
     {
+        StateHasChanged();
         SelectedPeriod = val;
         DateTime? From = null, To = null;
         DateTime today = DateTime.Today;
         switch (val)
         {
             case 1:
-                From = DateTime.Today.AddDays(-10);
+                From = DateTime.Today.AddDays(-9);
                 To = DateTime.Today;
+                ConsignmentTitle = "Last 10 Days";
                 break;
             case 2:
                 DateTime firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
                 From = firstDayOfMonth;
                 To = today;
+                ConsignmentTitle = "Current Month";
                 break;
             case 3:
                 DateTime firstDayOfLastMonth = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
                 DateTime lastDayOfLastMonth = firstDayOfLastMonth.AddMonths(1).AddDays(-1);
                 From = firstDayOfLastMonth;
                 To = lastDayOfLastMonth;
+                ConsignmentTitle = "Last Month";
                 break;
         }
         await ConsignmentLoad(From, To);

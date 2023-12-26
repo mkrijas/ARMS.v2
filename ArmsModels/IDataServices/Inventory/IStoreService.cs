@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
         IEnumerable<StoreModel> SelectByBranch(int BranchID);
         int OutFlow(int? StoreID, List<InventoryItemEntryModel> Items, string UserID);
         InventoryItemModel GetItemAvailability(int StoreID, int ItemID);
+        InventoryItemModel GetUsedItemAvailability(int StoreID, int ItemID);
         LinkableBatchModel GetBatchDetails(long? BatchID);
     }
 }

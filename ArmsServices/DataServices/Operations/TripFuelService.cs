@@ -92,6 +92,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PID", model.PurchaseModel.PID),
                new SqlParameter("@RatePerLitre", model.RatePerLitre),
                new SqlParameter("@Amount", model.Amount),
+               new SqlParameter("@CostCenter", model.CostCenter),
+               new SqlParameter("@Dimension", model.Dimension)
             };
 
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Fuel.Update]", parameters))

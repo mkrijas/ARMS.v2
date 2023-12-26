@@ -154,8 +154,11 @@ namespace Views
             services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>();
             #endregion
 
+        #region ------------Dashboard---------------
+            services.AddScoped<IDashboardService, DashboardService>();
+        #endregion
 
-            #region ------------FMS---------------
+        #region ------------FMS---------------
             services.AddScoped<IBreakdownService, BreakdownService>();
             services.AddScoped<IWorkshopService, WorkshopService>();
             services.AddScoped<IJobcardService, JobcardService>();
@@ -251,7 +254,15 @@ namespace Views
                                       .AllowAnyHeader()
                                       .AllowAnyMethod());
             });
-
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                    builder => builder
+                        .WithOrigins("http://10.200.50.39:8484/") // Add the origin of your Blazor application
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials());
+            });
             #region------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
@@ -296,8 +307,6 @@ namespace Views
 
             app.UseHttpsRedirection();
 
-            app.UseCors("AllowAnyOriginPolicy");
-
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
@@ -325,6 +334,8 @@ namespace Views
             //});
 
             app.UseCors("AllowAny");
+            app.UseCors("AllowAnyOriginPolicy");
+            app.UseCors("CorsPolicy");
             app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
             //app.UseStaticFiles(new StaticFileOptions()
             //{

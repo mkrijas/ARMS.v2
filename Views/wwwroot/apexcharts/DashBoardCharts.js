@@ -5,17 +5,25 @@ window.ChartResult = {
             series: data,
             labels: labels,
             chart: {
-                width: 500,
+                width: '100%',
+                height: '100%',
                 type: 'pie',
             },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val, opts) {
+                    // Accessing the corresponding value from the 'data' array
+                    return opts.w.globals.series[opts.seriesIndex]; // Assuming 'opts' contains the index
+                }
+            },
             responsive: [{
-                breakpoint: 480,
+                breakpoint: 200,
                 options: {
                     chart: {
-                        width: 200
+                        minWidth: 300
                     },
                     legend: {
-                        position: 'bottom'
+                        position: 'center'
                     }
                 }
             }]
@@ -32,15 +40,15 @@ window.ChartResult = {
                 data: data
             }],
             chart: {
-                width: 1710,
-                height: 300,
+                width: '100%',
+                height: '100%',
                 type: 'bar',
             },
             margin: {
-                top: 20, // Adjust the top margin
-                right: 20, // Adjust the right margin
-                bottom: 20, // Adjust the bottom margin
-                left: 20 // Adjust the left margin
+                top: 20,
+                right: 20,
+                bottom: 20,
+                left: 20,
             },
             responsive: [{
                 breakpoint: 510,
@@ -112,8 +120,144 @@ window.ChartResult = {
                 }
             }
         };
-
         var chart = new ApexCharts(document.querySelector("#BarGraph"), options);
+        if (chart) {
+            chart.render();
+        }
+        if (chart && chart.updateOptions) {
+            chart.updateOptions({
+                series: [{
+                    data: data
+                }],
+                xaxis: {
+                    categories: labels
+                }
+            });
+        }
+    },
+
+    DonutChart: function (labels, data) {
+        var options = {
+            series: data,
+            labels: labels,
+            chart: {
+                width: '100%',
+                height: '100%',
+                type: 'donut',
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val, opts) {
+                    // Accessing the corresponding value from the 'data' array
+                    return opts.w.globals.series[opts.seriesIndex]; // Assuming 'opts' contains the index
+                }
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        labels: {
+                            show: true,
+                            total: {
+                                showAlways: true,
+                                show: true,
+                                label: 'Total Drivers',
+                            }
+                        }
+                    }
+                }
+            },
+            responsive: [{
+                breakpoint: 200,
+                options: {
+                    chart: {
+                        minWidth: 300
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }]
+        }
+
+        var chart = new ApexCharts(document.querySelector("#DonutChart"), options);
+        chart.render();
+    },
+
+    LineGraph: function (labels, data, Cumulativedata) {
+        var options = {
+            series: [
+                {
+                    name: "Cumulative Target Data",
+                    data: Cumulativedata,
+                },
+                {
+                    name: "Cumulative Freight Per Day",
+                    data: data
+                }
+            ],
+            chart: {
+                width: '100%',
+                height: 500,
+                type: 'line',
+                dropShadow: {
+                    enabled: true,
+                    color: '#000',
+                    top: 18,
+                    left: 7,
+                    blur: 10,
+                    opacity: 0.2
+                },
+                toolbar: {
+                    show: true,
+                    fontSize: 20,
+                    autoSelected: 'zoom',
+                },
+                zoom: {
+                    type: 'x',
+                    enabled: true,
+                    autoScaleYaxis: true
+                },
+            },
+            colors: ['#77B6EA', '#545454'],
+            dataLabels: {
+                enabled: true,
+            },
+            stroke: {
+                curve: 'smooth'
+            },
+            grid: {
+                borderColor: '#e7e7e7',
+                row: {
+                    colors: ['#f3f3f3', 'transparent'], // takes an array which will be repeated on columns
+                    opacity: 0
+                },
+            },
+            markers: {
+                size: 1
+            },
+            xaxis: {
+                categories: labels,
+                title: {
+                    text: 'DAYS OF THE MONTH'
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'CUMULATIVE FREIGHT AMOUNT'
+                },
+                //min: 5,
+                //max: 40
+            },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'right',
+                floating: true,
+                offsetY: -25,
+                offsetX: -5
+            }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#LineGraph"), options);
         chart.render();
     }
 };

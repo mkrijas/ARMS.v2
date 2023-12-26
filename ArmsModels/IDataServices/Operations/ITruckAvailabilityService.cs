@@ -10,5 +10,6 @@ namespace Core.IDataServices.Operations
         int DeleteRequest(int? ID, string UserID);
         RequestApprovalHistoryModel UpdateStatus(RequestApprovalHistoryModel model);
         IEnumerable<RequestApprovalHistoryModel> SelectIncomingTrucks(int? ID, int? BranchID);
+        IEnumerable<int?> GetAllTruckIdsByBranchID(int? BranchID);
     }
 }

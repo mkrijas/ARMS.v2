@@ -16,7 +16,7 @@ namespace ArmsServices.DataServices
         int? ValidateRegistrationDate(TruckRegistrationModel model);
         int Delete(int? TruckID, string UserID);  //delete
         IEnumerable<TruckModel> Select(int? TruckID);
-        IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer = "All", string HomeOrOperation = "Operation");
+        IEnumerable<TruckModel> SelectByBranch(int? BranchID = null, string Filer = "All", string HomeOrOperation = "Operation");
         TruckModel SelectByAsset(int? AssetID);
         TruckModel SelectByID(int? ID);
         TruckRegistrationModel GetRegistration(int? TruckID);

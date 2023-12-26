@@ -8,7 +8,6 @@ using System.Xml.Linq;
 
 namespace ArmsModels.BaseModels
 {
-
     public class GcSetModel : ICloneable
     {
         public GcSetModel()
@@ -74,7 +73,6 @@ namespace ArmsModels.BaseModels
         [Required]
         [Range(1, double.MaxValue)]
         public decimal? BillQuantity { get; set; }
-        public virtual decimal? TotalBillQuantity { get; set; }
         public string PassNumber { get; set; }
         [Required]
         public decimal? Freight { get; set; }

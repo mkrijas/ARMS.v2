@@ -1,0 +1,73 @@
+﻿@inject IBranchService Iservice
+@inject IUserService Iuserservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12" md="12">
+                <div class="d-flex flex-column" style="height:70vh; overflow-x:auto;">
+                    <MudTable Items="@collection" Elevation="0">
+                        <HeaderContent>
+                            <MudTh><MudTableSortLabel SortBy="new Func<UserBranchRoleModel, object>(x=> x.User.UserName)" InitialDirection="SortDirection.Ascending">User</MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<UserBranchRoleModel, object>(x=> x.Role.RoleID)" InitialDirection="SortDirection.Ascending">Role</MudTableSortLabel></MudTh>
+                            <MudTh>Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="UserName">@context.User.UserName</MudTd>
+                            <MudTd DataLabel="RoleID">@context.Role.RoleID</MudTd>
+                            <MudTd DataLabel="Delete">
+                                <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </div>
+            </MudItem>
+        </MudGrid>
+        <hr />
+    </DialogContent>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public int? branchID { get; set; }
+    private UserBranchRoleModel usbr = new UserBranchRoleModel();
+    private List<UserBranchRoleModel> collection = new List<UserBranchRoleModel>();
+    [CascadingParameter] 
+    MudDialogInstance MudDialog { get; set; }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    protected override void OnInitialized()
+    {
+        GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        collection = Iservice.GetUsersNRoles(branchID).ToList();
+    }
+
+    public async Task Delete(UserBranchRoleModel Context)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+               "Warning !",
+               "Are you sure, you want to delete ?");
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User.Identity.Name;
+            Iuserservice.DeleteBranchesNRoles(Context, user);
+            snackbar.Add("Deleted Successfully", Severity.Success);
+            GetAll();
+        }
+    }
+
+}

@@ -117,27 +117,7 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
-        public List<GcModel> SelectChartData(int? BranchID, DateTime? From, DateTime? To)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "BarChart"),
-               new SqlParameter("@FromDate",From),
-               new SqlParameter("@ToDate",To),
-               new SqlParameter("@BranchID", BranchID)
-            };
-            return GetChartData(parameters);
-        }
-        private List<GcModel> GetChartData(List<SqlParameter> parameters)
-        {
-            List<GcModel> list = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ChartData.Select]", parameters))
-            {
-                GcModel gc = GetGcModel(dr);
-                list.Add(gc);
-            }
-            return list;
-        }
+
         public List<GcSetModel> SelectedUnloadEvent(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -240,7 +220,7 @@ namespace ArmsServices.DataServices
                 BillDate = dr?.GetDateTime("BillDate"),
                 BillNumber = dr.GetString("BillNumber"),
                 BillQuantity = dr.GetDecimal("BillQuantity"),
-                TotalBillQuantity = dr.GetDecimal("TotalBillQuantity"),
+                //TotalBillQuantity = dr.GetDecimal("TotalBillQuantity"),
                 GcNumber = dr.GetInt32("GcNo"),
                 GcPrefix = dr.GetString("GcPrefix"),
                 GcType = dr.GetInt16("GcType"),

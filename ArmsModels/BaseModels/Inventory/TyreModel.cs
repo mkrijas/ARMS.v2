@@ -53,6 +53,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? TyreID { get; set; }
         public string TyreNo { get; set; }
+        public int? RequestID { get; set; }
         [Required]
         public int? TruckID { get; set; }
         [Required]
@@ -64,6 +65,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? MountedKM { get; set; }
         public int? UnmountedKM { get; set; }
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
         public int? RunKM
         {
             get { return UnmountedKM - MountedKM; }
