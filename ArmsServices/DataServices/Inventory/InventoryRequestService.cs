@@ -26,6 +26,16 @@ namespace ArmsServices.DataServices.Inventory
             return Iservice.ExecuteNonQuery("[usp.Inventory.Request.Delete]", parameters);
         }
 
+        //public decimal? GetItemRequestStatus(int? RequestID, int? ItemID)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@RequestID", RequestID),
+        //       new SqlParameter("@ItemID", ItemID),
+        //    };
+        //    return 
+        //}
+
         public IEnumerable<InventoryItemEntryModel> GetSub(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
