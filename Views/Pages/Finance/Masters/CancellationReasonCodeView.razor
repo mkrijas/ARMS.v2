@@ -1,0 +1,177 @@
+﻿@*@page "/CancellationReasonCodeView"
+@using System.Threading;
+@using ArmsAdmin.Pages.User;
+@using Core.BaseModels.Finance;
+@using Core.IDataServices.Finance;
+@using DAL.DataServices.Finance;
+@layout AdminMainLayout
+@inject ICancellationReasonCodeService Iservice
+@inject IPlaceService Iplace
+@inject IOrderService Iorder
+@inject IChartOfAccountService Icoa
+@inject IAddressService Iaddress
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IDialogService DialogService
+@inject IRoleService<RoleModel> Irole
+
+<MudGrid Spacing="4" style="padding-top:16px;">
+    <MudItem xs="12" md="12">
+        @if (isLoaded)
+        {
+            <MudTable Items="@collection" Dense="true" Filter="new Func<CancellationReasonCodesByDocumentType, bool>(search)">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Branches</MudText>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(() => Edit(new CancellationReasonCodesByDocumentType()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudSpacer></MudSpacer>
+                    <MudTextField @bind-Value="searchBranch" Placeholder="Search Branchs... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x => x.DocumentTypeName)" InitialDirection="SortDirection.Ascending">Document Type</MudTableSortLabel></MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Document Type">@context.DocumentTypeName</MudTd>
+                    <MudTd DataLabel="">
+                        <MudFab @onclick="@(() => Edit(context))" Title="Edit" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(() => Delete(context))" Title="Delete" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                </PagerContent>
+            </MudTable>
+        }
+        else
+        {
+            <h1>Loading.........</h1>
+        }
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    private CancellationReasonCodesByDocumentType model = new CancellationReasonCodesByDocumentType();
+    private List<CancellationReasonCodesByDocumentType> collection = new List<CancellationReasonCodesByDocumentType>();
+    private List<OrderModel> AssignedOrders = new List<OrderModel>();
+    private List<OrderModel> Orders = new List<OrderModel>();
+    private OrderModel OrderAssigned { get; set; }
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    public bool HasPermissionOrderServiceAddRemoveOrder { get; set; } = false;
+    public int OrderDocTypeID = 45;
+    public bool HasPermissionBranchServiceEdit { get; set; } = false;
+    public bool HasPermissionBranchServiceDelete { get; set; } = false;
+    public int BranchDocTypeID = 73;
+
+    private bool _busy;
+    private string searchBranch = "";
+    private bool visibleOrders;
+    private int? ClickedBranchID;
+    private bool isLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionOrderServiceAddRemoveOrder = await Irole.HasClaim(OrderDocTypeID.ToString(), "AddRemoveOrder", ctc.Token);
+        HasPermissionBranchServiceEdit = await Irole.HasClaim(BranchDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionBranchServiceDelete = await Irole.HasClaim(BranchDocTypeID.ToString(), "Delete", ctc.Token);
+
+        await GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        collection = Iservice.Select().ToList();
+        isLoaded = true;
+    }
+
+    private async Task Edit(CancellationReasonCodesByDocumentType model)
+    {
+        try
+        {
+            if (HasPermissionBranchServiceEdit)
+            {
+                if (_busy)
+                {
+                    snackbar.Add("Please wait while form is closing!", Severity.Warning);
+                    return;
+                }
+                _busy = true;
+                DialogParameters parms = new DialogParameters();
+                parms.Add("model", model.Clone());
+                var dialog = DialogService.Show<CancellationReasonCodeDialog>("Add/Edit Branch", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
+                var result = await dialog.Result;
+                if (!result.Cancelled)
+                {
+                    CancellationReasonCodesByDocumentType UpdatedModel = (CancellationReasonCodesByDocumentType)result.Data;
+                    if ((UpdatedModel.ReasonCodeID == null && !collection.Exists(x => x.ReasonCodeID == UpdatedModel.ReasonCodeID)) ||
+                        (UpdatedModel.ReasonCodeID != null && !collection.Exists(x => x.BranchName == UpdatedModel.BranchName && x.BranchID != UpdatedModel.BranchID)))
+                    {
+                        var authState = await auth.GetAuthenticationStateAsync();
+                        UpdatedModel.UserInfo.UserID = authState.User.Identity.Name;
+                        Iservice.Update(UpdatedModel);
+                        snackbar.Add("Saved Successfully", Severity.Success);
+                    }
+                    else
+                    {
+                        bool? value = await DialogService.ShowMessageBox(
+                           "Error !",
+                           (MarkupString)$"BranchName - <b>{UpdatedModel.BranchName}</b> already exist !");
+                    }
+                }
+            }
+            else
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Edit Branch.");
+            }
+            await GetAll();
+        }
+        catch (Exception a)
+        {
+            snackbar.Add(a.Message, Severity.Error);
+        }
+        finally
+        {
+            await Task.Delay(2000);
+            _busy = false;
+        }
+    }
+
+
+    private async Task Delete(CancellationReasonCodesByDocumentType model)
+    {
+        if (HasPermissionBranchServiceDelete)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete branch - " + model.DocumentTypeName + "?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                Iservice.Delete(model.ReasonCodeID, authprov.User.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Branch.");
+        }
+        await GetAll();
+    }
+
+    private bool search(CancellationReasonCodesByDocumentType model)
+    {
+        if (model.ReasonCodeID != null && model.BranchName.Contains(searchBranch, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
+*@
