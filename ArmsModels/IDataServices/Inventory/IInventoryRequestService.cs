@@ -18,5 +18,6 @@ namespace ArmsServices.DataServices.Inventory
         IEnumerable<InventoryRequestModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<InventoryRequestModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<InventoryItemEntryModel> GetSub(int? ID);
+        //decimal? GetItemRequestStatus(int? RequestID, int? ItemID);
     }
 }

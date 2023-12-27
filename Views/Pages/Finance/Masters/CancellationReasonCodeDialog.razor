@@ -1,16 +1,18 @@
-﻿@*@inject MudBlazor.ISnackbar snackbar
+﻿@inject MudBlazor.ISnackbar snackbar
 @inject IPlaceService Iplace
 @inject IBranchService IBranchService
 @inject IDataAuthorizationSettingsService IDataAuthorizationService
+@inject ICancellationReasonCodeService IcancellationReasonCodeService
 @using System.Globalization;
 @using Core.BaseModels.Finance;
+@using Core.IDataServices.Finance;
 
 
 
 <MudDialog DisableSidePadding="true">
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add/Edit Branch
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add/Edit Reason Code
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -25,38 +27,28 @@
                             <MudGrid>
                                 <MudItem xs="12">
                                     <MudAutocomplete FullWidth Label="Document Type" Value="SelectedDocType" ValueChanged="ValueChanged" T="DocTypeModel" SearchFunc="@Search" ToStringFunc="@((e) => e?.Description)"
-                                                     Variant="Variant.Outlined" Margin="Margin.Dense" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                                     Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
                                     </MudAutocomplete>
                                 </MudItem>
                                 <MudItem xs="12" md="12" lg="12">
 
                                     <MudGrid Justify="Justify.Center">
-                                        <MudItem xs="12"><span class="HeadText">Reason Code</span></MudItem>
-                                        @foreach (var item in ReasonCodeList)
+                                        <MudItem xs="12"><span class="HeadText">Reason Codes</span></MudItem>
+                                        @if(ReasonCodeList != null)
                                         {
-                                            <MudItem xs="11">@item.ReasonCodeDescription</MudItem>
-                                            <MudItem xs="1">
-                                                @if (!ReadOnly)
-                                                {
+                                            @foreach (var item in ReasonCodeList)
+                                            {
+                                                <MudItem xs="11"><MudTextField Label="Reason Code" @bind-Value="item.ReasonCodeDescription" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudItem>
+                                                <MudItem xs="1">
                                                     <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteReasonCodes(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-                                                }
-                                            </MudItem>
+                                                </MudItem>
+                                            }
+                                            
                                         }
-                                        @if (!ReadOnly)
-                                        {
 
-                                            <MudItem xs="2"><MudTextField Label="Bill Reference" @bind-Value="Model.BillReference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudItem>
-                                            <MudItem xs="2">
-                                                <CostCenterSelector @bind-Value="@Model.CostCenter" @bind-ValueText="@Model.CostCenterVal" ReadOnly="@ReadOnly"></CostCenterSelector>
-                                            </MudItem>
-                                            <MudItem xs="2">
-                                                <DimensionSelector @bind-Value="@Model.Dimension" @bind-ValueText="@Model.DimensionVal" ReadOnly="@ReadOnly"></DimensionSelector>
-                                            </MudItem>
-                                            <MudItem xs="2"><MudNumericField HideSpinButtons Label="Amount" @bind-Value="Model.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField></MudItem>
+                                        <MudItem xs="11"><MudTextField Label="Reason Code" @bind-Value="Model.ReasonCodeDescription" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudItem>
+                                        <MudItem xs="1" Class="d-flex align-center"><MudIconButton Title="Add" OnClick="ADD" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" /></MudItem>
 
-                                            <MudItem xs="1" Class="d-flex align-center"><MudIconButton Title="Add" OnClick="ADD" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" /></MudItem>
-
-                                        }
                                     </MudGrid>
                                 </MudItem>
                             </MudGrid>
@@ -68,7 +60,7 @@
     </DialogContent>
     <DialogActions>
         <div style="padding-right:12px; padding-bottom:12px;">
-            <MudButton Disabled="@_busy" form="mainForm" Variant="Variant.Filled" Color="Color.Dark" ButtonType="ButtonType.Submit">Save Branch</MudButton>
+            <MudButton Disabled="@_busy" form="mainForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Reason Codes</MudButton>
         </div>
     </DialogActions>
 </MudDialog>
@@ -81,9 +73,8 @@
     [Parameter]
     public CancellationReasonCodesByDocumentType model { get; set; }
 
-    public CancellationReasonCodesByDocumentType Model { get; set; } = new();
+    public CancellationReasonCode Model { get; set; } = new();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    private List<PlaceModel> places = new List<PlaceModel>();
     private bool _busy;
 
     private DocTypeModel SelectedDocType;
@@ -93,7 +84,19 @@
     protected override async Task OnInitializedAsync()
     {
         doctypelist = IDataAuthorizationService.GetDocTypesList().ToList();
-        places = Iplace.Select(0).ToList();
+        if(model != null && model.DocumentTypeID !=null)
+        {
+            if(doctypelist != null && doctypelist.Any(s=>s.ID == model.DocumentTypeID))
+            {
+                SelectedDocType = doctypelist.FirstOrDefault(s=>s.ID == model.DocumentTypeID);
+            }
+            var Result = IcancellationReasonCodeService.SelectSubById(model.DocumentTypeID);
+            if(Result != null && Result.Count() != 0 && Result.Any(s=>s.ReasonCodeID != null))
+            {
+                ReasonCodeList = Result.ToList();
+            }
+
+        }
     }
 
     private async Task<IEnumerable<DocTypeModel>> Search(string value)
@@ -106,60 +109,75 @@
             return doctypelist;
         return doctypelist.Where(x => x.Description.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
-    private async Task OnValidSubmit(EditContext context)
+    private void OnValidSubmit(EditContext context)
     {
         if (_busy)
         {
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
-        _busy = true;
-
-        string formattedValue = "";
-        foreach (var item in words)
+        if(ReasonCodeList == null || ReasonCodeList.Count() == 0)
         {
-            var temp = item;
-            if (formattedValue != "")
-            {
-                formattedValue = formattedValue + " " + item[0].ToString().ToUpper() + (item.Substring(1, (item.Length - 1)).ToString().ToLower());
-            }
-            else
-            {
-                formattedValue = item[0].ToString().ToUpper() + (item.Substring(1, (item.Length - 1)).ToString().ToLower());
-            }
+            snackbar.Add("Please add at least one cancellation reason code.", Severity.Error);
+            return;
+        }
+        _busy = true;
+        if(SelectedDocType != null && SelectedDocType.ID != null)
+        {
+            model.DocumentTypeID = SelectedDocType.ID;
+        }
+        if (model.CancellationReasonCodeList == null )
+        {
+            model.CancellationReasonCodeList = new();
+        }
+        else
+        {
+            model.CancellationReasonCodeList.Clear();
+        }
+        if(ReasonCodeList != null && ReasonCodeList.Count() != 0)
+        {
+            model.CancellationReasonCodeList = ReasonCodeList;
         }
         _busy = false;
         MudDialog.Close(model);
-        await Task.Delay(2000);
     }
-    
+
     void ValueChanged(DocTypeModel val)
     {
         SelectedDocType = val;
         GetAll();
     }
-    private async Task DeleteReasonCodes(TaxPurchaseExpenseModel i)
+    private async Task DeleteReasonCodes(CancellationReasonCode ReasonCode)
     {
-        int rowIndex = ReasonCodeList.IndexOf(i);
+        int rowIndex = ReasonCodeList.IndexOf(ReasonCode);
         ReasonCodeList.RemoveAt(rowIndex);
-        await OnDelete.InvokeAsync();
     }
 
-    public async Task ADD()
+    public void ADD()
     {
-        Model.BranchID = BranchID;
-        if (AddTax() && editContext.Validate())
+        if(ReasonCodeList == null)
         {
-            await OnReasonCodeAdded.InvokeAsync(Model);
-            Model = new();
-            gstusge = null;
+            ReasonCodeList = new();
         }
-        else
+        if(Model != null && Model.ReasonCodeDescription != null)
         {
-            snackbar.Add("Entered particulars are invalid.", Severity.Error);
+            ReasonCodeList.Add(Model);
+
+        }
+        Model = new();
+    }
+    public void GetAll()
+    {
+        if (SelectedDocType != null && SelectedDocType.ID != null)
+        {
+            var Result = IcancellationReasonCodeService.SelectSubById(SelectedDocType.ID);
+            if (Result != null && Result.Count() != 0 && Result.Any(s => s.ReasonCodeID != null))
+            {
+                ReasonCodeList = Result.ToList();
+            }
+
         }
     }
 
 
-
-}*@
+}

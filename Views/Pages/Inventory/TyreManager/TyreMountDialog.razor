@@ -5,6 +5,7 @@
 @inject AuthenticationStateProvider auth
 @inject ITyreService IServices
 @inject IInventoryRequestService IInventoryRequestservice
+@inject IStoreService IStoreservice
 @inject MudBlazor.ISnackbar snackbar
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
@@ -80,10 +81,14 @@
     List<TyreModel> TyreList = new();
     List<TyrePositionModel> TyrePositionListForMountAndUnMount = new();
     private List<InventoryRequestModel> InventoryRequestList = new List<InventoryRequestModel>();
+    private List<InventoryItemEntryModel> InventoryRequestSubList = new List<InventoryItemEntryModel>();
     public InventoryRequestModel SelectInventoryRequest { get; set; }
     public bool IsTruckDisabled { get; set; } = false;
     public bool IsTyreDisabled { get; set; } = false;
     private bool _busy;
+    public LinkableBatchModel Store { get; set; } = new();
+    public int? StoreID;
+    public int? BranchID;
 
     public bool HasPermissionTyreServiceEdit { get; set; } = false;
     public int DocTypeID = 63;
@@ -119,7 +124,10 @@
             model.TruckID = SelectedTruck.TruckID;
             TyrePositionListForMountAndUnMount = IServices.GetTyrePositionListUsingTruckTypeId(SelectedTruck.TruckTypeID).ToList();
         }
-        InventoryRequestList = IInventoryRequestservice.Select().Where(d => !((d.IsCompletelyReleased != null && d.IsCompletelyReleased.Value && d.RequestID != model.RequestID))).ToList();
+        Store = IStoreservice.GetBatchDetails(SelectedTyre.InventoryBatchID);
+        StoreID = Store.StoreID;
+        BranchID = SelectedTyre.BranchID;
+        InventoryRequestList = IInventoryRequestservice.SelectByStore(StoreID ?? null, BranchID).Where(d => !((d.IsCompletelyReleased != null && d.IsCompletelyReleased.Value && d.RequestID != model.RequestID))).ToList();
     }
 
     private void OnValueChanged(TruckModel obj)
@@ -149,6 +157,7 @@
             model.TruckID = SelectedTruck.TruckID;
             IsTruckDisabled = true;
         }
+        InventoryRequestSubList = IInventoryRequestservice.GetSub(model.RequestID).ToList();
     }
 
     protected override void OnParametersSet()
@@ -183,12 +192,21 @@
                 snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
                 return;
             }
-            _busy = true;
+            bool itemExists = InventoryRequestSubList.Any(item => item.ItemID == SelectedTyre.InventoryItemID);
+            if (SelectInventoryRequest != null)
+            {
+                if(!itemExists)
+                {
+                    snackbar.Add("Selected request doesn't have any appropriate items!", Severity.Warning);
+                    return;
+                }
+            }
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
             var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
             if (model != null)
             {
+                _busy = true;
                 model.TruckID = SelectedTruck.TruckID;
                 model.TyreID = SelectedTyre.TyreID;
                 model.PositionID = SelectedTyrePosition.PositionID;

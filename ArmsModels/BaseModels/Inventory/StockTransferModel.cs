@@ -3,11 +3,12 @@ using ArmsModels.SharedModels;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace Core.BaseModels.Inventory
 {
-    public class StockTransferInitiationModel : ICloneable
+    public class StockTransferInitiationModel :TransactionBaseModel, ICloneable
     {
         public object Clone()
         {
@@ -16,11 +17,10 @@ namespace Core.BaseModels.Inventory
         }
         public int? StockTransferID { get; set; }
         public int? InvTranID { get; set; }
-        public StoreModel Store { get; set; }
-        public BranchModel Branch { get; set; }
-        public DateTime? InitiatedDate { get; set; }
+        [Required]
+        public StoreModel Store { get; set; } 
         public byte? Status { get; set; }
-        public string? DisplayStatus
+        public string DisplayStatus
         {
             get
             {
@@ -35,17 +35,23 @@ namespace Core.BaseModels.Inventory
                 }
             }
         }
-        public List<InventoryItemEntryModel> ItemsList { get; set; } = new();
-        public decimal? TotalValue { get { return ItemsList.Sum(X => X.ItemQty * X.ItemRate); } }
-        public StockTransferEndModel EndModel { get; set; }
-        public UserInfoModel UserInfo { get; set; } = new();
+
+        public bool IsLocal { get; set; }
+        public bool IsTaxable { get; set; }
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
+
+        [ValidateComplexType]
+        [MustContain]
+        public List<InventoryItemEntryModel> ItemsList { get; set; } = new();        
+        public StockTransferEndModel EndModel { get; set; }        
     }
 
-    public class StockTransferEndModel
+    public class StockTransferEndModel : TransactionBaseModel, ICloneable
     {
         public int? StockTransferEndID { get; set; }
-        //public StoreModel DestinationStore { get; set; }
-        //public BranchModel DestinationBranch { get; set; }
+        public int? StockTransferID { get; set; }
+        public StoreModel Store { get; set; }
         public byte? TransferStatus { get; set; }
         public string? DisplayTransferStatus
         {
@@ -62,8 +68,14 @@ namespace Core.BaseModels.Inventory
                 }
             }
         }
-        public DateTime? TransferEndDate { get; set; }
-        public byte? RecordStatus { get; set; }
+        public int? CostCenter { get; set; }
+        public int? Dimension { get; set; }
         public List<InventoryItemEntryModel> ItemsEndList { get; set; } = new();
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<StockTransferEndModel>(Json);
+        }
+        
     }
 }
