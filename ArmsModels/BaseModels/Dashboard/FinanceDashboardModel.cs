@@ -2,7 +2,7 @@
 
 namespace ArmsModels.BaseModels
 {
-    public class FinanceDashboardModel
+    public class AccountBalanceModel
     {
         public int? CoaID { get; set; }
         public DateTime? Date { get; set; } = DateTime.Today;

@@ -14,7 +14,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public FinanceDashboardModel GetAccountBalance(int? CoaID, int? BranchID, DateTime? Date)
+        public AccountBalanceModel GetAccountBalance(int? CoaID, int? BranchID, DateTime? Date)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@Date",Date)
             };
-            FinanceDashboardModel model = new();
+            AccountBalanceModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.AccountBalance.Select]", parameters))
             {
                 model = GetTotalAmount(dr);
@@ -30,9 +30,9 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        private FinanceDashboardModel GetTotalAmount(IDataRecord dr)
+        private AccountBalanceModel GetTotalAmount(IDataRecord dr)
         {
-            return new FinanceDashboardModel
+            return new AccountBalanceModel
             {
                 CoaID = dr.GetInt32("CoaID"),
                 Date = dr.GetDateTime("Date"),

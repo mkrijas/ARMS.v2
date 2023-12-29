@@ -10,6 +10,6 @@ namespace ArmsServices.DataServices
 {
     public interface IFinanceDashboardService
     {
-        FinanceDashboardModel GetAccountBalance(int? CoaID, int? BranchID, DateTime? Date);
+        AccountBalanceModel GetAccountBalance(int? CoaID, int? BranchID, DateTime? Date);
     }
 }
