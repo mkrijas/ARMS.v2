@@ -1,0 +1,84 @@
+﻿@page "/financedashboard"
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IConfigTable config
+@inject IFinanceDashboardService Iservice
+@using System
+@using Pages.General.Dashboard
+
+<style>
+    .finance-dashboard {
+        padding: 15px;
+    }
+
+    .dashboard-grid {
+        margin-top: 20px;
+    }
+
+    .dashboard-card {
+        text-align: center;
+    }
+
+    .Receivable-card-header {
+        background-color: #009688;
+        color: white;
+    }
+
+    .payable-card-header {
+        background-color: #f54c60;
+        color: white;
+    }
+
+</style>
+
+<MudPaper Class="finance-dashboard">
+    <MudToolBar>
+        <MudText Typo="Typo.h5" Style="font-weight:500;">FINANCE DASHBOARD</MudText>
+    </MudToolBar>
+    <MudDivider />
+    <MudGrid Class="dashboard-grid">
+        <MudItem sm="3">
+            <MudCard Class="dashboard-card">
+                <MudCardHeader Class="payable-card-header">Payables</MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="highlight">@PayableAmount</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem sm="3">
+            <MudCard Class="dashboard-card">
+                    <MudCardHeader Class="Receivable-card-header">Receivables</MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="highlight">@ReceivableAmount</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+
+@code {
+
+    private int BranchID;
+    private Decimal? PayableAmount;
+    private Decimal? ReceivableAmount;
+
+    public FinanceDashboardModel PayableModel { get; set; } = new();
+    public FinanceDashboardModel RecievableModel { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
+        BranchID = int.Parse(BranchIDString);
+        ConfigModel cpModel = config.GetFinancePayableGroupID();
+        PayableModel.CoaID = int.Parse(cpModel.ValueString);
+        ConfigModel crModel = config.GetFinanceReceivableGroupID();
+        RecievableModel.CoaID = int.Parse(crModel.ValueString);
+        PayableModel = Iservice.GetAccountBalance(PayableModel.CoaID, BranchID, PayableModel.Date);
+        PayableAmount = PayableModel.TotalAmount;
+        RecievableModel = Iservice.GetAccountBalance(RecievableModel.CoaID, BranchID, RecievableModel.Date);
+        ReceivableAmount = RecievableModel.TotalAmount;
+    }
+}
