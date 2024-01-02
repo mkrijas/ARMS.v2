@@ -1,0 +1,103 @@
+﻿@using Core.BaseModels.Finance;
+@using Core.IDataServices.Finance;
+@inject AuthenticationStateProvider auth
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@inject IAccountInfoService IaccountInfoService
+@attribute [Authorize]
+
+@if (IsReversed != null && !(IsReversed.Value))
+{
+    <MudFab @onclick="@(()=> ReverseTransactionDialogOpen())" Color="Color.Error" title="Reverse Entry" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />
+}
+@code {
+    [Parameter]
+    public int? DocTypeID { get; set; }
+    [Parameter]
+    public int? DocumentID { get; set; }
+    [Parameter]
+    public int? MID { get; set; }
+    [Parameter]
+    public string DocumentNumber { get; set; }
+
+
+    //[Parameter]
+    //public string PageToRedirectLink { get; set; }
+    //[Parameter]
+    //public string DocNumber { get; set; }
+    //[Parameter]
+    //public DateTime? DocDate { get; set; }
+    //[Parameter]
+    //public string DocType { get; set; }
+
+    public int BranchID { get; set; }
+    public string UserID { get; set; }
+    private bool _busy;
+    public bool? IsReversed = false;
+
+
+    //#region SignaIR Notification
+    //private IEnumerable<PushNotificationModel> allNotificationMessages = null;
+    //private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
+    //private PushNotificationModel notificationMessage = new PushNotificationModel();
+    //#endregion
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetAll();
+
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = user.Identity.Name;
+        IsReversed = IaccountInfoService.IsAlreadyReversed(DocumentID, DocTypeID);
+        //allNotificationMessages = IpushNotificationService.SelectUnAknowledgedAndNonTimeElapsedNotifications(BranchID).ToList();
+        //currentNotificationMessages = allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == BranchID).ToList();
+
+        await signalRService.StartAsync();
+    }
+    private void GetAll()
+    {
+    }
+
+
+    private async Task ReverseTransactionDialogOpen()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, ClassBackground = "blur" };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("DocumentTypeID", DocTypeID);
+        var dialog = DialogService.Show<ReverseTransactionDialog>("Reverse Transaction", parms, maxWidth);
+        var result = await dialog.Result;
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (CancellationReasonCodesByDocumentType)result.Data;
+            ReturnData.MID = MID;
+            ReturnData.DocumentID = DocumentID;
+            ReturnData.DocumentNumber = DocumentNumber;
+            var resultSub = IaccountInfoService.UpdateReverseEntry(ReturnData);
+            if (resultSub != null)
+            {
+                snackbar.Add("Reversed successfully!", Severity.Success);
+                IsReversed = true;
+                return;
+            }
+        }
+        //await GetAll(IsApproved, NumberOfRecords);
+
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+}
+

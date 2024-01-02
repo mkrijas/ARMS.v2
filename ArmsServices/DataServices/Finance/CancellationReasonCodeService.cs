@@ -82,6 +82,39 @@ namespace DAL.DataServices.Finance
                 };
             }
         }
+        public CancellationReasonCodesByDocumentType UpdateReverseEntry(CancellationReasonCodesByDocumentType model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentID", model.DocumentID),
+               new SqlParameter("@DocumentNumber", model.DocumentNumber),
+               new SqlParameter("@DocumentDate", model.DocumentDate),
+               new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
+               new SqlParameter("@MID", model.MID),
+               new SqlParameter("@ReasonCodeID", model.ReasonCodeID),
+               new SqlParameter("@Remarks", model.Remarks),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transaction.Reverse.Update]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+        public bool? IsAlreadyReversed(int? DocumentID, int? DocumentTypeID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentID", DocumentID),
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+            };
+            bool? Result = false;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transaction.Reverse.IsExists]", parameters))
+            {
+                Result = dr.GetBoolean("IsEntryAlreadyExist");
+            }
+            return Result;
+        }
 
         private CancellationReasonCodesByDocumentType GetModel(IDataRecord dr)
         {
