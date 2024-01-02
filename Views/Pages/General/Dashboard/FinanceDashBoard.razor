@@ -4,6 +4,7 @@
 @inject IConfigTable config
 @inject IFinanceDashboardService Iservice
 @inject IBankAccountOwnService Ibankservice
+@inject IJSRuntime JSRuntime
 @using System
 @using Pages.General.Dashboard
 @using MudBlazor
@@ -64,7 +65,7 @@
 
         <MudItem sm="6">
             <div class="text-center">
-            <h4>Payable Dues</h4>
+            <h5>Payable Dues</h5>
             <MudTable Items="@PayablesortedList" Class="dashboard-table">
                 <HeaderContent>
                     <MudTh>Party</MudTh>
@@ -83,7 +84,7 @@
         </MudItem>
         <MudItem sm="6">
             <div class="text-center">
-            <h4>Receivable Dues</h4>
+            <h5>Receivable Dues</h5>
             <MudTable Items="@ReceivablesortedList" Class="dashboard-table">
                 <HeaderContent>
                     <MudTh>Party</MudTh>
@@ -103,7 +104,7 @@
 
         <MudItem sm="6">
             <div class="text-center">
-            <h4>Bank Balance</h4>
+            <h5>Bank Balance</h5>
             <MudTable Items="@BankAccountBalanceList" Class="dashboard-table">
                 <HeaderContent>
                     <MudTh>Account Number</MudTh>
@@ -120,7 +121,7 @@
         </MudItem>
         <MudItem sm="6">
             <div class="text-center">
-            <h4>Cash Balance</h4>
+            <h5>Cash Balance</h5>
             <MudTable Items="@CashAccountBalanceList" Class="dashboard-table">
                 <HeaderContent>
                     <MudTh>Cash Account</MudTh>
@@ -133,6 +134,16 @@
             </MudTable>
             </div>
         </MudItem>
+
+        <MudItem sm="12">
+            <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
+                <MudToolBar Style="justify-content:left;">
+                    <MudText Style="width:500px;" Typo="Typo.h6">Expenses</MudText>
+                </MudToolBar>
+                <MudItem id="ExpenseLineGraph" style="padding:20px; width:100%;"></MudItem>
+                <MudText Align="Align.Center" Style="padding:12px; font-weight:500;">Expenses in @ExpenseMonth @ExpenseYear</MudText>
+            </MudPaper>
+        </MudItem>
     </MudGrid>
 </MudPaper>
 
@@ -140,6 +151,10 @@
 @code {
 
     private int BranchID;
+    string ExpenseMonth = "";
+    string ExpenseYear = "";
+    string[] Linelabels;
+    decimal?[] Linedata;
 
     private Decimal? PayableAmount;
     private Decimal? ReceivableAmount;
@@ -154,6 +169,8 @@
     List<BankAccountBalanceModel> BankAccountBalanceList = new List<BankAccountBalanceModel>();
     List<CashAccountBalanceModel> CashAccountBalanceList = new List<CashAccountBalanceModel>();
 
+    List<DashboardModel> ExpensesData = new List<DashboardModel>();
+
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -165,6 +182,15 @@
         await GetReceivableDueBalance();
         await GetBankAccountBalance();
         await GetCashAccountBalance();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await GetExpenses();
+            StateHasChanged();
+        }
     }
 
     public async Task GetAccountBalance()
@@ -217,6 +243,19 @@
     public async Task GetCashAccountBalance()
     {
         CashAccountBalanceList = Iservice.GetCashAccountBalance(BranchID).ToList();
+    }
+
+    public async Task GetExpenses()
+    {
+        DateTime today = DateTime.Today;
+        ExpenseMonth = today.ToString("MMMM");
+        ExpenseYear = today.ToString("yyyy");
+        ExpensesData = Iservice.SelectExpenses(BranchID).ToList();
+
+        Linelabels = ExpensesData.Select(x => x.DateList.Value.ToString("dd")).ToArray();
+        Linedata = ExpensesData.Select(x => x.Total).ToArray();
+
+        await JSRuntime.InvokeVoidAsync("ChartResult.ExpenseLineGraph", Linelabels, Linedata);
     }
 
     string GetTooltip(int partyID)

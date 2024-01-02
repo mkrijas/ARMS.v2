@@ -15,6 +15,6 @@ namespace ArmsServices.DataServices
         IEnumerable<DueBalanceModel> GetReceivableDueBalance(int? BranchID);
         IEnumerable<BankAccountBalanceModel> GetBankAccountBalance(int? BranchID);
         IEnumerable<CashAccountBalanceModel> GetCashAccountBalance(int? BranchID);
-
+        List<DashboardModel> SelectExpenses(int? BranchID);
     }
 }

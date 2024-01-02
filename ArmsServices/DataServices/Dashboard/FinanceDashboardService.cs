@@ -23,7 +23,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Date",Date)
             };
             AccountBalanceModel model = new();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.AccountBalance.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.AccountBalance.Select]", parameters))
             {
                 model = GetAccountBalance(dr);
             }
@@ -47,7 +47,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "PayableDues"),
                new SqlParameter("@BranchID", BranchID)
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.DueBalance.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.DueBalance.Select]", parameters))
             {
                 yield return new DueBalanceModel()
                 {
@@ -70,7 +70,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ReceivableDues"),
                new SqlParameter("@BranchID", BranchID)
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.DueBalance.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.DueBalance.Select]", parameters))
             {
                 yield return new DueBalanceModel()
                 {
@@ -117,6 +117,37 @@ namespace ArmsServices.DataServices
                     Amount = dr.GetDecimal("Amount")
                 };
             }
+        }
+
+        public List<DashboardModel> SelectExpenses(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID)
+            };
+            return GetChartData(parameters);
+        }
+
+        private List<DashboardModel> GetChartData(List<SqlParameter> parameters)
+        {
+            List<DashboardModel> list = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Expenses.Select]", parameters))
+            {
+                DashboardModel model = GetDashboardModel(dr);
+                list.Add(model);
+            }
+            return list;
+        }
+
+        private DashboardModel GetDashboardModel(IDataRecord dr)
+        {
+            return new DashboardModel
+            {
+                Label = dr.GetString("DataLabel"),
+                Data = dr.GetInt32("TotalData"),
+                DateList = dr?.GetDateTime("DateList"),
+                Total = dr.GetDecimal("Total"),
+            };
         }
     }
 }
