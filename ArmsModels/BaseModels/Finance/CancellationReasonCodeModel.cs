@@ -1,15 +1,30 @@
-﻿using ArmsModels.SharedModels;
+﻿using ArmsModels.BaseModels;
+using ArmsModels.SharedModels;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace Core.BaseModels.Finance
 {
-    public class CancellationReasonCodesByDocumentType
+    public class CancellationReasonCodesByDocumentType : ICloneable
     {
+
         public int? ReasonCodeID { get; set; }
+        public int? DocumentID { get; set; }
         public int? DocumentTypeID { get; set; }
+        public string DocumentNumber { get; set; }
+        public DateTime? DocumentDate { get; set; }
+        public int? MID { get; set; }
         public string DocumentTypeName { get; set; }
         public List<CancellationReasonCode> CancellationReasonCodeList { get; set; }
         public UserInfoModel UserInfo { get; set; }
+        public string Remarks { get; set; }
+
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<CancellationReasonCodesByDocumentType>(Json);
+        }
     }
     public class CancellationReasonCode
     {

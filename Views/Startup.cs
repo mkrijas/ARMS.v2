@@ -158,9 +158,10 @@ namespace Views
 
         #region ------------Dashboard---------------
             services.AddScoped<IDashboardService, DashboardService>();
-        #endregion
+            services.AddScoped<IFinanceDashboardService, FinanceDashboardService>();
+            #endregion
 
-        #region ------------FMS---------------
+            #region ------------FMS---------------
             services.AddScoped<IBreakdownService, BreakdownService>();
             services.AddScoped<IWorkshopService, WorkshopService>();
             services.AddScoped<IJobcardService, JobcardService>();

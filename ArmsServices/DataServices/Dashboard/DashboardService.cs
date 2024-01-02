@@ -9,7 +9,7 @@ namespace ArmsServices.DataServices
     public class DashboardService : IDashboardService
     {
         IDbService Iservice;
-        public DashboardService(IDbService iservice, ITariffService tariff)
+        public DashboardService(IDbService iservice)
         {
             Iservice = iservice;
         }

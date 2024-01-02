@@ -1,6 +1,8 @@
 ﻿@page "/DrCrNoteView"
 @page "/DrCrNoteView/{id:int}"
 @using System.Threading;
+@using Core.BaseModels.Finance;
+@using Core.IDataServices.Finance;
 @inject IDrCrNoteService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -9,6 +11,7 @@
 @inject IDialogService DialogService
 @inject SignalRService signalRService
 @inject IPushNotificationService IpushNotificationService
+@inject ICancellationReasonCodeService IcancellationReasonCodeService
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -49,6 +52,11 @@
                     @if (@context.AuthLevelId != 99)
                     {
                         <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Warning" title="Verify" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
+                    }
+                    @if (@context.AuthLevelId == 99)
+                    {
+                        <EntryReversedComponent DocTypeID="DrCrNoteDocTypeID" DocumentID="context.DrCrNoteID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                        @*<MudFab @onclick="@(()=> ReverseTransactionDialogOpen(context,true))" Color="Color.Error" title="Reverse Entry" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />*@
                     }
                 </MudTd>
             </RowTemplate>
@@ -165,6 +173,42 @@
         await Task.Delay(200);
         _busy = false;
     }
+
+    private async Task ReverseTransactionDialogOpen(DrCrNoteModel tds, bool ReadOnly)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, ClassBackground = "blur" };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("DocumentTypeID", DrCrNoteDocTypeID);
+        var dialog = DialogService.Show<ReverseTransactionDialog>("Reverse Transaction", parms, maxWidth);
+        var result = await dialog.Result;
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (CancellationReasonCodesByDocumentType)result.Data;
+            ReturnData.MID = tds.MID;
+            ReturnData.DocumentID = tds.DrCrNoteID;
+            ReturnData.DocumentNumber = tds.DocumentNumber;
+            var resultSub = IcancellationReasonCodeService.UpdateReverseEntry(ReturnData);
+            if (resultSub != null)
+            {
+
+                snackbar.Add("Reversed successfully!", Severity.Success);
+                return;
+            }
+        }
+        await GetAll(IsApproved, NumberOfRecords);
+
+        await Task.Delay(200);
+        _busy = false;
+    }
+
 
     public async Task GetAll(bool val, int numberOfRecords)
     {

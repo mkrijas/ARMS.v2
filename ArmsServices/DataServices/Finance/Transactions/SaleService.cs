@@ -65,7 +65,9 @@ namespace ArmsServices.DataServices
                     UsageCode = dr.GetString("UsageCode"),
                     TpeID = dr.GetInt64("SeID"),
                     CostCenter = dr.GetInt32("CostCenterID"),
+                    CostCenterVal = dr.GetString("CostCenter"),
                     Dimension = dr.GetInt32("DimensionID"),
+                    DimensionVal = dr.GetString("Dimension"),
                     //UsageCodeDescription = dr.GetString("UsageCodeDescription"),
                 };
             }
@@ -97,7 +99,9 @@ namespace ArmsServices.DataServices
                     TDS = dr.GetDecimal("TCS"),
                     TpiID = dr.GetInt64("SiID"),
                     CostCenter = dr.GetInt32("CostCenterID"),
+                    CostCenterVal = dr.GetString("CostCenter"),
                     Dimension = dr.GetInt32("DimensionID"),
+                    DimensionVal = dr.GetString("Dimension"),
                 };
             }
         }

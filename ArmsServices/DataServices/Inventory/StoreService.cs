@@ -38,6 +38,7 @@ namespace ArmsServices.DataServices
                 return new LinkableBatchModel()
                 {
                     BatchID = dr.GetInt64("BatchID"),
+                    StoreID = dr.GetInt32("StoreID"),
                     LinkableQty = dr.GetDecimal("LinkableQty"),
                     GrnNo = dr.GetString("GrnNo"),
                     PartyID = dr.GetInt32("PartyID")

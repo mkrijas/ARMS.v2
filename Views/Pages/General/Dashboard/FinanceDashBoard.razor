@@ -1,0 +1,238 @@
+﻿@page "/financedashboard"
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IConfigTable config
+@inject IFinanceDashboardService Iservice
+@inject IBankAccountOwnService Ibankservice
+@using System
+@using Pages.General.Dashboard
+@using MudBlazor
+@using MudBlazor.Components
+
+<style>
+    .finance-dashboard {
+        padding: 15px;
+    }
+
+    .dashboard-grid {
+        margin-top: 20px;
+    }
+
+    .dashboard-card {
+        text-align: center;
+        box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);
+    }
+
+    .Receivable-card-header {
+        background-color: #009688;
+        color: white;
+    }
+
+    .payable-card-header {
+        background-color: #f54c60;
+        color: white;
+    }
+
+    .dashboard-table {
+        box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);
+    }
+
+</style>
+
+<MudPaper Class="finance-dashboard">
+    <MudToolBar>
+        <MudText Typo="Typo.h5" Style="font-weight:500;">FINANCE DASHBOARD</MudText>
+    </MudToolBar>
+    <MudDivider />
+    <MudGrid Class="dashboard-grid">
+        <MudItem sm="6">
+            <MudCard Class="dashboard-card">
+                <MudCardHeader Class="payable-card-header">Payables</MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="highlight">@PayableAmount</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem sm="6">
+            <MudCard Class="dashboard-card">
+                    <MudCardHeader Class="Receivable-card-header">Receivables</MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="highlight">@ReceivableAmount</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem sm="6">
+            <div class="text-center">
+            <h4>Payable Dues</h4>
+            <MudTable Items="@PayablesortedList" Class="dashboard-table">
+                <HeaderContent>
+                    <MudTh>Party</MudTh>
+                    <MudTh>Payable Past Due</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="party">
+                    <MudTd>@party.TradeName</MudTd>
+                    <MudTd>
+                        <MudToolTip Content="@GetTooltip(party.PartyID.GetValueOrDefault())" Placement="Placement.Bottom">
+                            @party.TotalAmount
+                        </MudToolTip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+            </div>
+        </MudItem>
+        <MudItem sm="6">
+            <div class="text-center">
+            <h4>Receivable Dues</h4>
+            <MudTable Items="@ReceivablesortedList" Class="dashboard-table">
+                <HeaderContent>
+                    <MudTh>Party</MudTh>
+                    <MudTh>Payable Past Due</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="party">
+                    <MudTd>@party.TradeName</MudTd>
+                    <MudTd>
+                        <MudToolTip Content="@GetTooltip(party.PartyID.GetValueOrDefault())" Placement="Placement.Bottom">
+                            @party.TotalAmount
+                        </MudToolTip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+            </div>
+        </MudItem>
+
+        <MudItem sm="6">
+            <div class="text-center">
+            <h4>Bank Balance</h4>
+            <MudTable Items="@BankAccountBalanceList" Class="dashboard-table">
+                <HeaderContent>
+                    <MudTh>Account Number</MudTh>
+                    <MudTh>Bank</MudTh>
+                    <MudTh>Balance</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.AccountNumber</MudTd>
+                    <MudTd>@context.BankTitle</MudTd>
+                    <MudTd>@context.Amount</MudTd>
+                </RowTemplate>
+            </MudTable>
+            </div>
+        </MudItem>
+        <MudItem sm="6">
+            <div class="text-center">
+            <h4>Cash Balance</h4>
+            <MudTable Items="@CashAccountBalanceList" Class="dashboard-table">
+                <HeaderContent>
+                    <MudTh>Cash Account</MudTh>
+                    <MudTh>Balance</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Title</MudTd>
+                    <MudTd>@context.Amount</MudTd>
+                </RowTemplate>
+            </MudTable>
+            </div>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+
+@code {
+
+    private int BranchID;
+
+    private Decimal? PayableAmount;
+    private Decimal? ReceivableAmount;
+    public AccountBalanceModel PayableModel { get; set; } = new();
+    public AccountBalanceModel RecievableModel { get; set; } = new();
+
+    List<DueBalanceModel> PayableDuesList = new List<DueBalanceModel>();
+    List<DueBalanceModel> PayablesortedList = new List<DueBalanceModel>();
+    List<DueBalanceModel> ReceivableDuesList = new List<DueBalanceModel>();
+    List<DueBalanceModel> ReceivablesortedList = new List<DueBalanceModel>();
+
+    List<BankAccountBalanceModel> BankAccountBalanceList = new List<BankAccountBalanceModel>();
+    List<CashAccountBalanceModel> CashAccountBalanceList = new List<CashAccountBalanceModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
+        BranchID = int.Parse(BranchIDString);
+        await GetAccountBalance();
+        await GetPayableDueBalance();
+        await GetReceivableDueBalance();
+        await GetBankAccountBalance();
+        await GetCashAccountBalance();
+    }
+
+    public async Task GetAccountBalance()
+    {
+        ConfigModel cpModel = config.GetFinancePayableGroupID();
+        PayableModel.CoaID = int.Parse(cpModel.ValueString);
+        ConfigModel crModel = config.GetFinanceReceivableGroupID();
+        RecievableModel.CoaID = int.Parse(crModel.ValueString);
+        PayableModel = Iservice.GetAccountBalance(PayableModel.CoaID, BranchID, PayableModel.Date);
+        PayableAmount = PayableModel.TotalAmount;
+        RecievableModel = Iservice.GetAccountBalance(RecievableModel.CoaID, BranchID, RecievableModel.Date);
+        ReceivableAmount = RecievableModel.TotalAmount;
+    }
+
+    public async Task GetPayableDueBalance()
+    {
+        PayableDuesList = Iservice.GetPayableDueBalance(BranchID).ToList();
+        PayablesortedList = PayableDuesList
+            .GroupBy(item => new { item.PartyID, item.TradeName })
+            .Select(group => new DueBalanceModel 
+                {
+                    PartyID = group.Key.PartyID.GetValueOrDefault(),
+                    TradeName = group.Key.TradeName,
+                    TotalAmount = group.Sum(item => item.Amount)
+                })
+            .OrderByDescending(item => item.TotalAmount)
+            .ToList();
+    }
+
+    public async Task GetReceivableDueBalance()
+    {
+        ReceivableDuesList = Iservice.GetReceivableDueBalance(BranchID).ToList();
+        ReceivablesortedList = ReceivableDuesList
+            .GroupBy(item => new { item.PartyID, item.TradeName })
+            .Select(group => new DueBalanceModel
+                {
+                    PartyID = group.Key.PartyID.GetValueOrDefault(),
+                    TradeName = group.Key.TradeName,
+                    TotalAmount = group.Sum(item => item.Amount)
+                })
+            .OrderByDescending(item => item.TotalAmount)
+            .ToList();
+    }
+
+    public async Task GetBankAccountBalance()
+    {
+        BankAccountBalanceList = Iservice.GetBankAccountBalance(BranchID).ToList();
+    }
+
+    public async Task GetCashAccountBalance()
+    {
+        CashAccountBalanceList = Iservice.GetCashAccountBalance(BranchID).ToList();
+    }
+
+    string GetTooltip(int partyID)
+    {
+        var partyDueList = PayableDuesList
+            .Where(item => item.PartyID == partyID)
+            .ToList();
+
+        var table = $"<table><tr><th>Details</th><th>Amount</th></tr>";
+
+        foreach (var due in partyDueList)
+        {
+            table += $"<tr><td>{due.InvoiceDate}</td><td>{due.Amount}</td></tr>";
+        }
+
+        table += "</table>";
+        return table;
+    }
+}

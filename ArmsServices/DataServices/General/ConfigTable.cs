@@ -104,8 +104,6 @@ namespace ArmsServices.DataServices.General
             return null;
         }
 
-
-
         public IEnumerable<ConfigModel> GetAll()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -146,6 +144,34 @@ namespace ArmsServices.DataServices.General
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@KeyString", "CloseTripEventTypeID"),
+               new SqlParameter("@Operation", "ByID")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
+
+        public ConfigModel GetFinancePayableGroupID()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@KeyString", "FinancePayableGroupID"),
+               new SqlParameter("@Operation", "ByID")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
+
+        public ConfigModel GetFinanceReceivableGroupID()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@KeyString", "FinanceReceivableGroupID"),
                new SqlParameter("@Operation", "ByID")
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.Select]", parameters))
