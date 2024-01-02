@@ -25,12 +25,12 @@ namespace ArmsServices.DataServices
             AccountBalanceModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.AccountBalance.Select]", parameters))
             {
-                model = GetTotalAmount(dr);
+                model = GetAccountBalance(dr);
             }
             return model;
         }
 
-        private AccountBalanceModel GetTotalAmount(IDataRecord dr)
+        private AccountBalanceModel GetAccountBalance(IDataRecord dr)
         {
             return new AccountBalanceModel
             {
@@ -38,6 +38,85 @@ namespace ArmsServices.DataServices
                 Date = dr.GetDateTime("Date"),
                 TotalAmount = dr.GetDecimal("Result")
             };
+        }
+
+        public IEnumerable<DueBalanceModel> GetPayableDueBalance(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "PayableDues"),
+               new SqlParameter("@BranchID", BranchID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.DueBalance.Select]", parameters))
+            {
+                yield return new DueBalanceModel()
+                {
+                    MID = dr.GetInt32("MID"),
+                    BranchID =  dr.GetInt32("BranchID"),
+                    PartyID = dr.GetInt32("PartyID"),
+                    TradeName = dr.GetString("TradeName"),
+                    Amount = dr.GetDecimal("Amount"),
+                    InvoiceNo = dr.GetString("InvoiceNo"),
+                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
+                    DueDays = dr.GetInt32("DueDays")
+                };
+            }
+        }
+
+        public IEnumerable<DueBalanceModel> GetReceivableDueBalance(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ReceivableDues"),
+               new SqlParameter("@BranchID", BranchID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.DueBalance.Select]", parameters))
+            {
+                yield return new DueBalanceModel()
+                {
+                    MID = dr.GetInt32("MID"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    PartyID = dr.GetInt32("PartyID"),
+                    TradeName = dr.GetString("TradeName"),
+                    Amount = dr.GetDecimal("Amount"),
+                    InvoiceNo = dr.GetString("ReferenceDocNo"),
+                    InvoiceDate = dr.GetDateTime("ReferenceDocDate"),
+                    DueDays = dr.GetInt32("DueDays")
+                };
+            }
+        }
+
+        public IEnumerable<BankAccountBalanceModel> GetBankAccountBalance(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Bank.AccountBalance.Select]", parameters))
+            {
+                yield return new BankAccountBalanceModel()
+                {
+                    AccountNumber = dr.GetString("AccountNumber"),
+                    BankTitle = dr.GetString("BankTitle"),
+                    Amount = dr.GetDecimal("Amount")
+                };
+            }
+        }
+
+        public IEnumerable<CashAccountBalanceModel> GetCashAccountBalance(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Cash.AccountBalance.Select]", parameters))
+            {
+                yield return new CashAccountBalanceModel()
+                {
+                    Title = dr.GetString("Title"),
+                    Amount = dr.GetDecimal("Amount")
+                };
+            }
         }
     }
 }
