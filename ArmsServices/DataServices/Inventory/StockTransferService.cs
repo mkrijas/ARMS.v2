@@ -63,7 +63,7 @@ namespace ArmsServices.DataServices
                     ItemDescription = dr.GetString("ItemDescription"),
                     ItemQty = dr.GetDecimal("Quantity"),
                     ItemRate = dr.GetDecimal("Amount"),
-                    ItemGstVal = dr.GetDecimal("EndQuantity"),
+                    ItemGstVal = dr.GetDecimal("GstVal"),
                 };
             }
         }
@@ -83,7 +83,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public StockTransferInitiationModel Update(StockTransferInitiationModel model)
+        public StockTransferInitiationModel Initiate(StockTransferInitiationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -103,28 +103,32 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID",model.UserInfo.UserID),
                new SqlParameter("@Operation", "Initiation"),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Transfer.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Transfer.Initiate]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
         }
 
-        public StockTransferInitiationModel UpdateDelivery(StockTransferInitiationModel model)
+        public StockTransferEndModel UpdateDelivery(StockTransferEndModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@StockTransferID",model.StockTransferID),
-               new SqlParameter("@InvTranID",model.InvTranID),
+                new SqlParameter("@StockTransferEndID",model.StockTransferEndID),
+               new SqlParameter("@StockTransferID",model.StockTransferID),               
                new SqlParameter("@StoreID",model.Store.StoreID),
-               new SqlParameter("@RecordStatus",model.Status),
-               new SqlParameter("@Items",model.ItemsList.ToDataTable()),
+               new SqlParameter("@DocumentDate",model.DocumentDate),
+               new SqlParameter("@BranchID",model.BranchID),
+               new SqlParameter("@CostCenter",model.CostCenter),
+               new SqlParameter("@Dimension",model.Dimension),
+               new SqlParameter("@Narration",model.Narration),               
+               new SqlParameter("@NatureOfTransaction",model.NatureOfTransaction),
                new SqlParameter("@UserID",model.UserInfo.UserID),
                new SqlParameter("@Operation", "Accept"),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Transfer.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Transfer.end]", parameters))
             {
-                model = GetModel(dr);
+                model = GetEndModel(dr);
             }
             return model;
         }
@@ -209,7 +213,7 @@ namespace ArmsServices.DataServices
                 AuthStatus = dr.GetString("AuthStatus"),
                 BranchID = dr.GetInt32("BranchID"),
                 OtherBranchID = dr.GetInt32("OtherBranchID"),
-                OtherBranchName = dr.GetString("OtherBranchName"),
+                OtherBranchName = dr.GetString("OtherBranchName"),                
                 FileName = dr.GetString("FileName"),
                 Store = new StoreModel
                 {

@@ -14,8 +14,8 @@ namespace ArmsServices.DataServices
         IEnumerable<StockTransferInitiationModel> SelectOutGoing(int? BranchID);
         IEnumerable<StockTransferInitiationModel> SelectIncoming(int? BranchID);
         IEnumerable<InventoryItemEntryModel> SelectItemsList(int? InvTranID);
-        StockTransferInitiationModel Update(StockTransferInitiationModel model);  //Edit
-        StockTransferInitiationModel UpdateDelivery(StockTransferInitiationModel model);  //Accept
+        StockTransferInitiationModel Initiate(StockTransferInitiationModel model);  //Edit
+        StockTransferEndModel UpdateDelivery(StockTransferEndModel model);  //Accept
         StockTransferInitiationModel SelectSandB(int? InvTranID);
         int TransferCancel(int? InvTranID, string UserID);  //Cancel
         StockTransferInitiationModel RejectOrder(StockTransferInitiationModel model);  //Reject

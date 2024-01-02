@@ -35,7 +35,6 @@ namespace Core.BaseModels.Inventory
                 }
             }
         }
-
         public bool IsLocal { get; set; }
         public bool IsTaxable { get; set; }
         public int? CostCenter { get; set; }
@@ -50,8 +49,11 @@ namespace Core.BaseModels.Inventory
     public class StockTransferEndModel : TransactionBaseModel, ICloneable
     {
         public int? StockTransferEndID { get; set; }
+        [Required]
         public int? StockTransferID { get; set; }
+        [Required]
         public StoreModel Store { get; set; }
+        public int? InvTranID { get; set; }
         public byte? TransferStatus { get; set; }
         public string? DisplayTransferStatus
         {
@@ -69,8 +71,7 @@ namespace Core.BaseModels.Inventory
             }
         }
         public int? CostCenter { get; set; }
-        public int? Dimension { get; set; }
-        public List<InventoryItemEntryModel> ItemsEndList { get; set; } = new();
+        public int? Dimension { get; set; }        
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
