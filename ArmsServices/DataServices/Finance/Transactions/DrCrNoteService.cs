@@ -6,8 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
-
-
 namespace ArmsServices.DataServices
 {
     public class DrCrNoteService : IDrCrNoteService

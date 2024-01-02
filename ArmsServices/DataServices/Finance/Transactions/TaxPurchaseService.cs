@@ -100,10 +100,10 @@ namespace ArmsServices.DataServices
                     TDS = dr.GetDecimal("TDS"),
                     TpiID = dr.GetInt64("TpiID"),
                     ItemDescription = dr.GetString("ItemDescription"),
-                    CostCenterVal = dr.GetString("CostCenter"),
-                    DimensionVal = dr.GetString("Dimension"),
                     CostCenter = dr.GetInt32("CostCenterID"),
-                    Dimension = dr.GetInt32("DimensionID")
+                    CostCenterVal = dr.GetString("CostCenter"),
+                    Dimension = dr.GetInt32("DimensionID"),
+                    DimensionVal = dr.GetString("Dimension"),
                 };
             }
         }
