@@ -9,15 +9,15 @@
 @using Views.Pages.Finance.Transactions
 @using System.Threading;
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Accept Stock-Transfer" formID="stockTransferEndForm" model="@InitiationModel" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Accept Stock-Transfer" formID="stockTransferEndForm" model="@Model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
-            <EditForm id="stockTransferEndForm" Model="@InitiationModel" OnValidSubmit="OnValidSubmit">
+            <EditForm id="stockTransferEndForm" Model="@Model" OnValidSubmit="OnValidSubmit">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="5">
-                        <MudText>    @InitiationModel.OtherBranchName</MudText>
+                        <MudTextField T="string" ReadOnly Value="@Model.OtherBranchName" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     </MudItem>
                     <MudItem xs="12" md="2">
                         <Center>
@@ -25,16 +25,16 @@
                         </Center>
                     </MudItem>
                     <MudItem xs="12" md="5">
-                        <StoreSelector @bind-Value="@InitiationModel.Store" BranchID="@branchID.Value"></StoreSelector>
+                        <StoreSelector @bind-Value="@Model.Store" BranchID="@branchID.Value"></StoreSelector>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <CostCenterSelector @bind-Value="InitiationModel.CostCenter" ReadOnly="@ReadOnly" />
+                        <CostCenterSelector @bind-Value="@Model.CostCenter" ReadOnly="@ReadOnly" />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <DimensionSelector @bind-Value="InitiationModel.Dimension" ReadOnly="@ReadOnly" />
+                        <DimensionSelector @bind-Value="@Model.Dimension" ReadOnly="@ReadOnly" />
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudTextField @bind-Value="@InitiationModel.Narration" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="ReadOnly"></MudTextField>
+                        <MudTextField @bind-Value="@Model.Narration" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="ReadOnly"></MudTextField>
                     </MudItem>
                     <br />
                     <MudItem xs="12" md="12">
@@ -44,7 +44,7 @@
                                     <th>Items</th>
                                     <th>Quantity</th>
                                     <th>Rate</th>
-                                    <th>Action</th>
+                                    <th>Gst %</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -54,9 +54,7 @@
                                         <td>@item.ItemDescription</td>
                                         <td>@item.ItemQty</td>
                                         <td>@item.ItemRate</td>
-                                        <td>
-                                          
-                                        </td>
+                                        <td>@item.ItemGstVal</td>
                                     </tr>
                                 }
                             </tbody>
@@ -88,6 +86,7 @@
     DialogForm dialogForm;
     bool _busy;
 
+    StockTransferEndModel Model;
     int? branchID;
     string UserID;
 
@@ -109,9 +108,22 @@
         UserID = authprov.User.Identity.Name;
 
         InitiationModel.ItemsList = IService.SelectItemsList(InitiationModel?.InvTranID).ToList();
-        InitiationModel.TotalAmount = GetTotal();
+
+
+        Model = new StockTransferEndModel()
+            {
+                StockTransferID = InitiationModel.StockTransferID,
+                TotalAmount = GetTotal(),
+                BranchID = branchID,
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel() { UserID = UserID },
+                OtherBranchName = InitiationModel.OtherBranchName,
+                OtherBranchID = InitiationModel.OtherBranchID,
+                NatureOfTransaction = "StockTransferIN",
+                DocumentNumber = InitiationModel.DocumentNumber
+            };
 
     }
+
 
     public async Task OnValidSubmit()
     {       
@@ -124,10 +136,9 @@
         try
         {
             InitiationModel.UserInfo.UserID = UserID;
-
             if (HasPermissionStockTransferServiceAccept)
             {
-                IService.UpdateDelivery(InitiationModel);
+                IService.UpdateDelivery(Model);
                 InitiationModel = new();
                 snackbar.Add("Stock Accepted Successfully", Severity.Success);
                 MudDialog.Close(InitiationModel);
@@ -140,7 +151,7 @@
         catch (Exception ex)
         {
             bool? result = await DialogService.ShowMessageBox(
-                    "Permission denied!",
+                    "Exception!",
                    ex.Message );
         }
         await Task.Delay(2000);
@@ -148,9 +159,15 @@
     }
 
     decimal? GetTotal()
-    {
-        var isTaxable = InitiationModel.IsTaxable;
-        return InitiationModel.ItemsList.Sum(s => (s.ItemQty * s.ItemRate) * (1 + (isTaxable ? (s.ItemGstVal / 100) : 0)));
+    { 
+        var totamt = InitiationModel.ItemsList.Sum(s => (s.ItemQty * s.ItemRate));
+        decimal? gstVal = 0;
+
+        if (InitiationModel.IsTaxable)
+        {
+            gstVal = InitiationModel.ItemsList.Sum(s => (s.ItemQty * s.ItemRate) * (s.ItemGstVal / 100));
+        }
+        return totamt + gstVal;        
     }
 
     protected async Task Approve(DataApprovedStatus aprvd)

@@ -14,6 +14,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
         }
         public int? MID { get; set; }
+        public int? ReverseMID { get; set; }
         [Required]
         public DateTime? DocumentDate { get; set; } = DateTime.Today;
         public string DocumentNumber { get; set; } = "New";

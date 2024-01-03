@@ -1,0 +1,141 @@
+﻿@using Core.BaseModels.Finance;
+@using Core.IDataServices.Finance;
+
+
+@inject IDataAuthorizationService Iservice
+@inject IDataAuthorizationSettingsService IDataAuthorizationService
+@inject ICancellationReasonCodeService IcancellationReasonCodeService
+@inject NavigationManager uriHelper
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+
+<MudDialog>
+    <TitleContent><h3> @(SelectedDocType.Description) Reverse Reason</h3></TitleContent>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="6" md="6" lg="6">
+                <MudAutocomplete FullWidth Label="Reason Code" Value="SelectedReasonCode" ValueChanged="ValueChanged" T="CancellationReasonCode" SearchFunc="@Search" ToStringFunc="@((e) => e?.ReasonCodeDescription)"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                </MudAutocomplete>
+            </MudItem>
+            <MudItem xs="12" md="12" lg="12">
+                <MudTextField Label="Remarks" @bind-Value="model.Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="4"></MudTextField>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="@_busy" @onclick="OnSubmit" Variant="Variant.Filled" Color="Color.Success">@btn_txt1</MudButton>
+        <MudButton @onclick="Cancel" Variant="Variant.Filled" Color="Color.Warning">@btn_txt2</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [Parameter]
+    public CancellationReasonCodesByDocumentType model { get; set; }
+    [Parameter]
+    public int? DocumentTypeID { get; set; }
+
+    private List<DocTypeModel> doctypelist;
+
+    private DocTypeModel SelectedDocType = new();
+    private CancellationReasonCode SelectedReasonCode;
+    public List<CancellationReasonCode> ReasonCodeList { get; set; }
+
+
+    public string btn_txt1 = "Submit";
+    public string btn_txt2 = "Cancel";
+    public bool _busy;
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    protected override void OnInitialized()
+    {
+        if (model == null)
+        {
+            model = new();
+        }
+        doctypelist = IDataAuthorizationService.GetDocTypesList().ToList();
+        if (DocumentTypeID != null)
+        {
+            if (doctypelist != null && doctypelist.Any(s => s.ID == DocumentTypeID))
+            {
+                SelectedDocType = doctypelist.FirstOrDefault(s => s.ID == DocumentTypeID);
+            }
+            var Result = IcancellationReasonCodeService.SelectSubById(DocumentTypeID);
+            if (Result != null && Result.Count() != 0 && Result.Any(s => s.ReasonCodeID != null))
+            {
+                ReasonCodeList = Result.ToList();
+            }
+        }
+        if (model.UserInfo == null)
+        {
+            model.UserInfo = new();
+        }
+    }
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public async Task OnSubmit()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        if (ReasonCodeList == null || ReasonCodeList.Count() == 0)
+        {
+            snackbar.Add("Please create reason code for this form!", Severity.Error);
+            _busy = false;
+            return;
+
+        }
+        if (SelectedReasonCode == null)
+        {
+            snackbar.Add("Please select reason code!", Severity.Error);
+            _busy = false;
+            return;
+        }
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
+        model.ReasonCodeID = SelectedReasonCode.ReasonCodeID;
+        model.DocumentTypeID = DocumentTypeID;
+        try
+        {
+
+            //Iservice.Update(model);
+            //snackbar.Add("Verified Successfully", Severity.Success);
+
+            MudDialog.Close(model);
+            model = new();
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+        await Task.Delay(2000);
+        _busy = false;
+    }
+
+    private async Task<IEnumerable<CancellationReasonCode>> Search(string value)
+    {
+        await Task.Delay(5);
+
+        if (string.IsNullOrEmpty(value))
+            return ReasonCodeList;
+        return ReasonCodeList.Where(x => x.ReasonCodeDescription.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    void ValueChanged(CancellationReasonCode val)
+    {
+        SelectedReasonCode = val;
+    }
+
+}
