@@ -47,12 +47,12 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<InventoryItemEntryModel> SelectItemsList(int? InvTranID)
+        public IEnumerable<InventoryItemEntryModel> SelectItemsList(int? StockTransferID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@InvTranID", InvTranID),
-               new SqlParameter("@Operation", "SelectByInvTranID")
+               new SqlParameter("@StockTransferID", StockTransferID),
+               new SqlParameter("@Operation", "GetItems")
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Transfer.Initiation.SelectAll]", parameters))
             {
@@ -68,12 +68,12 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public StockTransferInitiationModel SelectSandB(int? InvTranID)
+        public StockTransferInitiationModel SelectSandB(int? StockTransferID)
         {
             StockTransferInitiationModel model = null;
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@InvTranID", InvTranID),
+               new SqlParameter("@StockTransferID", StockTransferID),
                new SqlParameter("@Operation", "SelectSandB")
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Transfer.Initiation.SelectAll]", parameters))

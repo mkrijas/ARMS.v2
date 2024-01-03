@@ -48,7 +48,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var item in InitiationModel.ItemsList)
+                                @foreach (var item in Model.ItemsList)
                                 {
                                     <tr>
                                         <td>@item.ItemDescription</td>
@@ -65,7 +65,8 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@InitiationModel.DocumentDate" DocType="@DocType" DocNumber="@InitiationModel.DocumentNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="InitiationModel.StockTransferID" OnApprove="Approve"></AutherizationStatusComponent>
+      @*   <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@Model.DocumentDate" DocType="@DocType" DocNumber="@InitiationModel.DocumentNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="InitiationModel.StockTransferID" OnApprove="Approve"></AutherizationStatusComponent>
+        *@
     </VerificationStatus>
 </DialogForm>
 
@@ -76,8 +77,14 @@
 
     [Parameter]
     public bool ReadOnly { get; set; }
+
     [Parameter]
-    public StockTransferInitiationModel InitiationModel { get; set; } = new();
+    public StockTransferEndModel Model { get; set; }
+    [Parameter]
+    public bool IsTaxable { get; set; }
+
+    // [Parameter]
+    // public StockTransferInitiationModel InitiationModel { get; set; } = new();
 
     [CascadingParameter]
     MudDialogInstance MudDialog { get; set; }
@@ -86,7 +93,7 @@
     DialogForm dialogForm;
     bool _busy;
 
-    StockTransferEndModel Model;
+
     int? branchID;
     string UserID;
 
@@ -107,20 +114,8 @@
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = authprov.User.Identity.Name;
 
-        InitiationModel.ItemsList = IService.SelectItemsList(InitiationModel?.InvTranID).ToList();
-
-
-        Model = new StockTransferEndModel()
-            {
-                StockTransferID = InitiationModel.StockTransferID,
-                TotalAmount = GetTotal(),
-                BranchID = branchID,
-                UserInfo = new ArmsModels.SharedModels.UserInfoModel() { UserID = UserID },
-                OtherBranchName = InitiationModel.OtherBranchName,
-                OtherBranchID = InitiationModel.OtherBranchID,
-                NatureOfTransaction = "StockTransferIN",
-                DocumentNumber = InitiationModel.DocumentNumber
-            };
+        Model.ItemsList = IService.SelectItemsList(Model.StockTransferID).ToList();
+        Model.TotalAmount = GetTotal();
 
     }
 
@@ -135,13 +130,12 @@
         _busy = true;
         try
         {
-            InitiationModel.UserInfo.UserID = UserID;
+            Model.UserInfo.UserID = UserID;
             if (HasPermissionStockTransferServiceAccept)
             {
-                IService.UpdateDelivery(Model);
-                InitiationModel = new();
+                IService.UpdateDelivery(Model);                
                 snackbar.Add("Stock Accepted Successfully", Severity.Success);
-                MudDialog.Close(InitiationModel);
+                MudDialog.Close(Model);
             }
             else
             {
@@ -160,38 +154,38 @@
 
     decimal? GetTotal()
     { 
-        var totamt = InitiationModel.ItemsList.Sum(s => (s.ItemQty * s.ItemRate));
+        var totamt = Model.ItemsList.Sum(s => (s.ItemQty * s.ItemRate));
         decimal? gstVal = 0;
 
-        if (InitiationModel.IsTaxable)
+        if (IsTaxable)
         {
-            gstVal = InitiationModel.ItemsList.Sum(s => (s.ItemQty * s.ItemRate) * (s.ItemGstVal / 100));
+            gstVal = Model.ItemsList.Sum(s => (s.ItemQty * s.ItemRate) * (s.ItemGstVal / 100));
         }
         return totamt + gstVal;        
     }
 
-    protected async Task Approve(DataApprovedStatus aprvd)
-    {
-        try
-        {
-            if (HasPermissionStockTransferServiceEdit)
-            {
-                if (aprvd.IsApprove)
-                {
-                    IService.Approve(InitiationModel.StockTransferID, UserID, aprvd.Remarks);
-                    snackbar.Add("Approved Successfully", Severity.Success);
-                }
-            }
-            else
-            {
-                throw new Exception("You dont have any permission to Approve OpInventoryRelease.");
-            }
-        }
-        catch (Exception ex)
-        {
-            bool? result = await DialogService.ShowMessageBox("Permission denied!", ex.Message);
-        }
-    }
+    // protected async Task Approve(DataApprovedStatus aprvd)
+    // {
+    //     try
+    //     {
+    //         if (HasPermissionStockTransferServiceEdit)
+    //         {
+    //             if (aprvd.IsApprove)
+    //             {
+    //                 IService.Approve(Model.StockTransferID, UserID, aprvd.Remarks);
+    //                 snackbar.Add("Approved Successfully", Severity.Success);
+    //             }
+    //         }
+    //         else
+    //         {
+    //             throw new Exception("You dont have any permission to Approve OpInventoryRelease.");
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         bool? result = await DialogService.ShowMessageBox("Permission denied!", ex.Message);
+    //     }
+    // }
     
     private void CloseDialog()
     {
