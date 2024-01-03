@@ -294,6 +294,7 @@ namespace ArmsServices.DataServices
             {
                 return new TaxPurchaseModel
                 {
+                    PID = dr.GetInt32("PID"),
                     DocumentDate = dr.GetDateTime("DocDate"),
                     DocumentNumber = dr.GetString("DocNumber"),
                 };
