@@ -131,10 +131,7 @@ namespace ArmsServices.DataServices
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
                 },
-
             };
-
         }
-
     }
 }

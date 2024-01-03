@@ -139,7 +139,7 @@ namespace Views.Pages.Operations.Gc
                 {
                     snackbar.Add(ex.Message, Severity.Error);
                 }
-                await Task.Delay(2000);
+                await Task.Delay(200);
                 _busy = false;
             }
             else

@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
@@ -9,14 +8,15 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public class FreightBillingService: IFreightBillingService
-    { 
+    public class FreightBillingService : IFreightBillingService
+    {
         IDbService Iservice;
 
         public FreightBillingService(IDbService iservice)
         {
             Iservice = iservice;
         }
+
         public int ReverseFinalInvoice(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -24,7 +24,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BillingID", ID),
                new SqlParameter("@Remarks", Remarks),
                new SqlParameter("@UserID", UserID),
-
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.FinalInvoice.Reverse]", parameters);
         }
@@ -47,23 +46,25 @@ namespace ArmsServices.DataServices
                     GcID = dr.GetInt64("GcID"),
                     TariffID = dr.GetInt32("TariffID"),
                     Amount = dr.GetDecimal("Amount"),
-                    BillDate=dr.GetDateTime("BillDate"),
+                    BillDate = dr.GetDateTime("BillDate"),
                     InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     BillNumber = dr.GetString("BillNumber"),
                     BillQuantity = dr.GetDecimal("BillQuantity"),
-                    ConsigneeName= dr.GetString("ConsigneeName"),
+                    ConsigneeName = dr.GetString("ConsigneeName"),
                 };
             }
         }
+
         public IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "PENDING"),
-               new SqlParameter("@numberOfRecords", NumberOfRecords), 
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
 
-            }; 
+            };
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
             {
                 yield return new ProformaInvoiceModel()
@@ -72,7 +73,7 @@ namespace ArmsServices.DataServices
                     DraftBillID = dr.GetInt32("DraftBillID"),
                     OrderID = dr.GetInt32("OrderID"),
                     PartyCoa = dr.GetInt32("PartyCoaID"),
-                    
+
                     Party = new PartyModel()
                     {
                         PartyCode = dr.GetString("PartyCode"),
@@ -124,6 +125,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@searchTerm", searchTerm)
 
             };
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
             {
                 yield return new ProformaInvoiceModel()
@@ -174,7 +176,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID,int? BranchID)
+        public IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -187,7 +189,7 @@ namespace ArmsServices.DataServices
                 yield return new ConsolidatedDraftBillModel()
                 {
                     DraftBillID = dr.GetInt32("DraftBillID"),
-                    BranchID = dr.GetInt32("BranchID"),                    
+                    BranchID = dr.GetInt32("BranchID"),
                     Order = new OrderModel()
                     {
                         OrderID = dr.GetInt32("OrderID"),
@@ -201,7 +203,7 @@ namespace ArmsServices.DataServices
                     },
                     DocumentDate = dr.GetDateTime("DocumentDate"),
                     DocumentNumber = dr.GetString("DocumentNumber"),
-                    TotalAmount = dr.GetDecimal("TotalAmount"),                    
+                    TotalAmount = dr.GetDecimal("TotalAmount"),
                     AuthLevelId = dr.GetInt32("AuthLevelId"),
                     AuthStatus = dr.GetString("AuthStatus"),
                     Narration = dr.GetString("Narration"),
@@ -220,7 +222,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "Billed"),
-               new SqlParameter("@ConsolidatedDraftBillID", ConsolidatedDraftBillID),               
+               new SqlParameter("@ConsolidatedDraftBillID", ConsolidatedDraftBillID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
@@ -240,19 +242,21 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+
         public BillingModel SelectFinalInvoice(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@BillingID", ID),              
+               new SqlParameter("@BillingID", ID),
             };
             BillingModel model = new();
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.FinalInvoice.Select]", parameters))
             {
                 model = GetFinalInvoiceModel(dr);
             }
             return model;
-        }       
+        }
 
         public int? UpdateFinalInvoice(BillingModel model)
         {
@@ -269,7 +273,7 @@ namespace ArmsServices.DataServices
                //new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
-                new SqlParameter("@FilePath", model.FileName),
+               new SqlParameter("@FilePath", model.FileName),
                //new SqlParameter("@CostCenter", model.CostCenter),
                //new SqlParameter("@Dimension", model.Dimension),
                //new SqlParameter("@TotalAmount", model.TotalAmount),
@@ -281,6 +285,7 @@ namespace ArmsServices.DataServices
                //new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             int? ID = null;
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.FinalInvoice.Update]", parameters))
             {
                 ID = dr.GetInt32("BillingID");
@@ -290,23 +295,23 @@ namespace ArmsServices.DataServices
         private BillingModel GetFinalInvoiceModel(IDataRecord dr)
         {
             return new BillingModel
-            {                
+            {
                 BillingID = dr.GetInt32("BillingID"),
                 ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
                 DraftBillID = dr.GetInt32("DraftBillID"),
-                OrderID =  dr.GetInt32("PartyBranchID"),
+                OrderID = dr.GetInt32("PartyBranchID"),
                 PartyCoa = dr.GetInt32("PartyCoaID"),
                 TariffType = new TariffTypeModel()
                 {
                     TariffTypeID = dr.GetInt16("TariffTypeID"),
                     UsageCode = dr.GetString("UsageCode"),
-                },                
+                },
                 Reference = dr.GetString("Reference"),
-                BranchID = dr.GetInt32("BranchID"),                            
+                BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),
-                CostCenter = dr.GetInt32("CostCenter"),                
+                CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),
                 FileName = dr.GetString("FilePath"),
                 FreightAmount = dr.GetDecimal("FreightAmount"),
@@ -331,7 +336,7 @@ namespace ArmsServices.DataServices
         private ProformaInvoiceModel GetProformaInvoiceModel(IDataRecord dr)
         {
             return new ProformaInvoiceModel
-            {                
+            {
                 ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
                 DraftBillID = dr.GetInt32("DraftBillID"),
                 OrderID = dr.GetInt32("PartyBranchID"),
@@ -342,7 +347,7 @@ namespace ArmsServices.DataServices
                     UsageCode = dr.GetString("UsageCode"),
                 },
                 Reference = dr.GetString("Reference"),
-                BranchID = dr.GetInt32("BranchID"),                        
+                BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),
@@ -375,7 +380,7 @@ namespace ArmsServices.DataServices
             return new ConsolidatedDraftBillModel
             {
                 DraftBillID = dr.GetInt32("DraftBillID"),
-                BranchID = dr.GetInt32("BranchID"),                
+                BranchID = dr.GetInt32("BranchID"),
                 Order = new OrderModel()
                 {
                     OrderID = dr.GetInt32("OrderID")
@@ -386,7 +391,7 @@ namespace ArmsServices.DataServices
                     UsageCode = dr.GetString("UsageCode"),
                 },
                 DocumentDate = dr.GetDateTime("DocDate"),
-                DocumentNumber = dr.GetString("DocumentNumber"),               
+                DocumentNumber = dr.GetString("DocumentNumber"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
                 FileName = dr.GetString("FilePath"),
@@ -402,7 +407,7 @@ namespace ArmsServices.DataServices
         public int? UpdateProformaInvoice(ProformaInvoiceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-            {               
+            {
                new SqlParameter("@ProformaInvoiceID", model.ProformaInvoiceID),
                new SqlParameter("@DraftBillID", model.DraftBillID),
                new SqlParameter("@OrderID", model.OrderID),
@@ -427,18 +432,19 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             int? ID = null;
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Update]", parameters))
             {
                 ID = dr.GetInt32("ProformaInvoiceID");
             }
             return ID;
-        }       
+        }
 
         public int? UpdateConsolidatedDraftBill(ConsolidatedDraftBillModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-            {               
-               new SqlParameter("@DraftBillID", model.DraftBillID),              
+            {
+               new SqlParameter("@DraftBillID", model.DraftBillID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
@@ -451,6 +457,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             int? ID = null;
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Update]", parameters))
             {
                 ID = dr.GetInt32("DraftBillID");
@@ -462,9 +469,10 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ProformaInvoiceID", ID)               
+               new SqlParameter("@ProformaInvoiceID", ID)
             };
             ProformaInvoiceModel model = new();
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
             {
                 model = GetProformaInvoiceModel(dr);
@@ -496,19 +504,17 @@ namespace ArmsServices.DataServices
 
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Delete]", parameters);
-
         }
 
         public int ReverseConsolidatedDraftBill(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DraftBillID", ID),               
+               new SqlParameter("@DraftBillID", ID),
                new SqlParameter("@UserID", UserID),
 
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Reverse]", parameters);
-
         }
 
         public IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateTime? begin, DateTime? end)
@@ -521,7 +527,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("End",end),
                new SqlParameter("@OrderID", OrderID),
                new SqlParameter("@TariffTypeID", TariffTypeID),
-               
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
@@ -541,6 +546,7 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+
         public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -557,7 +563,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ProformaInvoiceID", ProformaInvoiceID),
-               new SqlParameter("@UserID", userID)              
+               new SqlParameter("@UserID", userID)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Reverse]", parameters);
         }
@@ -567,8 +573,9 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "GetGst"),
-               new SqlParameter("@DraftBillID",DraftBillID),               
+               new SqlParameter("@DraftBillID",DraftBillID),
             };
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Select]", parameters))
             {
                 return new GstModel()
@@ -581,9 +588,5 @@ namespace ArmsServices.DataServices
             }
             return new GstModel();
         }
-
-        
     }
-
 }
-
