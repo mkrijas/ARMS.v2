@@ -71,7 +71,8 @@ namespace Core.BaseModels.Inventory
             }
         }
         public int? CostCenter { get; set; }
-        public int? Dimension { get; set; }        
+        public int? Dimension { get; set; }
+        public List<InventoryItemEntryModel> ItemsList { get; set; } = new();
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
