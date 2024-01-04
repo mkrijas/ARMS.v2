@@ -12,22 +12,23 @@ namespace DAL.DataServices.Finance.LedgerViews
     public class PartyLedgerViewService : IPartyLedgerViewService
     {
         IDbService Iservice;
-
         public PartyLedgerViewService(IDbService iservice)
         {
             Iservice = iservice;
         }
 
-        public IEnumerable<LedgerViewsModel> SelectByPartyIDAndDate(int? PartyID, DateTime? FromDate, DateTime? ToDate)
+        public IEnumerable<LedgerViewsModel> SelectByPartyIDAndDate(PartyModel Party, int? BranchID, DateTime? FromDate, DateTime? ToDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@PartyID", Party.PartyID),
+               new SqlParameter("@ArdCode", Party.PartyCode),
+               new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@FromDate", FromDate),
                new SqlParameter("@ToDate", ToDate),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Report.Ledger.SelectByArdCode.Party]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[rptFinanceReportLedgerSelectByArdCodeParty]", parameters))
             {
                 yield return new LedgerViewsModel()
                 {

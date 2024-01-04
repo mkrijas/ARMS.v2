@@ -46,7 +46,7 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<LedgerViewsModel, object>(x=> x.Date)" InitialDirection="SortDirection.Ascending">Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<LedgerViewsModel, object>(x=> x.Narration)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<LedgerViewsModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<LedgerViewsModel, object>(x=> x.Refference)" InitialDirection="SortDirection.Ascending">Refference</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<LedgerViewsModel, object>(x=> x.Refference)" InitialDirection="SortDirection.Ascending">Reference</MudTableSortLabel></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Account Name">@context.AccountName</MudTd>
@@ -72,11 +72,15 @@
     public LedgerTransactionsReportMoreParameterModel MoreParameter { get; set; } = new();
     public bool IsMoreParameterHasValues { get; set; } = false;
     private List<LedgerViewsModel> collection = new List<LedgerViewsModel>();
-
     private List<PartyModel> partyList = new();
+    int BranchID;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+
         partyList = partyIservice.SelectByCode(null, null).ToList();
         if (PartyID != null && partyList.Any(s => s.PartyID == PartyID))
         {
@@ -84,7 +88,7 @@
         }
         if (SelectedParty != null && SelectedParty.PartyID != null)
         {
-            var result = PartyLedgerViewService.SelectByPartyIDAndDate(SelectedParty.PartyID, StartDate, EndDate);
+            var result = PartyLedgerViewService.SelectByPartyIDAndDate(SelectedParty, BranchID, StartDate, EndDate);
             if (result != null)
             {
                 collection = result.ToList();
@@ -110,7 +114,7 @@
             return;
         }
 
-        var result = PartyLedgerViewService.SelectByPartyIDAndDate(SelectedParty.PartyID, StartDate, EndDate);
+        var result = PartyLedgerViewService.SelectByPartyIDAndDate(SelectedParty, BranchID, StartDate, EndDate);
         if (result != null)
         {
             collection = result.ToList();

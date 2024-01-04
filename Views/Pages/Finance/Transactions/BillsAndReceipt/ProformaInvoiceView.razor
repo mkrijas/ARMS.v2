@@ -81,8 +81,9 @@
     public int? id { get; set; } = null;
 
     public bool HasPermissionFreightBillingServiceEditProformaInvoice { get; set; } = false;
+    public bool HasPermissionFreightBillingServiceViewProformaInvoice { get; set; } = false;
     public bool HasPermissionFreightBillingServiceReverseProformaInvoice { get; set; } = false;
-    public int FreightBillingDocTypeID = 2;
+    public int FreightBillingDocTypeID = 116;
 
     #region SignaIR Notification
 
@@ -118,8 +119,9 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionFreightBillingServiceEditProformaInvoice = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "EditProformaInvoice", ctc.Token);
-        HasPermissionFreightBillingServiceReverseProformaInvoice = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "ReverseProformaInvoice", ctc.Token);
+        HasPermissionFreightBillingServiceEditProformaInvoice = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionFreightBillingServiceViewProformaInvoice = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "View", ctc.Token);
+        HasPermissionFreightBillingServiceReverseProformaInvoice = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "Reverse", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
@@ -143,7 +145,7 @@
 
     public async Task OpenDialog(ProformaInvoiceModel pfm, bool ReadOnly)
     {
-        if (HasPermissionFreightBillingServiceEditProformaInvoice)
+        if (HasPermissionFreightBillingServiceViewProformaInvoice)
         {
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
             pfm.Gst = Iservice.GetGstRate(pfm.DraftBillID);
@@ -157,28 +159,37 @@
             var result = await dialog.Result;
             if (!result.Canceled)
             {
-                ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;
-                var SaveResult = Iservice.UpdateProformaInvoice(UpatedModel);
-
-                var ReturnData = UpatedModel;
-                if (SaveResult != -1)
+                if (HasPermissionFreightBillingServiceEditProformaInvoice)
                 {
-                    notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-                    notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-                    notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-                    notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-                    notificationMessage.RedirectedTo = 0;
-                    notificationMessage.ExpiredBy = 7;
-                    notificationMessage.DocumentID = SaveResult;
-                    notificationMessage.MessageGroupID = "PendingVerification";
-                    notificationMessage.PageToRedirectLink = "/ProformaInvoiceView";
-                    notificationMessage.ClaimValue = "Verify 1";
-                    notificationMessage.DocumentTypeID = FreightBillingDocTypeID;
-                    notificationMessage.MsgDate = DateTime.Now;
-                    await signalRService.Send(notificationMessage);
+                    ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;
+                    var SaveResult = Iservice.UpdateProformaInvoice(UpatedModel);
 
+                    var ReturnData = UpatedModel;
+                    if (SaveResult != -1)
+                    {
+                        notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+                        notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+                        notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+                        notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+                        notificationMessage.RedirectedTo = 0;
+                        notificationMessage.ExpiredBy = 7;
+                        notificationMessage.DocumentID = SaveResult;
+                        notificationMessage.MessageGroupID = "PendingVerification";
+                        notificationMessage.PageToRedirectLink = "/ProformaInvoiceView";
+                        notificationMessage.ClaimValue = "Verify 1";
+                        notificationMessage.DocumentTypeID = FreightBillingDocTypeID;
+                        notificationMessage.MsgDate = DateTime.Now;
+                        await signalRService.Send(notificationMessage);
+
+                    }
+                    snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
                 }
-                snackbar.Add("Saved Successfully ", Severity.Success);//value = "visible";
+                else
+                {
+                    bool? resultmsg = await DialogService.ShowMessageBox(
+                        "Permission denied!",
+                        "You dont have any permission to EditProformaInvoice FreightBilling.");
+                }
             }
             GetPerfomaInvoice(IsApproved, NumberOfRecords);
         }
@@ -186,7 +197,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to EditProformaInvoice FreightBilling.");
+                "You dont have any permission to ViewProformaInvoice FreightBilling.");
         }
     }
 

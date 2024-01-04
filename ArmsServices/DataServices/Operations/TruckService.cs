@@ -287,6 +287,7 @@ namespace ArmsServices.DataServices
             {
                 yield return new TruckModel()
                 {
+                    AssetID = dr.GetInt32("AssetID"),
                     RegNo = dr.GetString("RegNo"),
                     TruckID = dr.GetInt32("TruckID"),
                     TruckTypeID = dr.GetInt16("TruckTypeID"),
