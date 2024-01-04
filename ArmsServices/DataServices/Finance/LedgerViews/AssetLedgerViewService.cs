@@ -10,14 +10,11 @@ namespace DAL.DataServices.Finance.LedgerViews
 {
     public class AssetLedgerViewService: IAssetLedgerViewService
     {
-
         IDbService Iservice;
-
         public AssetLedgerViewService(IDbService iservice)
         {
             Iservice = iservice;
         }
-
 
         public IEnumerable<LedgerViewsModel> SelectByAssetIDAndDate(int? AssetID, DateTime? FromDate, DateTime? ToDate)
         {
@@ -27,7 +24,8 @@ namespace DAL.DataServices.Finance.LedgerViews
                new SqlParameter("@FromDate", FromDate),
                new SqlParameter("@ToDate", ToDate),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Report.Ledger.SelectByArdCode.Asset]", parameters))
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[rptFinanceReportLedgerSelectByArdCodeAsset]", parameters))
             {
                 yield return new LedgerViewsModel()
                 {
