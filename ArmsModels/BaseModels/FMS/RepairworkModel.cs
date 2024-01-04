@@ -1,4 +1,5 @@
 ﻿using ArmsModels.SharedModels;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -7,13 +8,17 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class RepairJobModel
+    public class RepairJobModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<RepairJobModel>(Json);
+        }
         public RepairJobModel()
         {
             UserInfo = new();
         }
-
         public int? RepairJobID { get; set; }
         [Required]
         public string RepairJobTitle { get; set; }
@@ -22,7 +27,6 @@ namespace ArmsModels.BaseModels
         public decimal? MechanicalHours { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
-
 
     public class JobInProgressModel
     {
@@ -39,7 +43,8 @@ namespace ArmsModels.BaseModels
         public int? JobCardID { get; set; }
         public int? WorkshopID { get; set; }
         public int? JobStatus { get; set; }
-        public string JobStatusText {
+        public string JobStatusText
+        {
             get
             {
                 switch (JobStatus)
@@ -51,6 +56,7 @@ namespace ArmsModels.BaseModels
                 }
             }
         }
+
         public string JobStatusTextColor
         {
             get
