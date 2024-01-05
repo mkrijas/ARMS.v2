@@ -10,7 +10,6 @@ namespace ArmsServices.DataServices
 {
     public class RepairWorkService : IRepairWorkService
     {
-
         IDbService Iservice;
 
         public RepairWorkService(IDbService iservice)
@@ -48,6 +47,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RepairJobID", ID),
             };
             RepairJobModel model = new();
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RepairJob.Select]", parameters))
             {
                 model = GetModel(dr);

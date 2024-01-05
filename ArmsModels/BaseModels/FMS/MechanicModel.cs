@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -19,7 +20,9 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
         }
         public int? MechanicID { get; set; }
+        [Required]
         public string MechanicName { get; set; }
+        [Required]
         public int? WorkshopID { get; set; }
         public virtual string WorkshopName { get; set; }
         public string Remarks { get; set; }
