@@ -1,5 +1,6 @@
-﻿@page "/TripReviewPage"
+﻿@page "/TripReviewManager"
 @using System.ComponentModel.DataAnnotations
+@layout AdminMainLayout
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IBranchService Ibranch
@@ -7,57 +8,59 @@
 @inject IDriverService Idriver
 @inject ITripService Itrip
 
-<h4>Select Trip</h4>
-<EditForm id="form" Model="@Selector" OnValidSubmit="OnValidSubmit">
-    <MudGrid>
-        <MudItem xs="6" md="4">
-            <MudPaper Class="p-2">
-                <MudSelect Variant="Variant.Outlined" Label="Branch" @bind-Value="Selector.BranchID" For="@(() => Selector.BranchID)">
-                    @foreach (var br in branches)
-                    {
-                        <MudSelectItem T="int?" Value="br.BranchID"> @br.BranchName</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudPaper>
+<MudPaper Style="margin-top:16px; padding-bottom: 1px;">
+    <MudToolBar>
+        <MudText Typo="Typo.h6">Trip Manager</MudText>
+    </MudToolBar>
+    <MudItem sm="12" style="padding: 0px 24px 0px 24px">
+        <EditForm id="form" Model="@Selector" OnValidSubmit="OnValidSubmit">
+            <MudGrid>
+                <MudItem xs="3">
+                    <MudSelect Variant="Variant.Outlined" Label="Branch" @bind-Value="Selector.BranchID" For="@(() => Selector.BranchID)">
+                        @foreach (var br in branches)
+                        {
+                            <MudSelectItem T="int?" Value="br.BranchID"> @br.BranchName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="2">
+                    <MudSelect Variant="Variant.Outlined" Label="Year" @bind-Value="Selector.Year" For="@(() => Selector.Year)">
+                        @foreach (var yr in Years)
+                        {
+                            <MudSelectItem T="int" Value="yr"> @yr</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="2">
+                    <MudSelect Variant="Variant.Outlined" Label="Month" @bind-Value="Selector.Month" For="@(() => Selector.Month)">
+                        @foreach (var mon in Months)
+                        {
+                            <MudSelectItem T="int" Value="mon"> @mon</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="3">
+                    <MudNumericField T="int?" @bind-Value="Selector.TripNumber" Label="TripNumber" Variant="Variant.Outlined" For="@(() => Selector.TripNumber)" />
+                </MudItem>
+                <MudItem xs="2">
+                    <MudButton Style="width: 80%; height: 80%; margin-top: 8px;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Load Trip</MudButton>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </MudItem>
+    @if (SelectedTrip != null)
+    {
+        <MudItem sm="12" style="margin: 24px;">
+            <TripDetailsCard Trip="SelectedTrip" @ref="TripDetailsComponentRef"></TripDetailsCard>
         </MudItem>
-        <MudItem xs="3" md="2">
-            <MudPaper Class="p-2">
-                <MudSelect Variant="Variant.Outlined" Label="Year" @bind-Value="Selector.Year" For="@(() => Selector.Year)">
-                    @foreach (var yr in Years)
-                    {
-                        <MudSelectItem T="int" Value="yr"> @yr</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudPaper>
+    }
+    else
+    {
+        <MudItem sm="12" style="margin: 24px;">
+            <TripDetailsCard Trip="new TripModel()"></TripDetailsCard>
         </MudItem>
-        <MudItem xs="3" md="2">
-            <MudPaper Class="p-2">
-                <MudSelect Variant="Variant.Outlined" Label="Month" @bind-Value="Selector.Month" For="@(() => Selector.Month)">
-                    @foreach (var mon in Months)
-                    {
-                        <MudSelectItem T="int" Value="mon"> @mon</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6" md="3">
-            <MudPaper Class="p-2">
-                <MudNumericField T="int?" @bind-Value="Selector.TripNumber" Label="TripNumber" Variant="Variant.Outlined" For="@(() => Selector.TripNumber)" />
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="2" md="1">
-            <MudButton Class="mt-2" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Load Trip</MudButton>
-        </MudItem>
-    </MudGrid>
-</EditForm>
-@if (SelectedTrip != null)
-{
-    <TripDetailsCard Trip="SelectedTrip" @ref="TripDetailsComponentRef"></TripDetailsCard>
-}
-else
-{
-    <TripDetailsCard Trip="new TripModel()"></TripDetailsCard>
-}
+    }
+</MudPaper>
 
 @code {
 
@@ -70,10 +73,10 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        Selector = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
         branches = Ibranch.Select().ToList();
 
-        var authprov = await auth.GetAuthenticationStateAsync();
+        Selector = new();
         Selector.BranchID = int.Parse(authprov.User.Claims.FirstOrDefault(c => c.Type == "BranchID").Value);
         Selector.Year = DateTime.Today.Year;
         Selector.Month = DateTime.Today.Month;

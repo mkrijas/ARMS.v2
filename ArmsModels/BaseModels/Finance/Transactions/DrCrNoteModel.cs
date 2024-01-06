@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
+using Core.BaseModels.Finance;
 
 namespace ArmsModels.BaseModels
 {
@@ -22,9 +23,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public PartyModel Party { get; set; }
         public int? PartyCoaID { get; set; }
-        public string Reference { get; set; }
         [Required]
-        public string ReasonCode { get; set; } // dropdownlist
+        public CancellationReasonCode Reason { get; set; }
+        public string Reference { get; set; }
         public int? OriginalTransactionID { get; set; } // Transaction against which this issuing
         public string OriginalTranDocNumber { get; set; } // auto complete if possible or confirm the number
         public DateTime? OriginalTranDocDate { get; set; }
