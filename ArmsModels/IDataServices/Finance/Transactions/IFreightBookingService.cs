@@ -22,8 +22,8 @@ namespace ArmsServices.DataServices
         int DeleteProformaInvoice(int? ID,string UserID, string Remarks);  //Delete
         int ReverseConsolidatedDraftBill(int? ID, string UserID);  //ReverseConsolidatedDraftBill
         IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID,int? BranchId);
-        IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? NumberOfRecords, string searchTerm);
-        IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? ID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? BranchID, int? ID, int? NumberOfRecords, string searchTerm);
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID);
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateTime? begin, DateTime? end);
         IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID);
