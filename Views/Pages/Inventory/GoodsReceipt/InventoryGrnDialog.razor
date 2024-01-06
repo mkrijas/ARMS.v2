@@ -30,7 +30,7 @@
                 <ValidationSummary />
                 <MudGrid Spacing="2">
                     <MudItem xs="12" md="12">
-                        <PartySelector ReadOnly="ReadOnly" @bind-Value="partyinfo" NatureOfBusiness="Supplier"></PartySelector>
+                        <PartySelector ReadOnly="ReadOnly" Value="partyinfo" ValueChanged="PartyChanged" NatureOfBusiness="Supplier"></PartySelector>
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="ReadOnly" Label="Entry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.EntryDate" DateFormat="dd/MM/yyyy" />
@@ -73,7 +73,7 @@
                                         <td>
                                             @if (!ReadOnly)
                                             {
-                                                <MudFab Color="Color.Error" @onclick="@(()=> Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                                <MudFab Color="Color.Error" @onclick="@(()=> Delete(@item))" StartIcon ="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                                             }
                                         </td>
                                     </tr>
@@ -81,7 +81,9 @@
                                 @if (!ReadOnly && model.POID == null)
                                 {
                                     <tr>
-                                        <td colspan="2"><InventoryItemSelector Value="SelectedItems" ValueChanged="@((InventoryItemModel newValue) => getitemCode(newValue))" /></td>
+                                        <td colspan="2">
+                                            <InventoryItemSelector Value="SelectedItem" ValueChanged="@((InventoryItemModel newValue) => ItemChanged(newValue))" />
+                                        </td>
                                         <td><MudTextField @bind-Value="Entrymodel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField></td>
                                         <td><MudTextField @bind-Value="Entrymodel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemRate)"></MudTextField></td>
                                         <td></td>
@@ -146,7 +148,7 @@
     public bool HasPermissionPurchaseOrderServiceCancel { get; set; } = false;
     public int PurchaseOrderDocTypeID = 17;
 
-    public InventoryItemModel SelectedItems = new();
+    public InventoryItemModel SelectedItem = new();
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
@@ -285,64 +287,78 @@
 
     private void Delete(InventoryItemEntryModel i)
     {
-        decimal total = (((i.ItemQty.Value) * (i.ItemRate.Value)) + (i.ItemGstVal.Value));
-        model.TotalValue = model.TotalValue - total;
         int rowIndex = model.Entries.IndexOf(i);
         model.Entries.RemoveAt(rowIndex);
+        SetTotal();
     }
 
     protected void getitemCode(InventoryItemModel item)
     {
         if (item != null)
         {
-            if (SelectedItems != null && SelectedItems.InventoryItemID == null)
+            if (SelectedItem != null && SelectedItem.InventoryItemID == null)
             {
-                SelectedItems = item;
+                SelectedItem = item;
             }
             else
             {
-                SelectedItems = new InventoryItemModel();
+                SelectedItem = new InventoryItemModel();
             }
         }
     }
 
     public decimal getgstrate(int itemID)
     {
-        List<GstItemModel> gstitem = new();
-        gstitem = gstIservice.SelectByItem(itemID).ToList();
-        decimal gstrate = gstitem[0].TaxRate.Value;
-        return gstrate;
+        var itemGst = gstIservice.SelectByItem(itemID, (model.EntryDate ?? DateTime.Today));
+        decimal? gstrate = itemGst.TaxRate;
+        return gstrate ?? 0;
     }
+
+
+    void PartyChanged(PartyModel party)
+    {
+        partyinfo = party;
+        model.PartyID = party.PartyID;
+        model.PartyCode = party.PartyCode;
+        model.PartyName = party.TradeName;
+    }
+
 
     private void AddItems()
     {
-        model.PartyID = partyinfo.PartyID;
-        Entrymodel.ItemID = SelectedItems.InventoryItemID;
         if (Entrymodel.ItemID == null || Entrymodel.ItemRate == null || Entrymodel.ItemQty == null)
         {
             snackbar.Add("Please fill in all Fields", Severity.Error);
             return;
         }
         decimal gstrt = 0;
-        decimal gstrate = 0;
+        Entrymodel.ItemGstVal = 0;
         try
         {
             gstrt = getgstrate(Entrymodel.ItemID.Value);
         }
-        catch (Exception)
-        {
-            gstrt = 0;
-        }
+        catch { }
+
         if (gstrt != 0)
         {
-            gstrate = (((Entrymodel.ItemRate.Value) * (Entrymodel.ItemQty.Value)) * gstrt) / 100;
+            Entrymodel.ItemGstVal = (((Entrymodel.ItemRate.Value) * (Entrymodel.ItemQty.Value)) * gstrt) / 100;
         }
-        Entrymodel.ItemGstVal = gstrate;
         model.Entries.Add(Entrymodel);
-        decimal total = ((Entrymodel.ItemQty.Value) * (Entrymodel.ItemRate.Value) + (Entrymodel.ItemGstVal.Value));
-        model.TotalValue = model.TotalValue + total;
         Entrymodel = new();
-        SelectedItems = null;
-        SelectedItems = new();
+        SelectedItem = new();
+
+        SetTotal();
+    }
+
+    void SetTotal()
+    {
+        model.TotalValue = model.Entries.Sum(x => (x.ItemQty * x.ItemRate) + x.ItemGstVal);
+    }
+
+    protected void ItemChanged(InventoryItemModel item)
+    {
+        SelectedItem = item;
+        Entrymodel.ItemID = item?.InventoryItemID;
+
     }
 }
