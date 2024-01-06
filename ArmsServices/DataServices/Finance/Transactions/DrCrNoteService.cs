@@ -119,6 +119,7 @@ namespace ArmsServices.DataServices
                     BillReference = dr.GetString("BillReference"),
                     BranchID = dr.GetInt32("BranchID"),
                     UsageCode = dr.GetString("UsageCode"),
+                    UsageCodeDescription = dr.GetString("UsageDescription"),
                     TpeID = dr.GetInt64("DrCreID"),
                 };
             }
@@ -265,7 +266,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DrCrNoteID", model.DrCrNoteID),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@DrCrType", model.DrCrType),
-               new SqlParameter("@ReasonCode", model.ReasonCode),
+               new SqlParameter("@ReasonCodeID", model.Reason.ReasonCodeID),
                new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@OriginalTransactionID", model.OriginalTransactionID),
                new SqlParameter("@OriginalTranDocDate", model.OriginalTranDocDate),
@@ -297,7 +298,11 @@ namespace ArmsServices.DataServices
             {
                 DrCrNoteID = dr.GetInt32("DrCrNoteID"),
                 DrCrType = dr.GetString("DrCrType"),
-                ReasonCode = dr.GetString("ReasonCode"),
+                Reason = new Core.BaseModels.Finance.CancellationReasonCode()
+                {
+                    ReasonCodeID = dr.GetInt32("ReasonCodeID"),
+                    ReasonCodeDescription = dr.GetString("ReasonCodeDescription")
+                },
                 Reference =   dr.GetString("Reference"),
                 OriginalTranDocDate  = dr.GetDateTime("OriginalTranDocDate"),
                 OriginalTranDocNumber = dr.GetString("OriginalTranDocNumber"),
