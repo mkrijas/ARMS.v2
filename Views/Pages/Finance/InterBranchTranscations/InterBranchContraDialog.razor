@@ -37,14 +37,14 @@
                                 </MudItem>
                                 <br />
                                 <MudItem xs="12" md="12">
-                                    <MudSelect ReadOnly="ReadOnly" Label="Select Mode" @bind-Value="vaal" SelectedValuesChanged="ReceiptModeChange" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                                        <MudSelectItem Value="@("Payment")" />
-                                        <MudSelectItem Value="@("Reciept")" />
+                                    <MudSelect ReadOnly="ReadOnly" Label="Select Mode" Value="@model.IsPayment" ValueChanged="PaymentModeChanged" T="bool" Variant="Variant.Outlined" Margin="Margin.Dense"  AdornmentColor="Color.Secondary">
+                                        <MudSelectItem Value="@(true)" >Payment</MudSelectItem>
+                                        <MudSelectItem Value="@(false)">Receipt</MudSelectItem>
                                     </MudSelect>
                                 </MudItem>
                                 <br />
                                 <MudItem xs="12" md="12">
-                                    <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" @bind-Value="model.ContraModeHome" SelectedValuesChanged="ModeChange" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                    <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" Value="model.ContraModeHome" ValueChanged="BankModeChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
                                         <MudSelectItem Value="@("Bank")" />
                                         <MudSelectItem Value="@("Cash")" />
                                     </MudSelect>
@@ -71,11 +71,14 @@
                                 </MudItem>
                                 <br />
                                 <MudItem xs="12" md="12">
-                                    <MudTextField ReadOnly="true" Label="Mode" @bind-Value="OrouteName" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                                    <MudSelect ReadOnly="true" Label="Mode" @bind-Value="@model.IsPayment" T="bool" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                                        <MudSelectItem Value="@(false)">Payment</MudSelectItem>
+                                        <MudSelectItem Value="@(true)">Receipt</MudSelectItem>
+                                    </MudSelect>                                    
                                 </MudItem>
                                 <br />
                                 <MudItem xs="12" md="12">
-                                    <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" @bind-Value="model.ContraModeOther" SelectedValuesChanged="ModeChangeOther" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                    <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" Value="model.ContraModeOther" ValueChanged="ModeChangeOther" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                                         <MudSelectItem Value="@("Bank")" />
                                         <MudSelectItem Value="@("Cash")" />
                                     </MudSelect>
@@ -171,11 +174,10 @@
     private PaymentCodeModel accountRuleDefinitionH = new();
     private PaymentCodeModel accountRuleDefinitionO = new();
     private bool _busy;
-    public bool Ispayment = true;
-    public bool bnktl = true;
-    private string vaal = "Payment";
+
+    public bool bnktl = true;   
     public string value = "invisible";
-    private string hmbarnchName, OrouteName;
+    private string hmbarnchName;
     private int? branchID = null;
     private string UserID = null;
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
@@ -249,9 +251,10 @@
         model.ArdCodeOther = obj?.ArdCode ?? null;
     }
 
-    public void ModeChange()
+    public void BankModeChanged(string val)
     {
-        if (Ispayment == true)
+        model.ContraModeHome = val;
+        if (model.IsPayment)
         {
             if (model.ContraModeHome == "Bank")
             {
@@ -266,9 +269,10 @@
         }
     }    
 
-    public void ModeChangeOther()
+    public void ModeChangeOther(string val)
     {
-        if (Ispayment == false)
+        model.ContraModeOther = val;
+        if (!model.IsPayment)
         {
             if (model.ContraModeOther == "Bank")
             {
@@ -300,8 +304,7 @@
         UserID = user.Identity.Name;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
         hmbarnchName = brancIDString.ToString();
-        transactionTypeList = intermappingIservice.GetTypes().ToList();
-        OrouteName = "Reciept";
+        transactionTypeList = intermappingIservice.GetTypes().ToList();        
         if (model.ContraID == null)
         {
             model.TotalAmount = 0;
@@ -333,18 +336,9 @@
         DocType = model.NatureOfTransaction;
     }
 
-    public void ReceiptModeChange()
+    public void PaymentModeChanged(bool val)
     {
-        if (vaal == "Payment")
-        {
-            OrouteName = "Reciept";
-            Ispayment = true;
-        }
-        else
-        {
-            OrouteName = "Payment";
-            Ispayment = false;
-        }
+        model.IsPayment = val;
     }
 
     public void Cancel()
@@ -368,8 +362,7 @@
                 model.ArdCodeHome = accountRuleDefinitionH.ArdCode;
                 model.CoaIDOther = accountRuleDefinitionO.CoaID;
                 model.ArdCodeOther = accountRuleDefinitionO.ArdCode;
-                model.BranchID = branchID;
-                model.IsPayment = Ispayment;
+                model.BranchID = branchID;                
                 model.IsInterBranch = true;
                 model.NatureOfTransaction = "Contra";
                 model.UserInfo.UserID = UserID;
