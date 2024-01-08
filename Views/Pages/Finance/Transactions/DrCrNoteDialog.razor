@@ -1,8 +1,12 @@
 ﻿@using System.Threading;
 @using Core.BaseModels.General;
+@using Core.BaseModels.Finance;
+@using Core.IDataServices.Finance;
 @attribute [Authorize]
 @inject IDrCrNoteService Iservice
 @inject IPartyService partyIservice
+@inject IDataAuthorizationSettingsService IDataAuthorizationService
+@inject ICancellationReasonCodeService IcancellationReasonCodeService
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
@@ -39,9 +43,14 @@
                      <MudItem xs="12" md="6">
                          <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
                      </MudItem>
-                     <MudItem xs="12" md="6">
-                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.ReasonCode" Label="ReasonCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ReasonCode)"></MudTextField>
+                     <MudItem xs="6" md="6" lg="6">
+                         <MudAutocomplete ReadOnly="ReadOnly" FullWidth Label="Reason Code" Value="model.Reason" ValueChanged="ValueChanged" T="CancellationReasonCode" SearchFunc="@Search" ToStringFunc="@((e) => e?.ReasonCodeDescription)"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                         </MudAutocomplete>
                      </MudItem>
+                     @* <MudItem xs="12" md="6">
+                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.ReasonCodeID" Label="ReasonCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ReasonCodeID)"></MudTextField>
+                     </MudItem> *@
                      <MudItem xs="12" md="4">
                          <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                      </MudItem>
@@ -63,7 +72,7 @@
      </VerificationStatus>
  </DialogForm>
 
-@code {
+ @code {
 
     [Parameter]
     public DrCrNoteModel model { get; set; }
@@ -80,6 +89,10 @@
     DialogForm dialogForm;
     bool Local;
     private bool _busy;
+
+    public List<CancellationReasonCode> ReasonCodeList { get; set; }
+    private List<DocTypeModel> doctypelist;
+    private DocTypeModel SelectedDocType = new();
 
     public DocumentDetailsModel DocumentDetails { get; set; } = new();
 
@@ -111,6 +124,20 @@
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
+
+        doctypelist = IDataAuthorizationService.GetDocTypesList().ToList();
+        if (DrCrNoteDocTypeID != null)
+        {
+            if (doctypelist != null && doctypelist.Any(s => s.ID == DrCrNoteDocTypeID))
+            {
+                SelectedDocType = doctypelist.FirstOrDefault(s => s.ID == DrCrNoteDocTypeID);
+            }
+            var Result = IcancellationReasonCodeService.SelectSubById(DrCrNoteDocTypeID);
+            if (Result != null && Result.Count() != 0 && Result.Any(s => s.ReasonCodeID != null))
+            {
+                ReasonCodeList = Result.ToList();
+            }
+        }
     }
 
     protected override void OnParametersSet()
@@ -284,5 +311,19 @@
                 model.Particulars = Bill.Particulars;
             }
         }
+    }
+
+    private async Task<IEnumerable<CancellationReasonCode>> Search(string value)
+    {
+        await Task.Delay(5);
+
+        if (string.IsNullOrEmpty(value))
+            return ReasonCodeList;
+        return ReasonCodeList.Where(x => x.ReasonCodeDescription.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    void ValueChanged(CancellationReasonCode val)
+    {
+        model.Reason = val;
     }
 } 

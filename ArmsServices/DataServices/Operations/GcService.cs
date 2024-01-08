@@ -42,6 +42,15 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        public int DeleteSet(long? id, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@GcSetID", id),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.GcSet.Delete]", parameters);
+        }
         public int Delete(long? GcID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -56,7 +65,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@GcSetID", model.GcSetID),
-               new SqlParameter("@UnloadingQuantity", model.TotalUnloadingQuantity),
+               new SqlParameter("@UnloadingQuantity", model.SetUnloadQuantity),
 
             };
             return Iservice.ExecuteNonQuery("[usp.GcSet.UpdateUnloadingQuantity]", parameters);
@@ -171,8 +180,8 @@ namespace ArmsServices.DataServices
 
                 set.SetBillNumber = set.SetBillNumber + (IsFirst ? null : ", ") + gc.BillNumber;
                 set.SetGcNumber = set.SetGcNumber + (IsFirst ? gc.GcPrefix : ", ") + gc.GcNumber;
-                set.SetBillQuantity = set.SetBillQuantity + gc.BillQuantity;
-                set.SetUnloadQuantity = set.SetUnloadQuantity + gc.UnloadedQuantity;
+                set.TotalBillQuantity = (set.TotalBillQuantity ?? 0) + gc.BillQuantity;
+                set.TotalUnloadingQuantity = (set.TotalUnloadingQuantity ?? 0) + gc.UnloadedQuantity;
                 set.OrderTime = gc.OrderTime;
                 set.Gcs.Add(gc);
             }
@@ -332,6 +341,6 @@ namespace ArmsServices.DataServices
             return Frt;
         }
 
-
+        
     }
 }

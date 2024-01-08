@@ -252,9 +252,25 @@
                 model.EventTypeID = SelectedEvent.EventTypeID;
                 if (model.EventTypeID == 5)
                 {
-                    DialogParameters parms = new DialogParameters();
-                    parms.Add("TripID", model.TripID);
-                    var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Quantity", parms);
+                    List<GcSetModel> GcsToUnload = new();
+                    GcsToUnload = Igc.SelectedUnloadEvent(model.TripID);
+                    if(GcsToUnload.Count == 0)
+                    {
+                        snackbar.Add("No Consignment being Unloaded", Severity.Error);
+                        return;
+                    }
+
+                    foreach (var item in GcsToUnload)
+                    {
+                        if (item.SetUnloadQuantity == null)
+                        {
+                            item.SetUnloadQuantity = item.TotalBillQuantity;
+                        }                        
+                    }
+
+                    DialogParameters parms = new DialogParameters();                    
+                    parms.Add("GcsToUnload", GcsToUnload);
+                    var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Consignment", parms);
                     var result = await dialog.Result;
                     if (!result.Canceled)
                     {
@@ -298,33 +314,19 @@
                     {
                         snackbar.Add("No GCs selected to Unload!", Severity.Warning);
                         return;
-                    }
-                    else
+                    }                   
+                }
+
+                model = Ievent.Update(model);
+
+                if (SelectedEvent.EventTypeID == 4)
+                {
+                    foreach (GcSetModel item in SelectedGCs)
                     {
-                        foreach (GcSetModel item in SelectedGCs)
-                        {
-                            Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
-                            if (item != null && item.Gcs != null && item.Gcs.Any(s => s.EwayBill != null && s.EwayBill.ExpireOn != null && (s.EwayBill.ExpireOn - DateTime.Now).Value.TotalHours >= 4))
-                            {
-                                foreach (var EwayBill in item.Gcs.Where(s => s.EwayBill != null && s.EwayBill.ExpireOn != null && (s.EwayBill.ExpireOn - DateTime.Now).Value.TotalHours >= 4))
-                                {
-                                    notificationMessage = new();
-                                    notificationMessage.DocumentID = Convert.ToInt32(EwayBill.GcID);
-                                    notificationMessage.MessageGroupID = "EWayBill";
-                                    notificationMessage.DocumentTypeID = 46;
-
-                                    currentNotificationMessages = IpushNotificationService.SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(BranchID, Convert.ToInt32(EwayBill.GcID), 46).ToList();
-                                    string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
-                                    IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
-
-                                    await signalRService.Send(notificationMessage);
-
-                                }
-                            }
-                        }
+                        Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                        await DisableEwayBillNotifications(item);
                     }
                 }
-                model = Ievent.Update(model);
                 MudDialog.Close(DialogResult.Ok(model));
             }
             catch (Exception ex)
@@ -345,6 +347,26 @@
                 "You dont have any permission to Add or Edit Event.");
         }
     }
+
+
+    async Task DisableEwayBillNotifications(GcSetModel item)
+    {
+        if (item != null && item.Gcs != null && item.Gcs.Any(s => s.EwayBill != null && s.EwayBill.ExpireOn != null && (s.EwayBill.ExpireOn - DateTime.Now).Value.TotalHours >= 4))
+        {
+            foreach (var EwayBill in item.Gcs.Where(s => s.EwayBill != null && s.EwayBill.ExpireOn != null && (s.EwayBill.ExpireOn - DateTime.Now).Value.TotalHours >= 4))
+            {
+                notificationMessage = new();
+                notificationMessage.DocumentID = Convert.ToInt32(EwayBill.GcID);
+                notificationMessage.MessageGroupID = "EWayBill";
+                notificationMessage.DocumentTypeID = 46;
+                currentNotificationMessages = IpushNotificationService.SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(BranchID, Convert.ToInt32(EwayBill.GcID), 46).ToList();
+                string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
+                IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
+                await signalRService.Send(notificationMessage);
+            }
+        }
+    }
+
 
     private bool ValidateEvent(EventModel ev)
     {

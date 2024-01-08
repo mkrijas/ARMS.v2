@@ -63,6 +63,7 @@ namespace ArmsServices.DataServices
                     BillReference = dr.GetString("BillReference"),
                     BranchID = dr.GetInt32("BranchID"),
                     UsageCode = dr.GetString("UsageCode"),
+                    SubArdCode = dr.GetString("SubArdCode"),
                     TpeID = dr.GetInt64("SeID"),
                     CostCenter = dr.GetInt32("CostCenterID"),
                     CostCenterVal = dr.GetString("CostCenter"),
