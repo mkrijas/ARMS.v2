@@ -42,6 +42,15 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        public int DeleteSet(long? id, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@GcSetID", id),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.GcSet.Delete]", parameters);
+        }
         public int Delete(long? GcID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -332,6 +341,6 @@ namespace ArmsServices.DataServices
             return Frt;
         }
 
-
+        
     }
 }

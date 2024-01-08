@@ -12,6 +12,7 @@ namespace ArmsServices.DataServices
     public interface IGcService
     {
         GcSetModel Update(GcSetModel model);  //Edit
+        int DeleteSet(long? id, string UserID);
         int UpdateUnloadingQuantity(GcSetModel model);  //Edit
         int Delete(long? GcID, string UserID);  //Delete
         List<GcSetModel> Select(int? BranchID);

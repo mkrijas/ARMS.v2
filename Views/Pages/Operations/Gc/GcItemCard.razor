@@ -47,6 +47,7 @@
             {
                 <MudButton @onclick="@(() => Edit(item.GcSetID))" Color="Color.Primary" Disabled="@IsLocked">EDIT</MudButton>
                 <MudButton @onclick="@(() => EwayBill(item.GcSetID))" Variant="Variant.Text" Color="@ewaycolor">Eway Bill</MudButton>
+                <MudButton @onclick="@(() => Delete(item.GcSetID))" Color="Color.Primary" Disabled="@(item.TripID!= null)">DELETE</MudButton>
             }
         </MudCardActions>
     </MudCard>
@@ -70,8 +71,14 @@
     public bool unloading { get; set; } = false;
     [Parameter]
     public EventCallback<long?> OnGcRemoved { get; set; }
+    [Parameter]
+    public EventCallback<long?> OnGcDeleted { get; set; }
+
+
+
     private Color ewaycolor = new();
     private Color FillExpColor = new();
+    private string UserID;
 
     private bool _busy;
     public bool HasPermissionGcServiceEdit { get; set; } = false;
@@ -81,6 +88,10 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
+
+        var authState = await auth.GetAuthenticationStateAsync();
+        UserID = authState.User.Identity.Name;
+
         HasPermissionGcServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionGcServiceAppentToTrip = await Irole.HasClaim(DocTypeID.ToString(), "AppentToTrip", ctc.Token);
         if (MessageDocumentID != null)
@@ -140,6 +151,29 @@
         _busy = false;
     }
 
+
+    private async Task Delete(long? id)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+           "Warning",
+           "Are You Sure you want to Delete this GC!",
+           yesText: "Delete!", cancelText: "Cancel");
+
+        if (result != null && result.Value)
+        {
+            try
+            {
+                Iservice.DeleteSet(id, UserID);
+                await OnGcDeleted.InvokeAsync(id);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+
+    }
+
     private async Task Edit(long? id)
     {
         if (_busy)
@@ -159,27 +193,7 @@
             {
                 if (data.Data != null)
                 {
-                    item = (GcSetModel)data.Data;
-
-
-
-                    var e = await auth.GetAuthenticationStateAsync();
-                    string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
-                    var BranchID = int.Parse(BranchIDString);
-                    var TempCollection = Iservice.SelectUnAssigned(BranchID);
-                    if (TempCollection.Any(g => g.GcSetID == item.GcSetID))
-                    {
-                        foreach (var Current in TempCollection.Where(g => g.GcSetID == item.GcSetID))
-                        {
-                            item = Current;
-                        }
-                    }
-                    //item.Gcs.Clear();
-                    //foreach (var item in ((GcSetModel)data.Data).Gcs)
-                    //{
-                    //    item.Gcs.Add(item);
-                    //}
-                    //item.Gcs.AddRange(((GcSetModel)data.Data).Gcs);
+                    item = (GcSetModel)data.Data;                   
                 }
             }
             StateHasChanged();
