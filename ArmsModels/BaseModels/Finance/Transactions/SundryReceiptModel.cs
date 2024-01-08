@@ -38,6 +38,7 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public int? BranchID { get; set; }
         [Required]
         public string UsageCode { get; set; }
+        public virtual string UsageCodeDescription { get; set; }
         [Required]
         public int? CoaID { get; set; }
         [Required]
