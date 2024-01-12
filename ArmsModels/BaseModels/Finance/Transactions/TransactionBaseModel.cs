@@ -23,7 +23,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? BranchID { get; set; }
         public virtual decimal? TotalTaxableAmount { get; set; }
-        [Required]
+        public string FileName { get; set; }
+
+        [RequiredIf("FileName", "null")]
         public virtual decimal? TotalAmount { get; set; }        
         [Required]
         public string Narration { get; set; }
@@ -34,7 +36,7 @@ namespace ArmsModels.BaseModels
         [RequiredIfTrue("IsInterBranch")]
         public int? OtherBranchID { get; set; }
         public string OtherBranchName { get; set; }
-        public string FileName { get; set; }
+        
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
@@ -69,10 +71,8 @@ namespace ArmsModels.BaseModels
         public decimal? SGST { get; set; } = 0;
         public decimal? IGST { get; set; } = 0;
         public decimal? TDS { get; set; } = 0;
-
         public virtual decimal? TotalGst { get { return (CGST ?? 0) + (SGST ?? 0) + (IGST ?? 0); } }
     }
-
     public class ChequeModel
     {
         public int? ID { get; set; }
