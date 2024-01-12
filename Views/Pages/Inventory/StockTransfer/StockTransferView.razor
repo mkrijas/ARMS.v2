@@ -2,12 +2,12 @@
 @using Core.BaseModels.Inventory;
 @using MudBlazor
 @using MudBlazor.Services
+@using System.Threading;
 @attribute [Authorize]
+@inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
 @inject IStockTransferService IStockTransferService
-@using System.Threading;
 @inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
@@ -16,11 +16,19 @@
             <MudTabPanel Style="min-width: 200px;" Text="Outgoing Stock" BadgeData="@(collectionOutGoing?.Count > 0 ? collectionOutGoing.Count : null)" BadgeColor="Color.Info" Visible="@(collectionOutGoing?.Count > 0)">
                 <MudTable Items="@collectionOutGoing" Dense="true" Hover="true" Striped="true" Elevation="0">
                     <ToolBarContent>
-                        <MudText Typo="Typo.h6">Initiate Stock Transfer</MudText>
-                        <MudTooltip Text="New Stock Transfer">
-                            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" @onclick="@(()=> EditOutGoing(new StockTransferInitiationModel()))" Title="Add" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                        </MudTooltip>
+                        @if (!IsOutComplete)
+                        {
+                            <MudText Typo="Typo.h6">Initiate Stock Transfer</MudText>
+                            <MudTooltip Text="New Stock Transfer">
+                                <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" @onclick="@(()=> EditOutGoing(new StockTransferInitiationModel()))" Title="Add" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                            </MudTooltip>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.h6">Completed Transfer</MudText>
+                        }
                         <MudSpacer></MudSpacer>
+                        <MudCheckBox Style="margin-right: 16px;" Label="Completed Transfers" CheckedChanged="((bool value)=>CompletedOutgoing(value))" Checked="@IsOutComplete"></MudCheckBox>
                     </ToolBarContent>
                     <HeaderContent>
                         <MudTh>Destination Branch</MudTh>
@@ -54,6 +62,18 @@
             </MudTabPanel>
             <MudTabPanel Style="min-width: 200px;" Text="Incoming Stock" BadgeData="@(collectionInComing?.Count > 0 ? collectionInComing.Count : null)" BadgeColor="Color.Info" Visible="@(collectionInComing?.Count > 0)">
                 <MudTable Items="@collectionInComing" Dense="true" Hover="true" Striped="true" Elevation="0">
+                    <ToolBarContent>
+                        @if (!IsIncomingComplete)
+                        {
+                            <MudText Typo="Typo.h6">Incoming Transfer</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.h6">Received Stock Transfer</MudText>
+                        }
+                        <MudSpacer></MudSpacer>
+                        <MudCheckBox Style="margin-right: 16px;" Label="Received Transfers" CheckedChanged="((bool value)=>CompletedIncoming(value))" Checked="@IsIncomingComplete"></MudCheckBox>
+                    </ToolBarContent>
                     <HeaderContent>
                         <MudTh>Initiated Branch</MudTh>
                         <MudTh>Initiated Date</MudTh>
@@ -93,6 +113,8 @@
 
     private List<StockTransferInitiationModel> collectionOutGoing = new();
     private StockTransferInitiationModel model = new StockTransferInitiationModel();
+    public bool IsOutComplete { get; set; } = false;
+    public bool IsIncomingComplete { get; set; } = false;
     public int? branchID { get; set; }
     private bool _busy;
 
@@ -117,6 +139,32 @@
     {
         collectionOutGoing = IStockTransferService.SelectOutGoing(branchID).ToList();
         collectionInComing = IStockTransferService.SelectIncoming(branchID).ToList();
+    }
+
+    async Task CompletedOutgoing(bool value)
+    {
+        IsOutComplete = value;
+        @if (IsOutComplete)
+        {
+            
+        }
+        else
+        {
+            collectionOutGoing = IStockTransferService.SelectOutGoing(branchID).ToList();
+        }
+    }
+
+    async Task CompletedIncoming(bool value)
+    {
+        IsIncomingComplete = value;
+        @if (IsIncomingComplete)
+        {
+            
+        }
+        else
+        {
+            collectionInComing = IStockTransferService.SelectIncoming(branchID).ToList();
+        }
     }
 
     //================== CollectionOutGoing Functions ==================//
@@ -192,15 +240,15 @@
 
     private async Task Initiate(StockTransferInitiationModel model, bool ReadOnly)
     {
-        DialogParameters parms = new DialogParameters();        
+        DialogParameters parms = new DialogParameters();
         parms.Add("InitiationModel", model.Clone());
         parms.Add("ReadOnly", ReadOnly);
         var dialog = DialogService.Show<StockTransferInitiateDialog>("Stock-Transfer", parms);
         var result = await dialog.Result;
-        if(!result.Canceled)
+        if (!result.Canceled)
         {
             await GetAll();
-        }        
+        }
     }
 
 
@@ -210,8 +258,8 @@
 
         var endModel = new StockTransferEndModel()
             {
-                StockTransferID = model.StockTransferID,                
-                BranchID = branchID,                
+                StockTransferID = model.StockTransferID,
+                BranchID = branchID,
                 OtherBranchName = model.OtherBranchName,
                 OtherBranchID = model.OtherBranchID,
                 NatureOfTransaction = "StockTransferIN",
