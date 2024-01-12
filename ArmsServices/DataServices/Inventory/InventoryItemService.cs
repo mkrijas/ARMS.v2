@@ -122,7 +122,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InventoryGroupID", model.InventoryGroupID),
                new SqlParameter("@ItemDescription",model.ItemDescription),
                new SqlParameter("@InventoryItemID",model.InventoryItemID),
-              // new SqlParameter("@InventoryItemCode",model.InventoryItemCode),
+               new SqlParameter("@UoM",model.UoM),
                new SqlParameter("@HsnCode",model.HsnCode),
                new SqlParameter("@UserID",model.UserInfo.UserID),
             };
@@ -143,6 +143,7 @@ namespace ArmsServices.DataServices
                 InventoryGroupID = dr.GetInt32("InventoryGroupID"),
                 InventoryItemCode = dr.GetString("InventoryItemCode"),
                 InventoryItemID = dr.GetInt32("InventoryItemID"),
+                UoM = dr.GetString("UoM"),
                 ItemDescription = dr.GetString("ItemDescription"),
                 Group = new InventoryGroupModel()
                 {
