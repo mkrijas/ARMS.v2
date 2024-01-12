@@ -23,7 +23,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? BranchID { get; set; }
         public virtual decimal? TotalTaxableAmount { get; set; }
-        [Required]
+        public string FileName { get; set; }
+
+        [RequiredIf("FileName", "null")]
         public virtual decimal? TotalAmount { get; set; }        
         [Required]
         public string Narration { get; set; }
@@ -34,7 +36,7 @@ namespace ArmsModels.BaseModels
         [RequiredIfTrue("IsInterBranch")]
         public int? OtherBranchID { get; set; }
         public string OtherBranchName { get; set; }
-        public string FileName { get; set; }
+        
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
