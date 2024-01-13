@@ -32,7 +32,7 @@ namespace ArmsServices.DataServices
         public DriverModel Update(DriverModel model)
         {
             model.Address = _addressService.Update(model.Address);
-            if (model.BankAccount != null)
+            if (model.BankAccount != null && model.BankAccount.BeneficiaryName != null && model.BankAccount.BeneficiaryName != string.Empty)
             {
                 model.BankAccount.UserInfo = model.UserInfo;
                 model.BankAccount = _bankAccountService.Update(model.BankAccount);
