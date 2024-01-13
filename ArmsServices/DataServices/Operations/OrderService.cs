@@ -12,10 +12,12 @@ namespace ArmsServices.DataServices
     public class OrderService : IOrderService
     {
         IDbService Iservice;
+
         public OrderService(IDbService iservice)
         {
             Iservice = iservice;
         }
+
         public async Task<OrderModel> Update(OrderModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -35,6 +37,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
         public async Task<OrderModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -49,6 +52,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
         public async Task<int> Delete(int? OrderID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +62,7 @@ namespace ArmsServices.DataServices
             };
             return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Order.Delete]", parameters);
         }
+
         public async IAsyncEnumerable<OrderModel> Select(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -70,6 +75,7 @@ namespace ArmsServices.DataServices
                 yield return await GetModel(dr);
             }
         }
+
         public async IAsyncEnumerable<OrderModel> SelectByBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -94,6 +100,7 @@ namespace ArmsServices.DataServices
             };
             return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Order.Branch.Update]", parameters);
         }
+
         private async Task<OrderModel> GetModel(IDataRecord dr)
         {
             return new OrderModel
@@ -131,6 +138,4 @@ namespace ArmsServices.DataServices
             };
         }
     }
-
-
 }

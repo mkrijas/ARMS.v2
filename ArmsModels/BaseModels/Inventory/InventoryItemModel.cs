@@ -26,6 +26,8 @@ namespace ArmsModels.BaseModels
         public string InventoryItemCode { get; set; }
         [Required]
         public string ItemDescription { get; set; }
+        [Required]
+        public string UoM { get; set; }
         [StringLength(8)]
         public string HsnCode { get; set; }
         public virtual decimal? QtyAvailable { get; set; }

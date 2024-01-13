@@ -39,7 +39,6 @@ namespace Core.BaseModels.Inventory
         public bool IsTaxable { get; set; }
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
-
         [ValidateComplexType]
         [MustContain]
         public List<InventoryItemEntryModel> ItemsList { get; set; } = new();        
@@ -77,7 +76,6 @@ namespace Core.BaseModels.Inventory
         {
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<StockTransferEndModel>(Json);
-        }
-        
+        }       
     }
 }

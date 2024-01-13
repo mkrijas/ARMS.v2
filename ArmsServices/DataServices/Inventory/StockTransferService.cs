@@ -152,9 +152,21 @@ namespace ArmsServices.DataServices
                new SqlParameter("@InvTranID",model.InvTranID),
                new SqlParameter("@StoreID",model.Store.StoreID),
                new SqlParameter("@UserID",model.UserInfo.UserID),
-               new SqlParameter("@Operation", "Reject")
+               new SqlParameter("@Operation", "Reject"),
+               new SqlParameter("@DestinationBranchID", model.OtherBranchID),
+               new SqlParameter("@MID", model.MID),
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@DocumentDate", model.DocumentDate),
+               new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@IsLocal", model.IsLocal),
+               new SqlParameter("@IsTaxable", model.IsTaxable),
+               new SqlParameter("@Items",model.ItemsList.ToDataTable()),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
+               new SqlParameter("@CostCenter", model.CostCenter),
+               new SqlParameter("@Dimension", model.Dimension),
+               new SqlParameter("@RecordStatus", 0)
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Transfer.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Store.Transfer.Reject]", parameters))
             {
                 model = GetModel(dr);
             }
