@@ -14,22 +14,29 @@ namespace ArmsServices.DataServices
     {
         IDbService Iservice;
         IAddressService _addressService;
+        IBankAccountService _bankAccountService;
 
         private readonly ITruckService truckService;
         private readonly ITripService tripService;
 
         public DriverService(IDbService iservice, IAddressService Iaddress, ITruckService truckService,
-            ITripService tripService)
+            ITripService tripService, IBankAccountService bankAccountService)
         {
             Iservice = iservice;
             _addressService = Iaddress;
             this.truckService = truckService;
             this.tripService = tripService;
-
+            _bankAccountService = bankAccountService;
         }
+
         public DriverModel Update(DriverModel model)
         {
             model.Address = _addressService.Update(model.Address);
+            if (model.BankAccount != null)
+            {
+                model.BankAccount.UserInfo = model.UserInfo;
+                model.BankAccount = _bankAccountService.Update(model.BankAccount);
+            }
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@DriverID", model.DriverID),
@@ -40,6 +47,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AdhaarNo", model.AdhaarNo),
                new SqlParameter("@AdhaarImage", model.AdhaarImage),
                new SqlParameter("@AddressID", model.Address.AddressID),
+               new SqlParameter("@BankAccountID", model.BankAccount.BankAccountID),
                new SqlParameter("@AdditionalInfo", model.AdditionalInfo),
                new SqlParameter("@Mobile", model.Mobile),
                new SqlParameter("@Email", model.Email),
@@ -54,6 +62,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
         public int Delete(int? DriverID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -136,6 +145,7 @@ namespace ArmsServices.DataServices
                 Mobile = reader.GetString("Mobile"),
                 Email = reader.GetString("Email"),
                 AddressID = reader.GetInt32("AddressID"),
+                BankAccountID = reader.GetInt32("BankAccountID"),
                 HasValidLicense = reader.GetBoolean("HasValidLicense"),
                 TruckID = reader.GetInt32("TruckID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
