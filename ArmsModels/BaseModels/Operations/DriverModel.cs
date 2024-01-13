@@ -34,6 +34,7 @@ namespace ArmsModels.BaseModels
         public int? AddressID { get; set; }
         public string FestivalBonus { get; set; }
         public string AdditionalInfo { get; set; }
+        public int? BankAccountID { get; set; }
         [Required]
         [RegularExpression(@"^([0-9]{10})$", ErrorMessage = "Mobile must be 10 digits long")]
         public string Mobile { get; set; }
@@ -41,6 +42,7 @@ namespace ArmsModels.BaseModels
         public string Email { get; set; }
         [ValidateComplexType]
         public AddressModel Address { get; set; }
+        public BankAccountModel BankAccount { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
         public List<ContactModel> Contacts { get; set; }
         public bool HasValidLicense { get; set; }
