@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsServices.DataServices.General;
+using Microsoft.AspNetCore.SignalR;
 
 namespace ArmsServices.DataServices
 {
@@ -40,7 +41,6 @@ namespace ArmsServices.DataServices
             if (!IsConnected)
             {
                 await hubConnection.StartAsync();
-
             }
         }
         public async Task Send(PushNotificationModel notificationMessage)
@@ -51,40 +51,37 @@ namespace ArmsServices.DataServices
                 if(notificationMessage != null && !string.IsNullOrEmpty(notificationMessage.MessageTitle) )
                 {
                     PushNotificationModel result = pushNotificationService.UpdatePushNotification(notificationMessage);
-
-                    await hubConnection.SendAsync("SendMessages",
-                    result);
-
-                    notificationMessage = new();
-
+                    await hubConnection.SendAsync("SendMessages",  result);
                 }
                 else if(notificationMessage != null && string.IsNullOrEmpty(notificationMessage.MessageTitle) && notificationMessage.DocumentID != null && notificationMessage.DocumentTypeID != null)
                 {
-                    await hubConnection.SendAsync("SendMessages",
-                    notificationMessage);
-
-                    notificationMessage = new();
+                    await hubConnection.SendAsync("SendMessages",  notificationMessage);                   
 
                 }
+                notificationMessage = new();
             }
         }
         public void SendWithOutSave(PushNotificationModel notificationMessage)
         {
-
             if (IsConnected)
             {
                 if (notificationMessage != null && !string.IsNullOrEmpty(notificationMessage.MessageTitle))
                 {
                     PushNotificationModel result = pushNotificationService.UpdatePushNotification(notificationMessage);
 
-                     hubConnection.SendAsync("SendMessages",
-                    result);
-
+                     hubConnection.SendAsync("SendMessages", result);
                     notificationMessage = new();
-
                 }
             }
         }
+
+
+        public async Task TriggerBranchChanged()
+        {
+            await hubConnection.SendAsync("BranchChanged");
+        }
+
+       
 
         public List<PushNotificationModel> GetAllNotificationMessages()
         {
