@@ -22,7 +22,7 @@ namespace ArmsModels.BaseModels
         [RegularExpression("^[0-9]*$", ErrorMessage = "Account Number must be numeric")]
         public string AccountNumber { get; set; }
         [Required]
-        [StringLength(maximumLength: 11)]
+        [StringLength(maximumLength: 11, MinimumLength = 11, ErrorMessage = "IFSC Code must be a string with a length of 11")]
         public string IfscCode { get; set; }
         [StringLength(9, MinimumLength = 9)]
         public string MicrCode { get; set; }
