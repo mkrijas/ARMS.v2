@@ -79,6 +79,7 @@ namespace ArmsServices.DataServices
         public async Task TriggerBranchChanged()
         {
             await hubConnection.SendAsync("BranchChanged");
+            
         }
 
        
