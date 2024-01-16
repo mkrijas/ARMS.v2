@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace Core.BaseModels.Inventory
 {
-    public class StockTransferInitiationModel :TransactionBaseModel, ICloneable
+    public class StockTransferInitiationModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
         {
@@ -18,7 +18,23 @@ namespace Core.BaseModels.Inventory
         public int? StockTransferID { get; set; }
         public int? InvTranID { get; set; }
         [Required]
-        public StoreModel Store { get; set; } 
+        public StoreModel Store { get; set; }
+        public DateTime? TransferEndDate { get; set; }
+        public byte? TransferCompleteStatus { get; set; }
+        public string DisplayCompleteStatus
+        {
+            get
+            {
+                if (TransferCompleteStatus != 0)
+                {
+                    return "Completed";
+                }
+                else 
+                { 
+                    return "Rejected"; 
+                }
+            }
+        }
         public byte? Status { get; set; }
         public string DisplayStatus
         {
@@ -41,8 +57,8 @@ namespace Core.BaseModels.Inventory
         public int? Dimension { get; set; }
         [ValidateComplexType]
         [MustContain]
-        public List<InventoryItemEntryModel> ItemsList { get; set; } = new();        
-        public StockTransferEndModel EndModel { get; set; }        
+        public List<InventoryItemEntryModel> ItemsList { get; set; } = new();
+        public StockTransferEndModel EndModel { get; set; }
     }
 
     public class StockTransferEndModel : TransactionBaseModel, ICloneable
@@ -76,6 +92,6 @@ namespace Core.BaseModels.Inventory
         {
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<StockTransferEndModel>(Json);
-        }       
+        }
     }
 }

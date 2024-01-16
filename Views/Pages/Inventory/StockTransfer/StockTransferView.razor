@@ -34,22 +34,34 @@
                     <HeaderContent>
                         <MudTh>Destination Branch</MudTh>
                         <MudTh>Initiated Date</MudTh>
+                        @if (IsOutComplete)
+                        {
+                            <MudTh>TransferEnd Date</MudTh>
+                        }
                         <MudTh>Status</MudTh>
                         <MudTh>Actions</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="Destination Branch">@context.OtherBranchName</MudTd>
                         <MudTd DataLabel="Initiated Date">@context.DocumentDate</MudTd>
-                        <MudTd DataLabel="Status">@context?.DisplayStatus</MudTd>
+                        @if (IsOutComplete)
+                        {
+                            <MudTd DataLabel="TransferEnd Date">@context.TransferEndDate</MudTd>
+                            <MudTd DataLabel="Status">@context.DisplayCompleteStatus</MudTd>
+                        }
+                        else if (!IsOutComplete)
+                        {
+                            <MudTd DataLabel="Status">@context?.DisplayStatus</MudTd>
+                        }
                         <MudTd DataLabel="Actions">
                             <MudTooltip Text="View Items">
                                 <MudFab @onclick="@(()=> Initiate(context,true))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                             </MudTooltip>
-                            @if (context.Status != 3)
+                            @if (context.Status != 3 && !IsOutComplete)
                             {
                                 @* <MudTooltip Text="Edit">
-                            <MudFab @onclick="@(()=> EditOutGoing(context))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTooltip> *@
+                                   <MudFab @onclick="@(()=> EditOutGoing(context))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                                   </MudTooltip> *@
                                 <MudTooltip Text="Remove">
                                     <MudFab @onclick="@(()=> DeleteOutGoing(context))" Color="Color.Error" StartIcon="@Icons.Material.Filled.Remove" Size="Size.Small" IconSize="Size.Small" />
                                 </MudTooltip>
@@ -78,27 +90,48 @@
                     <HeaderContent>
                         <MudTh>Initiated Branch</MudTh>
                         <MudTh>Initiated Date</MudTh>
+                        @if (IsIncomingComplete)
+                        {
+                            <MudTh>TransferEnd Date</MudTh>
+                        }
                         <MudTh>Status</MudTh>
                         <MudTh>Actions</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="Initiated Branch">@context.OtherBranchName</MudTd>
                         <MudTd DataLabel="Initiated Date">@context.DocumentDate</MudTd>
-                        <MudTd DataLabel="Status">@context?.DisplayStatus</MudTd>
+                        @if (IsIncomingComplete)
+                        {
+                            <MudTd DataLabel="TransferEnd Date">@context.TransferEndDate</MudTd>
+                            <MudTd DataLabel="Status">@context.DisplayCompleteStatus</MudTd>
+                        }
+                        else if (!IsIncomingComplete)
+                        {
+                            <MudTd DataLabel="Status">@context?.DisplayStatus</MudTd>
+                        }
                         <MudTd DataLabel="Actions">
-                            <MudTooltip Text="View and Accept">
-                                <MudIconButton @onclick="@(()=> Deliver(context,false))" Color="Color.Primary" Icon="@Icons.Material.Outlined.Check" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTooltip>
-                                @if (context.Status != 3)  @*|| context.EndModel.TransferStatus == 3 || context.EndModel.TransferStatus == 0)*@
+                            @if (IsIncomingComplete)
                             {
-                                if (context.DisplayStatus != "Cancelled")
-                                {
-                                    @* <MudTooltip Text="Edit">
-                            <MudFab @onclick="@(()=> Accept(context))" Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTooltip> *@
-                                    <MudTooltip Text="Cancel Incoming">
-                                        <MudIconButton @onclick="@(()=> Reject(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Close" Size="Size.Small" IconSize="Size.Small" />
+                                <MudTooltip Text="View Items">
+                                    <MudFab @onclick="@(()=> Initiate(context,true))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                                 </MudTooltip>
+                            }
+                            else
+                            {
+                                <MudTooltip Text="View and Accept">
+                                    <MudIconButton @onclick="@(()=> Deliver(context,false))" Color="Color.Primary" Icon="@Icons.Material.Outlined.Check" Size="Size.Small" IconSize="Size.Small" />
+                                </MudTooltip>
+                                @if (context.Status != 3)  @*|| context.EndModel.TransferStatus == 3 || context.EndModel.TransferStatus == 0)*@
+                                {
+                                    if (context.DisplayStatus != "Cancelled")
+                                    {
+                                        @* <MudTooltip Text="Edit">
+                                           <MudFab @onclick="@(()=> Accept(context))" Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                                           </MudTooltip> *@
+                                        <MudTooltip Text="Cancel Incoming">
+                                            <MudIconButton @onclick="@(()=> Reject(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Close" Size="Size.Small" IconSize="Size.Small" />
+                                        </MudTooltip>
+                                    }
                                 }
                             }
                         </MudTd>
@@ -116,6 +149,7 @@
 @code {
 
     private List<StockTransferInitiationModel> collectionOutGoing = new();
+    private List<StockTransferInitiationModel> CompleteOutgoing = new();
     private StockTransferInitiationModel model = new StockTransferInitiationModel();
     public bool IsOutComplete { get; set; } = false;
     public bool IsIncomingComplete { get; set; } = false;
@@ -150,11 +184,11 @@
         IsOutComplete = value;
         @if (IsOutComplete)
         {
-            
+            collectionOutGoing = IStockTransferService.SelectCompletedOutGoing(branchID).ToList();
         }
         else
         {
-            //collectionOutGoing = IStockTransferService.SelectOutGoing(branchID).ToList();
+            collectionOutGoing = IStockTransferService.SelectOutGoing(branchID).ToList();
         }
     }
 
@@ -163,11 +197,11 @@
         IsIncomingComplete = value;
         @if (IsIncomingComplete)
         {
-            
+            collectionInComing = IStockTransferService.SelectCompletedIncoming(branchID).ToList();
         }
         else
         {
-            //collectionInComing = IStockTransferService.SelectIncoming(branchID).ToList();
+            collectionInComing = IStockTransferService.SelectIncoming(branchID).ToList();
         }
     }
 
@@ -235,6 +269,7 @@
     //==================================================================//
 
     private List<StockTransferInitiationModel> collectionInComing = new();
+    private List<StockTransferInitiationModel> CompleteIncoming = new();
     public StoreModel SelectedStore { get; set; } = new();
 
     private void StoreChanged(StoreModel obj)
@@ -309,7 +344,7 @@
                         CostCenter = model.CostCenter,
                         Dimension = model.Dimension,
                         ItemsList = IStockTransferService.SelectItemsList(model?.StockTransferID).ToList(),
-                        InvTranID = model.InvTranID, 
+                        InvTranID = model.InvTranID,
                         Store = model.Store,
                         MID = model.MID,
                         UserInfo = model.UserInfo
