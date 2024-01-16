@@ -34,6 +34,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PurchaseDate", model.PurchaseDate),
                new SqlParameter("@TruckTypeID", model.TruckTypeID),
                new SqlParameter("@TransmissionType", model.TransmissionType),
+               new SqlParameter("@GrossWeight", model.GrossWeight),
+               new SqlParameter("@UnladenWeight", model.UnladenWeight),
                new SqlParameter("@AssetID", model.AssetID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -145,6 +147,8 @@ namespace ArmsServices.DataServices
                 PurchaseDate = reader.GetDateTime("PurchaseDate"),
                 SoldDate = reader.GetDateTime("SoldDate"),
                 TransmissionType = reader.GetString("TransmissionType"),
+                GrossWeight = reader.GetDecimal("GrossWeight"),
+                UnladenWeight = reader.GetDecimal("UnladenWeight"),
                 TruckTypeID = reader.GetInt16("TruckTypeID"),
                 TruckType = reader.GetString("TruckType"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
