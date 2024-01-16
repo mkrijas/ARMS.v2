@@ -36,7 +36,6 @@ namespace ArmsModels.BaseModels
         [RequiredIfTrue("IsInterBranch")]
         public int? OtherBranchID { get; set; }
         public string OtherBranchName { get; set; }
-        
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 

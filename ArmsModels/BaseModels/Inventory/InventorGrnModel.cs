@@ -118,6 +118,7 @@ namespace ArmsModels.BaseModels
     public class InventoryItemEntryModel
     {
         public long? ItemEntryID { get; set; }
+        public long? RefID { get; set; }
         [Required]
         public int? ItemID { get; set; }
         public virtual int? CoaID { get; set; }
