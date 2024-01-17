@@ -54,7 +54,7 @@ namespace ArmsServices.DataServices
                     ItemID = dr.GetInt32("ItemID"),
                     ItemDescription = dr.GetString("ItemDescription"),
                     ItemRate = dr.GetDecimal("ItemRate"),
-                    ItemQty = dr.GetDecimal("ItemQty"),
+                    ItemQty = (decimal)dr.GetDecimal("ItemQty"),
                     CoaID = dr.GetInt32("CoaID"),
                     ItemGstVal = dr.GetDecimal("ItemGstVal"),
                 };
@@ -90,8 +90,25 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public string CheckPOQty(int POID)
+        {
+            string result = "";
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@POID", POID),
+            };
+            InventoryGrnModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.GoodsReceiptNote.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            model.Entries = GetItemEntries(model.POID.Value).ToList();
+            return result;
+        }
+
         public InventoryGrnModel Update(InventoryGrnModel model)
         {
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@POID", model.POID),
@@ -108,7 +125,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("entries",model.Entries.ToDataTable()),
                new SqlParameter("@UserID",model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.GoodsReceiptNote.Update]", parameters))
+            //foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.GoodsReceiptNote.Update]", parameters))
+            foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.GoodsReceiptNoteCheckQty.Update]", parameters))
             {
                 model = GetModel(dr);
             }

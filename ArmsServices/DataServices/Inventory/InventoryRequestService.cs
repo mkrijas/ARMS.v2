@@ -51,7 +51,7 @@ namespace ArmsServices.DataServices.Inventory
                     ItemEntryID = dr.GetInt32("ItemEntryID"),
                     //RID = dr.GetInt32("RID"),
                     ItemID = dr.GetInt32("ItemID"),
-                    ItemQty = dr.GetDecimal("ItemQty"),
+                    ItemQty = (decimal)dr.GetDecimal("ItemQty"),
                     ItemRate = dr.GetDecimal("ItemRate"),
                 };
             }
