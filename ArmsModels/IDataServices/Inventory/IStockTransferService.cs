@@ -12,7 +12,9 @@ namespace ArmsServices.DataServices
     public interface IStockTransferService
     {
         IEnumerable<StockTransferInitiationModel> SelectOutGoing(int? BranchID);
+        IEnumerable<StockTransferInitiationModel> SelectCompletedOutGoing(int? BranchID);
         IEnumerable<StockTransferInitiationModel> SelectIncoming(int? BranchID);
+        IEnumerable<StockTransferInitiationModel> SelectCompletedIncoming(int? BranchID);
         IEnumerable<InventoryItemEntryModel> SelectItemsList(int? StockTransferID);
         StockTransferInitiationModel Initiate(StockTransferInitiationModel model);  //Edit
         StockTransferEndModel UpdateDelivery(StockTransferEndModel model);  //Accept

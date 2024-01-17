@@ -48,6 +48,11 @@ namespace ArmsModels.BaseModels
         public string FuelType { get; set; }
         [Required]
         public decimal? FuelTankCapacity { get; set; }
+        public decimal? SecondFuelTankCapacity { get; set; }
+        [Required]
+        public decimal? UnladenWeight { get; set; }
+        [Required]
+        public decimal? GrossWeight { get; set; }
         [Required]
         public DateTime? PurchaseDate { get; set; }
         public DateTime? SoldDate { get; set; }

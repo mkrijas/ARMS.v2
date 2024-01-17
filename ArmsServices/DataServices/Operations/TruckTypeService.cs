@@ -25,8 +25,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckType", model.TruckType),
                new SqlParameter("@BSType", model.BSType),
                new SqlParameter("@Axles", model.Axles),
-               new SqlParameter("@GrossWeight", model.GrossWeight),
-               new SqlParameter("@UnladenWeight", model.UnladenWeight),
+               
                new SqlParameter("@wheels", model.wheels),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -82,8 +81,7 @@ namespace ArmsServices.DataServices
                 TruckType = reader.GetString("TruckType"),
                 BSType = reader.GetString("BSType"),
                 Axles = reader.GetByte("Axles"),
-                GrossWeight = reader.GetDecimal("GrossWeight"),
-                UnladenWeight = reader.GetDecimal("UnladenWeight"),
+                
                 wheels = reader.GetByte("wheels"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

@@ -28,9 +28,9 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@BranchName", model.BranchName),
+               new SqlParameter("@BranchName", model.BranchName.ToUpper()),
                //new SqlParameter("@BranchCode", model.BranchCode),
-               new SqlParameter("@BranchAbbrev", model.BranchAbbrev),
+               new SqlParameter("@BranchAbbrev", model.BranchAbbrev.ToUpper()),
                //new SqlParameter("@CoaID", model.Coa.CoaID),
                new SqlParameter("@GstNo", model.GstNo),
                new SqlParameter("@AddressID", model.Address.AddressID),
