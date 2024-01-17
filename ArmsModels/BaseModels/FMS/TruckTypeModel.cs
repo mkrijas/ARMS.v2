@@ -25,11 +25,7 @@ namespace ArmsModels.BaseModels
         public string TruckType { get; set; }
         [Required]
         public string BSType { get; set; }
-        [Required]
-        public decimal? UnladenWeight { get; set; }
-        [Required]
-        public decimal? GrossWeight { get; set; }
-        [Required]
+        
         public byte? Axles { get; set; }
         [Required]
         public byte? wheels { get; set; }

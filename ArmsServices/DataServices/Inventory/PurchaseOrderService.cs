@@ -76,7 +76,7 @@ namespace ArmsServices.DataServices
                     ItemEntryID = dr.GetInt64("POItemID"),
                     ItemID = dr.GetInt32("ItemID"),
                     ItemRate = dr.GetDecimal("ItemRate"),
-                    ItemQty = dr.GetDecimal("ItemQty"),
+                    ItemQty = (decimal)dr.GetDecimal("ItemQty"),
                     ItemGstVal = dr.GetDecimal("ItemGstVal"),
                 };
             }
