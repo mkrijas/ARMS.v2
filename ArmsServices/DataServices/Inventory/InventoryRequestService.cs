@@ -231,6 +231,7 @@ namespace ArmsServices.DataServices.Inventory
                 RID = dr.GetInt32("RID"),
                 RequestDate = dr.GetDateTime("RequestDate"),
                 RequestNumber = dr.GetString("RequestNumber"),
+                IsCompletelyReleased = dr.GetBoolean("IsCompletelyReleased"),
                 Store = new()
                 {
                     StoreID = dr.GetInt32("StoreID"),
