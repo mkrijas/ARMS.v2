@@ -21,40 +21,44 @@
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudTextField ReadOnly Value="PI.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-                </MudItem>                
-                <MudItem xs="12" md="6">
-                    <MudDatePicker ReadOnly="@ReadOnly" Label="Due On" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="PI.DueOn" DateFormat="dd/MM/yyyy" />
-                </MudItem>
-            </MudGrid>
-        </EditForm>
-        <MudTable Class="mb-3" T="PaymentMemoModel" Items="@PI.SelectedMemos" Hover="true" SelectOnRowClick>
+                 </MudItem>
+                 <MudItem xs="12" md="6">
+                     <MudDatePicker ReadOnly="@ReadOnly" Label="Due On" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="PI.DueOn" DateFormat="dd/MM/yyyy" />
+                 </MudItem>
+             </MudGrid>
+         </EditForm>
+         <MudTable Class="mb-3" T="PaymentMemoModel" Items="@PI.SelectedMemos" Hover="true" SelectOnRowClick>
             <HeaderContent>
                 <MudTh>Memo Date</MudTh>
                 <MudTh>Party</MudTh>
                 <MudTh>Amount</MudTh>
                 <MudTh>Reference</MudTh>
+                <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
-                <MudTd DataLabel="Party">@context.PartyInfo.TradeName</MudTd>
-                <MudTd DataLabel="Amount">@context.TotalAmount</MudTd>
-                <MudTd DataLabel="Reference">@context.Reference</MudTd>
-            </RowTemplate>
-        </MudTable>
-        @if(ReadOnly)
-        {           
-          <AutherizationStatusComponent DocTypeID="15" DocDate="@PI.InitiatedDocumentDate" DocType="PaymentInitiate" DocNumber="@PI.DocumentNumber" DocumentID="@PI.PaymentInitiatedID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+                    <MudTd DataLabel="Party">@context.PartyInfo.TradeName</MudTd>
+                    <MudTd DataLabel="Amount">@context.TotalAmount</MudTd>
+                    <MudTd DataLabel="Reference">@context.Reference</MudTd>
+                    <MudTd>
+                        <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> Delete(@context))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+            @if (ReadOnly)
+        {
+            <AutherizationStatusComponent DocTypeID="15" DocDate="@PI.InitiatedDocumentDate" DocType="PaymentInitiate" DocNumber="@PI.DocumentNumber" DocumentID="@PI.PaymentInitiatedID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
         }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(()=> MudDialog.Cancel())">Cancel</MudButton>
-        @if(!ReadOnly)
+        @if (!ReadOnly)
         {
             <MudButton Disabled="@_busy" form="InitiatePaymentForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
         }
         else
         {
-            <MudButton OnClick="@ExportToCsv">Export Memos</MudButton>            
+            <MudButton OnClick="@ExportToCsv">Export Memos</MudButton>
         }
     </DialogActions>
 </MudDialog>
@@ -64,8 +68,10 @@
     [Parameter]
     public PaymentInitiatedModel PI { get; set; }
     [Parameter]
+    public List<PaymentMemoModel> ListPI { get; set; }
+    [Parameter]
     public bool ReadOnly { get; set; } = true;
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }    
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     string docNum;
     string UserID;
     private bool _busy;
@@ -94,7 +100,7 @@
             return;
         }
         _busy = true;
-        MudDialog.Close(PI); 
+        MudDialog.Close(PI);
         await Task.Delay(200);
         _busy = false;
     }
@@ -119,8 +125,34 @@
 
     private async Task ExportToCsv()
     {
-        List<PaymentMemoPrintDetailModel> data =  iservice.GetPaymentMemoPrintDetails(PI.PaymentInitiatedID).ToList();
+        List<PaymentMemoPrintDetailModel> data = iservice.GetPaymentMemoPrintDetails(PI.PaymentInitiatedID).ToList();
         var excelBytes = ExcelService.GenerateExcelWorkbook(data);
         await JSRuntime.InvokeVoidAsync("saveAsFile", $"test_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.xlsx", Convert.ToBase64String(excelBytes));
-    } 
+    }
+
+    private async Task Delete(PaymentMemoModel i)
+    {
+        var PaymentMemoID = i.PaymentMemoID;
+        try
+        {
+            if(PI.SelectedMemos.Count > 1)
+            {
+                iservice.Delete(i.PaymentMemoID);
+                int rowIndex = PI.SelectedMemos.IndexOf(i);
+                PI.SelectedMemos.RemoveAt(rowIndex);
+                snackbar.Add("Removed Successfully", Severity.Success);
+            }
+            else
+            {
+                snackbar.Add("Deletion is not allowed if there is only one Payment Memo", Severity.Warning);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+        
+        // await OnAmountChange.InvokeAsync();
+    }
 }
