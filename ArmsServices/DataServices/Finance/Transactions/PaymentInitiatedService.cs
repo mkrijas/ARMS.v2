@@ -146,5 +146,16 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+
+        public int? Delete(int? PaymentMemoID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PaymentMemoID", PaymentMemoID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Initiate.Delete]", parameters);
+
+        }
+
     }
 }
