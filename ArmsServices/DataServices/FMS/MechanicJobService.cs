@@ -78,6 +78,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@MechanicID", model.MechanicID),
                new SqlParameter("@JipID", model.JipID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@Odometer", model.Odometer)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.JobInProgress.Mechanic.Update]", parameters))

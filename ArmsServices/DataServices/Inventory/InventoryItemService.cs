@@ -133,7 +133,19 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public IEnumerable<JobCardTrackModel> GetJobcardTimeAndKM(int? ItemID, int? TruckID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ItemID", ItemID),
+               new SqlParameter("@TruckID", TruckID)
+            };
 
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.JobcardTimeAndKM.Select]", parameters))
+            {
+                yield return GetModelJobCard(dr);
+            }
+        }
 
         private InventoryItemModel GetModel(IDataRecord dr)
         {
@@ -157,6 +169,18 @@ namespace ArmsServices.DataServices
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
                 },
+            };
+        }
+
+        private JobCardTrackModel GetModelJobCard(IDataRecord dr)
+        {
+            return new JobCardTrackModel
+            {
+                DocumentDate = dr.GetDateTime("DocumentDate"),
+                Odometer = dr.GetInt32("Odometer"),
+                JobCardID = dr.GetInt32("JobCardID"),
+                JobcardNumber = dr.GetInt32("JobcardNumber"),
+                
             };
         }
 

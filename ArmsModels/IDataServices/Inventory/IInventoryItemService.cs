@@ -18,5 +18,6 @@ namespace ArmsServices.DataServices
         IEnumerable<InventoryItemModel> SearchByItemCode(string itemCode);
         IEnumerable<InventoryItemModel> SearchByDescription(string itemDescription);
         IEnumerable<InventoryItemModel> SearchByHsn(string HsnCode);
+        IEnumerable<JobCardTrackModel> GetJobcardTimeAndKM(int? ItemID, int? TruckID);
     }
 }

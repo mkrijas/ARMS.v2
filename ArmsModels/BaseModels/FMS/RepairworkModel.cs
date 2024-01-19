@@ -43,6 +43,7 @@ namespace ArmsModels.BaseModels
         public int? JobCardID { get; set; }
         public int? WorkshopID { get; set; }
         public int? JobStatus { get; set; }
+        public decimal Odometer { get; set; }
         public string JobStatusText
         {
             get
@@ -88,5 +89,6 @@ namespace ArmsModels.BaseModels
         public DateTime? AssignedOn { get; set; }
         public DateTime? EndedOn { get; set; }
         public UserInfoModel UserInfo { get; set; }
+        public decimal Odometer { get; set; }
     }
 }
