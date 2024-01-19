@@ -203,7 +203,7 @@ namespace ArmsServices.DataServices.General
                 case "Asset": KeyString = "AssetFinanceBaseGroupID"; break;
                 case "Liability": KeyString = "LiabilityFinanceBaseGroupID"; break;
                 case "Income": KeyString = "IncomeFinanceBaseGroupID"; break;
-                case "Expence": KeyString = "ExpenceFinanceBaseGroupID"; break;
+                case "Expense": KeyString = "ExpenceFinanceBaseGroupID"; break;
                 case "Capital": KeyString = "CapitalFinanceBaseGroupID"; break;
                 default: KeyString = string.Empty; break;
             }
