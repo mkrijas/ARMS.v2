@@ -67,13 +67,15 @@
                                 {
                                     <tr>
                                         <td>@(itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.InventoryItemCode) | @(itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.ItemDescription)</td>
-                                        <td>@item.ItemQty</td>
+                                        @* <td>@item.ItemQty</td> *@
+                                        <td><MudTextField Label="Quantity" Immediate=true T="decimal" bind-value-oninput="@item.ItemQty" Value="@item.ItemQty" ValueChanged="@(e => CalculateAndDisplay(e, @item))" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @item.ItemQty)"></MudTextField></td>
+                                        @* <td contenteditable="true" bind-value-oninput= "item.ItemQty">@item.ItemQty</td> *@
                                         <td>@item.ItemRate</td>
                                         <td>@item.ItemGstVal</td>
                                         <td>
                                             @if (!ReadOnly)
                                             {
-                                                <MudFab Color="Color.Error" @onclick="@(()=> Delete(@item))" StartIcon ="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                                <MudFab Color="Color.Error" @onclick="@(()=> Delete(@item))" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                                             }
                                         </td>
                                     </tr>
@@ -150,6 +152,10 @@
 
     public InventoryItemModel SelectedItem = new();
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
+
+    decimal ItemGSTValue = 0;
+    decimal TotalValue = 0;
+
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -181,6 +187,10 @@
         {
             partyinfo = partyIservice.SelectByID(model.PartyID);
             model.PartyID = partyinfo.PartyID;
+            foreach (var item in model.Entries)
+            {
+                CalculateAndDisplay(item.ItemQty, item);
+            }
         }
         else
         {
@@ -206,6 +216,7 @@
                 snackbar.Add("Add at least one Entry before Submitting", Severity.Error);
                 return;
             }
+
             else
             {
                 model.PartyCode = partyinfo.PartyCode;
@@ -341,7 +352,7 @@
 
         if (gstrt != 0)
         {
-            Entrymodel.ItemGstVal = (((Entrymodel.ItemRate.Value) * (Entrymodel.ItemQty.Value)) * gstrt) / 100;
+            Entrymodel.ItemGstVal = (((Entrymodel.ItemRate.Value) * (Entrymodel.ItemQty)) * gstrt) / 100;
         }
         model.Entries.Add(Entrymodel);
         Entrymodel = new();
@@ -361,4 +372,21 @@
         Entrymodel.ItemID = item?.InventoryItemID;
 
     }
+
+
+
+    decimal CalculateAndDisplay(decimal ItemQty, InventoryItemEntryModel entryModel)
+    {
+        entryModel.ItemQty = ItemQty;
+        model.TotalValue = 0;
+        decimal gstrt = 0;
+        gstrt = getgstrate(entryModel.ItemID.Value);
+        entryModel.ItemGstVal = (((entryModel.ItemRate.Value) * (entryModel.ItemQty)) * gstrt) / 100;
+        foreach(var item in model.Entries)
+        {
+            model.TotalValue += (item.ItemQty * item.ItemRate) + item.ItemGstVal;
+        }
+        return entryModel.ItemGstVal.Value;
+    }
+
 }

@@ -45,54 +45,52 @@
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Remarks" Lines="2" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th>Total</th>
-                                    <th>@model.TotalValue</th>
-                                </tr>
-                                <tr>
-                                    <th>Items</th>
-                                    <th>Quantity</th>
-                                    <th>Rate</th>
-                                    <th>Gst</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in model.Entries)
-                                {
-                                    var itemInfo = itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID);
-                                    <tr>
-                                        <td>@string.Format("{0} | {1}",itemInfo?.InventoryItemCode,itemInfo?.ItemDescription)</td>
-                                        <td>@item.ItemQty</td>
-                                        <td>@item.ItemRate</td>
-                                        <td>@item.ItemGstVal</td>
-                                        <td>
+                        <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
+                            <div style="width: 1160px;" class="pb-3">
+                                <MudGrid Justify="Justify.Center">
+                                    <MudItem xs="7"></MudItem>
+                                    <MudItem xs="2"><span class=""><b>TOTAL : </b></span></MudItem>
+                                    <MudItem xs="2">@model.TotalValue</MudItem>
+                                    <MudItem xs="1"></MudItem>
+
+                                    <MudItem xs="5"><span class=""><b>ITEMS</b></span></MudItem>
+                                    <MudItem xs="2"><span class=""><b>QUANTITY</b></span></MudItem>
+                                    <MudItem xs="2"><span class=""><b>RATE</b></span></MudItem>
+                                    <MudItem xs="2"><span class=""><b>GST</b></span></MudItem>
+                                    <MudItem xs="1"><span class=""><b></b></span></MudItem>
+                                    @foreach (var item in model.Entries)
+                                    {
+                                        var itemInfo = itm.FirstOrDefault(x => x.InventoryItemID == item.ItemID);
+
+                                        <MudItem xs="5">@string.Format("{0} | {1}",itemInfo?.InventoryItemCode,itemInfo?.ItemDescription)</MudItem>
+                                        <MudItem xs="2">@item.ItemQty<MudText Class="mx-4" Typo="Typo.caption" Style="opacity: 0.8;">@item.UOM</MudText></MudItem>
+                                        <MudItem xs="2">@item.ItemRate</MudItem>
+                                        <MudItem xs="2">@item.ItemGstVal</MudItem>
+                                        <MudItem xs="1">
                                             @if (!ReadOnly)
                                             {
                                                 <MudFab Color="Color.Error" @onclick="@(()=> Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                                             }
-                                        </td>
-                                    </tr>
-                                }
-                                @if (!ReadOnly)
-                                {
-                                    <tr>
-                                        <td colspan="2">
+                                        </MudItem>
+                                    }
+                                    @if (!ReadOnly)
+                                    {
+                                        <MudItem xs="5">
                                             <InventoryItemSelector Value="SelectedItem" ValueChanged="@((InventoryItemModel newValue) => ItemChanged(newValue))" />
-                                            </td>
-                                        <td><MudTextField @bind-Value="Entrymodel.ItemQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField></td>
-                                        <td><MudTextField @bind-Value="Entrymodel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemRate)"></MudTextField></td>
-                                        <td></td>
-                                        <td><MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" /></td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </MudSimpleTable>
+                                        </MudItem>
+                                        <MudItem xs="3">
+                                            <MudTextField @bind-Value="Entrymodel.ItemQty" Adornment="Adornment.End" AdornmentText="@UOM" AdornmentColor="Color.Warning" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemQty)"></MudTextField>
+                                        </MudItem>
+                                        <MudItem xs="3">
+                                            <MudTextField @bind-Value="Entrymodel.ItemRate" Label="Rate" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Entrymodel.ItemRate)"></MudTextField>
+                                        </MudItem>
+                                        <MudItem xs="1">
+                                            <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+                            </div>
+                        </MudItem>
                     </MudItem>
                     <MudItem xs="12">
                         @if ((ReadOnly) && (!IsView))
@@ -138,6 +136,8 @@
     public InventoryItemModel SelectedItem = new();
     private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    public string UOM { get; set; }
+
     private bool _busy;
 
     public bool HasPermissionPurchaseOrderServiceApprove { get; set; } = false;
@@ -201,7 +201,7 @@
     }
 
     private void Delete(InventoryItemEntryModel i)
-    {       
+    {
         int rowIndex = model.Entries.IndexOf(i);
         model.Entries.RemoveAt(rowIndex);
         SetTotal();
@@ -238,10 +238,10 @@
     }
 
     public decimal getgstrate(int itemID)
-    {        
-        var itemGst = gstIservice.SelectByItem(itemID,(model.EntryDate ?? DateTime.Today));
+    {
+        var itemGst = gstIservice.SelectByItem(itemID, (model.EntryDate ?? DateTime.Today));
         decimal? gstrate = itemGst.TaxRate;
-        return gstrate??0;
+        return gstrate ?? 0;
     }
 
 
@@ -255,7 +255,7 @@
 
 
     private void AddItems()
-    {          
+    {
         if (Entrymodel.ItemID == null || Entrymodel.ItemRate == null || Entrymodel.ItemQty == null)
         {
             snackbar.Add("Please fill in all Fields", Severity.Error);
@@ -269,12 +269,13 @@
         }
         catch { }
 
-        if ( gstrt != 0 )
+        if (gstrt != 0)
         {
-            Entrymodel.ItemGstVal = (((Entrymodel.ItemRate.Value) * (Entrymodel.ItemQty.Value)) * gstrt) / 100;
+            Entrymodel.ItemGstVal = (((Entrymodel.ItemRate.Value) * (Entrymodel.ItemQty)) * gstrt) / 100;
         }
-        model.Entries.Add(Entrymodel);       
-        Entrymodel = new();        
+        Entrymodel.UOM = UOM;
+        model.Entries.Add(Entrymodel);
+        Entrymodel = new();
         SelectedItem = new();
 
         SetTotal();
@@ -282,13 +283,13 @@
 
     void SetTotal()
     {
-       model.TotalValue =   model.Entries.Sum(x => (x.ItemQty * x.ItemRate) + x.ItemGstVal);
+        model.TotalValue = model.Entries.Sum(x => (x.ItemQty * x.ItemRate) + x.ItemGstVal);
     }
 
     protected void ItemChanged(InventoryItemModel item)
     {
-        SelectedItem = item;        
+        SelectedItem = item;
         Entrymodel.ItemID = item?.InventoryItemID;
-
+        UOM = item?.UoM;
     }
 }

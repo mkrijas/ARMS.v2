@@ -15,5 +15,6 @@ namespace ArmsServices.DataServices
         IEnumerable<PaymentInitiatedModel> Select(int? BranchID);   
         IEnumerable<PaymentInitiatedModel> SelectInitiatedBetween(int? BranchID, DateTime Begin, DateTime End);
         IEnumerable<PaymentMemoPrintDetailModel> GetPaymentMemoPrintDetails(int? ID);
+        int? Delete(int? PaymentMemoID);
     }
 }

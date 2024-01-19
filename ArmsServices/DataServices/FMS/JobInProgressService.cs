@@ -80,6 +80,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@JobStatus", model.JobStatus),
                new SqlParameter("@Remarks", model.Remarks),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@Odometer", model.Odometer)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.JobInProgress.Update]", parameters))

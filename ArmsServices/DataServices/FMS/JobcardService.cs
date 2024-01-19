@@ -110,6 +110,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PMIID", model.PMIID),
                new SqlParameter("@RecordStatus", model.UserInfo.RecordStatus),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@Odometer", model.Odometer)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.Update]", parameters))
@@ -131,6 +132,7 @@ namespace ArmsServices.DataServices
                 JobcardNumber = dr.GetString("JobcardPrefix") + dr.GetInt32("JobcardNumber").ToString(),
                 TruckID = dr.GetInt32("TruckID"),
                 RegNo = dr.GetString("RegNo"),
+                Odometer = (decimal)dr.GetDecimal("Odometer"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

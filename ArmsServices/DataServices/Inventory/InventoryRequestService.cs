@@ -51,7 +51,7 @@ namespace ArmsServices.DataServices.Inventory
                     ItemEntryID = dr.GetInt32("ItemEntryID"),
                     //RID = dr.GetInt32("RID"),
                     ItemID = dr.GetInt32("ItemID"),
-                    ItemQty = dr.GetDecimal("ItemQty"),
+                    ItemQty = (decimal)dr.GetDecimal("ItemQty"),
                     ItemRate = dr.GetDecimal("ItemRate"),
                 };
             }
@@ -231,6 +231,7 @@ namespace ArmsServices.DataServices.Inventory
                 RID = dr.GetInt32("RID"),
                 RequestDate = dr.GetDateTime("RequestDate"),
                 RequestNumber = dr.GetString("RequestNumber"),
+                IsCompletelyReleased = dr.GetBoolean("IsCompletelyReleased"),
                 Store = new()
                 {
                     StoreID = dr.GetInt32("StoreID"),

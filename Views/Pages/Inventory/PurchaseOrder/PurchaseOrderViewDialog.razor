@@ -40,7 +40,7 @@
     </DialogContent>
 </MudDialog>
 
-@code {
+    @code {
 
     private PurchaseOrderModel model = new PurchaseOrderModel();
     private List<PurchaseOrderModel> collection = new List<PurchaseOrderModel>();
@@ -92,8 +92,10 @@
         await Task.Delay(200);
         _busy = false;
     }
+    List<InventoryItemEntryModel> PoItems = new();
 
-    private async Task Add(PurchaseOrderModel tds)
+
+    private async Task Add(PurchaseOrderModel po)
     {
         if (_busy)
         {
@@ -101,18 +103,20 @@
             return;
         }
         _busy = true;
-        tds.Entries = Iservice.GetItemEntries(tds.POID.Value).ToList();
+        po.Entries = Iservice.GetItemEntries(po.POID.Value).ToList();
+        po.Entries.ForEach(x => PoItems.Add(x));
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         InventoryGrnModel grn = new();
-        grn.POID = tds.POID;
-        grn.EntryDate = tds.EntryDate;
-        grn.PartyID = tds.PartyID;
-        grn.TotalValue = tds.TotalValue;
-        grn.Reference = tds.Reference;
-        grn.Remarks = tds.Remarks;
-        grn.StoreID = tds.StoreID;
-        grn.Entries = tds.Entries.Select(x => { x.ItemEntryID = null; return x; }).ToList();
+        grn.POID = po.POID;
+        grn.EntryDate = po.EntryDate;
+        grn.PartyID = po.PartyID;
+        grn.TotalValue = po.TotalValue;
+        grn.Reference = po.Reference;
+        grn.Remarks = po.Remarks;
+        grn.StoreID = po.StoreID;
+        grn.Entries = po.Entries.Select(x => { x.RefID = x.ItemEntryID; x.ItemEntryID = null; return x; }).ToList();
         DialogParameters parms = new DialogParameters();
         parms.Add("model", grn.Clone());
         var dialog = DialogService.Show<InventoryGrnDialog>(grn.GrnID == null ? "ADD" : "EDIT", parms, maxWidth);
