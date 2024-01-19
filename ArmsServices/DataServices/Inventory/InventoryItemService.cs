@@ -125,6 +125,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UoM",model.UoM),
                new SqlParameter("@HsnCode",model.HsnCode),
                new SqlParameter("@UserID",model.UserInfo.UserID),
+               new SqlParameter("@Group2", model.Group2),
+               new SqlParameter("@Make", model.Make)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Item.Update]", parameters))
             {
@@ -157,6 +159,8 @@ namespace ArmsServices.DataServices
                 InventoryItemID = dr.GetInt32("InventoryItemID"),
                 UoM = dr.GetString("UoM"),
                 ItemDescription = dr.GetString("ItemDescription"),
+                Group2 = dr.GetString("Group2"),
+                Make = dr.GetString("Make"),
                 Group = new InventoryGroupModel()
                 {
                     MappedConsumptionHead = dr.GetInt32("MappedConsumptionHead"),
