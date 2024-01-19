@@ -77,6 +77,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@JobCardID", model.JobCardID),
                new SqlParameter("@WorkshopID", model.WorkshopID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@Odometer", model.Odometer)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.WorkshopEntry.Update]", parameters))

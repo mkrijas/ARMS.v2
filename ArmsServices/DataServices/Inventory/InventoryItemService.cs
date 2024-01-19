@@ -125,6 +125,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UoM",model.UoM),
                new SqlParameter("@HsnCode",model.HsnCode),
                new SqlParameter("@UserID",model.UserInfo.UserID),
+               new SqlParameter("@Group2", model.Group2),
+               new SqlParameter("@Make", model.Make)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Item.Update]", parameters))
             {
@@ -133,7 +135,19 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public IEnumerable<JobCardTrackModel> GetJobcardTimeAndKM(int? ItemID, int? TruckID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ItemID", ItemID),
+               new SqlParameter("@TruckID", TruckID)
+            };
 
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.JobcardTimeAndKM.Select]", parameters))
+            {
+                yield return GetModelJobCard(dr);
+            }
+        }
 
         private InventoryItemModel GetModel(IDataRecord dr)
         {
@@ -145,6 +159,8 @@ namespace ArmsServices.DataServices
                 InventoryItemID = dr.GetInt32("InventoryItemID"),
                 UoM = dr.GetString("UoM"),
                 ItemDescription = dr.GetString("ItemDescription"),
+                Group2 = dr.GetString("Group2"),
+                Make = dr.GetString("Make"),
                 Group = new InventoryGroupModel()
                 {
                     MappedConsumptionHead = dr.GetInt32("MappedConsumptionHead"),
@@ -157,6 +173,18 @@ namespace ArmsServices.DataServices
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
                 },
+            };
+        }
+
+        private JobCardTrackModel GetModelJobCard(IDataRecord dr)
+        {
+            return new JobCardTrackModel
+            {
+                DocumentDate = dr.GetDateTime("DocumentDate"),
+                Odometer = dr.GetInt32("Odometer"),
+                JobCardID = dr.GetInt32("JobCardID"),
+                JobcardNumber = dr.GetInt32("JobcardNumber"),
+                
             };
         }
 

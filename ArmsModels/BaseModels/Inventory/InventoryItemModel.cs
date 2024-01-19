@@ -33,6 +33,8 @@ namespace ArmsModels.BaseModels
         public virtual decimal? QtyAvailable { get; set; }
         public InventoryGroupModel Group { get; set; } = new();
         public SharedModels.UserInfoModel UserInfo { get; set; }
+        public string Group2 { get; set; }
+        public string Make { get; set; }
     }
 
     public class InventoryGroupModel :ICloneable
@@ -53,6 +55,33 @@ namespace ArmsModels.BaseModels
         public int? MappedPurchaseHead { get; set; }
         public int? MappedConsumptionHead { get; set; }
         public int? MappedNonInventoryPurchaseHead { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+    }
+
+    public class JobCardTrackModel : ICloneable
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<InventoryItemModel>(Json);
+        }
+        public JobCardTrackModel()
+        {
+
+            UserInfo = new SharedModels.UserInfoModel();
+        }
+        public DateTime? DocumentDate { get; set; }
+        [Required]
+        public decimal? Odometer { get; set; }
+        public int? JobCardID { get; set; }
+        [Required]
+        public int? JobcardNumber { get; set; }
+        [Required]
+        public string UoM { get; set; }
+        [StringLength(8)]
+        public string HsnCode { get; set; }
+        public virtual decimal? QtyAvailable { get; set; }
+        public InventoryGroupModel Group { get; set; } = new();
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 }

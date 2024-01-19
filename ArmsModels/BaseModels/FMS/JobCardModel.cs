@@ -34,6 +34,8 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; }
 
         public int? PMIID { get; set; } = null;
+        [Required]
+        public decimal Odometer { get; set; }
     }
 
     //public class MaterialRequestModel
@@ -64,5 +66,6 @@ namespace ArmsModels.BaseModels
         public DateTime? EnteredOn { get; set; }
         public DateTime? ExitOn { get; set; }
         public UserInfoModel UserInfo { get; set; }
+        public decimal Odometer { get; set; }
     }
 }
