@@ -129,7 +129,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@SerialNumber", model.SerialNumber),
                new SqlParameter("@SpanOfYear", model.SpanOfYear),
                new SqlParameter("@Status", model.Status),
-               new SqlParameter("@PartyID", model.VendorInfo.PartyID),
+               new SqlParameter("@PartyID", model.VendorInfo?.PartyID),
                new SqlParameter("@WarrentyDate", model.WarrentyDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };

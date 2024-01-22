@@ -174,13 +174,22 @@
     bool HasPermissionAssetServiceEdit { get; set; } = false;
     int AssetDocTypeID = 112;
 
-    int BranchID; 
+    int BranchID;
+    string UserID;
 
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionAssetServiceEdit = await Irole.HasClaim(AssetDocTypeID.ToString(), "Edit", ctc.Token);
+
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = user.Claims.First(x => x.Type == "BranchID").Value;
+        BranchID = int.Parse(brancIDString);
+        model.BranchID = BranchID;
+        UserID = user.Identity.Name;
 
         assetclassList = assetclassIservice.SelectClasses().ToList();
         vendorListList = partyIservice.GetVendors(string.Empty).ToList();
@@ -245,12 +254,8 @@
 
         if (HasPermissionAssetServiceEdit)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-            int brancID = int.Parse(brancIDString);
-            model.BranchID = brancID;
-            model.UserInfo.UserID = user.Identity.Name;
+
+            model.UserInfo.UserID = UserID;
             try
             {
                 Iservice.UpdateAsset(model);

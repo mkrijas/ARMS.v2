@@ -25,11 +25,11 @@ namespace ArmsModels.BaseModels
         [StringLength(8)]
         public virtual string AssetCode { get; set; }
         public string SerialNumber { get; set; }
-        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        [Required]
         public string NatureOfAsset { get; set; }//Tangible, Intangible
-        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        [Required]
         public AssetClassModel AssetClass { get; set; } // Building,Vehicle,Computer etc
-        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        [Required]
         public AssetSubClassModel SubClass { get; set; } // Printers,Chair,Engine etc
         [Required]
         public int? BranchID { get; set; }
@@ -42,7 +42,7 @@ namespace ArmsModels.BaseModels
         public string HsnCode { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public DateTime? WarrentyDate { get; set; }
-        [Required]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public PartyModel VendorInfo { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public string DepreciationBookCode { get; set; }// Income Tax,Company Act
