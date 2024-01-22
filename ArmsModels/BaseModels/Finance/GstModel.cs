@@ -25,7 +25,7 @@ namespace ArmsModels.BaseModels
         public virtual string CoaDescreption { get; set; }
         public virtual string CoaAccountCode { get; set; }
         [Required]
-        public string Area { get; set; } = "All"; // Operation,Maintenance,All
+        public string GstMechanism { get; set; } = "FCM"; // Operation,Maintenance,All
         [Required]
         public int? RID { get; set; }
         public virtual decimal? TaxRate { get; set; }

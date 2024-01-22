@@ -76,9 +76,9 @@ namespace ArmsServices.DataServices
         }
 
 
-        public async Task TriggerAsync(string trigger,object obj)
+        public async Task TriggerAsync(string trigger, string user,object obj)
         {
-            await hubConnection.SendAsync(trigger,obj);            
+            await hubConnection.SendAsync(trigger, user,obj);            
         }
 
        

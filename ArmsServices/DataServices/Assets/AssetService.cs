@@ -63,6 +63,7 @@ namespace ArmsServices.DataServices
                 Description = dr.GetString("Description"),
                 CurrentValue = dr.GetDecimal("CurrentValue"),
                 GstRateID = dr.GetInt32("GstRateID"),
+                GstMechanism = dr.GetString("GstMechanism"),
                 HsnCode = dr.GetString("HsnCode"),
                 NatureOfAsset = dr.GetString("NatureOfAsset"),
                 ProjectedDisposalDate = dr.GetDateTime("ProjectedDisposalDate"),
@@ -102,11 +103,9 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AssetID", model.AssetID),
-               //new SqlParameter("@Description", model.Description),
                new SqlParameter("@IsComplex", model.IsComplex),
                new SqlParameter("@ParentAssetID", model.ParentAssetID),
-               new SqlParameter("@BranchID", model.BranchID),
-               //new SqlParameter("@AccountTransactionID", model.CurrentValue),
+               new SqlParameter("@BranchID", model.BranchID),               
                new SqlParameter("@AssetClassID", model.AssetClass.AssetClassID),
                new SqlParameter("@SubAssetClassID", model.SubClass.ID),
                new SqlParameter("@AssetCode", model.AssetCode),
@@ -121,6 +120,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DepreciationMethod", model.DepreciationMethod),
                new SqlParameter("@Description", model.Description),
                new SqlParameter("@GstRateID", model.GstRateID),
+               new SqlParameter("@GstMechanism", model.GstMechanism),
                new SqlParameter("@HsnCode", model.HsnCode),
                new SqlParameter("@NatureOfAsset", model.NatureOfAsset),
                new SqlParameter("@ProjectedDisposalDate", model.ProjectedDisposalDate),
