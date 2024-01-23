@@ -20,6 +20,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string Description { get; set; }
         public int? ParentAssetID { get; set; }
+        [Required]
         public bool IsComplex { get; set; } = false;
         [StringLength(8)]
         public virtual string AssetCode { get; set; }
@@ -32,14 +33,16 @@ namespace ArmsModels.BaseModels
         public AssetSubClassModel SubClass { get; set; } // Printers,Chair,Engine etc
         [Required]
         public int? BranchID { get; set; }
-        [Required]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public int? GstRateID { get; set; }
-        [Required]
-        [StringLength(8)]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public string GstMechanism { get; set; } // FCM/RCM/INELIGIBLE
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        [StringLength(10)]
         public string HsnCode { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public DateTime? WarrentyDate { get; set; }
-        [Required]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public PartyModel VendorInfo { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public string DepreciationBookCode { get; set; }// Income Tax,Company Act
@@ -98,9 +101,12 @@ namespace ArmsModels.BaseModels
         }
         public int? ID { get; set; }
         public int? AssetSubClassID { get; set; }
-        [Required(ErrorMessage = "Name of Asset SubClass is required.")]
+        [Required(ErrorMessage = "Name of Asset SubClass is required !")]
         public virtual string AssetSubclass { get; set; }
-        [Required(ErrorMessage = "AssetClass is required.")]
+        [Required(ErrorMessage = "Asset SubClass Abbreviation is required.")]
+        [StringLength(3, MinimumLength = 3, ErrorMessage = "Asset SubClass Abbreviation must have 3 characters !")]
+        public string AssetSubAbbrev { get; set; }
+        [Required(ErrorMessage = "AssetClass is required !")]
         public int? AssetClassID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
