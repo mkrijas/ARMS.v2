@@ -359,7 +359,7 @@ namespace Views
             {
                 endpoints.MapControllers();
                 endpoints.MapBlazorHub();
-                endpoints.MapHub<ChatHub>("/chatHub");
+                endpoints.MapHub<ServerSignalHub>("/chatHub");
                 endpoints.MapFallbackToPage("/_Host");
                 
             });

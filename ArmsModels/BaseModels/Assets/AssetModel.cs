@@ -20,6 +20,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string Description { get; set; }
         public int? ParentAssetID { get; set; }
+        [Required]
         public bool IsComplex { get; set; } = false;
         [StringLength(8)]
         public virtual string AssetCode { get; set; }
@@ -32,14 +33,16 @@ namespace ArmsModels.BaseModels
         public AssetSubClassModel SubClass { get; set; } // Printers,Chair,Engine etc
         [Required]
         public int? BranchID { get; set; }
-        [Required]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public int? GstRateID { get; set; }
-        [Required]
-        [StringLength(8)]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public string GstMechanism { get; set; } // FCM/RCM/INELIGIBLE
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        [StringLength(10)]
         public string HsnCode { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public DateTime? WarrentyDate { get; set; }
-        [Required]
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public PartyModel VendorInfo { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public string DepreciationBookCode { get; set; }// Income Tax,Company Act
