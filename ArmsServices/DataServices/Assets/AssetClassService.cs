@@ -26,6 +26,7 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.AssetClass.Delete]", parameters);
         }
+
         public int DeleteSubClass(int? AssetSubClassID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -61,8 +62,8 @@ namespace ArmsServices.DataServices
             {
                 yield return GetAssetSubClass(dr);
             }
-            
         }
+            
         public IEnumerable<AssetSubClassModel> SelectSubClassesByClass(int? ClassID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -148,6 +149,3 @@ namespace ArmsServices.DataServices
         }
     }
 }
-   
-
-     
