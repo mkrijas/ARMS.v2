@@ -75,6 +75,8 @@ namespace ArmsModels.BaseModels
         public string Status { get; set; }//Scrap,Dismantled,Sold,Revaluated        
         public UserInfoModel UserInfo { get; set; } = new();
         public decimal? GSTValue { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public int? GetAccountRuleDefinition { get; set; }
     }
 
     public class AssetViewModel
@@ -187,5 +189,14 @@ namespace ArmsModels.BaseModels
             return JsonConvert.DeserializeObject<AssetPurchaseModel>(Json);
         }
     }
+
+    public class AccountRuleDefModel
+    {
+        public int? ID { get; set; }
+        public string? Title { get; set; }
+        public int? CapitalizationID { get; set; }
+        public int? CWIPID { get; set; }
+    }
+
 
 }
