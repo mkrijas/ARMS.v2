@@ -1,0 +1,272 @@
+﻿@attribute [Authorize]
+@using System.Threading;
+@using Core.BaseModels.General;
+@inject AuthenticationStateProvider auth
+@inject IAssetService iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@using System.Text;
+@using Views.Pages.Finance.Transactions
+@inject IJSRuntime JSRuntime
+@inject IPartyService partyIservice
+@inject IRoleService<RoleModel> Irole
+@inject ITaxPurchaseService Iservice
+
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Purchase" formID="formTaxPurchase" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+    <FormContent>
+
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+                Create Asset Purchase  : @docNum
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm id="InitiatePaymentForm" Model="@PI" OnValidSubmit="OnValidSubmit" EditContext="editContext" autocomplete="off">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <PartySelector Value="model.PartyInfo" For="@(()=> model.PartyInfo)" ValueChanged="PartyChanged" NatureOfBusiness="Supplier"></PartySelector>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="model.InvoiceDate" For="@(() => model.InvoiceDate)" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceNo)"></MudTextField>
+                    </MudItem>
+                    @* <MudItem xs="12" md="6">
+                    <MudTextField ReadOnly="ReadOnly" @bind-Value="model.AdditionalTDS" Label="Additional TDS" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdditionalTDS)"></MudTextField>
+                    </MudItem> *@
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" ExpenseList="@model.Expenses" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    @* <MudItem xs="12">
+                    <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" ItemList="@model.Items" ReadOnly="@ReadOnly" EditMode="@(model.PID != null)" />
+                    </MudItem> *@
+                </MudGrid>
+            </EditForm>
+            <MudTable Class="mb-3" T="AssetModel" Items="@PI.SelectedAssets" Hover="true" SelectOnRowClick>
+                <HeaderContent>
+                    <MudTh>Description</MudTh>
+                    <MudTh>Nature Of Asset</MudTh>
+                    <MudTh>Serial Number</MudTh>
+                    <MudTh>Simple/Complex</MudTh>
+                    <MudTh>Book Value</MudTh>
+                    <MudTh>Current Value</MudTh>
+                    <MudTh>Salvage Value</MudTh>
+                    <MudTh>GST</MudTh>
+                    @* <MudTh>Actions</MudTh> *@
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Description">@context.Description</MudTd>
+                        <MudTd DataLabel="NatureOfAsset">@context.NatureOfAsset</MudTd>
+                        <MudTd DataLabel="SerialNumber">@context.SerialNumber</MudTd>
+                        <MudTd DataLabel="@(context.IsComplex ? "Complex" : "Simple")">
+                            @if (context.IsComplex)
+                        {
+                            <div>Complex</div>
+                        }
+                        else
+                        {
+                            <div>Simple</div>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="BookValue">@context.BookValue</MudTd>
+                        <MudTd DataLabel="CurrentValue">@context.CurrentValue</MudTd>
+                        <MudTd DataLabel="SalvageValue">@context.SalvageValue</MudTd>
+                        <MudTd DataLabel="GSTValue">
+                            @string.Format("{0:F3}", context.GSTValue)
+                    </MudTd>
+                        @* <MudTd>
+                    <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> Delete(@context))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                    </MudTd> *@
+                    </RowTemplate>
+                </MudTable>
+                @* @if (ReadOnly)
+            {
+            <AutherizationStatusComponent DocTypeID="15" DocDate="@PI.InitiatedDocumentDate" DocType="PaymentInitiate" DocNumber="@PI.DocumentNumber" DocumentID="@PI.PaymentInitiatedID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+            } *@
+            </DialogContent>
+            @*         <DialogActions>
+        <MudButton OnClick="@(()=> MudDialog.Cancel())">Cancel</MudButton>
+        @if (!ReadOnly)
+        {
+        <MudButton Disabled="@_busy" form="InitiatePaymentForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+        }
+        else
+        {
+        <MudButton OnClick="@ExportToCsv">Export Memos</MudButton>
+        }
+        </DialogActions> *@
+        </FormContent>
+        <VerificationStatus>
+            <AutherizationStatusComponent DocTypeID="@TaxPurchaseDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="@model.PID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+        </VerificationStatus>
+    </DialogForm>
+
+
+    @code {
+
+    [Parameter]
+    public TaxPurchaseModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; } = true;
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    string docNum;
+    string UserID;
+    private bool _busy;
+    public AssetDocumentTypeModel DocumentType { get; set; }
+    public string DocNumber { get; set; }
+    public DateTime? DocDate { get; set; }
+    public string DocType { get; set; }
+    private EditContext editContext;
+    private int? branchID = null;
+    private bool Local;
+    public bool HasPermissionTaxPurchaseServiceEdit { get; set; } = false;
+    public bool HasPermissionTaxPurchaseServiceApprove { get; set; } = false;
+    int TaxPurchaseDocTypeID = 9;
+    DialogForm dialogForm;
+    public DocumentDetailsModel DocumentDetails { get; set; } = new();
+    [Parameter]
+    public string PageToRedirectLink { get; set; }
+
+    [Parameter]
+    public AssetPurchaseModel PI { get; set; }
+    [Parameter]
+    public List<AssetModel> ListPI { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTaxPurchaseServiceEdit = await Irole.HasClaim(TaxPurchaseDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTaxPurchaseServiceApprove = await Irole.HasClaim(TaxPurchaseDocTypeID.ToString(), "Approve", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        if (model.PID == null && model.PartyInfo != null)
+        {
+            PartyChanged(model.PartyInfo);
+        }
+
+        if (model.PID != null)
+        {
+            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
+            model.Expenses = Iservice.GetExpenses(model.PID).ToList();
+            model.Items = Iservice.GetItems(model.PID).ToList();
+        }
+        else
+        {
+            model.NatureOfTransaction = "TaxPurchase";
+            model.BranchID = branchID;
+            model.NonStoreInventory = model.GRNID == null;
+        }
+        DocNumber = model.DocumentNumber;
+        DocDate = model.DocumentDate;
+        DocType = model.NatureOfTransaction;
+
+        // if (PI.PaymentInitiatedID == null)
+        // {
+        //     docNum = "New";
+        // }
+        // else
+        // {
+        //     docNum = PI.DocumentNumber;
+        // }
+    }
+
+    void PartyChanged(PartyModel party)
+    {
+        model.PartyInfo = party;
+        if (party != null)
+        {
+            Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
+        }
+        else { Local = false; }
+    }
+
+    private async Task OnValidSubmit()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        MudDialog.Close(PI);
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    protected void ApproveEntry(DataApprovedStatus aprvd)
+    {
+        if (aprvd.IsApprove)
+        {
+            try
+            {
+                //iservice.Approve(PI.PaymentInitiatedID, UserID, aprvd.Remarks);
+                snackbar.Add("Approved Successfully", Severity.Success);
+                PI.AuthLevelId = 99;
+                PI.AuthStatus = "Approved";
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+
+    async Task AddExpense(TaxPurchaseExpenseModel expenseModel)
+    {
+        model.Expenses.Add(expenseModel);
+        SetTotal();
+    }
+
+    void SetTotal()
+    {
+        model.TotalAmount = (model.Expenses.Where(x => x != null).Sum(x => x.Amount + x.IGST + x.CGST + x.SGST) ?? 0) + (model.Items.Where(y => y != null).Sum(y => y.Amount + y.IGST + y.CGST + y.SGST) ?? 0);
+    }
+
+    private async Task ExportToCsv()
+    {
+        //List<PaymentMemoPrintDetailModel> data = iservice.GetPaymentMemoPrintDetails(PI.PaymentInitiatedID).ToList();
+        // var excelBytes = ExcelService.GenerateExcelWorkbook(data);
+        //await JSRuntime.InvokeVoidAsync("saveAsFile", $"test_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.xlsx", Convert.ToBase64String(excelBytes));
+    }
+
+    // private async Task Delete(PaymentMemoModel i)
+    // {
+    //     var PaymentMemoID = i.PaymentMemoID;
+    //     try
+    //     {
+    //         if (PI.SelectedMemos.Count > 1)
+    //         {
+    //             iservice.Delete(i.PaymentMemoID);
+    //             int rowIndex = PI.SelectedMemos.IndexOf(i);
+    //             PI.SelectedMemos.RemoveAt(rowIndex);
+    //             snackbar.Add("Removed Successfully", Severity.Success);
+    //         }
+    //         else
+    //         {
+    //             snackbar.Add("Deletion is not allowed if there is only one Payment Memo", Severity.Warning);
+    //         }
+
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         snackbar.Add(ex.Message, Severity.Error);
+    //     }
+
+    //     // await OnAmountChange.InvokeAsync();
+    // }
+}

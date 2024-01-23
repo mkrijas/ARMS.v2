@@ -71,6 +71,7 @@ namespace ArmsModels.BaseModels
         public bool Scrap { get; set; } = false;
         public string Status { get; set; }//Scrap,Dismantled,Sold,Revaluated        
         public UserInfoModel UserInfo { get; set; } = new();
+        public decimal? GSTValue { get; set; }
     }
 
     public class AssetViewModel
@@ -161,4 +162,24 @@ namespace ArmsModels.BaseModels
         public int? AccountTransactionID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
+
+    public class AssetPurchaseModel : ICloneable
+    {
+        public int? AssetID { get; set; }
+        [Required]
+        public DateTime? InitiatedDocumentDate { get; set; } = DateTime.Today;
+        public string DocumentNumber { get; set; }
+        public int? BranchID { get; set; }
+        public decimal? TotalAmount { get; set; }
+        public List<AssetModel> SelectedAssets { get; set; } = new();
+        public int? AuthLevelId { get; set; }
+        public string AuthStatus { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AssetPurchaseModel>(Json);
+        }
+    }
+
 }
