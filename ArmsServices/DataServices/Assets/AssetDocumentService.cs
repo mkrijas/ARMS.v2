@@ -211,7 +211,7 @@ namespace ArmsServices.DataServices
                     UsageCode = new()
                     {
                         Id = dr.GetInt32("UsageID"),
-                        Area = dr.GetString("Area"),
+                        GstMechanism = dr.GetString("Area"),
                         Description = dr.GetString("Description"),
                         UsageCode = dr.GetString("UsageCode")
                     },
@@ -247,7 +247,7 @@ namespace ArmsServices.DataServices
                     UsageCode = new()
                     {
                         Id = dr.GetInt32("UsageID"),
-                        Area = dr.GetString("Area"),
+                        GstMechanism = dr.GetString("Area"),
                         Description = dr.GetString("Description"),
                         UsageCode = dr.GetString("UsageCode")
                     },

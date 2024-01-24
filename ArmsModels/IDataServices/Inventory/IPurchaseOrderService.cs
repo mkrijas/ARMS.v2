@@ -20,5 +20,6 @@ namespace ArmsServices.DataServices
         int Reverse(int POID, string UserID);  //Reverse
         int CancelOrder(int POID, string UserID, string Remarks);  //Cancel
         IEnumerable<InventoryItemEntryModel> GetItemEntries(int POID);
+        IEnumerable<InventoryItemEntryModel> GetItemEntriesPO(int POID);
     }
 }

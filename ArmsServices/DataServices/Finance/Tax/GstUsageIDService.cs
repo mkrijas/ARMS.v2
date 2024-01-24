@@ -153,7 +153,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", model.Id),
                new SqlParameter("@UsageCode", model.UsageCode),
                new SqlParameter("@Description", model.Description),
-               new SqlParameter("@Area", model.Area),
+               new SqlParameter("@Area", model.GstMechanism),
                new SqlParameter("@AccountID", model.CoaID),
                new SqlParameter("@PeriodFrom", model.PeriodFrom),
                new SqlParameter("@PeriodTo", model.PeriodTo),
@@ -190,7 +190,7 @@ namespace ArmsServices.DataServices
             {
                 Id = dr.GetInt32("ID"),
                 UsageCode = dr.GetString("UsageCode"),
-                Area = dr.GetString("Area"),
+                GstMechanism = dr.GetString("Area"),
                 Description = dr.GetString("Description"),
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),
                 PeriodTo = dr.GetDateTime("PeriodTo"),

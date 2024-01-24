@@ -83,6 +83,27 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<InventoryItemEntryModel> GetItemEntriesPO(int POID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@POID", POID),
+               new SqlParameter("@Operation", "GetEntriesPO")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.PurchaseOrder.Select]", parameters))
+            {
+                yield return new InventoryItemEntryModel()
+                {
+                    ItemEntryID = dr.GetInt64("POItemID"),
+                    ItemID = dr.GetInt32("ItemID"),
+                    ItemRate = dr.GetDecimal("ItemRate"),
+                    ItemQty = (decimal)dr.GetDecimal("ItemQty"),
+                    UOM = dr.GetString("UOM"),
+                    ItemGstVal = dr.GetDecimal("ItemGstVal"),
+                };
+            }
+        }
+
         public IEnumerable<PurchaseOrderModel> SelectPending(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

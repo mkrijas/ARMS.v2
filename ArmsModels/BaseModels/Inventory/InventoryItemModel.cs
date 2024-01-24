@@ -33,8 +33,8 @@ namespace ArmsModels.BaseModels
         public virtual decimal? QtyAvailable { get; set; }
         public InventoryGroupModel Group { get; set; } = new();
         public SharedModels.UserInfoModel UserInfo { get; set; }
-        public string Group2 { get; set; }
-        public string Make { get; set; }
+        public string? Group2 { get; set; }
+        public string? Make { get; set; }
     }
 
     public class InventoryGroupModel :ICloneable
