@@ -3,6 +3,7 @@
 @using ArmsServices.DataServices.Inventory;
 @using Pages.FMS.InsuranceClaim
 @using Views.Pages.Finance.Transactions.PurchaseAndPayment;
+@using Views.Pages.Finance.Transactions;
 @using Views.Pages.Inventory.InvRelease;
 @using Views.Pages.Operations
 @inject IJobcardService Iservice
@@ -202,9 +203,17 @@
                 <RowTemplate>
                     <MudTd DataLabel="Item">@context.ReleaseSubDetails?.ItemDescription</MudTd>
                     <MudTd DataLabel="Document Date / Request Number">@(context.RequestDate?.ToShortDateString()) / @(context.RequestNumber)</MudTd>
-                        <MudTd DataLabel="Request Qty">@context.ReleaseSubDetails?.RequestQty</MudTd>
-                        <MudTd DataLabel="Release Qty">@context.ReleaseSubDetails?.ItemQty</MudTd>
-                        @if (context.RID == null)
+                    <MudTd DataLabel="Request Qty">@context.ReleaseSubDetails?.RequestQty</MudTd>
+                    <MudTd DataLabel="Release Qty">@context.ReleaseSubDetails?.ItemQty</MudTd>
+                    @if (context.RID != null && !context.IsClosed)
+                    {
+                        <MudTd DataLabel="">
+                            <MudTooltip Text="Close Request">
+                                <MudFab @onclick="@(()=> OpenInventoryReleaseClosedDialog(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
+                            </MudTooltip>
+                        </MudTd>
+                    }
+                    @if (context.RID == null)
                     {
                         <MudTd DataLabel="">
                             <MudTooltip Text="Edit">
@@ -439,9 +448,9 @@
     {
         if (HasPermissionJobcardServiceEdit)
         {
-            if(InvRequestList.Any(x => x.IsCompletelyReleased == false))
+            if(InvRequestList.Any(x => x.IsClosed == null || x.IsClosed == false))
             {
-                snackbar.Add("Release requested inventory items before closing Jobcard!", Severity.Error);
+                snackbar.Add("Close requested inventory items before closing Jobcard!", Severity.Error);
                 return;
             }
             if (jwList.Any(x => x.ExitOn == null))
@@ -600,6 +609,31 @@
                 "Permission denied!",
                 "You dont have any permission to Add Jobcard.");
         }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async Task OpenInventoryReleaseClosedDialog(InventoryRequestModel model)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        model.Jobcard = SelectedJobcard;
+        model.BranchID = branchID;
+        model.Truck = SelectedTruck;
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", model.Clone());
+        parms.Add("SetIncomingVal", true);
+        var result = await DialogService.Show<InventoryReleaseClosedDialog>("ADD", parms, mediumWidth).Result;
+
+        InvRequestList = IInvRequestservice.SelectRequestReleaseByTruckID(SelectedTruck?.TruckID ?? 0).ToList();
+        model = new();
         await Task.Delay(200);
         _busy = false;
     }
