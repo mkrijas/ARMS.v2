@@ -143,8 +143,21 @@ namespace ArmsServices.DataServices
                Entries = Entries(MID).ToList()
             };
         }
-   
-       
+
+        public int? GetTdsMID(int? MID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@MID", MID),
+               new SqlParameter("@Operation", "ByMID"),
+            };
+            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.finance.Transactions.TdsLinkTable.Select]", parameters))
+            {
+                return dr.GetInt32("TdsMID");
+            }
+            return null;
+        }
     }
 }
 
