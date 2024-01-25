@@ -14,7 +14,8 @@ namespace ArmsServices.DataServices.Finance.Transactions
         int Delete(int? ID, bool IsUsedItem, string UserID);  //Delete
         IEnumerable<InventoryReleaseModel> Select();
         public IEnumerable<InventoryReleaseModel> SelectByStoreID(int? StoreID);
-        public IEnumerable<InventoryReleaseModel> SelectByStoreAndBranchID(int? StoreID,int? BranchID);
+        public IEnumerable<InventoryReleaseModel> SelectByStoreAndBranchIDApproved(int? StoreID,int? BranchID);
+        public IEnumerable<InventoryReleaseModel> SelectByStoreAndBranchIDUnApproved(int? StoreID,int? BranchID);
         IEnumerable<InventoryReleaseModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<InventoryReleaseModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<InventoryReleaseSubViewModel> GetRequstSub(int? ID, int? StoreID);

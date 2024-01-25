@@ -24,10 +24,9 @@ namespace ArmsModels.BaseModels
             Contacts = new();
         }
         private string _branchName;
-        public string BranchCode { get; set; }
+       
         [Required]
-        public string BranchAbbrev { get; set; }
-        public ChartOfAccountModel Coa { get; set; }
+        public string BranchAbbrev { get; set; }        
         private PlaceModel _place;
         public int? BranchID { get; set; }
         [Required]
@@ -44,7 +43,12 @@ namespace ArmsModels.BaseModels
         public int? PlaceID { get; set; }
         public int? AddressID { get; set; }
         public bool Operate { get; set; } = true;
-        public int? UpwardBranchID { get; set; } = 0;
+        public int? StateOfficeID { get; set; } = 0;
+        public bool IsStateOffice { get; set; }
+        public string SoDisplayText {
+            get
+            { return  IsStateOffice ? "SO" : (StateOfficeID??0) == 0?"HO":"Branch"; }
+        }
         public bool Active { get; set; } = true;
         [ValidateComplexType]
         public virtual AddressModel Address { get; set; }

@@ -190,6 +190,22 @@ namespace ArmsServices.DataServices.Inventory
             return model;
         }
 
+        public InventoryRequestModel ClosedInventory(InventoryRequestModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RequestID", model.RequestID),
+               new SqlParameter("@IsClosed", model.IsClosed),
+               new SqlParameter("@Items", model.Items?.ToDataTable()??null),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Request.Closed]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
         private InventoryRequestModel GetModel(IDataRecord dr)
         {
             return new InventoryRequestModel
@@ -214,6 +230,7 @@ namespace ArmsServices.DataServices.Inventory
                 },
                 Remarks = dr.GetString("Remarks"),
                 IsCompletelyReleased = dr.GetBoolean("IsCompletelyReleased"),
+                IsClosed = dr.GetBoolean("IsClosed"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -232,6 +249,7 @@ namespace ArmsServices.DataServices.Inventory
                 RequestDate = dr.GetDateTime("RequestDate"),
                 RequestNumber = dr.GetString("RequestNumber"),
                 IsCompletelyReleased = dr.GetBoolean("IsCompletelyReleased"),
+                IsClosed = dr.GetBoolean("IsClosed"),
                 Store = new()
                 {
                     StoreID = dr.GetInt32("StoreID"),
