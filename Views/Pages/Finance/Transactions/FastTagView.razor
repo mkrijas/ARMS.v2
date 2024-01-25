@@ -1,0 +1,290 @@
+﻿@page "/FastTagToll"
+@using Core.BaseModels.Finance.Transactions;
+@using System.IO;
+@using NPOI.HSSF.UserModel;
+@using NPOI.SS.UserModel;
+@using OfficeOpenXml;
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+
+<MudPaper>
+    <MudGrid Style="width:100%; margin:0px;">
+        <MudItem xs="12">
+            <MudText Typo="Typo.h6">FastTag Toll Transaction</MudText>
+            <MudSpacer></MudSpacer>
+        </MudItem>
+        <MudDivider />
+        <MudItem xs="12" Class="fullborder" Style="margin:12px;">
+            <h6>Upload XLSX File : </h6>
+            <InputFile @ref="fileInput" OnChange="HandleXLSXFileButtonSelected" />
+            <MudButton OnClick="UploadXLSXFile" Variant="Variant.Filled">Upload</MudButton>
+        </MudItem>
+        <MudItem xs="12">
+            <MudTable Items="@collection" Context="item" Dense="true" Hover="true" Striped="true" Elevation="1">
+                <ToolBarContent>
+                    <MudSpacer></MudSpacer>
+                    <MudTextField @bind-Value="searchTerm" Placeholder="Search Licence Plate No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
+                    </MudTextField>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>Transaction DateTime</MudTh>
+                    <MudTh>Processed DateTime</MudTh>
+                    <MudTh>Licence Plate No</MudTh>
+                    <MudTh>Tag Account No</MudTh>
+                    <MudTh>Group</MudTh>
+                    <MudTh>Activity</MudTh>
+                    <MudTh>Plaza Code</MudTh>
+                    <MudTh>Transaction Description</MudTh>
+                    <MudTh>Unique Transaction ID</MudTh>
+                    <MudTh>Amount(CR)</MudTh>
+                    <MudTh>Amount(DR)</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Transaction DateTime">@item.TransactionDateTime</MudTd>
+                    <MudTd DataLabel="Processed DateTime">@item.ProcessedDateTime</MudTd>
+                    <MudTd DataLabel="NumberPlate">@item.NumberPlate</MudTd>
+                    <MudTd DataLabel="TagAccountNumber">@item.TagAccountNumber</MudTd>
+                    <MudTd DataLabel="Group">@item.Group</MudTd>
+                    <MudTd DataLabel="Activity">@item.Activity</MudTd>
+                    <MudTd DataLabel="PlazaCode">@item.PlazaCode</MudTd>
+                    <MudTd DataLabel="TransactionDescription">@item.Description</MudTd>
+                    <MudTd DataLabel="Unique Transaction ID">@item.TransactionID</MudTd>
+                    <MudTd DataLabel="Credit Amount">@item.CreditAmount</MudTd>
+                    <MudTd DataLabel="Debit Amount">@item.DebitAmount</MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                </PagerContent>
+            </MudTable>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@code {
+
+    private InputFile fileInput;
+    private MemoryStream memoryStream = new MemoryStream();
+    private List<FastTagModel> collection = new List<FastTagModel>();
+    private string searchTerm = "";
+    public string fileExtension = "";
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+
+        }
+    }
+
+    private async Task HandleXLSXFileButtonSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (file != null)
+        {
+            try
+            {
+                var extension = System.IO.Path.GetExtension(file.Name);
+                fileExtension = extension.ToString();
+
+                if (extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase)) //|| extension.Equals(".xls", StringComparison.OrdinalIgnoreCase))
+                {
+                    memoryStream = new MemoryStream();
+                    collection.Clear();
+                    memoryStream.SetLength(0); // Reset the stream before reading new file data
+                    await file.OpenReadStream().CopyToAsync(memoryStream);
+                }
+                else
+                {
+                    bool? result = await DialogService.ShowMessageBox(
+                        "File Denied !",
+                        "The file you uploaded is not in .xlsx format.");
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+
+    private async Task UploadXLSXFile()
+    {
+        try
+        {
+            // if (fileExtension == ".xls")
+            // {
+            //     memoryStream.Position = 0;
+            //     IWorkbook workbook;
+
+            //     using (workbook = new HSSFWorkbook(memoryStream)) // Use HSSFWorkbook for .xls files
+            //     {
+            //         HSSFSheet sheet = (HSSFSheet)workbook.GetSheetAt(0); // Access the first worksheet
+
+            //         int rowCount = sheet.PhysicalNumberOfRows;
+
+            //         for (int row = 0; row < rowCount; row++)
+            //         {
+            //             FastTagModel Model = new FastTagModel();
+            //             HSSFRow excelRow = (HSSFRow)sheet.GetRow(row);
+
+            //             if (excelRow != null)
+            //             {
+            //                 int colCount = excelRow.PhysicalNumberOfCells;
+
+            //                 for (int col = 0; col < colCount; col++)
+            //                 {
+
+            //                 }
+            //             }
+            //             XLSXButtoncollection.Add(Model);
+            //         }
+            //     }
+            // }
+            if (fileExtension == ".xlsx")
+            {
+                memoryStream.Position = 0;
+
+                using (ExcelPackage package = new ExcelPackage(memoryStream))
+                {
+                    int worksheetCount = package.Workbook.Worksheets.Count;
+                    if (worksheetCount > 0)
+                    {
+                        ExcelWorksheet worksheet = package.Workbook.Worksheets[0]; // Access the first worksheet
+
+                        int rowCount = worksheet.Dimension.Rows;
+                        int colCount = worksheet.Dimension.Columns;
+                        int TransactionDateTimeRow = 0,
+                            ProcessedDateTimeRow = 0,
+                            LicencePlateNoRow = 0,
+                            TagAccountNoRow = 0,
+                            GroupRow = 0,
+                            ActivityRow = 0,
+                            PlazaCodeRow = 0,
+                            TransactionDescriptionRow = 0,
+                            UniqueTransactionIDRow = 0,
+                            CRAmountRow = 0,
+                            DRAmountRow = 0;
+
+                        for (int row = 1; row <= (rowCount - 1); row++)
+                        {
+                            FastTagModel Model = new FastTagModel();
+                            if (row == 1)
+                            {
+                                for (int col = 1; col <= colCount; col++)
+                                {
+                                    if (worksheet.Cells[row, col].Value?.ToString() == "Transaction Date Time")
+                                    {
+                                        TransactionDateTimeRow = col;
+                                    }
+                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Processed Date Time")
+                                    {
+                                        ProcessedDateTimeRow = col;
+                                    }
+                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Licence Plate No")
+                                    {
+                                        LicencePlateNoRow = col;
+                                    }
+                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Tag Account No.")
+                                    {
+                                        TagAccountNoRow = col;
+                                    }
+                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Group")
+                                    {
+                                        GroupRow = col;
+                                    }
+                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Activity")
+                                    {
+                                        ActivityRow = col;
+                                    }
+                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Plaza Code")
+                                    {
+                                        PlazaCodeRow = col;
+                                    }
+                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Transaction Description")
+                                    {
+                                        TransactionDescriptionRow = col;
+                                    }
+                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Unique Transaction ID")
+                                    {
+                                        UniqueTransactionIDRow = col;
+                                    }
+                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Amount(CR)")
+                                    {
+                                        CRAmountRow = col;
+                                    }
+                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Amount(DR)")
+                                    {
+                                        DRAmountRow = col;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                for (int col = 1; col <= colCount; col++)
+                                {
+                                    if (TransactionDateTimeRow == col)
+                                    {
+                                        Model.TransactionDateTime = DateTime.Parse(worksheet.Cells[row, TransactionDateTimeRow].Value?.ToString());
+                                    }
+                                    if (ProcessedDateTimeRow == col)
+                                    {
+                                        Model.ProcessedDateTime = DateTime.Parse(worksheet.Cells[row, ProcessedDateTimeRow].Value?.ToString());
+                                    }
+                                    if (LicencePlateNoRow == col)
+                                    {
+                                        Model.NumberPlate = worksheet.Cells[row, LicencePlateNoRow].Value?.ToString();
+                                    }
+                                    if (TagAccountNoRow == col)
+                                    {
+                                        Model.TagAccountNumber = int.Parse(worksheet.Cells[row, TagAccountNoRow].Value?.ToString());
+                                    }
+                                    if (GroupRow == col)
+                                    {
+                                        Model.Group = worksheet.Cells[row, GroupRow].Value?.ToString();
+                                    }
+                                    if (ActivityRow == col)
+                                    {
+                                        Model.Activity = worksheet.Cells[row, ActivityRow].Value?.ToString();
+                                    }
+                                    if (PlazaCodeRow == col)
+                                    {
+                                        Model.PlazaCode = worksheet.Cells[row, PlazaCodeRow].Value?.ToString();
+                                    }
+                                    if (TransactionDescriptionRow == col)
+                                    {
+                                        Model.Description = worksheet.Cells[row, TransactionDescriptionRow].Value?.ToString();
+                                    }
+                                    if (UniqueTransactionIDRow == col)
+                                    {
+                                        Model.TransactionID = worksheet.Cells[row, UniqueTransactionIDRow].Value?.ToString();
+                                    }
+                                    if (CRAmountRow == col)
+                                    {
+                                        Model.CreditAmount = decimal.Parse(worksheet.Cells[row, CRAmountRow].Value?.ToString());
+                                    }
+                                    if (DRAmountRow == col)
+                                    {
+                                        Model.DebitAmount = decimal.Parse(worksheet.Cells[row, DRAmountRow].Value?.ToString());
+                                    }
+                                }
+                                collection.Add(Model);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        bool? errorresult = await DialogService.ShowMessageBox(
+                            "File Denied !",
+                            "The file you uploaded seems to be Corrupted.");
+                    }
+                }
+                memoryStream.Dispose();
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}
