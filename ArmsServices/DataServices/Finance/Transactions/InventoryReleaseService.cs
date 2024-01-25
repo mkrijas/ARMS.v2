@@ -50,7 +50,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InventoryRelease.Select]", parameters))
             {
-                if ((dr.GetDecimal("ReleaseQty") == null) || (dr.GetDecimal("ReleaseQty") < dr.GetDecimal("RequestQty")))
+                if ((dr.GetDecimal("ReleaseQty") == null) || (dr.GetDecimal("ReleaseQty") < dr.GetDecimal("RequestQty") || (dr.GetDecimal("ReleaseQty") >= 0)))
                 {
                     yield return new InventoryReleaseSubViewModel()
                     {
@@ -63,8 +63,10 @@ namespace ArmsServices.DataServices.Finance.Transactions
                         PendingQty = dr.GetDecimal("ReleaseQty") != null ? (dr.GetDecimal("RequestQty") - dr.GetDecimal("ReleaseQty")) : dr.GetDecimal("RequestQty"),
                         ReleaseQty = dr.GetDecimal("ReleaseQty"),
                         ItemQty = dr.GetDecimal("ReleaseQty") != null ? (dr.GetDecimal("RequestQty") - dr.GetDecimal("ReleaseQty")) : dr.GetDecimal("RequestQty"),
+                        UsedQty = dr.GetDecimal("ReleaseQty"),
                     };
                 }
+
             }
         }
 
@@ -118,6 +120,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                         ItemDescription = dr.GetString("ItemDescription"),
                         AvailableQty = dr.GetDecimal("AvailableQty"),
                         RequestQty = dr.GetDecimal("RequestQty"),
+                        ReleaseQty = dr.GetDecimal("ReleaseQty"),
                         ItemQty =  dr.GetDecimal("ReleaseQty"),
                     };
                 }
@@ -151,11 +154,26 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
-        public IEnumerable<InventoryReleaseModel> SelectByStoreAndBranchID(int? StoreID, int? BranchID)
+        public IEnumerable<InventoryReleaseModel> SelectByStoreAndBranchIDApproved(int? StoreID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByStore"),
+               new SqlParameter("@Operation", "ByStoreApproved"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@StoreID", StoreID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.InventoryRelease.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<InventoryReleaseModel> SelectByStoreAndBranchIDUnApproved(int? StoreID, int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByStoreUnApproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@StoreID", StoreID),
             };
@@ -273,6 +291,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     RegNo = dr.GetString("RegNo")
                 },
                 IsUsedItem = dr.GetBoolean("IsUsedItem"),
+                IsClosed = dr.GetBoolean("IsClosed"),
                 CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),
                 Narration = dr.GetString("Narration"),

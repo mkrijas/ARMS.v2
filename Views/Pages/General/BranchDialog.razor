@@ -23,15 +23,18 @@
                                 <MudItem xs="6">
                                     <MudTextField @bind-Value="model.BranchName" Label="Branch Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BranchName)"></MudTextField>
                                 </MudItem>
-                                <MudItem xs="6">
-                                    <MudTextField @bind-Value="model.BranchAbbrev" MaxLength="3" Label="Branch Abbreviation" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BranchAbbrev)"></MudTextField>
+                                <MudItem xs="3">
+                                    <MudTextField @bind-Value="model.BranchAbbrev" MaxLength="3" Label="Abbrev" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.BranchAbbrev)"></MudTextField>
+                                   
+                                </MudItem>
+                                <MudItem xs="3" Class="d-flex">
+                                    <MudCheckBox @bind-Checked="model.IsStateOffice" Label="SO?" For="@(() => model.IsStateOffice)" Color="Color.Success" />
+                                
+                                    <MudCheckBox @bind-Checked="model.Active" Label="Active?" For="@(() => model.Active)" Color="Color.Error" />
                                 </MudItem>
                                 <MudItem xs="6">
                                     <MudAutocomplete T="PlaceModel" Label="Place" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="model.Place" ResetValueOnEmptyText="true" SearchFunc="@Search" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" For="@(() => model.Place)"></MudAutocomplete>
-                                </MudItem>
-                                <MudItem xs="6">
-                                    <MudCheckBox @bind-Checked="model.Active" Label="Is Active" For="@(() => model.Active)" />
-                                </MudItem>
+                                </MudItem>                                
                                 <MudItem xs="6">
                                     <MudAutocomplete T="BranchModel" Label="Parent Branch" @bind-Value="UpwardBranch" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" SearchFunc="@SearchBranch" ToStringFunc="@(e => e == null ? null : $"{e.BranchName}")" Immediate="true"></MudAutocomplete>
                                 </MudItem>
@@ -81,10 +84,10 @@
     protected override async Task OnInitializedAsync()
     {
         places = Iplace.Select(0).ToList();
-        branches = IBranchService.Select().ToList();
+        branches = IBranchService.Select().Where(x=> x.IsStateOffice || (x.StateOfficeID??0) == 0). ToList();
         if (model.BranchID != null)
         {
-            UpwardBranch = IBranchService.SelectByID(model.UpwardBranchID);
+            UpwardBranch = IBranchService.SelectByID(model.StateOfficeID);
         }
     }
 
@@ -105,7 +108,7 @@
             snackbar.Add("Invalid Place", Severity.Error);
             return;
         }
-        else if (model.UpwardBranchID == null)
+        else if (model.StateOfficeID == null)
         {
             snackbar.Add("Please select parent branch", Severity.Error);
             return;
@@ -117,7 +120,7 @@
         }
         _busy = true;
         ValidationMessage = null;
-        model.UpwardBranchID = UpwardBranch?.BranchID;
+        model.StateOfficeID = UpwardBranch?.BranchID;
 
         string[] words = model.BranchName.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
         string formattedValue = "";
@@ -164,6 +167,6 @@
 
     private async Task<IEnumerable<BranchModel>> SearchBranch(string searchString)
     {
-        return await Task.FromResult(branches.Where(x => x.BranchName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)).Where(x => x.BranchID != model.BranchID));
+        return await Task.FromResult(branches.Where(x => x.BranchName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)).Where(x => x.BranchID != model.BranchID  ));
     }
 }

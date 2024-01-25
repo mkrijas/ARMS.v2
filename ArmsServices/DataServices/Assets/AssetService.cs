@@ -78,6 +78,8 @@ namespace ArmsServices.DataServices
                     TradeName = dr.GetString("TradeName"),
                 },
                 WarrentyDate = dr.GetDateTime("WarrentyDate"),
+                GSTValue = dr.GetDecimal("GSTValue"),
+                GetAccountRuleDefinition = dr.GetInt32("AccountDef"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -132,6 +134,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyID", model.VendorInfo?.PartyID),
                new SqlParameter("@WarrentyDate", model.WarrentyDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@AccountDef", model.GetAccountRuleDefinition)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Update]", parameters))
@@ -376,6 +379,57 @@ namespace ArmsServices.DataServices
             var truck = truckService.SelectByID(TruckID);
             return SelectByID(truck.AssetID);
         }
+
+        public IEnumerable<AssetModel> GetAssetList(int BranchID, int? ParentID, int? NumberOfRecords, string searchTerm)
+        {
+            bool Scrap = false;
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByBranchPO"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Scrap", Scrap),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+        public IEnumerable<AssetModel> GetAssetListNonInvoiced(int BranchID, int? ParentID, int? NumberOfRecords, string searchTerm)
+        {
+            bool Scrap = false;
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByBranchPONonInv"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Scrap", Scrap),
+               new SqlParameter("@numberOfRecords", NumberOfRecords),
+               new SqlParameter("@searchTerm", searchTerm)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<AccountRuleDefModel> GetAccountRuleDefinition()
+        {
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Assets.AccountDef.Select]", null))
+            {
+                yield return new AccountRuleDefModel()
+                {
+                    ID = dr.GetInt32("ID"),
+                    Title = dr.GetString("Title"),
+                    CapitalizationID = dr.GetInt32("CapitalizationID"),
+                    CWIPID = dr.GetInt32("CWIPID")
+                };
+            }
+        }
+
     }
 }
    

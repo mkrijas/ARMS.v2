@@ -26,6 +26,7 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.AssetClass.Delete]", parameters);
         }
+
         public int DeleteSubClass(int? AssetSubClassID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -61,8 +62,8 @@ namespace ArmsServices.DataServices
             {
                 yield return GetAssetSubClass(dr);
             }
-            
         }
+            
         public IEnumerable<AssetSubClassModel> SelectSubClassesByClass(int? ClassID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -84,7 +85,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@AssetClassID", model.AssetClassID),
                new SqlParameter("@AssetClasssName", model.AssetClassName),
-                new SqlParameter("@PostingGroupID", model.PostingGroupID),
+               new SqlParameter("@PostingGroupID", model.PostingGroupID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -101,6 +102,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ID", model.AssetSubClassID),
                new SqlParameter("@AsstSubClassName", model.AssetSubclass),
+               new SqlParameter("@AssetSubClassAbbrev", model.AssetSubAbbrev),
                new SqlParameter("@AssetClassID", model.AssetClassID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -135,6 +137,7 @@ namespace ArmsServices.DataServices
                 ID = dr.GetInt32("ID"),                
                 AssetSubClassID = dr.GetInt32("AssetSubClassID"),                
                 AssetSubclass = dr.GetString("AsstSubClassName"),
+                AssetSubAbbrev = dr.GetString("AssetSubClassAbbrev"),
                 AssetClassID = dr.GetInt32("AssetClassID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -146,6 +149,3 @@ namespace ArmsServices.DataServices
         }
     }
 }
-   
-
-     

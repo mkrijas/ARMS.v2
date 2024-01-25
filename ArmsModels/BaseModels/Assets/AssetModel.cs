@@ -74,6 +74,9 @@ namespace ArmsModels.BaseModels
         public bool Scrap { get; set; } = false;
         public string Status { get; set; }//Scrap,Dismantled,Sold,Revaluated        
         public UserInfoModel UserInfo { get; set; } = new();
+        public decimal? GSTValue { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public int? GetAccountRuleDefinition { get; set; }
     }
 
     public class AssetViewModel
@@ -100,9 +103,12 @@ namespace ArmsModels.BaseModels
         }
         public int? ID { get; set; }
         public int? AssetSubClassID { get; set; }
-        [Required(ErrorMessage = "Name of Asset SubClass is required.")]
+        [Required(ErrorMessage = "Name of Asset SubClass is required !")]
         public virtual string AssetSubclass { get; set; }
-        [Required(ErrorMessage = "AssetClass is required.")]
+        [Required(ErrorMessage = "Asset SubClass Abbreviation is required.")]
+        [StringLength(3, MinimumLength = 3, ErrorMessage = "Asset SubClass Abbreviation must have 3 characters !")]
+        public string AssetSubAbbrev { get; set; }
+        [Required(ErrorMessage = "AssetClass is required !")]
         public int? AssetClassID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
@@ -164,4 +170,33 @@ namespace ArmsModels.BaseModels
         public int? AccountTransactionID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
+
+    public class AssetPurchaseModel : ICloneable
+    {
+        public int? AssetID { get; set; }
+        [Required]
+        public DateTime? InitiatedDocumentDate { get; set; } = DateTime.Today;
+        public string DocumentNumber { get; set; }
+        public int? BranchID { get; set; }
+        public decimal? TotalAmount { get; set; }
+        public List<AssetModel> SelectedAssets { get; set; } = new();
+        public int? AuthLevelId { get; set; }
+        public string AuthStatus { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AssetPurchaseModel>(Json);
+        }
+    }
+
+    public class AccountRuleDefModel
+    {
+        public int? ID { get; set; }
+        public string? Title { get; set; }
+        public int? CapitalizationID { get; set; }
+        public int? CWIPID { get; set; }
+    }
+
+
 }

@@ -1,0 +1,89 @@
+﻿@inject IAssetService iservice
+@inject MudBlazor.ISnackbar snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
+            Select Asset to Initiate Purchase
+            <MudText> (@selectedItems?.Count) Asstes Selected</MudText>
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTable T="AssetModel" Items="@Asset" MultiSelection="true"
+                  @bind-SelectedItems="selectedItems" Hover="true" SelectOnRowClick>
+            <HeaderContent>
+                <MudTh>Description</MudTh>
+                <MudTh>Nature Of Asset</MudTh>
+                <MudTh>Setial Number</MudTh>
+                <MudTh>Simple/Complex</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Description">@context.Description</MudTd>
+                    <MudTd DataLabel="NatureOfAsset">@context.NatureOfAsset</MudTd>
+                    <MudTd DataLabel="SerialNumber">@context.SerialNumber</MudTd>
+                    <MudTd DataLabel="@(context.IsComplex ? "Complex" : "Simple")">
+                        @if (context.IsComplex)
+                    {
+                        <div>Complex</div>
+                    }
+                    else
+                    {
+                        <div>Simple</div>
+                    }
+                </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="@(()=> MudDialog.Cancel())">Cancel</MudButton>
+            <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Button" OnClick="Submit">Submit</MudButton>
+        </DialogActions>
+    </MudDialog>
+
+
+    @code {
+
+    [Parameter]
+    public int BranchID { get; set; }
+
+    private bool _busy;
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private HashSet<AssetModel> selectedItems = new();
+    private List<AssetModel> Asset = new();
+
+    protected override void OnInitialized()
+    {
+        Asset = iservice.GetAssetListNonInvoiced(BranchID, null, null, "").ToList();
+    }
+
+
+    private async Task Submit()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        if (selectedItems.Count > 0)
+        {
+            MudDialog.Close(selectedItems.ToList());
+        }
+        else
+        {
+            snackbar.Add("Please select atleast one Asset!", Severity.Warning);
+        }
+
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+
+    void OnRowClick(TableRowClickEventArgs<AssetModel> args)
+    {
+        //_selectedItemText = $"{args.Item.Name} ({args.Item.Sign})";
+    }
+}

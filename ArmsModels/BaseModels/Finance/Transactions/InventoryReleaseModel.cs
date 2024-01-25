@@ -27,10 +27,25 @@ namespace ArmsModels.BaseModels
         public JobcardModel Jobcard { get; set; } // Optional ,  Active Jobcards
         public TruckModel Truck { get; set; } //Optional
         public bool IsUsedItem { get; set; }
+        public bool IsClosed { get; set; }
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
         [ValidateComplexType]
         public List<InventoryItemEntryModel> Items { get; set; } = new();
+        public string Status
+        {
+            get
+            {
+                if (IsClosed)
+                {
+                    return "Closed";
+                }
+                else
+                {
+                    return "Pending";
+                }
+            }
+        }
     }
 
     public class InventoryRequestModel : ICloneable
@@ -50,6 +65,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public StoreModel Store { get; set; }// Mandatory
         public int? RID { get; set; }
+        public bool IsClosed {  get; set; }
         public InventoryReleaseSubViewModel ReleaseSubDetails { get; set; }
         public string Remarks { get; set; }// Optional
         [ValidateComplexType]
@@ -75,5 +91,6 @@ namespace ArmsModels.BaseModels
         public decimal? AvailableQty { get; set; }
         public decimal? PendingQty { get; set; }
         public decimal? ReleaseQty { get; set; }
+        public decimal? UsedQty { get; set; }
     }
 }
