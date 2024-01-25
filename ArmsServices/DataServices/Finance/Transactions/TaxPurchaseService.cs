@@ -238,6 +238,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@Assets", model.Assets.ToDataTable()),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Update]", parameters))
             {
@@ -300,6 +301,60 @@ namespace ArmsServices.DataServices
                 };
             }
             return null;
+        }
+
+        public TaxPurchaseModel UpdateAssetPO(TaxPurchaseModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PID", model.PID),
+               new SqlParameter("@AdditionalTDS", model.AdditionalTDS),
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@DocumentDate", model.DocumentDate),
+               new SqlParameter("@DocumentNumber", model.DocumentNumber),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
+               new SqlParameter("@Expenses", model.Expenses.ToDataTable()),
+               new SqlParameter("@GRNID", model.GRNID),
+               new SqlParameter("@InvoiceDate", model.InvoiceDate),
+               new SqlParameter("@InvoiceNo", model.InvoiceNo),
+               new SqlParameter("@FilePath", model.FileName),
+               new SqlParameter("@IsCredit", model.IsCredit),
+               new SqlParameter("@Items", model.Items.ToDataTable()),
+               new SqlParameter("@NonStoreInventory", model.NonStoreInventory),
+               new SqlParameter("@PartyID", model.PartyInfo.PartyID),
+               new SqlParameter("@PartyCode", model.PartyInfo.PartyCode),
+               new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@Assets", model.Assets.ToDataTable())
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Update]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+        public IEnumerable<AssetPOModel> GetAssets(int? PID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetAssets"),
+               new SqlParameter("@PID", PID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Select]", parameters))
+            {
+                yield return new AssetPOModel()
+                {
+                    Description = dr.GetString("Description"),
+                    NatureOfAsset = dr.GetString("NatureOfAsset"),
+                    AssetCode = dr.GetString("AssetCode"),
+                    AccountName = dr.GetString("AccountName"),
+                    BookValue = dr.GetDecimal("BookValue"),
+                    TaxRate = dr.GetDecimal("TaxRate"),
+                    GSTValue = dr.GetDecimal("GSTValue"),
+                };
+            }
         }
     }
 }

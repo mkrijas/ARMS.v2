@@ -1,4 +1,5 @@
 ﻿@page "/AssetPurchaseOrder"
+@using Views.Pages.Finance.Transactions.PurchaseAndPayment
 @inject IAssetService Iservice
 @inject IAssetClassService assetclassIservice
 @inject IGstUsageIDService gstIservice
@@ -8,6 +9,9 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject ITaxPurchaseService Iservice1
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
 
 
 <MudGrid Spacing="4">
@@ -16,7 +20,7 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Asset Purchase</MudText>
                 <MudTooltip Text="Asset PO">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> SelectAssets())" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" @onclick="@(()=> SelectAssets())" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Assets..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -24,32 +28,66 @@
                 <MudTextField Class="pt-3" @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 80px;"></MudTextField>
 
             </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<AssetModel, object>(x=> x.Description)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<AssetModel, object>(x=> x.NatureOfAsset)" InitialDirection="SortDirection.Ascending">Nature Of Asset</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<AssetModel, object>(x=> x.SerialNumber)" InitialDirection="SortDirection.Ascending">Serial Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<AssetModel, object>(x=> x.IsComplex)" InitialDirection="SortDirection.Ascending">Simple/Complex</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
+            @* <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<AssetPOModel, object>(x=> x.Description)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<AssetPOModel, object>(x=> x.NatureOfAsset)" InitialDirection="SortDirection.Ascending">Nature Of Asset</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<AssetPOModel, object>(x=> x.SerialNumber)" InitialDirection="SortDirection.Ascending">Serial Number</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<AssetPOModel, object>(x=> x.IsComplex)" InitialDirection="SortDirection.Ascending">Simple/Complex</MudTableSortLabel></MudTh>
+            <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Description">@context.Description</MudTd>
-                    <MudTd DataLabel="NatureOfAsset">@context.NatureOfAsset</MudTd>
-                    <MudTd DataLabel="SerialNumber">@context.SerialNumber</MudTd>
-                    <MudTd DataLabel="@(context.IsComplex ? "Complex" : "Simple")">
-                        @if (context.IsComplex)
+            <MudTd DataLabel="Description">@context.Description</MudTd>
+            <MudTd DataLabel="NatureOfAsset">@context.NatureOfAsset</MudTd>
+            <MudTd DataLabel="SerialNumber">@context.SerialNumber</MudTd>
+            <MudTd DataLabel="@(context.IsComplex ? "Complex" : "Simple")">
+            @if (context.IsComplex)
+            {
+            <div>Complex</div>
+            }
+            else
+            {
+            <div>Simple</div>
+            }
+            </MudTd>
+
+            <MudTooltip Text="View">
+            <MudFab @onclick="@(()=> ViewAsset(context))" Color="Color.Primary" Title="View asset" Icon="@Icons.Material.Filled.Fullscreen" Size="Size.Small" IconSize="Size.Small" />
+            </MudTooltip>
+
+            </RowTemplate> *@
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.InvoiceDate)" InitialDirection="SortDirection.Ascending">Invoice Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.InvoiceNo)" InitialDirection="SortDirection.Ascending">Invoice No</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
+                @* <MudTh>Actions</MudTh> *@
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="InvoiceDate">@context.InvoiceDate?.ToShortDateString()</MudTd>
+                    <MudTd DataLabel="InvoiceNo">@context.InvoiceNo</MudTd>
+                    <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
+                    <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
+                    <MudTd DataLabel="">
+                        @*     @if (@context.AuthLevelId == null)
                     {
-                        <div>Complex</div>
+                    <MudFab @onclick="@(()=> SelectAssets()(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                     }
-                    else
+                    @if (@context.AuthLevelId != 99)
                     {
-                        <div>Simple</div>
+                    <MudFab @onclick="@(()=> SelectAssets()(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
                     }
+                    @if (@context.AuthLevelId == 99)
+                    {
+                    <MudFab @onclick="@(()=> GetAccountDetails(context))" Color="Color.Info" Icon="@Icons.Material.Filled.CurrencyExchange" title="Accounts" Size="Size.Small" IconSize="Size.Small" />
+                    } *@
+                        <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+
+                        @* @if (@context.AuthLevelId == 99)
+                    {
+                        <EntryReversedComponent DocTypeID="TaxPurchaseDocTypeID" DocumentID="context.PID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                    } *@
                 </MudTd>
-
-                <MudTooltip Text="View">
-                    <MudFab @onclick="@(()=> ViewAsset(context))" Color="Color.Primary" Title="View asset" Icon="@Icons.Material.Filled.Fullscreen" Size="Size.Small" IconSize="Size.Small" />
-                </MudTooltip>
-
             </RowTemplate>
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
@@ -63,22 +101,30 @@
 
 @code {
     bool IsOpen = false;
-
+    private TaxPurchaseModel model = new TaxPurchaseModel();
+    private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
     private int numberOfRecords = 100;
-    private AssetModel model = new AssetModel();
-    private List<AssetModel> collection = new List<AssetModel>();
-    private List<AssetViewModel> assetView = new List<AssetViewModel>();
+    //private AssetPOModel model = new AssetPOModel();
+    //private List<AssetPOModel> collection = new List<AssetPOModel>();
+    //private List<AssetViewModel> assetView = new List<AssetViewModel>();
 
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
     private string searchTerm = "";
     int BranchID; string UserID;
     private bool _busy;
+    public bool IsApproved { get; set; } = false;
+    public int TaxPurchaseDocTypeID = 9;
+
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
 
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            await GetAll();
+            await GetAll(IsApproved, NumberOfRecords);
         }
     }
 
@@ -90,7 +136,7 @@
             if (numberOfRecords != value)
             {
                 numberOfRecords = value;
-                _ = GetAll();
+                _ = GetAll(IsApproved, NumberOfRecords);
             }
         }
     }
@@ -100,7 +146,7 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = authprov.User.Identity.Name;
-        GetAll();
+        GetAll(IsApproved, NumberOfRecords);
     }
 
     private async Task SelectAssets()
@@ -112,7 +158,7 @@
         var result = await dialog.Result;
         if (!result.Canceled)
         {
-            var data = (List<AssetModel>)result.Data;
+            var data = (List<AssetPOModel>)result.Data;
 
             AssetPurchaseModel PI = new AssetPurchaseModel()
                 {
@@ -122,7 +168,7 @@
                     SelectedAssets = data,
                 };
             parms = new DialogParameters();
-            parms.Add("model", tds.Clone());
+            parms.Add("model", model.Clone());
             //parms.Add("PageToRedirectLink", "/TaxPurchase");
             parms.Add("PI", PI);
             parms.Add("ReadOnly", false);
@@ -130,26 +176,40 @@
             var result2 = await dialog2.Result;
             if (!result2.Canceled)
             {
-                var UpdatedPI = (AssetPurchaseModel)result2.Data;
+                var UpdatedPI = (TaxPurchaseModel)result2.Data;
                 //IAssetService.Update(PI);
-                GetAll();
+                GetAll(IsApproved, NumberOfRecords);
             }
         }
     }
 
 
-    public async Task GetAll()
+    public async Task GetAll(bool val, int numberOfRecords)
     {
-        //collection = Iservice.PendingForCompletion(BranchID, searchTerm).ToList();
-        if (collection != null)
+        // //collection = Iservice.PendingForCompletion(BranchID, searchTerm).ToList();
+        // if (collection != null)
+        // {
+        //     collection.Clear();
+        // }
+        // Iservice.ClearAssets();
+        // collection = Iservice.GetAssetList(BranchID, null, NumberOfRecords, searchTerm).ToList();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int? brancID = int.Parse(brancIDString);
+        int NumberOfRecords = numberOfRecords;
+
+        if (val)
         {
-            collection.Clear();
+            collection = Iservice1.SelectByApproved(brancID, NumberOfRecords, searchTerm).ToList();
         }
-        Iservice.ClearAssets();
-        collection = Iservice.GetAssetList(BranchID, null, NumberOfRecords, searchTerm).ToList();
+        else
+        {
+            collection = Iservice1.SelectByUnapproved(brancID, NumberOfRecords, searchTerm).ToList();
+        }
+        await Task.Delay(200);
     }
 
-    public async void ViewAsset(AssetModel pim)
+    public async void ViewAsset(AssetPOModel pim)
     {
         if (_busy)
         {
@@ -162,6 +222,43 @@
         // parms.Add("PI", pim);
         // parms.Add("ReadOnly", true);
         // var dialog = DialogService.Show<PaymentConsolidateDialog>("Asset", parms, maxWidth);
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async Task OpenDialog(TaxPurchaseModel tds, bool ReadOnly, bool View)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", tds.Clone());
+        parms.Add("PageToRedirectLink", "/TaxPurchase");
+        parms.Add("ReadOnly", ReadOnly);
+        var dialog = DialogService.Show<TaxPurchaseDialog>(tds.PID == null ? "ADD" : "EDIT", parms, maxWidth);
+        var result = await dialog.Result;
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (TaxPurchaseModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.PID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/TaxPurchase";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = TaxPurchaseDocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
+        await GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;
     }

@@ -11,9 +11,10 @@
 @inject IPartyService partyIservice
 @inject IRoleService<RoleModel> Irole
 @inject ITaxPurchaseService Iservice
+@inject IDialogService DialogService
 
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Purchase" formID="formTaxPurchase" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Asset Purchase" formID="formAssetPurchase" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
     <FormContent>
 
         <TitleContent>
@@ -23,7 +24,7 @@
             </MudText>
         </TitleContent>
         <DialogContent>
-            <EditForm id="InitiatePaymentForm" Model="@PI" OnValidSubmit="OnValidSubmit" EditContext="editContext" autocomplete="off">
+            <EditForm id="formAssetPurchase" OnValidSubmit="OnValidSubmit" EditContext="editContext" autocomplete="off">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
@@ -53,35 +54,21 @@
                     </MudItem> *@
                 </MudGrid>
             </EditForm>
-            <MudTable Class="mb-3" T="AssetModel" Items="@PI.SelectedAssets" Hover="true" SelectOnRowClick>
+            <MudTable Class="mb-3" T="AssetPOModel" Items="@PI.SelectedAssets" Hover="true" SelectOnRowClick>
                 <HeaderContent>
                     <MudTh>Description</MudTh>
-                    <MudTh>Nature Of Asset</MudTh>
-                    <MudTh>Serial Number</MudTh>
-                    <MudTh>Simple/Complex</MudTh>
+                    <MudTh>Capitalization</MudTh>
                     <MudTh>Book Value</MudTh>
-                    <MudTh>Current Value</MudTh>
-                    <MudTh>Salvage Value</MudTh>
-                    <MudTh>GST</MudTh>
+                    <MudTh>GST Rate</MudTh>
+                    <MudTh>GST Amount</MudTh>
                     @* <MudTh>Actions</MudTh> *@
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="Description">@context.Description</MudTd>
-                        <MudTd DataLabel="NatureOfAsset">@context.NatureOfAsset</MudTd>
-                        <MudTd DataLabel="SerialNumber">@context.SerialNumber</MudTd>
-                        <MudTd DataLabel="@(context.IsComplex ? "Complex" : "Simple")">
-                            @if (context.IsComplex)
-                        {
-                            <div>Complex</div>
-                        }
-                        else
-                        {
-                            <div>Simple</div>
-                        }
-                    </MudTd>
+                        <MudTd DataLabel="NatureOfAsset">@context.AccountName</MudTd>
+                        
                     <MudTd DataLabel="BookValue">@context.BookValue</MudTd>
-                        <MudTd DataLabel="CurrentValue">@context.CurrentValue</MudTd>
-                        <MudTd DataLabel="SalvageValue">@context.SalvageValue</MudTd>
+                        <MudTd DataLabel="CurrentValue">@context.TaxRate</MudTd>
                         <MudTd DataLabel="GSTValue">
                             @string.Format("{0:F3}", context.GSTValue)
                     </MudTd>
@@ -113,7 +100,7 @@
     </DialogForm>
 
 
-    @code {
+@code {
 
     [Parameter]
     public TaxPurchaseModel model { get; set; }
@@ -141,7 +128,8 @@
     [Parameter]
     public AssetPurchaseModel PI { get; set; }
     [Parameter]
-    public List<AssetModel> ListPI { get; set; }
+    public List<AssetPOModel> ListPI { get; set; }
+    ValidationMessageStore messageStore;
 
 
     protected override async Task OnInitializedAsync()
@@ -154,6 +142,9 @@
         var user = authprov.User;
         UserID = user.Identity.Name;
         branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        model.Assets = PI.SelectedAssets;
+        model.PartyInfo = PI.SelectedAssets[0].VendorInfo;
+        model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
         if (model.PID == null && model.PartyInfo != null)
         {
             PartyChanged(model.PartyInfo);
@@ -185,6 +176,17 @@
         // }
     }
 
+    protected override void OnParametersSet()
+    {
+        if (editContext == null)
+        {
+            editContext = new EditContext(model);
+        }
+        DocumentDetails.DocumentTypeID = TaxPurchaseDocTypeID;
+        DocumentDetails.DocumentID = model.PID;
+        SetTotal();
+    }
+
     void PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
@@ -195,15 +197,46 @@
         else { Local = false; }
     }
 
-    private async Task OnValidSubmit()
+    private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
         {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
         _busy = true;
-        MudDialog.Close(PI);
+
+        if (HasPermissionTaxPurchaseServiceEdit)
+        {
+            try
+            {
+                TaxPurchaseModel check = Iservice.CheckInvoiceDuplication(model);
+                if (check == null || (check.PID != null && check.PID == model.PID && check.DocumentNumber == model.DocumentNumber))
+                {
+                    model.UserInfo.UserID = UserID;
+                    var result = Iservice.Update(model);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    dialogForm.Close(result);
+                    model = new();
+                }
+                else
+                {
+                    bool? result = await DialogService.ShowMessageBox(
+                        "Warning",
+                        new MarkupString("Invoice already entered On <b>" + check.DocumentDate + "</b> as <b>" + check.DocumentNumber + "</b>!"));
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit TaxPurchase.");
+        }
         await Task.Delay(200);
         _busy = false;
     }
@@ -234,39 +267,6 @@
 
     void SetTotal()
     {
-        model.TotalAmount = (model.Expenses.Where(x => x != null).Sum(x => x.Amount + x.IGST + x.CGST + x.SGST) ?? 0) + (model.Items.Where(y => y != null).Sum(y => y.Amount + y.IGST + y.CGST + y.SGST) ?? 0);
+        model.TotalAmount = (model.Expenses.Where(x => x != null).Sum(x => x.Amount + x.IGST + x.CGST + x.SGST) ?? 0) + (model.Assets.Where(y => y != null).Sum(y => y.BookValue + y.GSTValue) ?? 0);
     }
-
-    private async Task ExportToCsv()
-    {
-        //List<PaymentMemoPrintDetailModel> data = iservice.GetPaymentMemoPrintDetails(PI.PaymentInitiatedID).ToList();
-        // var excelBytes = ExcelService.GenerateExcelWorkbook(data);
-        //await JSRuntime.InvokeVoidAsync("saveAsFile", $"test_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.xlsx", Convert.ToBase64String(excelBytes));
-    }
-
-    // private async Task Delete(PaymentMemoModel i)
-    // {
-    //     var PaymentMemoID = i.PaymentMemoID;
-    //     try
-    //     {
-    //         if (PI.SelectedMemos.Count > 1)
-    //         {
-    //             iservice.Delete(i.PaymentMemoID);
-    //             int rowIndex = PI.SelectedMemos.IndexOf(i);
-    //             PI.SelectedMemos.RemoveAt(rowIndex);
-    //             snackbar.Add("Removed Successfully", Severity.Success);
-    //         }
-    //         else
-    //         {
-    //             snackbar.Add("Deletion is not allowed if there is only one Payment Memo", Severity.Warning);
-    //         }
-
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         snackbar.Add(ex.Message, Severity.Error);
-    //     }
-
-    //     // await OnAmountChange.InvokeAsync();
-    // }
 }
