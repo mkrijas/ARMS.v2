@@ -18,13 +18,15 @@ namespace ArmsServices.DataServices
         TaxPurchaseModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);  //Delete
         IEnumerable<TaxPurchaseModel> Select();
-        IEnumerable<TaxPurchaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<TaxPurchaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type);
+        IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type);
         IEnumerable<TaxPurchaseModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<TaxPurchaseModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? PID);
         IEnumerable<TaxPurchaseItemModel> GetItems(int? PID);
         int Approve(int? PID, string UserID, string Remarks);  //Approve
         int Reverse(int? PID, string UserID, string Remarks);  //Reverse
+        TaxPurchaseModel UpdateAssetPO(TaxPurchaseModel model);
+        IEnumerable<AssetPOModel> GetAssets(int? PID);
     }
 }

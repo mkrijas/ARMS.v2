@@ -16,6 +16,8 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<AssetModel>(Json);
         }
+        public long? ID { get; set; }
+        public int? PID { get; set; }
         public int? AssetID { get; set; }
         [Required]
         public string Description { get; set; }
@@ -77,6 +79,11 @@ namespace ArmsModels.BaseModels
         public decimal? GSTValue { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public int? GetAccountRuleDefinition { get; set; }
+        public string AccountName { get; set; }
+        public int? CoaID { get; set; }
+        public decimal? TaxRate { get; set; }
+        [Required]
+        public string AssetStatus { get; set; }
     }
 
     public class AssetViewModel
@@ -179,7 +186,7 @@ namespace ArmsModels.BaseModels
         public string DocumentNumber { get; set; }
         public int? BranchID { get; set; }
         public decimal? TotalAmount { get; set; }
-        public List<AssetModel> SelectedAssets { get; set; } = new();
+        public List<AssetPOModel> SelectedAssets { get; set; } = new();
         public int? AuthLevelId { get; set; }
         public string AuthStatus { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
@@ -197,6 +204,75 @@ namespace ArmsModels.BaseModels
         public int? CapitalizationID { get; set; }
         public int? CWIPID { get; set; }
     }
+
+    public class AssetPOModel : ICloneable
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AssetPOModel>(Json);
+        }
+        public long? ID { get; set; }
+        public int? PID { get; set; }
+        public int? AssetID { get; set; }
+        [Required]
+        public string Description { get; set; }
+        public string AccountName { get; set; }
+        [StringLength(8)]
+        public string AssetCode { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public decimal? BookValue { get; set; }
+        [Required]
+        public int? BranchID { get; set; }
+        public int? CoaID { get; set; }
+        public decimal? CurrentValue { get; set; }
+        public virtual decimal? DepreciableValue
+        {
+            get
+            {
+                return BookValue - SalvageValue;
+            }
+        }
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public string DepreciationBookCode { get; set; }// Income Tax,Company Act
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public DateTime? DepreciationEndingDate { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public string DepreciationMethod { get; set; }// Straigt Line,Diminishing Balance,Sum of Years Digits 
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public DateTime? DepreciationStartingDate { get; set; }
+        public decimal? GSTValue { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public int? GetAccountRuleDefinition { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public string GstMechanism { get; set; } // FCM/RCM/INELIGIBLE
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public int? GstRateID { get; set; }
+        [StringLength(10)]
+        public string HsnCode { get; set; }
+        [Required]
+        public bool IsComplex { get; set; } = false;
+        [Required]
+        public string NatureOfAsset { get; set; }//Tangible, Intangible
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public DateTime? ProjectedDisposalDate { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public decimal? RateOfDepreciation { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public decimal? SalvageValue { get; set; }
+        public bool Scrap { get; set; } = false;
+        public decimal? SpanOfYear { get; set; }
+        public decimal? TaxRate { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public DateTime? WarrentyDate { get; set; }
+        public int RecordStatus { get; set; }
+        //public decimal? TotalValue { get; set; }
+        //[ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public string SerialNumber { get; set; }
+        [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
+        public virtual PartyModel VendorInfo { get; set; }
+    }
+
 
 
 }

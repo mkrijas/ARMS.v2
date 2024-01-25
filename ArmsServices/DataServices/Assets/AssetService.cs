@@ -37,11 +37,11 @@ namespace ArmsServices.DataServices
             return new AssetModel
             {
                 AssetID = dr.GetInt32("AssetID"),
-                BranchID = dr.GetInt32("BranchID"),               
+                BranchID = dr.GetInt32("BranchID"),
                 AssetClass = new()
                 {
                     AssetClassID = dr.GetInt32("AssetClassID"),
-                    AssetClassName = dr.GetString("AssetClassName"),                    
+                    AssetClassName = dr.GetString("AssetClassName"),
                 },
                 SubClass = new()
                 {
@@ -53,12 +53,12 @@ namespace ArmsServices.DataServices
                 AssetCode = dr.GetString("AssetCode"),
                 IsComplex = dr.GetBoolean("IsComplex"),
                 ParentAssetID = dr.GetInt32("ParentAssetID"),
-                TotalValue = dr.GetDecimal("TotalValue"),                
+                TotalValue = dr.GetDecimal("TotalValue"),
                 Scrap = dr.GetBoolean("Scrap"),
                 BookValue = dr.GetDecimal("BookValue"),
                 DepreciationBookCode = dr.GetString("DepreciationBookCode"),
                 DepreciationEndingDate = dr.GetDateTime("DepreciationEndingDate"),
-                DepreciationStartingDate =  dr.GetDateTime("DepreciationStartingDate"),
+                DepreciationStartingDate = dr.GetDateTime("DepreciationStartingDate"),
                 DepreciationMethod = dr.GetString("DepreciationMethod"),
                 Description = dr.GetString("Description"),
                 CurrentValue = dr.GetDecimal("CurrentValue"),
@@ -67,11 +67,11 @@ namespace ArmsServices.DataServices
                 HsnCode = dr.GetString("HsnCode"),
                 NatureOfAsset = dr.GetString("NatureOfAsset"),
                 ProjectedDisposalDate = dr.GetDateTime("ProjectedDisposalDate"),
-                RateOfDepreciation = dr.GetDecimal("RateOfDepreciation"),                
+                RateOfDepreciation = dr.GetDecimal("RateOfDepreciation"),
                 SalvageValue = dr.GetDecimal("SalvageValue"),
                 SerialNumber = dr.GetString("SerialNumber"),
                 SpanOfYear = dr.GetDecimal("SpanOfYear"),
-                Status = dr.GetString("Status"),               
+                Status = dr.GetString("Status"),
                 VendorInfo = new()
                 {
                     PartyID = dr.GetInt32("PartyID"),
@@ -80,6 +80,10 @@ namespace ArmsServices.DataServices
                 WarrentyDate = dr.GetDateTime("WarrentyDate"),
                 GSTValue = dr.GetDecimal("GSTValue"),
                 GetAccountRuleDefinition = dr.GetInt32("AccountDef"),
+                AccountName = dr.GetString("AccountName"),
+                CoaID = dr.GetInt32("CoaID"),
+                TaxRate = dr.GetDecimal("TaxRate"),
+                AssetStatus = dr.GetString("AssetStatus"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -134,7 +138,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyID", model.VendorInfo?.PartyID),
                new SqlParameter("@WarrentyDate", model.WarrentyDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-               new SqlParameter("@AccountDef", model.GetAccountRuleDefinition)
+               new SqlParameter("@AccountDef", model.GetAccountRuleDefinition),
+               new SqlParameter("AssetStatus", model.AssetStatus)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Update]", parameters))
@@ -380,7 +385,7 @@ namespace ArmsServices.DataServices
             return SelectByID(truck.AssetID);
         }
 
-        public IEnumerable<AssetModel> GetAssetList(int BranchID, int? ParentID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<AssetPOModel> GetAssetList(int BranchID, int? ParentID, int? NumberOfRecords, string searchTerm)
         {
             bool Scrap = false;
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -394,10 +399,10 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Select]", parameters))
             {
-                yield return GetModel(dr);
+                yield return GetModelPO(dr);
             }
         }
-        public IEnumerable<AssetModel> GetAssetListNonInvoiced(int BranchID, int? ParentID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<AssetPOModel> GetAssetListNonInvoiced(int BranchID, int? ParentID, int? NumberOfRecords, string searchTerm)
         {
             bool Scrap = false;
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -411,7 +416,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Select]", parameters))
             {
-                yield return GetModel(dr);
+                yield return GetModelPO(dr);
             }
         }
 
@@ -428,6 +433,48 @@ namespace ArmsServices.DataServices
                     CWIPID = dr.GetInt32("CWIPID")
                 };
             }
+        }
+
+        private AssetPOModel GetModelPO(IDataRecord dr)
+        {
+            return new AssetPOModel
+            {
+                AssetID = dr.GetInt32("AssetID"),
+                BranchID = dr.GetInt32("BranchID"),
+                AssetCode = dr.GetString("AssetCode"),
+                IsComplex = dr.GetBoolean("IsComplex"),
+                //ParentAssetID = dr.GetInt32("ParentAssetID"),
+                //TotalValue = dr.GetDecimal("TotalValue"),
+                Scrap = dr.GetBoolean("Scrap"),
+                BookValue = dr.GetDecimal("BookValue"),
+                DepreciationBookCode = dr.GetString("DepreciationBookCode"),
+                DepreciationEndingDate = dr.GetDateTime("DepreciationEndingDate"),
+                DepreciationStartingDate = dr.GetDateTime("DepreciationStartingDate"),
+                DepreciationMethod = dr.GetString("DepreciationMethod"),
+                Description = dr.GetString("Description"),
+                CurrentValue = dr.GetDecimal("CurrentValue"),
+                GstRateID = dr.GetInt32("GstRateID"),
+                GstMechanism = dr.GetString("GstMechanism"),
+                HsnCode = dr.GetString("HsnCode"),
+                NatureOfAsset = dr.GetString("NatureOfAsset"),
+                ProjectedDisposalDate = dr.GetDateTime("ProjectedDisposalDate"),
+                RateOfDepreciation = dr.GetDecimal("RateOfDepreciation"),
+                SalvageValue = dr.GetDecimal("SalvageValue"),
+                SerialNumber = dr.GetString("SerialNumber"),
+                SpanOfYear = dr.GetDecimal("SpanOfYear"),
+                //Status = dr.GetString("Status"),
+                WarrentyDate = dr.GetDateTime("WarrentyDate"),
+                GSTValue = dr.GetDecimal("GSTValue"),
+                GetAccountRuleDefinition = dr.GetInt32("AccountDef"),
+                AccountName = dr.GetString("AccountName"),
+                CoaID = dr.GetInt32("CoaID"),
+                TaxRate = dr.GetDecimal("TaxRate"),
+                VendorInfo = new()
+                {
+                    PartyID = dr.GetInt32("PartyID"),
+                    TradeName = dr.GetString("TradeName"),
+                },
+            };
         }
 
     }
