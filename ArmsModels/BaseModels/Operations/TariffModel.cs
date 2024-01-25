@@ -32,7 +32,8 @@ namespace ArmsModels.BaseModels
         public int? TariffSign { get; set; }
         [Required]
         public decimal? TariffRate { get; set; }
-        public byte? TruckAxles { get; set; }
+        public byte? Wheels { get; set; }
+        public bool CalculateOnUnloadingQty { get; set; }
         public virtual string Unit { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
