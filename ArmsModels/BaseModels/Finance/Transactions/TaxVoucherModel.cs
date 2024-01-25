@@ -15,13 +15,13 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public int? TaxVoucherID { get; set; }
         [Required]
         public AssetDocumentTypeModel DocumentType { get; set; }
-        [Required]
-        public DateTime? FromDate { get; set; }
-        [Required]
-        public DateTime? ToDate { get; set; }
-        [Required]
-        public DateTime? InvoiceDate { get; set; }
-        public bool? IsAgent { get; set; } = false;
+        //[Required]
+        //public DateTime? FromDate { get; set; }
+        //[Required]
+        //public DateTime? ToDate { get; set; }
+        //[Required]
+        //public DateTime? InvoiceDate { get; set; }
+        public bool IsAgent { get; set; }
         [RequiredIfTrue("IsAgent")]
         public PartyModel Agent { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsAgent == false")]
@@ -34,12 +34,12 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public string PaymentTool { get; set; }
         [RequiredIf("PaymentMode", "Bank")]
         public decimal? BankCharges { get; set; }
-        public decimal? TotalTax { get; set; }
+        public virtual decimal? GstRate { get; set; }        
         public decimal? SGST { get; set; } = 0;
         public decimal? CGST { get; set; } = 0;
         public decimal? IGST { get; set; } = 0;
         public decimal? TDS { get; set; } = 0;
-        public virtual decimal? GstRate { get; set; }
+        public decimal? TotalTax { get; set; }
         public virtual string AccountName { get; set; }
         public List<TaxVoucherSubModel> TaxVoucherSubList { get; set; } = new();
     }
@@ -59,10 +59,10 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public virtual int? AssetID { get; set; }
         public virtual string AssetName { get; set; }
         public virtual string AssetCode { get; set; }
-        public virtual string CostCenterVal { get; set; }
+        //public virtual string CostCenterVal { get; set; }
+        //public virtual string DimensionVal { get; set; }
         public virtual CostCenterModel CostCenterMod { get; set; }
-        public virtual DimensionModel DimensionMod { get; set; }
-        public virtual string DimensionVal { get; set; }
+        public virtual DimensionModel DimensionMod { get; set; }        
         public virtual string DocumentName { get; set; }
         public virtual string UsageCode { get; set; }
 
