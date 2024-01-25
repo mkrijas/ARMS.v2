@@ -83,6 +83,7 @@ namespace ArmsServices.DataServices
                 AccountName = dr.GetString("AccountName"),
                 CoaID = dr.GetInt32("CoaID"),
                 TaxRate = dr.GetDecimal("TaxRate"),
+                AssetStatus = dr.GetString("AssetStatus"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -137,7 +138,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyID", model.VendorInfo?.PartyID),
                new SqlParameter("@WarrentyDate", model.WarrentyDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-               new SqlParameter("@AccountDef", model.GetAccountRuleDefinition)
+               new SqlParameter("@AccountDef", model.GetAccountRuleDefinition),
+               new SqlParameter("AssetStatus", model.AssetStatus)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Update]", parameters))

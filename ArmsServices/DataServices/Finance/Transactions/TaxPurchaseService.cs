@@ -137,14 +137,15 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<TaxPurchaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<TaxPurchaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByApproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
-               new SqlParameter("@searchTerm", searchTerm)
+               new SqlParameter("@searchTerm", searchTerm),
+               new SqlParameter("@Type", Type)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Select]", parameters))
@@ -153,7 +154,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type)
 
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -161,7 +162,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByUnapproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
-               new SqlParameter("@searchTerm", searchTerm)
+               new SqlParameter("@searchTerm", searchTerm),
+               new SqlParameter("@Type", Type)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Select]", parameters))
