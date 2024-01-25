@@ -1,0 +1,97 @@
+﻿@attribute [Authorize]
+@using System.Threading;
+@using Core.BaseModels.General;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+ <MudDialog>
+     <TitleContent>
+         <MudItem xs="6">
+             <MudText Typo="Typo.h5" GutterBottom="true">
+                 <b>@(Trip != null ? Trip.TripNumberDisplay : "")</b>
+             </MudText>
+         </MudItem>
+         <MudItem xs="6">
+             <MudText Typo="Typo.h5" GutterBottom="true">
+                 <MudIcon Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Title="Driver" Color="Color.Primary" />
+                 <b>@AssignedDriver.DriverName</b>
+            </MudText>
+        </MudItem>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="min-height:100px;max-height: 300px;padding-left:10px">
+            <EditForm id="AdvancePayForm" Model="@spe" OnValidSubmit="OnValidSubmit">
+                <MudGrid Spacing="2">
+                    <MudItem xs="6">
+                        <CostCenterSelector @bind-Value="spe.CostCenter" @bind-ValueText="@spe.CostCenterVal" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <DimensionSelector @bind-Value="spe.Dimension" @bind-ValueText="@spe.DimensionVal" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudNumericField HideSpinButtons @bind-Value="spe.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Amount)" Required></MudNumericField>
+                     </MudItem>
+                     <MudItem xs="6">
+                         <MudTextField @bind-Value="spe.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Reference)"></MudTextField>
+                     </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+         <MudButton Disabled="@_busy" form="AdvancePayForm" Variant="Variant.Filled" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Send" ButtonType="ButtonType.Submit">NEXT</MudButton>
+    </DialogActions>
+</MudDialog>
+
+ @code {
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    [Parameter]
+    public TripModel Trip { get; set; }
+    [Parameter]
+    public TruckModel Truck { get; set; }
+    [Parameter]
+    public DriverModel AssignedDriver { get; set; }
+    private SundryPaymentEntryModel spe { get; set; } = new();
+    private EditContext editContext;
+    [CascadingParameter] 
+    MudDialogInstance MudDialog { get; set; }
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        spe = new()
+        {
+            Reference = Trip.TripNumberDisplay.ToString() + " Advance"
+        };
+    }
+
+    public async Task OnValidSubmit(EditContext context)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        try
+        {
+            MudDialog.Close(spe);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+       
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}
