@@ -1,0 +1,241 @@
+﻿@attribute [Authorize]
+@using System.Threading;
+@using Core.BaseModels.General;
+@using Views.Pages.Finance.Transactions
+@inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@inject ITaxPurchaseService Iservice
+@inject IInventoryGrnService grnIservice
+@inject IPartyService partyIservice
+@inject IInventoryItemService itemIservice
+@inject IGstItemService gstitemIservice
+@inject IInventoryGroupService inventoryGroupIservice
+@inject ITdsRateService tdsIService
+@inject IJSRuntime JsRuntime
+
+<MudDialog ReadOnly="@ReadOnly" Title="Asset Purchase" formID="formTaxPurchase" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+@*     <TitleContent></TitleContent> *@
+@* <DialogForm ReadOnly="@ReadOnly" Title="Purchase" formID="formTaxPurchase" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+ *@    <DialogContent>
+        <MudPaper Class="p-3">
+            <EditForm autocomplete="off" id="formTaxPurchase" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <PartySelector Value="model.PartyInfo" For="@(()=> model.PartyInfo)" ValueChanged="PartyChanged" NatureOfBusiness="Supplier" IncludeRenter ></PartySelector>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="model.InvoiceDate" For="@(() => model.InvoiceDate)" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceNo)"></MudTextField>
+                    </MudItem>
+                    @* <MudItem xs="12" md="6">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.AdditionalTDS" Label="Additional TDS" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdditionalTDS)"></MudTextField>
+                    </MudItem> *@
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12">
+
+                        <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" ExpenseList="@model.Expenses" ReadOnly="@ReadOnly" />
+                    
+                    </MudItem>
+                    <MudItem xs="12">
+                        <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" ItemList="@model.Items" ReadOnly="@ReadOnly" EditMode="@(model.PID != null)" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <AssetsListView OnAssetAdded="AddAssets" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" AssetList="@model.Assets" ReadOnly="@ReadOnly" EditMode="@(model.PID != null)" />
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </DialogContent>
+@*     <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@TaxPurchaseDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="@model.PID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+    </VerificationStatus> *@
+@* </DialogForm>
+ *@
+ </MudDialog>
+@code {
+
+    [Parameter]
+    public TaxPurchaseModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    private int? branchID = null;
+    private string UserID = null;
+    private bool Local;
+    [Parameter]
+    public string PageToRedirectLink { get; set; }
+    [Parameter]
+    public AssetDocumentTypeModel DocumentType { get; set; }
+    public string DocNumber { get; set; }
+    public DateTime? DocDate { get; set; }
+    public string DocType { get; set; }
+    private EditContext editContext;
+    DialogForm dialogForm;
+    ValidationMessageStore messageStore;
+
+    public bool HasPermissionTaxPurchaseServiceEdit { get; set; } = false;
+    public bool HasPermissionTaxPurchaseServiceApprove { get; set; } = false;
+    int TaxPurchaseDocTypeID = 9;
+    private bool _busy;
+
+    
+    public DocumentDetailsModel DocumentDetails { get; set; } = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTaxPurchaseServiceEdit = await Irole.HasClaim(TaxPurchaseDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTaxPurchaseServiceApprove = await Irole.HasClaim(TaxPurchaseDocTypeID.ToString(), "Approve", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = user.Identity.Name;
+
+        if (model.PID == null && model.PartyInfo != null)
+        {
+            PartyChanged(model.PartyInfo);
+        }
+
+        if (model.PID != null)
+        {
+            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
+            model.Expenses = Iservice.GetExpenses(model.PID).ToList();
+            model.Items = Iservice.GetItems(model.PID).ToList();
+            model.Assets = Iservice.GetAssets(model.PID).ToList();
+        }
+        else
+        {
+            model.NatureOfTransaction = "TaxPurchase";
+            model.BranchID = branchID;
+            model.NonStoreInventory = model.GRNID == null;
+        }
+        DocNumber = model.DocumentNumber;
+        DocDate = model.DocumentDate;
+        DocType = model.NatureOfTransaction;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (editContext == null)
+        {
+            editContext = new EditContext(model);
+        }
+        DocumentDetails.DocumentTypeID = TaxPurchaseDocTypeID;
+        DocumentDetails.DocumentID = model.PID;
+        SetTotal();
+    }
+
+    void SetTotal()
+    {
+        model.TotalAmount = (model.Expenses.Where(x => x != null).Sum(x => x.Amount + x.IGST + x.CGST + x.SGST) ?? 0) + (model.Items.Where(y => y != null).Sum(y => y.Amount + y.IGST + y.CGST + y.SGST) ?? 0);
+    }
+
+    void PartyChanged(PartyModel party)
+    {
+        model.PartyInfo = party;
+        if (party != null)
+        {
+            Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
+        }
+        else { Local = false; }
+    }
+
+    async Task AddExpense(TaxPurchaseExpenseModel expenseModel)
+    {
+        model.Expenses.Add(expenseModel);
+        SetTotal();
+    }
+
+    async Task AddItems(TaxPurchaseItemModel ItemModel)
+    {
+        model.Items.Add(ItemModel);
+        SetTotal();
+    }
+
+    async Task AddAssets(AssetPOModel AssetModel)
+    {
+        model.Assets.Add(AssetModel);
+        SetTotal();
+    }
+
+    protected async Task ApproveEntry(DataApprovedStatus aprvd)
+    {
+        if (HasPermissionTaxPurchaseServiceApprove)
+        {
+            if (aprvd.IsApprove)
+            {
+                try
+                {
+                    Iservice.Approve(model.PID, UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve TaxPurchase.");
+        }
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        if (HasPermissionTaxPurchaseServiceEdit)
+        {
+            try
+            {
+                TaxPurchaseModel check = Iservice.CheckInvoiceDuplication(model);
+                if (check == null || (check.PID != null && check.PID == model.PID && check.DocumentNumber == model.DocumentNumber))
+                {
+                    model.UserInfo.UserID = UserID;
+                    var result = Iservice.Update(model);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    dialogForm.Close(result);
+                    model = new();
+                }
+                else
+                {
+                    bool? result = await DialogService.ShowMessageBox(
+                        "Warning",
+                        new MarkupString("Invoice already entered On <b>" + check.DocumentDate + "</b> as <b>" + check.DocumentNumber + "</b>!"));
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit TaxPurchase.");
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+}

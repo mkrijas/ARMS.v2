@@ -82,6 +82,8 @@ namespace ArmsModels.BaseModels
         public string AccountName { get; set; }
         public int? CoaID { get; set; }
         public decimal? TaxRate { get; set; }
+        [Required]
+        public string AssetStatus { get; set; }
     }
 
     public class AssetViewModel
