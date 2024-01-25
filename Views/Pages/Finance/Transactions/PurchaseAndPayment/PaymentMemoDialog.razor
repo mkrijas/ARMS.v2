@@ -29,11 +29,12 @@
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudSelect Label="Nature Of Business" ReadOnly="ReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @if (model.PartyInfo != null)
+                            @if (model.PartyInfo is not null)
                             {
-                                <MudSelectItem Value="@("Deposit")" />
-                                <MudSelectItem Value="@("Payment")" />
-                                <MudSelectItem Value="@("Prepayment")" />
+                                foreach (var item in natureOfBusinessGroup)
+                                {
+                                    <MudSelectItem Value="@(item)" />
+                                }
                             }
                         </MudSelect>
                     </MudItem>
@@ -66,7 +67,7 @@
                                             <td>@item.BranchName</td>
                                             <td>@item.OutstandingAmount</td>
                                             <td> <MudNumericField T="decimal?" ReadOnly="@ReadOnly" @bind-Value="item.PayAmount" TextChanged="SetTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons> </MudNumericField></td>
-                                        </tr>
+                                     </tr>
                                     }
                                 </tbody>
                             </MudSimpleTable>
@@ -98,23 +99,29 @@
     public bool ReadOnly { get; set; }
     [Parameter]
     public bool Dialog { get; set; } = true;
-    private EditContext editContext;
-    DialogForm dialogForm;
-    private int? branchID = null;
-    private string UserID = null;
-
     [Parameter]
     public string PageToRedirectLink { get; set; }
-    public string DocNumber { get; set; }
-    public DateTime? DocDate { get; set; }
-    public string DocType { get; set; }
-    private bool _busy;
 
-    public DocumentDetailsModel DocumentDetails { get; set; } = new();
 
-    public bool HasPermissionPaymentServiceEdit { get; set; } = false;
-    public bool HasPermissionPaymentServiceApprove { get; set; } = false;
-    public int PaymentDocTypeID = 7;
+    EditContext editContext;
+    DialogForm dialogForm;
+    int? branchID = null;
+    string UserID = null;
+
+    string DocNumber { get; set; }
+    DateTime? DocDate { get; set; }
+    string DocType { get; set; }
+    bool _busy;
+
+    string[] natureOfBusinessGroup = new string[] { };
+    string[] RentGroup = { "Rent", "Deposit", "Other" };
+    string[] SupplierGroup = { "Deposit", "Payment", "Prepayment" };
+
+    DocumentDetailsModel DocumentDetails { get; set; } = new();
+
+    bool HasPermissionPaymentServiceEdit { get; set; } = false;
+    bool HasPermissionPaymentServiceApprove { get; set; } = false;
+    int PaymentDocTypeID = 7;
 
     protected override async Task OnInitializedAsync()
     {
@@ -135,7 +142,10 @@
             model.BranchID = branchID;
             model.BusinessNature = "Supplier";
         }
+        SetNTransaction(model.BusinessNature);
         GetBills();
+
+
 
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
@@ -193,7 +203,7 @@
             return;
         }
         _busy = true;
-        if(model.TotalAmount <= 0)
+        if (model.TotalAmount <= 0)
         {
             snackbar.Add("Total amount should be greater than zero!", Severity.Error);
             _busy = false;
@@ -236,7 +246,24 @@
     async Task nbusinesschanged(string val)
     {
         model.BusinessNature = val;
+        SetNTransaction(val);
         await PartyChanged(null);
+    }
+
+    void SetNTransaction(string nBusiness)
+    {
+        if (nBusiness == "Renter")
+        {
+            natureOfBusinessGroup = RentGroup;
+        }
+        else if (nBusiness is not null)
+        {
+            natureOfBusinessGroup = SupplierGroup;
+        }
+        else
+        {
+            natureOfBusinessGroup = new string[] { };
+        }
     }
 
     async Task PartyChanged(PartyModel party)
@@ -248,7 +275,7 @@
     private async Task nTransactionChanged(string nt)
     {
         model.NatureOfTransaction = nt;
-        if (nt == "Payment")
+        if (nt == "Payment" || nt == "Rent")
         {
             await OpenOutstandingBills();
         }
