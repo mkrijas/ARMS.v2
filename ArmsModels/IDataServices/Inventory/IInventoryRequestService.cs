@@ -9,6 +9,7 @@ namespace ArmsServices.DataServices.Inventory
     public interface IInventoryRequestService
     {
         InventoryRequestModel Update(InventoryRequestModel model);  //Edit
+        InventoryRequestModel ClosedInventory(InventoryRequestModel model);  //Edit
         InventoryRequestModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);  //Delete
         IEnumerable<InventoryRequestModel> Select();

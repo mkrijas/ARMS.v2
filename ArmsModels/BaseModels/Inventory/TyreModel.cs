@@ -53,6 +53,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? TyreID { get; set; }
         public string TyreNo { get; set; }
+        [Required]
         public int? RequestID { get; set; }
         [Required]
         public int? TruckID { get; set; }

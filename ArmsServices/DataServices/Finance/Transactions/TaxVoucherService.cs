@@ -60,15 +60,13 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     SlipNo = dr.GetString("ReceiptNo"),
                     UsageCode = dr.GetString("UsageCode"),
                     InvoiceDate = dr.GetDateTime("InvoiceDate"),
-                    CostCenter = dr.GetInt32("CostCenterID"),
-                    CostCenterVal = dr.GetString("CostCenter"),
+                    CostCenter = dr.GetInt32("CostCenterID"),                    
                     CostCenterMod = new CostCenterModel()
                     {
                         CostCenterID = dr.GetInt32("CostCenterID"),
                         CostCenter = dr.GetString("CostCenter"),
 
-                    },
-                    DimensionVal = dr.GetString("Dimension"),
+                    },                    
                     Dimension = dr.GetInt32("DimensionID"),
                     DimensionMod = new DimensionModel()
                     {
@@ -105,8 +103,8 @@ namespace ArmsServices.DataServices.Finance.Transactions
                     SlipNo = dr.GetString("ReceiptNo"),
                     UsageCode = dr.GetString("UsageCode"),
                     InvoiceDate = dr.GetDateTime("InvoiceDate"),
-                    CostCenterVal = dr.GetString("CostCenter"),
-                    DimensionVal = dr.GetString("Dimension"),
+                    CostCenterMod = new CostCenterModel() { CostCenter = dr.GetString("CostCenter"),CostCenterID = dr.GetInt32("CostCenterID"), },
+                    DimensionMod = new() {Dimension =  dr.GetString("Dimension"), DimensionID = dr.GetInt32("DimensionID"), },
                     CostCenter = dr.GetInt32("CostCenterID"),
                     Dimension = dr.GetInt32("DimensionID"),
                     Reference = dr.GetString("Refference"),
@@ -206,14 +204,11 @@ namespace ArmsServices.DataServices.Finance.Transactions
                new SqlParameter("@TaxVoucherID", model.TaxVoucherID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@MID", model.MID),
-               new SqlParameter("@DocumentDate", model.DocumentDate),
-               new SqlParameter("@InvoiceDate", model.InvoiceDate),
+               new SqlParameter("@DocumentDate", model.DocumentDate),               
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@Narration", model.Narration),
-               new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
-               new SqlParameter("@FromDate", model.FromDate),
-               new SqlParameter("@ToDate", model.ToDate),
+               new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),               
                new SqlParameter("@IsAgent", model.IsAgent),
                new SqlParameter("@AgentID", model.Agent?.PartyID??null),
                new SqlParameter("@AgentCode", model.Agent?.PartyCode?? null),
@@ -252,7 +247,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                 BranchID = dr.GetInt32("BranchID"),
                 MID = dr.GetInt32("MID"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
-                InvoiceDate = dr.GetDateTime("InvoiceDate"),
+               
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 Narration = dr.GetString("Narration"),
@@ -261,10 +256,8 @@ namespace ArmsServices.DataServices.Finance.Transactions
                 {
                     DocumentTypeID = dr.GetInt32("DocumentTypeID"),
                     DocumentTypeName = dr.GetString("DocumentTypeName"),
-                },
-                FromDate = dr.GetDateTime("FromDate"),
-                ToDate = dr.GetDateTime("ToDate"),
-                IsAgent = dr.GetBooleanNullable("IsAgent"),
+                },                
+                IsAgent = dr.GetBoolean("IsAgent"),
                 Agent = new PartyModel()
                 {
                     PartyID = dr.GetInt32("AgentID"),

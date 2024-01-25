@@ -28,16 +28,15 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@BranchName", model.BranchName.ToUpper()),
-               //new SqlParameter("@BranchCode", model.BranchCode),
-               new SqlParameter("@BranchAbbrev", model.BranchAbbrev.ToUpper()),
-               //new SqlParameter("@CoaID", model.Coa.CoaID),
+               new SqlParameter("@BranchName", model.BranchName.ToUpper()),               
+               new SqlParameter("@BranchAbbrev", model.BranchAbbrev.ToUpper()),               
                new SqlParameter("@GstNo", model.GstNo),
                new SqlParameter("@AddressID", model.Address.AddressID),
                new SqlParameter("@PlaceID", model.PlaceID),
                new SqlParameter("@Operate", model.Operate),
                new SqlParameter("@Active", model.Active),
-               new SqlParameter("@UpwardBranchID", model.UpwardBranchID),
+               new SqlParameter("@UpwardBranchID", model.StateOfficeID),
+               new SqlParameter("@IsStateOffice", model.IsStateOffice),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Branch.Update]", parameters))
@@ -84,15 +83,14 @@ namespace ArmsServices.DataServices
                 Active = dr.GetBoolean("Active"),
                 //AddressID = dr.GetInt32("AddressID"),
                 BranchName = dr.GetString("BranchName"),
-                BranchCode = dr.GetString("BranchCode"),
-                BranchAbbrev = dr.GetString("BranchAbbrev"),
-                Coa = new ChartOfAccountModel() { CoaID = dr.GetInt32("CoaID") },
+                IsStateOffice = dr.GetBoolean("IsStateOffice"),
+                BranchAbbrev = dr.GetString("BranchAbbrev"),                
                 BranchID = dr.GetInt32("BranchID"),
                 Operate = dr.GetBoolean("Operate"),
                 //PlaceID = dr.GetInt32("PlaceID"),
                 //GstCode = dr.GetInt32("GstCode"),
                 GstNo = dr.GetString("GstNo"),
-                UpwardBranchID = dr.GetInt32("UpwardBranchID"),
+                StateOfficeID = dr.GetInt32("UpwardBranchID"),
                 State = new StateModel
                 {
                     StateName = dr.GetString("StateName")

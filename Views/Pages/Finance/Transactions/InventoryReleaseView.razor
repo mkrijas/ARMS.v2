@@ -30,12 +30,14 @@
                         <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(null))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                     </MudTooltip>
                     <MudSpacer></MudSpacer>
+                    <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
                 </ToolBarContent>
                 <HeaderContent>
                     <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Store.StoreName)" InitialDirection="SortDirection.Ascending">Store Name</MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Jobcard.JobcardNumber)" InitialDirection="SortDirection.Ascending">Jobcard Number</MudTableSortLabel></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Truck.RegNo)" InitialDirection="SortDirection.Ascending">Truck Reg No</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryReleaseModel, object>(x=> x.Status)" InitialDirection="SortDirection.Ascending">Status</MudTableSortLabel></MudTh>
                     <MudTh>Actions</MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -43,11 +45,12 @@
                         <MudTd DataLabel="Store Name">@context.Store.StoreName</MudTd>
                         <MudTd DataLabel="Jobcard Number">@context.Jobcard.JobcardNumber</MudTd>
                         <MudTd DataLabel="Truck Reg No">@context.Truck.RegNo</MudTd>
+                        <MudTd DataLabel="Status">@context.Status</MudTd>
                         <MudTd DataLabel="">
                             <MudTooltip Text="View">
                                 <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
                             </MudTooltip>
-                            @if (@context.AuthLevelId == null)
+                        @if (@context.AuthLevelId == null && context.Status == "Pending")
                         {
                             <MudTooltip Text="Reverse">
                                 <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />
@@ -94,11 +97,18 @@
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
     }
 
-    private void GetAll()
+    private void GetAll(bool val)
     {
         if (SelectedStore != null && SelectedStore.StoreID != 0)
         {
-            collection = Iservice.SelectByStoreAndBranchID(SelectedStore.StoreID, branchID).ToList();
+            if (val)
+            {
+                collection = Iservice.SelectByStoreAndBranchIDApproved(SelectedStore.StoreID, branchID).ToList();
+            }
+            else
+            {
+                collection = Iservice.SelectByStoreAndBranchIDUnApproved(SelectedStore.StoreID, branchID).ToList();
+            }
         }
         else
         {
@@ -109,10 +119,16 @@
         }
     }
 
+    async Task ApprovedChanged(bool value)
+    {
+        IsApproved = value;
+        GetAll(IsApproved);
+    }
+
     private void StoreChanged(StoreModel obj)
     {
         SelectedStore = obj;
-        GetAll();
+        GetAll(IsApproved);
     }
 
     private async Task Delete(InventoryReleaseModel model)
@@ -130,7 +146,7 @@
                     var user = authprov.User;
                     Iservice.Delete(model.RID, model.IsUsedItem, user.Identity.Name);
                     snackbar.Add("Transaction reversed successfully", Severity.Success);
-                    GetAll();
+                    GetAll(IsApproved);
                 }
             }
             catch (Exception ex)
@@ -178,7 +194,7 @@
         parms.Add("RequestIds", RequestIds);
         var dialog = DialogService.Show<InventoryReleaseDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
-        GetAll();
+        GetAll(IsApproved);
         await Task.Delay(200);
         _busy = false;
     }

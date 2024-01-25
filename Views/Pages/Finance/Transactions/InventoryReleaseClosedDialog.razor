@@ -1,0 +1,195 @@
+﻿@using ArmsModels.BaseModels.Finance.Transactions;
+@using ArmsServices.DataServices.Finance.Transactions;
+@using ArmsServices.DataServices.Inventory;
+@attribute [Authorize]
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@inject IInventoryRequestService Irqstservice
+@inject IInventoryReleaseService Iservice
+@inject IJobcardService IJobcardService
+@inject IDialogService DialogService
+@inject IInventoryItemService itemIservice
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="inventoryReleaseCloseForm" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="model.RequestNumber" Label="Request Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RequestNumber)" Disabled></MudTextField>
+                     </MudItem>
+                     <MudItem xs="12" md="4">
+                         <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.RequestDate" DateFormat="dd/MM/yyyy" />
+                     </MudItem>
+                     <MudItem xs="12" md="4">
+                         <MudSelect Label="Select Job Card" T="JobcardModel" Value="model.Jobcard" ToStringFunc="@(e => e == null ? null : $"{e.JobcardNumber}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" Disabled="@SetIncomingVal">
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <TruckSelector @bind-Value="@model.Truck" BranchID="@model.BranchID" IsDisabled="@SetIncomingVal"></TruckSelector>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                         <StoreSelector @bind-Value="@model.Store" BranchID="@(model.BranchID??0)" IsDisabled="@SetIncomingVal"></StoreSelector>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <h6><u>Items</u></h6>
+                        <MudGrid Justify="Justify.Center">
+                            <MudItem xs="3" Class="d-flex align-center"><span> <strong> <u>Item</u></strong> </span></MudItem>
+                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Requested Quantity</u></strong> </span></MudItem>
+                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Released Quantity</u></strong> </span></MudItem>
+                            <MudItem xs="3" Class="d-flex align-center"><span><strong><u>Used Quantity</u></strong> </span></MudItem>
+                            @foreach (var item in InventoryRequestSubList)
+                            {
+                                <MudItem xs="3"> @(ItemList.FirstOrDefault(x => x.InventoryItemID == item.ItemID)?.ItemDescription) </MudItem>
+                                <MudItem xs="3"> @item.RequestQty </MudItem>
+                                <MudItem xs="3"> @item.ReleaseQty </MudItem>
+                                <MudItem xs="3">
+                                    <MudTextField @bind-Value="item.UsedQty" Label="Quatity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.UsedQty)" Disabled="ReadOnly"></MudTextField>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Disabled="@_busy" form="inventoryReleaseCloseForm" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public InventoryRequestModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    private string UserID = null;
+    private List<InventoryItemModel> ItemList = new();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public bool SetIncomingVal { get; set; } = false;
+    private List<InventoryReleaseSubViewModel> InventoryRequestSubList = new List<InventoryReleaseSubViewModel>();
+    private InventoryItemEntryModel Entrymodel = new InventoryItemEntryModel();
+    private EditContext editContext;
+    DialogForm dialogForm;
+    private bool _busy;
+
+    public bool HasPermissionInventoryRequestEdit { get; set; } = false;
+    public int DocTypeID = 67;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInventoryRequestEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        if (model.UserInfo == null)
+        {
+            model.UserInfo = new();
+        }
+        model.UserInfo.UserID = UserID;
+        if (model == null)
+        {
+            model = new()
+                {
+                    UserInfo = new() { UserID = UserID, },
+                };
+        }
+        else
+        {
+            InventoryRequestSubList = Iservice.GetRequstSub(model.RequestID, model.Store.StoreID).ToList();
+        }
+        ItemList = itemIservice.SearchByDescription(string.Empty).ToList();
+    }
+
+    protected override void OnParametersSet()
+    {
+        editContext = new EditContext(model);
+    }
+
+    public async void OnValidSubmit(EditContext context)
+    {
+        if (HasPermissionInventoryRequestEdit)
+        {
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            try
+            {
+                if (model.Items == null)
+                {
+                    model.Items = new();
+                }
+                else if (model.Items.Count() != 0)
+                {
+                    model.Items.Clear();
+                }
+                foreach (var item in InventoryRequestSubList)
+                {
+                    if (item.UsedQty > item.ReleaseQty || item.UsedQty < 0 || item.UsedQty == null)
+                    {
+                        snackbar.Add(("You enterd invalid Qty in " + item.ItemDescription + "."), Severity.Error);
+                        model.Items.Clear();
+                        return;
+                    }
+                    if (item != null && item.ItemID != 0 && item.UsedQty >= 0)
+                    {
+                        model.Items.Add(new InventoryItemEntryModel()
+                            {
+                                ItemID = item.ItemID,
+                                ItemQty = item.UsedQty.Value
+                            });
+                    }
+                }
+                _busy = true;
+                model.IsClosed = true;
+                model = Irqstservice.ClosedInventory(model);  
+                MudDialog.Close(DialogResult.Ok(model));
+                snackbar.Add("Saved Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+            finally
+            {
+                await Task.Delay(200);
+                _busy = false;
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit InventoryRequest.");
+        }
+    }
+
+    private void DeleteItem(InventoryItemEntryModel ItemDetails)
+    {
+        if (model.Items.Exists(x => x.ItemID == ItemDetails.ItemID))
+        {
+            int rowIndex = model.Items.IndexOf(ItemDetails);
+            model.Items.RemoveAt(rowIndex);
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}
