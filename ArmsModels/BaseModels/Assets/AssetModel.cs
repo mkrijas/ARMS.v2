@@ -242,6 +242,10 @@ namespace ArmsModels.BaseModels
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public DateTime? DepreciationStartingDate { get; set; }
         public decimal? GSTValue { get; set; }
+        public decimal? CGSTValue { get; set; }
+        public decimal? SGSTValue { get; set; }
+        public decimal? IGSTValue { get; set; }
+        public decimal? TDS { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public int? GetAccountRuleDefinition { get; set; }
         [ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]

@@ -12,6 +12,7 @@
 @inject IRoleService<RoleModel> Irole
 @inject ITaxPurchaseService Iservice
 @inject IDialogService DialogService
+@inject ITdsRateService tdsService
 
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Asset Purchase" formID="formAssetPurchase" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
@@ -54,13 +55,17 @@
                     </MudItem> *@
                 </MudGrid>
             </EditForm>
+            <h6> <u>Assets</u></h6>
             <MudTable Class="mb-3" T="AssetPOModel" Items="@PI.SelectedAssets" Hover="true" SelectOnRowClick>
                 <HeaderContent>
                     <MudTh>Description</MudTh>
-                    <MudTh>Capitalization</MudTh>
+                    <MudTh>Capitalization (A/C)</MudTh>
                     <MudTh>Book Value</MudTh>
                     <MudTh>GST Rate</MudTh>
-                    <MudTh>GST Amount</MudTh>
+                    <MudTh>CGST</MudTh>
+                    <MudTh>SGST</MudTh>
+                    <MudTh>IGST</MudTh>
+                    <MudTh>TDS</MudTh>
                     @* <MudTh>Actions</MudTh> *@
                 </HeaderContent>
                 <RowTemplate>
@@ -69,8 +74,17 @@
                         
                     <MudTd DataLabel="BookValue">@context.BookValue</MudTd>
                         <MudTd DataLabel="CurrentValue">@context.TaxRate</MudTd>
-                        <MudTd DataLabel="GSTValue">
-                            @string.Format("{0:F3}", context.GSTValue)
+                        <MudTd DataLabel="CGSTValue">
+                            @string.Format("{0:F3}", context.CGSTValue)
+                    </MudTd>
+                    <MudTd DataLabel="SGSTValue">
+                            @string.Format("{0:F3}", context.SGSTValue)
+                    </MudTd>
+                    <MudTd DataLabel="IGSTValue">
+                        @string.Format("{0:F3}", context.IGSTValue)
+                    </MudTd>
+                    <MudTd DataLabel="TDS">
+                        @string.Format("{0:F3}", context.TDS)
                     </MudTd>
                         @* <MudTd>
                     <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> Delete(@context))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
@@ -145,6 +159,11 @@
         model.Assets = PI.SelectedAssets;
         model.PartyInfo = PI.SelectedAssets[0].VendorInfo;
         model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
+        if (model.PartyInfo != null)
+        {
+            Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
+        }
+        else { Local = false; }
         if (model.PID == null && model.PartyInfo != null)
         {
             PartyChanged(model.PartyInfo);
@@ -165,7 +184,7 @@
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
-
+        AddTax(model.Assets);
         // if (PI.PaymentInitiatedID == null)
         // {
         //     docNum = "New";
@@ -268,5 +287,33 @@
     void SetTotal()
     {
         model.TotalAmount = (model.Expenses.Where(x => x != null).Sum(x => x.Amount + x.IGST + x.CGST + x.SGST) ?? 0) + (model.Assets.Where(y => y != null).Sum(y => y.BookValue + y.GSTValue) ?? 0);
+    }
+
+    private bool AddTax(List<AssetPOModel> asset)
+    {
+
+        if (model.PartyInfo == null)
+        {
+            snackbar.Add("select party", Severity.Error);
+            return false;
+        }
+        //Model.GstRateID = usageIservice.GetGstRate(Model.UsageCode, DateTime.Now);
+        foreach(var item in asset)
+        {
+            decimal taxRate = item.TaxRate ?? 0;
+            if (!Local)
+            {
+                item.IGSTValue = Math.Round(item.BookValue.Value * taxRate / 100, 2);
+            }
+            else
+            {
+                item.SGSTValue = item.CGSTValue = Math.Round(item.BookValue.Value * taxRate / 200, 2);
+            }
+            decimal tdsRate = tdsService.GetTdsRate(model.PartyInfo.PartyID, item.CoaID);
+            item.TDS = Math.Round((item.BookValue.Value * tdsRate) / 100, 2);
+            //asset.Add(item);
+        }
+        
+        return true;
     }
 }
