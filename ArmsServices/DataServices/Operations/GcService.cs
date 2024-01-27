@@ -41,7 +41,6 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
-
         public int DeleteSet(long? id, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -61,12 +60,10 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Gc.Gcs.Delete]", parameters);
         }
         public int UpdateUnloadingQuantity(GcSetModel model)
-        {
+        {   
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@GcSetID", model.GcSetID),
-               new SqlParameter("@UnloadingQuantity", model.SetUnloadQuantity),
-
+               new SqlParameter("@gcs", model.Gcs.Select(x=> new{  x.GcID,x.UnloadedQuantity }).ToList().ToDataTable()),               
             };
             return Iservice.ExecuteNonQuery("[usp.GcSet.UpdateUnloadingQuantity]", parameters);
         }
@@ -318,15 +315,15 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
-        public decimal? GetPrimaryFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty, decimal? Frt)
+        public decimal? GetPrimaryFreight(int? OrderID, int? RouteID, int? Wheels, decimal? Qty, decimal? Frt)
         {
             decimal? Freight = 0;
             if (Frt == null)
             {
                 if (OrderID > 0)
                 {
-                    List<TariffModel> tariffs = Itariff.GetTariffs("FREIGHT", OrderID, RouteID, Axles).ToList();
-                    foreach (TariffModel item in tariffs)
+                    List<TariffModel> tariffs = Itariff.GetTariffs("FREIGHT", OrderID, RouteID, Wheels).ToList();
+                    foreach (TariffModel item in tariffs.Where(x=> (x.Wheels == Wheels || Wheels is null) /*&& x.TariffType.TariffTypeName == "Primary Freight"*/))
                     {
                         switch (item.Formula.FormulaID)
                         {

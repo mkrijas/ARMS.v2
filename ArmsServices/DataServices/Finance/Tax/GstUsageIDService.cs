@@ -106,9 +106,9 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@UsageCode", Code),
-               new SqlParameter("@Operation", "ByCode")
+               new SqlParameter("@Operation", "ByUsageCode")
             };
-            GstUsageCodeModel model = new();
+            GstUsageCodeModel model = new GstUsageCodeModel();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.UsageID.Select]", parameters))
             {
                 model = GetModel(dr);
