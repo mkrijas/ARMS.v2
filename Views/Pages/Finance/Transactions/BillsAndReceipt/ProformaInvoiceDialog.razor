@@ -69,7 +69,12 @@
     </VerificationStatus>
 </DialogForm>
 
-@code {
+
+   
+
+    @code {
+
+
 
     [Parameter]
     public ProformaInvoiceModel model { get; set; }
@@ -86,7 +91,8 @@
     public string DocType { get; set; }
     private bool _busy;
 
-    
+
+
     public DocumentDetailsModel DocumentDetails { get; set; } = new();
 
 
@@ -115,12 +121,14 @@
         DocType = model.NatureOfTransaction;
     }
 
-    
+
     protected override void OnParametersSet()
     {
         DocumentDetails.DocumentTypeID = FreightBillingDocTypeID;
         DocumentDetails.DocumentID = model.ProformaInvoiceID;
     }
+
+
 
     protected async Task Approve(DataApprovedStatus aprvd)
     {
@@ -128,18 +136,26 @@
         {
             if (aprvd.IsApprove)
             {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                model.UserInfo.UserID = user.Identity.Name;
-                try
+                var dialog = DialogService.Show<InvoiceNumberDialog>();
+
+                var res = await dialog.Result;
+                if(!res.Canceled)
                 {
-                    Iservice.ApproveProformaInvoice(model.ProformaInvoiceID, model.UserInfo.UserID, aprvd.Remarks);
-                    snackbar.Add("Approved Successfully", Severity.Success);
+                    string InvoiceNumber = (string)res.Data;
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    model.UserInfo.UserID = user.Identity.Name;
+                    try
+                    {
+                        Iservice.ApproveProformaInvoice(model.ProformaInvoiceID, model.UserInfo.UserID, aprvd.Remarks, InvoiceNumber);
+                        snackbar.Add("Approved Successfully", Severity.Success);
+                    }
+                    catch (Exception ex)
+                    {
+                        snackbar.Add(ex.Message, Severity.Error);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
+                
             }
         }
         else

@@ -22,6 +22,7 @@ namespace Views.Pages.Operations.Gc
         [Inject] IGcService Iservice { get; set; }
         [Inject] IRouteService Iroute { get; set; }
         [Inject] IOrderService Iorder { get; set; }
+        [Inject] ITariffService ITariff { get; set; }
         [Inject] IConsigneeService Iconsignee { get; set; }
         [Inject] MudBlazor.ISnackbar snackbar { get; set; }
         [Inject] AuthenticationStateProvider auth { get; set; }
@@ -83,7 +84,7 @@ namespace Views.Pages.Operations.Gc
         }
         private void GetFreight(GcSetModel GcSet)
         {
-            GcSet.Gcs.ForEach(x => x.Freight = Iservice.GetPrimaryFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
+            GcSet.Gcs.ForEach(x => x.Freight = ITariff.GetPrimaryFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
         }
 
         private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
