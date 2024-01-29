@@ -29,5 +29,6 @@ namespace ArmsServices.DataServices
         void RemoveBranch(CoaBranchAvailabilityModel model);  //UpdateSelect
         IEnumerable<CoaBranchAvailabilityModel> GetSubledgersInBranch(int? BranchID, string filterText);
         IEnumerable<PaymentCodeModel> GetPaymentCodes(int? BranchID, string PaymentMode);
+        decimal? GetBalance(int? CoaID,string ArdCode,string SubARdCode,DateTime _date);
     }
 }
