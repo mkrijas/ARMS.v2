@@ -60,7 +60,7 @@
                             <MudDivider DividerType="DividerType.Middle" Class="my-6" />
                         </MudItem>
                         <MudItem xs="12" md="4">
-                            <PartySelector @bind-Value="Tmodel.PurchaseModel.PartyInfo"></PartySelector>
+                            <PartySelector @bind-Value="Tmodel.PurchaseModel.PartyInfo" BranchID="branchID"></PartySelector>
                         </MudItem>
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="Tmodel.PurchaseModel.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Tmodel.PurchaseModel.InvoiceNo)"></MudTextField>
@@ -104,6 +104,9 @@
     public bool HasPermissionTripFuelServiceEdit { get; set; } = false;
     public int DocTypeID = 40;
 
+    int branchID;
+    string UserID;
+
     private async void OnValidSubmit()
     {
         if (_busy)
@@ -113,11 +116,9 @@
         }
         if (HasPermissionTripFuelServiceEdit)
         {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            int branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
             Tmodel.PurchaseModel.BranchID = branchID;
-            Tmodel.PurchaseModel.UserInfo.UserID = user.Identity.Name;
+            Tmodel.PurchaseModel.UserInfo.UserID = UserID;
             TaxPurchaseItemModel item = Tmodel.PurchaseModel.Items.FirstOrDefault();
             if (item == null)
             {
@@ -187,6 +188,11 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionTripFuelServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = user.Identity.Name;
 
         costCenter = costIservice.Select().ToList();
         dimension = dimensionIservice.Select().ToList();

@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
         PartyModel SelectByID(int? ID);
         int Delete(int? PartyID, string UserID);  //Delete
         IEnumerable<PartyModel> Select(int? PartyID);
+        IEnumerable<PartyModel> SelectByBranch( int? BranchID);
         IEnumerable<PartyModel> SelectByCode(string PartyCode,string NatureOfBusiness);     
         IEnumerable<ContactModel> GetContacts(int? PartyID);
         IEnumerable<PartyModel> GetCustomers(string Code);
@@ -33,5 +34,9 @@ namespace ArmsServices.DataServices
         int? GetRenterOtherCoaID(int? RenterID);
         bool IsLocal(int? PartyID, int? BranchID);
         int? GetPartyCoaID(int? PartyID, string BusinessNature, string NatureOfTransaction);
+        IEnumerable<int> GetAllocatedBranches(int PartyID);
+
+        int AddToBranch(int? PartyID, int? BranchID, string UserID);
+        int RemoveFromBranch(int? PartyID, int? BranchID, string UserID);        
     }
 }
