@@ -10,6 +10,8 @@
 @inject ITdsRateService tdsIService
 @inject IChartOfAccountService accountService
 @inject IBranchService brIservice
+@inject ITripAdvanceService advanceService
+@inject ITruckService truckService
 @inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
@@ -51,7 +53,7 @@
                                 @foreach (var item in model.Transactions)
                                 {
                                     <tr>
-                                        <td>@item.ExpenseUsageCode</td>
+                                        <td>@item.ExpenseUsageCode - @item.ExpenseTitle</td>
                                         <td>@item.Reference</td>
                                         <td>@item.CostCenterVal</td>
                                         <td>@item.DimensionVal</td>
@@ -92,6 +94,17 @@
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="@ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
+                    <MudItem>
+                        <b>Trip Advance: @Advance.Amount</b><br />
+                        @if (Balance > 0)
+                        {
+                            <b>Receivable Amount: @displayBalance</b>
+                        }
+                        else
+                        {
+                            <b>Payable Amount: @displayBalance</b>
+                        }
+                    </MudItem>
                 </MudGrid>
             </EditForm>
         </MudPaper>
@@ -119,9 +132,12 @@
     public GstUsageCodeModel gstusge = new();
     private OpTranSubModel opTranSubModel = new();
     private List<OperationPostingGroupModel> OperationPostingList = new();
+    private TripAdvanceModel Advance = new(); 
     private bool _busy;
+    private decimal? Balance;
+    private decimal? amount;
+    private string displayBalance;
 
-    
     public DocumentDetailsModel DocumentDetails { get; set; } = new();
 
 
@@ -160,6 +176,10 @@
         DocType = model.NatureOfTransaction;
 
         OperationPostingList = IOperationPostingGroupService.Select().ToList();
+
+        Advance = advanceService.GetTotal(model.TripID);
+        Balance = Advance.Amount;
+        displayBalance = Balance.ToString();
     }
 
     protected override void OnParametersSet()
@@ -231,6 +251,8 @@
     private void SetTotal()
     {
         model.TotalAmount = model.Transactions.Sum(x => x.Amount);
+        Balance = Advance.Amount - model.TotalAmount;
+        displayBalance = (Balance < 0) ? (-Balance).ToString() : Balance.ToString();
     }
 
     private async Task Submit()
@@ -246,10 +268,31 @@
         {
             try
             {
-                Iservice.Update(model);
+                var updatedModel = Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
-                model = new OpTranModel();
                 dialogForm.Close(model);
+
+                var driverId = truckService.GetAssignedDriver(updatedModel.TruckID);
+                if(Balance > 0)
+                {
+                    amount = model.TotalAmount;
+                }
+                else
+                {
+                    amount = Advance.Amount;
+                }
+
+                TripAdvanceModel advanceModel = new()
+                {
+                    BranchID = branchID,
+                    TripID = updatedModel.TripID,
+                    DriverID = driverId,
+                    Amount = -(amount),
+                    CoaID = updatedModel.CreditCoaID,
+                    DocumentTypeID = OpTranDocTypeID,
+                    DocumentID = updatedModel.OpTranID
+                };
+                advanceService.Update(advanceModel);
             }
             catch (Exception ex)
             {
