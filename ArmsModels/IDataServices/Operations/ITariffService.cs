@@ -22,7 +22,8 @@ namespace ArmsServices.DataServices
         TariffTypeModel SelectTariffTypeByID(short? ID);
         TariffTypeModel UpdateTariffType(TariffTypeModel model);  //Edit
         string[] TariffGroups { get; }
-        IEnumerable<TariffModel> GetTariffs(string TariffGroup, int? OrderID, int? RouteID, int? Wheels);
+        //IEnumerable<TariffModel> GetTariffs(string TariffGroup, int? OrderID, int? RouteID, int? Wheels);
+        decimal? GetPrimaryFreight(int? OrderID, int? RouteID, int? Wheels, decimal? Qty, decimal? Frt);
         decimal? GetTariffAmount(GcSetModel GcSet, TariffModel Tariff);
         IEnumerable<TariffModel> GeneratePendingTariffs(long? RefID);
     }

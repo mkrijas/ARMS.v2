@@ -53,7 +53,10 @@ namespace ArmsServices
 
         public static decimal? GetDecimal(this IDataRecord dr, string name)
         {
-            return GetFieldValue<decimal?>(dr, name, null);
+            var val =  GetFieldValue<decimal?>(dr, name, null);
+            if (val != null)
+                return val/1.000000000000000000000000000000000m;
+                return val;
         }
 
         public static DateTime? GetDateTime(this IDataRecord dr, string name)

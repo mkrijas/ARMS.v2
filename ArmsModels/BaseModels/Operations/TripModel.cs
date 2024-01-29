@@ -95,7 +95,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public decimal? Amount { get; set; }
         public int? CoaID { get; set; }
-        public int? DocumentID { get; set; }
         public int? DocumentTypeID { get; set; }
+        public int? DocumentID { get; set; }
     }
 }

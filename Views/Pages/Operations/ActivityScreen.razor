@@ -16,6 +16,7 @@
 @inject IAssetDocumentService idocument
 @inject IRoutineCheckListMasterService IserviceRoutineMaster
 @inject IRoutineCheckListService IroutineCheckListService
+@inject ITripAdvanceService Iadvance
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -86,7 +87,7 @@
                 }
                 @if (CurrentTrip != null)
                 {
-                    <MudButton StartIcon="@Icons.Material.Filled.Money" OnClick="OpenTripAdvance" IconColor="Color.Primary">Trip Advance</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Money" OnClick="OpenTripAdvance" IconColor="Color.Success">Trip Advance</MudButton>
                     <MudButton StartIcon="@Icons.Material.Outlined.Details" OnClick="OpenTripCard" IconColor="Color.Primary">View Details</MudButton>
                 }
             </MudButtonGroup>
@@ -104,11 +105,11 @@
     public TruckModel SelectedTruck { get; set; }
     TripViewComponent TripViewRef;
     private int branchID;
+    private string UserID = null;
     private DriverModel AssignedDriver { get; set; }
     private EventModel CurrentEvent { get; set; }
     private EventTypeModel EventType { get; set; }
     private TripModel CurrentTrip { get; set; }
-    private SundryPaymentEntryModel Advance { get; set; }
     private GstUsageCodeModel UsageCodeModel { get; set; }
     string TruckStatus;
     string EventButtonLabel;
@@ -129,6 +130,8 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         branchID = int.Parse(brancIDString);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
         OnTruckSelected(SelectedTruck);
     }
 
@@ -176,19 +179,40 @@
             advanceEntry.UsageCodeDescription = UsageCodeModel.Description;
             advanceEntry.CoaID = UsageCodeModel.CoaID;
             advanceEntry.Reference = CurrentTrip.TripNumberDisplay.ToString() + " Advance";
+            advanceEntry.BranchID = branchID;
 
             SundryPaymentModel spModel = new()
-                {
-                    PayeeName = AssignedDriver.DriverName,
-                    PayeeContactNo = AssignedDriver.Mobile,
-                    Reference = CurrentTrip.TripNumberDisplay.ToString() + " Advance",
-                    NatureOfTransaction = "Trip Advance",
-                    Entries = new List<SundryPaymentEntryModel>() { advanceEntry }
-                };
+            {
+                BranchID = branchID,
+                PayeeName = AssignedDriver.DriverName,
+                PayeeContactNo = AssignedDriver.Mobile,
+                Reference = CurrentTrip.TripNumberDisplay.ToString() + " Advance",
+                NatureOfTransaction = "Trip Advance",
+                UserInfo = new() { UserID = UserID, },
+                Entries = new List<SundryPaymentEntryModel>() { advanceEntry }
+            };
 
             var parametersForSp = new DialogParameters();
             parametersForSp.Add("model", spModel);
-            var Sundryresult = DialogService.Show<SundryPaymentDialog>(null, parametersForSp, new DialogOptions { MaxWidth = MaxWidth.Large });
+            var Sundrydialog = DialogService.Show<SundryPaymentDialog>(null, parametersForSp, new DialogOptions { MaxWidth = MaxWidth.Large });
+            var Sundryresult = await Sundrydialog.Result;
+            if (!Sundryresult.Canceled)
+            {
+                var sundryPayment = (SundryPaymentModel)Sundryresult.Data;
+                int SundryPaymentDocTypeID = 11;
+
+                TripAdvanceModel advanceModel = new()
+                {
+                    BranchID = branchID,
+                    TripID = CurrentTrip.TripID,
+                    DriverID = AssignedDriver.DriverID,
+                    Amount = advanceEntry.Amount,
+                    CoaID = sundryPayment.PaymentCoaID,
+                    DocumentTypeID = SundryPaymentDocTypeID,
+                    DocumentID = sundryPayment.SundryPaymentID
+                };
+                Iadvance.Update(advanceModel);
+            }
 
         }     
         await Task.Delay(200);
