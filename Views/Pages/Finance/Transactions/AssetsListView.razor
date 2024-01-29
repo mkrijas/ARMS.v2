@@ -11,29 +11,35 @@
             <h6> <u>Assets</u></h6>
             <div style="width: 1600px;" class="pb-3">
                 <MudGrid Justify="Justify.Center">
-                    <MudItem xs="3"><span class="HeadText">Asset Code</span></MudItem>
+                    <MudItem xs="1"><span class="HeadText">Asset Code</span></MudItem>
                     <MudItem xs="1"><span class="HeadText">Description</span></MudItem>
                     <MudItem xs="1"><span class="HeadText">Nature Of Asset</span></MudItem>
                     <MudItem xs="2"><span class="HeadText">Account Name</span></MudItem>
-                    <MudItem xs="2"><span class="HeadText">Book Value</span></MudItem>
+                    <MudItem xs="1"><span class="HeadText">Book Value</span></MudItem>
                     <MudItem xs="1"><span class="HeadText">GST Rate</span></MudItem>
-                    <MudItem xs="1"><span class="HeadText">GST Amount</span></MudItem>
+                    <MudItem xs="1"><span class="HeadText">CGST</span></MudItem>
+                    <MudItem xs="1"><span class="HeadText">SGST</span></MudItem>
+                    <MudItem xs="1"><span class="HeadText">IGST</span></MudItem>
+                    <MudItem xs="1"><span class="HeadText">TDS</span></MudItem>
                     <MudItem xs="1">Actions</MudItem>
                     @foreach (var item in AssetList)
                     {
-                        <MudItem xs="3">@item.AssetCode</MudItem>
+                        <MudItem xs="1">@item.AssetCode</MudItem>
                         <MudItem xs="1">@item.Description</MudItem>
                         <MudItem xs="1">@item.NatureOfAsset</MudItem>
                         <MudItem xs="2">@item.AccountName</MudItem>
-                        <MudItem xs="2">@item.BookValue</MudItem>
+                        <MudItem xs="1">@item.BookValue</MudItem>
                         <MudItem xs="1">@item.TaxRate</MudItem>
-                        <MudItem xs="1">@item.GSTValue</MudItem>
+                        <MudItem xs="1">@item.CGSTValue</MudItem>
+                        <MudItem xs="1">@item.SGSTValue</MudItem>
+                        <MudItem xs="1">@item.IGSTValue</MudItem>
+                        <MudItem xs="1">@item.TDS</MudItem>
                         <MudItem xs="1" Class="d-flex">
                             @if (!ReadOnly)
                             {
                                 <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
                             }
-                            @* <MudIconButton Title="Show Taxes" Color="Color.Info" @onclick="@(()=> OpenDialogTaxRates(@item))" Icon="@Icons.Material.Filled.CurrencyExchange" Size="Size.Small" /> *@
+                            <MudIconButton Title="Show Taxes" Color="Color.Info" @onclick="@(()=> OpenDialogTaxRates(@item))" Icon="@Icons.Material.Filled.CurrencyExchange" Size="Size.Small" />
                         </MudItem>
                     }
                     @*                 @if (!ReadOnly && !NonInventoryItems)
@@ -155,31 +161,61 @@
         await OnAmountChange.InvokeAsync();
     }
 
-    private bool AddTax(AssetPOModel item)
+    private bool AddTax(AssetPOModel asset)
     {
-        // if (item?.ItemID != null && item.Amount != null)
-        // {
-        //     if (PartyInfo == null)
-        //     {
-        //         snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomCenter;
-        //         snackbar.Add("Select Party !", Severity.Error);
-        //         return false;
-        //     }
-        //     var gstItem = gstIservice.SelectByItem(item?.ItemID ?? 0, DateTime.Today);
-        //     item.GstRate = gstItem?.TaxRate;
-        //     decimal taxRate = item.GstRate ?? 0;
-        //     if (!Local)
-        //     {
-        //         item.IGST = Math.Round(item.Amount.Value * taxRate / 100, 2);
-        //     }
-        //     else
-        //     {
-        //         item.SGST = Model.CGST = Math.Round(item.Amount.Value * taxRate / 200, 2);
-        //     }
-        //     decimal tdsRate = tdsService.GetTdsRate(PartyInfo.PartyID, item.CoaID);
-        //     Model.TDS = Math.Round((item.Amount.Value * tdsRate) / 100, 2);
-        //     return true;
-        // }
-        return false;
+
+        if (PartyInfo == null)
+        {
+            snackbar.Add("select party", Severity.Error);
+            return false;
+        }
+        //Model.GstRateID = usageIservice.GetGstRate(Model.UsageCode, DateTime.Now);
+        decimal taxRate = asset.GSTValue ?? 0;
+        if (!Local)
+        {
+            Model.IGSTValue = Math.Round(asset.BookValue.Value * taxRate / 100, 2);
+        }
+        else
+        {
+            Model.SGSTValue = Model.CGSTValue = Math.Round(asset.BookValue.Value * taxRate / 200, 2);
+        }
+        decimal tdsRate = tdsService.GetTdsRate(PartyInfo.PartyID, asset.CoaID);
+        Model.TDS = Math.Round((asset.BookValue.Value * tdsRate) / 100, 2);
+        return true;
     }
+
+    private async Task OpenDialogTaxRates(AssetPOModel i)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        GstModel taxModel = new GstModel();
+        taxModel.CGST = i.CGSTValue;
+        taxModel.IGST = i.IGSTValue;
+        taxModel.TDS = i.TDS;
+        taxModel.SGST = i.SGSTValue;
+        taxModel.GstRate = i.TaxRate;
+        DialogParameters parms = new DialogParameters();
+        parms.Add("tax", taxModel);
+        parms.Add("ReadOnly", ReadOnly);
+        var dialog = DialogService.Show<TaxRatedialog>(i.PID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            taxModel = (GstModel)result.Data;
+            i.CGSTValue = taxModel.CGST;
+            i.IGSTValue = taxModel.IGST;
+            i.TDS = taxModel.TDS;
+            i.SGSTValue = taxModel.SGST;
+            i.GstRateID = Convert.ToInt32(taxModel.GstRate);
+
+            await OnAmountChange.InvokeAsync();
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
 }

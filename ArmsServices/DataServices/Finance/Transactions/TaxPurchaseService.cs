@@ -355,6 +355,10 @@ namespace ArmsServices.DataServices
                     BookValue = dr.GetDecimal("BookValue"),
                     TaxRate = dr.GetDecimal("TaxRate"),
                     GSTValue = dr.GetDecimal("GSTValue"),
+                    CGSTValue = dr.GetDecimal("CGSTValue"),
+                    SGSTValue = dr.GetDecimal("SGSTValue"),
+                    IGSTValue = dr.GetDecimal("IGSTValue"),
+                    TDS = dr.GetDecimal("TDS"),
                 };
             }
         }
