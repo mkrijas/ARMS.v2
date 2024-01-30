@@ -368,5 +368,26 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+
+        public decimal? GetBalance(int? CoaID, string ArdCode, string SubARdCode, DateTime _date)
+        {
+
+            string Query = "SELECT dbo.GetBalance(@CoaID,@ArdCode,@SubArdCode,@Date)";
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@CoaID", CoaID ?? (object)DBNull.Value),
+               new SqlParameter("@ArdCode", ArdCode ?? (object)DBNull.Value),
+               new SqlParameter("@SubARdCode",SubARdCode ??(object) DBNull.Value),
+               new SqlParameter("@Date",_date),
+            };
+
+            foreach (IDataRecord dr in Iservice.QuerySql(Query, parameters))
+            {
+                return (decimal)dr.GetValue(0);                
+            }
+            return null;
+
+        }
     }
 }

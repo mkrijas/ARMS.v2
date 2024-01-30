@@ -16,9 +16,12 @@ namespace ArmsServices
         Task<int> ExecuteNonQueryAsync(string procedureName, List<SqlParameter> parameters);
         IEnumerable<IDataRecord> GetDataReader(string procedureName, List<SqlParameter> parameters);
         int ExecuteNonQuery(string procedureName, List<SqlParameter> parameters);
+
+        IEnumerable<IDataRecord> QuerySql(string Query, List<SqlParameter> parameters);
+
     }
 
-    public class DbService:IDbService
+    public class DbService : IDbService
     {
         private string ConnectionString { get; set; }
         ILogger<DbService> _logger;
@@ -109,6 +112,31 @@ namespace ArmsServices
                     }
                     connection.Open();
                     return cmd.ExecuteNonQuery();
+            }
+        }
+
+        public IEnumerable<IDataRecord> QuerySql(string Query, List<SqlParameter> parameters)
+        {
+            StringBuilder errorMessages = new StringBuilder();
+
+            using (SqlConnection connection = new SqlConnection(this.ConnectionString))
+            {
+                connection.Open();
+                using (SqlCommand cmd = new SqlCommand(Query, connection))
+                {
+                    cmd.CommandType = CommandType.Text;
+                    if (parameters != null && parameters.Count > 0)
+                    {
+                        cmd.Parameters.AddRange(parameters.ToArray());
+                    }
+                    SqlDataReader dr = null;
+                    dr = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+                    while (dr.Read())
+                    {
+                        yield return dr;
+                    }
+                    dr.Close();
+                }
             }
         }
     }

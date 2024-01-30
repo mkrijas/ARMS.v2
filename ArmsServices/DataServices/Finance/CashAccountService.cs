@@ -25,6 +25,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@CashCode", model.CashCode),
                new SqlParameter("@Title", model.Title),
+               new SqlParameter("@AccountType", model.AccountType),
                new SqlParameter("@CoaID", model.Coa.CoaID),
                new SqlParameter("@MinBalance", model.MinBalance),
                new SqlParameter("@MaxBalance", model.MaxBalance),               
@@ -77,7 +78,7 @@ namespace ArmsServices.DataServices
                 CashAccountID = dr.GetInt32("CashAccountID"),
                 BranchID = dr.GetInt32("BranchID"),
                 CashCode = dr.GetString("CashCode"),
-                //CoaID = new ChartOfAccountModel() { CoaID = dr.GetInt32("CoaID") },
+                AccountType = dr.GetString("AccountType"),
                 Coa = new ChartOfAccountModel() { AccountName = dr.GetString("AccountName"),CoaID = dr.GetInt32("CoaID") },
                 MinBalance = dr.GetDecimal("MinBalance"),
                 MaxBalance = dr.GetDecimal("MaxBalance"),
@@ -115,12 +116,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "ByBranchAll"),
             };
 
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.CashAccount.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
-
         }
 
         public CashAccountModel SelectByID(int ID)
@@ -136,6 +135,21 @@ namespace ArmsServices.DataServices
                 model = GetModel(dr);
             }
             return model;
+        }
+
+        public decimal? GetBalance(int? CashAccountID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@CashAccountID", CashAccountID),
+               new SqlParameter("@Operation", "GetBalance"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.CashAccount.Select]", parameters))
+            {
+                return dr.GetDecimal("Accountbalnce");
+            }
+            return null;
         }
     }
 }

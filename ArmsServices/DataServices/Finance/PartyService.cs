@@ -162,8 +162,6 @@ namespace ArmsServices.DataServices
             }
         }
 
-
-
         private PartyModel GetModel(IDataRecord reader)
         {
             return new PartyModel()
@@ -383,6 +381,54 @@ namespace ArmsServices.DataServices
                 }
             }
             return null;
+        }
+
+        public IEnumerable<PartyModel> SelectByBranch(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {               
+               new SqlParameter("@Operation", "ByBranch"),
+               new SqlParameter("@BranchID",BranchID)
+            };
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.Select]", parameters))
+            {
+                yield return GetModel(reader);
+            }
+        }
+
+        public IEnumerable<int> GetAllocatedBranches(int PartyID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByParty"),
+               new SqlParameter("@PartyID",PartyID)
+            };
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.LinkTableToBranch.Select]", parameters))
+            {
+                yield return reader.GetInt32("BranchID").Value;
+            }            
+        }
+
+        int AllocateBranch(int? PartyID,int? BranchID, string UserID,string Operation)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {               
+               new SqlParameter("@PartyID",PartyID),
+               new SqlParameter("@BranchID",BranchID),
+               new SqlParameter("@UserID",UserID),
+               new SqlParameter("@Operation",Operation)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Entity.Party.LinkTableToBranch.Update]", parameters);           
+        }
+
+        public int AddToBranch(int? PartyID, int? BranchID, string UserID)
+        {
+            return AllocateBranch(PartyID, BranchID, UserID, "ADD");
+        }
+
+        public int RemoveFromBranch(int? PartyID, int? BranchID, string UserID)
+        {
+            return AllocateBranch(PartyID, BranchID, UserID, "REMOVE");
         }
     }
 }

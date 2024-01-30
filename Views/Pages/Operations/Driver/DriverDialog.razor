@@ -50,7 +50,7 @@
                                         <MudNumericField HideSpinButtons MaxLength="12" @bind-Value="model.AdhaarNo" Label="ADHAAR No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdhaarNo)"></MudNumericField>
                                      </MudItem>
                                      <MudItem xs="12" md="6">
-                                         <PartySelector @bind-Value="model.DriverAgent" label="Contractor / Supplier" NatureOfBusiness="Supplier"></PartySelector>
+                                         <PartySelector @bind-Value="model.DriverAgent" label="Contractor / Supplier" NatureOfBusiness="Supplier" BranchID="@BranchID"></PartySelector>
                                      </MudItem>
                                      <MudItem md="6">
                                          <MudTextField Label="Reference" @bind-Value="model.AdditionalInfo" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdditionalInfo)"></MudTextField>
@@ -119,6 +119,9 @@
     public int ContactServiceDocTypeID = 71;
     private bool _busy;
 
+    int BranchID;
+    string UserID;
+
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -142,6 +145,11 @@
             model.BankAccount = new();
         }
         model.Contacts = Icontact.Select(model.DriverID, "Driver").ToList();
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value);
+        UserID = user.Identity.Name;
     }
 
     private void Cancel()
@@ -183,10 +191,11 @@
             _busy = true;
             model.DriverAgentID = model.DriverAgent.PartyID;
             model.Address.AddresseeName = model.DriverName;
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            model.HomeBranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value);
-            model.UserInfo.UserID = user.Identity.Name;
+            
+            model.HomeBranchID = BranchID;
+            model.UserInfo.UserID = UserID ;
+
+
             try
             {
                 var contacts = model.Contacts;
