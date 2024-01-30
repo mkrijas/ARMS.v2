@@ -23,8 +23,30 @@ namespace ArmsModels.BaseModels
         public string TyreSize { get; set; } // 1000 x 25 etc
         public bool Tubeless { get; set; } = false;
         public virtual string TyrePosition { get; set; }
+        public byte? TyreStatus { get; set; }        
         public UserInfoModel UserInfo { get; set; } = new();
         public bool IsChecked { get; set; } = false;
+        public string Status
+        {
+            get
+            {
+                switch (TyreStatus)
+                {
+                    case 0:
+                        return "New";
+                    case 1:
+                        return "1st Resole";
+                    case 2:
+                        return "2nd Resole";
+                    case 3:
+                        return "3rd Resole";
+                    case 99:
+                        return "Scrap";
+                    default:
+                        return null;
+                }
+            }
+        }
     }
 
     public class TyrePositionModel

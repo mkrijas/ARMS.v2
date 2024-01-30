@@ -352,6 +352,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID",model.BranchID),
                new SqlParameter("@TyreSize",model.TyreSize),
                new SqlParameter("@TyreType",model.TyreType),
+               new SqlParameter("@TyreStatus",model.TyreStatus),
                new SqlParameter("@Tubeless",model.Tubeless),
                new SqlParameter("@InventoryItemID",model.InventoryItemID),
                new SqlParameter("@Make",model.Make),
@@ -409,6 +410,7 @@ namespace ArmsServices.DataServices
                 Tubeless = dr.GetBoolean("Tubeless"),
                 TyreSize = dr.GetString("TyreSize"),
                 TyreType = dr.GetString("TyreType"),
+                TyreStatus = dr.GetByte("TyreStatus"),
                 TyrePosition = dr.GetString("TyrePosition"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
