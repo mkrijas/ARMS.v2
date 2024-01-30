@@ -78,15 +78,12 @@ namespace ArmsModels.BaseModels
         public string PassNumber { get; set; }
         [Required]
         public decimal? Freight { get; set; }
-
-
         public virtual string GcTypeName { get; set; }
         public virtual long? GcSetID { get; set; }
         public virtual string GcPrefix { get; set; }
         public virtual long? GcNumber { get; set; }
-        public virtual EwayBillModel EwayBill { get; set; }
-        [Required]
-        public virtual decimal? EFreight { get; set; } = 200;
+        public virtual EwayBillModel EwayBill { get; set; }        
+        public virtual decimal? EFreight { get; set; } = 0;
         public virtual decimal? UnloadedQuantity { get; set; }
         public virtual DateTime? OrderTime { get; set; } = DateTime.Today;
 
