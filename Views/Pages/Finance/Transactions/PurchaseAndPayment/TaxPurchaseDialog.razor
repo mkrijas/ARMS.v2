@@ -26,6 +26,7 @@
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <PartySelector Value="model.PartyInfo" For="@(()=> model.PartyInfo)" ValueChanged="PartyChanged" BranchID="branchID" NatureOfBusiness="Supplier" IncludeRenter ></PartySelector>
+                         <MudText Typo="Typo.caption"> @model.PartyInfo?.GstRegType  @model.PartyInfo?.GstNo</MudText>
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudDatePicker ReadOnly="ReadOnly" Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="model.InvoiceDate" For="@(() => model.InvoiceDate)" />
@@ -40,17 +41,16 @@
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
                     <MudItem xs="12">
-
-                        <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" ExpenseList="@model.Expenses" ReadOnly="@ReadOnly" />
+                        <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ExpenseList="@model.Expenses" ReadOnly="@ReadOnly" />
                     
                     </MudItem>
                     <MudItem xs="12">
-                        <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" ItemList="@model.Items" ReadOnly="@ReadOnly" EditMode="@(model.PID != null)" />
+                            <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ItemList="@model.Items" ReadOnly="@ReadOnly" EditMode="@(model.PID != null)" />
                     </MudItem>
                      @if (model.Assets != null && model.Assets.Count > 0)
                     {
                         <MudItem xs="12">
-                            <AssetsListView OnAssetAdded="AddAssets" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" AssetList="@model.Assets" ReadOnly="@ReadOnly" EditMode="@(model.PID != null)" />
+                            <AssetsListView OnAssetAdded="AddAssets" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" AssetList="@model.Assets" ReadOnly="@ReadOnly" EditMode="@(model.PID != null)" />
                     </MudItem>
                     }
                 </MudGrid>
@@ -62,7 +62,7 @@
     </VerificationStatus>
 </DialogForm>
 
- @code {
+@code {
 
     [Parameter]
     public TaxPurchaseModel model { get; set; }
@@ -70,7 +70,8 @@
     public bool ReadOnly { get; set; }
     private int? branchID = null;
     private string UserID = null;
-    private bool Local;
+    bool Local;
+    bool IsTaxable;
     [Parameter]
     public string PageToRedirectLink { get; set; }
     [Parameter]
@@ -81,6 +82,7 @@
     private EditContext editContext;
     DialogForm dialogForm;
     ValidationMessageStore messageStore;
+    
 
     public bool HasPermissionTaxPurchaseServiceEdit { get; set; } = false;
     public bool HasPermissionTaxPurchaseServiceApprove { get; set; } = false;
@@ -146,6 +148,7 @@
         model.PartyInfo = party;
         if (party != null)
         {
+            IsTaxable = party.GstType == "Registered" || party.GstType == "SEZ";
             Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
         }
         else { Local = false; }
