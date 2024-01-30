@@ -231,6 +231,7 @@ namespace Views
             services.AddScoped<ISaleService, SaleService>();
             services.AddScoped<IJournalService, JournalService>();
             services.AddScoped<IInventoryReleaseService, InventoryReleaseService>();
+            services.AddScoped<IFastTagService, FastTagService>();
 
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();
