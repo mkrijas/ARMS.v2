@@ -28,5 +28,6 @@ namespace ArmsServices.DataServices
         int? GetAssignedDriver(int? TruckID);
         long? GetCurrentTrip(int? TruckID);
         IEnumerable<TruckStatusModel> GetTruckStatus(int? BranchID);
+        IEnumerable<TruckModel> SelectAllByBranch(bool IsChecked, int? BranchID = null, string Filer = "All", string HomeOrOperation = "AllOperation");
     }
 }

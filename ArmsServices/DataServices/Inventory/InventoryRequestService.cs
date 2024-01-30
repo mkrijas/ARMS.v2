@@ -206,6 +206,20 @@ namespace ArmsServices.DataServices.Inventory
             return model;
         }
 
+        public IEnumerable<InventoryRequestModel> SelectRequestReleaseByJobCardID(int? JobCardID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByJobCardID"),
+               new SqlParameter("@ID", JobCardID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Request.Release.Select]", parameters))
+            {
+                yield return GetModelRequestRelease(dr);
+            }
+        }
+
         private InventoryRequestModel GetModel(IDataRecord dr)
         {
             return new InventoryRequestModel

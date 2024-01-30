@@ -1,4 +1,5 @@
 ﻿using ArmsModels.SharedModels;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -9,6 +10,11 @@ namespace ArmsModels.BaseModels
 {
     public class JobcardModel
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<JobcardModel>(Json);
+        }
         public JobcardModel()
         {
             UserInfo = new();

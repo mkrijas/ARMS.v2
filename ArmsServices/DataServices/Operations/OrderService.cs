@@ -30,6 +30,7 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@OrderQuantity", model.OrderQuantity),
                 new SqlParameter("@IsLimitedQuantity", model.IsLimitedQuantity),
                 new SqlParameter("@UserID", model.UserInfo.UserID),
+                new SqlParameter("@Declaration", model.Declaration)
             };
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.gc.Order.Update]", parameters))
             {
@@ -113,6 +114,7 @@ namespace ArmsServices.DataServices
                 OrderName = dr.GetString("OrderName"),
                 IsLimitedQuantity = dr.GetBoolean("IsLimitedQuantity"),
                 OrderQuantity = dr.GetDecimal("OrderQuantity"),
+                Declaration = dr.GetString("Declaration"),
                 Party = new PartyModel
                 {
                     PartyID = dr.GetInt32("ClientID"),

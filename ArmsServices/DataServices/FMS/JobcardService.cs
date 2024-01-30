@@ -120,6 +120,22 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public IEnumerable<JobcardModel> SelectByBranchAndTruck(int? BranchID, int? TruckID, bool Active = false)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByBranchIDAndTruckID"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@Active",Active)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         private JobcardModel GetModel(IDataRecord dr)
         {
             return new JobcardModel
@@ -133,12 +149,55 @@ namespace ArmsServices.DataServices
                 TruckID = dr.GetInt32("TruckID"),
                 RegNo = dr.GetString("RegNo"),
                 Odometer = (decimal)dr.GetDecimal("Odometer"),
+                workshop = dr.GetString("WorkshopName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
                 },
+            };
+        }
+
+        public IEnumerable<JobcardModel> SelectByJobCardID(int? JobCardID, bool Active = false)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByJobCardID"),
+               new SqlParameter("@JobCardID", JobCardID),
+               new SqlParameter("@Active",Active)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<JobInProgressModel> GetJobListByJobCardID(int? JobCardID)
+        {
+            bool Scrap = false;
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "GetJobsByJobCardID"),
+                new SqlParameter("@JobCardID", JobCardID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.Select]", parameters))
+            {
+                yield return GetModelJob(dr);
+            }
+        }
+
+        private JobInProgressModel GetModelJob(IDataRecord dr)
+        {
+            return new JobInProgressModel
+            {
+                RepairJobTitle = dr.GetString("RepairJobTitle"),
+                CreatedOn = dr.GetDateTime("CreatedOn"),
+                FinishedOn = dr.GetDateTime("FinishedOn"),
+                TimeTaken = dr.GetInt32("TimeTaken"),
+                Mechanic = dr.GetString("Mechanic")
             };
         }
     }

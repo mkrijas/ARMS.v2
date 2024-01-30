@@ -35,5 +35,6 @@ namespace ArmsModels.BaseModels
         public PartyModel Party { get; set; }
         public ConsigneeModel Consignor { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
+        public string Declaration { get; set; }
     }
 }
