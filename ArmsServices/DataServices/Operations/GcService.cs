@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Reflection;
 
 
 namespace ArmsServices.DataServices
@@ -41,7 +42,6 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
-
         public int DeleteSet(long? id, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -64,9 +64,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@GcSetID", model.GcSetID),
-               new SqlParameter("@UnloadingQuantity", model.SetUnloadQuantity),
-
+               new SqlParameter("@gcs", model.Gcs.Select(x=> new{  x.GcID,x.UnloadedQuantity }).ToList().ToDataTable()),
             };
             return Iservice.ExecuteNonQuery("[usp.GcSet.UpdateUnloadingQuantity]", parameters);
         }
@@ -195,13 +193,13 @@ namespace ArmsServices.DataServices
                 GcSetID = dr.GetInt64("GcSetID"),
                 BranchID = dr.GetInt32("BranchID"),
                 GcDate = dr.GetDateTime("GcDate"),
-                OrderID = dr.GetInt32("OrderID"),
-                TotalBillQuantity = dr.GetDecimal("BillQuantity"),
-                TotalUnloadingQuantity = dr.GetDecimal("UnloadingQuantity"),
+                OrderID = dr.GetInt32("OrderID"),                
                 OrderName = dr.GetString("OrderName"),
                 RouteID = dr.GetInt32("RouteID"),
                 RouteName = dr.GetString("RouteName"),
                 TripID = dr.GetInt64("TripID"),
+                Content = dr.GetString("ContentName"),
+                UoM = dr.GetString("UoM"),
                 ConsigneeID = dr.GetInt32("ConsigneeID"),
                 ConsigneeName = dr.GetString("ConsigneeName"),
                 ConsignorID = dr.GetInt32("ConsignorID"),
@@ -318,29 +316,8 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
-        public decimal? GetPrimaryFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty, decimal? Frt)
-        {
-            decimal? Freight = 0;
-            if (Frt == null)
-            {
-                if (OrderID > 0)
-                {
-                    List<TariffModel> tariffs = Itariff.GetTariffs("FREIGHT", OrderID, RouteID, Axles).ToList();
-                    foreach (TariffModel item in tariffs)
-                    {
-                        switch (item.Formula.FormulaID)
-                        {
-                            case 3:
-                                Freight += Qty * item.TariffRate;
-                                break;
-                        }
-                    }
-                }
-                return Freight;
-            }
-            return Frt;
-        }
-
         
+
+
     }
 }

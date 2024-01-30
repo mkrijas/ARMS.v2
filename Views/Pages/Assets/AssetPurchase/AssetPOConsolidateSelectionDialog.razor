@@ -1,5 +1,7 @@
 ﻿@inject IAssetService iservice
 @inject MudBlazor.ISnackbar snackbar
+@inject IPartyService partyIservice
+@inject ITdsRateService tdsService
 
 <MudDialog>
     <TitleContent>
@@ -10,12 +12,12 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudTable T="AssetModel" Items="@Asset" MultiSelection="true"
+        <MudTable T="AssetPOModel" Items="@Asset" MultiSelection="true"
                   @bind-SelectedItems="selectedItems" Hover="true" SelectOnRowClick>
             <HeaderContent>
                 <MudTh>Description</MudTh>
                 <MudTh>Nature Of Asset</MudTh>
-                <MudTh>Setial Number</MudTh>
+                <MudTh>Serial Number</MudTh>
                 <MudTh>Simple/Complex</MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -32,17 +34,17 @@
                         <div>Simple</div>
                     }
                 </MudTd>
-                </RowTemplate>
-            </MudTable>
-        </DialogContent>
-        <DialogActions>
-            <MudButton OnClick="@(()=> MudDialog.Cancel())">Cancel</MudButton>
-            <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Button" OnClick="Submit">Submit</MudButton>
-        </DialogActions>
-    </MudDialog>
+            </RowTemplate>
+        </MudTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(()=> MudDialog.Cancel())">Cancel</MudButton>
+        <MudButton Disabled="@_busy" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Button" OnClick="Submit">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
 
 
-    @code {
+@code {
 
     [Parameter]
     public int BranchID { get; set; }
@@ -50,12 +52,41 @@
     private bool _busy;
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    private HashSet<AssetModel> selectedItems = new();
-    private List<AssetModel> Asset = new();
+    private HashSet<AssetPOModel> selectedItems = new();
+    private List<AssetPOModel> Asset = new();
+    public TaxPurchaseModel model { get; set; }
+
+    private bool Local;
 
     protected override void OnInitialized()
     {
         Asset = iservice.GetAssetListNonInvoiced(BranchID, null, null, "").ToList();
+        if (Asset.Count > 0 && Asset[0].VendorInfo.PartyID != null)
+        {
+            Local = partyIservice.IsLocal(Asset[0].VendorInfo.PartyID, BranchID);
+            if (Local == true)
+            {
+                // var gstItem = gstIservice.SelectByItem(item?.ItemID ?? 0, DateTime.Today);
+                // item.GstRate = gstItem?.TaxRate;
+                // decimal taxRate = item.GstRate ?? 0;
+                decimal taxRate = 0;
+                foreach(var item in Asset)
+                {
+                    taxRate = Convert.ToDecimal(item.TaxRate);
+                    if (!Local)
+                    {
+                        item.IGSTValue = Math.Round(item.BookValue.Value * taxRate / 100, 2);
+                    }
+                    else
+                    {
+                        item.SGSTValue = item.CGSTValue = Math.Round(item.BookValue.Value * taxRate / 200, 2);
+                    }
+                    decimal tdsRate = tdsService.GetTdsRate(item.VendorInfo.PartyID, item.CoaID);
+                    item.TDS = Math.Round((item.BookValue.Value * tdsRate) / 100, 2);
+                    Asset.Add(item);
+                }
+            }
+        }
     }
 
 
@@ -67,10 +98,35 @@
             return;
         }
         _busy = true;
-
+        bool flag = false;
         if (selectedItems.Count > 0)
         {
-            MudDialog.Close(selectedItems.ToList());
+            for (int i = 0; i < selectedItems.Count; i++)
+            {
+                for (int j = 0; j < selectedItems.Count; j++)
+                {
+                    List<AssetPOModel> selectedItems1 = selectedItems.ToList();
+                    if (selectedItems1[i].VendorInfo.PartyID != selectedItems1[j].VendorInfo.PartyID)
+                    {
+
+                        flag = false;
+                        break;
+                    }
+                    else
+                    {
+                        flag = true;
+                    }
+                }
+            }
+
+            if (flag == false)
+            {
+                snackbar.Add("Please select Assets having same Party!", Severity.Warning);
+            }
+            else
+            {
+                MudDialog.Close(selectedItems.ToList());
+            }
         }
         else
         {
@@ -82,7 +138,7 @@
     }
 
 
-    void OnRowClick(TableRowClickEventArgs<AssetModel> args)
+    void OnRowClick(TableRowClickEventArgs<AssetPOModel> args)
     {
         //_selectedItemText = $"{args.Item.Name} ({args.Item.Sign})";
     }

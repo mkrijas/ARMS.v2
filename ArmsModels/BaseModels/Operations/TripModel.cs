@@ -82,4 +82,20 @@ namespace ArmsModels.BaseModels
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
     }
+
+    public class TripAdvanceModel
+    {
+        public long? TripAdvanceID { get; set; }
+        [Required]
+        public int? BranchID { get; set; }
+        [Required]
+        public long? TripID { get; set; }
+        [Required]
+        public int? DriverID { get; set; }
+        [Required]
+        public decimal? Amount { get; set; }
+        public int? CoaID { get; set; }
+        public int? DocumentTypeID { get; set; }
+        public int? DocumentID { get; set; }
+    }
 }

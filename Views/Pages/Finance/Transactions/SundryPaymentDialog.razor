@@ -7,6 +7,8 @@
 @inject IDialogService DialogService
 
 @inject ISundryPaymentService Iservice
+@inject IChartOfAccountService Icoa
+
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sundry Payment" formID="sundryPaymentForm" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
     <FormContent>
@@ -136,7 +138,7 @@
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         UserID = user.Identity.Name;
-        if (model == null || (model != null && model.SundryPaymentID == null))
+        if (model == null || (model != null && model.NatureOfTransaction == null))
         {
             model = new()
                 {
@@ -146,7 +148,7 @@
                     TotalAmount = 0,
                 };
         }
-        else
+        else if( model.Entries.Count == 0)
         {
             model.Entries = Iservice.GetEntries(model.SundryPaymentID).ToList();
         }
@@ -239,6 +241,13 @@
 
         if (HasPermissionSundryPaymentServiceEdit)
         {
+            var balance = Icoa.GetBalance(0, model.PaymentArdCode, null, DateTime.Today);
+            if (model.TotalAmount > balance && model.PaymentMode != "Bank")
+            {
+                snackbar.Add(string.Format("insufficient balance! Only Rs {0} Available", balance), Severity.Error);
+                return;
+            }
+
             try
             {
                 model = Iservice.Update(model);

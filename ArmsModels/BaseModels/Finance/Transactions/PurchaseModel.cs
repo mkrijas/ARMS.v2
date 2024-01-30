@@ -46,6 +46,7 @@ namespace ArmsModels.BaseModels
             if (Expenses.Count == 0 && Items.Count == 0)
                 yield return new ValidationResult("No Items or Expenses selected!");
         }
+        public List<AssetPOModel> Assets { get; set; }
     }
 
     public class TaxPurchaseExpenseModel

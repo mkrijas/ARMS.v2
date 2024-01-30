@@ -4,6 +4,7 @@
 @using Pages.Operations.Truck
 @using Pages.Operations.Gc
 @using Pages.FMS.Breakdown
+@using Pages.Finance.Transactions
 @using System.Threading;
 @inject IBranchService Ibranch
 @inject ITruckService Itruck
@@ -15,12 +16,15 @@
 @inject IAssetDocumentService idocument
 @inject IRoutineCheckListMasterService IserviceRoutineMaster
 @inject IRoutineCheckListService IroutineCheckListService
+@inject ITripAdvanceService Iadvance
 @inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IDialogService DialogService
 @inject IBranchSettingsService branchSettingsService
 @inject IRoleService<RoleModel> Irole
+@inject IConfigTable config
+@inject IGstUsageIDService usage
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -60,12 +64,12 @@
         <MudItem xs="12" md="12">
             <MudButtonGroup Color="Color.Surface" Variant="Variant.Filled">
                 <MudButton StartIcon="@Icons.Material.Filled.AddTask" Disabled="@(AssignedDriver == null ||(AssignDriver != null && !AssignedDriver.HasValidLicense))" OnClick="UpdateEvent" IconColor="Color.Default">@EventButtonLabel</MudButton>
-                @if (CurrentEvent?.EventTypeID == 2)
+                    @if (CurrentEvent?.EventTypeID == 2)
                 {
                     <MudButton StartIcon="@Icons.Material.Outlined.AddTask" OnClick="AddConsignment" IconColor="Color.Tertiary">Load Consignment</MudButton>
                 }
                 <MudButton StartIcon="@Icons.Material.Outlined.PersonAddAlt1" OnClick="AssignDriver" IconColor="Color.Primary">@AssignDriverLabel</MudButton>
-                @if (ShowReportBreakdownButton)
+                    @if (ShowReportBreakdownButton)
                 {
                     <MudButton StartIcon="@Icons.Material.Filled.ReportProblem" OnClick="ReportBreakDown" IconColor="Color.Secondary">Breakdown/Accident</MudButton>
 
@@ -83,6 +87,7 @@
                 }
                 @if (CurrentTrip != null)
                 {
+                    <MudButton StartIcon="@Icons.Material.Filled.Money" OnClick="OpenTripAdvance" IconColor="Color.Success">Trip Advance</MudButton>
                     <MudButton StartIcon="@Icons.Material.Outlined.Details" OnClick="OpenTripCard" IconColor="Color.Primary">View Details</MudButton>
                 }
             </MudButtonGroup>
@@ -100,10 +105,12 @@
     public TruckModel SelectedTruck { get; set; }
     TripViewComponent TripViewRef;
     private int branchID;
+    private string UserID = null;
     private DriverModel AssignedDriver { get; set; }
     private EventModel CurrentEvent { get; set; }
     private EventTypeModel EventType { get; set; }
     private TripModel CurrentTrip { get; set; }
+    private GstUsageCodeModel UsageCodeModel { get; set; }
     string TruckStatus;
     string EventButtonLabel;
     string AssignDriverLabel;
@@ -123,6 +130,8 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         branchID = int.Parse(brancIDString);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
         OnTruckSelected(SelectedTruck);
     }
 
@@ -142,6 +151,70 @@
         var parameters = new DialogParameters();
         parameters.Add("Trip", CurrentTrip);
         var result = DialogService.Show<TripDetailsCard>(CurrentTrip.TripNumberDisplay.ToString() + " Details", parameters, new DialogOptions { MaxWidth = MaxWidth.Large });
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async void OpenTripAdvance()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        var parameters = new DialogParameters();
+        parameters.Add("Trip", CurrentTrip);
+        parameters.Add("Truck", SelectedTruck);
+        parameters.Add("AssignedDriver", AssignedDriver);
+        var Advancedialog = DialogService.Show<TripAdvanceDialog>(CurrentTrip.TripNumberDisplay.ToString() + " Details", parameters);
+        var Advanceresult = await Advancedialog.Result;
+        if (!Advanceresult.Canceled)
+        {
+            var advanceEntry = (SundryPaymentEntryModel)Advanceresult.Data;
+            ConfigModel cModel = config.GetTripAdvanceUsageCode();
+            UsageCodeModel = usage.SelectByCode(cModel.ValueString);
+
+            advanceEntry.UsageCode = (cModel.ValueString);
+            advanceEntry.UsageCodeDescription = UsageCodeModel.Description;
+            advanceEntry.CoaID = UsageCodeModel.CoaID;
+            advanceEntry.Reference = CurrentTrip.TripNumberDisplay.ToString() + " Advance";
+            advanceEntry.BranchID = branchID;
+
+            SundryPaymentModel spModel = new()
+            {
+                BranchID = branchID,
+                PayeeName = AssignedDriver.DriverName,
+                PayeeContactNo = AssignedDriver.Mobile,
+                Reference = CurrentTrip.TripNumberDisplay.ToString() + " Advance",
+                NatureOfTransaction = "Trip Advance",
+                UserInfo = new() { UserID = UserID, },
+                Entries = new List<SundryPaymentEntryModel>() { advanceEntry }
+            };
+
+            var parametersForSp = new DialogParameters();
+            parametersForSp.Add("model", spModel);
+            var Sundrydialog = DialogService.Show<SundryPaymentDialog>(null, parametersForSp, new DialogOptions { MaxWidth = MaxWidth.Large });
+            var Sundryresult = await Sundrydialog.Result;
+            if (!Sundryresult.Canceled)
+            {
+                var sundryPayment = (SundryPaymentModel)Sundryresult.Data;
+                int SundryPaymentDocTypeID = 11;
+
+                TripAdvanceModel advanceModel = new()
+                {
+                    BranchID = branchID,
+                    TripID = CurrentTrip.TripID,
+                    DriverID = AssignedDriver.DriverID,
+                    Amount = advanceEntry.Amount,
+                    CoaID = sundryPayment.PaymentCoaID,
+                    DocumentTypeID = SundryPaymentDocTypeID,
+                    DocumentID = sundryPayment.SundryPaymentID
+                };
+                Iadvance.Update(advanceModel);
+            }
+
+        }     
         await Task.Delay(200);
         _busy = false;
     }

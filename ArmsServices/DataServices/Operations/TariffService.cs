@@ -154,8 +154,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TariffID", model.TariffID),
                new SqlParameter("@TariffRate", model.TariffRate),
                new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
-               new SqlParameter("@TruckAxles", model.TruckAxles),
-               new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@Wheels", model.Wheels),
+               new SqlParameter("@CalculateOnUnloadingQty", model.CalculateOnUnloadingQty),
+               new SqlParameter("@UserID", model.UserInfo.UserID),               
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.Update]", parameters))
             {
@@ -211,10 +212,8 @@ namespace ArmsServices.DataServices
                 TariffID = dr.GetInt32("TariffID"),
                 TariffRate = dr.GetDecimal("TariffRate"),
                 TariffSign = dr.GetInt32("TariffSign"),
-                TruckAxles = dr.GetByte("TruckAxles"),
-
-
-
+                Wheels = dr.GetByte("Wheels"),
+                CalculateOnUnloadingQty = dr.GetBoolean("CalculateOnUnloadingQty"),
 
                 Unit = dr.GetString("Unit"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
@@ -247,19 +246,40 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public IEnumerable<TariffModel> GetTariffs(string TariffGroup, int? OrderID, int? RouteID, int? Axles)
+        //public IEnumerable<TariffModel> GetTariffs(string TariffGroup, int? OrderID, int? RouteID, int? Wheels)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@TariffGroup", TariffGroup),
+        //       new SqlParameter("@OrderID", OrderID),
+        //       new SqlParameter("@RouteID", RouteID),
+        //       new SqlParameter("@Wheels", Wheels),
+        //    };
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.GetTariffs]", parameters))
+        //    {
+        //        yield return GetModel(dr);
+        //    }
+        //}
+
+        public decimal? GetPrimaryFreight(int? OrderID, int? RouteID, int? Wheels, decimal? Qty, decimal? Frt)
         {
-            List<SqlParameter> parameters = new List<SqlParameter>
+            if (Frt == null)
             {
-               new SqlParameter("@TariffGroup", TariffGroup),
-               new SqlParameter("@OrderID", OrderID),
-               new SqlParameter("@RouteID", RouteID),
-               new SqlParameter("@Axles", Axles),
+                List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@RouteID",RouteID),
+                new SqlParameter("@OrderID", OrderID),
+                new SqlParameter("@BillQuantity", Qty),
+                new SqlParameter("@Wheels", Wheels),
+                new SqlParameter("@Operation","GetPrimaryFreight"),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.GetTariffs]", parameters))
-            {
-                yield return GetModel(dr);
+                foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Tariff.GetTariffs]", parameters))
+                {
+                    return dr.GetDecimal("Freight");
+                }
+                return null;
             }
+            return Frt;   
         }
 
         public decimal? GetTariffAmount(GcSetModel GcSet, TariffModel Tariff)

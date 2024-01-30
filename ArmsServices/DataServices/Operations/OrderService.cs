@@ -33,7 +33,7 @@ namespace ArmsServices.DataServices
             };
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.gc.Order.Update]", parameters))
             {
-                model = await GetModel(dr);
+                model = GetModel(dr);
             }
             return model;
         }
@@ -48,7 +48,7 @@ namespace ArmsServices.DataServices
             OrderModel model = new OrderModel();
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.gc.Order.Select]", parameters))
             {
-                model = await GetModel(dr);
+                model = GetModel(dr);
             }
             return model;
         }
@@ -72,7 +72,7 @@ namespace ArmsServices.DataServices
             };
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Order.Select]", parameters))
             {
-                yield return await GetModel(dr);
+                yield return GetModel(dr);
             }
         }
 
@@ -85,7 +85,7 @@ namespace ArmsServices.DataServices
             };
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Order.Select]", parameters))
             {
-                yield return await GetModel(dr);
+                yield return GetModel(dr);
             }
         }
 
@@ -101,7 +101,7 @@ namespace ArmsServices.DataServices
             return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Order.Branch.Update]", parameters);
         }
 
-        private async Task<OrderModel> GetModel(IDataRecord dr)
+        private OrderModel GetModel(IDataRecord dr)
         {
             return new OrderModel
             {
@@ -122,7 +122,8 @@ namespace ArmsServices.DataServices
                 Content = new ContentModel
                 {
                     ContentID = dr.GetInt16("contentID"),
-                    ContentName = dr.GetString("ContentName")
+                    ContentName = dr.GetString("ContentName"),
+                    PrimaryUnit = dr.GetString("PrimaryUnit")
                 },
                 Consignor = new()
                 {

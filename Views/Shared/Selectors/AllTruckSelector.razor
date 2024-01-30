@@ -1,0 +1,126 @@
+﻿@inject ITruckService Itruck
+
+@if (IsLoaded)
+{
+    <MudAutocomplete SelectValueOnTab Clearable ResetValueOnEmptyText Strict T="TruckModel"
+                      Variant="@VariantParameter" Margin="@MarginParameter" Label="Select Truck"
+                      @bind-Value="Value" SearchFunc="SearchTruck" Class="@Class" Disabled="@IsDisabled"
+                      ToStringFunc="@(e => e == null ? null : $"{e.RegNo}")"></MudAutocomplete>
+
+}
+else
+{
+    <MudText> Loading..... </MudText>
+}
+
+@code {
+    private List<TruckModel> TruckList = new();
+    [Parameter]
+    public bool IsChecked { get; set; }
+    [Parameter]
+    public TruckModel Value
+    {
+        get => _value;
+        set
+        {
+            if (_value == value) return;
+            _value = value;
+            ValueChanged.InvokeAsync(value);
+        }
+    }
+
+    [Parameter]
+    public EventCallback<TruckModel> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool IsDisabled { get; set; } = false;
+    [Parameter]
+    public string Class { get; set; }
+    [Parameter]
+    public int? BranchID { get; set; }
+    [Parameter]
+    public string Filter { get; set; } = null;
+    [Parameter]
+    public string HomeOrOperation { get; set; } = "AllOperation";
+    [Parameter]
+    public List<int?> TruckIDsToRemove { get; set; } = null;
+
+
+
+
+    private TruckModel _value;
+    private bool IsLoaded = false;
+    [Parameter]
+    public MudBlazor.Variant VariantParameter { get; set; } = MudBlazor.Variant.Outlined;
+    [Parameter]
+    public MudBlazor.Margin MarginParameter { get; set; } = MudBlazor.Margin.Dense;
+
+    private async Task<IEnumerable<TruckModel>> SearchTruck(string searchString)
+    {
+        await Task.Delay(3);
+        return TruckList.Where(x => (x.RegNo == null && string.IsNullOrWhiteSpace(searchString)) || x.RegNo != null && x.RegNo.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        var Result = Itruck.SelectAllByBranch(IsChecked, BranchID, Filter, HomeOrOperation).ToList();
+        if (TruckIDsToRemove != null && Result.Any(g => TruckIDsToRemove.Any(d => d == g.TruckID)))
+        {
+            if (Result.Any(g => !TruckIDsToRemove.Any(d => d == g.TruckID)))
+            {
+                TruckList = Result.Where(g => !TruckIDsToRemove.Any(d => d == g.TruckID)).ToList();
+
+            }
+        }
+        else
+        {
+            TruckList = Result;
+        }
+        IsLoaded = true;
+
+        if (VariantParameter == null)
+        {
+            VariantParameter = MudBlazor.Variant.Outlined;
+        }
+        if (MarginParameter == null)
+        {
+            MarginParameter = MudBlazor.Margin.Dense;
+        }
+        if (IsDisabled == null)
+        {
+            IsDisabled = false;
+        }
+            StateHasChanged();
+    }
+
+    // protected override void OnInitialized()
+    // {
+    //     var Result = Itruck.SelectAllByBranch(IsChecked, BranchID, Filter, HomeOrOperation).ToList();
+    //     if (TruckIDsToRemove != null && Result.Any(g => TruckIDsToRemove.Any(d => d == g.TruckID)))
+    //     {
+    //         if (Result.Any(g => !TruckIDsToRemove.Any(d => d == g.TruckID)))
+    //         {
+    //             TruckList = Result.Where(g => !TruckIDsToRemove.Any(d => d == g.TruckID)).ToList();
+
+    //         }
+    //     }
+    //     else
+    //     {
+    //         TruckList = Result;
+    //     }
+    //     IsLoaded = true;
+
+    //     if (VariantParameter == null)
+    //     {
+    //         VariantParameter = MudBlazor.Variant.Outlined;
+    //     }
+    //     if (MarginParameter == null)
+    //     {
+    //         MarginParameter = MudBlazor.Margin.Dense;
+    //     }
+    //     if (IsDisabled == null)
+    //     {
+    //         IsDisabled = false;
+    //     }
+    // }
+}

@@ -2,9 +2,10 @@
 @using System.Threading;
 @inject IConfigTable IConfig
 @inject IPaymentFinalizeService Iservice
+
 @inject IPaymentService ImemoService
 @inject TruckDataArrayModel data
-@inject IChartOfAccountService accountService
+@inject IChartOfAccountService Icoa
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @inject IRoleService<RoleModel> Irole
@@ -105,7 +106,7 @@
     public string DocType { get; set; }
     private int DocTypeID = 8;
 
-    
+
     public DocumentDetailsModel DocumentDetails { get; set; } = new();
 
 
@@ -241,6 +242,14 @@
         if (HasPermissionPaymentFinalizeServiceEdit)
         {
             model.UserInfo.UserID = UserID;
+
+            var balance =  Icoa.GetBalance(0, model.PaymentArdCode, null, DateTime.Today);
+            if(model.TotalAmount > balance && model.PaymentMode != "Bank")
+            {
+                snackbar.Add(string.Format("insufficient balance! Only Rs {0} Available",balance), Severity.Error);
+                return;
+            }
+
             try
             {
                 Iservice.Update(model);
