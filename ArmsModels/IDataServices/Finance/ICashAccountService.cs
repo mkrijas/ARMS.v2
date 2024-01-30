@@ -18,5 +18,6 @@ namespace ArmsServices.DataServices
         CashAccountModel SelectByID(int ID);
         IEnumerable<CashAccountModel> SelectByBranch(int BranchID);
         IEnumerable<CashAccountModel> SelectByBranchALL(int BranchID);
+        decimal? GetBalance(int? CashAccountID);
     }
 }

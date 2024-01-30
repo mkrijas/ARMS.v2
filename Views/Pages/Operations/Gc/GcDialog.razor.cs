@@ -22,6 +22,7 @@ namespace Views.Pages.Operations.Gc
         [Inject] IGcService Iservice { get; set; }
         [Inject] IRouteService Iroute { get; set; }
         [Inject] IOrderService Iorder { get; set; }
+        [Inject] ITariffService ITariff { get; set; }
         [Inject] IConsigneeService Iconsignee { get; set; }
         [Inject] MudBlazor.ISnackbar snackbar { get; set; }
         [Inject] AuthenticationStateProvider auth { get; set; }
@@ -81,10 +82,13 @@ namespace Views.Pages.Operations.Gc
         {
             MudDialog.Cancel();
         }
-        private void GetFreight(GcSetModel GcSet)
+        private GcSetModel GetFreight(GcSetModel GcSet)
         {
-            GcSet.Gcs.ForEach(x => x.Freight = Iservice.GetPrimaryFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
+            GcSet.Gcs.ForEach(x => x.Freight = ITariff.GetPrimaryFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
+            return GcSet;
         }
+
+
 
         private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
         {
@@ -223,25 +227,23 @@ namespace Views.Pages.Operations.Gc
 
         private void QtyChanged(decimal? Qty, GcModel gc)
         {
-            gc.BillQuantity = Qty;
-            gc.Freight = null;
-            GetFreight(model);
-            gc.EFreight = gc.Freight;
+            gc.BillQuantity = Qty;            
+            gc.Freight = ITariff.GetPrimaryFreight(model.OrderID, model.RouteID, null, gc.BillQuantity, gc.Freight);
+            
+            //gc.EFreight = gc.Freight;
         }
 
         private void FrChanged(decimal? Freight, GcModel gc)
         {
-            if (Freight < gc.EFreight)
-            {
-                gc.Freight = null;
-                snackbar.Add("The Freight should not be less than that master Freight", Severity.Warning);
-            }
-            else
-            {
-                gc.Freight = Freight;
-            }
-            GetFreight(model);
-            StateHasChanged();
+            gc.Freight = Freight;
+            //if (Freight < gc.EFreight)
+            //{
+            //    gc.Freight = null;
+            //    snackbar.Add("The Freight should not be less than that master Freight", Severity.Warning);
+            //}
+           
+            //GetFreight(model);
+            //StateHasChanged();
         }
 
         private void AddMoreInvoice()
