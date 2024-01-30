@@ -43,6 +43,7 @@ namespace ArmsModels.BaseModels
         public long? OpTranID { get; set; }
         [Required]
         public string ExpenseUsageCode { get; set; }
+        public virtual string ExpenseTitle { get; set; }
         public int? CoaID { get; set; }
         public string Reference { get; set; }
         [Required]

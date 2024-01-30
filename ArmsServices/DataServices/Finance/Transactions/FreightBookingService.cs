@@ -533,29 +533,55 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
             {
-                yield return new GcTariffModel()
-                {
-                    GcTariffID = dr.GetInt64("GcTariffID"),
-                    ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
-                    GcID = dr.GetInt64("GcID"),
-                    TariffID = dr.GetInt32("TariffID"),
-                    Amount = dr.GetDecimal("Amount"),
-                    BillDate = dr.GetDateTime("BillDate"),
-                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
-                    BillNumber = dr.GetString("BillNumber"),
-                    BillQuantity = dr.GetDecimal("BillQuantity"),
-                    ConsigneeName = dr.GetString("ConsigneeName"),
-                };
+                yield return GetTariffEntries(dr);
             }
         }
 
-        public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks)
+        public IEnumerable<GcTariffModel> GenerateTariffs(int? OrderID, short? TariffTypeID, DateTime? begin, DateTime? end)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "Generate"),
+               new SqlParameter("Begin",begin),
+               new SqlParameter("End",end),
+               new SqlParameter("@OrderID", OrderID),
+               new SqlParameter("@TariffTypeID", TariffTypeID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Generate]", parameters))
+            {
+                yield return GetTariffEntries(dr);
+            }
+        }
+
+
+        GcTariffModel GetTariffEntries(IDataRecord dr)
+        {
+            return new GcTariffModel()
+            {
+                GcTariffID = dr.GetInt64("GcTariffID"),
+                ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
+                GcID = dr.GetInt64("GcID"),
+                TariffID = dr.GetInt32("TariffID"),
+                Amount = dr.GetDecimal("Amount"),
+                BillDate = dr.GetDateTime("BillDate"),
+                InvoiceDate = dr.GetDateTime("InvoiceDate"),
+                BillNumber = dr.GetString("BillNumber"),
+                BillQuantity = dr.GetDecimal("BillQuantity"),
+                ConsigneeName = dr.GetString("ConsigneeName"),
+            };
+        }
+
+
+        public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks, string InvoiceNumber)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ProformaInvoiceID", ProformaInvoiceID),
                new SqlParameter("@UserID", userID),
-               new SqlParameter("@Remarks", Remarks)
+               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("InvoiceNumber", InvoiceNumber)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Approve]", parameters);
         }

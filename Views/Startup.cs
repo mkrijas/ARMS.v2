@@ -152,6 +152,7 @@ namespace Views
             services.AddScoped<IExpenseMappingServices, ExpenseMappingServices>();
             services.AddScoped<IPushNotificationService, PushNotificationService>();            
             services.AddScoped<ITripFuelService, TripFuelService>();
+            services.AddScoped<ITripAdvanceService, TripAdvanceService>();
             services.AddScoped<IGeneralSettingsService, GeneralSettingsService>();
             services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>();
             #endregion

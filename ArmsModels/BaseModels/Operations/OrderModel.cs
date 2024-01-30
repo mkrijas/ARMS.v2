@@ -31,7 +31,7 @@ namespace ArmsModels.BaseModels
         public bool IsLimitedQuantity { get; set; }
         [RequiredIfTrue("IsLimitedQuantity")]
         public decimal? OrderQuantity { get; set; }
-        public ContentModel Content { get; set; }
+        public ContentModel Content { get; set; } = new();
         public PartyModel Party { get; set; }
         public ConsigneeModel Consignor { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
