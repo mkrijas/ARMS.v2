@@ -20,6 +20,7 @@ namespace ArmsServices.DataServices.Inventory
         IEnumerable<InventoryRequestModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<InventoryItemEntryModel> GetSub(int? ID);
         IEnumerable<InventoryRequestModel> SelectRequestReleaseByJobCardID(int? JobCardID);
+        IEnumerable<ExpenseModel> SelectExpenseByJobCardID(int? JobCardID);
         //decimal? GetItemRequestStatus(int? RequestID, int? ItemID);
     }
 }

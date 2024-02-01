@@ -93,4 +93,33 @@ namespace ArmsModels.BaseModels
         public decimal? ReleaseQty { get; set; }
         public decimal? UsedQty { get; set; }
     }
+
+    public class ExpenseModel : ICloneable
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<ExpenseModel>(Json);
+        }
+        public int? JFID { get; set; }// Primary
+        public string DocNumber { get; set; }
+        public DateTime? DocDate { get; set; }
+        public string BranchName { get; set; }
+        public string RegName { get; set; }
+        public string InvoiceNo { get; set; }
+        public DateTime? InvoiceDate { get; set; }
+        public decimal? TotalAmount { get; set; }
+        public string Narration { get; set; }
+        public string UserID { get; set; }
+        public string AccountName { get; set; }// Optional
+        public decimal? Amount { get; set; }
+        public decimal? SGST { get; set; }
+        public decimal? CGST { get; set; }
+        public decimal? IGST { get; set; }
+        public decimal? TDS { get; set; }
+        public string BillReference { get; set; }
+        public string CostCenter { get; set; }
+        public string Dimension { get; set; }
+    }
+
 }
