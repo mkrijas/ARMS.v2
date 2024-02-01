@@ -5,14 +5,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels.Finance.Transactions
 {
-    public class TaxVoucherModel : TransactionBaseModel, ICloneable
+    public class DocumentVoucherModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<TaxVoucherModel>(Json);
+            return JsonConvert.DeserializeObject<DocumentVoucherModel>(Json);
         }
-        public int? TaxVoucherID { get; set; }
+        public int? DocumentVoucherID { get; set; }
         [Required]
         public AssetDocumentTypeModel DocumentType { get; set; }
         //[Required]
@@ -41,13 +41,13 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public decimal? TDS { get; set; } = 0;
         public decimal? TotalTax { get; set; }
         public virtual string AccountName { get; set; }
-        public List<TaxVoucherSubModel> TaxVoucherSubList { get; set; } = new();
+        public List<DocumentVoucherSubModel> DocVoucherSubList { get; set; } = new();
     }
 
-    public class TaxVoucherSubModel
+    public class DocumentVoucherSubModel
     {
-        public int? TaxVoucherSubID { get; set; }
-        public int? TaxVoucherID { get; set; }
+        public int? DocumentVoucherSubID { get; set; }
+        public int? DocumntVoucherID { get; set; }
         public int? DocumentID { get; set; }
         public string SlipNo { get; set; }
         public string Reference { get; set; }
@@ -68,10 +68,10 @@ namespace ArmsModels.BaseModels.Finance.Transactions
 
     }
 
-    public class TaxVoucherSubSendModel
+    public class DocumentVoucherSubSendModel
     {
-        public int? TaxVoucherSubID { get; set; }
-        public int? TaxVoucherID { get; set; }
+        public int? DocumentVoucherSubID { get; set; }
+        public int? DocumentVoucherID { get; set; }
         public decimal? Amount { get; set; }
         public int? DocumentID { get; set; }
         public string Reference { get; set; }
