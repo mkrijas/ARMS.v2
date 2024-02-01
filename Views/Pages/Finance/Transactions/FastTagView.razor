@@ -12,29 +12,56 @@
 @inject IDialogService DialogService
 @inject IFastTagService FastTagService
 
-<MudPaper>
+<MudPaper Style="padding-bottom: 15px;">
     <MudToolBar>
         <MudText Typo="Typo.h6" Style="font-weight:500;">FastTag Toll Transaction</MudText>
     </MudToolBar>
     <MudDivider />
-    <MudGrid Style="padding:36px; padding-bottom: 22px;">
-        <MudItem xs="12" Class="item-shadow" Style="margin:12px; padding:38px; border-radius:5px;">
+    <MudGrid Class="item-shadow" Style="margin:36px; margin-bottom: 22px; width: fit-content;">
+        <MudItem xs="12" Style="padding: 38px">
             <MudGrid Class="fullborder">
-                <MudItem xs="6">
+                <MudItem xs="4">
                     <h6>Upload XLSX File : </h6>
                     <InputFile @ref="fileInput" OnChange="HandleXLSXFileButtonSelected" />
                     <MudButton OnClick="UploadXLSXFile" Variant="Variant.Filled">Upload</MudButton>
                 </MudItem>
-                <MudItem xs="6">
-                    <MudGrid>
-                        <MudItem xs="12"><b>Total Credit Amount : @collection.Sum(e => e.CreditAmount).ToString("c")</b></MudItem>
-                        <MudItem xs="12"><b>Total Debit Amount  : @collection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
-                    </MudGrid>
+                <MudItem xs="8">
+                    <EditForm id="FastTagForm" OnValidSubmit="OnValidSubmit" Model="MainModel">
+                        <MudGrid>
+                            <MudItem xs="6">
+                                <MudTextField @bind-Value="@MainModel.DocumentNumber" ReadOnly="true" Label="Reference ID" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudDatePicker @bind-Date=@MainModel.DocumentDate Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <PaymentAccountSelector BranchID="@branchID" @bind-PaymentMode="@MainModel.PaymentMode" @bind-ArdCode="@MainModel.PaymentArdCode" @bind-CoaID="@MainModel.PaymentCoaID" @bind-BankCharges="@MainModel.BankCharges" @bind-BankTool="@MainModel.PaymentTool" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="MainModel.Narration" Lines="3" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(()=> MainModel.Narration)"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="10">
+                                <MudGrid>
+                                    <MudItem xs="12"><b>Total Excel Debit Amount &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: @collection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
+                                    <MudItem xs="12"><b>Total Selected Debit Amount &nbsp;: @selectedcollection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
+                                </MudGrid>
+                            </MudItem>
+                            <MudItem xs="2">
+                                <MudButton Class="fasttagsb" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </EditForm>
                 </MudItem>
+                @* <MudItem xs="6">
+                <MudGrid>
+                <MudItem xs="12"><b>Total Credit Amount : @collection.Sum(e => e.CreditAmount).ToString("c")</b></MudItem>
+                <MudItem xs="12"><b>Total Debit Amount  : @collection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
+                </MudGrid>
+                </MudItem> *@
             </MudGrid>
         </MudItem>
-        <MudItem xs="12">
-            <MudTable Class="item-shadow" Items="@collection" Context="item" MultiSelection="true" Filter="new Func<FastTagModel, bool>(search)" @bind-Model="model" RowsPerPage="100" Dense="true" Hover="true" Striped="true">
+        <MudItem xs="12" Style="padding: 0px 26px 26px 26px;">
+            <MudTable Items="@collection" Context="item" MultiSelection="true"  @bind-SelectedItems="selectedcollection" Filter="new Func<FastTagModel, bool>(search)" RowsPerPage="100" Class="fullborder" Style="padding: 0px" Elevation="0" Dense="true" Hover="true" Striped="true">
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Transactions List</MudText>
                     <MudSpacer></MudSpacer>
@@ -53,7 +80,8 @@
                     <MudTh>Plaza Code</MudTh>
                     <MudTh>Transaction Description</MudTh>
                     <MudTh>Unique Transaction ID</MudTh>
-                    @* <MudTh>Amount(CR)</MudTh> *@
+                    @*<MudTh>Amount(CR)</MudTh>*@
+                    <MudTh>Reimbursable</MudTh>
                     <MudTh>Amount(DR)</MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -68,7 +96,8 @@
                     <MudTd DataLabel="PlazaCode">@item.PlazaCode</MudTd>
                     <MudTd DataLabel="TransactionDescription">@item.Description</MudTd>
                     <MudTd DataLabel="Unique Transaction ID">@item.TransactionID</MudTd>
-                    @* <MudTd DataLabel="Credit Amount">@item.CreditAmount</MudTd> *@
+                    @*<MudTd DataLabel="Credit Amount">@item.CreditAmount</MudTd>*@
+                    <MudTh><MudCheckBox T="bool" @bind-Checked="@item.Reimbursable"></MudCheckBox></MudTh>
                     <MudTd DataLabel="Debit Amount">@item.DebitAmount</MudTd>
                 </RowTemplate>
                 <PagerContent>
@@ -83,12 +112,31 @@
 
     private InputFile fileInput;
     private MemoryStream memoryStream = new MemoryStream();
-    private FastTagModel model = new FastTagModel();
+    //private FastTagModel model = new FastTagModel();
+    private HashSet<FastTagModel> selectedcollection = new HashSet<FastTagModel>();
+    private FastTagTollModel MainModel = new FastTagTollModel();
     private List<FastTagModel> collection = new List<FastTagModel>();
     private List<FastTagModel> excelcollection = new List<FastTagModel>();
     private List<FastTagList> collectionlist = new List<FastTagList>();
     private string searchplatenumber = "";
     public string fileExtension = "";
+    public int branchID;
+    private string UserID = null;
+
+    public bool a { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = user.Identity.Name;
+    }
+
+    public async Task OnValidSubmit()
+    {
+        MainModel.FastTagModelList = selectedcollection.ToList();
+    }
 
     private bool search(FastTagModel model)
     {
@@ -97,12 +145,6 @@
             return true;
         }
         return model.NumberPlate?.Contains(searchplatenumber, StringComparison.OrdinalIgnoreCase) == true;
-        // if (model.NumberPlate.Contains(searchplatenumber, StringComparison.OrdinalIgnoreCase))
-        // {
-        //     return true;
-        // }
-        // return false;
-        // }
     }
 
     private async Task HandleXLSXFileButtonSelected(InputFileChangeEventArgs e)
