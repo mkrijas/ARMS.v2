@@ -23,10 +23,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public PartyModel PartyInfo { get; set; }
         public int? PartyCoaID { get; set; }
+        [Required]
         public string Reference { get; set; }
-        public decimal? BankCharges { get; set; }
-        public int? CostCenter { get; set; }
-        public int? Dimension { get; set; }
+        public decimal? BankCharges { get; set; }      
         [Required]
         public byte? PaymentStatus { get; set; } = 0; // 0 - generated; 1 - initiated; 2 - completed;
         public List<BillsPaidModel> Bills { get; set; } = new();
