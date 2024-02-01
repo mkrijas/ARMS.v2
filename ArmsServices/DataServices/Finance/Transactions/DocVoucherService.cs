@@ -7,20 +7,20 @@ using ArmsModels.BaseModels.Finance.Transactions;
 
 namespace ArmsServices.DataServices.Finance.Transactions
 {
-    public class TaxVoucherService : ITaxVoucherService
+    public class DocVoucherService : IDocVoucherService
     {
         IDbService Iservice;
 
-        public TaxVoucherService(IDbService iservice)
+        public DocVoucherService(IDbService iservice)
         {
             Iservice = iservice;
         }
 
-        public int Approve(int? TaxVoucherID, string UserID, string Remark)
+        public int Approve(int? DocVoucherID, string UserID, string Remark)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TaxVoucherID", TaxVoucherID),
+               new SqlParameter("@TaxVoucherID", DocVoucherID),
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Remarks", Remark)
             };
@@ -38,7 +38,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxVoucher.Delete]", parameters);
         }
 
-        public IEnumerable<TaxVoucherSubModel> GetSub(int? ID)
+        public IEnumerable<DocumentVoucherSubModel> GetSub(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -48,10 +48,10 @@ namespace ArmsServices.DataServices.Finance.Transactions
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxVoucher.Select]", parameters))
             {
-                yield return new TaxVoucherSubModel()
+                yield return new DocumentVoucherSubModel()
                 {
-                    TaxVoucherSubID = dr.GetInt32("TaxVoucherSubID"),
-                    TaxVoucherID = dr.GetInt32("TaxVoucherID"),
+                    DocumentVoucherSubID = dr.GetInt32("TaxVoucherSubID"),
+                    DocumntVoucherID = dr.GetInt32("TaxVoucherID"),
                     Amount = dr.GetDecimal("Amount"),
                     DocumentID = dr.GetInt32("DocumentID"),
                     DocumentName = dr.GetString("DocumentName"),
@@ -80,7 +80,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
 
 
 
-        public IEnumerable<TaxVoucherSubModel> GetNotPostedSubDocuments(int? DocumentTypeID)
+        public IEnumerable<DocumentVoucherSubModel> GetNotPostedSubDocuments(int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -90,10 +90,10 @@ namespace ArmsServices.DataServices.Finance.Transactions
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
             {
-                yield return new TaxVoucherSubModel()
+                yield return new DocumentVoucherSubModel()
                 {
-                    TaxVoucherSubID = dr.GetInt32("TaxVoucherSubID"),
-                    TaxVoucherID = dr.GetInt32("TaxVoucherID"),
+                    DocumentVoucherSubID = dr.GetInt32("TaxVoucherSubID"),
+                    DocumntVoucherID = dr.GetInt32("TaxVoucherID"),
                     Amount = dr.GetDecimal("Amount"),
                     DocumentID = dr.GetInt32("DocumentID"),
                     DocumentName = dr.GetString("DocumentName"),
@@ -123,7 +123,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxVoucher.Reverse]", parameters);
         }
 
-        public IEnumerable<TaxVoucherModel> Select(int? BranchID)
+        public IEnumerable<DocumentVoucherModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -137,14 +137,14 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
-        public TaxVoucherModel SelectByID(int? ID)
+        public DocumentVoucherModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PID", ID),
                new SqlParameter("@Operation", "ByID")
             };
-            TaxVoucherModel model = new();
+            DocumentVoucherModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxVoucher.Select]", parameters))
             {
                 model = GetModel(dr);
@@ -152,7 +152,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return model;
         }
 
-        public IEnumerable<TaxVoucherModel> SelectByParty(int? PartyID, int? PartyBranchID)
+        public IEnumerable<DocumentVoucherModel> SelectByParty(int? PartyID, int? PartyBranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -167,7 +167,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
-        public IEnumerable<TaxVoucherModel> SelectByPeriod(DateTime? begin, DateTime? end)
+        public IEnumerable<DocumentVoucherModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -182,7 +182,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
-        public TaxVoucherModel Update(TaxVoucherModel model)
+        public DocumentVoucherModel Update(DocumentVoucherModel model)
         {
             //List<TaxVoucherSubSendModel> taxVoucherSubListFormated = new();
             //foreach (var item in model.TaxVoucherSubList)
@@ -201,7 +201,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
 
                 List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@TaxVoucherID", model.TaxVoucherID),
+               new SqlParameter("@TaxVoucherID", model.DocumentVoucherID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@MID", model.MID),
                new SqlParameter("@DocumentDate", model.DocumentDate),               
@@ -223,7 +223,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                new SqlParameter("@CGST", model.CGST),
                new SqlParameter("@IGST", model.IGST),
                new SqlParameter("@TDS", model.TDS),
-               new SqlParameter("@TaxVoucherSub", model.TaxVoucherSubList?.ToDataTable()??null),
+               new SqlParameter("@TaxVoucherSub", model.DocVoucherSubList?.ToDataTable()??null),
 
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -239,11 +239,11 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return model;
         }
 
-        private TaxVoucherModel GetModel(IDataRecord dr)
+        private DocumentVoucherModel GetModel(IDataRecord dr)
         {
-            return new TaxVoucherModel
+            return new DocumentVoucherModel
             {
-                TaxVoucherID = dr.GetInt32("TaxVoucherID"),
+                DocumentVoucherID = dr.GetInt32("TaxVoucherID"),
                 BranchID = dr.GetInt32("BranchID"),
                 MID = dr.GetInt32("MID"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
