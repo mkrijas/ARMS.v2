@@ -32,6 +32,8 @@ namespace ArmsModels.BaseModels
         public string BankTitle { get; set; }
         public string BankBranch { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
+        [Required]
+        public string TANNo { get; set; }
     }
 
     public class OwnBankModel : ICloneable

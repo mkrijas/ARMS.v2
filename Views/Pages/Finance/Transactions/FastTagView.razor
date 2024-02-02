@@ -1,59 +1,107 @@
 ﻿@page "/FastTagToll"
 @using Core.BaseModels.Finance.Transactions;
+@using Core.IDataServices.Finance.Transactions;
 @using System.IO;
 @using NPOI.HSSF.UserModel;
 @using NPOI.SS.UserModel;
 @using OfficeOpenXml;
+@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
+@inject IFastTagService FastTagService
 
-<MudPaper>
-    <MudGrid Style="width:100%; margin:0px;">
-        <MudItem xs="12">
-            <MudText Typo="Typo.h6">FastTag Toll Transaction</MudText>
-            <MudSpacer></MudSpacer>
+<MudPaper Style="padding-bottom: 15px;">
+    <MudToolBar>
+        <MudText Typo="Typo.h6" Style="font-weight:500;">FastTag Toll Transaction</MudText>
+    </MudToolBar>
+    <MudDivider />
+    <MudGrid Class="item-shadow" Style="margin:36px; margin-bottom: 22px; width: fit-content;">
+        <MudItem xs="12" Style="padding: 38px">
+            <MudGrid Class="fullborder">
+                <MudItem xs="4">
+                    <h6>Upload XLSX File : </h6>
+                    <InputFile @ref="fileInput" OnChange="HandleXLSXFileButtonSelected" />
+                    <MudButton OnClick="UploadXLSXFile" Variant="Variant.Filled">Upload</MudButton>
+                </MudItem>
+                <MudItem xs="8">
+                    <EditForm id="FastTagForm" OnValidSubmit="OnValidSubmit" Model="MainModel">
+                        <MudGrid>
+                            <MudItem xs="6">
+                                <MudTextField @bind-Value="@MainModel.DocumentNumber" ReadOnly="true" Label="Reference ID" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudDatePicker @bind-Date=@MainModel.DocumentDate Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <PaymentAccountSelector BranchID="@branchID" @bind-PaymentMode="@MainModel.PaymentMode" @bind-ArdCode="@MainModel.PaymentArdCode" @bind-CoaID="@MainModel.PaymentCoaID" @bind-BankCharges="@MainModel.BankCharges" @bind-BankTool="@MainModel.PaymentTool" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="MainModel.Narration" Lines="3" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(()=> MainModel.Narration)"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="10">
+                                <MudGrid>
+                                    <MudItem xs="12"><b>Total Excel Debit Amount &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: @collection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
+                                    <MudItem xs="12"><b>Total Selected Debit Amount &nbsp;: @selectedcollection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
+                                </MudGrid>
+                            </MudItem>
+                            <MudItem xs="2">
+                                <MudButton Style="width: 100%; height: 60%; margin-top: 18%;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </EditForm>
+                </MudItem>
+                @* <MudItem xs="6">
+                <MudGrid>
+                <MudItem xs="12"><b>Total Credit Amount : @collection.Sum(e => e.CreditAmount).ToString("c")</b></MudItem>
+                <MudItem xs="12"><b>Total Debit Amount  : @collection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
+                </MudGrid>
+                </MudItem> *@
+            </MudGrid>
         </MudItem>
-        <MudDivider />
-        <MudItem xs="12" Class="fullborder" Style="margin:12px;">
-            <h6>Upload XLSX File : </h6>
-            <InputFile @ref="fileInput" OnChange="HandleXLSXFileButtonSelected" />
-            <MudButton OnClick="UploadXLSXFile" Variant="Variant.Filled">Upload</MudButton>
-        </MudItem>
-        <MudItem xs="12">
-            <MudTable Items="@collection" Context="item" Dense="true" Hover="true" Striped="true" Elevation="1">
+        <MudItem xs="12" Style="padding: 0px 26px 26px 26px;">
+            <MudTable Items="@collection" Context="item" MultiSelection="true"  @bind-SelectedItems="selectedcollection" Filter="new Func<FastTagModel, bool>(search)" RowsPerPage="100" Class="fullborder" Style="padding: 0px" Elevation="0" Dense="true" Hover="true" Striped="true">
                 <ToolBarContent>
+                    <MudText Typo="Typo.h6">Transactions List</MudText>
                     <MudSpacer></MudSpacer>
-                    <MudTextField @bind-Value="searchTerm" Placeholder="Search Licence Plate No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
+                    <MudTextField @bind-Value="searchplatenumber" Placeholder="Search Licence Plate No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0">
                     </MudTextField>
                 </ToolBarContent>
                 <HeaderContent>
                     <MudTh>Transaction DateTime</MudTh>
-                    <MudTh>Processed DateTime</MudTh>
                     <MudTh>Licence Plate No</MudTh>
+                    <MudTh>Branch Name</MudTh>
+                    <MudTh>Trip No</MudTh>
+                    @*<MudTh>Processed DateTime</MudTh>
                     <MudTh>Tag Account No</MudTh>
                     <MudTh>Group</MudTh>
-                    <MudTh>Activity</MudTh>
+                    <MudTh>Activity</MudTh>*@
                     <MudTh>Plaza Code</MudTh>
                     <MudTh>Transaction Description</MudTh>
                     <MudTh>Unique Transaction ID</MudTh>
-                    <MudTh>Amount(CR)</MudTh>
+                    @*<MudTh>Amount(CR)</MudTh>*@
+                    <MudTh>Reimbursable</MudTh>
                     <MudTh>Amount(DR)</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="Transaction DateTime">@item.TransactionDateTime</MudTd>
-                    <MudTd DataLabel="Processed DateTime">@item.ProcessedDateTime</MudTd>
                     <MudTd DataLabel="NumberPlate">@item.NumberPlate</MudTd>
+                    <MudTd DataLabel="Branch Name">@item.BranchName</MudTd>
+                    <MudTd DataLabel="Trip No">@item.Trip?.TripNumberDisplay</MudTd>
+                    @*<MudTd DataLabel="Processed DateTime">@item.ProcessedDateTime</MudTd>
                     <MudTd DataLabel="TagAccountNumber">@item.TagAccountNumber</MudTd>
                     <MudTd DataLabel="Group">@item.Group</MudTd>
-                    <MudTd DataLabel="Activity">@item.Activity</MudTd>
+                    <MudTd DataLabel="Activity">@item.Activity</MudTd>*@
                     <MudTd DataLabel="PlazaCode">@item.PlazaCode</MudTd>
                     <MudTd DataLabel="TransactionDescription">@item.Description</MudTd>
                     <MudTd DataLabel="Unique Transaction ID">@item.TransactionID</MudTd>
-                    <MudTd DataLabel="Credit Amount">@item.CreditAmount</MudTd>
+                    @*<MudTd DataLabel="Credit Amount">@item.CreditAmount</MudTd>*@
+                    <MudTh><MudCheckBox T="bool" @bind-Checked="@item.Reimbursable"></MudCheckBox></MudTh>
                     <MudTd DataLabel="Debit Amount">@item.DebitAmount</MudTd>
                 </RowTemplate>
                 <PagerContent>
-                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                    <MudTablePager PageSizeOptions="new int[] {5 ,10 ,50 , 100 , 150, 200}" />
                 </PagerContent>
             </MudTable>
         </MudItem>
@@ -64,16 +112,39 @@
 
     private InputFile fileInput;
     private MemoryStream memoryStream = new MemoryStream();
+    //private FastTagModel model = new FastTagModel();
+    private HashSet<FastTagModel> selectedcollection = new HashSet<FastTagModel>();
+    private FastTagTollModel MainModel = new FastTagTollModel();
     private List<FastTagModel> collection = new List<FastTagModel>();
-    private string searchTerm = "";
+    private List<FastTagModel> excelcollection = new List<FastTagModel>();
+    private List<FastTagList> collectionlist = new List<FastTagList>();
+    private string searchplatenumber = "";
     public string fileExtension = "";
+    public int branchID;
+    private string UserID = null;
 
-    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    public bool a { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
     {
-        if (e.Key == "Enter")
-        {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = user.Identity.Name;
+    }
 
+    public async Task OnValidSubmit()
+    {
+        MainModel.FastTagModelList = selectedcollection.ToList();
+    }
+
+    private bool search(FastTagModel model)
+    {
+        if (string.IsNullOrEmpty(searchplatenumber))
+        {
+            return true;
         }
+        return model.NumberPlate?.Contains(searchplatenumber, StringComparison.OrdinalIgnoreCase) == true;
     }
 
     private async Task HandleXLSXFileButtonSelected(InputFileChangeEventArgs e)
@@ -90,6 +161,7 @@
                 if (extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase)) //|| extension.Equals(".xls", StringComparison.OrdinalIgnoreCase))
                 {
                     memoryStream = new MemoryStream();
+                    excelcollection.Clear();
                     collection.Clear();
                     memoryStream.SetLength(0); // Reset the stream before reading new file data
                     await file.OpenReadStream().CopyToAsync(memoryStream);
@@ -155,11 +227,11 @@
                         int rowCount = worksheet.Dimension.Rows;
                         int colCount = worksheet.Dimension.Columns;
                         int TransactionDateTimeRow = 0,
-                            ProcessedDateTimeRow = 0,
+                            //ProcessedDateTimeRow = 0,
                             LicencePlateNoRow = 0,
-                            TagAccountNoRow = 0,
-                            GroupRow = 0,
-                            ActivityRow = 0,
+                            // TagAccountNoRow = 0,
+                            // GroupRow = 0,
+                            // ActivityRow = 0,
                             PlazaCodeRow = 0,
                             TransactionDescriptionRow = 0,
                             UniqueTransactionIDRow = 0,
@@ -177,26 +249,26 @@
                                     {
                                         TransactionDateTimeRow = col;
                                     }
-                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Processed Date Time")
-                                    {
-                                        ProcessedDateTimeRow = col;
-                                    }
+                                    // else if (worksheet.Cells[row, col].Value?.ToString() == "Processed Date Time")
+                                    // {
+                                    //     ProcessedDateTimeRow = col;
+                                    // }
                                     else if (worksheet.Cells[row, col].Value?.ToString() == "Licence Plate No")
                                     {
                                         LicencePlateNoRow = col;
                                     }
-                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Tag Account No.")
-                                    {
-                                        TagAccountNoRow = col;
-                                    }
-                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Group")
-                                    {
-                                        GroupRow = col;
-                                    }
-                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Activity")
-                                    {
-                                        ActivityRow = col;
-                                    }
+                                    // else if (worksheet.Cells[row, col].Value?.ToString() == "Tag Account No.")
+                                    // {
+                                    //     TagAccountNoRow = col;
+                                    // }
+                                    // else if (worksheet.Cells[row, col].Value?.ToString() == "Group")
+                                    // {
+                                    //     GroupRow = col;
+                                    // }
+                                    // else if (worksheet.Cells[row, col].Value?.ToString() == "Activity")
+                                    // {
+                                    //     ActivityRow = col;
+                                    // }
                                     else if (worksheet.Cells[row, col].Value?.ToString() == "Plaza Code")
                                     {
                                         PlazaCodeRow = col;
@@ -227,26 +299,26 @@
                                     {
                                         Model.TransactionDateTime = DateTime.Parse(worksheet.Cells[row, TransactionDateTimeRow].Value?.ToString());
                                     }
-                                    if (ProcessedDateTimeRow == col)
-                                    {
-                                        Model.ProcessedDateTime = DateTime.Parse(worksheet.Cells[row, ProcessedDateTimeRow].Value?.ToString());
-                                    }
+                                    // if (ProcessedDateTimeRow == col)
+                                    // {
+                                    //     Model.ProcessedDateTime = DateTime.Parse(worksheet.Cells[row, ProcessedDateTimeRow].Value?.ToString());
+                                    // }
                                     if (LicencePlateNoRow == col)
                                     {
                                         Model.NumberPlate = worksheet.Cells[row, LicencePlateNoRow].Value?.ToString();
                                     }
-                                    if (TagAccountNoRow == col)
-                                    {
-                                        Model.TagAccountNumber = int.Parse(worksheet.Cells[row, TagAccountNoRow].Value?.ToString());
-                                    }
-                                    if (GroupRow == col)
-                                    {
-                                        Model.Group = worksheet.Cells[row, GroupRow].Value?.ToString();
-                                    }
-                                    if (ActivityRow == col)
-                                    {
-                                        Model.Activity = worksheet.Cells[row, ActivityRow].Value?.ToString();
-                                    }
+                                    // if (TagAccountNoRow == col)
+                                    // {
+                                    //     Model.TagAccountNumber = int.Parse(worksheet.Cells[row, TagAccountNoRow].Value?.ToString());
+                                    // }
+                                    // if (GroupRow == col)
+                                    // {
+                                    //     Model.Group = worksheet.Cells[row, GroupRow].Value?.ToString();
+                                    // }
+                                    // if (ActivityRow == col)
+                                    // {
+                                    //     Model.Activity = worksheet.Cells[row, ActivityRow].Value?.ToString();
+                                    // }
                                     if (PlazaCodeRow == col)
                                     {
                                         Model.PlazaCode = worksheet.Cells[row, PlazaCodeRow].Value?.ToString();
@@ -268,7 +340,50 @@
                                         Model.DebitAmount = decimal.Parse(worksheet.Cells[row, DRAmountRow].Value?.ToString());
                                     }
                                 }
-                                collection.Add(Model);
+                                if (Model.NumberPlate != null && Model.DebitAmount > 0)
+                                {
+                                    excelcollection.Add(Model);
+                                }
+                            }
+                        }
+
+                        collectionlist = excelcollection.Select(model => new FastTagList
+                            {
+                                TransactionDateTime = model.TransactionDateTime,
+                                NumberPlate = model.NumberPlate
+                            }).ToList();
+
+                        collection = FastTagService.Select(collectionlist).ToList();
+
+                        foreach (var data in collection)
+                        {
+                            var matchingCollectionData = excelcollection.FirstOrDefault(x => x.TransactionDateTime == data.TransactionDateTime
+                                                                                          && x.NumberPlate == data.NumberPlate);
+                            if (matchingCollectionData != null)
+                            {
+                                // Update 'excelData' properties with corresponding 'matchingCollectionData' values
+                                data.PlazaCode = matchingCollectionData.PlazaCode;
+                                data.Description = matchingCollectionData.Description;
+                                data.TransactionID = matchingCollectionData.TransactionID;
+                                data.CreditAmount = matchingCollectionData.CreditAmount;
+                                data.DebitAmount = matchingCollectionData.DebitAmount;
+                                // data.BranchName = matchingCollectionData.BranchName;
+                                // if (matchingCollectionData.Trip != null)
+                                // {
+                                //     data.Trip = new TripModel
+                                //         {
+                                //             TripID = matchingCollectionData.Trip.TripID,
+                                //             TruckID = matchingCollectionData.Trip.TruckID,
+                                //             TripPrefix = matchingCollectionData.Trip.TripPrefix,
+                                //             TripNumber = matchingCollectionData.Trip.TripNumber
+                                //         };
+                                // };
+                                // ... Update other properties as needed ...
+                            }
+                            else
+                            {
+                                // Handle the case where there is no match in 'collection' for the current 'excelData'
+                                // You may choose to add default values or handle it as needed
                             }
                         }
                     }

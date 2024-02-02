@@ -70,7 +70,7 @@ namespace ArmsServices.DataServices.Inventory
             }
         }
 
-        public IEnumerable<InventoryRequestModel> SelectByStore(int? StoreID,int? BranchID)
+        public IEnumerable<InventoryRequestModel> SelectByStore(int? StoreID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -206,6 +206,20 @@ namespace ArmsServices.DataServices.Inventory
             return model;
         }
 
+        public IEnumerable<InventoryRequestModel> SelectRequestReleaseByJobCardID(int? JobCardID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByJobCardID"),
+               new SqlParameter("@ID", JobCardID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Request.Release.Select]", parameters))
+            {
+                yield return GetModelRequestRelease(dr);
+            }
+        }
+
         private InventoryRequestModel GetModel(IDataRecord dr)
         {
             return new InventoryRequestModel
@@ -279,6 +293,45 @@ namespace ArmsServices.DataServices.Inventory
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
                 },
+            };
+        }
+
+        public IEnumerable<ExpenseModel> SelectExpenseByJobCardID(int? JobCardID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@JobCardID", JobCardID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.JobCard.Expense.Select]", parameters))
+            {
+                yield return GetModelExpense(dr);
+            }
+        }
+
+        private ExpenseModel GetModelExpense(IDataRecord dr)
+        {
+            return new ExpenseModel
+            {
+                JFID = dr.GetInt32("JFID"),
+                DocNumber = dr.GetString("DocNumber"),
+                DocDate = dr.GetDateTime("DocDate"),
+                BranchName = dr.GetString("BranchName"),
+                RegName = dr.GetString("RegName"),
+                InvoiceNo = dr.GetString("InvoiceNo"),
+                InvoiceDate = dr.GetDateTime("InvoiceDate"),
+                BillReference = dr.GetString("BillReference"),
+                Narration = dr.GetString("Narration"),
+                UserID = dr.GetString("UserID"),
+                AccountName = dr.GetString("AccountName"),
+                CostCenter = dr.GetString("CostCenter"),
+                Dimension = dr.GetString("Dimension"),
+                TotalAmount = dr.GetDecimal("TotalAmount"),
+                Amount = dr.GetDecimal("Amount"),
+                SGST = dr.GetDecimal("SGST"),
+                CGST = dr.GetDecimal("CGST"),
+                IGST = dr.GetDecimal("IGST"),
+                TDS = dr.GetDecimal("TDS")
             };
         }
     }

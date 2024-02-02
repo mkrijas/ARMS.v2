@@ -1,0 +1,916 @@
+﻿@page "/completedjobcard"
+@page "/completedjobcard/{TruckID:int}"
+@using ArmsServices.DataServices.Inventory;
+@using Pages.FMS.InsuranceClaim
+@using Views.Pages.Finance.Transactions.PurchaseAndPayment;
+@using Views.Pages.Finance.Transactions;
+@using Views.Pages.Inventory.InvRelease;
+@using Views.Pages.Operations
+@inject IJobcardService Iservice
+@inject IBreakdownService Ibreakdown
+@inject ITruckService Itruck
+@inject IAssetService Iasset
+@inject IEventService Ievent
+@inject IJobcardWorkshopService Ijw
+@inject IJobInProgressService Ijp
+@inject IWorkshopService Iworkshop
+@inject IMechanicJobService ImechanicJob
+@inject IMechanicService Imechanic
+@inject IEventService Ievent
+@inject IInventoryRequestService IInvRequestservice
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject NavigationManager nav
+
+<style>
+    .InActiveText {
+        color: lightgray;
+    }
+
+    .ActiveText {
+        color: cornflowerblue;
+    }
+</style>
+
+<div class="opthead"><h6>Select Job Card </h6></div>
+<MudPaper Class="p-2" Elevation="0">
+    <div class="d-flex">
+
+        <AllTruckSelector Class="d-inline-block" Value="SelectedTruck" ValueChanged="TruckSelected" BranchID="BranchID" IsChecked="@IsChecked" />
+        <MudCheckBox Label="All Branches" Checked="@IsChecked" CheckedChanged="((bool value) => AllBranchesChanged(value))" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+    </div>
+</MudPaper>
+ @if (TruckID != null)
+{
+    @if (SelectedJobcard?.JobcardID != null)
+    {
+        <MudPaper Class="p-4 mb-4">
+            <h6><MudIcon Icon="@Icons.Material.Outlined.CreditCard" Size=Size.Small />&nbsp; @SelectedJobcard?.JobcardNumber  &nbsp;&nbsp;&nbsp;<MudIcon Icon="@Icons.Material.Outlined.AccountTree" Size=Size.Small />&nbsp; @SelectedJobcard?.BranchName</h6>
+            <br>
+            @if (SelectedJobcard.UserInfo.RecordStatus == 3)
+            {
+                <MudButton StartIcon="@Icons.Material.Filled.Close" Class="scbtn" Color="Color.Secondary" OnClick="CloseJobcard">Close Jobcard</MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.AddChart" Class="mainbtn" OnClick="(()=>OpenInventoryRequestDialog(new InventoryRequestModel()))">Request Spareparts</MudButton>
+            }
+            @if (!Breakdown.IsClaimInitiated)
+            {
+                <MudButton Style="text-transform:capitalize;padding-right:1%" StartIcon="@Icons.Material.Filled.AppRegistration" OnClick="BeginInsuranceClaim" IconColor="Color.Primary">Initiate Insurance Claim</MudButton>
+            }
+            else
+            {
+                <MudButton Style="text-transform:capitalize;" OnClick="ViewClaimStatus" StartIcon="@Icons.Material.Filled.AppRegistration" IconColor="Color.Primary">View Claim Status</MudButton>
+            }
+            <MudButton Style="text-transform:capitalize;" StartIcon="@Icons.Material.Filled.AppRegistration" OnClick="OpenExpenses" IconColor="Color.Primary">Post Expenses</MudButton>
+        </MudPaper>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudPaper Elevation="0">
+                            <div class="opthead"> <h6>Workshop</h6></div>
+                            <MudList>
+                                <MudListItem>
+                                    <MudGrid>
+                                        <MudItem xs="6">
+                                            <b>WORKSHOP</b>
+                                        </MudItem>
+                                        <MudItem xs="3">
+                                            <b> ENTRY</b>
+                                        </MudItem>
+                                        <MudItem xs="3">
+                                            <b> EXIT</b>
+                                        </MudItem>
+                                    </MudGrid>
+                                </MudListItem>
+                                @foreach (var item in jwList)
+                                {
+                                    <MudDivider />
+                                    <MudListItem>
+                                        <MudGrid>
+                                            <MudItem xs="6">
+                                                @item.WorkshopName
+                                            </MudItem>
+                                            <MudItem xs="3">
+                                                @item.EnteredOn?.ToString("dd/MM/yy HH:mm tt")
+                                            </MudItem>
+                                            <MudItem xs="3">
+                                                @if (@item.ExitOn == null)
+                                                {
+                                                    <MudButton Color="Color.Success" OnClick="@(() => ExitWorkshop(item))">Exit</MudButton>
+                                                }
+                                                else
+                                                {
+                                                    @item.ExitOn?.ToString("dd/MM/yy HH:mm tt")
+                                                }
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudListItem>
+                                }
+                                @if (!jwList.Any(x => x.ExitOn == null) && SelectedJobcard?.UserInfo.RecordStatus == 3)
+                                {
+                                    <MudDivider></MudDivider>
+                                    <MudListItem>
+                                        <MudGrid>
+                                            <MudItem xs="8">
+                                                <MudSelect T="WorkshopModel" @bind-Value="SelectedWorkshop" Label="Workshop" Strict="true" Variant="Variant.Outlined">
+                                                    @foreach (var workshop in Workshops)
+                                                    {
+                                                        <MudSelectItem Value="workshop">@workshop.WorkshopName</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+                                            </MudItem>
+                                            <MudItem xs="4">
+                                                <MudButton Color="Color.Primary" OnClick="EnterWorkshop">Enter Workshop</MudButton>
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudListItem>
+                                }
+                            </MudList>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <div class="opthead"><h6>Jobs</h6></div>
+                        <MudList>
+                            @foreach (var item in JipList)
+                            {
+                                <MudListItem Class="px-0">
+                                    <MudPaper Class="mb-2 px-5" Elevation="0">
+                                        <MudGrid>
+                                            <MudItem Class="d-flex" xs="12">
+                                                <b>@item.RepairJobTitle</b>
+                                                <b class="ml-3" style="color: @item.JobStatusTextColor">@item.JobStatusText </b>
+                                                @if (item.JobStatus == 1)
+                                                {
+                                                    <MudButtonGroup Class="ml-3" Color="Color.Primary" Variant="Variant.Outlined">
+                                                        <MudTooltip Text="Finished">
+                                                            <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" OnClick="@(() => UpdateJob(item, 2))"></MudIconButton>
+                                                        </MudTooltip>
+                                                        <MudTooltip Text="Cancel">
+                                                            <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" OnClick="@(() => UpdateJob(item, 0))"></MudIconButton>
+                                                        </MudTooltip>
+                                                    </MudButtonGroup>
+                                                }
+                                                <MudSpacer></MudSpacer>
+                                                <b>@item.CreatedOn?.ToString("MMM-dd-yy HH:mm tt")</b>
+                                            </MudItem>
+                                            <MudDivider></MudDivider>
+                                            <MudItem xs="12" Class="d-flex">
+                                                Assigned Mechanics
+                                                @foreach (var mech in item.Mechanics)
+                                                {
+                                                    string mechClass = mech.EndedOn == null ? "ActiveText" : "InActiveText";
+                                                    <div style="background-color:#f7f7f7;padding-left:2%;margin-bottom:1%">
+                                                        <MudText Class="@mechClass">
+                                                            @mech.MechanicName
+                                                            <MudButton Size="Size.Small" hidden="@(mech.EndedOn != null)" Color="Color.Default" OnClick="(() => RemoveMechanic(mech))">Remove</MudButton>
+                                                        </MudText>
+                                                    </div>
+                                                }
+                                                @if (item.JobStatus == 1)
+                                                {
+                                                    <MudTooltip Text="Assign Mechanic">
+                                                        <MudIconButton Class="ml-3" Size="Size.Small" Icon="@Icons.Material.Sharp.Add" OnClick="(() => OpenMechanicSelector(item))" aria-label="AddMechanic"></MudIconButton>
+                                                    </MudTooltip>
+                                                }
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudPaper>
+                                </MudListItem>
+                            }
+                        </MudList>
+                        @if (CurrentWorkshop != null && SelectedJobcard.UserInfo.RecordStatus == 3)
+                        {
+                            <MudPaper Class="pa-2 d-flex" Elevation="0">
+                                <JobInProgressView workshop="CurrentWorkshop" model="NewJob" @ref="jipView"></JobInProgressView>
+                                <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddJob" Title="Create Job"></MudIconButton>
+                            </MudPaper>
+                        }
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTable Items="@InvRequestList" Dense="true" Hover="true" Striped="true" Elevation="5">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Inventory Request / Release </MudText>
+                        <MudSpacer></MudSpacer>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<InventoryRequestModel, object>(x=> x.ReleaseSubDetails?.ItemDescription)" InitialDirection="SortDirection.Ascending">Item</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<InventoryRequestModel, object>(x=> x.RequestNumber)" InitialDirection="SortDirection.Ascending">Document Date / Request Number</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<InventoryRequestModel, object>(x=> x.ReleaseSubDetails?.RequestQty)" InitialDirection="SortDirection.Ascending">Request Qty</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<InventoryRequestModel, object>(x=> x.ReleaseSubDetails?.ItemQty)" InitialDirection="SortDirection.Ascending">Release Qty</MudTableSortLabel></MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Item">@context.ReleaseSubDetails?.ItemDescription</MudTd>
+                            <MudTd DataLabel="Document Date / Request Number">@(context.RequestDate?.ToShortDateString()) / @(context.RequestNumber)</MudTd>
+                            <MudTd DataLabel="Request Qty">@context.ReleaseSubDetails?.RequestQty</MudTd>
+                            <MudTd DataLabel="Release Qty">@context.ReleaseSubDetails?.ItemQty</MudTd>
+                            @if (context.RID != null && !context.IsClosed)
+                        {
+                            <MudTd DataLabel="">
+                                <MudTooltip Text="Close Request">
+                                    <MudFab @onclick="@(()=> OpenInventoryReleaseClosedDialog(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
+                                </MudTooltip>
+                            </MudTd>
+                        }
+                        @if (context.RID == null)
+                        {
+                            <MudTd DataLabel="">
+                                <MudTooltip Text="Edit">
+                                    <MudFab @onclick="@(()=> OpenInventoryRequestDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                                </MudTooltip>
+                                <MudTooltip Text="Delete">
+                                    <MudFab @onclick="@(()=> DeleteInventoryRequest(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                </MudTooltip>
+                            </MudTd>
+                        }
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
+            </MudItem>
+
+            <MudItem xs="12" md="12">
+                <MudTable Items="@ExpenseList" Dense="true" Hover="true" Striped="true" Elevation="5">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Expenses </MudText>
+                        <MudSpacer></MudSpacer>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.DocNumber)" InitialDirection="SortDirection.Ascending">Doc Number</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.DocDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.BranchName)" InitialDirection="SortDirection.Ascending">Branch</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.RegName)" InitialDirection="SortDirection.Ascending">Vendor</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.InvoiceNo)" InitialDirection="SortDirection.Ascending">Invoice No</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.InvoiceDate)" InitialDirection="SortDirection.Ascending">Invoice Date</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.BillReference)" InitialDirection="SortDirection.Ascending">Bill Ref</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.Narration)" InitialDirection="SortDirection.Ascending">Narration</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.UserID)" InitialDirection="SortDirection.Ascending">User</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.AccountName)" InitialDirection="SortDirection.Ascending">Account Name</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.CostCenter)" InitialDirection="SortDirection.Ascending">Cost Center</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.Dimension)" InitialDirection="SortDirection.Ascending">Dimension</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Total Amt</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.SGST)" InitialDirection="SortDirection.Ascending">SGST</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.CGST)" InitialDirection="SortDirection.Ascending">CGST</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.IGST)" InitialDirection="SortDirection.Ascending">IGST</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<ExpenseModel, object>(x=> x.TDS)" InitialDirection="SortDirection.Ascending">TDS</MudTableSortLabel></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Doc Number">@context.DocNumber</MudTd>
+                            <MudTd DataLabel="Document Date">@context.DocDate</MudTd>
+                            <MudTd DataLabel="Branch">@context.BranchName</MudTd>
+                            <MudTd DataLabel="Vendor">@context.RegName</MudTd>
+                            <MudTd DataLabel="Invoice No">@context.InvoiceNo</MudTd>
+                            <MudTd DataLabel="Invoice Date">@context.InvoiceDate</MudTd>
+                            <MudTd DataLabel="Bill Ref">@context.BillReference</MudTd>
+                            <MudTd DataLabel="Narration">@context.Narration</MudTd>
+                            <MudTd DataLabel="User">@context.UserID</MudTd>
+                            <MudTd DataLabel="Account Name">@context.AccountName</MudTd>
+                            <MudTd DataLabel="Cost Center">@context.CostCenter</MudTd>
+                            <MudTd DataLabel="Dimension">@context.Dimension</MudTd>
+                            <MudTd DataLabel="Total Amt">@context.TotalAmount</MudTd>
+                            <MudTd DataLabel="Amount">@context.Amount</MudTd>
+                            <MudTd DataLabel="SGST">@context.SGST</MudTd>
+                            <MudTd DataLabel="CGST">@context.CGST</MudTd>
+                            <MudTd DataLabel="IGST">@context.IGST</MudTd>
+                            <MudTd DataLabel="TDS">@context.TDS</MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                        </PagerContent>
+                    </MudTable>
+                </MudItem>
+
+            </MudGrid>
+    }
+    <MudDialog @bind-IsVisible="visibleMechanicSelector" DisableSidePadding="true">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3" /> Assign Mechanics
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudContainer Style="height: 300px; overflow-y: auto">
+                <MudSelect T="MechanicModel" MultiSelection="true" Label="Assign Mechanic/s" ToStringFunc="@(p => p.MechanicName)" @bind-SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                    @foreach (var item in Mechanics)
+                    {
+                        <MudSelectItem T="MechanicModel" Value="@item">@item.MechanicName</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudButton Color="Color.Success" OnClick="AddMechanic">Add</MudButton>
+            </MudContainer>
+        </DialogContent>
+    </MudDialog>
+}
+else
+{
+    <MudTable Items="@collection" Elevation="10" @bind-model="model">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Jobcards</MudText>
+            <MudSpacer></MudSpacer>
+            @* <MudTextField Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField> *@
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<JobcardModel, object>(x=> x.JobcardNumber)" InitialDirection="SortDirection.Ascending">Jobcard No</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<JobcardModel, object>(x=> x.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<JobcardModel, object>(x=> x.CreatedOn)" InitialDirection="SortDirection.Ascending">Created on</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<JobcardModel, object>(x=> x.workshop)" InitialDirection="SortDirection.Ascending">Workshop</MudTableSortLabel></MudTh>
+            @* <MudTh>View Jobs</MudTh> *@
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            @* <MudTd DataLabel="JobcardNumber"> <MudHighlighter Style="background-color:cornflowerblue;font-weight:bold" Text="@context.JobcardNumber" HighlightedText="@searchString" /></MudTd> *@
+            <MudTd DataLabel="JobcardNumber"> @context.JobcardNumber</MudTd>
+                <MudTd DataLabel="Truck">@context.RegNo</MudTd>
+                <MudTd DataLabel="Date">@context.CreatedOn</MudTd>
+                <MudTd DataLabel="Date">@context.workshop</MudTd>
+                @* <MudTd DataLabel="Jobs"></MudTd> *@
+                <MudTd DataLabel="">
+                    <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ViewList" title="View" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> View(context, context.JobcardID, context.TruckID))" Color="Color.Info" StartIcon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+                @*  <MudTd DataLabel="">
+        <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd> *@
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+
+}
+
+@code {
+
+    [Parameter]
+    public int? TruckID { get; set; }
+    private TruckModel SelectedTruck = new();
+    private BreakdownModel Breakdown = new();
+    private JobcardModel SelectedJobcard = new();
+    private WorkshopModel SelectedWorkshop = new();
+    private WorkshopModel CurrentWorkshop;
+    private List<JobcardWorkshopModel> jwList = new();
+    private List<JobInProgressModel> JipList = new();
+    private List<InventoryRequestModel> InvRequestList = new();
+    private List<ExpenseModel> ExpenseList = new();
+    private List<WorkshopModel> Workshops = new();
+    public int? BranchID { get; set; }
+    private JobInProgressModel NewJob = new JobInProgressModel();
+    private List<EventTypeModel> EventTypes;
+    string ColorInProgress = Colors.Indigo.Lighten5;
+    string ColorFinished = Colors.Green.Lighten5;
+    string ColorCancelled = Colors.Grey.Lighten5;
+    JobInProgressView jipView;
+    bool visibleMechanicSelector = false;
+    private List<MechanicModel> Mechanics = new();
+    private IEnumerable<MechanicModel> SelectedMechanics;
+    private JobInProgressModel SelectedJob = new();
+    private bool _busy;
+
+    public bool HasPermissionInventoryRequestDelete { get; set; } = false;
+    public int InventoryRequestDocTypeID = 67;
+    public bool HasPermissionMechanicJobServiceAdd { get; set; } = false;
+    public bool HasPermissionMechanicJobServiceRemove { get; set; } = false;
+    public int MechanicJobDocTypeID = 79;
+    public bool HasPermissionJobInProgressServiceEdit { get; set; } = false;
+    public int JobInProgressDocTypeID = 80;
+    public bool HasPermissionJobcardWorkshopServiceEdit { get; set; } = false;
+    public int JobcardWorkshopDocTypeID = 81;
+    public bool HasPermissionJobcardServiceEdit { get; set; } = false;
+    public bool HasPermissionJobcardServiceAdd { get; set; } = false;
+    public int JobcardDocTypeID = 82;
+    private List<JobcardModel> collection = new();
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    private JobcardModel model;
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
+    bool IsChecked { get; set; }
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionMechanicJobServiceAdd = await Irole.HasClaim(MechanicJobDocTypeID.ToString(), "Add", ctc.Token);
+        HasPermissionMechanicJobServiceRemove = await Irole.HasClaim(MechanicJobDocTypeID.ToString(), "Remove", ctc.Token);
+        HasPermissionInventoryRequestDelete = await Irole.HasClaim(InventoryRequestDocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionJobInProgressServiceEdit = await Irole.HasClaim(JobInProgressDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionJobcardWorkshopServiceEdit = await Irole.HasClaim(JobcardWorkshopDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionJobcardServiceEdit = await Irole.HasClaim(JobcardDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionJobcardServiceAdd = await Irole.HasClaim(JobcardDocTypeID.ToString(), "Edit", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        Workshops = Iworkshop.Select(0).ToList();
+        EventTypes = Ievent.GetEventTypes().ToList();
+        if (TruckID != null)
+        {
+            await TruckSelected(Itruck.SelectByID(TruckID));
+        }
+    }
+
+    async void AllBranchesChanged(bool value)
+    {
+        IsChecked = value;
+        await Task.Delay(2);
+        await InvokeAsync(() => StateHasChanged()).ConfigureAwait(false);  // Refresh the UI
+    }
+
+    private async Task GetAll()
+    {
+        var authState = await auth.GetAuthenticationStateAsync();
+        int branchID = int.Parse(authState.User.Claims.First(x => x.Type == "BranchID").Value);
+        collection = Iservice.SelectByBranchAndTruck(branchID, SelectedTruck?.TruckID, true).ToList();
+    }
+
+    private async Task View(JobcardModel Jobcard, int? JobCardID, int? Truck)
+    {
+        TruckID = Truck;
+        ReadOnly = true;
+        SelectedJobcard = Iservice.SelectByJobCardID(Jobcard.JobcardID, true).OrderByDescending(s => s.JobcardID).FirstOrDefault();
+        Breakdown = Ibreakdown.SelectByID(SelectedJobcard?.BreakdownID);
+        jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
+        setJipList(SelectedJobcard);
+        if (InvRequestList != null)
+        {
+            InvRequestList.Clear();
+        }
+        InvRequestList = IInvRequestservice.SelectRequestReleaseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
+
+        if (ExpenseList != null)
+        {
+            ExpenseList.Clear();
+        }
+        ExpenseList = IInvRequestservice.SelectExpenseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
+
+        if (jwList.Count(x => x.ExitOn == null) > 0)
+        {
+            CurrentWorkshop = Workshops.First(y => y.WorkshopID == jwList.First(x => x.ExitOn == null).WorkshopID);
+        }
+        var authProvider = await auth.GetAuthenticationStateAsync();
+        NewJob = new()
+            {
+                CreatedOn = DateTime.Now,
+                JobCardID = SelectedJobcard?.JobcardID,
+                WorkshopID = CurrentWorkshop?.WorkshopID,
+                JobStatus = 1,
+                UserInfo = new() { UserID = authProvider.User.Identity.Name }
+            };
+        //TruckID = null;
+        nav.NavigateTo("completedjobcard/" + Jobcard.TruckID);
+
+    }
+
+    private async Task TruckSelected(TruckModel obj)
+    {
+        SelectedTruck = obj;
+        if (obj != null)
+        {
+            if (TruckID == null)
+            {
+                await GetAll();
+            }
+            else
+            {
+                SelectedJobcard = Iservice.SelectByTruck(SelectedTruck?.TruckID, true).OrderByDescending(s => s.JobcardID).FirstOrDefault();
+                Breakdown = Ibreakdown.SelectByID(SelectedJobcard?.BreakdownID);
+                jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
+                setJipList(SelectedJobcard);
+                if (InvRequestList != null)
+                {
+                    InvRequestList.Clear();
+                }
+                InvRequestList = IInvRequestservice.SelectRequestReleaseByTruckID(SelectedTruck?.TruckID ?? 0).ToList();
+
+
+
+                if (ExpenseList != null)
+                {
+                    ExpenseList.Clear();
+                }
+                ExpenseList = IInvRequestservice.SelectExpenseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
+
+
+                if (jwList.Count(x => x.ExitOn == null) > 0)
+                {
+                    CurrentWorkshop = Workshops.First(y => y.WorkshopID == jwList.First(x => x.ExitOn == null).WorkshopID);
+                }
+                var authProvider = await auth.GetAuthenticationStateAsync();
+                NewJob = new()
+                    {
+                        CreatedOn = DateTime.Now,
+                        JobCardID = SelectedJobcard?.JobcardID,
+                        WorkshopID = CurrentWorkshop?.WorkshopID,
+                        JobStatus = 1,
+                        UserInfo = new() { UserID = authProvider.User.Identity.Name }
+                    };
+            }
+
+        }
+        else
+        {
+            //SelectedTruck.TruckID = null;
+            TruckID = null;
+        }
+    }
+
+    void setJipList(JobcardModel jobcard)
+    {
+        JipList = Ijp.SelectByJobcard(jobcard?.JobcardID).ToList();
+        foreach (JobInProgressModel item in JipList)
+        {
+            item.Mechanics = ImechanicJob.SelectByJob(item.JipID).ToList();
+        }
+    }
+
+    private async Task ExitWorkshop(JobcardWorkshopModel jwModel)
+    {
+        if (HasPermissionJobcardWorkshopServiceEdit)
+        {
+            if (JipList.Any(x => x.WorkshopID == jwModel.WorkshopID && x.FinishedOn == null))
+            {
+                snackbar.Add("Unfinished Jobs found!", Severity.Error);
+                return;
+            }
+            jwModel.ExitOn = DateTime.Now;
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            jwModel.UserInfo.UserID = authProvider.User.Identity.Name;
+            Ijw.Update(jwModel);
+            jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
+            CurrentWorkshop = null;
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit JobcardWorkshop.");
+        }
+    }
+
+    private async Task EnterWorkshop()
+    {
+        if (HasPermissionJobcardWorkshopServiceEdit)
+        {
+            if (SelectedWorkshop == null || SelectedWorkshop.WorkshopID == null)
+            {
+                snackbar.Add("Please select workshop.", Severity.Error);
+                return;
+            }
+            JobcardWorkshopModel jwEnter = new();
+            jwEnter.JobCardID = SelectedJobcard.JobcardID;
+            jwEnter.WorkshopID = SelectedWorkshop.WorkshopID;
+            jwEnter.EnteredOn = DateTime.Now;
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            jwEnter.UserInfo.UserID = authProvider.User.Identity.Name;
+            Ijw.Update(jwEnter);
+            jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
+            CurrentWorkshop = Workshops.First(y => y.WorkshopID == jwList.First(x => x.ExitOn == null).WorkshopID);
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit JobcardWorkshop.");
+        }
+    }
+
+    private async Task UpdateJob(JobInProgressModel Ujip, int status)
+    {
+        if (HasPermissionJobInProgressServiceEdit)
+        {
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            Ujip.UserInfo.UserID = authProvider.User.Identity.Name;
+            Ujip.JobStatus = status;
+            Ujip.FinishedOn = DateTime.Now;
+            foreach (var item in Ujip.Mechanics)
+            {
+                await RemoveMechanic(item);
+            }
+            Ijp.Update(Ujip);
+            setJipList(SelectedJobcard);
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit JobInProgress.");
+        }
+    }
+
+    private async Task AddJob()
+    {
+        var authProvider = await auth.GetAuthenticationStateAsync();
+        NewJob.CreatedOn = DateTime.Now;
+        if (NewJob.RepairJobID == null || NewJob.RepairJobID == 0)
+        {
+            snackbar.Add("Please select job;", Severity.Error);
+            return;
+        }
+        if (NewJob.Mechanics == null || NewJob.Mechanics.Count() == 0)
+        {
+            snackbar.Add("Please select mechanic;", Severity.Error);
+            return;
+        }
+        jipView.UpdateJob(NewJob);
+        setJipList(SelectedJobcard);
+        NewJob = new();
+        jipView.clearmodel();
+    }
+
+    async Task CloseJobcard()
+    {
+        if (HasPermissionJobcardServiceEdit)
+        {
+            if (InvRequestList.Any(x => x.IsClosed == null || x.IsClosed == false))
+            {
+                snackbar.Add("Close requested inventory items before closing Jobcard!", Severity.Error);
+                return;
+            }
+            if (jwList.Any(x => x.ExitOn == null))
+            {
+                snackbar.Add("Exit from workshop before closing Jobcard!", Severity.Error);
+                return;
+            }
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            int BraanchID = int.Parse(authProvider.User.Claims.First(x => x.Type == "BranchID").Value);
+            SelectedJobcard.UserInfo.RecordStatus = 4;
+            Iservice.Update(SelectedJobcard);
+            EventModel CurrentEvent = Ievent.GetCurrentEvent(SelectedTruck.TruckID);
+            if (CurrentEvent.NextEventTypeID == null)
+            {
+                CurrentEvent.NextEventTypeID = EventTypes.FirstOrDefault(s => s.EventTypeID == CurrentEvent.EventTypeID)?.DefaultNextEventTypeID ?? null;
+            }
+            Ievent.Update(new EventModel()
+                {
+                    EventTypeID = 6,
+                    BranchID = BraanchID,
+                    DriverID = CurrentEvent.DriverID,
+                    DestinationID = CurrentEvent.DestinationID,
+                    OriginID = CurrentEvent.DestinationID,
+                    EventReading = CurrentEvent.EventReading,
+                    EventTime = DateTime.Now,
+                    TripID = CurrentEvent.TripID,
+                    TruckID = CurrentEvent.TruckID,
+                    GcSetID = CurrentEvent.GcSetID,
+                    NextEventTypeID = CurrentEvent.NextEventTypeID,
+                    UserInfo =
+                        {
+                            UserID = authProvider.User.Identity.Name
+                        }
+                });
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Jobcard.");
+        }
+    }
+
+    async Task RemoveMechanic(MechanicJobModel mj)
+    {
+        if (HasPermissionMechanicJobServiceRemove)
+        {
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            string UserID = authProvider.User.Identity.Name;
+            ImechanicJob.Remove(mj.MjID, UserID);
+            mj.EndedOn = DateTime.Now;
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Remove MechanicJob.");
+        }
+    }
+
+    void OpenMechanicSelector(JobInProgressModel jipModel)
+    {
+        SelectedMechanics = new HashSet<MechanicModel>();
+        Mechanics = Imechanic.SelectByWorkshop(CurrentWorkshop.WorkshopID).ToList()
+            .Where(x => jipModel.Mechanics.Where(z => z.EndedOn == null).All(y => y.MechanicID != x.MechanicID)).ToList();
+        SelectedJob = jipModel;
+        visibleMechanicSelector = true;
+    }
+
+    async Task AddMechanic()
+    {
+        if (HasPermissionMechanicJobServiceAdd)
+        {
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            foreach (var item in SelectedMechanics)
+            {
+                ImechanicJob.Update(new MechanicJobModel()
+                    {
+                        AssignedOn = DateTime.Now,
+                        JipID = SelectedJob.JipID,
+                        MechanicID = item.MechanicID,
+                        MechanicName = item.MechanicName,
+                        UserInfo = new ArmsModels.SharedModels.UserInfoModel()
+                        {
+                            UserID = authProvider.User.Identity.Name
+                        }
+                    });
+            }
+            setJipList(SelectedJobcard);
+            visibleMechanicSelector = false;
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Add MechanicJob.");
+        }
+    }
+
+    private async Task BeginInsuranceClaim()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        var asset = Iasset.SelectByTruckID(Breakdown.TruckID);
+        var parameters = new DialogParameters();
+        parameters.Add("BreakdownID", Breakdown.BreakdownID);
+        parameters.Add("Asset", asset.Clone());
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = DialogService.Show<InitiateClaimDialog>("Initiate Claim", parameters, maxWidth);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            InsuranceClaimModel InsModel = (InsuranceClaimModel)result.Data;
+            Breakdown.IsClaimInitiated = true;
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async Task OpenExpenses()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        if (HasPermissionJobcardServiceAdd)
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("model", new TaxPurchaseModel() { NonStoreInventory = true, });
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+            var dialog = DialogService.Show<TaxPurchaseDialog>("Maintenance Expenses", parameters, maxWidth);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                var purchaseModel = (TaxPurchaseModel)result.Data;
+                int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, purchaseModel.PID);
+                if (queryStatus == 0)
+                {
+                    snackbar.Add("Something went wrong !  Please check Taxpurchase collect number then contact Admin", Severity.Error);
+                }
+                else
+                {
+                    snackbar.Add("Created Successfully", Severity.Success);
+                }
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Add Jobcard.");
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async Task OpenInventoryReleaseClosedDialog(InventoryRequestModel model)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        model.Jobcard = SelectedJobcard;
+        model.BranchID = branchID;
+        model.Truck = SelectedTruck;
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", model.Clone());
+        parms.Add("SetIncomingVal", true);
+        var result = await DialogService.Show<InventoryReleaseClosedDialog>("ADD", parms, mediumWidth).Result;
+
+        InvRequestList = IInvRequestservice.SelectRequestReleaseByTruckID(SelectedTruck?.TruckID ?? 0).ToList();
+        model = new();
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async Task OpenInventoryRequestDialog(InventoryRequestModel model)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        model.Jobcard = SelectedJobcard;
+        model.BranchID = branchID;
+        model.Truck = SelectedTruck;
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", model.Clone());
+        parms.Add("SetIncomingVal", true);
+        var dialog = DialogService.Show<InvRequestDialog>("ADD", parms, mediumWidth);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            InvRequestList = IInvRequestservice.SelectRequestReleaseByTruckID(SelectedTruck?.TruckID ?? 0).ToList();
+            model = new();
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async Task DeleteInventoryRequest(InventoryRequestModel model)
+    {
+        if (HasPermissionInventoryRequestDelete)
+        {
+            try
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Warning !",
+                    "Are you sure, you want to delete - " + model.ReleaseSubDetails?.ItemDescription + " (" + model.RequestDate?.ToShortDateString() + " / " + model.RequestNumber + ") ?");
+                if (result == true)
+                {
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    var value = IInvRequestservice.Delete(model.RequestID, user.Identity.Name);
+                    if (value != -1)
+                    {
+                        if (InvRequestList.Exists(s => s.RequestID == value))
+                        {
+                            InvRequestList.Remove(InvRequestList.FirstOrDefault(s => s.RequestID == value));
+                        }
+                    }
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete InventoryRequest.");
+        }
+    }
+
+    private async Task ViewClaimStatus()
+    {
+
+    }
+
+    private async Task OpenDialog(JobcardModel jcm, bool ReadOnly, bool View)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", jcm.Clone());
+        // parms.Add("PageToRedirectLink", "/TaxPurchase");
+        //parms.Add("ReadOnly", ReadOnly);
+        // var dialog = DialogService.Show<TaxPurchaseDialog>(tds.PID == null ? "ADD" : "EDIT", parms, maxWidth);
+        var dialog = DialogService.Show<ShowCompletedJobsDialog>(TruckID == null ? "ADD" : "VIEW", parms, maxWidth);
+        var result = await dialog.Result;
+        var isCancelled = result.Cancelled;
+        if (!isCancelled)
+        {
+            var ReturnData = (JobInProgressModel)result.Data;
+        }
+        await GetAll();
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+}

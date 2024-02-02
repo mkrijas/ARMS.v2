@@ -212,7 +212,7 @@ namespace Views
             services.AddScoped<IDimensionService, DimensionService>();
             services.AddScoped<IInterBranchMappingService, InterBranchTransactionService>();
             services.AddScoped<IRoutineCheckListMasterService, RoutineCheckListMasterService>();
-            services.AddScoped<ITaxVoucherService, TaxVoucherService>();
+            services.AddScoped<IDocVoucherService, DocVoucherService>();
             services.AddScoped<IMileageShortageReceiptService, MileageShortageReceiptService>();
         
 
@@ -232,6 +232,7 @@ namespace Views
             services.AddScoped<ISaleService, SaleService>();
             services.AddScoped<IJournalService, JournalService>();
             services.AddScoped<IInventoryReleaseService, InventoryReleaseService>();
+            services.AddScoped<IFastTagService, FastTagService>();
 
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();

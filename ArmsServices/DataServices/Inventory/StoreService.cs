@@ -153,8 +153,6 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
-
         private StoreModel GetModel(IDataRecord dr)
         {
             return new StoreModel(dr.GetString("BranchName"))
@@ -170,6 +168,5 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-
     }
 }

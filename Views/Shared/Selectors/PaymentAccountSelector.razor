@@ -8,14 +8,14 @@
     <MudElement Class="d-flex flex-grow-1 gap-4">
         @if (!HideMode)
         {
-            <MudSelect Disabled ="@ReadOnly" Label="Mode" Class="flex-auto" Value="@PaymentMode" ValueChanged="Modechanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary" For="@(() => PaymentMode)">
+            <MudSelect Disabled="@ReadOnly" Label="Mode" Class="flex-auto" Value="@PaymentMode" ValueChanged="Modechanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary" For="@(() => PaymentMode)">
                 <MudSelectItem @key="@("Bank")" Value="@("Bank")" />
                 <MudSelectItem @key="@("Cash")" Value="@("Cash")" />
                 <MudSelectItem @key="@("Wallet")" Value="@("Wallet")" />
             </MudSelect>
         }
         <MudAutocomplete Disabled="@ReadOnly" Class="flex-auto" T="PaymentCodeModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="@LabelName" Value="@PaymentCode" ValueChanged="_ardCodeChanged" ResetValueOnEmptyText="true"
-                     Clearable="true" SearchFunc="SearchAccounts" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.ArdCode)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
+                         Clearable="true" SearchFunc="SearchAccounts" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.ArdCode)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
         <ValidationMessage For="@(()=> ArdCode)"></ValidationMessage>
 
         @if (PaymentMode == "Bank")
@@ -40,9 +40,10 @@ else
 {
     <MudText> Loading..... </MudText>
 }
+
 @code {
-
-
+    [Parameter]
+    public int BranchID { get; set; } = 0;
     [Parameter]
     public bool ReadOnly { get; set; } = false;
     [Parameter]
@@ -123,21 +124,25 @@ else
         await BankToolChanged.InvokeAsync(val);
     }
 
-
     protected override async Task OnInitializedAsync()
     {
         await getAll();
         PaymentCode = paymentCodes.FirstOrDefault(s => s.CoaID == CoaID && s.ArdCode == ArdCode);
     }
+
     public async Task getAll()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int branchID = int.Parse(brancIDString);
-        paymentCodes = accountService.GetPaymentCodes(branchID, PaymentMode).ToList();
+        @if (BranchID != 0)
+        {
+            paymentCodes = accountService.GetPaymentCodes(BranchID, PaymentMode).ToList();
+        }
+        else
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            int branchID = int.Parse(brancIDString);
+            paymentCodes = accountService.GetPaymentCodes(branchID, PaymentMode).ToList();
+        }
         IsLoaded = true;
     }
 }
-
-
-

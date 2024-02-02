@@ -21,7 +21,7 @@ namespace ArmsServices.DataServices
             Configuration = configuration;
             Iroute = _IRoute;
         }
-        public string[] TariffGroups { get { return Configuration.GetSection(Data).GetSection("TariffGroups").Get<string[]>(); } }
+        public string[] TariffGroups { get { return new string[] { "FREIGHT", "INCENTIVE" }; } }
 
         public int Delete(int? ID, string UserID)
         {
