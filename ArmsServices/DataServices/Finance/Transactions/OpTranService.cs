@@ -26,6 +26,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@AssetTransferID", model.AssetTransferID),
+               new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
                new SqlParameter("@CreditCoaID", model.CreditCoaID),
                new SqlParameter("@Area", model.Area),
                new SqlParameter("@JobCardID", model.JobCardID),
@@ -208,6 +209,7 @@ namespace ArmsServices.DataServices
                 MID = dr.GetInt32("MID"),
                 TripID = dr.GetInt64("TripID"),
                 AssetTransferID = dr.GetInt32("AssetTransferID"),
+                RequestApprovalHistoryID = dr.GetInt32("RequestApprovalHistoryID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

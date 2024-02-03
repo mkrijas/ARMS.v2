@@ -20,21 +20,21 @@ namespace DAL.DataServices.Operations
         public int DeleteRequest(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-                    {
-                       new SqlParameter("@ID", ID),
-                       new SqlParameter("@UserID", UserID),
-                    };
+            {
+                new SqlParameter("@ID", ID),
+                new SqlParameter("@UserID", UserID),
+            };
             return Iservice.ExecuteNonQuery("[usp.Operation.TruckAvailability.Request.Delete]", parameters);
         }
 
         public IEnumerable<RequestApprovalHistoryModel> SelectOutgoingRequests(int? ID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-                    {
-                       new SqlParameter("@Operation", "Outgoing"),
-                       new SqlParameter("@ID", ID),
-                       new SqlParameter("@BranchID", BranchID),
-                    };
+            {
+                new SqlParameter("@Operation", "Outgoing"),
+                new SqlParameter("@ID", ID),
+                new SqlParameter("@BranchID", BranchID),
+            };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Request.Select]", parameters))
             {
@@ -45,13 +45,14 @@ namespace DAL.DataServices.Operations
         public RequestApprovalHistoryModel UpdateOutgoing(RequestApprovalHistoryModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-                    {
-                       new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
-                       new SqlParameter("@TruckID", model.Truck.TruckID),
-                       new SqlParameter("@RequestedBranchID", model.RequestedBranchID),
-                       new SqlParameter("@RequestedUserID", model.RequestedUserInfo.UserID),
-                       new SqlParameter("@RecordStatus", 3),
-                    };
+            {
+                new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
+                new SqlParameter("@TruckID", model.Truck.TruckID),
+                new SqlParameter("@RequestedBranchID", model.RequestedBranchID),
+                new SqlParameter("@RequestedUserID", model.RequestedUserInfo.UserID),
+                new SqlParameter("@RequestStatus", model.RequestStatus),
+                new SqlParameter("@RecordStatus", 3),
+            };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Request.Update]", parameters))
             {
@@ -63,11 +64,11 @@ namespace DAL.DataServices.Operations
         public IEnumerable<RequestApprovalHistoryModel> SelectIncomingTrucks(int? ID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-                    {
-                       new SqlParameter("@Operation", "Incoming"),
-                       new SqlParameter("@ID", ID),
-                       new SqlParameter("@BranchID", BranchID),
-                    };
+            {
+                new SqlParameter("@Operation", "Incoming"),
+                new SqlParameter("@ID", ID),
+                new SqlParameter("@BranchID", BranchID),
+            };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Request.Select]", parameters))
             {
@@ -78,12 +79,14 @@ namespace DAL.DataServices.Operations
         public RequestApprovalHistoryModel UpdateStatus(RequestApprovalHistoryModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-                    {
-                       new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
-                       new SqlParameter("@RespondedUserID", model.RespondedUserInfo.UserID),
-                       new SqlParameter("@IsApproved", model.IsApproved),
-                       new SqlParameter("@RecordStatus", 3),
-                    };
+            {
+                new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
+                new SqlParameter("@RespondedUserID", model.RespondedUserInfo.UserID),
+                new SqlParameter("@OpeningKM", model.OpeningKM),
+                new SqlParameter("@ClosingKM", model.ClosingKM),
+                new SqlParameter("@RequestStatus", model.RequestStatus),
+                new SqlParameter("@RecordStatus", 3),
+            };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Response.Update]", parameters))
             {
@@ -95,9 +98,9 @@ namespace DAL.DataServices.Operations
         public IEnumerable<int?> GetAllTruckIdsByBranchID(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
-                    {
-                       new SqlParameter("@BranchID", BranchID)
-                    };
+            {
+                new SqlParameter("@BranchID", BranchID)
+            };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Request.TrickIds.Select]", parameters))
             {
@@ -128,6 +131,7 @@ namespace DAL.DataServices.Operations
                     BranchID = dr.GetInt32("RespondedBranchID"),
                     BranchName = dr.GetString("RespondedBranchName"),
                 },
+                RequestStatus = dr.GetByte("RequestStatus"),
                 RequestedUserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

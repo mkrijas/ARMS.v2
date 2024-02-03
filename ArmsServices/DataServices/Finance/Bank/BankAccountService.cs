@@ -30,6 +30,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@MicrCode", model.MicrCode),
                new SqlParameter("@SwiftCode", model.SwiftCode),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@TANNo", model.TANNo)
             };
             
             foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.Update]", parameters))
@@ -73,6 +74,7 @@ namespace ArmsServices.DataServices
                 BankTitle = dr.GetString("BankTitle"),
                 MicrCode = dr.GetString("MicrCode"),
                 SwiftCode = dr.GetString("SwiftCode"),
+                TANNo = dr.GetString("TANNo"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

@@ -13,8 +13,11 @@ namespace Core.BaseModels.Finance.Transactions
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<SundryPaymentModel>(Json);
+            return JsonConvert.DeserializeObject<FastTagTollModel>(Json);
         }
+        public string DocumentNumber { get; set; } = "New";
+        [Required]
+        public DateTime? DocumentDate { get; set; }
         [Required]
         public string PaymentMode { get; set; }
         [Required]
@@ -26,10 +29,11 @@ namespace Core.BaseModels.Finance.Transactions
         [RequiredIf("PaymentMode", "Bank")]
         public decimal? BankCharges { get; set; }
         public virtual string AccountName { get; set; }
+        [Required]
+        public string Narration { get; set; }
         [ValidateComplexType]
         [MustContain(ErrorMessage = "No items added for payment!")]
         public List<FastTagModel> FastTagModelList { get; set; } = new();
-
     }
 
     public class FastTagModel
@@ -46,6 +50,7 @@ namespace Core.BaseModels.Finance.Transactions
         public string PlazaCode { get; set; }
         public string Description { get; set; }
         public string TransactionID { get; set; }
+        public bool Reimbursable {  get; set; }
         public decimal CreditAmount { get; set; }
         public decimal DebitAmount { get; set; }
     }
