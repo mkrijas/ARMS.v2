@@ -41,7 +41,10 @@
                     <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item))">Edit</MudButton>
                     <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> Remove(item))">Remove</MudButton>
                     <MyFileUpload FileName="@(item.DocumentType.DocumentTypeName + Guid.NewGuid().ToString())" FolderName="AssetDocuments" Label="Upload" FilePath="@item.AttachedDocument" FilePathChanged="((e)=> SaveImagePath(e,item.DocumentID))" AcceptOnlyPdf="true"></MyFileUpload>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> OpenDialogTaxPurchase(item.DocumentType))">Add TaxPurchase</MudButton>
+                    @if(!item.IsFinanciallyPosted)
+                    {
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> OpenDialogTaxPurchase(item))">Add TaxPurchase</MudButton>
+                    }
                 </MudCardActions>
             </MudCard>
             </div>
@@ -84,7 +87,6 @@
         UserID = user.Identity.Name;
         BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
         Dtypes = Iservice.GetDocumentTypes().ToList();
-
         await signalRService.StartAsync();
         GetAll();
     }
@@ -148,35 +150,44 @@
             GetAll();
         }
     }
-    private async Task OpenDialogTaxPurchase(AssetDocumentTypeModel DocumentType)
+    private async Task OpenDialogTaxPurchase(AssetDocumentModel doc)
     {
 
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         TaxPurchaseModel taxPurchase = new TaxPurchaseModel();
         DialogParameters parms = new DialogParameters();
         parms.Add("model", taxPurchase);
-        parms.Add("DocumentType", DocumentType);
+        // parms.Add("DocumentType", DocumentType);
         parms.Add("PageToRedirectLink", "/TaxPurchase");
         var dialog = DialogService.Show<TaxPurchaseDialog>("ADD" , parms, maxWidth);
         var result = await dialog.Result;
-        var isCancelled = result.Cancelled;
+        var isCancelled = result.Canceled;
         if (!isCancelled)
         {
-            var ReturnData = (TaxPurchaseModel)result.Data;
-            Iservice.LinkDocumentTypeAndTaxPurchase(DocumentType.DocumentTypeID, ReturnData.PID);
-            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-            notificationMessage.RedirectedTo = 0;
-            notificationMessage.ExpiredBy = 7;
-            notificationMessage.DocumentID = ReturnData.PID;
-            notificationMessage.MessageGroupID = "PendingVerification";
-            notificationMessage.PageToRedirectLink = "/TaxPurchase";
-            notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = TaxPurchaseDocTypeID;
-            notificationMessage.MsgDate = DateTime.Now;
-            await signalRService.Send(notificationMessage);
+            try
+            {
+                var ReturnData = (TaxPurchaseModel)result.Data;
+                Iservice.LinkDocumentTypeAndTaxPurchase(doc.DocumentID, ReturnData.PID);
+                notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+                notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+                notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+                notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+                notificationMessage.RedirectedTo = 0;
+                notificationMessage.ExpiredBy = 7;
+                notificationMessage.DocumentID = ReturnData.PID;
+                notificationMessage.MessageGroupID = "PendingVerification";
+                notificationMessage.PageToRedirectLink = "/TaxPurchase";
+                notificationMessage.ClaimValue = "Verify 1";
+                notificationMessage.DocumentTypeID = TaxPurchaseDocTypeID;
+                notificationMessage.MsgDate = DateTime.Now;
+                await signalRService.Send(notificationMessage);
+                doc.IsFinanciallyPosted = true;
+            }
+            catch(Exception ex)
+            {
+                bool? exResult = await DialogService.ShowMessageBox(
+                "Error!", ex.Message);
+            }
         }
     }
 

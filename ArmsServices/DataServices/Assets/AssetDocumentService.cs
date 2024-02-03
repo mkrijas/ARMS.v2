@@ -115,11 +115,11 @@ namespace ArmsServices.DataServices
         }
 
 
-        public int LinkDocumentTypeAndTaxPurchase(int? DocumentTypeID, int? TaxPurchaseID)
+        public int LinkDocumentTypeAndTaxPurchase(int? DocumentID, int? TaxPurchaseID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+               new SqlParameter("@DocumentID", DocumentID),
                new SqlParameter("@TaxPurchaseID", TaxPurchaseID)
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.TaxPurchase.Link.Update]", parameters);
@@ -189,6 +189,7 @@ namespace ArmsServices.DataServices
                 ReceiptNo = dr.GetString("ReceiptNo"),
                 Refference = dr.GetString("Refference"),
                 Amount = dr.GetDecimal("Amount"),
+                IsFinanciallyPosted = dr.GetBoolean("IsFinanciallyPosted"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
