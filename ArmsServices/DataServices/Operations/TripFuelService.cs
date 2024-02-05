@@ -82,6 +82,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TripFuelID", model.TripFuelID),
                new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@AssetTransferID", model.AssetTransferID),
+               new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@BranchID", model.PurchaseModel.BranchID),
                new SqlParameter("@EntryDate", model.EntryDate),
@@ -129,6 +130,7 @@ namespace ArmsServices.DataServices
                 TruckID = reader.GetInt32("TruckID"),
                 TripID = reader.GetInt64("TripID"),
                 AssetTransferID = reader.GetInt32("AssetTransferID"),
+                RequestApprovalHistoryID = reader.GetInt32("RequestApprovalHistoryID"),
             };
         }
     }

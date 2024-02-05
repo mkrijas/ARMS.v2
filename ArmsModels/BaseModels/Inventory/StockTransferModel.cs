@@ -45,7 +45,7 @@ namespace Core.BaseModels.Inventory
                     case 3:
                         return "Dispatched";
                     case 0:
-                        return "Cancelled";
+                        return "Rejected";
                     default:
                         return "Pending";
                 }

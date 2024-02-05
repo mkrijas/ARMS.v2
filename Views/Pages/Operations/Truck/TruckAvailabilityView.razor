@@ -7,6 +7,9 @@
 @using System.Threading;
 @using Views.Data
 @using System.Threading;
+@using Core.BaseModels.Finance.Transactions;
+@using Pages.Operations.Expenses
+
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject ITruckAvailabilityService Iservice
@@ -22,57 +25,145 @@
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
-            <MudTabPanel Text="Truck Request Outgoing">
-                <MudTable Items="@collectionOutGoing" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="modelOutGoing">
-                    <ToolBarContent>
-                        <MudText Typo="Typo.h6">Initiate Request</MudText>
-                        <MudTooltip Text="New Truck Transfer">
-                            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEditOutGoing(new RequestApprovalHistoryModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-                        </MudTooltip>
-                        <MudSpacer></MudSpacer>
-                    </ToolBarContent>
-                    <HeaderContent>
-                        <MudTh><MudTableSortLabel SortBy="new Func<RequestApprovalHistoryModel, object>(x=> x.Truck.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<RequestApprovalHistoryModel, object>(x=> x.ApprovedStatus)" InitialDirection="SortDirection.Ascending">Approved Status</MudTableSortLabel></MudTh>
-                        <MudTh>Actions</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="Truck">@context.Truck.RegNo</MudTd>
-                        <MudTd DataLabel="Remarks">@context.ApprovedStatus</MudTd>
-                        <MudTd DataLabel="">
-                            <MudTooltip Text="Edit">
-                                <MudIconButton @onclick="@(()=> OpenDialogEditOutGoing(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTooltip>
-                            <MudTooltip Text="Remove">
-                                <MudIconButton @onclick="@(()=> OpenDialogDeleteOutGoing(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTooltip>
-                        </MudTd>
-                    </RowTemplate>
-                    <PagerContent>
-                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                    </PagerContent>
-                </MudTable>
+            <MudTabPanel Text="Truck Request">
+                <MudToolBar>
+                    <MudText Typo="Typo.h6">Initiate Request</MudText>
+                    <MudTooltip Text="New Truck Request">
+                        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEditOutGoing(new RequestApprovalHistoryModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    </MudTooltip>
+                    <MudSpacer></MudSpacer>
+                    <MudCheckBox Label="Completed Entries" CheckedChanged="((bool value)=>CompletedChanged(value))" Checked="@IsCompleted" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
+                </MudToolBar>
+                <MudGrid Class="mud-cols-xs-1 mud-cols-md-2 mud-cols-lg-2">
+                    @foreach (var item in collectionOutGoing)
+                    {
+                        <MudItem sm="12" xl="4" lg="6">
+                            <MudCard Class="mt-3" Style="height:auto" Elevation="4">
+                                <MudCardHeader>
+                                    <CardHeaderAvatar>
+                                        <MudAvatar Color="Color.Tertiary"><MudIcon Icon="@Icons.Material.Filled.Train" Title="Reg No" Color="Color.Primary" /></MudAvatar>
+                                    </CardHeaderAvatar>
+                                    <CardHeaderContent>
+                                        <MudGrid>
+                                            <MudItem xs="6">
+                                                <MudText Typo="Typo.h6" GutterBottom="true">
+                                                    <b>@item.Truck.RegNo</b>
+                                                </MudText>
+                                            </MudItem>
+                                        </MudGrid>
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        @if (item.RequestStatus != 2)
+                                        {
+                                            @if (item.RequestStatus != 0)
+                                            {
+                                                @if (item.RequestStatus == 99)
+                                                {
+                                                    <MudText Color="Color.Error">Rejected</MudText>
+                                                }
+                                                else
+                                                {
+                                                    <MudTooltip Text="Add Fuel">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.LocalGasStation" Size="Size.Large" Color="Color.Success" @onclick="@(()=> OpenFuelForm(new TripFuelModel(){RequestApprovalHistoryID = item.RequestApprovalHistoryID}))" />
+                                                    </MudTooltip>
+                                                    <MudTooltip Text="Add Expenses">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenExpenseForm(new OpTranModel(){RequestApprovalHistoryID = item.RequestApprovalHistoryID}))" />
+                                                    </MudTooltip>
+                                                    <MudTooltip Text="Add Mileage Shortage Receipt">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Toll" Color="Color.Success" Size="Size.Large" @onclick="@(()=> OpenMileageShortageReceipt(new MileageShortageReceiptModel(){RequestApprovalHistoryID = item.RequestApprovalHistoryID}))" />
+                                                    </MudTooltip>
+                                                    <MudTooltip Text="Accept/Reject">
+                                                        <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddTask" Size="Size.Medium" IconSize="Size.Small" />
+                                                    </MudTooltip>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <MudTooltip Text="Edit">
+                                                    <MudIconButton @onclick="@(()=> OpenDialogEditOutGoing(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                                                </MudTooltip>
+                                                <MudTooltip Text="Remove">
+                                                    <MudIconButton @onclick="@(()=> OpenDialogDeleteOutGoing(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.Remove" Size="Size.Small" IconSize="Size.Small" />
+                                                </MudTooltip>
+                                            }
+                                        }
+                                    </CardHeaderActions>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <MudList Style="width:700px">
+                                        <MudGrid>
+                                            <MudItem md="5">
+                                                <MudListItem Avatar="@Icons.Material.Filled.DateRange" IconColor="Color.Primary">
+                                                    <b>@item.RequestedUserInfo?.TimeStampField?.ToString("dd/MM/yyyy")</b>
+                                                </MudListItem>
+                                                <MudListItem Avatar="@Icons.Material.Filled.Approval" IconColor="Color.Primary">
+                                                    Status :<b>@item.StatusText</b>
+                                                </MudListItem>
+                                            </MudItem>
+                                            <MudItem md="5">
+                                                <MudListItem Avatar="@Icons.Material.Filled.Warehouse" IconColor="Color.Primary">
+                                                    Responded Branch : <b>@item.RespondedBranch.BranchName</b>
+                                                </MudListItem>
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudList>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
             </MudTabPanel>
             <MudTabPanel Text="Truck Approve/ Reject">
-                <MudTable Items="@collectionIncoming" Dense="true" Hover="true" Striped="true" Elevation="0" @bind-place="modelIncoming">
-                    <HeaderContent>
-                        <MudTh><MudTableSortLabel SortBy="new Func<RequestApprovalHistoryModel, object>(x=> x.Truck.RegNo)" InitialDirection="SortDirection.Ascending">Truck</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<RequestApprovalHistoryModel, object>(x=> x.ApprovedStatus)" InitialDirection="SortDirection.Ascending">Remarks</MudTableSortLabel></MudTh>
-                        <MudTh>Actions</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="Truck">@context.Truck.RegNo</MudTd>
-                        <MudTd DataLabel="Approved Status">@context.ApprovedStatus</MudTd>
-                        <MudTd DataLabel="">
-                            <MudTooltip Text="Edit">
-                                <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTooltip>
-                        </MudTd>
-                    </RowTemplate>
-                    <PagerContent>
-                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                    </PagerContent>
-                </MudTable>
+                <MudGrid Class="mud-cols-xs-1 mud-cols-md-2 mud-cols-lg-2">
+                    @foreach (var item in collectionIncoming)
+                    {
+                        <MudItem sm="12" xl="4" lg="6">
+                            <MudCard Class="mt-3" Style="height:auto" Elevation="4">
+                                <MudCardHeader>
+                                    <CardHeaderAvatar>
+                                        <MudAvatar Color="Color.Tertiary"><MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Title="Trip Number" Color="Color.Primary" /></MudAvatar>
+                                    </CardHeaderAvatar>
+                                    <CardHeaderContent>
+                                        <MudGrid>
+                                            <MudItem xs="6">
+                                                <MudText Typo="Typo.h6" GutterBottom="true">
+                                                    <b>@item.Truck.RegNo</b>
+                                                </MudText>
+                                            </MudItem>
+                                        </MudGrid>
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        <MudTooltip Text="Accept/Reject">
+                                            <MudIconButton @onclick="@(()=> OpenDialogEditIncoming(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.AddTask" Size="Size.Medium" IconSize="Size.Small" />
+                                        </MudTooltip>
+                                    </CardHeaderActions>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <div class="TabStyle">
+                                        <MudList Style="width:700px">
+                                            <MudGrid>
+                                                <MudItem md="5">
+                                                    <MudListItem Avatar="@Icons.Material.Filled.DateRange" IconColor="Color.Primary">
+                                                        <b>@item.RequestedUserInfo?.TimeStampField?.ToString("dd/MM/yyyy")</b>
+                                                    </MudListItem>
+                                                    <MudListItem Avatar="@Icons.Material.Filled.Approval" IconColor="Color.Primary">
+                                                        Status :<b>@item.StatusText</b>
+                                                    </MudListItem>
+                                                </MudItem>
+                                                <MudItem md="5">
+                                                    <MudListItem Avatar="@Icons.Material.Filled.Warehouse" IconColor="Color.Primary">
+                                                        Requested Branch : <b>@item.RequestedBranch.BranchName</b>
+                                                    </MudListItem>
+                                                </MudItem>
+                                            </MudGrid>
+
+                                        </MudList>
+                                    </div>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
             </MudTabPanel>
         </MudTabs>
     </MudItem>
@@ -84,6 +175,8 @@
     private List<BranchModel> BranchList = new();
     [Parameter]
     public int? id { get; set; } = null;
+    public bool IsCompleted { get; set; } = false;
+
     int DocTypeID = 3;
 
     #region SignaIR Notification
@@ -93,6 +186,7 @@
     private PushNotificationModel notificationMessage = new PushNotificationModel();
 
     #endregion
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true, CloseOnEscapeKey = true };
 
     protected override async Task OnInitializedAsync()
     {
@@ -116,10 +210,23 @@
         }
     }
 
-    private async Task GetAll()
+    private async Task GetAll(bool val)
     {
-        await GetAllOutGoing();
+        if(val)
+        {
+            await GetAllOutGoingCompleted();
+        }
+        else
+        {
+            await GetAllOutGoing();
+        }
         await GetAllIncoming();
+    }
+
+    async Task CompletedChanged(bool value)
+    {
+        IsCompleted = value;
+        await GetAll(IsCompleted);
     }
 
     #region Outgoing
@@ -172,7 +279,7 @@
             notificationMessage.MsgDate = DateTime.Now;
             await signalRService.Send(notificationMessage);
 
-            await GetAll();
+            await GetAll(IsCompleted);
         }
     }
 
@@ -200,7 +307,7 @@
                     snackbar.Add(ex.Message, Severity.Error);
                 }
             }
-            await GetAll();
+            await GetAll(IsCompleted);
         }
     }
 
@@ -216,7 +323,25 @@
         }
         modelOutGoing.RespondedBranch.BranchID = int.Parse(brancIDString);
         modelOutGoing.RequestedBranchID = int.Parse(brancIDString);
-        foreach (var item in Iservice.SelectOutgoingRequests(null, modelOutGoing.RequestedBranchID))
+        foreach (var item in Iservice.SelectOutgoingRequests(null, modelOutGoing.RequestedBranchID).Where(x => x.RequestStatus != 2))
+        {
+            collectionOutGoing.Add(item);
+        }
+    }
+
+    private async Task GetAllOutGoingCompleted()
+    {
+        collectionOutGoing = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        if (modelOutGoing.RespondedBranch == null)
+        {
+            modelOutGoing.RespondedBranch = new();
+        }
+        modelOutGoing.RespondedBranch.BranchID = int.Parse(brancIDString);
+        modelOutGoing.RequestedBranchID = int.Parse(brancIDString);
+        foreach (var item in Iservice.SelectOutgoingRequests(null, modelOutGoing.RequestedBranchID).Where(x => x.RequestStatus == 2))
         {
             collectionOutGoing.Add(item);
         }
@@ -275,12 +400,12 @@
             }
             string messageTitle = string.Empty;
             string messageBody = string.Empty;
-            if (ReturnData.IsApproved == true)
+            if (ReturnData.RequestStatus == 1)
             {
                 messageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Approved.";
                 messageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Approved" + ((ReturnData.RequestedBranch != null && ReturnData.RequestedBranch.BranchName != null) ? (" from branch " + ReturnData.RequestedBranch.BranchName + ((ReturnData.RespondedUserInfo != null && ReturnData.RespondedUserInfo.UserID != null) ? (" by user " + ReturnData.RespondedUserInfo.UserID + ".") : ".")) : ".") + " on " + (DateTime.Now).ToString() + ".";
             }
-            else if (ReturnData.IsApproved == false)
+            else if (ReturnData.RequestStatus == 99)
             {
                 messageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Rejected.";
                 messageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Rejected" + ((ReturnData.RequestedBranch != null && ReturnData.RequestedBranch.BranchName != null) ? (" from branch " + ReturnData.RequestedBranch.BranchName + ((ReturnData.RespondedUserInfo != null && ReturnData.RespondedUserInfo.UserID != null) ? (" by user " + ReturnData.RespondedUserInfo.UserID + ".") : ".")) : ".") + " on " + (DateTime.Now).ToString() + ".";
@@ -299,7 +424,7 @@
             notificationMessage.DocumentTypeID = DocTypeID;
             await signalRService.Send(notificationMessage);
         }
-        await GetAll();
+        await GetAll(IsCompleted);
     }
 
     private async Task GetAllIncoming()
@@ -320,5 +445,36 @@
             collectionIncoming.Add(item);
         }
     }
+
+    private async Task OpenFuelForm(TripFuelModel fuelModel)
+    {
+        DialogParameters parms = new DialogParameters();
+        parms.Add("Tmodel", new TripFuelModel() { RequestApprovalHistoryID = fuelModel.RequestApprovalHistoryID });
+        var dialog = DialogService.Show<TripsFuelDialog>("ADD FUEL", parms, maxWidth);
+        var result = await dialog.Result;
+    }
+
+    private async Task OpenExpenseForm(OpTranModel tranModel)
+    {
+        DialogParameters parms = new DialogParameters();
+        tranModel.PaymentMode = "Cash"; tranModel.Area = "Operation";
+        parms.Add("model", tranModel.Clone());
+        var dialog = DialogService.Show<Finance.Transactions.OpTranDialog>("ADD", parms, maxWidth);
+        var result = await dialog.Result;
+    }
+
+    private async Task OpenMileageShortageReceipt(MileageShortageReceiptModel morModel)
+    {
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", new MileageShortageReceiptModel()
+            {
+                RequestApprovalHistoryID = morModel.RequestApprovalHistoryID
+
+            });
+        var dialog = DialogService.Show<Finance.Transactions.MileageShortageReceiptDialog>("ADD", parms, maxWidth);
+        var result = await dialog.Result;
+    }
+
     #endregion
 } 
