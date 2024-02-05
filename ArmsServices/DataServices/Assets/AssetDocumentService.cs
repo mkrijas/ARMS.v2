@@ -32,6 +32,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Refference", model.Refference),
                new SqlParameter("@Amount", model.Amount),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@ExtendedEndDate", model.ExtendedEndDate)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Update]", parameters))
             {
@@ -49,6 +50,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
                new SqlParameter("@StartDate", model.StartDate),
                new SqlParameter("@AssetID", model.Asset.AssetID),
+               new SqlParameter("@ExtendedEndDate", model.ExtendedEndDate)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
             {
@@ -190,6 +192,7 @@ namespace ArmsServices.DataServices
                 Refference = dr.GetString("Refference"),
                 Amount = dr.GetDecimal("Amount"),
                 IsFinanciallyPosted = dr.GetBoolean("IsFinanciallyPosted"),
+                ExtendedEndDate = dr.GetDateTime("ExtendedEndDate"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
