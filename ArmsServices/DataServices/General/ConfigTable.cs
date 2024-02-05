@@ -90,6 +90,19 @@ namespace ArmsServices.DataServices.General
             }
             return null;
         }
+        public ConfigModel GetByInventoryAdBlueGroupID()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@KeyString", "InventoryAdBlueGroupID"),
+               new SqlParameter("@Operation", "ByID")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
         public ConfigModel GetByInventoryTyreGroupID()
         {
             List<SqlParameter> parameters = new List<SqlParameter>

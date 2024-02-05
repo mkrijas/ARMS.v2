@@ -80,6 +80,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripFuelID", model.TripFuelID),
+               new SqlParameter("@ItemType", model.ItemType),
                new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@AssetTransferID", model.AssetTransferID),
                new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
@@ -110,6 +111,7 @@ namespace ArmsServices.DataServices
             {
                 TripFuelID = reader.GetInt64("TripFuelID"),
                 EntryDate = reader.GetDateTime("EntryDate"),
+                ItemType = reader.GetString("ItemType"),
                 FuelItemID = reader.GetInt32("FuelItemID"),
                 FuelItemDescription = reader.GetString("FuelItemDescription"),
                 PurchaseModel = new()
