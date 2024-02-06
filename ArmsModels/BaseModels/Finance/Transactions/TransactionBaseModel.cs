@@ -24,7 +24,6 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         public virtual decimal? TotalTaxableAmount { get; set; }
         public string FileName { get; set; }
-
         [RequiredIf("FileName", "null")]
         public virtual decimal? TotalAmount { get; set; }        
         [Required]
