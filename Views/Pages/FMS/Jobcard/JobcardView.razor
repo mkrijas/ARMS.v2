@@ -24,6 +24,7 @@
 @inject AuthenticationStateProvider auth
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
+@inject IInsuranceClaimService IClaimservice
 
 <style>
     .InActiveText {
@@ -58,6 +59,7 @@
         else
         {
             <MudButton Style="text-transform:capitalize;" OnClick="ViewClaimStatus" StartIcon="@Icons.Material.Filled.AppRegistration" IconColor="Color.Primary">View Claim Status</MudButton>
+            @* <Views.Pages.FMS.InsuranceClaim.ManageClaimDialog OnClaimAdded="AddClaims" SelectedModels="@InsModel" Visible="@dialogVisible" Page="JobCard" /> *@
         }
         <MudButton Style="text-transform:capitalize;" StartIcon="@Icons.Material.Filled.AppRegistration" OnClick="OpenExpenses" IconColor="Color.Primary">Post Expenses</MudButton>
     </MudPaper>
@@ -342,6 +344,10 @@
     // public bool HasPermissionJobcardServiceAdd { get; set; } = false;
     public int JobcardDocTypeID = 82;
 
+    InsuranceClaimModel InsModel = new();
+    private InsuranceClaimModel SelectedItem;
+    private bool dialogVisible = false;
+
     protected async override Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -379,10 +385,10 @@
             InvRequestList = IInvRequestservice.SelectRequestReleaseByTruckID(SelectedTruck?.TruckID ?? 0).ToList();
 
             if (ExpenseList != null)
-        {
-            ExpenseList.Clear();
-        }
-        ExpenseList = IInvRequestservice.SelectExpenseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
+            {
+                ExpenseList.Clear();
+            }
+            ExpenseList = IInvRequestservice.SelectExpenseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
 
             if (jwList.Count(x => x.ExitOn == null) > 0)
             {
@@ -397,6 +403,14 @@
                     JobStatus = 1,
                     UserInfo = new() { UserID = authProvider.User.Identity.Name }
                 };
+            if (Breakdown.IsClaimInitiated == true)
+            {
+
+                InsModel = IClaimservice.SelectByBreakdownID(Breakdown.BreakdownID);
+                IEnumerable<InsuranceClaimEventStatusModel> statusModel;
+                statusModel = IClaimservice.GetEventStatusList(InsModel.InsuranceClaimID);
+                InsModel.Events = statusModel.ToList();
+            }
         }
     }
 
@@ -762,8 +776,57 @@
         }
     }
 
-    private async Task ViewClaimStatus()
+    private void ViewClaimStatus()
     {
+        dialogVisible = true;
+        Openclaims();
+    }
 
+    private async Task Openclaims()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        if (HasPermissionJobcardServiceAdd)
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("SelectedModels", InsModel);
+            parameters.Add("Visible", dialogVisible);
+            parameters.Add("Page", "JobCard");
+            parameters.Add("OnClaimAdded", null);
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+            var dialog = DialogService.Show<ManageClaimDialog>("Manage Claims", parameters, maxWidth);
+            // var result = await dialog.Result;
+            // if (!result.Canceled)
+            // {
+            //     var purchaseModel = (TaxPurchaseModel)result.Data;
+            //     int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, purchaseModel.PID);
+            //     if (queryStatus == 0)
+            //     {
+            //         snackbar.Add("Something went wrong !  Please check Taxpurchase collect number then contact Admin", Severity.Error);
+            //     }
+            //     else
+            //     {
+            //         snackbar.Add("Created Successfully", Severity.Success);
+            //     }
+            // }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Add Jobcard.");
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    async Task AddClaims()
+    {
+        SelectedItem = InsModel;
+        //model.Assets.Add(MudListItem);
     }
 }
