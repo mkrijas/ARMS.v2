@@ -16,11 +16,25 @@ namespace DAL.DataServices.Finance.Transactions
             Iservice = iservice;
         }
 
-        public IEnumerable<FastTagModel> Select(List<FastTagList> model)
+        public IEnumerable<FastTagModel> SelectForExcel(List<FastTagList> model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "ForExcel"),
                new SqlParameter("@ExcelList", model.ToDataTable()),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Excel.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<FastTagModel> SelectByBranch(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "ForBranch"),
+                new SqlParameter("@BranchID", BranchID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Excel.Select]", parameters))
             {
@@ -73,13 +87,6 @@ namespace DAL.DataServices.Finance.Transactions
                 TruckID = dr.GetInt32("TruckID"),
                 TripPrefix = dr.GetString("TripPrefix"),
                 TripNumber = dr.GetInt64("TripNumber"),
-                //Trip = new TripModel()
-                //{
-                //    TripID = dr.GetInt64("TripID"),
-                //    TruckID = dr.GetInt32("TruckID"),
-                //    TripPrefix = dr.GetString("TripPrefix"),
-                //    TripNumber = dr.GetInt64("TripNumber"),
-                //},
             };
         }
     }
