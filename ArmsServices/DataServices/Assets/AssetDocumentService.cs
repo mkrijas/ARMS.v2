@@ -32,6 +32,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Refference", model.Refference),
                new SqlParameter("@Amount", model.Amount),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@ExtendedEndDate", model.ExtendedEndDate)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Update]", parameters))
             {
@@ -49,6 +50,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
                new SqlParameter("@StartDate", model.StartDate),
                new SqlParameter("@AssetID", model.Asset.AssetID),
+               new SqlParameter("@ExtendedEndDate", model.ExtendedEndDate)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
             {
@@ -115,11 +117,11 @@ namespace ArmsServices.DataServices
         }
 
 
-        public int LinkDocumentTypeAndTaxPurchase(int? DocumentTypeID, int? TaxPurchaseID)
+        public int LinkDocumentTypeAndTaxPurchase(int? DocumentID, int? TaxPurchaseID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+               new SqlParameter("@DocumentID", DocumentID),
                new SqlParameter("@TaxPurchaseID", TaxPurchaseID)
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.TaxPurchase.Link.Update]", parameters);
@@ -189,6 +191,8 @@ namespace ArmsServices.DataServices
                 ReceiptNo = dr.GetString("ReceiptNo"),
                 Refference = dr.GetString("Refference"),
                 Amount = dr.GetDecimal("Amount"),
+                IsFinanciallyPosted = dr.GetBoolean("IsFinanciallyPosted"),
+                ExtendedEndDate = dr.GetDateTime("ExtendedEndDate"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

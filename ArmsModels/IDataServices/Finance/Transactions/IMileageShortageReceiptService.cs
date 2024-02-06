@@ -14,5 +14,6 @@ namespace ArmsServices.DataServices
         IEnumerable<MileageShortageReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         int Approve(int? MileageShortageReceiptID, string UserID, string Remarks);  //Approve
         int Reverse(int? SundryReceiptID, string UserID, string Remarks);  //Reverse
+        IEnumerable<MileageShortageReceiptModel> SelectByTripID(long? TripID);
     }
 }

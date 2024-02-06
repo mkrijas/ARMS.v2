@@ -80,8 +80,10 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripFuelID", model.TripFuelID),
+               new SqlParameter("@ItemType", model.ItemType),
                new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@AssetTransferID", model.AssetTransferID),
+               new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@BranchID", model.PurchaseModel.BranchID),
                new SqlParameter("@EntryDate", model.EntryDate),
@@ -109,6 +111,7 @@ namespace ArmsServices.DataServices
             {
                 TripFuelID = reader.GetInt64("TripFuelID"),
                 EntryDate = reader.GetDateTime("EntryDate"),
+                ItemType = reader.GetString("ItemType"),
                 FuelItemID = reader.GetInt32("FuelItemID"),
                 FuelItemDescription = reader.GetString("FuelItemDescription"),
                 PurchaseModel = new()
@@ -129,6 +132,7 @@ namespace ArmsServices.DataServices
                 TruckID = reader.GetInt32("TruckID"),
                 TripID = reader.GetInt64("TripID"),
                 AssetTransferID = reader.GetInt32("AssetTransferID"),
+                RequestApprovalHistoryID = reader.GetInt32("RequestApprovalHistoryID"),
             };
         }
     }

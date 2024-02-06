@@ -21,28 +21,31 @@ namespace Core.BaseModels.Operations
         public DateTime? RequestedDate { get; set; }
         public UserInfoModel RequestedUserInfo { get; set; } = new();
         public int? RespondedBranchID { get; set; }
+        public int? OpeningKM { get; set; }
+        public int? ClosingKM { get; set; }
         public BranchModel RespondedBranch { get; set; }
         public DateTime? RespondedDate { get; set; }
         public UserInfoModel RespondedUserInfo { get; set; } = new();
-        public bool? IsApproved { get; set; }
-        private string _ApprovedStatus = string.Empty;
-        public string ApprovedStatus
+        public byte? RequestStatus { get; set; }
+        public decimal? Fuel { get; set; }
+        public decimal? Expenses { get; set; }
+        public string StatusText
         {
             get
             {
-                if (IsApproved == null)
+                switch (RequestStatus)
                 {
-                    _ApprovedStatus = "Pending";
+                    case 0:
+                        return "Pending";
+                    case 1:
+                        return "Approved";
+                    case 2:
+                        return "Completed";
+                    case 99:
+                        return "Rejected";
+                    default:
+                        return null;
                 }
-                else if(IsApproved == true)
-                {
-                    _ApprovedStatus = "Approved";
-                }
-                else
-                {
-                    _ApprovedStatus = "Rejected";
-                }
-                return _ApprovedStatus;
             }
         }
 

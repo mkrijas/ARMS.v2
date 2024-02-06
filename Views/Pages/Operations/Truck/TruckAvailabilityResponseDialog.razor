@@ -11,7 +11,18 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Accep Or Reject Truck.
+            @if(model.RequestStatus == 1)
+            {
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Accept Or Reject Truck.
+                </MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Approve Or Reject Truck.
+                </MudText>
+            }
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -19,14 +30,29 @@
             <EditForm id="formDriver" Model="@model" OnValidSubmit="Approve">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
-                <MudItem xs="12" md="12">
-                    <MudTextField @bind-Value="model.Truck.RegNo" Label="Truck" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Truck.RegNo)" Disabled></MudTextField>
-                </MudItem>
+                <MudGrid>
+                    <MudItem xs="6" md="6">
+                        <MudTextField @bind-Value="model.Truck.RegNo" Label="Truck" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Truck.RegNo)" ReadOnly></MudTextField>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudTextField @bind-Value="model.RequestedBranch.BranchName" Label="Requested Branch" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RequestedBranch.BranchName)" ReadOnly></MudTextField>
+                    </MudItem>
+                     <MudItem xs="12" md="12">
+                         <MudNumericField HideSpinButtons="true" @bind-Value="Odometer" Label="OdometerReading" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                     </MudItem>
+                </MudGrid>
             </EditForm>
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Approve" Class="px-12">Approve</MudButton>
+        @if(model.RequestStatus == 1)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Complete" Class="px-12">Complete</MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Approve" Class="px-12">Approve</MudButton>
+        }
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reject" Class="px-12">Reject</MudButton>
     </DialogActions>
 </MudDialog>
@@ -38,6 +64,7 @@
     public RequestApprovalHistoryModel model { get; set; } = new();
     private int branchID { get; set; } = 0;
     private int? BranchID { get; set; } = 0;
+    private int? Odometer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,12 +99,41 @@
         if (model != null)
         {
             model.RespondedUserInfo = new();
-            model.IsApproved = true;
+            model.RequestStatus = 1;
+            model.OpeningKM = Odometer;
             model.RespondedUserInfo.UserID = user.Identity.Name;
             try
             {
                 Iservice.UpdateStatus(model);
                 Snackbar.Add("Accepted succesfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        MudDialog.Close(model);
+    }
+
+    public async Task Complete()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        if (model.Truck == null || model.Truck.TruckID == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Please, Select truck.", yesText: "OK");
+            return;
+        }
+        if (model != null)
+        {
+            model.RequestStatus = 2;
+            model.ClosingKM = Odometer;
+            try
+            {
+                Iservice.UpdateStatus(model);
+                Snackbar.Add("Completed succesfully", Severity.Success);
             }
             catch (Exception ex)
             {
@@ -101,7 +157,7 @@
         if (model != null)
         {
             model.RespondedUserInfo = new();
-            model.IsApproved = false;
+            model.RequestStatus = 99;
             model.RespondedUserInfo.UserID = user.Identity.Name;
             try
             {

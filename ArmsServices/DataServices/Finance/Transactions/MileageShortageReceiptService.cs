@@ -46,6 +46,19 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        public IEnumerable<MileageShortageReceiptModel> SelectByTripID(long? TripID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByTripID"),
+               new SqlParameter("@TripID", TripID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.MileageShortageReceipt.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public IEnumerable<MileageShortageReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -133,6 +146,7 @@ namespace DAL.DataServices.Finance.Transactions
                new SqlParameter("@TripID", model.TripID),
                new SqlParameter("@DriverID", model.DriverID),
                new SqlParameter("@AssetTransferID", model.AssetTransferID),
+               new SqlParameter("@RequestApprovalHistoryID", model.RequestApprovalHistoryID),
                new SqlParameter("@RunningKM", model.RunningKM),
                new SqlParameter("@ConsumedFuel", model.ConsumedFuel),
                new SqlParameter("@FilePath", model.FileName),
@@ -159,6 +173,7 @@ namespace DAL.DataServices.Finance.Transactions
                 TripID = dr.GetInt32("TripID"),
                 TripNo = dr.GetString("TripNo"),
                 AssetTransferID = dr.GetInt32("AssetTransferID"),
+                RequestApprovalHistoryID = dr.GetInt32("RequestApprovalHistoryID"),
                 DriverID = dr.GetInt32("DriverID"),
                 RunningKM = dr.GetDecimal("RunningKM"),
                 ConsumedFuel = dr.GetDecimal("ConsumedFuel"),

@@ -55,6 +55,7 @@ namespace ArmsModels.BaseModels
         decimal? amount;
 
         public long? TripFuelID { get; set; }
+        public string ItemType { get; set; }
         [Required]
         public DateTime? EntryDate
         {
@@ -63,6 +64,7 @@ namespace ArmsModels.BaseModels
         }
         public long? TripID { get; set; }
         public int? AssetTransferID { get; set; }
+        public int? RequestApprovalHistoryID { get; set; }
         public int? TruckID { get; set; }
         [Required]
         public int? FuelItemID { get; set; }

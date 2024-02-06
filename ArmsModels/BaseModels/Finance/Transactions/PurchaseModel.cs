@@ -41,12 +41,14 @@ namespace ArmsModels.BaseModels
         public List<TaxPurchaseExpenseModel> Expenses { get; set; } = new();
         [ValidateComplexType]
         public List<TaxPurchaseItemModel> Items { get; set; } = new();
+        [ValidateComplexType]
+        public List<AssetPOModel> Assets { get; set; } = new();
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            if (Expenses.Count == 0 && Items.Count == 0)
+            if (Expenses.Count == 0 && Items.Count == 0 && Assets.Count == 0)
                 yield return new ValidationResult("No Items or Expenses selected!");
         }
-        public List<AssetPOModel> Assets { get; set; }
+        
     }
 
     public class TaxPurchaseExpenseModel
