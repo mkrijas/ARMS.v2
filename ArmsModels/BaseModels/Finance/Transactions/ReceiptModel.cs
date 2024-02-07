@@ -44,7 +44,7 @@ namespace ArmsModels.BaseModels
         public int? BrID { get; set; }
         public int? MID { get; set; }
         public bool? IsMemo { get; set; } = false;
-        //public decimal? ReceiptAmount { get; set; }
+        public int? CoaID { get; set; }
         public decimal? ReceiptAmount
         {
             get { return _ReceiptAmount; }
