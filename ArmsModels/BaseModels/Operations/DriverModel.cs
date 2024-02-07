@@ -53,6 +53,8 @@ namespace ArmsModels.BaseModels
             {
                 switch (UserInfo.RecordStatus)
                 {
+                    case 0:
+                        return "Resigned";
                     case 3:
                         return "Available";
                     case 4:
@@ -64,7 +66,6 @@ namespace ArmsModels.BaseModels
                 }
             }
         }
-
     }
 
     public class DriverFaultModel
@@ -167,5 +168,12 @@ namespace ArmsModels.BaseModels
         public DriverModel Driver { get; set; }
         [Required]
         public string Remarks { get; set; }
+    }
+
+    public class DriverWorkPeriodModel
+    {
+        public DriverModel Driver { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
     }
 }
