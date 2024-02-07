@@ -128,7 +128,7 @@ namespace DAL.DataServices.Finance.Transactions
         }
         public MileageShortageReceiptModel Update(MileageShortageReceiptModel model)
         {
-            ConfigModel MileageShortageAccount = configTable.GetDefaultMileageShortageCredit();
+            ConfigModel MileageShortageAccount = configTable.GetDefaultMileageShortageCoaID();
             ConfigModel CashAccount = configTable.GetByDefaultCashCoaID();
             List<SqlParameter> parameters = new List<SqlParameter>
             {
