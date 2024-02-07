@@ -195,7 +195,7 @@ namespace ArmsServices.DataServices.General
             return null;
         }
 
-        public ConfigModel GetDefaultMileageShortageCredit()
+        public ConfigModel GetDefaultMileageShortageCoaID()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
