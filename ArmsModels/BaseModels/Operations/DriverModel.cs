@@ -26,7 +26,7 @@ namespace ArmsModels.BaseModels
         [Required]
         [DataType(DataType.Date)]
         [Display(Name = "Date of Birth")]
-        [ValidateAge(18, ErrorMessage = "Age must be 18 years or older.")]
+        [ValidateAge(21, ErrorMessage = "Age must be 21 years or older.")]
         public DateTime? DateOfBirth { get; set; }
         [Required]
         public string AdhaarNo { get; set; }
