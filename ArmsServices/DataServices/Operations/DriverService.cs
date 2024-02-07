@@ -188,13 +188,12 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DriverName", model?.DriverName),
+               new SqlParameter("@Operation", "GetTracked"),
                new SqlParameter("@AdhaarNo", model?.AdhaarNo),
                new SqlParameter("@LicenceNo", licence?.LicenceNo),
-               new SqlParameter("@BadgeNo", licence?.BadgeNo),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Find]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
             {
                 model = GetModel(dr);
             }
