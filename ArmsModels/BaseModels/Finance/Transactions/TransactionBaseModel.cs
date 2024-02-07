@@ -57,7 +57,7 @@ namespace ArmsModels.BaseModels
         public string Dimension { get; set; }
     }
 
-    public class GstModel : ICloneable
+    public class GstModel : IValidatableObject, ICloneable
     {
         public object Clone()
         {
@@ -65,11 +65,30 @@ namespace ArmsModels.BaseModels
             return JsonConvert.DeserializeObject<GstModel>(Json);
         }
         public virtual decimal? GstRate { get; set; }
+        [ValidateComplexType]
         public decimal? CGST { get; set; } = 0;
+        [ValidateComplexType]
         public decimal? SGST { get; set; } = 0;
+        [ValidateComplexType]
         public decimal? IGST { get; set; } = 0;
         public decimal? TDS { get; set; } = 0;
         public virtual decimal? TotalGst { get { return (CGST ?? 0) + (SGST ?? 0) + (IGST ?? 0); } }
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (IGST > 0 && (CGST > 0 || SGST > 0))
+            {
+                yield return new ValidationResult("You can enter either IGST or CGST AND SGST Values");
+            }
+
+            else if ((CGST > 0 || SGST > 0) && IGST > 0)
+            {
+                yield return new ValidationResult("You can enter either IGST or CGST AND SGST Values");
+            }
+            if(CGST.Value != SGST.Value)
+            {
+                yield return new ValidationResult("CGST AND SGST Values must be equal");
+            }
+        }
     }
     public class ChequeModel
     {
