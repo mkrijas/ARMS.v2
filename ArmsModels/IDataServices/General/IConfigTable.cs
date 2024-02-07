@@ -12,6 +12,7 @@ namespace ArmsServices.DataServices.General
         ConfigModel GetByFinanceBankGroupID();        
         ConfigModel GetByFinanceCashGroupID();
         ConfigModel GetByInventoryFuelGroupID();
+        ConfigModel GetByInventoryAdBlueGroupID();
         ConfigModel GetByInventoryTyreGroupID();
         ConfigModel GetAssetSubclassForTrucks();
         ConfigModel GetTripAdvanceUsageCode();

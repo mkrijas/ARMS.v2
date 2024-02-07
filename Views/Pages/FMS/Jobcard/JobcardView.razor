@@ -24,6 +24,7 @@
 @inject AuthenticationStateProvider auth
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
+@inject IInsuranceClaimService IClaimservice
 
 <style>
     .InActiveText {
@@ -58,6 +59,7 @@
         else
         {
             <MudButton Style="text-transform:capitalize;" OnClick="ViewClaimStatus" StartIcon="@Icons.Material.Filled.AppRegistration" IconColor="Color.Primary">View Claim Status</MudButton>
+            @* <Views.Pages.FMS.InsuranceClaim.ManageClaimDialog OnClaimAdded="AddClaims" SelectedModels="@InsModel" Visible="@dialogVisible" Page="JobCard" /> *@
         }
         <MudButton Style="text-transform:capitalize;" StartIcon="@Icons.Material.Filled.AppRegistration" OnClick="OpenExpenses" IconColor="Color.Primary">Post Expenses</MudButton>
     </MudPaper>
@@ -331,27 +333,31 @@
 
     public bool HasPermissionInventoryRequestDelete { get; set; } = false;
     public int InventoryRequestDocTypeID = 67;
-    public bool HasPermissionMechanicJobServiceAdd { get; set; } = false;
-    public bool HasPermissionMechanicJobServiceRemove { get; set; } = false;
-    public int MechanicJobDocTypeID = 79;
-    public bool HasPermissionJobInProgressServiceEdit { get; set; } = false;
-    public int JobInProgressDocTypeID = 80;
-    public bool HasPermissionJobcardWorkshopServiceEdit { get; set; } = false;
-    public int JobcardWorkshopDocTypeID = 81;
+    // public bool HasPermissionMechanicJobServiceAdd { get; set; } = false;
+    // public bool HasPermissionMechanicJobServiceRemove { get; set; } = false;
+    // public int MechanicJobDocTypeID = 79;
+    // public bool HasPermissionJobInProgressServiceEdit { get; set; } = false;
+    // public int JobInProgressDocTypeID = 80;
+    // public bool HasPermissionJobcardWorkshopServiceEdit { get; set; } = false;
+    // public int JobcardWorkshopDocTypeID = 81;
     public bool HasPermissionJobcardServiceEdit { get; set; } = false;
-    public bool HasPermissionJobcardServiceAdd { get; set; } = false;
+    // public bool HasPermissionJobcardServiceAdd { get; set; } = false;
     public int JobcardDocTypeID = 82;
+
+    InsuranceClaimModel InsModel = new();
+    private InsuranceClaimModel SelectedItem;
+    private bool dialogVisible = false;
 
     protected async override Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionMechanicJobServiceAdd = await Irole.HasClaim(MechanicJobDocTypeID.ToString(), "Add", ctc.Token);
-        HasPermissionMechanicJobServiceRemove = await Irole.HasClaim(MechanicJobDocTypeID.ToString(), "Remove", ctc.Token);
+        // HasPermissionMechanicJobServiceAdd = await Irole.HasClaim(MechanicJobDocTypeID.ToString(), "Add", ctc.Token);
+        // HasPermissionMechanicJobServiceRemove = await Irole.HasClaim(MechanicJobDocTypeID.ToString(), "Remove", ctc.Token);
         HasPermissionInventoryRequestDelete = await Irole.HasClaim(InventoryRequestDocTypeID.ToString(), "Delete", ctc.Token);
-        HasPermissionJobInProgressServiceEdit = await Irole.HasClaim(JobInProgressDocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionJobcardWorkshopServiceEdit = await Irole.HasClaim(JobcardWorkshopDocTypeID.ToString(), "Edit", ctc.Token);
+        // HasPermissionJobInProgressServiceEdit = await Irole.HasClaim(JobInProgressDocTypeID.ToString(), "Edit", ctc.Token);
+        // HasPermissionJobcardWorkshopServiceEdit = await Irole.HasClaim(JobcardWorkshopDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionJobcardServiceEdit = await Irole.HasClaim(JobcardDocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionJobcardServiceAdd = await Irole.HasClaim(JobcardDocTypeID.ToString(), "Edit", ctc.Token);
+        // HasPermissionJobcardServiceAdd = await Irole.HasClaim(JobcardDocTypeID.ToString(), "Edit", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -379,10 +385,10 @@
             InvRequestList = IInvRequestservice.SelectRequestReleaseByTruckID(SelectedTruck?.TruckID ?? 0).ToList();
 
             if (ExpenseList != null)
-        {
-            ExpenseList.Clear();
-        }
-        ExpenseList = IInvRequestservice.SelectExpenseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
+            {
+                ExpenseList.Clear();
+            }
+            ExpenseList = IInvRequestservice.SelectExpenseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
 
             if (jwList.Count(x => x.ExitOn == null) > 0)
             {
@@ -397,6 +403,14 @@
                     JobStatus = 1,
                     UserInfo = new() { UserID = authProvider.User.Identity.Name }
                 };
+            if (Breakdown.IsClaimInitiated == true)
+            {
+
+                InsModel = IClaimservice.SelectByBreakdownID(Breakdown.BreakdownID);
+                IEnumerable<InsuranceClaimEventStatusModel> statusModel;
+                statusModel = IClaimservice.GetEventStatusList(InsModel.InsuranceClaimID);
+                InsModel.Events = statusModel.ToList();
+            }
         }
     }
 
@@ -411,7 +425,7 @@
 
     private async Task ExitWorkshop(JobcardWorkshopModel jwModel)
     {
-        if (HasPermissionJobcardWorkshopServiceEdit)
+        if (HasPermissionJobcardServiceEdit)
         {
             if (JipList.Any(x => x.WorkshopID == jwModel.WorkshopID && x.FinishedOn == null))
             {
@@ -429,13 +443,13 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to Edit JobcardWorkshop.");
+                "You dont have any permission to Edit Jobcard.");
         }
     }
 
     private async Task EnterWorkshop()
     {
-        if (HasPermissionJobcardWorkshopServiceEdit)
+        if (HasPermissionJobcardServiceEdit)
         {
             if (SelectedWorkshop == null || SelectedWorkshop.WorkshopID == null)
             {
@@ -456,13 +470,13 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to Edit JobcardWorkshop.");
+                "You dont have any permission to Edit Jobcard.");
         }
     }
 
     private async Task UpdateJob(JobInProgressModel Ujip, int status)
     {
-        if (HasPermissionJobInProgressServiceEdit)
+        if (HasPermissionJobcardServiceEdit)
         {
             var authProvider = await auth.GetAuthenticationStateAsync();
             Ujip.UserInfo.UserID = authProvider.User.Identity.Name;
@@ -479,7 +493,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to Edit JobInProgress.");
+                "You dont have any permission to Edit Jobcard.");
         }
     }
 
@@ -555,7 +569,7 @@
 
     async Task RemoveMechanic(MechanicJobModel mj)
     {
-        if (HasPermissionMechanicJobServiceRemove)
+        if (HasPermissionJobcardServiceEdit)
         {
             var authProvider = await auth.GetAuthenticationStateAsync();
             string UserID = authProvider.User.Identity.Name;
@@ -566,7 +580,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to Remove MechanicJob.");
+                "You dont have any permission to Edit Jobcard.");
         }
     }
 
@@ -581,7 +595,7 @@
 
     async Task AddMechanic()
     {
-        if (HasPermissionMechanicJobServiceAdd)
+        if (HasPermissionJobcardServiceEdit)
         {
             var authProvider = await auth.GetAuthenticationStateAsync();
             foreach (var item in SelectedMechanics)
@@ -605,7 +619,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to Add MechanicJob.");
+                "You dont have any permission to Edit Jobcard.");
         }
     }
 
@@ -641,7 +655,7 @@
             return;
         }
         _busy = true;
-        if (HasPermissionJobcardServiceAdd)
+        if (HasPermissionJobcardServiceEdit)
         {
             var parameters = new DialogParameters();
             parameters.Add("model", new TaxPurchaseModel() { NonStoreInventory = true, });
@@ -666,7 +680,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to Add Jobcard.");
+                "You dont have any permission to Edit Jobcard.");
         }
         await Task.Delay(200);
         _busy = false;
@@ -762,8 +776,57 @@
         }
     }
 
-    private async Task ViewClaimStatus()
+    private void ViewClaimStatus()
     {
+        dialogVisible = true;
+        Openclaims();
+    }
 
+    private async Task Openclaims()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        if (HasPermissionJobcardServiceEdit)
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("SelectedModels", InsModel);
+            parameters.Add("Visible", dialogVisible);
+            parameters.Add("Page", "JobCard");
+            parameters.Add("OnClaimAdded", null);
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+            var dialog = DialogService.Show<ManageClaimDialog>("Manage Claims", parameters, maxWidth);
+            // var result = await dialog.Result;
+            // if (!result.Canceled)
+            // {
+            //     var purchaseModel = (TaxPurchaseModel)result.Data;
+            //     int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, purchaseModel.PID);
+            //     if (queryStatus == 0)
+            //     {
+            //         snackbar.Add("Something went wrong !  Please check Taxpurchase collect number then contact Admin", Severity.Error);
+            //     }
+            //     else
+            //     {
+            //         snackbar.Add("Created Successfully", Severity.Success);
+            //     }
+            // }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Jobcard.");
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    async Task AddClaims()
+    {
+        SelectedItem = InsModel;
+        //model.Assets.Add(MudListItem);
     }
 }

@@ -33,10 +33,10 @@
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceNo)"></MudTextField>
+\                   </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField HideSpinButtons Label="Billed Amount" @bind-Value="TotalBillAmount" Variant="Variant.Outlined" Margin="Margin.Dense" Required></MudNumericField>
                     </MudItem>
-                    @* <MudItem xs="12" md="6">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.AdditionalTDS" Label="Additional TDS" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdditionalTDS)"></MudTextField>
-                    </MudItem> *@
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
@@ -79,19 +79,18 @@
     public string DocNumber { get; set; }
     public DateTime? DocDate { get; set; }
     public string DocType { get; set; }
+    private decimal? TotalBillAmount;
     private EditContext editContext;
     DialogForm dialogForm;
     ValidationMessageStore messageStore;
-    
+
 
     public bool HasPermissionTaxPurchaseServiceEdit { get; set; } = false;
     public bool HasPermissionTaxPurchaseServiceApprove { get; set; } = false;
     int TaxPurchaseDocTypeID = 9;
     private bool _busy;
 
-
     public DocumentDetailsModel DocumentDetails { get; set; } = new();
-
 
     protected override async Task OnInitializedAsync()
     {
@@ -115,6 +114,7 @@
             model.Expenses = Iservice.GetExpenses(model.PID).ToList();
             model.Items = Iservice.GetItems(model.PID).ToList();
             model.Assets = Iservice.GetAssets(model.PID).ToList();
+            TotalBillAmount = model.TotalAmount;
         }
         else
         {
@@ -204,10 +204,15 @@
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
             return;
         }
-        _busy = true;
 
         if (HasPermissionTaxPurchaseServiceEdit)
         {
+            if(TotalBillAmount != model.TotalAmount)
+            {
+                snackbar.Add("Invalid Amount", Severity.Warning);
+                return;
+            }
+            _busy = true;
             try
             {
                 TaxPurchaseModel check = Iservice.CheckInvoiceDuplication(model);

@@ -46,6 +46,19 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        public IEnumerable<MileageShortageReceiptModel> SelectByTripID(long? TripID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByTripID"),
+               new SqlParameter("@TripID", TripID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.MileageShortageReceipt.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public IEnumerable<MileageShortageReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

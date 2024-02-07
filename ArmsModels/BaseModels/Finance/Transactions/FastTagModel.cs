@@ -15,9 +15,9 @@ namespace Core.BaseModels.Finance.Transactions
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<FastTagTollModel>(Json);
         }
-        public string DocumentNumber { get; set; } = "New";
-        [Required]
-        public DateTime? DocumentDate { get; set; }
+        public int? FastTagID { get; set; }
+        //[Required]
+        //public DateTime? DocumentDate { get; set; }
         [Required]
         public string PaymentMode { get; set; }
         [Required]
@@ -28,31 +28,31 @@ namespace Core.BaseModels.Finance.Transactions
         public string PaymentTool { get; set; }
         [RequiredIf("PaymentMode", "Bank")]
         public decimal? BankCharges { get; set; }
-        public virtual string AccountName { get; set; }
-        [Required]
-        public string Narration { get; set; }
-        [ValidateComplexType]
-        [MustContain(ErrorMessage = "No items added for payment!")]
+        public decimal? TotalAmount {  get; set; }
         public List<FastTagModel> FastTagModelList { get; set; } = new();
     }
 
     public class FastTagModel
     {
-        public DateTime? TransactionDateTime { get; set; }
-        public DateTime? ProcessedDateTime { get; set; }
+        public virtual DateTime? TransactionDateTime { get; set; }
+        //public DateTime? ProcessedDateTime { get; set; }
         public int? BranchID { get; set; }
-        public string BranchName { get; set; }
-        public string NumberPlate { get; set; }
-        public TripModel Trip { get; set; }
-        public int TagAccountNumber { get; set; }
-        public string Group { get; set; }
-        public string Activity { get; set; }
+        public int? TruckID { get; set; }
+        public long? TripID { get; set; }
+        public long? TripNumber { get; set; }
         public string PlazaCode { get; set; }
         public string Description { get; set; }
         public string TransactionID { get; set; }
         public bool Reimbursable {  get; set; }
-        public decimal CreditAmount { get; set; }
         public decimal DebitAmount { get; set; }
+        public virtual string BranchName { get; set; }
+        public virtual string NumberPlate { get; set; }
+        public virtual string TripPrefix { get; set; }
+        public virtual string TripNumberDisplay { get { return TripPrefix + TripNumber.ToString().PadLeft(4, '0'); } }
+        //public int TagAccountNumber { get; set; }
+        //public string Group { get; set; }
+        //public string Activity { get; set; }
+        public virtual decimal CreditAmount { get; set; }
     }
 
     public class FastTagList

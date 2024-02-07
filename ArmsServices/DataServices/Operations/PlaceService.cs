@@ -96,6 +96,17 @@ namespace ArmsServices.DataServices
             };
         }
 
+        public IEnumerable<PlaceModel> checkPinCode(string PinCode)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@PinCode", PinCode)
+            };
 
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Places.Places.Pincode]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
     }
 }
