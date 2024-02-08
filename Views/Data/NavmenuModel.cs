@@ -6,7 +6,7 @@ namespace Views.Data
     public class NavMenuModel
     {
         public int ID { get; set; }
-        public bool IsGroup { get; set; }
+        public bool IsGroup { get; set; } = false;
         public string Title { get; set; }
         public string ParentTitle { get; set; }
         public string href { get; set; }
