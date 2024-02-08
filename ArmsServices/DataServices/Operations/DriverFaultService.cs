@@ -63,6 +63,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@FaultID", model.FaultID),
                new SqlParameter("@FaultDate", model.FaultDate),
                new SqlParameter("@Severity", model.Severity),
+               new SqlParameter("@Amount", model.Amount),
                new SqlParameter("@Detail", model.Detail),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -81,6 +82,7 @@ namespace ArmsServices.DataServices
                 FaultID = dr.GetInt32("FaultID"),
                 FaultDate = dr.GetDateTime("FaultDate"),
                 Severity = dr.GetByte("Severity"),
+                Amount = dr.GetDecimal("Amount"),
                 Detail = dr.GetString("Detail"),
                 BranchID = dr.GetInt32("BranchID"),
                 Driver = new DriverModel()
