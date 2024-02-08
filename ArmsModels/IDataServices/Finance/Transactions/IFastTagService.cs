@@ -7,7 +7,9 @@ namespace Core.IDataServices.Finance.Transactions
     public interface IFastTagService
     {
         IEnumerable<FastTagModel> SelectForExcel(List<FastTagList> model);
-        IEnumerable<FastTagModel> SelectByBranch(int? BranchID);
-        FastTagTollModel Update(FastTagTollModel model);
+        IEnumerable<FastTagTollModel> AllDocumentNumbers();
+        IEnumerable<FastTagModel> SelectByBranch(int? FastTagUploadID, int BranchID);
+        FastTagTollModel UpdateNew(FastTagTollModel model);
+        FastTagTollModel UpdateProcess(FastTagTollModel model);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ArmsModels.BaseModels;
+using ArmsModels.SharedModels;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using System;
@@ -15,7 +16,7 @@ namespace Core.BaseModels.Finance.Transactions
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<FastTagTollModel>(Json);
         }
-        public int? FastTagID { get; set; }
+        public int? FastTagUploadID { get; set; }
         //[Required]
         //public DateTime? DocumentDate { get; set; }
         [Required]
@@ -34,7 +35,8 @@ namespace Core.BaseModels.Finance.Transactions
 
     public class FastTagModel
     {
-        public virtual DateTime? TransactionDateTime { get; set; }
+        public int? FastTagTollID { get; set; }
+        public DateTime? TransactionDateTime { get; set; }
         //public DateTime? ProcessedDateTime { get; set; }
         public int? BranchID { get; set; }
         public int? TruckID { get; set; }
@@ -53,6 +55,7 @@ namespace Core.BaseModels.Finance.Transactions
         //public string Group { get; set; }
         //public string Activity { get; set; }
         public virtual decimal CreditAmount { get; set; }
+        public virtual byte? RecordStatus { get; set; }
     }
 
     public class FastTagList

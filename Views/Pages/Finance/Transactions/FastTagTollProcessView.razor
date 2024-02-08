@@ -23,20 +23,31 @@
                 <MudItem xs="12">
                     <EditForm id="FastTagProcessForm" OnValidSubmit="OnValidSubmit" Model="MainModel">
                         <MudGrid>
-                            <MudItem xs="6">
+                            <MudItem xs="4">
+                                <MudSelect Label="Select DocumentNumber" Value="@selectedDocumentNumber" T="FastTagTollModel" ValueChanged="(Value) => DocNoChange(Value)" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
+                                    @foreach (var item in DocumentNumbers)
+                                    {
+                                        <MudSelectItem Value="@item">@item.DocumentNumber</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="4">
                                 <MudTextField @bind-Value="@MainModel.DocumentNumber" ReadOnly="true" Label="DocumentNumber" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                             </MudItem>
-                            <MudItem xs="6">
+                            <MudItem xs="4">
                                 <MudDatePicker @bind-Date=@MainModel.DocumentDate Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" For="@(()=> MainModel.DocumentDate)" Required />
                              </MudItem>
                              <MudItem xs="12">
-                                 <MudTextField @bind-Value="MainModel.Narration" Lines="3" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(()=> MainModel.Narration)"></MudTextField>
+                                 <MudTextField @bind-Value="@MainModel.Narration" Lines="3" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(()=> MainModel.Narration)"></MudTextField>
                              </MudItem>
                              <MudItem xs="10">
                                  <MudGrid>
                                      <MudItem xs="12">
-                                         <b>Total Debit Amount &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                                        : @collection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
+                                         <b>
+                                             Total Debit Amount &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                             : @collection.Sum(e => e.DebitAmount).ToString("c")
+                                         </b>
+                                     </MudItem>
                                      <MudItem xs="12"><b>Total Selected Debit Amount &nbsp;: @selectedcollection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
                                  </MudGrid>
                              </MudItem>
@@ -93,9 +104,38 @@
     private FastTagTollModel MainModel = new FastTagTollModel();
     private HashSet<FastTagModel> selectedcollection = new HashSet<FastTagModel>();
     private List<FastTagModel> collection = new List<FastTagModel>();
+    private List<FastTagTollModel> DocumentNumbers = new List<FastTagTollModel>();
     private string searchplatenumber = "";
     public int branchID;
     private string UserID = null;
+
+    private FastTagTollModel selectedDocumentNumber;
+
+    private async Task DocNoChange(FastTagTollModel model)
+    {
+        selectedDocumentNumber = model;
+        MainModel.BranchID = branchID;
+        MainModel.FastTagUploadID = model.FastTagUploadID;
+        MainModel.PaymentMode = "Bank";
+        MainModel.PaymentTool = model.PaymentTool;
+        MainModel.BankCharges = model.BankCharges;
+        MainModel.PaymentArdCode = model.PaymentArdCode;
+        MainModel.PaymentCoaID = model.PaymentCoaID;
+        MainModel.NatureOfTransaction = model.NatureOfTransaction;
+        GetCollection(model);
+    }
+
+    public async Task GetCollection(FastTagTollModel model)
+    {
+        collection = IFTService.SelectByBranch(model.FastTagUploadID, branchID).ToList();
+
+        if (collection.Count == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Oops !",
+                (MarkupString)$"No FastTag Transactions allotted for this Branch under DocNo - <b>{model.DocumentNumber}</b> !");
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,7 +146,8 @@
         // MainModel.NatureOfTransaction = "FastTag";
         UserID = user.Identity.Name;
 
-        collection = IFTService.SelectByBranch(branchID).ToList();
+        DocumentNumbers = IFTService.AllDocumentNumbers().ToList();
+        //collection = IFTService.SelectByBranch(branchID).ToList();
     }
 
     private bool search(FastTagModel model)
@@ -120,6 +161,32 @@
 
     public async Task OnValidSubmit()
     {
+        try
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            UserID = user.Identity.Name;
 
+            MainModel.UserInfo.UserID = UserID;
+            MainModel.TotalAmount = selectedcollection.Sum(e => e.DebitAmount);
+            MainModel.FastTagModelList = selectedcollection.ToList();
+            if (MainModel.FastTagModelList.Count != 0)
+            {
+                IFTService.UpdateProcess(MainModel);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MainModel = new();
+                collection = new();
+            }
+            else
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Oops !",
+                    "Please select Transactions before Submitting !");
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
     }
  }
