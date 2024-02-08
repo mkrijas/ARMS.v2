@@ -81,6 +81,8 @@ namespace ArmsModels.BaseModels
         public DateTime? FaultDate { get; set; } = DateTime.Now;
         [Required]
         public byte? Severity { get; set; }
+        [Required] 
+        public decimal? Amount { get; set; }
         [Required]
         public string Detail { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
