@@ -23,5 +23,6 @@ namespace ArmsModels.BaseModels
         public virtual int? SettlementID { get; set; }
         public virtual int? AutoSettleID { get; set; } 
         public bool isMemo { get; set; }
+        public int? CoaID { get; set; }
     }   
 }
