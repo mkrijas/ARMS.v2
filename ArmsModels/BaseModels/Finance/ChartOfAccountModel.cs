@@ -24,7 +24,7 @@ namespace ArmsModels.BaseModels
         public int? ParentID { get; set; }
         public string AccountCode { get; set; }
         [Required]
-        [StringLength(50, ErrorMessage = "LedgerName is required.")]
+        [StringLength(200, ErrorMessage = "LedgerName is required.")]
         public string AccountName { get; set; }
         public string AccountDescription { get; set; }
         public string AccountType { get; set; }

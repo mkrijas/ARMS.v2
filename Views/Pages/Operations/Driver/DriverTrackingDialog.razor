@@ -1,0 +1,99 @@
+﻿@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IPartyService Iparty
+@inject IDriverService Iservice
+@inject IBranchService Ibranchservice
+@inject IAddressService Iaddress
+@inject IBankAccountService IbankAccount
+@inject IContactService Icontact
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.TrackChanges" Class="mr-3 mb-n1" />
+            Track Driver
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12" md="6" lg="6">
+                <MudItem xs="11">
+                    <MudNumericField HideSpinButtons MaxLength="12" @bind-Value="AdhaarNo" Label="ADHAAR No" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                 </MudItem>
+                 <MudItem xs="11">
+                     <MudTextField @bind-Value="LicenceNo" Label="DL No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => licencemodel.LicenceNo)" Mask="@(new PatternMask("aa0000000000000"))" HelperText="Licence Format : KL1120230001111" Class="mt-3"></MudTextField>
+                 </MudItem>
+                <MudItem xs="11" md="11" lg="11">
+                     <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Success" OnClick="ReloadCollection" Class="ml-auto">Track</MudButton>
+                </MudItem>
+            </MudItem>
+            <MudItem xs="12" md="6" lg="6">
+                <MudItem xs="11">
+                    <MudList Style="width:700px">
+                        @if (model.DriverID != null)
+                        {
+                            <MudListItem>
+                                <b>Driver Name : @model.DriverName</b>
+                            </MudListItem>
+                            <MudListItem>
+                                <b>Branch : @Branch</b>
+                            </MudListItem>
+                            <MudListItem>
+                                <b>Work Period : @WorkPeriod</b>
+                            </MudListItem>
+                            <MudListItem>
+                                <b>Status : @model.Status</b>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudItem>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    public DriverModel model { get; set; } = new();
+    public DriverLicenceModel licencemodel { get; set; } = new();
+    private string AdhaarNo;
+    private string LicenceNo;
+    private string Branch;
+    string WorkPeriod;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public void ReloadCollection()
+    {
+        model.AdhaarNo = AdhaarNo;
+        licencemodel.LicenceNo = LicenceNo;
+        if (model.AdhaarNo != null || licencemodel.LicenceNo != null)
+        {
+            var result = Iservice.FindDriver(model, licencemodel);
+            if (result.DriverID != null)
+            {
+                model = result;
+                Branch = Ibranchservice.SelectByID(model.HomeBranchID).BranchName;
+                WorkPeriod = Iservice.GetWorkPeriod(model.DriverID);
+            }           
+            else
+            {
+                snackbar.Add("No data found", Severity.Error);
+                return;
+            }
+        }
+        else
+        {
+            snackbar.Add("Adhar No or Licence No required", Severity.Error);
+            return;
+        }
+    }   
+}

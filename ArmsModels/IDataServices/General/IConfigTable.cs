@@ -9,15 +9,14 @@ namespace ArmsServices.DataServices.General
     {
         ConfigModel GetByID(string KeyString);
         ConfigModel GetByDefaultCashCoaID();
-        ConfigModel GetByFinanceBankGroupID();
-        ConfigModel GetByAdministrativeExpenceGroupID();
+        ConfigModel GetByFinanceBankGroupID();        
         ConfigModel GetByFinanceCashGroupID();
         ConfigModel GetByInventoryFuelGroupID();
         ConfigModel GetByInventoryAdBlueGroupID();
         ConfigModel GetByInventoryTyreGroupID();
         ConfigModel GetAssetSubclassForTrucks();
         ConfigModel GetTripAdvanceUsageCode();
-        ConfigModel GetDefaultMileageShortageCredit();
+        ConfigModel GetDefaultMileageShortageCoaID();
         ConfigModel GetCloseTripEventTypeID();
         ConfigModel GetFinancePayableGroupID();
         ConfigModel GetFinanceReceivableGroupID();
