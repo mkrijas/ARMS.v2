@@ -1,4 +1,9 @@
-﻿namespace Core.BaseModels.General
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using ArmsModels.SharedModels;
+using Newtonsoft.Json;
+
+namespace ArmsModels.BaseModels
 {
     public class DocumentDetailsModel
     {

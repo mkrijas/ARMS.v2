@@ -20,19 +20,53 @@ namespace ArmsServices.DataServices
         }
        
 
-        public int? AutoSettle(OutstandingBillsModel model, List<BillsPaidModel> Bills)
+        public int? AutoSettle(AutoSettleModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "AutoSettle"),
-               new SqlParameter("@Bills", Bills.ToDataTable()),
+               new SqlParameter("@AutoSettleID", model.AutoSettleID),
+               new SqlParameter("@DocumentDate", model.DocumentDate),
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
+               new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@PartyID", model.PartyInfo.PartyID),
-                 new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@Bills", model.Bills.ToDataTable()),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Update]", parameters);
         }
 
+        public int DeleteAutoSettle(int? ID, string userID)
+        {
+            throw new NotImplementedException();
+        }
 
+        public IEnumerable<BillsPaidModel> GetAutoSettledBills(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetBills"),
+               new SqlParameter("@AutoSettleID", ID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Select]", parameters))
+            {
+                yield return new BillsPaidModel()
+                {
+                    MID = dr.GetInt32("MID"),
+                    BpID = dr.GetInt32("BpID"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    BranchName = dr.GetString("BranchName"),
+                    InvoiceDate = dr.GetDateTime("ReferenceDocDate"),
+                    InvoiceNumber = dr.GetString("ReferenceDocNo"),
+                    PayAmount = dr.GetDecimal("PayAmount"),
+                    CoaID = dr.GetInt32("CoaID"),
+                    IsMemo = dr.GetBoolean("IsMemo"),
+                    OutstandingAmount = dr.GetDecimal("OutstandingAmount"),
+                };
+            }
+        }
 
         public IEnumerable<OutstandingBillsModel> Select(int BranchID)
         {
@@ -44,6 +78,35 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.Select]", parameters))
             {
                 yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<AutoSettleModel> SelectAutoSettledEntries(int? BranchID, int numberOfRecords)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByBranch"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@numberOfRecords", numberOfRecords),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Select]", parameters))
+            {
+                yield return new AutoSettleModel()
+                {
+                    PartyInfo = new PartyModel()
+                    {
+                        PartyID = dr.GetInt32("PartyID"),
+                        TradeName = dr.GetString("tradeName"),
+                    },
+                    BranchID = dr.GetInt32("BranchID"),
+                    DocumentDate = dr.GetDateTime("DocumentDate"),
+                    DocumentNumber = dr.GetString("DocumentNumber"),
+                    NatureOfTransaction = dr.GetString("NatureOfTransaction"),
+                    MID = dr.GetInt32("MID"),
+                    Narration = dr.GetString("Narration"),
+                    TotalAmount = dr.GetDecimal("TotalAmount"),                    
+                };
             }
         }
 
