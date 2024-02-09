@@ -1,0 +1,192 @@
+﻿@page "/FastTagTollProcess"
+@using Core.BaseModels.Finance.Transactions;
+@using Core.IDataServices.Finance.Transactions;
+@using System.IO;
+@using NPOI.HSSF.UserModel;
+@using NPOI.SS.UserModel;
+@using OfficeOpenXml;
+@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IFastTagService IFTService
+
+<MudPaper Style="padding-bottom: 15px; min-width:min-content;">
+    <MudToolBar>
+        <MudText Typo="Typo.h6" Style="font-weight:500;">FastTag Toll Transaction</MudText>
+    </MudToolBar>
+    <MudDivider />
+    <MudGrid Class="item-shadow" Style="margin:36px; margin-bottom: 22px; width: fit-content;">
+        <MudItem xs="12" Style="padding: 38px">
+            <MudGrid Class="fullborder">
+                <MudItem xs="12">
+                    <EditForm id="FastTagProcessForm" OnValidSubmit="OnValidSubmit" Model="MainModel">
+                        <MudGrid>
+                            <MudItem xs="4">
+                                <MudSelect Label="Select DocumentNumber" Value="@selectedDocumentNumber" T="FastTagTollModel" ValueChanged="(Value) => DocNoChange(Value)" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
+                                    @foreach (var item in DocumentNumbers)
+                                    {
+                                        <MudSelectItem Value="@item">@item.DocumentNumber</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="4">
+                                <MudTextField @bind-Value="@MainModel.DocumentNumber" ReadOnly="true" Label="DocumentNumber" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="4">
+                                <MudDatePicker @bind-Date=@MainModel.DocumentDate Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" For="@(()=> MainModel.DocumentDate)" Required />
+                             </MudItem>
+                             <MudItem xs="12">
+                                 <MudTextField @bind-Value="@MainModel.Narration" Lines="3" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(()=> MainModel.Narration)"></MudTextField>
+                             </MudItem>
+                             <MudItem xs="10">
+                                 <MudGrid>
+                                     <MudItem xs="12">
+                                         <b>
+                                             Total Debit Amount &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                             : @collection.Sum(e => e.DebitAmount).ToString("c")
+                                         </b>
+                                     </MudItem>
+                                     <MudItem xs="12"><b>Total Selected Debit Amount &nbsp;: @selectedcollection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
+                                 </MudGrid>
+                             </MudItem>
+                             <MudItem xs="2">
+                                 <MudButton Style="margin-top: 12%; width: 70%; margin-left: 30%; height: 60%;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+                             </MudItem>
+                         </MudGrid>
+                         <ObjectGraphDataAnnotationsValidator />
+                         <ValidationSummary />
+                     </EditForm>
+                 </MudItem>
+             </MudGrid>
+         </MudItem>
+         <MudItem xs="12" Style="padding: 0px 26px 26px 26px;">
+             <MudTable Items="@collection" Context="item" MultiSelection="true" @bind-SelectedItems="selectedcollection" Filter="new Func<FastTagModel, bool>(search)" RowsPerPage="100" Class="fullborder" Style="padding: 0px" Elevation="0" Dense="true" Hover="true" Striped="true">
+                 <ToolBarContent>
+                     <MudText Typo="Typo.h6">Transactions List</MudText>
+                     <MudSpacer></MudSpacer>
+                     <MudTextField @bind-Value="searchplatenumber" Placeholder="Search Licence Plate No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0">
+                     </MudTextField>
+                 </ToolBarContent>
+                 <HeaderContent>
+                     <MudTh>Transaction DateTime</MudTh>
+                     <MudTh>Licence Plate No</MudTh>
+                     <MudTh>Branch Name</MudTh>
+                     <MudTh>Trip No</MudTh>
+                     <MudTh>Plaza Code</MudTh>
+                     <MudTh>Transaction Description</MudTh>
+                     <MudTh>Unique Transaction ID</MudTh>
+                     <MudTh>Reimbursable</MudTh>
+                     <MudTh>Amount(DR)</MudTh>
+                 </HeaderContent>
+                 <RowTemplate>
+                     <MudTd DataLabel="Transaction DateTime">@item.TransactionDateTime</MudTd>
+                     <MudTd DataLabel="NumberPlate">@item.NumberPlate</MudTd>
+                     <MudTd DataLabel="Branch Name">@item.BranchName</MudTd>
+                     <MudTd DataLabel="Trip No">@item.TripNumberDisplay</MudTd>
+                     <MudTd DataLabel="PlazaCode">@item.PlazaCode</MudTd>
+                     <MudTd DataLabel="TransactionDescription">@item.Description</MudTd>
+                     <MudTd DataLabel="Unique Transaction ID">@item.TransactionID</MudTd>
+                     <MudTh><MudCheckBox T="bool" @bind-Checked="@item.Reimbursable"></MudCheckBox></MudTh>
+                     <MudTd DataLabel="Debit Amount">@item.DebitAmount</MudTd>
+                 </RowTemplate>
+                 <PagerContent>
+                     <MudTablePager PageSizeOptions="new int[] {5 ,10 ,50 , 100 , 150, 200}" />
+                 </PagerContent>
+             </MudTable>
+         </MudItem>
+     </MudGrid>
+ </MudPaper>
+
+ @code {
+
+    private FastTagTollModel MainModel = new FastTagTollModel();
+    private HashSet<FastTagModel> selectedcollection = new HashSet<FastTagModel>();
+    private List<FastTagModel> collection = new List<FastTagModel>();
+    private List<FastTagTollModel> DocumentNumbers = new List<FastTagTollModel>();
+    private string searchplatenumber = "";
+    public int branchID;
+    private string UserID = null;
+
+    private FastTagTollModel selectedDocumentNumber;
+
+    private async Task DocNoChange(FastTagTollModel model)
+    {
+        selectedDocumentNumber = model;
+        MainModel.BranchID = branchID;
+        MainModel.FastTagUploadID = model.FastTagUploadID;
+        MainModel.PaymentMode = "Bank";
+        MainModel.PaymentTool = model.PaymentTool;
+        MainModel.BankCharges = model.BankCharges;
+        MainModel.PaymentArdCode = model.PaymentArdCode;
+        MainModel.PaymentCoaID = model.PaymentCoaID;
+        MainModel.NatureOfTransaction = model.NatureOfTransaction;
+        GetCollection(model);
+    }
+
+    public async Task GetCollection(FastTagTollModel model)
+    {
+        collection = IFTService.SelectByBranch(model.FastTagUploadID, branchID).ToList();
+
+        if (collection.Count == 0)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Oops !",
+                (MarkupString)$"No FastTag Transactions allotted for this Branch under DocNo - <b>{model.DocumentNumber}</b> !");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        // MainModel.BranchID = branchID;
+        // MainModel.NatureOfTransaction = "FastTag";
+        UserID = user.Identity.Name;
+
+        DocumentNumbers = IFTService.AllDocumentNumbers().ToList();
+        //collection = IFTService.SelectByBranch(branchID).ToList();
+    }
+
+    private bool search(FastTagModel model)
+    {
+        if (string.IsNullOrEmpty(searchplatenumber))
+        {
+            return true;
+        }
+        return model.NumberPlate?.Contains(searchplatenumber, StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    public async Task OnValidSubmit()
+    {
+        try
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            UserID = user.Identity.Name;
+
+            MainModel.UserInfo.UserID = UserID;
+            MainModel.TotalAmount = selectedcollection.Sum(e => e.DebitAmount);
+            MainModel.FastTagModelList = selectedcollection.ToList();
+            if (MainModel.FastTagModelList.Count != 0)
+            {
+                IFTService.UpdateProcess(MainModel);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MainModel = new();
+                collection = new();
+            }
+            else
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Oops !",
+                    "Please select Transactions before Submitting !");
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+ }

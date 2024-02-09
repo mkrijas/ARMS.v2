@@ -44,6 +44,18 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        public IEnumerable<FastTagTollModel> GetUploadView(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "UploadView"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
+            {
+                yield return GetMainModel(dr);
+            }
+        }
+
         public IEnumerable<FastTagModel> SelectByBranch(int? FastTagUploadID ,int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

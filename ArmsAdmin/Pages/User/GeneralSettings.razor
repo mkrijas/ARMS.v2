@@ -1,6 +1,7 @@
 ﻿@page "/GeneralSettings"
 @using ArmsModels.BaseModels.General;
 @using System.Threading;
+@using ArmsModels.SharedModels
 @layout AdminMainLayout
 @attribute [Authorize]
 @inject IGeneralSettingsService IGeneralSettings
@@ -8,7 +9,6 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
-
 <MudGrid style="padding-top:16px;">
     <MudItem xs="12" md="12">
         <MudTable Items="@collection">
@@ -23,24 +23,32 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Options" Style="text-align:center;">@context.SettingName</MudTd>
-                <MudTd DataLabel="Value">
-                    @if (context.ValueOptionsList?.Count == 2 && context.ValueOptionsList.Contains("True") && context.ValueOptionsList.Contains("False"))
+                    <MudTd DataLabel="Value">
+                        @* @if (context.ValueOptionsList?.Count == 2 && context.ValueOptionsList.Contains("True") && context.ValueOptionsList.Contains("False")) *@
+                        @if(context.ValueSelectType == "CHECK")
                     {
                         <MudCheckBox T="bool" Checked="@(bool.Parse(context.Value))" CheckedChanged="(bool e) => Submit(e.ToString(), context)"></MudCheckBox>
                     }
-                    @if (context.ValueOptionsList == null && context.ValueOptionsList?.Count != 2)
+                    @* @if (context.ValueOptionsList == null && context.ValueOptionsList?.Count != 2) *@
+                    @if (context.ValueSelectType == "TEXT")
                     {
                         <MudTextField Style="width:80%" Value="@context.Value" ValueChanged="(string a) => Submit(a, context)" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                     }
-                    @if (context.ValueOptionsList != null && context.ValueOptionsList?.Count > 2)
+                    @* @if (context.ValueOptionsList != null && context.ValueOptionsList?.Count > 2) *@
+                    @if (context.ValueSelectType == "QUERY")
                     {
                         <MudItem Style="width:80%">
-                            <MudSelect Value="@context.Value" ValueChanged="(string newValue) => Submit(newValue, context)" Variant=" Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter">
-                                @foreach (var item in context.ValueOptionsList)
-                                {
-                                    <MudSelectItem Value="@item">@item</MudSelectItem>
-                                }
-                            </MudSelect>
+                            @if (!context.HideTextField)
+                        {
+                            <MudTextField Style="width:80%" Value="@context.Value" ValueChanged="(string a) => Submit(a, context)" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                        }
+                            @if (context.HideTextField)
+                            {
+                                <MudAutocomplete T="KeyValuePair<string, string>" Value="@context.selectedValue" ValueChanged="@(value => Submit1(value, context.SettingName))" ToStringFunc="@((item) => item.Value)" SearchFunc="@Search" ResetValueOnEmptyText="@resetValueOnEmptyText"
+                                CoerceText="@coerceText" CoerceValue="@coerceValue" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary">
+                            </MudAutocomplete>
+                            }
+                            <MudFab style="font-size:5px" @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                         </MudItem>
                     }
                 </MudTd>
@@ -49,16 +57,79 @@
         </MudTable>
     </MudItem>
 </MudGrid>
-
 @code {
-
     private List<GeneralSettingsModel> collection = new();
+    private bool resetValueOnEmptyText;
+    private bool coerceText;
+    private bool coerceValue;
+    //private KeyValuePair<string, string> selectedValue;
+    private Dictionary<string, string> options = new Dictionary<string, string>();
+    private bool hideTextField = false;
 
     protected override async Task OnInitializedAsync()
     {
         collection = IGeneralSettings.Select().ToList();
+        //selectedValue = new KeyValuePair<string, string>(context.Value, context.Value);
     }
 
+    private Task<IEnumerable<KeyValuePair<string, string>>> Search(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            // If the text is blank, return all options.
+            return Task.FromResult(options.AsEnumerable());
+        }
+        else
+        {
+            return Task.FromResult(options.Where(x => x.Value.Contains(value, StringComparison.InvariantCultureIgnoreCase)).ToList().AsEnumerable());
+        }
+
+    }
+
+    private Task<IEnumerable<string>> Search(string text, GeneralSettingsModel context)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            // If the text is blank, return all options.
+            return Task.FromResult(context.ValueOptionsList.AsEnumerable());
+        }
+        else
+        {
+            var result = context.ValueOptionsList.Where(item => item.Contains(text, StringComparison.InvariantCultureIgnoreCase));
+            return Task.FromResult(result);
+        }
+    }
+
+    private void Edit(GeneralSettingsModel context)
+    {
+        options = IGeneralSettings.SelectValues(context).ToDictionary(vo => vo.id, vo => vo.val);
+        context.HideTextField = true;
+    }
+    private async Task Submit1(KeyValuePair<string, string> selectedValue, string SettingName)
+    {
+        try
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            string? key = selectedValue.Key;
+            string? value = selectedValue.Value;
+            GeneralSettingsModel model = new GeneralSettingsModel();
+            UserInfoModel userInfo = new UserInfoModel();
+            model.UserInfo = userInfo;
+            model.UserInfo.UserID = user.Identity.Name;
+            model.SettingName = SettingName;
+            model.SettingId = key.ToString();
+            model.Value = value;
+            IGeneralSettings.Update(model);
+            selectedValue = new KeyValuePair<string, string>("", "");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
     private async Task Submit(string? newValue, GeneralSettingsModel model)
     {
         try
@@ -76,4 +147,5 @@
             snackbar.Add(ex.Message, Severity.Error);
         }
     }
+
 }
