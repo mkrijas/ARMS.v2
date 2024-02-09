@@ -139,6 +139,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@HsnID", model.HsnID),
                new SqlParameter("@ItemID", model.ItemID),
+               new SqlParameter("@GstMechanism", model.GstMechanism),
                new SqlParameter("@PeriodFrom", model.PeriodFrom),
                new SqlParameter("@PeriodTo", model.PeriodTo),
                new SqlParameter("@RID", model.RID),
@@ -159,6 +160,7 @@ namespace ArmsServices.DataServices
             {
                 HsnID = dr.GetInt32("HsnID"),
                 ItemID = dr.GetInt32("ItemID"),
+                GstMechanism = dr.GetString("GstMechanism"),
                 ItemDescription = dr.GetString("ItemDescription"),
                 HsnCode = dr.GetString("HsnCode"),
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),

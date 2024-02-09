@@ -84,8 +84,17 @@
                     </MudTabPanel>
                     @foreach (var item in model.Contacts.Select((value, i) => new { i, value }))
                     {
-                        <MudTabPanel Text="@("Contact"+(item.i+1))">
+                        <MudTabPanel ID="item.i" Text="@("Contact"+(item.i+1))">
                             <ContactView Index="null" Model="item.value"></ContactView>
+                            <br />
+                            <div class="d-flex justify-content-end">
+                                @if (item.value.ContactID == null)
+                                {
+                                    <MudTooltip Text="Remove Contact">
+                                        <MudFab Icon="@Icons.Material.Filled.Close" Variant="Variant.Filled" Color="Color.Error" Size="Size.Medium" OnClick="() => RemoveContact(item.i)"></MudFab>
+                                    </MudTooltip>
+                                }
+                            </div>
                         </MudTabPanel>
                     }
                 </MudTabs>
@@ -118,7 +127,6 @@
     public bool HasPermissionContactServiceServiceEdit { get; set; } = false;
     public int ContactServiceDocTypeID = 71;
     private bool _busy;
-
     int BranchID;
     string UserID;
 
@@ -161,8 +169,13 @@
     {
         model.Contacts.Add(new ContactModel()
             {
-                RefTable = "Driver"
+                RefTable = "Driver",
             });
+    }
+
+    private void RemoveContact(int index)
+    {
+        model.Contacts.RemoveAt(index);
     }
 
     private async Task OnValidSubmit(EditContext context)
@@ -201,20 +214,11 @@
                 var contacts = model.Contacts;
                 model = Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
-                if (HasPermissionContactServiceServiceEdit)
+                foreach (var item in contacts)
                 {
-                    foreach (var item in contacts)
-                    {
-                        item.RefKey = model.DriverID;
-                        item.UserInfo = model.UserInfo;
-                        Icontact.Update(item);
-                    }
-                }
-                else
-                {
-                    bool? ResultModel = await DialogService.ShowMessageBox(
-                        "Permission denied!",
-                        "You dont have any permission to Add or Edit Contact.");
+                    item.RefKey = model.DriverID;
+                    item.UserInfo = model.UserInfo;
+                    Icontact.Update(item);
                 }
                 MudDialog.Close(model);
             }
