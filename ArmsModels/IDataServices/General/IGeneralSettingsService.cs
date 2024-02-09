@@ -7,5 +7,6 @@ namespace ArmsServices.DataServices
     {
         IEnumerable<GeneralSettingsModel> Select();
         void Update(GeneralSettingsModel model);
+        IEnumerable<ValueOptions> SelectValues(GeneralSettingsModel model);
     }
 }

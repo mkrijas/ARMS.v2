@@ -17,12 +17,21 @@ namespace ArmsModels.BaseModels.General
 
     public class GeneralSettingsModel
     {
-        public int? SettingId { get; set; }
+        public string SettingId { get; set; }
         public string SettingName { get; set; }
         public string Value { get; set; }
         public string? ValueOptions { get; set; }
         public List<string>? ValueOptionsList => !string.IsNullOrEmpty(ValueOptions) ? ValueOptions.Split(',').ToList() : null;
         public bool? RecordStatus { get; set; }
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
+        public KeyValuePair<string, string> selectedValue { get; set; }
+        public List<ValueOptions> Values { get; set; }
+        public string ValueSelectType { get; set; }
+        public bool HideTextField { get; set; }
+    }
+    public class ValueOptions
+    {
+        public string? id { get; set; }
+        public string val { get; set; }
     }
 }
