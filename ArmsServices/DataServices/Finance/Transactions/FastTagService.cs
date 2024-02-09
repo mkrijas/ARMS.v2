@@ -56,6 +56,18 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        public IEnumerable<FastTagTollModel> GetProcessView(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "ProcessView"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
+            {
+                yield return GetMainModel(dr);
+            }
+        }
+
         public IEnumerable<FastTagModel> SelectByBranch(int? FastTagUploadID ,int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -128,6 +140,7 @@ namespace DAL.DataServices.Finance.Transactions
             {
                 FastTagUploadID = dr?.GetInt32("FastTagUploadID"),
                 DocumentNumber = dr.GetString("DocNumber"),
+                ProcessDocumentNumber = dr.GetString("ProcessDocNumber"),
                 DocumentDate = dr?.GetDateTime("DocDate"),
                 BranchID = dr?.GetInt32("BranchID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
