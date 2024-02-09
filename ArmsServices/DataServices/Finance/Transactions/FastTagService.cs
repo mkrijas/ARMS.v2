@@ -5,6 +5,9 @@ using System.Data.SqlClient;
 using System.Data;
 using Core.BaseModels.Finance.Transactions;
 using ArmsServices;
+using Microsoft.VisualBasic;
+using static System.Runtime.CompilerServices.RuntimeHelpers;
+using System;
 
 namespace DAL.DataServices.Finance.Transactions
 {
@@ -23,30 +26,82 @@ namespace DAL.DataServices.Finance.Transactions
                new SqlParameter("@Operation", "ForExcel"),
                new SqlParameter("@ExcelList", model.ToDataTable()),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Excel.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        public IEnumerable<FastTagModel> SelectByBranch(int? BranchID)
+        public IEnumerable<FastTagTollModel> AllDocumentNumbers()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "AllDocNo"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
+            {
+                yield return GetMainModel(dr);
+            }
+        }
+
+        public IEnumerable<FastTagTollModel> GetUploadView(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "UploadView"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
+            {
+                yield return GetMainModel(dr);
+            }
+        }
+
+        public IEnumerable<FastTagModel> SelectByBranch(int? FastTagUploadID ,int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@Operation", "ForBranch"),
+                new SqlParameter("@FastTagUploadID", FastTagUploadID),
                 new SqlParameter("@BranchID", BranchID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Excel.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        public FastTagTollModel Update(FastTagTollModel model)
+        public FastTagTollModel UpdateNew(FastTagTollModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@FastTagID", model.FastTagID),
+               new SqlParameter("@Operation", "New"),
+               new SqlParameter("@FastTagUploadID", model.FastTagUploadID),
+               new SqlParameter("@DocumentNumber", model.DocumentNumber),
+               new SqlParameter("@DocDate", model.DocumentDate),
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@CoaID", model.PaymentCoaID),
+               new SqlParameter("@ArdCode", model.PaymentArdCode),
+               new SqlParameter("@PaymentTool", model.PaymentTool),
+               new SqlParameter("@BankCharges", model.BankCharges),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
+               new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@TransactionList", model.FastTagModelList.ToDataTable()),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Update]", parameters))
+            {
+                model = GetMainModel(dr);
+            }
+            return model;
+        }
+
+        public FastTagTollModel UpdateProcess(FastTagTollModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "Process"),
+               new SqlParameter("@FastTagUploadID", model.FastTagUploadID),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@DocDate", model.DocumentDate),
                new SqlParameter("@BranchID", model.BranchID),
@@ -71,7 +126,22 @@ namespace DAL.DataServices.Finance.Transactions
         {
             return new FastTagTollModel
             {
-
+                FastTagUploadID = dr?.GetInt32("FastTagUploadID"),
+                DocumentNumber = dr.GetString("DocNumber"),
+                DocumentDate = dr?.GetDateTime("DocDate"),
+                BranchID = dr?.GetInt32("BranchID"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
+                PaymentArdCode = dr.GetString("ArdCode"),
+                PaymentCoaID = dr?.GetInt32("CoaID"),
+                TotalAmount = dr?.GetDecimal("TotalAmount"),
+                PaymentTool = dr.GetString("PaymentTool"),
+                BankCharges = dr?.GetDecimal("BankCharges"),
+                Narration = dr.GetString("Narration"),
+                UserInfo =
+                {
+                    RecordStatus = dr?.GetByte("RecordStatus"),
+                    UserID = dr.GetString("UserID")
+                }
             };
         }
 
@@ -79,6 +149,7 @@ namespace DAL.DataServices.Finance.Transactions
         {
             return new FastTagModel
             {
+                FastTagTollID = dr?.GetInt32("FastTagTollID"),
                 TransactionDateTime = dr.GetDateTime("TollCrossTime"),
                 NumberPlate = dr.GetString("RegNo"),
                 BranchID = dr.GetInt32("BranchID"),
@@ -87,6 +158,12 @@ namespace DAL.DataServices.Finance.Transactions
                 TruckID = dr.GetInt32("TruckID"),
                 TripPrefix = dr.GetString("TripPrefix"),
                 TripNumber = dr.GetInt64("TripNumber"),
+                PlazaCode = dr.GetString("PlazaCode"),
+                Description = dr.GetString("Description"),
+                TransactionID = dr.GetString("TransactionID"),
+                Reimbursable = dr.GetBoolean("Reimbursable"),
+                DebitAmount = (dr.GetDecimal("DebitAmount")??0),
+                RecordStatus = dr.GetByte("RecordStatus"),
             };
         }
     }

@@ -55,6 +55,7 @@ namespace ArmsServices.DataServices
                     InvoiceDate = dr.GetDateTime("ReferenceDocDate"),
                     InvoiceNumber = dr.GetString("ReferenceDocNo"),
                     ReceiptAmount = dr.GetDecimal("ReceiptAmount"),
+                    CoaID = dr.GetInt32("CoaID"),
                 };
             }
         }

@@ -1,0 +1,84 @@
+﻿@page "/FastTagTollUploadView"
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@using Core.BaseModels.Finance.Transactions;
+@using Core.IDataServices.Finance.Transactions;
+@inject NavigationManager NavigationManager
+@inject IFastTagService IFTService
+
+
+<MudTable Items="@MainModel" Class="item-shadow" Filter="new Func<FastTagTollModel, bool>(search)" @bind-model="model">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">FastTag Upload List</MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(0, false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+        <MudSpacer></MudSpacer>
+        <MudTextField @bind-Value="searchmodel" Placeholder="Search DocumentNumber... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<FastTagTollModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<FastTagTollModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">DocumentNumber</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+ 
+        <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
+        <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
+        <MudTd DataLabel="">
+            <MudTooltip Text="View">
+                <MudFab style="font-size:5px" @onclick="@(()=> View(context.FastTagUploadID, true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+            </MudTooltip>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+
+    private List<FastTagTollModel> MainModel = new List<FastTagTollModel>();
+    private TruckModel model = new TruckModel();
+
+    public int branchID;
+    private string UserID = null;
+    private string searchmodel = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        branchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+
+        GetCollection();
+    }
+
+    private async Task GetCollection()
+    {
+        MainModel = IFTService.GetUploadView(branchID).ToList();
+    }
+
+    private async Task Edit(int? id, bool rdonly)
+    {
+        //NavigationManager.NavigateTo("/FastTagTollUpload");
+        //string url = "/FastTagTollUpload?FastTagUploadID=" + id.ToString();
+
+        string url = $"/FastTagTollUpload/{id}/{rdonly}";
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task View(int? id, bool rdonly)
+    {
+        string url = $"/FastTagTollUpload/{id}/{rdonly}";
+        NavigationManager.NavigateTo(url);
+    }
+
+    private bool search(FastTagTollModel model)
+    {
+        if (model.FastTagUploadID != null && model.DocumentNumber.Contains(searchmodel, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (model.DocumentNumber == null) return true;
+        return false;
+    }
+}
