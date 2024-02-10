@@ -15,12 +15,14 @@
 @inject ITdsRateService tdsIService
 @inject IJSRuntime JsRuntime
 
-<MudDialog ReadOnly="@ReadOnly" Title="Asset Purchase" formID="formTaxPurchase" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
-@*     <TitleContent></TitleContent> *@
+@* <MudDialog ReadOnly="@ReadOnly" Title="Asset Purchase" formID="formTaxPurchase" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+ *@@*     <TitleContent></TitleContent> *@
 @* <DialogForm ReadOnly="@ReadOnly" Title="Purchase" formID="formTaxPurchase" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
- *@    <DialogContent>
+ *@   @*  <DialogContent> *@
+     <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Asset Purchase" formID="formAssetPurchase" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+    <FormContent>
         <MudPaper Class="p-3">
-            <EditForm autocomplete="off" id="formTaxPurchase" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+            <EditForm autocomplete="off" id="formAssetPurchase" OnValidSubmit="OnValidSubmit" EditContext="editContext">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
@@ -47,23 +49,28 @@
                         <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" ExpenseList="@model.Expenses" ReadOnly="@ReadOnly" />
                     
                     </MudItem>
-                    <MudItem xs="12">
+                    @* <MudItem xs="12">
                         <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" ItemList="@model.Items" ReadOnly="@ReadOnly" EditMode="@(model.PID != null)" />
-                    </MudItem>
+                    </MudItem> *@
                     <MudItem xs="12">
                         <AssetsListView OnAssetAdded="AddAssets" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" AssetList="@model.Assets" ReadOnly="@ReadOnly" EditMode="@(model.PID != null)" />
                     </MudItem>
                 </MudGrid>
             </EditForm>
         </MudPaper>
-    </DialogContent>
-@*     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@TaxPurchaseDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="@model.PID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+     </FormContent>
+     <VerificationStatus>
+         <AutherizationStatusComponent DocTypeID="@AssetPurchaseDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="@model.PID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+     </VerificationStatus>
+ </DialogForm>
+    @* </DialogContent>
+<VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@AssetPurchaseDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="@model.PID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
     </VerificationStatus> *@
 @* </DialogForm>
  *@
- </MudDialog>
-@code {
+ @* </MudDialog> *@
+ @code {
 
     [Parameter]
     public TaxPurchaseModel model { get; set; }
@@ -85,18 +92,18 @@
 
     public bool HasPermissionTaxPurchaseServiceEdit { get; set; } = false;
     public bool HasPermissionTaxPurchaseServiceApprove { get; set; } = false;
-    int TaxPurchaseDocTypeID = 9;
+    int AssetPurchaseDocTypeID = 117;
     private bool _busy;
 
-    
+
     public DocumentDetailsModel DocumentDetails { get; set; } = new();
 
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionTaxPurchaseServiceEdit = await Irole.HasClaim(TaxPurchaseDocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionTaxPurchaseServiceApprove = await Irole.HasClaim(TaxPurchaseDocTypeID.ToString(), "Approve", ctc.Token);
+        HasPermissionTaxPurchaseServiceEdit = await Irole.HasClaim(AssetPurchaseDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionTaxPurchaseServiceApprove = await Irole.HasClaim(AssetPurchaseDocTypeID.ToString(), "Approve", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
@@ -112,12 +119,12 @@
         {
             model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
             model.Expenses = Iservice.GetExpenses(model.PID).ToList();
-            model.Items = Iservice.GetItems(model.PID).ToList();
+            //model.Items = Iservice.GetItems(model.PID).ToList();
             model.Assets = Iservice.GetAssets(model.PID).ToList();
         }
         else
         {
-            model.NatureOfTransaction = "TaxPurchase";
+            model.NatureOfTransaction = "AssetPurchase";
             model.BranchID = branchID;
             model.NonStoreInventory = model.GRNID == null;
         }
@@ -132,7 +139,7 @@
         {
             editContext = new EditContext(model);
         }
-        DocumentDetails.DocumentTypeID = TaxPurchaseDocTypeID;
+        DocumentDetails.DocumentTypeID = AssetPurchaseDocTypeID;
         DocumentDetails.DocumentID = model.PID;
         SetTotal();
     }
@@ -211,11 +218,18 @@
                 TaxPurchaseModel check = Iservice.CheckInvoiceDuplication(model);
                 if (check == null || (check.PID != null && check.PID == model.PID && check.DocumentNumber == model.DocumentNumber))
                 {
-                    model.UserInfo.UserID = UserID;
-                    var result = Iservice.Update(model);
-                    snackbar.Add("Saved Successfully", Severity.Success);
-                    dialogForm.Close(result);
-                    model = new();
+                    if (model.Assets.Count > 0)
+                    {
+                        model.UserInfo.UserID = UserID;
+                        var result = Iservice.Update(model);
+                        snackbar.Add("Saved Successfully", Severity.Success);
+                        dialogForm.Close(result);
+                        model = new();
+                    }
+                    else
+                    {
+                        snackbar.Add("Please select atleast one Asset!", Severity.Warning);
+                    }
                 }
                 else
                 {
@@ -239,3 +253,4 @@
         _busy = false;
     }
 }
+fixmyspeaker
