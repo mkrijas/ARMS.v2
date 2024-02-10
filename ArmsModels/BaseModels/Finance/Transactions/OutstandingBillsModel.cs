@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 namespace ArmsModels.BaseModels
 {
     public class OutstandingBillsModel : TransactionBaseModel
@@ -25,4 +26,17 @@ namespace ArmsModels.BaseModels
         public bool isMemo { get; set; }
         public int? CoaID { get; set; }
     }   
+
+
+    public class AutoSettleModel : TransactionBaseModel,ICloneable
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AutoSettleModel>(Json);
+        }
+        public int? AutoSettleID { get; set; }
+        public PartyModel PartyInfo { get; set; } = new();
+        public List<BillsPaidModel> Bills { get; set; } = new();
+    }
 }

@@ -56,7 +56,46 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
-        public IEnumerable<FastTagModel> SelectByBranch(int? FastTagUploadID ,int BranchID)
+        public FastTagTollModel GetUploadViewModel(int? FastTagUploadID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "UploadViewModel"),
+                new SqlParameter("@FastTagUploadID", FastTagUploadID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
+            {
+                return GetMainModel(dr);
+            }
+            return null;
+        }
+
+        public IEnumerable<FastTagModel> GetUploadViewCollection(int? FastTagUploadID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "UploadViewCollection"),
+                new SqlParameter("@FastTagUploadID", FastTagUploadID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<FastTagTollModel> GetProcessView(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "ProcessView"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
+            {
+                yield return GetMainModel(dr);
+            }
+        }
+
+        public IEnumerable<FastTagModel> SelectByBranch(int? FastTagUploadID, int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -81,6 +120,7 @@ namespace DAL.DataServices.Finance.Transactions
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@CoaID", model.PaymentCoaID),
                new SqlParameter("@ArdCode", model.PaymentArdCode),
+               new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@PaymentTool", model.PaymentTool),
                new SqlParameter("@BankCharges", model.BankCharges),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
@@ -128,12 +168,14 @@ namespace DAL.DataServices.Finance.Transactions
             {
                 FastTagUploadID = dr?.GetInt32("FastTagUploadID"),
                 DocumentNumber = dr.GetString("DocNumber"),
+                ProcessDocumentNumber = dr.GetString("ProcessDocNumber"),
                 DocumentDate = dr?.GetDateTime("DocDate"),
                 BranchID = dr?.GetInt32("BranchID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 PaymentArdCode = dr.GetString("ArdCode"),
                 PaymentCoaID = dr?.GetInt32("CoaID"),
                 TotalAmount = dr?.GetDecimal("TotalAmount"),
+                PaymentMode = dr.GetString("PaymentMode"),
                 PaymentTool = dr.GetString("PaymentTool"),
                 BankCharges = dr?.GetDecimal("BankCharges"),
                 Narration = dr.GetString("Narration"),
@@ -162,7 +204,7 @@ namespace DAL.DataServices.Finance.Transactions
                 Description = dr.GetString("Description"),
                 TransactionID = dr.GetString("TransactionID"),
                 Reimbursable = dr.GetBoolean("Reimbursable"),
-                DebitAmount = (dr.GetDecimal("DebitAmount")??0),
+                DebitAmount = (dr.GetDecimal("DebitAmount") ?? 0),
                 RecordStatus = dr.GetByte("RecordStatus"),
             };
         }

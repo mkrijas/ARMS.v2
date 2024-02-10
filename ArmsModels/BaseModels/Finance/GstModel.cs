@@ -66,6 +66,7 @@ namespace ArmsModels.BaseModels
         public int? HsnID { get; set; }
         [Required]
         public int? ItemID { get; set; }
+        public string GstMechanism { get; set; } = "FCM"; // Operation,Maintenance,All
         public virtual string ItemCode { get; }
         public string ItemDescription { get; set; }
         public string HsnCode { get; set; }

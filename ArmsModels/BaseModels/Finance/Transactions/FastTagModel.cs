@@ -17,8 +17,7 @@ namespace Core.BaseModels.Finance.Transactions
             return JsonConvert.DeserializeObject<FastTagTollModel>(Json);
         }
         public int? FastTagUploadID { get; set; }
-        //[Required]
-        //public DateTime? DocumentDate { get; set; }
+        public string ProcessDocumentNumber { get; set; }
         [Required]
         public string PaymentMode { get; set; }
         [Required]

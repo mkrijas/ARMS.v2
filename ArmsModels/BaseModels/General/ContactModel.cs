@@ -26,6 +26,7 @@ namespace ArmsModels.BaseModels
         public string Email { get; set; }
         public string RefTable { get; set; }
         public int? RefKey { get; set; }
+        public int? Index { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
 }
