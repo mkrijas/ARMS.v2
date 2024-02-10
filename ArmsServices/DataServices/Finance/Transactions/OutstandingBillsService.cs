@@ -29,6 +29,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
+               new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@PartyID", model.PartyInfo.PartyID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -53,17 +54,17 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Select]", parameters))
             {
                 yield return new BillsPaidModel()
-                {
+                {                    
                     MID = dr.GetInt32("MID"),
                     BpID = dr.GetInt32("BpID"),
                     BranchID = dr.GetInt32("BranchID"),
                     BranchName = dr.GetString("BranchName"),
                     InvoiceDate = dr.GetDateTime("ReferenceDocDate"),
                     InvoiceNumber = dr.GetString("ReferenceDocNo"),
-                    PayAmount = dr.GetDecimal("PayAmount"),
+                    PayAmount = dr.GetDecimal("Amount"),
                     CoaID = dr.GetInt32("CoaID"),
                     IsMemo = dr.GetBoolean("IsMemo"),
-                    OutstandingAmount = dr.GetDecimal("OutstandingAmount"),
+                    OutstandingAmount = dr.GetDecimal("Amount"),
                 };
             }
         }
@@ -99,6 +100,7 @@ namespace ArmsServices.DataServices
                         PartyID = dr.GetInt32("PartyID"),
                         TradeName = dr.GetString("tradeName"),
                     },
+                    AutoSettleID = dr.GetInt32("AutoSettleID"),
                     BranchID = dr.GetInt32("BranchID"),
                     DocumentDate = dr.GetDateTime("DocumentDate"),
                     DocumentNumber = dr.GetString("DocumentNumber"),
