@@ -1,0 +1,253 @@
+﻿@page "/ReimbursementView"
+@page "/ReimbursementView/{id:int}"
+@using ArmsModels.BaseModels.Finance.Transactions
+@inject IReimbursementService Iservice
+@inject ICostCenterService costIservice
+@inject IDimensionService dimensionIservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Inter Branch Contra</MudText>
+                <MudTooltip Text="New Payment Memos">
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new InterBranchReimbursementModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Contra..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<InterBranchReimbursementModel , object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<InterBranchReimbursementModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<InterBranchReimbursementModel, object>(x=> x.OtherBranchName)" InitialDirection="SortDirection.Ascending">Reimbursed To</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<InterBranchReimbursementModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
+                    <MudTd DataLabel="OtherBranchName">@context.OtherBranchName</MudTd>
+                <MudTd DataLabel="Amount">@context.TotalAmount</MudTd>
+                <MudTd DataLabel="">
+                    <MudTooltip Text="View">
+                        <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip>
+                    @if (@context.AuthLevelId == null)
+                    {
+                        <MudTooltip Text="Edit">
+                            <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                        <MudTooltip Text="Delete">
+                            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                    }
+                    @if (@context.AuthLevelId != 99)
+                    {
+                        <MudTooltip Text="Verify">
+                            <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                    }
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    private InterBranchReimbursementModel model = new InterBranchReimbursementModel();
+    public bool IsApproved { get; set; } = false;
+    private List<InterBranchReimbursementModel> collection = new List<InterBranchReimbursementModel>();
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
+    [Parameter]
+    public int? id { get; set; } = null;
+    private bool _busy;
+
+    public bool HasPermissionContraServiceDelete { get; set; } = false;
+    public bool HasPermissionContraServiceApprove { get; set; } = false;
+    public int ContraDocTypeID = 3;
+
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
+
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
+    }
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
+
+    private async Task ReloadTable()
+    {
+        await GetAll(IsApproved, NumberOfRecords);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionContraServiceDelete = await Irole.HasClaim(ContraDocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionContraServiceApprove = await Irole.HasClaim(ContraDocTypeID.ToString(), "Approve", ctc.Token);
+
+        model = new();
+        await GetAll(IsApproved, NumberOfRecords);
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.ID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.ID == id), false, false);
+        }
+    }
+
+    async Task ApprovedChanged(bool value)
+    {
+        IsApproved = value;
+        await GetAll(IsApproved, NumberOfRecords);
+    }
+
+    private async Task GetAll(bool val, int numberOfRecords)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        int NumberOfRecords = numberOfRecords;
+        collection = new List<InterBranchReimbursementModel>();
+        if (val)
+        {
+            collection = Iservice.SelectByApproved(brancID, NumberOfRecords, searchTerm).ToList();
+        }
+        else
+        {
+            collection = Iservice.SelectByUnapproved(brancID, NumberOfRecords, searchTerm).ToList();
+        }
+    }
+
+    private async Task Delete(InterBranchReimbursementModel model)
+    {
+        if (HasPermissionContraServiceDelete)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var User = authprov.User;
+                var UserID = User.Identity.Name;
+                Iservice.Delete(model.ID, UserID);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            await GetAll(IsApproved, NumberOfRecords);
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete Contra.");
+        }
+    }
+
+    private async Task Approve(InterBranchReimbursementModel tds)
+    {
+        if (HasPermissionContraServiceApprove)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Approve(tds.ID, model.UserInfo.UserID, "");
+                snackbar.Add("Approved Successfully", Severity.Success);
+                await GetAll(IsApproved, NumberOfRecords);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve Contra.");
+        }
+    }
+
+    private async Task OpenDialog(InterBranchReimbursementModel tds, bool ReadOnly, bool View)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", tds.Clone());
+        parms.Add("PageToRedirectLink", "/InterBranchContraView");
+        parms.Add("ReadOnly", ReadOnly);
+        parms.Add("IsView", View);
+        var dialog = DialogService.Show<InterBranchContraDialog>(tds.ID == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var result = await dialog.Result;
+
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+            var ReturnData = (InterBranchReimbursementModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.ID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/InterBranchContraView";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = ContraDocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
+        await GetAll(IsApproved, NumberOfRecords);
+
+        await Task.Delay(200);
+        _busy = false;
+    }
+}
