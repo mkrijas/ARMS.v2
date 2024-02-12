@@ -31,7 +31,8 @@ namespace ArmsModels.BaseModels
         public virtual string ConsignorName { get; set; }
         [Required]
         public int? ConsigneeID { get; set; }
-        public byte? PaidBy { get; set; }
+        [Required]
+        public byte? PaidBy { get; set; } // 
         public virtual string Content { get; set; }
         public virtual string UoM { get; set; }
         public virtual string ConsigneeName { get; set; }
