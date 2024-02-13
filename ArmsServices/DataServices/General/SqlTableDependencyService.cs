@@ -1,10 +1,13 @@
 ﻿using ArmsModels.BaseModels.General;
+using ArmsServices;
 using ArmsServices.DataServices;
 using Core.IDataServices.General;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using System;
 using TableDependency.SqlClient;
@@ -12,17 +15,26 @@ using TableDependency.SqlClient.Base;
 using TableDependency.SqlClient.Base.Abstracts;
 using TableDependency.SqlClient.Base.EventArgs;
 
-namespace DAL.DataServices.General
+namespace ArmsServices.DataServices
 {
-    public class SqlTableDependencyService : ISqlTableDependencyService
+    public class SqlTableDependencyService 
     {
-        SqlTableDependency<PushNotificationModel> tableDependency;
+        private const string TableName = "General.Notification";
+        private SqlTableDependency<PushNotificationModel> _notifier; 
+        
+
         private Microsoft.AspNetCore.SignalR.Client.HubConnection hubConnection;
         public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
         public string ResultErrorMessage { get; set; } = string.Empty;
         private readonly IServiceProvider serviceProvider;
-        public SqlTableDependencyService(IServiceProvider _serviceProvider)
+
+        string ConnectionString { get; set; }
+        ILogger<DbService> _logger;
+        public SqlTableDependencyService(IServiceProvider _serviceProvider, IConfiguration configuration, ILogger<DbService> logger)
         {
+            this._logger = logger;
+            this.ConnectionString = configuration.GetConnectionString("ArmsDB");
+
             serviceProvider = _serviceProvider;
             using (var scope = serviceProvider.CreateScope())
             {
@@ -35,23 +47,18 @@ namespace DAL.DataServices.General
                     hubConnection.StartAsync();
                 }
             }
-
         }
-        public void SubscribeTableDependency(string ConnectionString)
+        public void SubscribeTableDependency()
         {
             try
             {
-
-                tableDependency = new SqlTableDependency<PushNotificationModel>(ConnectionString, "General.Notification");
-
-                tableDependency.OnChanged += TabledependencyChange;
-                tableDependency.OnError += TabledependencyError;
-                tableDependency.Start();
-                
+                _notifier = new SqlTableDependency<PushNotificationModel>(ConnectionString, TableName);
+                _notifier.OnChanged += TabledependencyChange;
+                _notifier.OnError += TabledependencyError;
+                _notifier.Start();                
             }
             catch (Exception ex)
             {
-
                 ResultErrorMessage = ex.Message;
                 Console.Write(ResultErrorMessage);
             }
@@ -77,9 +84,7 @@ namespace DAL.DataServices.General
                     await hubConnection.SendAsync("SendMessages",
                         changeEntity);
                 }
-
             }
-
         }
 
         private void TabledependencyError(object obj, TableDependency.SqlClient.Base.EventArgs.ErrorEventArgs e)
@@ -95,6 +100,12 @@ namespace DAL.DataServices.General
                 ResultErrorMessage = ex.Message;
                 Console.Write(ResultErrorMessage);
             }
+        }
+
+        public void Dispose()
+        {
+            _notifier.Stop();
+            _notifier.Dispose();
         }
     }
 }

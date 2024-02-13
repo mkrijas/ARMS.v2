@@ -321,7 +321,7 @@ namespace Views
 
             app.UseStaticFiles();
 
-            app.UseSqlTableDependency<SqlTableDependencyService>(connectionString);
+            //app.UseSqlTableDependency<SqlTableDependencyService>(connectionString);
 
 
             // Configure proxy

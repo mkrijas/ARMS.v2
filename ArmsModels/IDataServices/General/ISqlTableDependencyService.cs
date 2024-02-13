@@ -2,6 +2,6 @@
 {
     public interface ISqlTableDependencyService
     {
-        public void SubscribeTableDependency(string ConnectionString);
+        public void SubscribeTableDependency();
     }
 }
