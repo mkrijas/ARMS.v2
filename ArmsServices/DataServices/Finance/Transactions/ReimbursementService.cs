@@ -37,7 +37,16 @@ namespace DAL.DataServices.Finance
 
         public IEnumerable<InterBranchReimbursementModel> Select(int? BranchID)
         {
-            throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByBrnach"),
+               new SqlParameter("@BranchID", BranchID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Reimbursement.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
 
         public IEnumerable<InterBranchReimbursementModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
@@ -58,6 +67,15 @@ namespace DAL.DataServices.Finance
         public InterBranchReimbursementModel Update(InterBranchReimbursementModel model)
         {
             throw new NotImplementedException();
+        }
+
+
+        private InterBranchReimbursementModel GetModel(IDataRecord dr) {
+
+            return new InterBranchReimbursementModel()
+            {
+
+            };
         }
     }
 }

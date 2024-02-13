@@ -40,6 +40,7 @@ namespace ArmsModels.BaseModels
         public virtual string SetBillNumber { get; set; }
         public virtual decimal? SetBillQuantity { get; set; }
         public virtual decimal? SetUnloadQuantity { get; set; }
+        public virtual string Acknowledgement {  get; set; }
         public virtual decimal? TotalFreight { get { return Gcs.Sum(x => x.Freight); } }
         public decimal? TotalBillQuantity { get; set; }
         public decimal? TotalUnloadingQuantity { get; set; }
