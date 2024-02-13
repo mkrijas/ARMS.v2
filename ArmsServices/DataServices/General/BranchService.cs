@@ -38,6 +38,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UpwardBranchID", model.StateOfficeID),
                new SqlParameter("@IsStateOffice", model.IsStateOffice),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@GstCertificate", model.GstCertificate),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Branch.Update]", parameters))
             {
@@ -115,6 +116,7 @@ namespace ArmsServices.DataServices
                     TimeStampField = dr.GetDateTime("TimeStamp"),
                     UserID = dr.GetString("UserID"),
                 },
+                GstCertificate = dr.GetString("GstCertificate"),
             };
         }
         public int AddContact(int? BranchID, ContactModel contact)

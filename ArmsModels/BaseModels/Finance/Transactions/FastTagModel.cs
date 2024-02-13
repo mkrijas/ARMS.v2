@@ -17,7 +17,7 @@ namespace Core.BaseModels.Finance.Transactions
             return JsonConvert.DeserializeObject<FastTagTollModel>(Json);
         }
         public int? FastTagUploadID { get; set; }
-        public string ProcessDocumentNumber { get; set; }
+        public string ProcessDocumentNumber { get; set; } = "New";
         [Required]
         public string PaymentMode { get; set; }
         [Required]
@@ -46,6 +46,7 @@ namespace Core.BaseModels.Finance.Transactions
         public string TransactionID { get; set; }
         public bool Reimbursable {  get; set; }
         public decimal DebitAmount { get; set; }
+        public virtual Boolean IsProcessed { get; set; }
         public virtual string BranchName { get; set; }
         public virtual string NumberPlate { get; set; }
         public virtual string TripPrefix { get; set; }

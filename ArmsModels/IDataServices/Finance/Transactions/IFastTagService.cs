@@ -6,12 +6,16 @@ namespace Core.IDataServices.Finance.Transactions
 {
     public interface IFastTagService
     {
-        IEnumerable<FastTagModel> SelectForExcel(List<FastTagList> model);
-        IEnumerable<FastTagTollModel> AllDocumentNumbers();
-        IEnumerable<FastTagTollModel> GetUploadView(int? ID);
-        FastTagTollModel GetUploadViewModel(int? ID);
+        IEnumerable<FastTagModel> MatchTrucks(List<FastTagList> model);
+        IEnumerable<FastTagTollModel> SelectPendingFTDoc();
+        IEnumerable<FastTagTollModel> GetUploadViewInComplete(int? ID);
+        IEnumerable<FastTagTollModel> GetUploadViewComplete(int? ID);
+        FastTagTollModel GetUploadViewModel(int? FastTagUploadID);
         IEnumerable<FastTagModel> GetUploadViewCollection(int? FastTagUploadID);
-        IEnumerable<FastTagTollModel> GetProcessView(int? ID);
+        IEnumerable<FastTagModel> GetUploadViewSelectedCollection(int? FastTagUploadID);
+        IEnumerable<FastTagTollModel> GetProcessView(int? BranchID);
+        FastTagTollModel GetProcessViewModel(int? FastTagProcessID);
+        IEnumerable<FastTagModel> GetProcessViewCollection(int? FastTagProcessID);
         IEnumerable<FastTagModel> SelectByBranch(int? FastTagUploadID, int BranchID);
         FastTagTollModel UpdateNew(FastTagTollModel model);
         FastTagTollModel UpdateProcess(FastTagTollModel model);
