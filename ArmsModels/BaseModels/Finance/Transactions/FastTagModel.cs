@@ -46,6 +46,7 @@ namespace Core.BaseModels.Finance.Transactions
         public string TransactionID { get; set; }
         public bool Reimbursable {  get; set; }
         public decimal DebitAmount { get; set; }
+        public virtual Boolean IsProcessed { get; set; }
         public virtual string BranchName { get; set; }
         public virtual string NumberPlate { get; set; }
         public virtual string TripPrefix { get; set; }

@@ -8,9 +8,11 @@ namespace Core.IDataServices.Finance.Transactions
     {
         IEnumerable<FastTagModel> MatchTrucks(List<FastTagList> model);
         IEnumerable<FastTagTollModel> SelectPendingFTDoc();
-        IEnumerable<FastTagTollModel> GetUploadView(int? ID);
+        IEnumerable<FastTagTollModel> GetUploadViewInComplete(int? ID);
+        IEnumerable<FastTagTollModel> GetUploadViewComplete(int? ID);
         FastTagTollModel GetUploadViewModel(int? FastTagUploadID);
         IEnumerable<FastTagModel> GetUploadViewCollection(int? FastTagUploadID);
+        IEnumerable<FastTagModel> GetUploadViewSelectedCollection(int? FastTagUploadID);
         IEnumerable<FastTagTollModel> GetProcessView(int? BranchID);
         FastTagTollModel GetProcessViewModel(int? FastTagProcessID);
         IEnumerable<FastTagModel> GetProcessViewCollection(int? FastTagProcessID);
