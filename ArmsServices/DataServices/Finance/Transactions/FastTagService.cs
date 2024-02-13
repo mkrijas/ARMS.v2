@@ -19,7 +19,7 @@ namespace DAL.DataServices.Finance.Transactions
             Iservice = iservice;
         }
 
-        public IEnumerable<FastTagModel> SelectForExcel(List<FastTagList> model)
+        public IEnumerable<FastTagModel> MatchTrucks(List<FastTagList> model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -32,7 +32,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
-        public IEnumerable<FastTagTollModel> AllDocumentNumbers()
+        public IEnumerable<FastTagTollModel> SelectPendingFTDoc()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -83,15 +83,43 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
-        public IEnumerable<FastTagTollModel> GetProcessView(int? ID)
+        public IEnumerable<FastTagTollModel> GetProcessView(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@Operation", "ProcessView"),
+                new SqlParameter("@BranchID", BranchID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
             {
                 yield return GetMainModel(dr);
+            }
+        }
+
+        public FastTagTollModel GetProcessViewModel(int? FastTagProcessID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "ProcessViewModel"),
+                new SqlParameter("@FastTagProcessID", FastTagProcessID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
+            {
+                return GetMainModel(dr);
+            }
+            return null;
+        }
+
+        public IEnumerable<FastTagModel> GetProcessViewCollection(int? FastTagProcessID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "ProcessViewCollection"),
+                new SqlParameter("@FastTagProcessID", FastTagProcessID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
+            {
+                yield return GetModel(dr);
             }
         }
 
@@ -147,6 +175,7 @@ namespace DAL.DataServices.Finance.Transactions
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@CoaID", model.PaymentCoaID),
                new SqlParameter("@ArdCode", model.PaymentArdCode),
+               new SqlParameter("@PaymentMode", model.PaymentMode),
                new SqlParameter("@PaymentTool", model.PaymentTool),
                new SqlParameter("@BankCharges", model.BankCharges),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),

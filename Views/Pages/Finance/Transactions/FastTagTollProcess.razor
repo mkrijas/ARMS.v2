@@ -1,4 +1,6 @@
 ﻿@page "/FastTagTollProcess"
+@page "/FastTagTollProcess/{id:int}/{Readonly:bool}"
+
 @using Core.BaseModels.Finance.Transactions;
 @using Core.IDataServices.Finance.Transactions;
 @using System.IO;
@@ -8,6 +10,7 @@
 @using System.Threading;
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
+@inject NavigationManager NavigationManager
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IFastTagService IFTService
@@ -24,7 +27,7 @@
                     <EditForm id="FastTagProcessForm" OnValidSubmit="OnValidSubmit" Model="MainModel">
                         <MudGrid>
                             <MudItem xs="4">
-                                <MudSelect Label="Select DocumentNumber" Value="@selectedDocumentNumber" T="FastTagTollModel" ValueChanged="(Value) => DocNoChange(Value)" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
+                                <MudSelect ReadOnly="@Readonly" Label="Select Document" Value="@selectedDocumentNumber" ToStringFunc="@((e)=> e?.DocumentNumber)" T="FastTagTollModel" ValueChanged="(Value) => DocNoChange(Value)" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
                                     @foreach (var item in DocumentNumbers)
                                     {
                                         <MudSelectItem Value="@item">@item.DocumentNumber</MudSelectItem>
@@ -32,15 +35,15 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="4">
-                                <MudTextField @bind-Value="@MainModel.DocumentNumber" ReadOnly="true" Label="DocumentNumber" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                                <MudTextField @bind-Value="@MainModel.ProcessDocumentNumber" ReadOnly="true" Label="Process Document" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                             </MudItem>
                             <MudItem xs="4">
-                                <MudDatePicker @bind-Date=@MainModel.DocumentDate Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" For="@(()=> MainModel.DocumentDate)" Required />
+                                <MudDatePicker @bind-Date="@MainModel.DocumentDate" ReadOnly="@Readonly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" For="@(()=> MainModel.DocumentDate)" Required />
                              </MudItem>
                              <MudItem xs="12">
-                                 <MudTextField @bind-Value="@MainModel.Narration" Lines="3" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(()=> MainModel.Narration)"></MudTextField>
+                                 <MudTextField @bind-Value="@MainModel.Narration" ReadOnly="@Readonly" Lines="3" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(()=> MainModel.Narration)"></MudTextField>
                              </MudItem>
-                             <MudItem xs="10">
+                             <MudItem xs="6">
                                  <MudGrid>
                                      <MudItem xs="12">
                                          <b>
@@ -48,58 +51,69 @@
                                              : @collection.Sum(e => e.DebitAmount).ToString("c")
                                          </b>
                                      </MudItem>
-                                     <MudItem xs="12"><b>Total Selected Debit Amount &nbsp;: @selectedcollection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
-                                 </MudGrid>
-                             </MudItem>
-                             <MudItem xs="2">
-                                 <MudButton Style="margin-top: 12%; width: 70%; margin-left: 30%; height: 60%;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-                             </MudItem>
-                         </MudGrid>
-                         <ObjectGraphDataAnnotationsValidator />
-                         <ValidationSummary />
-                     </EditForm>
-                 </MudItem>
-             </MudGrid>
-         </MudItem>
-         <MudItem xs="12" Style="padding: 0px 26px 26px 26px;">
-             <MudTable Items="@collection" Context="item" MultiSelection="true" @bind-SelectedItems="selectedcollection" Filter="new Func<FastTagModel, bool>(search)" RowsPerPage="100" Class="fullborder" Style="padding: 0px" Elevation="0" Dense="true" Hover="true" Striped="true">
-                 <ToolBarContent>
-                     <MudText Typo="Typo.h6">Transactions List</MudText>
-                     <MudSpacer></MudSpacer>
-                     <MudTextField @bind-Value="searchplatenumber" Placeholder="Search Licence Plate No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0">
-                     </MudTextField>
-                 </ToolBarContent>
-                 <HeaderContent>
-                     <MudTh>Transaction DateTime</MudTh>
-                     <MudTh>Licence Plate No</MudTh>
-                     <MudTh>Branch Name</MudTh>
-                     <MudTh>Trip No</MudTh>
-                     <MudTh>Plaza Code</MudTh>
-                     <MudTh>Transaction Description</MudTh>
-                     <MudTh>Unique Transaction ID</MudTh>
-                     <MudTh>Reimbursable</MudTh>
-                     <MudTh>Amount(DR)</MudTh>
-                 </HeaderContent>
-                 <RowTemplate>
-                     <MudTd DataLabel="Transaction DateTime">@item.TransactionDateTime</MudTd>
-                     <MudTd DataLabel="NumberPlate">@item.NumberPlate</MudTd>
-                     <MudTd DataLabel="Branch Name">@item.BranchName</MudTd>
-                     <MudTd DataLabel="Trip No">@item.TripNumberDisplay</MudTd>
-                     <MudTd DataLabel="PlazaCode">@item.PlazaCode</MudTd>
-                     <MudTd DataLabel="TransactionDescription">@item.Description</MudTd>
-                     <MudTd DataLabel="Unique Transaction ID">@item.TransactionID</MudTd>
-                     <MudTh><MudCheckBox T="bool" @bind-Checked="@item.Reimbursable"></MudCheckBox></MudTh>
-                     <MudTd DataLabel="Debit Amount">@item.DebitAmount</MudTd>
-                 </RowTemplate>
-                 <PagerContent>
-                     <MudTablePager PageSizeOptions="new int[] {5 ,10 ,50 , 100 , 150, 200}" />
-                 </PagerContent>
-             </MudTable>
-         </MudItem>
-     </MudGrid>
- </MudPaper>
+                                     @if (!Readonly)
+                                    {
+                                        <MudItem xs="12"><b>Total Selected Debit Amount &nbsp;: @selectedcollection.Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
+                                    }
+                                </MudGrid>
+                            </MudItem>
+                            <MudItem xs="6" Style="align-self: flex-end; text-align: right;">
+                                @if (!Readonly)
+                                {
+                                    <MudButton Style="width: 24%;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+                                    <MudButton Style="width: 24%; margin-left: 1%;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+                                }
+                                else
+                                {
+                                    <MudButton Style="width: 24%; margin-left: 76%; height: 110%;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+                                }
+                            </MudItem>
+                        </MudGrid>
+                        <ObjectGraphDataAnnotationsValidator />
+                        <ValidationSummary />
+                    </EditForm>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+        <MudItem xs="12" Style="padding: 0px 26px 26px 26px;">
+            <MudTable Items="@collection" Context="item" MultiSelection="!Readonly" @bind-SelectedItems="selectedcollection" Filter="new Func<FastTagModel, bool>(search)" RowsPerPage="100" Class="fullborder" Style="padding: 0px" Elevation="0" Dense="true" Hover="true" Striped="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Transactions List</MudText>
+                    <MudSpacer></MudSpacer>
+                    <MudTextField @bind-Value="searchplatenumber" Placeholder="Search Licence Plate No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0">
+                    </MudTextField>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>Transaction DateTime</MudTh>
+                    <MudTh>Licence Plate No</MudTh>
+                    <MudTh>Branch Name</MudTh>
+                    <MudTh>Trip No</MudTh>
+                    <MudTh>Plaza Code</MudTh>
+                    <MudTh>Transaction Description</MudTh>
+                    <MudTh>Unique Transaction ID</MudTh>
+                    <MudTh>Reimbursable</MudTh>
+                    <MudTh>Amount(DR)</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Transaction DateTime">@item.TransactionDateTime</MudTd>
+                    <MudTd DataLabel="NumberPlate">@item.NumberPlate</MudTd>
+                    <MudTd DataLabel="Branch Name">@item.BranchName</MudTd>
+                    <MudTd DataLabel="Trip No">@item.TripNumberDisplay</MudTd>
+                    <MudTd DataLabel="PlazaCode">@item.PlazaCode</MudTd>
+                    <MudTd DataLabel="TransactionDescription">@item.Description</MudTd>
+                    <MudTd DataLabel="Unique Transaction ID">@item.TransactionID</MudTd>
+                    <MudTh><MudCheckBox ReadOnly="@Readonly" T="bool" @bind-Checked="@item.Reimbursable"></MudCheckBox></MudTh>
+                    <MudTd DataLabel="Debit Amount">@item.DebitAmount</MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] {5 ,10 ,50 , 100 , 150, 200}" />
+                </PagerContent>
+            </MudTable>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
 
- @code {
+@code {
 
     private FastTagTollModel MainModel = new FastTagTollModel();
     private HashSet<FastTagModel> selectedcollection = new HashSet<FastTagModel>();
@@ -108,8 +122,12 @@
     private string searchplatenumber = "";
     public int branchID;
     private string UserID = null;
-
     private FastTagTollModel selectedDocumentNumber;
+
+    [Parameter]
+    public int? id { get; set; }
+    [Parameter]
+    public bool Readonly { get; set; }
 
     private async Task DocNoChange(FastTagTollModel model)
     {
@@ -146,8 +164,24 @@
         // MainModel.NatureOfTransaction = "FastTag";
         UserID = user.Identity.Name;
 
-        DocumentNumbers = IFTService.AllDocumentNumbers().ToList();
+        if (id != null && Readonly == true)
+        {
+            MainModel = IFTService.GetProcessViewModel(id);
+            selectedDocumentNumber = MainModel;
+
+            collection = IFTService.GetProcessViewCollection(id).ToList();
+        }
+        else if (id == 0 && Readonly == false)
+        {
+            DocumentNumbers = IFTService.SelectPendingFTDoc().ToList();
+        }
         //collection = IFTService.SelectByBranch(branchID).ToList();
+    }
+
+
+    public async Task Cancel()
+    {
+        NavigationManager.NavigateTo("/FastTagTollProcessView");
     }
 
     private bool search(FastTagModel model)
@@ -174,8 +208,9 @@
             {
                 IFTService.UpdateProcess(MainModel);
                 snackbar.Add("Saved Successfully", Severity.Success);
-                MainModel = new();
-                collection = new();
+                NavigationManager.NavigateTo("/FastTagTollProcessView");
+                // MainModel = new();
+                // collection = new();
             }
             else
             {
@@ -189,4 +224,4 @@
             snackbar.Add(ex.Message, Severity.Error);
         }
     }
- }
+}
