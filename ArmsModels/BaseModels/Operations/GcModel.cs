@@ -31,7 +31,8 @@ namespace ArmsModels.BaseModels
         public virtual string ConsignorName { get; set; }
         [Required]
         public int? ConsigneeID { get; set; }
-        public byte? PaidBy { get; set; }
+        [Required]
+        public byte? PaidBy { get; set; } // 
         public virtual string Content { get; set; }
         public virtual string UoM { get; set; }
         public virtual string ConsigneeName { get; set; }
@@ -39,6 +40,7 @@ namespace ArmsModels.BaseModels
         public virtual string SetBillNumber { get; set; }
         public virtual decimal? SetBillQuantity { get; set; }
         public virtual decimal? SetUnloadQuantity { get; set; }
+        public virtual string Acknowledgement {  get; set; }
         public virtual decimal? TotalFreight { get { return Gcs.Sum(x => x.Freight); } }
         public decimal? TotalBillQuantity { get; set; }
         public decimal? TotalUnloadingQuantity { get; set; }

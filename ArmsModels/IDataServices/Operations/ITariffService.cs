@@ -18,7 +18,7 @@ namespace ArmsServices.DataServices
         TariffModel SelectByID(int? ID);
         IEnumerable<TariffFormulaModel> SelectFormulas();
         TariffFormulaModel SelectFormulaByID(short? ID);
-        IEnumerable<TariffTypeModel> SelectTariffTypes(string Area);
+        IEnumerable<TariffTypeModel> SelectTariffTypes(string Area = "Operation");
         TariffTypeModel SelectTariffTypeByID(short? ID);
         TariffTypeModel UpdateTariffType(TariffTypeModel model);  //Edit
         string[] TariffGroups { get; }

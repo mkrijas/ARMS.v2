@@ -1,0 +1,383 @@
+﻿@inject IReimbursementService Iservice
+@using ArmsModels.BaseModels.Finance.Transactions
+@inject IChartOfAccountService accountService
+@inject IBranchService branchService
+@inject IInterBranchMappingService intermappingIservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Contra Entry" formID="IContraForm" model="@model" _busy="_busy">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm id="IContraForm" OnValidSubmit="Submit" Model="@model">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="4">
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Document Date" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    @* <MudItem xs="12" md="6">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.EntryReference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.EntryReference)"></MudTextField>
+                    </MudItem> *@
+                    <MudItem xs="12" md="6">
+                        <MudCard>
+                            <MudCardContent>
+                                <MudItem xs="12" md="12">
+                                    <MudTextField ReadOnly="true" @bind-Value="hmbarnchName" Label="Home Branch" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                                </MudItem>
+                                <br />
+                                <MudItem xs="12" md="12">
+                                  @*   <MudSelect ReadOnly="ReadOnly" Label="Select Mode" Value="@model.IsPayment" ValueChanged="PaymentModeChanged" T="bool" Variant="Variant.Outlined" Margin="Margin.Dense"  AdornmentColor="Color.Secondary">
+                                        <MudSelectItem Value="@(true)" >Payment</MudSelectItem>
+                                        <MudSelectItem Value="@(false)">Receipt</MudSelectItem>
+                                    </MudSelect> *@
+                                </MudItem>
+                                <br />
+                                <MudItem xs="12" md="12">
+                                   @*  <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" Value="model.ContraModeHome" ValueChanged="BankModeChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                                        <MudSelectItem Value="@("Bank")" />
+                                        <MudSelectItem Value="@("Cash")" />
+                                        <MudSelectItem Value="@("Wallet")" />
+                                    </MudSelect> *@
+                                </MudItem>
+                                <br />
+                                <MudItem xs="12" md="12">
+                                  @*   <MudAutocomplete ReadOnly="ReadOnly" T="PaymentCodeModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Account" Value="accountRuleDefinitionH" ValueChanged="SetAccountRuleDefinitionH" ResetValueOnEmptyText="true"
+                                                     Clearable="true" SearchFunc="SearchAccountsH" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
+
+                                    *@
+                                </MudItem>
+                                <br />
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudCard>
+                            <MudCardContent>
+                                <MudItem xs="12" md="12">
+                                    <MudSelect ReadOnly="ReadOnly" Label="Select Other Branch" @bind-Value="model.OtherBranchID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                        @foreach (var ditem in branches)
+                                        {
+                                            <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <br />
+                                <MudItem xs="12" md="12">
+                                    @* <MudSelect ReadOnly="true" Label="Mode" @bind-Value="@model.IsPayment" T="bool" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                                        <MudSelectItem Value="@(false)">Payment</MudSelectItem>
+                                        <MudSelectItem Value="@(true)">Receipt</MudSelectItem>
+                                    </MudSelect>         *@                            
+                                </MudItem>
+                                <br />
+                                <MudItem xs="12" md="12">
+                                    @* <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" Value="model.ContraModeOther" ValueChanged="ModeChangeOther" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                        <MudSelectItem Value="@("Bank")" />
+                                        <MudSelectItem Value="@("Cash")" />
+                                        <MudSelectItem Value="@("Wallet")" />
+                                    </MudSelect> *@
+                                </MudItem>
+                                <br />
+                                <MudItem xs="12" md="12">
+@*                                     <MudAutocomplete ReadOnly="ReadOnly" T="PaymentCodeModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Account" Value="accountRuleDefinitionO" ValueChanged="SetAccountRuleDefinitionO" ResetValueOnEmptyText="true"
+                                                     Clearable="true" SearchFunc="SearchAccountsO" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))">
+                                                 </MudAutocomplete> *@
+                                </MudItem>
+                                <br />
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    @* <MudItem xs="12" md="6">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect ReadOnly=bnktl Label="Select Tool of Payment" T="string" @bind-Value="model.PaymentTool" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var item in data.BankTools)
+                            {
+                                <MudSelectItem Value="@item">@item</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem> *@
+                   @*  @if (model.PaymentTool == "CHEQUE")
+                    {
+                        <MudItem xs="12" md="12">
+                            <MudGrid>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField ReadOnly="ReadOnly" @bind-Value="model.ChequeInfo.ChequeNumber" Label="Cheque Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ChequeInfo.ChequeNumber)"></MudTextField>
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudDatePicker ReadOnly="ReadOnly" Label="Cheque Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.ChequeInfo.ChequeDate" DateFormat="dd/MM/yyyy" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudItem>
+                    } *@
+                    <MudItem xs="12" md="12"></MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect Label="Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in transactionTypeList)
+                            {
+                                <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        @* <MudSelect ReadOnly="ReadOnly" Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in costCenter)
+                            {
+                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
+                            }
+                        </MudSelect> *@
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+
+                     @*    <dime
+                        <MudSelect ReadOnly="ReadOnly" Label="Select Dimension" @bind-Value="model.Dimension" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in dimension)
+                            {
+                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
+                            }
+                        </MudSelect> *@
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>                  
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@ContraDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.ID" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
+
+
+@code {
+
+    [Parameter]
+    public InterBranchReimbursementModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    [Parameter]
+    public bool IsView { get; set; }
+    [Parameter]
+    public string PageToRedirectLink { get; set; }
+    public string DocNumber { get; set; }
+    public DateTime? DocDate { get; set; }
+    public string DocType { get; set; }
+    private List<InterBranchTransactionTypeModel> transactionTypeList = new();
+    private List<CostCenterModel> costCenter = new();
+    private List<DimensionModel> dimension = new();
+    private List<BranchModel> branches = new();    
+    private PaymentCodeModel accountRuleDefinitionH = new();
+    private PaymentCodeModel accountRuleDefinitionO = new();
+    private bool _busy;
+
+    public bool bnktl = true;   
+    public string value = "invisible";
+    private string hmbarnchName;
+    private int? branchID = null;
+    private string UserID = null;
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+
+    DialogForm dialogForm;
+    bool HasPermissionContraServiceEdit { get; set; } = false;
+    bool HasPermissionContraServiceApprove { get; set; } = false;
+    int ContraDocTypeID = 3;
+
+    protected async Task Approve(DataApprovedStatus aprvd)
+    {
+        if (HasPermissionContraServiceApprove)
+        {
+            if (aprvd.IsApprove)
+            {
+                model.UserInfo.UserID = UserID;
+                try
+                {
+                    Iservice.Approve(model.ID, model.UserInfo.UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve Contra.");
+        }
+    }
+
+    // private async Task<IEnumerable<PaymentCodeModel>> SearchAccountsH(string searchString)
+    // {
+    //     await Task.Delay(5);
+    //     var authprov = await auth.GetAuthenticationStateAsync();
+    //     var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+    //     int branchID = int.Parse(brancIDString);
+    //     return accountService.GetPaymentCodes(branchID, model.ContraModeHome).ToList(); ;
+    // }
+
+    // private async Task<IEnumerable<PaymentCodeModel>> SearchAccountsO(string searchString)
+    // {
+    //     await Task.Delay(5);
+    //     if (model.OtherBranchID != null)
+    //     {
+    //         return accountService.GetPaymentCodes(model?.OtherBranchID ?? null, model.ContraModeOther).ToList();
+    //     }
+    //     else
+    //     {
+    //         snackbar.Add("Please select other branch.", Severity.Error);
+    //         return null;
+    //     }
+    // }
+
+    // private void SetAccountRuleDefinitionH(PaymentCodeModel obj)
+    // {
+    //     accountRuleDefinitionH = obj;
+    //     model.CoaIDHome = obj?.CoaID ?? null;
+    //     model.ArdCodeHome = obj?.ArdCode ?? null;
+    // }
+
+    // private void SetAccountRuleDefinitionO(PaymentCodeModel obj)
+    // {
+    //     accountRuleDefinitionO = obj;
+    //     model.CoaIDOther = obj?.CoaID ?? null;
+    //     model.ArdCodeOther = obj?.ArdCode ?? null;
+    // }
+
+    // public void BankModeChanged(string val)
+    // {
+    //     model.ContraModeHome = val;
+    //     if (model.IsPayment)
+    //     {
+    //         if (model.ContraModeHome == "Bank")
+    //         {
+    //             bnktl = false;
+    //         }
+    //         else
+    //         {
+    //             value = "invisible";
+    //             model.PaymentTool = null;
+    //             bnktl = true;
+    //         }
+    //     }
+    // }    
+
+    // public void ModeChangeOther(string val)
+    // {
+    //     model.ContraModeOther = val;
+    //     if (!model.IsPayment)
+    //     {
+    //         if (model.ContraModeOther == "Bank")
+    //         {
+    //             bnktl = false;
+    //         }
+    //         else
+    //         {
+    //             value = "invisible";
+    //             model.PaymentTool = null;
+    //             bnktl = true;
+    //         }
+    //     }
+    // }
+
+    public void OtherBranchChanges(int? otherBranchID)
+    {
+        model.OtherBranchID = otherBranchID;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionContraServiceEdit = await Irole.HasClaim(ContraDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionContraServiceApprove = await Irole.HasClaim(ContraDocTypeID.ToString(), "Approve", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
+        hmbarnchName = brancIDString.ToString();
+        transactionTypeList = intermappingIservice.GetTypes().ToList();        
+        if (model.ID == null)
+        {
+            model.TotalAmount = 0;
+        }
+        else
+        {
+            // accountRuleDefinitionH.CoaID = model.CoaIDHome;
+            // accountRuleDefinitionH.ArdCode = model.ArdCodeHome;
+            // accountRuleDefinitionO.CoaID = model.CoaIDOther;
+            // accountRuleDefinitionO.ArdCode = model.ArdCodeOther;
+            // if (model != null && model.CoaIDHome != null && accountService.GetPaymentCodes(model.BranchID, model.ContraModeHome) != null && accountService.GetPaymentCodes(model.BranchID, model.ContraModeHome).Any(s => s.ArdCode == model.ArdCodeHome))
+            // {
+            //     accountRuleDefinitionH = accountService.GetPaymentCodes(model.BranchID, model.ContraModeHome).FirstOrDefault(s => s.CoaID == model.CoaIDHome);
+            // }
+            // if (model != null && model.CoaIDOther != null && accountService.GetPaymentCodes(model.OtherBranchID, model.ContraModeOther) != null && accountService.GetPaymentCodes(model.OtherBranchID, model.ContraModeOther).Any(s => s.ArdCode == model.ArdCodeOther))
+            // {
+            //     accountRuleDefinitionO = accountService.GetPaymentCodes(model.OtherBranchID, model.ContraModeOther).FirstOrDefault(s => s.ArdCode == model.ArdCodeOther);
+            // }
+        }
+        model.BranchID = branchID;
+        model.NatureOfTransaction = "Contra";
+        model.UserInfo.UserID = UserID;
+        
+        branches = branchService.Select().ToList();
+
+        DocNumber = model.DocumentNumber;
+        DocDate = model.DocumentDate;
+        DocType = model.NatureOfTransaction;
+    }
+
+   
+
+    public void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public async void Submit()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        if (HasPermissionContraServiceEdit)
+        {
+            try
+            {               
+                model.BranchID = branchID;                
+                model.IsInterBranch = true;
+                model.NatureOfTransaction = "Reimbursement";
+                model.UserInfo.UserID = UserID;
+                var updatedModel = Iservice.Update(model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(updatedModel);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Contra.");
+        }
+
+        await Task.Delay(200);
+        _busy = false;
+    }
+}

@@ -1,4 +1,5 @@
 ﻿@page "/AssetPurchaseOrder"
+@using System.Threading
 @using Views.Pages.Finance.Transactions.PurchaseAndPayment
 @inject IAssetService Iservice
 @inject IAssetClassService assetclassIservice
@@ -12,7 +13,7 @@
 @inject ITaxPurchaseService Iservice1
 @inject SignalRService signalRService
 @inject IPushNotificationService IpushNotificationService
-
+@inject IRoleService<RoleModel> Irole
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -81,25 +82,26 @@
                     {
                     <MudFab @onclick="@(()=> GetAccountDetails(context))" Color="Color.Info" Icon="@Icons.Material.Filled.CurrencyExchange" title="Accounts" Size="Size.Small" IconSize="Size.Small" />
                     } *@
-                        <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
-
+                        <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                         @* @if (@context.AuthLevelId == 99)
                     {
-                        <EntryReversedComponent DocTypeID="TaxPurchaseDocTypeID" DocumentID="context.PID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                    <EntryReversedComponent DocTypeID="TaxPurchaseDocTypeID" DocumentID="context.PID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
                     } *@
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                </PagerContent>
+            </MudTable>
 
-    </MudItem>
-</MudGrid>
+        </MudItem>
+    </MudGrid>
 
 
 
-@code {
+    @code {
     bool IsOpen = false;
     private TaxPurchaseModel model = new TaxPurchaseModel();
     private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
@@ -113,7 +115,11 @@
     int BranchID; string UserID;
     private bool _busy;
     public bool IsApproved { get; set; } = false;
-    public int TaxPurchaseDocTypeID = 9;
+
+    public bool HasPermissionAssetPurchaseServiceDelete { get; set; } = false;
+    public bool HasPermissionAssetPurchaseServiceEdit { get; set; } = false;
+    public bool HasPermissionAssetPurchaseServiceView { get; set; } = false;
+    public int AssetPurchaseDocTypeID = 117;
 
     #region SignaIR Notification
 
@@ -143,6 +149,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionAssetPurchaseServiceDelete = await Irole.HasClaim(AssetPurchaseDocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionAssetPurchaseServiceEdit = await Irole.HasClaim(AssetPurchaseDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionAssetPurchaseServiceView = await Irole.HasClaim(AssetPurchaseDocTypeID.ToString(), "View", ctc.Token);
         var authprov = await auth.GetAuthenticationStateAsync();
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = authprov.User.Identity.Name;
@@ -151,35 +161,45 @@
 
     private async Task SelectAssets()
     {
-        TaxPurchaseModel tds = new TaxPurchaseModel();
-        DialogParameters parms = new DialogParameters();
-        parms.Add("BranchID", BranchID);
-        var dialog = DialogService.Show<AssetPOConsolidateSelectionDialog>("Asset Purchase", parms, maxWidth);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+        if (HasPermissionAssetPurchaseServiceEdit)
         {
-            var data = (List<AssetPOModel>)result.Data;
-
-            AssetPurchaseModel PI = new AssetPurchaseModel()
-                {
-                    //TotalAmount = data.Sum(x => x.TotalAmount),
-                    BranchID = BranchID,
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel() { UserID = UserID },
-                    SelectedAssets = data,
-                };
-            parms = new DialogParameters();
-            parms.Add("model", model.Clone());
-            //parms.Add("PageToRedirectLink", "/TaxPurchase");
-            parms.Add("PI", PI);
-            parms.Add("ReadOnly", false);
-            var dialog2 = DialogService.Show<AssetPurchaseConsolidateDialog>("Asset Purchase", parms, maxWidth);
-            var result2 = await dialog2.Result;
-            if (!result2.Canceled)
+            TaxPurchaseModel tds = new TaxPurchaseModel();
+            DialogParameters parms = new DialogParameters();
+            parms.Add("BranchID", BranchID);
+            var dialog = DialogService.Show<AssetPOConsolidateSelectionDialog>("Asset Purchase", parms, maxWidth);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                var UpdatedPI = (TaxPurchaseModel)result2.Data;
-                //IAssetService.Update(PI);
-                GetAll(IsApproved, NumberOfRecords);
+                var data = (List<AssetPOModel>)result.Data;
+
+                AssetPurchaseModel PI = new AssetPurchaseModel()
+                    {
+                        //TotalAmount = data.Sum(x => x.TotalAmount),
+                        BranchID = BranchID,
+                        UserInfo = new ArmsModels.SharedModels.UserInfoModel() { UserID = UserID },
+                        SelectedAssets = data,
+                    };
+                parms = new DialogParameters();
+                parms.Add("model", model.Clone());
+                //parms.Add("PageToRedirectLink", "/TaxPurchase");
+                parms.Add("PI", PI);
+                parms.Add("ReadOnly", false);
+                var dialog2 = DialogService.Show<AssetPurchaseConsolidateDialog>("Asset Purchase", parms, maxWidth);
+                var result2 = await dialog2.Result;
+                if (!result2.Canceled)
+                {
+                    var UpdatedPI = (TaxPurchaseModel)result2.Data;
+                    //IAssetService.Update(PI);
+                    GetAll(IsApproved, NumberOfRecords);
+                }
             }
+
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+            "Permission denied!",
+            "You dont have any permission to Create AssetPurchase.");
         }
     }
 
@@ -228,39 +248,71 @@
 
     private async Task OpenDialog(TaxPurchaseModel tds, bool ReadOnly, bool View)
     {
-        if (_busy)
+        if (HasPermissionAssetPurchaseServiceView)
         {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
-            return;
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is closing!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", tds.Clone());
+            parms.Add("PageToRedirectLink", "/TaxPurchase");
+            parms.Add("ReadOnly", ReadOnly);
+            // var dialog = DialogService.Show<TaxPurchaseDialog>(tds.PID == null ? "ADD" : "EDIT", parms, maxWidth);
+            var dialog = DialogService.Show<AssetTaxPurchaseDialog>(tds.PID == null ? "ADD" : "EDIT", parms, maxWidth);
+            var result = await dialog.Result;
+            var isCancelled = result.Cancelled;
+            if (!isCancelled)
+            {
+                var ReturnData = (TaxPurchaseModel)result.Data;
+                notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+                notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+                notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+                notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+                notificationMessage.RedirectedTo = 0;
+                notificationMessage.ExpiredBy = 7;
+                notificationMessage.DocumentID = ReturnData.PID;
+                notificationMessage.MessageGroupID = "PendingVerification";
+                notificationMessage.PageToRedirectLink = "/TaxPurchase";
+                notificationMessage.ClaimValue = "Verify 1";
+                notificationMessage.DocumentTypeID = AssetPurchaseDocTypeID;
+                notificationMessage.MsgDate = DateTime.Now;
+                await signalRService.Send(notificationMessage);
+            }
+            await GetAll(IsApproved, NumberOfRecords);
+            await Task.Delay(200);
+            _busy = false;
         }
-        _busy = true;
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds.Clone());
-        parms.Add("PageToRedirectLink", "/TaxPurchase");
-        parms.Add("ReadOnly", ReadOnly);
-        // var dialog = DialogService.Show<TaxPurchaseDialog>(tds.PID == null ? "ADD" : "EDIT", parms, maxWidth);
-        var dialog = DialogService.Show<AssetTaxPurchaseDialog>(tds.PID == null ? "ADD" : "VIEW", parms, maxWidth);
-        var result = await dialog.Result;
-        var isCancelled = result.Cancelled;
-        if (!isCancelled)
+        else
         {
-            var ReturnData = (TaxPurchaseModel)result.Data;
-            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-            notificationMessage.RedirectedTo = 0;
-            notificationMessage.ExpiredBy = 7;
-            notificationMessage.DocumentID = ReturnData.PID;
-            notificationMessage.MessageGroupID = "PendingVerification";
-            notificationMessage.PageToRedirectLink = "/TaxPurchase";
-            notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = TaxPurchaseDocTypeID;
-            notificationMessage.MsgDate = DateTime.Now;
-            await signalRService.Send(notificationMessage);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to View AssetPurchase.");
         }
-        await GetAll(IsApproved, NumberOfRecords);
-        await Task.Delay(200);
-        _busy = false;
+    }
+    private async Task Delete(TaxPurchaseModel model)
+    {
+        if (HasPermissionAssetPurchaseServiceDelete)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.InvoiceNo + " (" + model.InvoiceDate + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice1.Delete(model.PID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+            await GetAll(IsApproved, NumberOfRecords);
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete TaxPurchase.");
+        }
     }
 }

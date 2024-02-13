@@ -233,6 +233,8 @@ namespace Views
             services.AddScoped<IJournalService, JournalService>();
             services.AddScoped<IInventoryReleaseService, InventoryReleaseService>();
             services.AddScoped<IFastTagService, FastTagService>();
+            services.AddScoped<IReimbursementService, ReimbursementService>();
+
 
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();

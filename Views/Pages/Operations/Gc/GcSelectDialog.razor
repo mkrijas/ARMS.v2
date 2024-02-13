@@ -100,18 +100,16 @@
             var e = await auth.GetAuthenticationStateAsync();
             var user = e.User;
             var userID = user.Identity.Name;
-            if (item.Gcs[0].EwayBill.EwayBillDate == null)
+            if (item.Gcs.Any(y => DateTime.Compare(DateTime.Now, (y.EwayBill?.ExpireOn) ?? DateTime.MinValue) > 0))
             {
-                await DialogService.ShowMessageBox(
-                "EWAY BILL MISSING!",
-                "Please enter Eway Bill Number first.");
+                await DialogService.ShowMessageBox("EWAY BILL MISSING!","No Valid Ewaybill found!.");
+                return;
             }
-            else
-            {
+           
                 Iservice.AppendToTrip(TripID, item.GcSetID, userID);
                 MudDialog.Close(DialogResult.Ok("Appended"));
                 snackbar.Add("Loaded", Severity.Success, null);
-            }
+            
         }
         else
         {
@@ -130,41 +128,30 @@
     {
         if (HasPermissionGcServiceAppentToTrip)
         {
-            bool flag = false;
-            var e = await auth.GetAuthenticationStateAsync();
-            var user = e.User;
-            var userID = user.Identity.Name;
-            foreach (var item in collection)
+
+            if (collection.Where(x => x.Selected).Any())
             {
-                if (item.Selected)
+                var e = await auth.GetAuthenticationStateAsync();
+                var user = e.User;
+                var userID = user.Identity.Name;
+                foreach (var item in collection.Where(x => x.Selected))
                 {
-                    if (item.model.Gcs[0].EwayBill.EwayBillDate == null)
+                    if (item.model.Gcs.Any(y => DateTime.Compare(DateTime.Now, (y.EwayBill?.ExpireOn) ?? DateTime.MinValue) > 0))
                     {
-                        flag = false;
-                        break;
+                        await DialogService.ShowMessageBox("EWAY BILL MISSING!", "No Valid Ewaybill found!.");
+                        return;
                     }
-                    else
-                    {
-                        flag = true;
-                    }
+
+                    int result = Iservice.AppendToTrip(TripID, item.model.GcSetID, userID);
                 }
-            }
-            if (flag == false)
-            {
-                await DialogService.ShowMessageBox(
-                        "EWAY BILL MISSING!",
-                        "Please enter Eway Bill Number first.");
+
+                MudDialog.Close(DialogResult.Ok("Appended"));
             }
             else
             {
-                foreach (var item in collection)
-                {
-                    if (item.Selected)
-                    {
-                        int result = Iservice.AppendToTrip(TripID, item.model.GcSetID, userID);
-                    }
-                }
-                MudDialog.Close(DialogResult.Ok("Appended"));
+                bool? ResultModel = await DialogService.ShowMessageBox(
+                "None Selected!",
+                "Please select a consignment to load!.");
             }
         }
         else
