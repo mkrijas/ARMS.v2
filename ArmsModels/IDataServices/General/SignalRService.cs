@@ -10,7 +10,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsServices.DataServices.General;
 using Microsoft.AspNetCore.SignalR;
-
 namespace ArmsServices.DataServices
 {
     public class SignalRService

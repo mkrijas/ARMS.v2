@@ -1,15 +1,18 @@
 ﻿using ArmsModels.BaseModels.General;
 using ArmsServices;
 using ArmsServices.DataServices;
-using Core.IDataServices.General;
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using TableDependency.SqlClient;
 using TableDependency.SqlClient.Base;
 using TableDependency.SqlClient.Base.Abstracts;
@@ -21,68 +24,50 @@ namespace ArmsServices.DataServices
     {
         private const string TableName = "General.Notification";
         private SqlTableDependency<PushNotificationModel> _notifier; 
+        private IHubContext<ServerSignalHub> _hubContext;
         
-
-        private Microsoft.AspNetCore.SignalR.Client.HubConnection hubConnection;
-        public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
-        public string ResultErrorMessage { get; set; } = string.Empty;
-        private readonly IServiceProvider serviceProvider;
-
         string ConnectionString { get; set; }
         ILogger<DbService> _logger;
-        public SqlTableDependencyService(IServiceProvider _serviceProvider, IConfiguration configuration, ILogger<DbService> logger)
+        public string ResultErrorMessage { get; set; } = string.Empty;
+
+        bool Active = false;
+
+
+
+        public SqlTableDependencyService(IConfiguration configuration,IHubContext<ServerSignalHub> context , ILogger<DbService> logger )
         {
             this._logger = logger;
             this.ConnectionString = configuration.GetConnectionString("ArmsDB");
-
-            serviceProvider = _serviceProvider;
-            using (var scope = serviceProvider.CreateScope())
-            {
-                //var navigationManager = scope.ServiceProvider.GetRequiredService<NavigationManager>();
-                //NavigationManager.Initialized(navigationManager);
-                //var result = navigationManager.ToAbsoluteUri("/chatHub");
-                hubConnection = new HubConnectionBuilder().WithUrl("http://localhost:35411/chatHub").Build();
-                if (!IsConnected)
-                {
-                    hubConnection.StartAsync();
-                }
-            }
+            _hubContext = context;           
         }
         public void SubscribeTableDependency()
         {
-            try
+            if (!Active)
             {
-                _notifier = new SqlTableDependency<PushNotificationModel>(ConnectionString, TableName);
-                _notifier.OnChanged += TabledependencyChange;
-                _notifier.OnError += TabledependencyError;
-                _notifier.Start();                
-            }
-            catch (Exception ex)
-            {
-                ResultErrorMessage = ex.Message;
-                Console.Write(ResultErrorMessage);
+                try
+                {
+                    _notifier = new SqlTableDependency<PushNotificationModel>(ConnectionString, TableName);
+                    _notifier.OnChanged += TabledependencyChange;
+                    _notifier.OnError += TabledependencyError;
+                    _notifier.Start();
+                    Active = true;
+                }
+                catch (Exception ex)
+                {
+                    ResultErrorMessage = ex.Message;
+                    Console.Write(ResultErrorMessage);
+                }
             }
         }
-
         private async void TabledependencyChange(object obj, RecordChangedEventArgs<PushNotificationModel> e)
-        {
+        {            
             if (e.ChangeType != TableDependency.SqlClient.Base.Enums.ChangeType.None)
             {
                 var changeEntity = e.Entity;
-                if (changeEntity != null && changeEntity.MessageGroupID != null && (changeEntity.MessageGroupID.ToLower().Trim() == ("PeriodicMaintainence").ToLower().Trim() || changeEntity.MessageGroupID.ToLower().Trim() == ("EWayBill").ToLower().Trim()))
-                {
-                    if (!IsConnected)
-                    {
-                        await hubConnection.StartAsync();
-                    }
-
-                    changeEntity.InitiateBranch = new();
-                    changeEntity.InitiateBranch.BranchID = changeEntity.InitiateBranchID;
-                    changeEntity.ReceivedBranch = new();
-                    changeEntity.ReceivedBranch.BranchID = changeEntity.ReceivedBranchID;
-
-                    await hubConnection.SendAsync("SendMessages",
-                        changeEntity);
+                //if (changeEntity != null && changeEntity.MessageGroupID != null && (changeEntity.MessageGroupID.ToLower().Trim() == ("PeriodicMaintainence").ToLower().Trim() || changeEntity.MessageGroupID.ToLower().Trim() == ("EWayBill").ToLower().Trim()))
+                if (changeEntity != null)
+                {                    
+                    await _hubContext.Clients.All.SendAsync("ReceiveMessage", "Triggered");
                 }
             }
         }

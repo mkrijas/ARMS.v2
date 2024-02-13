@@ -34,7 +34,7 @@ using Core.IDataServices.Finance.Transactions;
 using DAL.DataServices.Finance.Transactions;
 using System.Security.Cryptography;
 using DAL.DataServices.General;
-using Core.IDataServices.General;
+
 using Microsoft.AspNetCore.Identity.UI.Services;
 using static MudBlazor.Defaults;
 using Core.IDataServices.Finance.LedgerViews;
@@ -311,7 +311,7 @@ namespace Views
             CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
             CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-            app.UseResponseCompression();
+            app.UseResponseCompression(); // SignalR Response compression
 
             app.UseHttpsRedirection();
 
