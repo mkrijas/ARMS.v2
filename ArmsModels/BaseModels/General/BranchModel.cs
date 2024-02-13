@@ -61,5 +61,6 @@ namespace ArmsModels.BaseModels
         public DistrictModel District { get; set; }
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
         public List<ContactModel> Contacts { get; set; }
+        public virtual string GstCertificate { get; set; }
     }
 }
