@@ -9,6 +9,8 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
+@inject NavigationManager Navigation
+
 <MudGrid style="padding-top:16px;">
     <MudItem xs="12" md="12">
         <MudTable Items="@collection">
@@ -17,37 +19,48 @@
                 <MudSpacer></MudSpacer>
             </ToolBarContent>
             <HeaderContent>
-                <MudTh Style="width:40%;">SETTINGS</MudTh>
-                <MudTh Style="width:40%;">SETTINGS VALUE</MudTh>
-                <MudTh Style="width:20%;"></MudTh>
+                <MudTh Style="width:40%;font-weight: bold;">SETTINGS</MudTh>
+                <MudTh Style="width:40%;font-weight: bold;">SETTINGS VALUE</MudTh>
+                <MudTh Style="width:20%;font-weight: bold;"></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Options">@context.SettingName</MudTd>
+                @* <MudTd DataLabel="Options">@context.SettingName</MudTd> *@
+                <MudTd DataLabel="Options">
+                    <MudText Typo="Typo.h6" Margin="Margin.Dense"> @context.SettingName</MudText>
+                    </MudTd>
                     <MudTd DataLabel="Value">
                         @* @if (context.ValueOptionsList?.Count == 2 && context.ValueOptionsList.Contains("True") && context.ValueOptionsList.Contains("False")) *@
-                        @if(context.ValueSelectType == "CHECK")
+                        @if (context.ValueSelectType == "CHECK")
                     {
                         <MudCheckBox T="bool" Checked="@(bool.Parse(context.Value))" CheckedChanged="(bool e) => Submit(e.ToString(), context)"></MudCheckBox>
                     }
                     @* @if (context.ValueOptionsList == null && context.ValueOptionsList?.Count != 2) *@
                     @if (context.ValueSelectType == "TEXT")
                     {
-                        <MudTextField Style="width:80%" Value="@context.Value" ValueChanged="(string a) => Submit(a, context)" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                        @* <MudTextField Style="width:80%; font-weight: bold;" Value="@context.Value" ValueChanged="(string a) => Submit(a, context)" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField> *@
+                    @if (!context.HideTextField)
+                    {
+                        <MudText Typo="Typo.h6" Style="font-weight: bold;" Margin="Margin.Dense"> @context.Value</MudText>
                     }
+                    @if (context.HideTextField)
+                        {
+                            <MudTextField Style="width:80%; font-weight: bold;" @bind-Value="@context.Value" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                        }
+                    } 
                     @* @if (context.ValueOptionsList != null && context.ValueOptionsList?.Count > 2) *@
                     @if (context.ValueSelectType == "QUERY")
                     {
                         <MudItem Style="width:100%">
                             @if (!context.HideTextField)
                             {
-                                <MudTextField Style="width:80%" Value="@context.Value" ValueChanged="(string a) => Submit(a, context)" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                                @* <b>@context.Value</b> *@
+                                <MudText Typo="Typo.h6" Style="font-weight: bold;" Margin="Margin.Dense"> @context.Value</MudText>
+                                @* <MudTextField Style="width:80%; font-weight: bold;" Value="@context.Value" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField> *@
                             }
                             @if (context.HideTextField)
                             {
-                                <MudAutocomplete Style="width:80%"
-                                    T="KeyValuePair<string, string>"
-                                                 Value="@context.selectedValue"
-                                                 ValueChanged="@(value => Submit1(value, context.SettingName))"
+                                <MudAutocomplete Style="width:80%; font-weight: bold;" T="KeyValuePair<string, string>"
+                                                 @bind-Value="@context.selectedValue"
                                                  ToStringFunc="@((item) => item.Value)"
                                                  SearchFunc="@Search"
                                                  ResetValueOnEmptyText="@resetValueOnEmptyText"
@@ -59,8 +72,51 @@
                                                  AdornmentColor="Color.Primary">
                                 </MudAutocomplete>
                             }
-                            <MudFab Style="font-size:5px" @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                         </MudItem>
+                        @* ValueChanged = "@(value => Submit1(value, context.SettingName, context))" *@
+                    }
+                </MudTd>
+                <MudTd DataLabel="Actions">
+                    @if (context.ValueSelectType == "TEXT")
+                    {
+                        @if (!context.HideTextField)
+                        {
+                            <MudFab Style="font-size:5px" @onclick="@(()=> Edit(context))"
+                                    Color="Color.Primary" Icon="@Icons.Material.Filled.Edit"
+                                    Size="Size.Small" IconSize="Size.Small" />
+                        }
+                        @if (context.HideTextField)
+                        {
+                            <MudFab Style="font-size:5px" @onclick="@(value => Submit(context.Value, context))"
+                                    Color="Color.Success" Icon="@Icons.Material.Filled.Save"
+                                    Size="Size.Small" IconSize="Size.Small" />
+
+                            <MudFab Style="font-size:5px" @onclick="@(()=> Cancel(context))"
+                                    Color="Color.Error" Icon="@Icons.Material.Filled.Cancel"
+                                    Size="Size.Small" IconSize="Size.Small" />
+                        }
+                    }
+
+                    @if (context.ValueSelectType == "QUERY")
+                    {
+                        @if (!context.HideTextField)
+                        {
+                            <MudFab Style="font-size:5px" @onclick="@(()=> Edit(context))"
+                                    Color="Color.Primary" Icon="@Icons.Material.Filled.Edit"
+                                    Size="Size.Small" IconSize="Size.Small" />
+                        }
+                        @if (context.HideTextField)
+                        {
+                            <MudFab Style="font-size:5px" @onclick="@(value => Submit1(context.selectedValue, context.KeyString, context))"
+                                    Color="Color.Success" Icon="@Icons.Material.Filled.Save"
+                                    Size="Size.Small" IconSize="Size.Small" />
+
+                            <MudFab Style="font-size:5px" @onclick="@(()=> Cancel(context))"
+                                    Color="Color.Error" Icon="@Icons.Material.Filled.Cancel"
+                                    Size="Size.Small" IconSize="Size.Small" />
+                        }
+
+                        
                     }
                 </MudTd>
                 <MudTd></MudTd>
@@ -73,21 +129,18 @@
     private bool resetValueOnEmptyText;
     private bool coerceText;
     private bool coerceValue;
-    //private KeyValuePair<string, string> selectedValue;
     private Dictionary<string, string> options = new Dictionary<string, string>();
     private bool hideTextField = false;
 
     protected override async Task OnInitializedAsync()
     {
         collection = IGeneralSettings.Select().ToList();
-        //selectedValue = new KeyValuePair<string, string>(context.Value, context.Value);
     }
 
     private Task<IEnumerable<KeyValuePair<string, string>>> Search(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            // If the text is blank, return all options.
             return Task.FromResult(options.AsEnumerable());
         }
         else
@@ -101,7 +154,6 @@
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            // If the text is blank, return all options.
             return Task.FromResult(context.ValueOptionsList.AsEnumerable());
         }
         else
@@ -116,7 +168,15 @@
         options = IGeneralSettings.SelectValues(context).ToDictionary(vo => vo.id, vo => vo.val);
         context.HideTextField = true;
     }
-    private async Task Submit1(KeyValuePair<string, string> selectedValue, string SettingName)
+
+    private void Cancel(GeneralSettingsModel context)
+    {
+        context.HideTextField = false;
+        StateHasChanged();
+        //Navigation.NavigateTo(Navigation.Uri, true);
+
+    }
+    private async Task Submit1(KeyValuePair<string, string> selectedValue, string KeyString, GeneralSettingsModel context)
     {
         try
         {
@@ -129,11 +189,14 @@
             UserInfoModel userInfo = new UserInfoModel();
             model.UserInfo = userInfo;
             model.UserInfo.UserID = user.Identity.Name;
-            model.SettingName = SettingName;
+            model.SettingName = KeyString;
             model.SettingId = key.ToString();
             model.Value = value;
+            context.Value = value;
+            context.selectedValue = selectedValue;
             IGeneralSettings.Update(model);
             //selectedValue = new KeyValuePair<string, string>("", "");
+            context.HideTextField = false;
             StateHasChanged();
         }
         catch (Exception ex)
@@ -151,6 +214,7 @@
             model.UserInfo.UserID = user.Identity.Name;
             model.Value = newValue;
             IGeneralSettings.Update(model);
+            model.HideTextField = false;
             StateHasChanged();
         }
         catch (Exception ex)
