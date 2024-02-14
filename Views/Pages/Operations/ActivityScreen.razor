@@ -1,9 +1,11 @@
 ﻿@page "/operations"
+@using ArmsModels.BaseModels.FMS;
 @using ArmsServices.DataServices.FMS;
 @using ArmsServices.DataServices.Operations;
 @using Pages.Operations.Truck
 @using Pages.Operations.Gc
 @using Pages.FMS.Breakdown
+@using Pages.FMS.RoutineCheckList
 @using Pages.Finance.Transactions
 @using System.Threading;
 @inject IBranchService Ibranch
@@ -90,6 +92,7 @@
                     <MudButton StartIcon="@Icons.Material.Filled.Money" OnClick="OpenTripAdvance" IconColor="Color.Success">Trip Advance</MudButton>
                     <MudButton StartIcon="@Icons.Material.Outlined.Details" OnClick="OpenTripCard" IconColor="Color.Primary">View Details</MudButton>
                 }
+                <MudButton StartIcon="@Icons.Material.Filled.Checklist" OnClick="OpenCheckList" IconColor="Color.Primary">Routine Check List</MudButton>
             </MudButtonGroup>
         </MudItem>
     }
@@ -516,5 +519,38 @@
                 EventButtonLabel = "Update Status";
             }
         }
+    }
+
+    private async void OpenCheckList()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+
+
+        RoutineCheckListModel checkListModel = new()
+            {
+                Truck = SelectedTruck,
+                TruckID = SelectedTruck.TruckID,
+                BranchID = int.Parse(brancIDString),
+            };
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", checkListModel);
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large };
+        var dialog = DialogService.Show<RoutineCheckListDialog>("Simple Dialog", parms, options);
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Cancelled;
+        await Task.Delay(200);
+        _busy = false;
     }
 }
