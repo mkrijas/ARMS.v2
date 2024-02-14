@@ -52,8 +52,10 @@
     public int? DocumentID { get; set; }
     [Parameter]
     public EventCallback<DataApprovedStatus> OnApprove { get; set; }
-    [Parameter]
-    public bool ApproveWithin { get; set; }
+    public EventCallback<DataApprovedStatus>OnUpdated{ get; set; }
+
+    // [Parameter]
+    // public bool ApproveWithin { get; set; }
     [Parameter]
     public string PageToRedirectLink { get; set; }
     [Parameter]
@@ -62,6 +64,8 @@
     public DateTime? DocDate { get; set; }
     [Parameter]
     public string DocType { get; set; }
+
+
 
     public int BranchID { get; set; }
     public string UserID { get; set; }
@@ -73,7 +77,7 @@
    
 
     #region SignaIR Notification
-    private IEnumerable<PushNotificationModel> allNotificationMessages = null;
+    //private IEnumerable<PushNotificationModel> allNotificationMessages = null;
     private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
     private PushNotificationModel notificationMessage = new PushNotificationModel();
     #endregion
@@ -89,8 +93,7 @@
 
         //allNotificationMessages = IpushNotificationService.SelectUnAknowledgedAndNonTimeElapsedNotifications(BranchID).ToList();
         //currentNotificationMessages = allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == BranchID).ToList();
-
-        await signalRService.StartAsync();
+        //await signalRService.StartAsync();
     }
 
     private void GetAll()
@@ -110,17 +113,14 @@
         _busy = true;
         DialogParameters parms = new DialogParameters();
         parms.Add("model", statusModel);
-        parms.Add("ApproveWithin", ApproveWithin);
+        //parms.Add("ApproveWithin", ApproveWithin);
         var dialog = DialogService.Show<AutherizationVerificationDialog>(statusModel?.ID == null ? "ADD" : "EDIT", parms);
         var result = await dialog.Result;
-        DataApprovedStatus aprd = new DataApprovedStatus();
-
-        allNotificationMessages = IpushNotificationService.SelectUnAknowledgedAndNonTimeElapsedNotifications(BranchID);
-        currentNotificationMessages = allNotificationMessages.Any(y => (y?.ReceivedBranch?.BranchID ?? 0) == BranchID) ? allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == BranchID).ToList() : null;
-
+        DataApprovedStatus aprd = new DataApprovedStatus();        
+        currentNotificationMessages = IpushNotificationService.SelectActiveNotifications(BranchID).ToList();  
         if (!result.Canceled)
         {
-            aprd = (DataApprovedStatus)result.Data;
+            aprd = (DataApprovedStatus)result.Data;            
             if (aprd.IsApprove)
             {
                 await OnApprove.InvokeAsync(aprd);
@@ -142,10 +142,10 @@
                     }
                     catch (Exception ex)
                     {
-                        snackbar.Add("Error while sending message!", Severity.Error);
+                        snackbar.Add(ex.Message, Severity.Error);
                     }
                 }
-                await signalRService.Send(notificationMessage);
+                IpushNotificationService.UpdatePushNotification(notificationMessage);
             }
             else
             {
@@ -181,7 +181,8 @@
                 notificationMessage.ClaimValue = claimValue;
                 notificationMessage.DocumentTypeID = DocTypeID;
                 notificationMessage.MsgDate = DateTime.Now;
-                await signalRService.Send(notificationMessage);
+               // await signalRService.Send(notificationMessage);
+                IpushNotificationService.UpdatePushNotification(notificationMessage);
             }
             GetAll();
         }
