@@ -26,7 +26,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TaxPurchaseItemModel> GetItems(int? PID);
         int Approve(int? PID, string UserID, string Remarks);  //Approve
         int Reverse(int? PID, string UserID, string Remarks);  //Reverse
-        TaxPurchaseModel UpdateAssetPO(TaxPurchaseModel model);
+        //TaxPurchaseModel UpdateAssetPO(TaxPurchaseModel model);
         IEnumerable<AssetPOModel> GetAssets(int? PID);
     }
 }

@@ -54,6 +54,7 @@ namespace DAL.DataServices.General
                     dr["Value"].ToString(),
                     dr["Value"].ToString()),
                 ValueSelectType = dr.GetString("ValueSelectType"),
+                KeyString = dr.GetString("KeyString"),
             UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -71,7 +72,7 @@ namespace DAL.DataServices.General
             //}
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@SettingName", model.SettingName)
+               new SqlParameter("@SettingName", model.KeyString)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.ValueOptions.Select]", parameters))
             {

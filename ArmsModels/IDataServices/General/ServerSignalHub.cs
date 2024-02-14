@@ -3,7 +3,7 @@ using ArmsModels.BaseModels.General;
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 
-namespace Views.Data
+namespace ArmsServices.DataServices
 {
     public class ServerSignalHub : Hub
     {      
@@ -12,7 +12,6 @@ namespace Views.Data
         {
             await Clients.All.SendAsync("ReceiveMessage", notificationModel);
         }
-
 
         public async Task SendMessage(string user, string message)
         {

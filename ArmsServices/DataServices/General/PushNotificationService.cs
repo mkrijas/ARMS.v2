@@ -11,9 +11,11 @@ namespace ArmsServices.DataServices.General
     {
         IDbService Iservice;
 
-        public PushNotificationService(IDbService iservice)
+
+        public PushNotificationService(IDbService iservice,SqlTableDependencyService _tabledep)
         {
             Iservice = iservice;
+            _tabledep.SubscribeTableDependency();
         }
 
         public string GetMessageTitle(string DocType, string DocNumber,string Varification)
@@ -53,19 +55,7 @@ namespace ArmsServices.DataServices.General
             }
             return model;
         }
-        public IEnumerable<PushNotificationModel> SelectUnAknowledgedAndNonTimeElapsedNotifications(int? ID)
-        {
-
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@ID", ID),
-               new SqlParameter("@Operation", "ByBranch"),
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.Notification.Select]", parameters))
-            {
-                yield return GetModel(dr);
-            }
-        }
+        
         public IEnumerable<PushNotificationModel> SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(int? ID,int? DocumentID,int? DocumentTypeID)
         {
 
@@ -150,6 +140,32 @@ namespace ArmsServices.DataServices.General
                 RecordStatus = dr.GetByte("RecordStatus"),
                 MsgDate = dr.GetDateTime("Timestamp")
             };
+        }
+
+        public IEnumerable<PushNotificationModel> SelectActiveNotifications()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {               
+               new SqlParameter("@Operation", "SelectActive"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.Notification.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<PushNotificationModel> SelectActiveNotifications(int? BranchID, string UserID = null)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", BranchID),
+               new SqlParameter("@UserID", UserID),               
+               new SqlParameter("@Operation", "SelectActive"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.Notification.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
     }
 }

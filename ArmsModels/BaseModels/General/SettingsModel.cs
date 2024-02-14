@@ -28,6 +28,7 @@ namespace ArmsModels.BaseModels.General
         public List<ValueOptions> Values { get; set; }
         public string ValueSelectType { get; set; }
         public bool HideTextField { get; set; }
+        public string KeyString { get; set; }
     }
     public class ValueOptions
     {

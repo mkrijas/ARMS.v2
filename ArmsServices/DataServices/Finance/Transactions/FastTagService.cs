@@ -44,11 +44,23 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
-        public IEnumerable<FastTagTollModel> GetUploadView(int? ID)
+        public IEnumerable<FastTagTollModel> GetUploadViewInComplete(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@Operation", "UploadView"),
+                new SqlParameter("@Operation", "UploadViewInComplete"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
+            {
+                yield return GetMainModel(dr);
+            }
+        }
+
+        public IEnumerable<FastTagTollModel> GetUploadViewComplete(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "UploadViewComplete"),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
             {
@@ -75,6 +87,19 @@ namespace DAL.DataServices.Finance.Transactions
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@Operation", "UploadViewCollection"),
+                new SqlParameter("@FastTagUploadID", FastTagUploadID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<FastTagModel> GetUploadViewSelectedCollection(int? FastTagUploadID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "UploadViewSelectedCollection"),
                 new SqlParameter("@FastTagUploadID", FastTagUploadID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
@@ -221,6 +246,7 @@ namespace DAL.DataServices.Finance.Transactions
             return new FastTagModel
             {
                 FastTagTollID = dr?.GetInt32("FastTagTollID"),
+                IsProcessed = dr.GetBoolean("IsProcessed"),
                 TransactionDateTime = dr.GetDateTime("TollCrossTime"),
                 NumberPlate = dr.GetString("RegNo"),
                 BranchID = dr.GetInt32("BranchID"),

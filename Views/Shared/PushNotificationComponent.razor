@@ -104,58 +104,6 @@
     public string BranchName { get; set; }
 
     int CurrentBranchId = 0;
-    protected override async Task OnInitializedAsync()
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value;
-
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        int.TryParse(brancIDString, out CurrentBranchId);
-
-        allNotificationMessages = IpushNotificationService.SelectUnAknowledgedAndNonTimeElapsedNotifications(CurrentBranchId).ToList();
-        currentNotificationMessages = allNotificationMessages.Where(y => (y?.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-        GroupList = IpushNotificationService.GetAllGroupList().ToList();
-        
-        hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
-        hubConnection.On<PushNotificationModel>("ReceiveMessage", async (PushNotificationMessage) =>
-        {
-            if (PushNotificationMessage != null && (PushNotificationMessage.MessageGroupID == "PendingVerification" || PushNotificationMessage.MessageGroupID == "EWayBill" || PushNotificationMessage.MessageGroupID == "PeriodicMaintainence" || PushNotificationMessage.MessageGroupID == "TruckRequestApproval") && PushNotificationMessage.DocumentID != null && PushNotificationMessage.DocumentTypeID != null && allNotificationMessages.Any(g => g.DocumentID == PushNotificationMessage.DocumentID && g.DocumentTypeID == PushNotificationMessage.DocumentTypeID))
-            {
-
-                foreach (var MessageID in allNotificationMessages.Where(g => g.DocumentID == PushNotificationMessage.DocumentID && g.DocumentTypeID == PushNotificationMessage.DocumentTypeID).Select(g => g.MessageID).ToList())
-                {
-                    if (allNotificationMessages != null && allNotificationMessages.Any(x => x.MessageID == MessageID))
-                    {
-                        allNotificationMessages.RemoveAll(x => x.MessageID == MessageID);
-                    }
-
-                    if (currentNotificationMessages != null && currentNotificationMessages.Any(x => x.MessageID == MessageID))
-                    {
-                        currentNotificationMessages.RemoveAll(t => t.MessageID == MessageID);
-                    }
-                }
-                await InvokeAsync(() => StateHasChanged());
-            }
-            if (PushNotificationMessage != null && PushNotificationMessage.Aknowledged == false && PushNotificationMessage.MessageID != null && PushNotificationMessage.MessageID != 0)
-            {
-                var ResultClaim = await Irole.HasClaim(PushNotificationMessage.DocumentTypeID.ToString(), "View", ctc.Token);
-                if (ResultClaim)
-                {
-                    allNotificationMessages.Add(PushNotificationMessage);
-                    currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-                    await InvokeAsync(() => StateHasChanged());
-                }
-                else if (string.IsNullOrEmpty(PushNotificationMessage.ClaimValue))
-                {
-                    allNotificationMessages.Add(PushNotificationMessage);
-                    currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-                    await InvokeAsync(() => StateHasChanged());
-                }
-            }
-        });
-        await hubConnection.StartAsync();
-    }
 
     #region SignaIR Notification
 
@@ -165,7 +113,81 @@
     private string BoxCss = "none";
     List<PushNotificationGroupModel> GroupList = new();
 
-    public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+    //public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+    protected override async Task OnInitializedAsync()
+    {  
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value;        
+        int.TryParse(brancIDString, out CurrentBranchId);
+
+        await getNotifications();
+        GroupList = IpushNotificationService.GetAllGroupList().ToList();
+
+
+        if (hubConnection == null || hubConnection.State == HubConnectionState.Disconnected)
+        {
+            hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/chatHub")).Build();
+            hubConnection.On<string>("ReceiveMessage", async Triggered =>
+            {
+                await getNotifications();
+
+                // if (notifications != null && (notifications.MessageGroupID == "PendingVerification" || notifications.MessageGroupID == "EWayBill" || notifications.MessageGroupID == "PeriodicMaintainence" || notifications.MessageGroupID == "TruckRequestApproval") && notifications.DocumentID != null && notifications.DocumentTypeID != null && allNotificationMessages.Any(g => g.DocumentID == notifications.DocumentID && g.DocumentTypeID == notifications.DocumentTypeID))
+                // {
+                //     foreach (var MessageID in allNotificationMessages.Where(g => g.DocumentID == notifications.DocumentID && g.DocumentTypeID == notifications.DocumentTypeID).Select(g => g.MessageID).ToList())
+                //     {
+                //         if (allNotificationMessages != null && allNotificationMessages.Any(x => x.MessageID == MessageID))
+                //         {
+                //             allNotificationMessages.RemoveAll(x => x.MessageID == MessageID);
+                //         }
+
+                //         if (currentNotificationMessages != null && currentNotificationMessages.Any(x => x.MessageID == MessageID))
+                //         {
+                //             currentNotificationMessages.RemoveAll(t => t.MessageID == MessageID);
+                //         }
+                //     }
+                //     await InvokeAsync(() => StateHasChanged());
+                // }
+                // if (notifications != null && notifications.Aknowledged == false && notifications.MessageID != null && notifications.MessageID != 0)
+                // {
+                //     var ResultClaim = await Irole.HasClaim(notifications.DocumentTypeID.ToString(), "View", ctc.Token);
+                //     if (ResultClaim)
+                //     {
+                //         allNotificationMessages.Add(notifications);
+                //         currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+                //         await InvokeAsync(() => StateHasChanged());
+                //     }
+                //     else if (string.IsNullOrEmpty(notifications.ClaimValue))
+                //     {
+                //         allNotificationMessages.Add(notifications);
+                //         currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
+                //         await InvokeAsync(() => StateHasChanged());
+                //     }
+                // }
+            });
+
+            await hubConnection.StartAsync();
+        }
+    }
+
+
+    private async Task getNotifications()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        currentNotificationMessages = IpushNotificationService.SelectActiveNotifications(CurrentBranchId).ToList();
+
+        foreach (var item in currentNotificationMessages)
+        {
+            var hasClaim = await Irole.HasClaim(item.DocumentTypeID.ToString(), "View", ctc.Token);
+            if (!hasClaim)
+            {
+                currentNotificationMessages.Remove(item);
+            }
+        }
+        await InvokeAsync(()=> StateHasChanged());
+    }
+
+
 
     private void NotificationHideShow()
     {
