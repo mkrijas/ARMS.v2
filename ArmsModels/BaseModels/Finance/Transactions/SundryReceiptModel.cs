@@ -28,6 +28,7 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public string PayerContactNo { get; set; }
         [Required]
         [ValidateComplexType]
+        [MustContain(ErrorMessage = "No particulars selected for Receipt!")]
         public List<SundryReceiptEntryModel> Entries { get; set; } = new();
     }
 
