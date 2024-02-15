@@ -1,4 +1,5 @@
 ﻿@page "/AssetPurchase"
+@page "/AssetPurchase/{id:int}"
 @using System.Threading
 @using Views.Pages.Finance.Transactions.PurchaseAndPayment
 @inject IAssetService Iservice
@@ -107,6 +108,9 @@
     private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
     private int numberOfRecords = 100;    
 
+    [Parameter]
+    public int? id { get; set; } = null;
+
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
     private string searchTerm = "";
     int BranchID; string UserID;
@@ -154,6 +158,11 @@
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = authprov.User.Identity.Name;
         await GetAll(IsApproved, NumberOfRecords);
+
+        if (id != null && collection != null && collection.Any(g => g.PID == id))
+        {
+            await Edit(collection.FirstOrDefault(s => s.PID == id), true,true);
+        }
     }
 
     private async Task SelectAssets()
@@ -168,26 +177,22 @@
             if (!result.Canceled)
             {
                 var data = (List<AssetPOModel>)result.Data;
-
-
                 AssetPurchaseModel PI = new AssetPurchaseModel()
-                    {
-                        //TotalAmount = data.Sum(x => x.TotalAmount),
+                    {                        
                         BranchID = BranchID,
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel() { UserID = UserID },
                         SelectedAssets = data,
                     };
                 parms = new DialogParameters();
-                parms.Add("model", model.Clone());
-                //parms.Add("PageToRedirectLink", "/TaxPurchase");
+                parms.Add("model", model.Clone());                
                 parms.Add("PI", PI);
                 parms.Add("ReadOnly", false);
                 var dialog2 = DialogService.Show<AssetPurchaseConsolidateDialog>("Asset Purchase", parms, maxWidth);
                 var result2 = await dialog2.Result;
                 if (!result2.Canceled)
                 {
-                    var UpdatedPI = (TaxPurchaseModel)result2.Data;
-                    //IAssetService.Update(PI);
+                    var ResultData = (TaxPurchaseModel)result2.Data;
+                    IpushNotificationService.CreateAuthNotifications(BranchID, DocTypeID, ResultData.PID.Value);
                     await GetAll(IsApproved, NumberOfRecords);
                 }
             }
@@ -258,7 +263,7 @@
             if (!result.Canceled)
             {
                 var ResultData = (TaxPurchaseModel)result.Data;
-                IpushNotificationService.CreateAuthNotifications(BranchID, DocTypeID, ResultData.PID.Value);
+                
             }
             await GetAll(IsApproved, NumberOfRecords);
             await Task.Delay(200);

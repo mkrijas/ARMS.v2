@@ -18,7 +18,7 @@
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Asset Purchase" formID="formAssetPurchase" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
     <FormContent>
-
+        <MudPaper Class="p-3">
             <EditForm id="formAssetPurchase" OnValidSubmit="OnValidSubmit" EditContext="editContext" autocomplete="off">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
@@ -34,10 +34,7 @@
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceNo)"></MudTextField>
-                    </MudItem>
-                    @* <MudItem xs="12" md="6">
-                    <MudTextField ReadOnly="ReadOnly" @bind-Value="model.AdditionalTDS" Label="Additional TDS" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdditionalTDS)"></MudTextField>
-                    </MudItem> *@
+                    </MudItem>                 
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
@@ -85,7 +82,7 @@
                     </MudTd> *@
                     </RowTemplate>
                 </MudTable>
-          
+        </MudPaper>
         </FormContent>
         <VerificationStatus>
             <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="@model.PID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
@@ -114,7 +111,7 @@
     public bool HasPermissionTaxPurchaseServiceApprove { get; set; } = false;
     int DocTypeID = 117;
     DialogForm dialogForm;
-    public DocumentDetailsModel DocumentDetails { get; set; } = new();
+    public DocumentInfoModel DocumentDetails { get; set; } = new();
     [Parameter]
     public string PageToRedirectLink { get; set; }
 
@@ -164,14 +161,7 @@
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
         AddTax(model.Assets);
-        // if (PI.PaymentInitiatedID == null)
-        // {
-        //     docNum = "New";
-        // }
-        // else
-        // {
-        //     docNum = PI.DocumentNumber;
-        // }
+
     }
 
     protected override void OnParametersSet()
@@ -212,6 +202,17 @@
                 if (check == null || (check.PID != null && check.PID == model.PID && check.DocumentNumber == model.DocumentNumber))
                 {
                     model.UserInfo.UserID = UserID;
+
+
+                    foreach (var asset in model.Assets)
+                    {
+                        asset.CoaID = iservice.GetCapitalizationCoaID(asset.AssetID);
+                        if(asset.CoaID is null)
+                        {
+                            snackbar.Add( string.Format("Acpitalization Account is not mapped for {0}",asset.AssetCode), Severity.Error);
+                            return;
+                        }
+                    }
                     var result = Iservice.Update(model);
                     snackbar.Add("Saved Successfully", Severity.Success);
                     dialogForm.Close(result);

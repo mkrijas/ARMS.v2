@@ -168,7 +168,7 @@ namespace ArmsServices.DataServices.General
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", BranchID),
+               new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@DocumentID", DocumentID),
                new SqlParameter("@DocumentTypeID", DocumentTypeID),
             };
