@@ -14,6 +14,7 @@
         <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(new RouteModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
         <MudSpacer></MudSpacer>
         <MudTextField @bind-Value="searchRoute" Placeholder="Search Routes... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudCheckBox Label="Disabled Routes" CheckedChanged="((bool value)=>DisabledChanged(value))" Checked="@IsDisabled" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
     </ToolBarContent>
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<RouteModel, object>(x=> x.RouteName)" InitialDirection="SortDirection.Ascending">Route</MudTableSortLabel></MudTh>
@@ -30,8 +31,21 @@
         <MudTd DataLabel="RouteType">@context.RouteType</MudTd>
         <MudTd DataLabel="TollBooths">@context.TollBooths</MudTd>
         <MudTd DataLabel="">
-            <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+            @if (IsDisabled)
+            {
+                <MudTooltip Text="Enable">
+                    <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.KeyboardReturn" Size="Size.Small" IconSize="Size.Small" />
+                </MudTooltip>
+            }
+            else
+            {
+                <MudTooltip Text="Edit">
+                    <MudFab @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                </MudTooltip>
+                <MudTooltip Text="Disable">
+                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.DisabledByDefault" Size="Size.Small" IconSize="Size.Small" />
+                </MudTooltip>
+            }
         </MudTd>
     </RowTemplate>
     <PagerContent>
@@ -39,7 +53,7 @@
     </PagerContent>
 </MudTable>
 
-@code {
+    @code {
 
     private RouteModel model = new RouteModel();
     private List<RouteModel> collection = new List<RouteModel>();
@@ -51,6 +65,7 @@
     public bool HasPermissionRouteServiceEdit { get; set; } = false;
     public bool HasPermissionRouteServiceDelete { get; set; } = false;
     public int DocTypeID = 43;
+    public bool IsDisabled { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -59,7 +74,7 @@
         HasPermissionRouteServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
 
         places = Iplace.Select(0).ToList();
-        await GetAll();
+        await GetAll(IsDisabled);
     }
 
     private async Task<IEnumerable<PlaceModel>> Search(string searchString)
@@ -67,12 +82,29 @@
         return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
-    private async Task GetAll()
+    private async Task GetAll(bool val)
     {
-        await foreach (var route in Iservice.Select(0))
+        collection = new();
+        if (val)
         {
-            collection.Add(route);
+            await foreach (var route in Iservice.GetDisabled(0))
+            {
+                collection.Add(route);
+            }
         }
+        else
+        {
+            await foreach (var route in Iservice.Select(0))
+            {
+                collection.Add(route);
+            }
+        }
+    }
+
+    async Task DisabledChanged(bool value)
+    {
+        IsDisabled = value;
+        await GetAll(IsDisabled);
     }
 
     private async Task Delete(RouteModel model)
@@ -81,7 +113,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Warning !",
-                "Are you sure, you want to delete - " + model.RouteName + " ?");
+                "Are you sure, you want to disable - " + model.RouteName + " ?");
             if (result == true)
             {
                 var authprov = await auth.GetAuthenticationStateAsync();
@@ -92,7 +124,7 @@
                     if (collection != null && collection.Any(s => s.RouteID == model.RouteID))
                     {
                         collection.Remove(collection.FirstOrDefault(s => s.RouteID == model.RouteID));
-                        snackbar.Add("Deleted Successfully", Severity.Success);
+                        snackbar.Add("Disabled Successfully", Severity.Success);
                     }
                 }
             }
@@ -156,5 +188,6 @@
         }
         await Task.Delay(200);
         _busy = false;
+        await GetAll(IsDisabled);
     }
 }
