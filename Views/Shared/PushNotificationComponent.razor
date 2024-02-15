@@ -103,23 +103,24 @@
     [Parameter]
     public string BranchName { get; set; }
 
-    int CurrentBranchId = 0;
-
     #region SignaIR Notification
 
-    private List<PushNotificationModel> allNotificationMessages = new List<PushNotificationModel>();
+    //private List<PushNotificationModel> allNotificationMessages = new List<PushNotificationModel>();
     private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
     private HubConnection hubConnection;
     private string BoxCss = "none";
     List<PushNotificationGroupModel> GroupList = new();
 
-    //public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+    string UserID;  
+    int BranchID = 0;
+
     protected override async Task OnInitializedAsync()
     {  
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         var brancIDString = authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value;        
-        int.TryParse(brancIDString, out CurrentBranchId);
+        int.TryParse(brancIDString, out BranchID);
+        UserID = user.Identity.Name;
 
         await getNotifications();
         GroupList = IpushNotificationService.GetAllGroupList().ToList();
@@ -173,19 +174,19 @@
 
     private async Task getNotifications()
     {
-        if (CurrentBranchId != 0)
+        if (BranchID != 0)
         {
             CancellationTokenSource ctc = new CancellationTokenSource();
-            currentNotificationMessages = IpushNotificationService.SelectActiveNotifications(CurrentBranchId).ToList();
+            currentNotificationMessages = IpushNotificationService.SelectActiveNotifications(BranchID,UserID).ToList();
 
-            foreach (var item in currentNotificationMessages)
-            {
-                var hasClaim = await Irole.HasClaim(item.DocumentTypeID.ToString(), "View", ctc.Token);
-                if (!hasClaim)
-                {
-                    currentNotificationMessages.Remove(item);
-                }
-            }
+            // foreach (var item in currentNotificationMessages)
+            // {                
+            //     var hasClaim = await Irole.HasClaim(item.DocumentTypeID.ToString(), Claim , ctc.Token);
+            //     if (!hasClaim)
+            //     {
+            //        currentNotificationMessages.Remove(item);
+            //    }
+            // }
             await InvokeAsync(() => StateHasChanged());
         }
     }
@@ -194,8 +195,7 @@
 
     private void NotificationHideShow()
     {
-        if (BoxCss == "none") BoxCss = "block";
-        else BoxCss = "none";
+        if (BoxCss == "none") BoxCss = "block";  else BoxCss = "none";
     }
 
     private async Task AknowledgeAllInTheList()
@@ -209,21 +209,20 @@
         {
             string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
             int c = IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
-            if (c != -1)
-            {
-                foreach (var item in currentNotificationMessages.ToList())
-                {
-                    if (await Irole.HasClaim(item.DocumentTypeID.ToString(), "View", ctc.Token))
-                    {
-                        currentNotificationMessages.Remove(currentNotificationMessages.FirstOrDefault(v => v.MessageID == item.MessageID));
-                        allNotificationMessages.Remove(allNotificationMessages.FirstOrDefault(v => v.MessageID == item.MessageID));
-                    }
-                    else
-                    {
-                        iSAnyCanNotAknowledge = true;
-                    }
-                }
-            }
+            // if (c != -1)
+            // {
+            //     foreach (var item in currentNotificationMessages.ToList())
+            //     {
+            //         if (await Irole.HasClaim(item.DocumentTypeID.ToString(), "View", ctc.Token))
+            //         {
+            //             currentNotificationMessages.Remove(currentNotificationMessages.FirstOrDefault(v => v.MessageID == item.MessageID));                        
+            //         }
+            //         else
+            //         {
+            //             iSAnyCanNotAknowledge = true;
+            //         }
+            //     }
+            // }
 
         }
         catch(Exception ex)
@@ -245,26 +244,21 @@
         if (MessageID != null)
         {
             CancellationTokenSource ctc = new CancellationTokenSource();
-            var CurrentMessage = allNotificationMessages.FirstOrDefault(s => s.MessageID == MessageID);
+            var CurrentMessage = currentNotificationMessages.FirstOrDefault(s => s.MessageID == MessageID);
             if (CurrentMessage != null && await Irole.HasClaim(CurrentMessage.DocumentTypeID.ToString(), "View", ctc.Token))
             {
                 var authprov = await auth.GetAuthenticationStateAsync();
                 var user = authprov.User;
                 var UserID = user.Identity.Name;
                 int c = IpushNotificationService.AknowledgedCurrentItem(MessageID, UserID);
-                if (c != -1)
-                {
+                // if (c != -1)
+                // {
 
-                    if (allNotificationMessages != null)
-                    {
-                        allNotificationMessages.RemoveAll(x => x.MessageID == MessageID);
-                    }
-
-                    if (currentNotificationMessages != null)
-                    {
-                        currentNotificationMessages.RemoveAll(t => t.MessageID == MessageID);
-                    }
-                }
+                //     if (currentNotificationMessages != null)
+                //     {
+                //         currentNotificationMessages.RemoveAll(x => x.MessageID == MessageID);
+                //     }
+                // }
             }
             else
             {

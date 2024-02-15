@@ -23,7 +23,6 @@ namespace ArmsServices.DataServices.General
 
             return "The DocNo :- "+ DocNumber + " of "+ DocType + " requires " + Varification + ".";
         }
-
         public string GetMessageBody(string DocType, string DocNumber, string Varification, DateTime? DocDate)
         {
 
@@ -54,8 +53,7 @@ namespace ArmsServices.DataServices.General
                 model = GetModel(dr);
             }
             return model;
-        }
-        
+        }        
         public IEnumerable<PushNotificationModel> SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(int? ID,int? DocumentID,int? DocumentTypeID)
         {
 
@@ -110,7 +108,6 @@ namespace ArmsServices.DataServices.General
             }
 
         }
-
         private PushNotificationModel GetModel(IDataRecord dr)
         {
             return new PushNotificationModel
@@ -141,7 +138,6 @@ namespace ArmsServices.DataServices.General
                 MsgDate = dr.GetDateTime("Timestamp")
             };
         }
-
         public IEnumerable<PushNotificationModel> SelectActiveNotifications()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -153,7 +149,6 @@ namespace ArmsServices.DataServices.General
                 yield return GetModel(dr);
             }
         }
-
         public IEnumerable<PushNotificationModel> SelectActiveNotifications(int? BranchID, string UserID = null)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
