@@ -17,5 +17,8 @@ namespace ArmsServices.DataServices
         int AknowledgedSelectedItems(string MessageIDs, string UserID);
         int AknowledgedCurrentItem(int? MessageID, string UserID);
         IEnumerable<PushNotificationGroupModel> GetAllGroupList();
+        int CreateAuthNotifications(int BranchID, int DocumentTypeID, int DocumentID);
+        int CancelAuthNotifications(int DocumentTypeID, int DocumentID);
+        int AcknowledgeAuthNotification(int AuthlevelID, int DocumentTypeID, int DocumentID, string UserID );
     }
 }
