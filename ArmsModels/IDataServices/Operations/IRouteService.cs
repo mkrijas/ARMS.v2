@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         Task<RouteModel> SelectByID(int? ID);
         int Delete(int? RouteID, string UserID);  //Edit
         IAsyncEnumerable<RouteModel> Select(int? RouteID);
+        IAsyncEnumerable<RouteModel> GetDisabled(int? RouteID);
         IAsyncEnumerable<RouteModel> SelectByOrder(int? OrderID);
     }
 }

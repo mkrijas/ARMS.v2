@@ -8,14 +8,8 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface IPaymentService
-    {
-        PaymentMemoModel Update(PaymentMemoModel model);  //Edit
-        PaymentMemoModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);  //Delete
-        IEnumerable<PaymentMemoModel> Select(int? BranchID);
-        IEnumerable<PaymentMemoModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<PaymentMemoModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+    public interface IPaymentService : IbaseInterface<PaymentMemoModel>
+    {       
         IEnumerable<PaymentMemoModel> SelectInterBranch(int? BranchID);
         IEnumerable<PaymentMemoModel> SelectInterBranchByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<PaymentMemoModel> SelectInterBranchByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
@@ -24,7 +18,5 @@ namespace ArmsServices.DataServices
         IEnumerable<PaymentMemoModel> SelectInitiated(int? PaymentInitiatedID);
         IEnumerable<PaymentMemoModel> SelectPending(int? BranchID);
         IEnumerable<BillsPaidModel> GetBills(int? PID);
-        int Approve(int? PID, string UserID, string Remarks);  //Approve
-        int Reverse(int? PID, string UserID, string Remarks);  //Reverse
     }
 }

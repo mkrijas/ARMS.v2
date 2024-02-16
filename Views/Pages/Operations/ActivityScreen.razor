@@ -1,9 +1,11 @@
 ﻿@page "/operations"
+@using ArmsModels.BaseModels.FMS;
 @using ArmsServices.DataServices.FMS;
 @using ArmsServices.DataServices.Operations;
 @using Pages.Operations.Truck
 @using Pages.Operations.Gc
 @using Pages.FMS.Breakdown
+@using Pages.FMS.RoutineCheckList
 @using Pages.Finance.Transactions
 @using System.Threading;
 @inject IBranchService Ibranch
@@ -90,6 +92,7 @@
                     <MudButton StartIcon="@Icons.Material.Filled.Money" OnClick="OpenTripAdvance" IconColor="Color.Success">Trip Advance</MudButton>
                     <MudButton StartIcon="@Icons.Material.Outlined.Details" OnClick="OpenTripCard" IconColor="Color.Primary">View Details</MudButton>
                 }
+                <MudButton StartIcon="@Icons.Material.Filled.Checklist" OnClick="OpenCheckList" IconColor="Color.Primary">Routine Check List</MudButton>
             </MudButtonGroup>
         </MudItem>
     }
@@ -233,7 +236,6 @@
         {
             return;
         }
-        _busy = true;
         var parameters = new DialogParameters();
         parameters.Add("Truck", SelectedTruck);
         parameters.Add("AssignedDriver", AssignedDriver);
@@ -246,18 +248,42 @@
             bool IsbranchSetting = branchSettingsService.IsEnabled(branchid, 1);
             if (IsbranchSetting)
             {
-                var ResultList = IroutineCheckListService.ExpireItems(branchid, SelectedTruck?.TruckID ?? 0);
-                if (ResultList != null && ResultList.Count() != 0)
+                var ResultList = IserviceRoutineMaster.SelectItemByBranch(branchid).Where(item => !item.IsDisabled).ToList();
+                var TruckListTempSub = IroutineCheckListService.GetLastRoutineCheckListDetailsUsingTruckId(SelectedTruck.TruckID);
+                if (TruckListTempSub != null)
                 {
-                    string ResultString = string.Join(",", ResultList.Select(s => s.ItemName + " (" + (s.CurrentTruckLastUpdatedDate?.ToString("dd/MM/yyyy") ?? "") + ")").ToList());
-                    string message = "Some of the check list item(s) " + ResultString + " is expired.";
-                    bool? result1 = await DialogService.ShowMessageBox(
-                        "Expired", message
-                        );
-                    return;
+                    List<RoutineCheckListModel> TruckListTemp = new();
+                    TruckListTemp = TruckListTempSub.ToList();
+                    foreach (var item in TruckListTemp.OrderBy(s => s.CreatedDate))
+                    {
+                        if (ResultList != null && ResultList.Count() != 0 && ResultList.Any(s => s.ItemID == item.ItemID))
+                        {
+                            foreach (RoutineCheckListMasterModel Values in ResultList.Where(s => (int)s.ItemID == item.ItemID))
+                            {
+                                Values.CurrentTruckLastUpdatedDate = item.CreatedDate;
+                                if (item.CreatedDate != null && Values != null)
+                                {
+                                    Values.IsExpired = ((DateTime.Now - item.CreatedDate.Value).TotalDays > Values.ValidDays);
+                                    //Values.IsChecked = true;
+                                    //Values.DetailDescription = item.Description;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (ResultList != null && ResultList.Count() != 0 && ResultList.Any(s => s.IsExpired))
+                {
+                    var expiredItems = ResultList.Where(s => !s.IsDisabled && s.IsExpired)
+                                    .Select(s => s.ItemName + " (" + (s.CurrentTruckLastUpdatedDate?.ToString("dd/MM/yyyy") ?? "") + ")")
+                                    .ToList();
 
+                    string resultString = string.Join(",", expiredItems);
+                    string message = "Some of the checklist item(s) " + resultString + " is expired.";
+                    bool? result1 = await DialogService.ShowMessageBox("Expired", message);
+                    return;
                 }
             }
+            _busy = true;
             var dialog = DialogService.Show<NewTripView>("Start Trip", parameters);
             var result = await dialog.Result;
             if (!result.Canceled)
@@ -516,5 +542,38 @@
                 EventButtonLabel = "Update Status";
             }
         }
+    }
+
+    private async void OpenCheckList()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+
+
+        RoutineCheckListModel checkListModel = new()
+            {
+                Truck = SelectedTruck,
+                TruckID = SelectedTruck.TruckID,
+                BranchID = int.Parse(brancIDString),
+            };
+
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", checkListModel);
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large };
+        var dialog = DialogService.Show<RoutineCheckListDialog>("Simple Dialog", parms, options);
+        var result = await dialog.Result;
+
+        // you can check if the modal was cancelled
+        var isCancelled = result.Cancelled;
+        await Task.Delay(200);
+        _busy = false;
     }
 }

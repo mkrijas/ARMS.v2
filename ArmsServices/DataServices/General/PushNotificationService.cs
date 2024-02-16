@@ -11,9 +11,11 @@ namespace ArmsServices.DataServices.General
     {
         IDbService Iservice;
 
-        public PushNotificationService(IDbService iservice)
+
+        public PushNotificationService(IDbService iservice,SqlTableDependencyService _tabledep)
         {
             Iservice = iservice;
+            _tabledep.SubscribeTableDependency();
         }
 
         public string GetMessageTitle(string DocType, string DocNumber,string Varification)
@@ -21,12 +23,13 @@ namespace ArmsServices.DataServices.General
 
             return "The DocNo :- "+ DocNumber + " of "+ DocType + " requires " + Varification + ".";
         }
-
         public string GetMessageBody(string DocType, string DocNumber, string Varification, DateTime? DocDate)
         {
 
             return "The DocNo :- " + DocNumber + " of " + DocType + " requires " + Varification + ". which was requested on " + DocDate;
         }
+
+
         public PushNotificationModel UpdatePushNotification(PushNotificationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -52,20 +55,7 @@ namespace ArmsServices.DataServices.General
                 model = GetModel(dr);
             }
             return model;
-        }
-        public IEnumerable<PushNotificationModel> SelectUnAknowledgedAndNonTimeElapsedNotifications(int? ID)
-        {
-
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@ID", ID),
-               new SqlParameter("@Operation", "ByBranch"),
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.Notification.Select]", parameters))
-            {
-                yield return GetModel(dr);
-            }
-        }
+        }        
         public IEnumerable<PushNotificationModel> SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(int? ID,int? DocumentID,int? DocumentTypeID)
         {
 
@@ -120,7 +110,6 @@ namespace ArmsServices.DataServices.General
             }
 
         }
-
         private PushNotificationModel GetModel(IDataRecord dr)
         {
             return new PushNotificationModel
@@ -150,6 +139,62 @@ namespace ArmsServices.DataServices.General
                 RecordStatus = dr.GetByte("RecordStatus"),
                 MsgDate = dr.GetDateTime("Timestamp")
             };
+        }
+        public IEnumerable<PushNotificationModel> SelectActiveNotifications()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {               
+               new SqlParameter("@Operation", "SelectActive"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.Notification.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+        public IEnumerable<PushNotificationModel> SelectActiveNotifications(int? BranchID, string UserID = null)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", BranchID),
+               new SqlParameter("@UserID", UserID),               
+               new SqlParameter("@Operation", "SelectActive"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.General.Notification.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+        public int CreateAuthNotifications(int BranchID, int DocumentTypeID, int DocumentID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@DocumentID", DocumentID),
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.General.Notification.CreateAuthNotification]", parameters);            
+        }
+
+        public int CancelAuthNotifications(int DocumentTypeID, int DocumentID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {               
+               new SqlParameter("@DocumentID", DocumentID),
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.General.Notification.CancelAuthNotification]", parameters);
+        }
+
+        public int AcknowledgeAuthNotification(int AuthlevelID,int DocumentTypeID, int DocumentID,string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentID", DocumentID),
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+               new SqlParameter("@AuthlevelID", AuthlevelID),
+               new SqlParameter("UserID",UserID)
+            };
+            return Iservice.ExecuteNonQuery("[usp.General.Notification.AcknowledgeAuthNotification]", parameters);
         }
     }
 }

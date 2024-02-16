@@ -3,8 +3,10 @@
 @inject AuthenticationStateProvider auth
 @using Core.BaseModels.Finance.Transactions;
 @using Core.IDataServices.Finance.Transactions;
+@using System.Text.Json;
 @inject NavigationManager NavigationManager
 @inject IFastTagService IFTService
+@inject IJSRuntime JSRuntime
 
 <MudTable Items="@MainModel" Class="item-shadow" Filter="new Func<FastTagTollModel, bool>(search)" @bind-model="model">
     <ToolBarContent>
@@ -12,6 +14,7 @@
         <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(0, false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
         <MudSpacer></MudSpacer>
         <MudTextField @bind-Value="searchmodel" Placeholder="Search Document... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
+        <MudCheckBox Style="margin: 0px; margin-right: 20px;" Label="Completed List" CheckedChanged="((bool value)=>Completed(value))" Checked="@IsCompleted" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
     </ToolBarContent>
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<FastTagTollModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">DocumentDate</MudTableSortLabel></MudTh>
@@ -23,7 +26,7 @@
         <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
         <MudTd DataLabel="">
             <MudTooltip Text="View">
-                <MudFab style="font-size:5px" @onclick="@(()=> View(context.FastTagUploadID, true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                <MudFab Style="font-size:5px" @onclick="@(()=> View(context.FastTagUploadID, true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
             </MudTooltip>
         </MudTd>
     </RowTemplate>
@@ -40,6 +43,7 @@
     public int branchID;
     private string UserID = null;
     private string searchmodel = "";
+    public bool IsCompleted { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -47,19 +51,57 @@
         var user = authprov.User;
         branchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
 
+        var jsonValue = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "FTincompleteRecordsToggle");
+        if (jsonValue != null)
+        {
+            // Parse the JSON string into a JsonDocument
+            using (JsonDocument document = JsonDocument.Parse(jsonValue))
+            {
+                // Get the root element of the JSON document
+                JsonElement root = document.RootElement;
+
+                // Check if the root element is a boolean
+                if (root.ValueKind == JsonValueKind.True || root.ValueKind == JsonValueKind.False)
+                {
+                    // Get the boolean value
+                    IsCompleted = root.GetBoolean();
+                }
+                else
+                {
+                    // Handle the case where the JSON value is not a boolean
+                    IsCompleted = false; // Or set to default value
+                }
+            }
+        }
+        else
+        {
+            // Handle the case where the value is not found or is null
+            IsCompleted = false; // Or set to default value
+        }
         GetCollection();
     }
 
     private async Task GetCollection()
     {
-        MainModel = IFTService.GetUploadView(branchID).ToList();
+        if (!IsCompleted)
+        {
+            MainModel = IFTService.GetUploadViewInComplete(branchID).ToList();
+        }
+        else
+        {
+            MainModel = IFTService.GetUploadViewComplete(branchID).ToList();
+        }
+    }
+
+    private async Task Completed(bool value)
+    {
+        IsCompleted = value;
+        await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "FTincompleteRecordsToggle", value);
+        GetCollection();
     }
 
     private async Task Edit(int? id, bool rdonly)
     {
-        //NavigationManager.NavigateTo("/FastTagTollUpload");
-        //string url = "/FastTagTollUpload?FastTagUploadID=" + id.ToString();
-
         string url = $"/FastTagTollUpload/{id}/{rdonly}";
         NavigationManager.NavigateTo(url);
     }

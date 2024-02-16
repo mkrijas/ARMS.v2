@@ -34,7 +34,7 @@ using Core.IDataServices.Finance.Transactions;
 using DAL.DataServices.Finance.Transactions;
 using System.Security.Cryptography;
 using DAL.DataServices.General;
-using Core.IDataServices.General;
+
 using Microsoft.AspNetCore.Identity.UI.Services;
 using static MudBlazor.Defaults;
 using Core.IDataServices.Finance.LedgerViews;
@@ -214,12 +214,13 @@ namespace Views
             services.AddScoped<IRoutineCheckListMasterService, RoutineCheckListMasterService>();
             services.AddScoped<IDocVoucherService, DocVoucherService>();
             services.AddScoped<IMileageShortageReceiptService, MileageShortageReceiptService>();
-        
+
 
             //------------FINANCE TRANSACTIONS-------------------
-            services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();
-            services.AddScoped<IAccountInfoService, AccountInfoService>();
+
             services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<ITaxPurchaseService, TaxPurchaseService>();
+            services.AddScoped<IAccountInfoService, AccountInfoService>();           
             services.AddScoped<IPaymentInitiatedService, PaymentInitiatedService>();
             services.AddScoped<IPaymentFinalizeService, PaymentFinalizeService>();
             services.AddScoped<IOutstandingBillsService, OutstandingBillsService>();
@@ -234,6 +235,9 @@ namespace Views
             services.AddScoped<IInventoryReleaseService, InventoryReleaseService>();
             services.AddScoped<IFastTagService, FastTagService>();
             services.AddScoped<IReimbursementService, ReimbursementService>();
+
+            services.AddScoped<IbaseInterface<PaymentMemoModel> , PaymentService>();
+            services.AddScoped <IbaseInterface<TaxPurchaseModel> , TaxPurchaseService>();
 
 
             //------------FINANCE POSTING GROUP-------------------
@@ -253,6 +257,18 @@ namespace Views
             services.AddScoped<IPartyLedgerViewService, PartyLedgerViewService>();
             services.AddScoped<IAssetLedgerViewService, AssetLedgerViewService>();
             services.AddScoped<IBankLedgerViewService, BankLedgerViewService>();
+
+
+       //     System.Reflection.Assembly.GetExecutingAssembly().GetTypes().Where(item => item.GetInterfaces()
+       //       .Where(i => i.IsGenericType).Any(i => i.GetGenericTypeDefinition() == typeof(IbaseInterface<>)) && !item.IsAbstract && !item.IsInterface)
+       //   .ToList()
+       //   .ForEach(assignedTypes =>
+       //   {
+       //       var serviceType = assignedTypes.GetInterfaces().First(i => i.GetGenericTypeDefinition() == typeof(IbaseInterface<>));
+       //       services.AddScoped(serviceType, assignedTypes);
+       //   });
+
+    
             #endregion
 
             services.AddCors(options =>
@@ -311,7 +327,7 @@ namespace Views
             CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
             CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-            app.UseResponseCompression();
+            app.UseResponseCompression(); // SignalR Response compression
 
             app.UseHttpsRedirection();
 
@@ -321,7 +337,7 @@ namespace Views
 
             app.UseStaticFiles();
 
-            app.UseSqlTableDependency<SqlTableDependencyService>(connectionString);
+            //app.UseSqlTableDependency<SqlTableDependencyService>(connectionString);
 
 
             // Configure proxy

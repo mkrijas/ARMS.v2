@@ -27,10 +27,14 @@
                 <MudIconButton Style="margin-bottom:4px;" Icon="@Icons.Material.Filled.Add" Disabled="@_busy" Title="Add Ledger" Color="Color.Dark" Size="Size.Small" OnClick="@addledgerbyicon"></MudIconButton>
             </MudText>
             <MudDivider DividerType="DividerType.Middle"></MudDivider>
-            <MudTreeView Color="Color.Primary" ServerData="LoadServerData" Items="TreeItems" T="TreeItemData" SelectedValueChanged="OnSelected">
+            <MudTreeView Color="Color.Primary" 
+           
+            Items="TreeItems" T="TreeItemData" SelectedValueChanged="OnSelected">
                 <ItemTemplate>
                     <ContextMenuTrigger MenuId="@(context.SummaryAccount ? "myMenu" : "myeditMenu")" Data="@context">
-                        <MudTreeViewItem id="@context.ID" OnClick="@(()=> getcoordinates(context.ID))" @bind-Expanded="@context.IsExpanded" TextClass="@(context.SummaryAccount?"":"subledger")" LoadingIconColor="Color.Info" Value="@context" Text="@context.Title" Icon="@context.Icon" CanExpand="@(context.SummaryAccount? true : false)">
+                        <MudTreeViewItem id="@context.ID" OnClick="@(()=> getcoordinates(context.ID))" @bind-Expanded="@context.IsExpanded" 
+                            TextClass="@(context.SummaryAccount?"":"subledger")" LoadingIconColor="Color.Info" Value="@context" Text="@context.Title" 
+                            Icon="@context.Icon" CanExpand="@(context.SummaryAccount? true : false)" Items="@context.TreeItems">
                         </MudTreeViewItem>
                     </ContextMenuTrigger>
                 </ItemTemplate>
@@ -82,6 +86,8 @@
     public bool HasPermissionChartOfAccountServiceUpdateSelect { get; set; } = false;
     public int ChartOfAccountDocTypeID = 89;
 
+    List<ChartOfAccountModel> collection;
+
     public class TreeItemData
     {
         public string Title { get; set; }
@@ -111,7 +117,9 @@
         HasPermissionChartOfAccountServiceEdit = await Irole.HasClaim(ChartOfAccountDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionChartOfAccountServiceUpdateSelect = await Irole.HasClaim(ChartOfAccountDocTypeID.ToString(), "UpdateSelect", ctc.Token);
 
-        var baseGroups = Iservice.SelectBase();
+        collection = Iservice.AllLedgers().ToList();
+        var baseGroups = collection.Where(x=> x.ParentID == 0).ToList();
+
         foreach (var item in baseGroups)
         {
             TreeItems.Add(new TreeItemData
@@ -119,30 +127,33 @@
                     ID = item.CoaID,
                     Title = item.AccountName,
                     SummaryAccount = item.SummaryAccount,
-                    Icon = item.SummaryAccount == false ? Icons.Material.Filled.Book : null
+                    Icon = item.SummaryAccount == false ? Icons.Material.Filled.Book : null,
+                    IsExpanded = true,  
+                    TreeItems = LoadServerData(item.CoaID),
                 });
         }
     }
 
-    public async Task<HashSet<TreeItemData>> LoadServerData(TreeItemData parentNode)
+    public HashSet<TreeItemData> LoadServerData(int? CoaID)
     {
-        await Task.Delay(3);
-        parentNode.TreeItems = new HashSet<TreeItemData>();
-        var children = Iservice.SelectChildren(parentNode.ID).OrderBy(x => x.SummaryAccount).ThenBy(y => y.AccountName);
+       //await Task.Delay(3);
+        var TreeItems = new HashSet<TreeItemData>();
+        var children = collection.Where(z => z.ParentID == CoaID).OrderBy(x => x.SummaryAccount).ThenBy(y => y.AccountName);
         foreach (var item in children)
         {
-            parentNode.TreeItems.Add(new TreeItemData
+            TreeItems.Add(new TreeItemData
                 {
                     ID = item.CoaID,
                     AccountCode = item.AccountCode,
                     Title = item.AccountName + (item.SummaryAccount ? "" : (" (" + item.AccountCode + ")")),
                     SummaryAccount = item.SummaryAccount,
                     Icon = item.SummaryAccount == false ? Icons.Material.Filled.Book : null,
-                    TreeItems = null
+                    TreeItems =  LoadServerData(item.CoaID),
+                    IsExpanded = true
                 });
         }
         //parentNode.Icon = "";
-        return parentNode.TreeItems;
+        return TreeItems;
     }
 
     //Function to create group / ledger
