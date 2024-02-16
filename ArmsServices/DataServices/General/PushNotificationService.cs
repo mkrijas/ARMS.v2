@@ -28,6 +28,8 @@ namespace ArmsServices.DataServices.General
 
             return "The DocNo :- " + DocNumber + " of " + DocType + " requires " + Varification + ". which was requested on " + DocDate;
         }
+
+
         public PushNotificationModel UpdatePushNotification(PushNotificationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -161,6 +163,38 @@ namespace ArmsServices.DataServices.General
             {
                 yield return GetModel(dr);
             }
+        }
+        public int CreateAuthNotifications(int BranchID, int DocumentTypeID, int DocumentID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@DocumentID", DocumentID),
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.General.Notification.CreateAuthNotification]", parameters);            
+        }
+
+        public int CancelAuthNotifications(int DocumentTypeID, int DocumentID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {               
+               new SqlParameter("@DocumentID", DocumentID),
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.General.Notification.CancelAuthNotification]", parameters);
+        }
+
+        public int AcknowledgeAuthNotification(int AuthlevelID,int DocumentTypeID, int DocumentID,string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentID", DocumentID),
+               new SqlParameter("@DocumentTypeID", DocumentTypeID),
+               new SqlParameter("@AuthlevelID", AuthlevelID),
+               new SqlParameter("UserID",UserID)
+            };
+            return Iservice.ExecuteNonQuery("[usp.General.Notification.AcknowledgeAuthNotification]", parameters);
         }
     }
 }

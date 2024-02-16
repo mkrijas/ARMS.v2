@@ -11,7 +11,7 @@ using System.Reflection;
 
 namespace ArmsServices.DataServices
 {
-    public interface ITaxPurchaseService
+    public interface ITaxPurchaseService : IbaseInterface<TaxPurchaseModel>
     {
         TaxPurchaseModel Update(TaxPurchaseModel model);  //Edit
         TaxPurchaseModel CheckInvoiceDuplication(TaxPurchaseModel model);

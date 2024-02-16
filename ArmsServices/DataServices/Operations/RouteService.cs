@@ -76,6 +76,19 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public async IAsyncEnumerable<RouteModel> GetDisabled(int? RouteID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", RouteID) ,
+               new SqlParameter("@Operation", "GetDisabled"),
+            };
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Select]", parameters))
+            {
+                yield return await GetModel(dr);
+            }
+        }
+
         public async IAsyncEnumerable<RouteModel> SelectByOrder(int? OrderID = 0)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

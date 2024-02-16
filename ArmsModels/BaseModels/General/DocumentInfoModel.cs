@@ -5,9 +5,10 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class DocumentDetailsModel
+    public class DocumentInfoModel
     {
         public int? DocumentTypeID { get; set; }
         public int? DocumentID { get; set; }
+        public string DocumentName { get; set; } = string.Empty;
     }
 }

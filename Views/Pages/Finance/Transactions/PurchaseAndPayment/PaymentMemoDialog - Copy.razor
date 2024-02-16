@@ -1,10 +1,17 @@
-﻿@page "/NewPaymentMemo"
+﻿@page "/NewPaymentMemoCopy"
+@using System.Threading;
 
-@inherits DialogFormComponentBase<PaymentMemoModel>
 @inject IPaymentService Iservice
 
+        @inject IOutstandingBillsService OBIservice
+        @inject IPartyService partyService
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
+@attribute [Authorize]
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Payment Memo" formID="PaymentMemoForm" DocumentDetails="DocInfo" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Payment Memo" formID="PaymentMemoForm" DocumentDetails="DocumentInfo" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="PaymentMemoForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
@@ -25,7 +32,7 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" BranchID="BranchID" NatureOfBusiness="@model.BusinessNature"></PartySelector>
+                        <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" BranchID="branchID" NatureOfBusiness="@model.BusinessNature"></PartySelector>
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudSelect Label="Nature Of Business" ReadOnly="ReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
@@ -37,7 +44,9 @@
                                 }
                             }
                         </MudSelect>
-                    </MudItem>                                    
+                    </MudItem>
+                   
+                   
                     
                     @if (model.Bills.Any())
                     {
@@ -79,54 +88,102 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocType="@DocInfo.DocumentName" DocNumber="@DocNumber" DocumentID="DocInfo.DocumentID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.PaymentMemoID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
 @code {
 
     [Parameter]
-    public override PaymentMemoModel model { get { return _model; }  set { _model = value;  DocInfo.DocumentID = value.PaymentMemoID; }  }
-    private PaymentMemoModel _model;
+    public PaymentMemoModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    [Parameter]
+    public bool Dialog { get; set; } = true;
+    [Parameter]
+    public string PageToRedirectLink { get; set; }
 
+
+    EditContext editContext;
+    DialogForm dialogForm;
+    int? branchID = null;
+    string UserID = null;
+
+    string DocNumber { get; set; }
+    DateTime? DocDate { get; set; }
+    string DocType { get; set; }
+    bool _busy;
 
     string[] natureOfBusinessGroup = new string[] { };
     string[] RentGroup = { "Rent", "Deposit", "Other" };
-    string[] SupplierGroup = { "Deposit", "Payment", "Prepayment" };   
+    string[] SupplierGroup = { "Deposit", "Payment", "Prepayment" };
 
-    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
-    {        
-        DocumentTypeID = 7,
-        DocumentName = "PaymentMemo"
-     };
+    DocumentInfoModel DocumentInfo { get; set; } = new();
+
+    bool HasPermissionPaymentServiceEdit { get; set; } = false;
+    bool HasPermissionPaymentServiceApprove { get; set; } = false;
+    int DocTypeID = 7;
 
     protected override async Task OnInitializedAsync()
-    {    
-        await base.OnInitializedAsync();
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionPaymentServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionPaymentServiceApprove = await Irole.HasClaim(DocTypeID.ToString(), "Approve", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        var user = authprov.User;
+        UserID = user.Identity.Name;
         if (model.PaymentMemoID != null)
         {
             model.Bills = Iservice.GetBills(model.PaymentMemoID.Value).ToList();
         }
         else
         {
-            model.BranchID = BranchID;
+            model.BranchID = branchID;
             model.BusinessNature = "Supplier";
         }
         SetNTransaction(model.BusinessNature);
         GetBills();
 
-    }   
 
-    protected override int Update(PaymentMemoModel editModel)
-    {
-        model = Iservice.Update(model);
-        return model.PaymentMemoID.Value;
+
+        // DocNumber = model.DocumentNumber;
+        // DocDate = model.DocumentDate;
+        // DocType = model.NatureOfTransaction;
     }
 
-    protected override int UpdateApproval(DataApprovedStatus aprvd)
+    protected override void OnParametersSet()
     {
-        int result = Iservice.Approve(model.PaymentMemoID, model.UserInfo.UserID, aprvd.Remarks);
-        return result;
+        editContext = new EditContext(model);
+        DocumentInfo.DocumentTypeID = DocTypeID;
+        DocumentInfo.DocumentID = model.PaymentMemoID;
+    }
+
+    protected async Task Approve(DataApprovedStatus aprvd)
+    {
+        if (HasPermissionPaymentServiceApprove)
+        {
+            if (aprvd.IsApprove)
+            {
+                try
+                {
+                    model.UserInfo.UserID = UserID;
+                    Iservice.Approve(model.PaymentMemoID, model.UserInfo.UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve Payment.");
+        }
     }
 
     private void GetBills()
@@ -135,8 +192,51 @@
 
         if (model?.PartyInfo?.PartyID != null)
         {
-            collection = OBIservice.SelectByParty(model.PartyInfo.PartyID, BranchID).ToList();
+            collection = OBIservice.SelectByParty(model.PartyInfo.PartyID, branchID).ToList();
         }
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        if (model.TotalAmount <= 0)
+        {
+            snackbar.Add("Total amount should be greater than zero!", Severity.Error);
+            _busy = false;
+            return;
+        }
+        if (HasPermissionPaymentServiceEdit)
+        {
+            try
+            {
+                model.UserInfo.UserID = UserID;
+                model.PartyCoaID = partyService.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
+                if (model.PartyCoaID == null)
+                {
+                    throw new Exception("Party Account is not mapped for " + model.NatureOfTransaction + "!");
+                }
+                model = Iservice.Update(model);
+                snackbar.Add("Submitted Successfully", Severity.Success);
+                dialogForm.Close(model);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Payment.");
+        }
+        await Task.Delay(200);
+        _busy = false;
     }
 
     private void SetTotalAmt()
@@ -169,18 +269,7 @@
 
     async Task PartyChanged(PartyModel party)
     {
-        model.PartyInfo = party;        
-        if (party is not null)
-        {
-            model.PartyCoaID = partyService.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
-            if (model.PartyCoaID == null)
-            {
-                bool? result = await dialogService.ShowMessageBox(
-                    "Account Not Mapped!",
-                    "Party Account is not mapped for " + model.NatureOfTransaction + "!");  
-                    party = null;
-            }
-        }
+        model.PartyInfo = party;
         await nTransactionChanged(null);
     }
 
@@ -202,8 +291,8 @@
         DialogOptions Doptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("PartyID", model.PartyInfo.PartyID);
-        parms.Add("BranchID", BranchID);
-        var dialog = dialogService.Show<OutstandingBillView>("Outstanding Bill", parms, Doptions);
+        parms.Add("BranchID", branchID);
+        var dialog = DialogService.Show<OutstandingBillView>("Outstanding Bill", parms, Doptions);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
