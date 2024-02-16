@@ -113,7 +113,7 @@ namespace Views.Data
         }
 
 
-        protected void LoadData(bool val, int numberOfRecords)
+        protected virtual void LoadData(bool val, int numberOfRecords)
         {
             if (val)
             {
