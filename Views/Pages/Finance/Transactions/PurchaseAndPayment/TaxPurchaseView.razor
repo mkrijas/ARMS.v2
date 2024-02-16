@@ -159,7 +159,7 @@
         await Task.Delay(200);
     }
 
-    private async Task OpenDialog(TaxPurchaseModel tds, bool ReadOnly, bool View)
+    private async Task OpenDialog(TaxPurchaseModel editModel, bool ReadOnly, bool View)
     {
         if (_busy)
         {
@@ -168,28 +168,14 @@
         }
         _busy = true;
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", tds.Clone());
-        parms.Add("PageToRedirectLink", "/TaxPurchase");
+        parms.Add("model", editModel.Clone());        
         parms.Add("ReadOnly", ReadOnly);
-        var dialog = DialogService.Show<TaxPurchaseDialog>(tds.PID == null ? "ADD" : "EDIT", parms, maxWidth);
+        var dialog = DialogService.Show<TaxPurchaseDialog>(editModel.PID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
-        var isCancelled = result.Cancelled;
+        var isCancelled = result.Canceled;
         if (!isCancelled)
         {
-            var ReturnData = (TaxPurchaseModel)result.Data;
-            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-            notificationMessage.RedirectedTo = 0;
-            notificationMessage.ExpiredBy = 7;
-            notificationMessage.DocumentID = ReturnData.PID;
-            notificationMessage.MessageGroupID = "PendingVerification";
-            notificationMessage.PageToRedirectLink = "/TaxPurchase";
-            notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = TaxPurchaseDocTypeID;
-            notificationMessage.MsgDate = DateTime.Now;
-            await signalRService.Send(notificationMessage);
+            var ReturnData = (TaxPurchaseModel)result.Data;          
         }
         await GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);

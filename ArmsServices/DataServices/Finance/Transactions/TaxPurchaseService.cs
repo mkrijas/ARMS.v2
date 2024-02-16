@@ -397,5 +397,20 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+
+        public IEnumerable<TaxPurchaseModel> Select(int? BranchID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<TaxPurchaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

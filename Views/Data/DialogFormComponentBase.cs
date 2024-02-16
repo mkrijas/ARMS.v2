@@ -12,6 +12,7 @@ using ArmsServices.DataServices;
 using ArmsServices;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Permissions;
+using Microsoft.JSInterop;
 
 namespace Views.Data
 {
@@ -24,7 +25,8 @@ namespace Views.Data
         [Inject] protected IRoleService<RoleModel> Irole { get; set; }
         [Inject] protected IOutstandingBillsService OBIservice { get; set; }
         [Inject] protected IPartyService partyService { get; set; }
-        [Inject] protected IPushNotificationService notiService { get; set; } 
+        [Inject] protected IPushNotificationService notiService { get; set; }
+        [Inject] protected IJSRuntime JsRuntime { get; set; }
 
 
         [Parameter]
@@ -40,6 +42,9 @@ namespace Views.Data
         protected bool EditPermission { get; set; }
         protected bool DeletePermission { get; set; }
         protected bool ApprovePermission { get; set; }
+
+        protected bool Local;
+        protected bool IsTaxable;
 
         protected EditContext editContext;
         protected DialogForm dialogForm;
@@ -78,11 +83,11 @@ namespace Views.Data
         }
 
 
-        protected abstract int Update(T editModel);
+        protected abstract Task<int> Update(T editModel);
         protected abstract int UpdateApproval(DataApprovedStatus aprvd);
         
 
-        protected virtual async Task OnValidSubmit(EditContext context)
+        protected async Task OnValidSubmit(EditContext context)
         {
             if (_busy)
             {
@@ -103,7 +108,7 @@ namespace Views.Data
             try
             {
                 model.UserInfo.UserID = UserID;
-                int ID = Update(model);                
+                int ID = await Update(model);                
                 
                 notiService.CreateAuthNotifications(BranchID.Value, DocInfo.DocumentTypeID.Value, DocInfo.DocumentID.Value);
                 snackbar.Add("Submitted Successfully", Severity.Success);
@@ -120,7 +125,7 @@ namespace Views.Data
 
        
 
-        protected virtual async Task Approve(DataApprovedStatus aprvd)
+        protected async Task Approve(DataApprovedStatus aprvd)
         {
             if (ApprovePermission)
             {
