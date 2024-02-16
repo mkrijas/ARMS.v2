@@ -18,5 +18,6 @@ namespace ArmsServices.DataServices
         IEnumerable<InterBranchReimbursementModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         int Approve(int? ID, string UserID, string Remarks);  //Approve
         int Reverse(int? ID, string UserID, string Remarks);  //Reverse
+        IEnumerable<ReimbursementSubModel> SelectParticulars(int? ID);
     }
 }

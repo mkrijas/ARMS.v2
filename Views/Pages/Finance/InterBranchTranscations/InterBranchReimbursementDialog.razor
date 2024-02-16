@@ -10,9 +10,10 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
+@inject IGstUsageIDService usageIservice
+@inject IBranchService branchservice
 
-
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Contra Entry" formID="IContraForm" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Reimbursement" formID="IContraForm" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="IContraForm" OnValidSubmit="Submit" Model="@model">
@@ -22,45 +23,25 @@
                     <MudItem xs="12" md="6">
                         <MudDatePicker Label="Document Date" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
-                    @* <MudItem xs="12" md="6">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.EntryReference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.EntryReference)"></MudTextField>
-                    </MudItem> *@
+
                     <MudItem xs="12" md="6">
-                        <MudCard>
-                            <MudCardContent>
-                                <MudItem xs="12" md="12">
+                        <MudSelect Label="Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in transactionTypeList)
+                            {
+                                <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudCard style="border: 1px solid grey;" xs="12" md="12" Class="mud-grid-item mud-grid-item-xs-12 mud-grid-item-md-12">
+                        <MudContainer>
+                            <br />
+                            <MudGrid>
+                                <MudItem md="6">
                                     <MudTextField ReadOnly="true" @bind-Value="hmbarnchName" Label="Home Branch" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                                 </MudItem>
-                                <br />
-                                <MudItem xs="12" md="12">
-                                  @*   <MudSelect ReadOnly="ReadOnly" Label="Select Mode" Value="@model.IsPayment" ValueChanged="PaymentModeChanged" T="bool" Variant="Variant.Outlined" Margin="Margin.Dense"  AdornmentColor="Color.Secondary">
-                                        <MudSelectItem Value="@(true)" >Payment</MudSelectItem>
-                                        <MudSelectItem Value="@(false)">Receipt</MudSelectItem>
-                                    </MudSelect> *@
-                                </MudItem>
-                                <br />
-                                <MudItem xs="12" md="12">
-                                   @*  <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" Value="model.ContraModeHome" ValueChanged="BankModeChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
-                                        <MudSelectItem Value="@("Bank")" />
-                                        <MudSelectItem Value="@("Cash")" />
-                                        <MudSelectItem Value="@("Wallet")" />
-                                    </MudSelect> *@
-                                </MudItem>
-                                <br />
-                                <MudItem xs="12" md="12">
-                                  @*   <MudAutocomplete ReadOnly="ReadOnly" T="PaymentCodeModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Account" Value="accountRuleDefinitionH" ValueChanged="SetAccountRuleDefinitionH" ResetValueOnEmptyText="true"
-                                                     Clearable="true" SearchFunc="SearchAccountsH" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))"></MudAutocomplete>
 
-                                    *@
-                                </MudItem>
-                                <br />
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudCard>
-                            <MudCardContent>
-                                <MudItem xs="12" md="12">
+                                <MudItem md="6">
                                     <MudSelect ReadOnly="ReadOnly" Label="Select Other Branch" @bind-Value="model.OtherBranchID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                                         @foreach (var ditem in branches)
                                         {
@@ -69,85 +50,136 @@
                                     </MudSelect>
                                 </MudItem>
                                 <br />
-                                <MudItem xs="12" md="12">
-                                    @* <MudSelect ReadOnly="true" Label="Mode" @bind-Value="@model.IsPayment" T="bool" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
-                                        <MudSelectItem Value="@(false)">Payment</MudSelectItem>
-                                        <MudSelectItem Value="@(true)">Receipt</MudSelectItem>
-                                    </MudSelect>         *@                            
-                                </MudItem>
-                                <br />
-                                <MudItem xs="12" md="12">
-                                    @* <MudSelect ReadOnly="ReadOnly" Label="Bank/Cash" Value="model.ContraModeOther" ValueChanged="ModeChangeOther" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                                        <MudSelectItem Value="@("Bank")" />
-                                        <MudSelectItem Value="@("Cash")" />
-                                        <MudSelectItem Value="@("Wallet")" />
-                                    </MudSelect> *@
-                                </MudItem>
-                                <br />
-                                <MudItem xs="12" md="12">
-@*                                     <MudAutocomplete ReadOnly="ReadOnly" T="PaymentCodeModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Account" Value="accountRuleDefinitionO" ValueChanged="SetAccountRuleDefinitionO" ResetValueOnEmptyText="true"
-                                                     Clearable="true" SearchFunc="SearchAccountsO" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ArdCode,e.Title))">
-                                                 </MudAutocomplete> *@
-                                </MudItem>
-                                <br />
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-                    @* <MudItem xs="12" md="6">
-                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudSelect ReadOnly=bnktl Label="Select Tool of Payment" T="string" @bind-Value="model.PaymentTool" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var item in data.BankTools)
-                            {
-                                <MudSelectItem Value="@item">@item</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem> *@
-                   @*  @if (model.PaymentTool == "CHEQUE")
-                    {
-                        <MudItem xs="12" md="12">
-                            <MudGrid>
-                                <MudItem xs="12" md="6">
-                                    <MudTextField ReadOnly="ReadOnly" @bind-Value="model.ChequeInfo.ChequeNumber" Label="Cheque Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ChequeInfo.ChequeNumber)"></MudTextField>
-                                </MudItem>
-                                <MudItem xs="12" md="6">
-                                    <MudDatePicker ReadOnly="ReadOnly" Label="Cheque Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.ChequeInfo.ChequeDate" DateFormat="dd/MM/yyyy" />
-                                </MudItem>
                             </MudGrid>
-                        </MudItem>
-                    } *@
-                    <MudItem xs="12" md="12"></MudItem>
-                    <MudItem xs="12" md="4">
-                        <MudSelect Label="Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in transactionTypeList)
-                            {
-                                <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" md="4">
-                        @* <MudSelect ReadOnly="ReadOnly" Label="Select CostCenter" @bind-Value="model.CostCenter" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in costCenter)
-                            {
-                                <MudSelectItem Value="@ditem.CostCenterID">@ditem.CostCenter</MudSelectItem>
-                            }
-                        </MudSelect> *@
-                    </MudItem>
-                    <MudItem xs="12" md="4">
+                        </MudContainer>
+                    </MudCard>
 
-                     @*    <dime
-                        <MudSelect ReadOnly="ReadOnly" Label="Select Dimension" @bind-Value="model.Dimension" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in dimension)
-                            {
-                                <MudSelectItem Value="@ditem.DimensionID">@ditem.Dimension</MudSelectItem>
-                            }
-                        </MudSelect> *@
-                    </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
-                    </MudItem>                  
+                    </MudItem>
+
+                    @if (!ReadOnly || IsView == true || ExpenseList.Any())
+                    {
+                        <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
+                            <h6><u>Particulars</u></h6>
+                            <div style="width: 1600px;" class="pb-3">
+                                @* <MudItem xs="12">
+                            <MudItem xs="4"><MudPaper Class="d-flex align-center justify-center mud-width-full">Home Branch</MudPaper></MudItem>
+                            <MudItem xs="2"><MudPaper Class="d-flex align-center justify-center mud-width-full"></MudPaper></MudItem>
+                            <MudItem xs="4"><MudPaper Class="d-flex align-center justify-center mud-width-full">Other Branch</MudPaper></MudItem>
+                            <MudItem xs="2"><MudPaper Class="d-flex align-center justify-center mud-width-full"></MudPaper></MudItem>
+                            </MudItem> *@
+                                <MudItem xs="12">
+                                    <MudGrid Justify="Justify.Center">
+                                        <MudItem xs="1"><span class="HeadText">Usage Code</span></MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Cost Center</span></MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Dimension</span></MudItem>
+                                        <MudItem xs="1">
+                                        @* <MudDivider Style="width:1%; height:100%" Color="Color.Dark" Vertical="true" FlexItem="true" /> *@
+                                        </MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Usage Code Other</span></MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Cost Center Other</span></MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Dimension Other</span></MudItem>
+                                        <MudItem xs="1">
+                                            @* <MudDivider Style="width:1%; height:100%" Color="Color.Dark" Vertical="true" FlexItem="true" /> *@
+                                        </MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Amount</span></MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Dr/Cr</span></MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Gst/TDS</span></MudItem>
+                                        <MudItem xs="1"><span class="HeadText">Actions</span></MudItem>
+
+
+                                        @foreach (var item in model.Particulars)
+                                        {
+                                            <MudItem xs="1">@string.Format("{0} | {1}", item.UsageCode, item.UsageCodeDesc)</MudItem>
+                                            <MudItem xs="1">
+                                                @item.CostCenterDesc
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                @item.DimensionDesc
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                @* <MudDivider Style="width:1%; height:100%" Color="Color.Dark" Vertical="true" FlexItem="true" /> *@
+                                            </MudItem>
+                                            <MudItem xs="1">@string.Format("{0} | {1}", item.UsageCodeOther, item.UsageCodeOtherDesc)</MudItem>
+                                            <MudItem xs="1">
+                                                @item.CostCenterOtherDesc
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                @item.DimensionOtherDesc
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                @* <MudDivider Style="width:1%; height:100%" Color="Color.Dark" Vertical="true" FlexItem="true" /> *@
+                                            </MudItem>
+                                            <MudItem xs="1">@item.Amount</MudItem>
+                                            <MudItem xs="1">@item.drcrTypeDesc</MudItem>
+                                            <MudItem xs="1">@(item.CGST + item.SGST + item.IGST)@* /@item.TDS *@</MudItem>
+                                            <MudItem xs="1">
+                                                @if (!ReadOnly)
+                                                {
+                                                    <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                                }
+                                                <MudIconButton Title="Show Taxes" Color="Color.Info" @onclick="@(()=> OpenDialogTaxRates(@item))" Icon="@Icons.Material.Filled.CurrencyExchange" Size="Size.Small" />
+                                            </MudItem>
+                                        }
+
+                                        @if (!ReadOnly && IsView == false)
+                                        {
+                                            <MudItem xs="1">
+                                                <UsageCodeSelector Value=gstusge ValueChanged="UsageCodeSelected"></UsageCodeSelector>
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                <CostCenterSelector @bind-Value="@Model.CostCenterID" @bind-ValueText="@Model.CostCenterDesc" ReadOnly="@ReadOnly"></CostCenterSelector>
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                <DimensionSelector @bind-Value="@Model.DimensionID" @bind-ValueText="@Model.DimensionDesc" ReadOnly="@ReadOnly"></DimensionSelector>
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                @* <MudDivider Style="width:1%; height:100%" Color="Color.Dark" Vertical="true" FlexItem="true" /> *@
+                                            </MudItem>
+
+                                            <MudItem xs="1">
+                                                <UsageCodeSelector Value=gstusgeother ValueChanged="UsageCodeOtherSelected"></UsageCodeSelector>
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                <CostCenterSelector @bind-Value="@Model.CostCenterOtherID" @bind-ValueText="@Model.CostCenterOtherDesc" ReadOnly="@ReadOnly"></CostCenterSelector>
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                <DimensionSelector @bind-Value="@Model.DimensionOtherID" @bind-ValueText="@Model.DimensionOtherDesc" ReadOnly="@ReadOnly"></DimensionSelector>
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                @* <MudDivider Style="width:1%; height:100%" Color="Color.Dark" Vertical="true" FlexItem="true" /> *@
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                <MudNumericField HideSpinButtons
+                                                                  Label="Amount" @bind-Value="Model.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                                             </MudItem>
+                                            <MudItem xs="1">
+                                                <MudSelect Label="Cr/Dr" @bind-Value="Model.drcrTypeDesc" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                                                    @foreach (var ditem in creditDebitList)
+                                                    {
+                                                        <MudSelectItem Value="@ditem">@ditem</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                            </MudItem>
+                                            <MudItem xs="1" Class="d-flex align-center">
+                                                <MudIconButton Title="Add" OnClick="ADD" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                                            </MudItem>
+                                        }
+
+                                    </MudGrid>
+                                </MudItem>
+
+
+                            </div>
+                        </MudItem>
+                    }
                 </MudGrid>
+
+
+
             </EditForm>
         </MudPaper>
     </FormContent>
@@ -173,12 +205,12 @@
     private List<InterBranchTransactionTypeModel> transactionTypeList = new();
     private List<CostCenterModel> costCenter = new();
     private List<DimensionModel> dimension = new();
-    private List<BranchModel> branches = new();    
+    private List<BranchModel> branches = new();
     private PaymentCodeModel accountRuleDefinitionH = new();
     private PaymentCodeModel accountRuleDefinitionO = new();
     private bool _busy;
 
-    public bool bnktl = true;   
+    public bool bnktl = true;
     public string value = "invisible";
     private string hmbarnchName;
     private int? branchID = null;
@@ -189,7 +221,20 @@
     DialogForm dialogForm;
     bool HasPermissionContraServiceEdit { get; set; } = false;
     bool HasPermissionContraServiceApprove { get; set; } = false;
-    int ContraDocTypeID = 3;
+    int ContraDocTypeID = 125;
+
+    private List<string> creditDebitList = new List<string>() { "Cr", "Dr" };
+    public List<ReimbursementSubModel> ExpenseList = new();
+    public bool Local { get; set; } = true;
+    public bool IsTaxable { get; set; } = true;
+    public EventCallback<ReimbursementSubModel> OnExpenseAdded { get; set; }
+    public EventCallback OnAmountChange { get; set; }
+    GstUsageCodeModel gstusge;
+    GstUsageCodeModel gstusgeother;
+    ReimbursementSubModel Model = new ReimbursementSubModel();
+    EditContext editContext;
+
+    string HomeGst, TargetGst;
 
     protected async Task Approve(DataApprovedStatus aprvd)
     {
@@ -270,7 +315,7 @@
     //             bnktl = true;
     //         }
     //     }
-    // }    
+    // }
 
     // public void ModeChangeOther(string val)
     // {
@@ -307,7 +352,7 @@
         UserID = user.Identity.Name;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
         hmbarnchName = brancIDString.ToString();
-        transactionTypeList = intermappingIservice.GetTypes().ToList();        
+        transactionTypeList = intermappingIservice.GetTypes().ToList();
         if (model.ID == null)
         {
             model.TotalAmount = 0;
@@ -328,17 +373,22 @@
             // }
         }
         model.BranchID = branchID;
-        model.NatureOfTransaction = "Contra";
+        model.NatureOfTransaction = "Reimbursement";
         model.UserInfo.UserID = UserID;
-        
+        model.Particulars = Iservice.SelectParticulars(model.ID).ToList();
         branches = branchService.Select().ToList();
 
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
+        if (editContext == null)
+        {
+            editContext = new EditContext(Model);
+            editContext.EnableDataAnnotationsValidation();
+        }
     }
 
-   
+
 
     public void Cancel()
     {
@@ -356,14 +406,36 @@
         if (HasPermissionContraServiceEdit)
         {
             try
-            {               
-                model.BranchID = branchID;                
-                model.IsInterBranch = true;
-                model.NatureOfTransaction = "Reimbursement";
-                model.UserInfo.UserID = UserID;
-                var updatedModel = Iservice.Update(model);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                MudDialog.Close(updatedModel);
+            {
+                decimal? totalCr = 0; 
+                decimal? totalDr = 0;
+                foreach(var item in model.Particulars)
+                {
+                    if(item.drcrTypeDesc == "Cr")
+                    {
+                        totalCr += item.Amount;
+                    }
+                    else
+                    {
+                        totalDr += item.Amount;
+                    }
+                }
+                if(totalCr == totalDr)
+                {
+                    model.BranchID = branchID;
+                    model.IsInterBranch = true;
+                    model.NatureOfTransaction = "Reimbursement";
+                    model.UserInfo.UserID = UserID;
+                    var updatedModel = Iservice.Update(model);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    MudDialog.Close(updatedModel);
+                }
+                else
+                {
+                    snackbar.Add("Debit and Credit must be equal!", Severity.Error);
+                    _busy = false;
+                    return;
+                }
             }
             catch (Exception ex)
             {
@@ -379,5 +451,126 @@
 
         await Task.Delay(200);
         _busy = false;
+    }
+
+    public async Task ADD()
+    {
+        // Model.BranchID = BranchID;
+        if (AddTax() && editContext.Validate())
+        {
+            // if (Model.drcrType == 1)
+            //     Model.drcrTypeDesc = "Cr";
+            // else
+            //     Model.drcrTypeDesc = "Dr";
+            
+            await OnExpenseAdded.InvokeAsync(Model);
+            model.Particulars.Add(Model);
+            SetTotalAmt();
+            Model = new();
+            gstusge = null;
+            gstusgeother = null;
+        }
+        else
+        {
+            snackbar.Add("Entered particulars are invalid.", Severity.Error);
+        }
+    }
+
+    private void SetTotalAmt()
+    {
+        model.TotalAmount = 0;
+        foreach(var item in model.Particulars)
+        {
+            model.TotalAmount = model.TotalAmount + item.Amount + item.CGST + item.SGST + item.IGST;
+        }
+    }
+
+    void UsageCodeSelected(GstUsageCodeModel u)
+    {
+        gstusge = u;
+        Model.UsageCode = gstusge?.UsageCode;
+        //Model.CoaID = gstusge?.CoaID;
+        Model.UsageCodeDesc = gstusge?.Description;
+    }
+
+    void UsageCodeOtherSelected(GstUsageCodeModel u)
+    {
+        gstusgeother = u;
+        Model.UsageCodeOther = gstusgeother?.UsageCode;
+        //Model.CoaID = gstusge?.CoaID;
+        Model.UsageCodeOtherDesc = gstusgeother?.Description;
+    }
+
+    private async Task OpenDialogTaxRates(ReimbursementSubModel i)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        GstModel taxModel = new GstModel();
+        taxModel.CGST = i.CGST;
+        taxModel.IGST = i.IGST;
+        //taxModel.TDS = i.TDS;
+        taxModel.SGST = i.SGST;
+        taxModel.GstRate = i.GstRate;
+        DialogParameters parms = new DialogParameters();
+        parms.Add("tax", taxModel);
+        parms.Add("ReadOnly", ReadOnly);
+        var dialog = DialogService.Show<TaxRatedialog>(i.ReimbursementID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            taxModel = (GstModel)result.Data;
+            i.CGST = taxModel.CGST;
+            i.IGST = taxModel.IGST;
+            //i.TDS = taxModel.TDS;
+            i.SGST = taxModel.SGST;
+            i.GstRate = taxModel.GstRate;
+
+            await OnAmountChange.InvokeAsync();
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async Task DeleteExpenses(ReimbursementSubModel i)
+    {
+        int rowIndex = model.Particulars.IndexOf(i);
+        model.Particulars.RemoveAt(rowIndex);
+        await OnAmountChange.InvokeAsync();
+    }
+
+    private bool AddTax()
+    {
+        if (gstusge != null && Model.Amount != null && gstusgeother != null)
+        {
+            Model.GstRate = usageIservice.GetGstRate(Model.UsageCode, DateTime.Now) ?? 0;
+            Model.GstRate += usageIservice.GetGstRate(Model.UsageCodeOther, DateTime.Now) ?? 0;
+            HomeGst = branchservice.GetGstNo(model.BranchID);
+            TargetGst = branchservice.GetGstNo(model.OtherBranchID);
+            Local = HomeGst.Substring(0, 2) == TargetGst.Substring(0, 2);
+            IsTaxable = HomeGst != TargetGst;
+            if (!IsTaxable)
+            {
+                return true;
+            }
+
+            decimal taxRate = Model.GstRate.Value;
+            
+            if (!Local)
+            {
+                Model.IGST = Math.Round(Model.Amount.Value * taxRate / 100, 2);
+            }
+            else
+            {
+                Model.SGST = Model.CGST = Math.Round(Model.Amount.Value * taxRate / 200, 2);
+            }
+            //decimal tdsRate = tdsService.GetTdsRate(PartyInfo.PartyID, Model.CoaID);
+            //Model.TDS = Math.Round((Model.Amount.Value * tdsRate) / 100, 2);
+            return true;
+        }
+        return false;
     }
 }
