@@ -33,7 +33,7 @@ namespace ArmsModels.BaseModels
     public class ReimbursementSubModel
     {
         public int? SubID { get; set; }
-        [Required]
+        //[Required]
         public int? ReimbursementID { get; set; }
         [Required]
         public string UsageCode { get; set; }
@@ -53,6 +53,15 @@ namespace ArmsModels.BaseModels
         public decimal? CGST { get; set; } = 0;
         public decimal? IGST { get; set; } = 0;
         public  byte RecordStatus { get; set; }
+
+
+        public string UsageCodeDesc { get; set; }
+        public string UsageCodeOtherDesc { get; set; }
+        public string? CostCenterDesc { get; set; }
+        public string? DimensionDesc { get; set; }
+        public string? drcrTypeDesc { get; set; }// debit = 1; credit = -1
+        public string? CostCenterOtherDesc { get; set; }
+        public string? DimensionOtherDesc { get; set; }
 
     }
 }
