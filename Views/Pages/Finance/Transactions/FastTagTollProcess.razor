@@ -1,5 +1,5 @@
 ﻿@page "/FastTagTollProcess"
-@page "/FastTagTollProcess/{id:int}/{Readonly:bool}"
+@page "/FastTagTollProcess/{id:int}/{Readonly:bool}/{Verify:bool}"
 
 @using Core.BaseModels.Finance.Transactions;
 @using Core.IDataServices.Finance.Transactions;
@@ -28,7 +28,7 @@
                     <EditForm id="FastTagProcessForm" OnValidSubmit="OnValidSubmit" Model="MainModel">
                         <MudGrid>
                             <MudItem xs="4">
-                                <MudSelect ReadOnly="@Readonly" Label="Select Document" Value="@selectedDocumentNumber" ToStringFunc="@((e)=> e?.DocumentNumber)" T="FastTagTollModel" ValueChanged="(Value) => DocNoChange(Value)" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
+                                <MudSelect ReadOnly="@Readonly" Label="Select Document" Value="@selectedDocumentNumber" ToStringFunc="@((e)=> e?.DocumentNumber)" T="FastTagProcessModel" ValueChanged="(Value) => DocNoChange(Value)" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
                                     @foreach (var item in DocumentNumbers)
                                     {
                                         <MudSelectItem Value="@item">@item.DocumentNumber</MudSelectItem>
@@ -76,12 +76,13 @@
                 </MudItem>
             </MudGrid>
         </MudPaper>
-
-        <MudItem Style="margin-top:30px; margin-bottom:30px; text-align-last: center;">
-            <AutherizationStatusComponent DocTypeID="@FasTagDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="MainModel.FastTagUploadID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
-        </MudItem>
-
-        <MudPaper Style="min-width:min-content;">
+        @if (Verify || MainModel.AuthLevelId == 99)
+        {
+            <MudItem Style="margin-top:30px; text-align-last: center;">
+                <AutherizationStatusComponent DocTypeID="@FasTagDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="MainModel.FastTagProcessID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+            </MudItem>
+        }
+        <MudPaper Style="margin-top:30px; min-width:min-content;">
             <MudItem xs="12" Style="padding: 26px 26px 26px 26px;">
                 <MudTable Items="@collection" Context="item" MultiSelection="!Readonly" @bind-SelectedItems="selectedcollection" Filter="new Func<FastTagModel, bool>(search)" RowsPerPage="100" Class="fullborder" Style="padding: 0px" Elevation="0" Dense="true" Hover="true" Striped="true">
                     <ToolBarContent>
@@ -123,14 +124,14 @@
 
 @code {
 
-    private FastTagTollModel MainModel = new FastTagTollModel();
+    private FastTagProcessModel MainModel = new FastTagProcessModel();
     private HashSet<FastTagModel> selectedcollection = new HashSet<FastTagModel>();
     private List<FastTagModel> collection = new List<FastTagModel>();
-    private List<FastTagTollModel> DocumentNumbers = new List<FastTagTollModel>();
+    private List<FastTagProcessModel> DocumentNumbers = new List<FastTagProcessModel>();
     private string searchplatenumber = "";
     public int branchID;
     private string UserID = null;
-    private FastTagTollModel selectedDocumentNumber;
+    private FastTagProcessModel selectedDocumentNumber;
 
     public DateTime? DocDate { get; set; }
     public string DocType { get; set; }
@@ -144,30 +145,48 @@
     public int? id { get; set; }
     [Parameter]
     public bool Readonly { get; set; }
-
+    [Parameter]
+    public bool Verify { get; set; }
 
     protected async Task ApproveEntry(DataApprovedStatus aprvd)
     {
-
+        if (aprvd.IsApprove)
+        {
+            try
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                MainModel.UserInfo.UserID = user.Identity.Name;
+                IFTService.Approve(MainModel.FastTagProcessID, MainModel.UserInfo.UserID, aprvd.Remarks);
+                snackbar.Add("Approved Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
     }
 
-    private async Task DocNoChange(FastTagTollModel model)
+    private async Task DocNoChange(FastTagProcessModel model)
     {
         selectedDocumentNumber = model;
+        // MainModel.BranchID = branchID;
+        // MainModel.FastTagUploadID = model.FastTagUploadID;
+        // MainModel.PaymentMode = "Bank";
+        // MainModel.PaymentTool = model.PaymentTool;
+        // MainModel.BankCharges = model.BankCharges;
+        // MainModel.PaymentArdCode = model.PaymentArdCode;
+        // MainModel.PaymentCoaID = model.PaymentCoaID;
+        // MainModel.NatureOfTransaction = selectedDocumentNumber.NatureOfTransaction;
+        MainModel.FastTagProcessID = selectedDocumentNumber.FastTagProcessID;
+        MainModel.DocumentNumber = selectedDocumentNumber.DocumentNumber;
         MainModel.BranchID = branchID;
-        MainModel.FastTagUploadID = model.FastTagUploadID;
-        MainModel.PaymentMode = "Bank";
-        MainModel.PaymentTool = model.PaymentTool;
-        MainModel.BankCharges = model.BankCharges;
-        MainModel.PaymentArdCode = model.PaymentArdCode;
-        MainModel.PaymentCoaID = model.PaymentCoaID;
-        MainModel.NatureOfTransaction = model.NatureOfTransaction;
-        GetCollection(model);
+        GetCollection(MainModel);
     }
 
-    public async Task GetCollection(FastTagTollModel model)
+    public async Task GetCollection(FastTagProcessModel model)
     {
-        collection = IFTService.SelectByBranch(model.FastTagUploadID, branchID).ToList();
+        collection = IFTService.SelectByBranch(model.FastTagProcessID, branchID).ToList();
 
         if (collection.Count == 0)
         {
@@ -187,7 +206,7 @@
         var user = authprov.User;
         branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
         // MainModel.BranchID = branchID;
-        // MainModel.NatureOfTransaction = "FastTag";
+        MainModel.NatureOfTransaction = "FastTag";
         UserID = user.Identity.Name;
 
         if (id != null && Readonly == true)
@@ -206,7 +225,6 @@
         DocDate = MainModel.DocumentDate;
         DocType = "FasTag";
     }
-
 
     public async Task Cancel()
     {

@@ -32,6 +32,24 @@ namespace Core.BaseModels.Finance.Transactions
         public List<FastTagModel> FastTagModelList { get; set; } = new();
     }
 
+    public class FastTagProcessModel : TransactionBaseModel, ICloneable
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<FastTagProcessModel>(Json);
+        }
+        public int? FastTagProcessID { get; set; }
+        public string ProcessDocumentNumber { get; set; } = "New";
+        [Required]
+        public DateTime? DocumentDate { get; set; } = DateTime.Today;
+        [Required]
+        public string Narration { get; set; }
+        public decimal? TotalAmount { get; set; }
+        public List<FastTagModel> FastTagModelList { get; set; } = new();
+    }
+
+
     public class FastTagModel
     {
         public int? FastTagTollID { get; set; }
