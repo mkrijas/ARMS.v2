@@ -1,24 +1,18 @@
 ﻿@page "/TaxPurchase"
 @page "/TaxPurchase/{id:int}"
-@using System.Threading;
-@inject ITaxPurchaseService Iservice
-@inject MudBlazor.ISnackbar snackbar
+@inherits ViewComponentBase<TaxPurchaseModel>
 
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
-@inject IDialogService DialogService
+@inject ITaxPurchaseService Iservice
 @using Inventory.GoodsReceipt
-@inject SignalRService signalRService
-@inject IPushNotificationService IpushNotificationService
+
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" @bind-place="model">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" >
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Purchase</MudText>
                 <MudTooltip Text="New TaxPurchase">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new TaxPurchaseModel(),false,false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new TaxPurchaseModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudTooltip Text="Add from GRN">
                     <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.AddLink" @onclick="openGrn" Color="Color.Dark" Size="Size.Small"></MudIconButton>
@@ -32,7 +26,7 @@
                 <MudItem xs="1">
                     <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
                 </MudItem>
-                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ToggleData(value))" Checked="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.InvoiceDate)" InitialDirection="SortDirection.Ascending">Invoice Date</MudTableSortLabel></MudTh>
@@ -49,22 +43,22 @@
                 <MudTd DataLabel="">
                     @if (@context.AuthLevelId == null)
                     {
-                        <MudFab @onclick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> OpenForm(context,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> Delete(context.PID))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                     }
                     @if (@context.AuthLevelId != 99)
                     {
-                        <MudFab @onclick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                        <MudFab @onclick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
                     }
                     @* @if (@context.AuthLevelId == 99)
                     {
                         <MudFab @onclick="@(()=> GetAccountDetails(context))" Color="Color.Info" Icon="@Icons.Material.Filled.CurrencyExchange" title="Accounts" Size="Size.Small" IconSize="Size.Small" />
                     } *@
-                    <MudFab @onclick="@(()=> OpenDialog(context,true,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> OpenForm(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
 
                     @if (@context.AuthLevelId == 99)
                     {
-                        <EntryReversedComponent DocTypeID="TaxPurchaseDocTypeID" DocumentID="context.PID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                        <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.PID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
                     }
                     </MudTd>
             </RowTemplate>
@@ -77,89 +71,27 @@
 
 @code {
 
-    private TaxPurchaseModel model = new TaxPurchaseModel();
-    private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
-    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-    public bool IsApproved { get; set; } = false;
-    private int numberOfRecords = 100;
-    private bool _busy;
-    private string searchTerm = "";
+    protected override List<TaxPurchaseModel> collection { get; set; } = new ();
 
-    public bool HasPermissionTaxPurchaseServiceDelete { get; set; } = false;
-    public int TaxPurchaseDocTypeID = 9;
-
-    [Parameter]
-    public int? id { get; set; } = null;
-    #region SignaIR Notification
-
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
-    #endregion
-
-    private int NumberOfRecords
-    {
-        get => numberOfRecords;
-        set
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
-            if (numberOfRecords != value)
-            {
-                numberOfRecords = value;
-                _ = ReloadTable();
-            }
-        }
-    }
+            DocumentTypeID = 9,
+            DocumentName = "Purchase"
+        };
+   
 
-    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await ReloadTable();
-        }
-    }
-
-    private async Task ReloadTable()
-    {
-        await GetAll(IsApproved, NumberOfRecords);
-    }
-
+    
     protected override async Task OnInitializedAsync()
-    {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionTaxPurchaseServiceDelete = await Irole.HasClaim(TaxPurchaseDocTypeID.ToString(), "Delete", ctc.Token);
-        model = new();
+    {  
+        await base.OnInitializedAsync();
 
-        await GetAll(IsApproved, NumberOfRecords);
-        await signalRService.StartAsync();
         if (id != null && collection != null && collection.Any(g => g.PID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.PID == id), true,true);
+            await OpenForm(collection.FirstOrDefault(s => s.PID == id), true);
         }
-    }
+    }    
 
-    async Task ApprovedChanged(bool value)
-    {
-        IsApproved = value;
-        await GetAll(IsApproved, NumberOfRecords);
-    }
-
-    private async Task GetAll(bool val, int numberOfRecords)
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int? brancID = int.Parse(brancIDString);
-        int NumberOfRecords = numberOfRecords;
-
-        if (val)
-        {
-            collection = Iservice.SelectByApproved(brancID, NumberOfRecords, searchTerm, "Purchase").ToList();
-        }
-        else
-        {
-            collection = Iservice.SelectByUnapproved(brancID, NumberOfRecords, searchTerm,"Purchase").ToList();
-        }
-        await Task.Delay(200);
-    }
-
-    private async Task OpenDialog(TaxPurchaseModel editModel, bool ReadOnly, bool View)
+    protected override async Task OpenForm(TaxPurchaseModel ppm, bool ReadOnly)
     {
         if (_busy)
         {
@@ -168,45 +100,19 @@
         }
         _busy = true;
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", editModel.Clone());        
+        parms.Add("model", ppm.Clone());
         parms.Add("ReadOnly", ReadOnly);
-        var dialog = DialogService.Show<TaxPurchaseDialog>(editModel.PID == null ? "ADD" : "EDIT", parms, maxWidth);
+        var dialog = dialogService.Show<TaxPurchaseDialog>(ppm.PID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
+        if (!result.Canceled)
         {
-            var ReturnData = (TaxPurchaseModel)result.Data;          
+            var ReturnData = (PaymentMemoModel)result.Data;
         }
-        await GetAll(IsApproved, NumberOfRecords);
+        LoadData(ShowApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;
     }
-
-    private async Task Delete(TaxPurchaseModel model)
-    {
-        if (HasPermissionTaxPurchaseServiceDelete)
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning !",
-                "Are you sure, you want to delete - " + model.InvoiceNo + " (" + model.InvoiceDate + ") ?");
-            if (result == true)
-            {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                Iservice.Delete(model.PID, user.Identity.Name);
-                snackbar.Add("Deleted Successfully", Severity.Success);
-            }
-            await GetAll(IsApproved, NumberOfRecords);
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Delete TaxPurchase.");
-        }
-    }
-
-    // private async void GetAccountDetails(TaxPurchaseModel tpm)
+    // private async Task OpenDialog(TaxPurchaseModel editModel, bool ReadOnly, bool View)
     // {
     //     if (_busy)
     //     {
@@ -214,13 +120,33 @@
     //         return;
     //     }
     //     _busy = true;
-    //     int MID = tpm.MID.Value;
     //     DialogParameters parms = new DialogParameters();
-    //     parms.Add("MID", MID);
-    //     DialogService.Show<AccountInfoDialog>(tpm.DocumentNumber, parms, maxWidth);
+    //     parms.Add("model", editModel.Clone());        
+    //     parms.Add("ReadOnly", ReadOnly);
+    //     var dialog = DialogService.Show<TaxPurchaseDialog>(editModel.PID == null ? "ADD" : "EDIT", parms, maxWidth);
+    //     var result = await dialog.Result;
+    //     var isCancelled = result.Canceled;
+    //     if (!isCancelled)
+    //     {
+    //         var ReturnData = (TaxPurchaseModel)result.Data;          
+    //     }
+    //     await GetAll(IsApproved, NumberOfRecords);
     //     await Task.Delay(200);
     //     _busy = false;
     // }
+     
+    protected override void LoadData(bool val, int numberOfRecords)
+    {
+        if (val)
+        {
+            collection = Iservice.SelectByApproved(BranchID, numberOfRecords, searchTerm, "Purchase").ToList();
+        }
+        else
+        {
+            collection = Iservice.SelectByUnapproved(BranchID, numberOfRecords, searchTerm,"Purchase").ToList();
+        }
+    }
+
 
     public async Task openGrn()
     {
@@ -229,12 +155,11 @@
             snackbar.Add("Please wait while form is closing!", Severity.Warning);
             return;
         }
-        _busy = true;
-        PurchaseOrderModel tds = new();
+        _busy = true;        
         DialogParameters parms = new DialogParameters();
-        var dialog = DialogService.Show<InventoryGrnViewDialog>("GRN", parms, maxWidth);
+        var dialog = dialogService.Show<InventoryGrnViewDialog>("GRN", parms, new DialogOptions(){MaxWidth = MaxWidth.Large});
         var result = await dialog.Result;
-        await GetAll(IsApproved, NumberOfRecords);
+        LoadData(ShowApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;
     }
