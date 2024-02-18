@@ -16,115 +16,74 @@
 @inject IRoleService<RoleModel> Irole
 @inject IPushNotificationService IpushNotificationService
 @inject IConfiguration configuration
-<style>
-    .pointer {
-        cursor: pointer;
-    }
 
-    .wrapper {
-        display: flex;
-        flex-direction: column;
-    }
 
-    .d2 {
-        margin-top: 0.25rem;
-        text-align: center;
-        background-color: #336712;
-    }
-</style>
 
-<div id="noti_Container" style="@(BoxCss == "block" ? "float:right;":"")" class="wrapper">
-    <div style="@(BoxCss == "block" ? "margin-top:365px;margin-left:188px;":"")">
-        <MudBadge Visible="@(currentNotificationMessages.Where(s=>!string.IsNullOrEmpty(s.MessageGroupID)).Count()>0)" OnClick="@NotificationHideShow" Content="@currentNotificationMessages.Where(s=>!string.IsNullOrEmpty(s.MessageGroupID)).Count()" Color="Color.Error" Overlap="true" Class="mx-6 my-4 pointer">
-            <MudChip Icon="@Icons.Material.Filled.Home" Color="Color.Primary">
-                <MudText Class="pointer" @onclick="@NotificationHideShow" Typo="Typo.subtitle2">@BranchName</MudText>
-            </MudChip>
-        </MudBadge>
-    </div>
-    <div class="ikrNotifications" style="display:@BoxCss !important; font-size:11px;">
-        <div style="color:#111;font-size:14px;font-weight:500; border:1px solid #ccc;">
-            <div style="margin:3px;">
-                Notification (@currentNotificationMessages.Where(s=>!string.IsNullOrEmpty(s.MessageGroupID)).Count())
-            </div>
-        </div>
-        <div class="ikrNotificationItems">
-            <MudExpansionPanels>
-                @foreach (var group in GroupList)
+<MudOverlay @bind-Visible="@IsOpen" DarkBackground="true" AutoClose></MudOverlay>
+
+ <div>
+
+     <MudBadge Visible="@(currentNotificationMessages.Where(s=>!string.IsNullOrEmpty(s.MessageGroupID)).Count()>0)"
+               Content="@currentNotificationMessages.Where(s=>!string.IsNullOrEmpty(s.MessageGroupID)).Count()"
+               Origin="Origin.TopRight" Color="Color.Error" Overlap="true" Class="mx-6 my-4">
+         <MudChip Icon="@Icons.Material.Filled.Home" Color="Color.Primary" OnClick="@Toggle">
+             <MudText Class="pointer" @onclick="@NotificationHideShow" Typo="Typo.subtitle2">@BranchName</MudText>
+         </MudChip>
+     </MudBadge>
+     <MudPopover Open="@IsOpen" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter" OverflowBehavior="OverflowBehavior.FlipOnOpen">
+
+         @foreach (var nmObj in @currentNotificationMessages.Take(Take))
+        {
+            <MudAlert Severity="Severity.Normal" Class="my-2" ShowCloseIcon="true" CloseIconClicked="(() => AknowledgedCurrentItem(nmObj.MessageID))">
+                <MudText Typo="Typo.caption" Color="Color.Primary"> - @nmObj.MessageTimeSpan</MudText>
+                <MudText Typo="Typo.h6" Style="color:#d18213"> @nmObj.MessageTitle </MudText>
+                @nmObj.MessageBody
+                @if (!string.IsNullOrEmpty(nmObj.PageToRedirectLink))
                 {
-                    if (currentNotificationMessages.Any(s => s.MessageGroupID == group.MessageGroupID))
-                    {
-
-                        <MudExpansionPanel>
-                            <TitleContent>
-                                <MudText Style="font-size:13px" class="ikrNotificationTitle"> <MudIcon Icon="@group.MessageGroupIcon" Title="@group.MessageGroupName" Color="Color.Primary" /> @group.MessageGroupName (@currentNotificationMessages.Where(s=>s.MessageGroupID == group.MessageGroupID).Count())</MudText>
-                            </TitleContent>
-                            <ChildContent>
-                                <MudExpansionPanels>
-                                    @foreach (var nmObj in @currentNotificationMessages.Where(s => s.MessageGroupID == group.MessageGroupID))
-                                    {
-                                        <MudExpansionPanel>
-                                            <TitleContent>
-                                                <MudGrid>
-                                                    <MudItem md="10" lg="10">
-                                                        <MudText Style="font-size:13px" class="ikrNotificationTitle">@nmObj.MessageTitle<MudText Typo="Typo.subtitle1" Color="Color.Primary">- @nmObj.MessageTimeSpan</MudText></MudText>
-                                                    </MudItem>
-                                                    <MudItem md="2" lg="2">
-                                                        <MudIconButton Class="ml-6 mb-0" Style="color:#ccc" Icon="@Icons.Material.Filled.Close" Title="Aknowledged" @onclick="@(()=>AknowledgedCurrentItem(nmObj.MessageID))" Size="Size.Small"></MudIconButton>
-                                                    </MudItem>
-                                                </MudGrid>
-                                            </TitleContent>
-                                            <ChildContent>
-                                                <div class="ikrNotificationBody" style="font-size:13px;">@nmObj.MessageBody</div>
-                                                <div style="text-align:center">
-                                                    <br />
-                                                    <MudButton Style="background-color:#EEE" OnClick="@(()=>RedirectToLink(nmObj.PageToRedirectLink,nmObj.DocumentID))"><a href="#" style="font-size:13px;">Go to</a></MudButton>
-                                                </div>
-                                            </ChildContent>
-                                        </MudExpansionPanel>
-                                    }
-                                </MudExpansionPanels>
-                            </ChildContent>
-                        </MudExpansionPanel>
-                    }
-
+                    <MudButton DisableElevation OnClick="@(()=>RedirectToLink(nmObj.PageToRedirectLink,nmObj.DocumentID))"><a href="#" style="font-size:10px;">Click Here</a></MudButton>                  
                 }
-            </MudExpansionPanels>
-        </div>
+            </MudAlert>
+        }
+        @if (@Take > 1 && @currentNotificationMessages.Count() > 1)
+        {
         <div style="text-align:center">
             <MudButton OnClick="@AknowledgeAllInTheList"><a href="#" style="font-size:13px">Aknowledge All</a></MudButton>
         </div>
-        @*<div class="ikrSeeAll"><button id="AknowledgeId" value="Aknowledge" name="Aknowledge" onclick="@AknowledgeAllInTheList();"> <a href="#">Aknowledge</a></button>
-        </div>*@
-    </div>
+        }
+    </MudPopover>
+
 </div>
 
 @code {
-
     [Parameter]
     public string BranchName { get; set; }
 
-    #region SignaIR Notification
-
-    //private List<PushNotificationModel> allNotificationMessages = new List<PushNotificationModel>();
+    #region SignaIR Notification    
     private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
     private HubConnection hubConnection;
     private string BoxCss = "none";
     List<PushNotificationGroupModel> GroupList = new();
+    int Take = 5;
 
-    string UserID;  
+    string UserID;
     int BranchID = 0;
+    bool IsOpen;
+
+    void Toggle()
+    {
+        IsOpen = !IsOpen;
+        Take = 5;
+    }
 
     protected override async Task OnInitializedAsync()
-    {  
+    {
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        var brancIDString = authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value;        
+        var brancIDString = authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID")?.Value;
         int.TryParse(brancIDString, out BranchID);
         UserID = user.Identity.Name;
 
-        await getNotifications();
-        GroupList = IpushNotificationService.GetAllGroupList().ToList();
-
+        await getNotifications();   
 
         if (hubConnection == null || hubConnection.State == HubConnectionState.Disconnected)
         {
@@ -132,41 +91,9 @@
             hubConnection.On<string>("ReceiveMessage", async Triggered =>
             {
                 await getNotifications();
-
-                // if (notifications != null && (notifications.MessageGroupID == "PendingVerification" || notifications.MessageGroupID == "EWayBill" || notifications.MessageGroupID == "PeriodicMaintainence" || notifications.MessageGroupID == "TruckRequestApproval") && notifications.DocumentID != null && notifications.DocumentTypeID != null && allNotificationMessages.Any(g => g.DocumentID == notifications.DocumentID && g.DocumentTypeID == notifications.DocumentTypeID))
-                // {
-                //     foreach (var MessageID in allNotificationMessages.Where(g => g.DocumentID == notifications.DocumentID && g.DocumentTypeID == notifications.DocumentTypeID).Select(g => g.MessageID).ToList())
-                //     {
-                //         if (allNotificationMessages != null && allNotificationMessages.Any(x => x.MessageID == MessageID))
-                //         {
-                //             allNotificationMessages.RemoveAll(x => x.MessageID == MessageID);
-                //         }
-
-                //         if (currentNotificationMessages != null && currentNotificationMessages.Any(x => x.MessageID == MessageID))
-                //         {
-                //             currentNotificationMessages.RemoveAll(t => t.MessageID == MessageID);
-                //         }
-                //     }
-                //     await InvokeAsync(() => StateHasChanged());
-                // }
-                // if (notifications != null && notifications.Aknowledged == false && notifications.MessageID != null && notifications.MessageID != 0)
-                // {
-                //     var ResultClaim = await Irole.HasClaim(notifications.DocumentTypeID.ToString(), "View", ctc.Token);
-                //     if (ResultClaim)
-                //     {
-                //         allNotificationMessages.Add(notifications);
-                //         currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-                //         await InvokeAsync(() => StateHasChanged());
-                //     }
-                //     else if (string.IsNullOrEmpty(notifications.ClaimValue))
-                //     {
-                //         allNotificationMessages.Add(notifications);
-                //         currentNotificationMessages = allNotificationMessages.Where(d => (d.ReceivedBranch?.BranchID ?? 0) == CurrentBranchId).ToList();
-                //         await InvokeAsync(() => StateHasChanged());
-                //     }
-                // }
+                Take = 1;
+                IsOpen = true;               
             });
-
             await hubConnection.StartAsync();
         }
     }
@@ -177,17 +104,14 @@
         if (BranchID != 0)
         {
             CancellationTokenSource ctc = new CancellationTokenSource();
-            currentNotificationMessages = IpushNotificationService.SelectActiveNotifications(BranchID,UserID).ToList();
-           
+            currentNotificationMessages = IpushNotificationService.SelectActiveNotifications(BranchID, UserID).ToList();
             await InvokeAsync(() => StateHasChanged());
         }
     }
 
-
-
     private void NotificationHideShow()
     {
-        if (BoxCss == "none") BoxCss = "block";  else BoxCss = "none";
+        if (BoxCss == "none") BoxCss = "block"; else BoxCss = "none";
     }
 
     private async Task AknowledgeAllInTheList()
@@ -201,25 +125,10 @@
         {
             string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
             int c = IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
-            // if (c != -1)
-            // {
-            //     foreach (var item in currentNotificationMessages.ToList())
-            //     {
-            //         if (await Irole.HasClaim(item.DocumentTypeID.ToString(), "View", ctc.Token))
-            //         {
-            //             currentNotificationMessages.Remove(currentNotificationMessages.FirstOrDefault(v => v.MessageID == item.MessageID));                        
-            //         }
-            //         else
-            //         {
-            //             iSAnyCanNotAknowledge = true;
-            //         }
-            //     }
-            // }
-
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            snackbar.Add(ex.Message,Severity.Error);    
+            snackbar.Add(ex.Message, Severity.Error);
         }
 
         if (iSAnyCanNotAknowledge)
@@ -228,6 +137,7 @@
        "Permission denied!",
        "You dont have any permission to aknowledge some items.");
         }
+        IsOpen = false;
 
     }
 
@@ -243,14 +153,6 @@
                 var user = authprov.User;
                 var UserID = user.Identity.Name;
                 int c = IpushNotificationService.AknowledgedCurrentItem(MessageID, UserID);
-                // if (c != -1)
-                // {
-
-                //     if (currentNotificationMessages != null)
-                //     {
-                //         currentNotificationMessages.RemoveAll(x => x.MessageID == MessageID);
-                //     }
-                // }
             }
             else
             {
