@@ -29,8 +29,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? RID { get; set; }
         public virtual decimal? TaxRate { get; set; }
-        [StringLength(maximumLength: 8)]
-        [Required]
+        [StringLength(maximumLength: 8)]        
         public string SAC { get; set; }
         [Required]
         public DateTime? PeriodFrom { get; set; }

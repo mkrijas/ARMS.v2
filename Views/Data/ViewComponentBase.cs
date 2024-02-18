@@ -101,7 +101,8 @@ namespace Views.Data
             BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
             var user = authprov.User;
             UserID = user.Identity.Name;
-            LoadData(ShowApproved, NumberOfRecords);              
+            LoadData(ShowApproved, NumberOfRecords);
+            await Task.Delay(100);
         }
         private async Task setPermissions()
         {
