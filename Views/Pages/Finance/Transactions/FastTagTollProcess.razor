@@ -1,5 +1,6 @@
 ﻿@page "/FastTagTollProcess"
-@page "/FastTagTollProcess/{id:int}/{Readonly:bool}/{Verify:bool}"
+@* @page "/FastTagTollProcess/{id:int}/{Readonly:bool}/{Verify:bool}" *@
+@page "/FastTagTollProcess/{encryptedId}/{Readonly:bool}/{Verify:bool}"
 
 @using Core.BaseModels.Finance.Transactions;
 @using Core.IDataServices.Finance.Transactions;
@@ -141,12 +142,77 @@
     public string DocNumber { get; set; }
     public bool HasPermissionIFastTagServiceEdit { get; set; } = false;
 
-    [Parameter]
+    // [Parameter]
     public int? id { get; set; }
+    [Parameter]
+    public string encryptedId { get; set; }
     [Parameter]
     public bool Readonly { get; set; }
     [Parameter]
     public bool Verify { get; set; }
+
+    // [Parameter]
+    // public string encryptedReadonly { get; set; }
+    // [Parameter]
+    // public string encryptedVerify { get; set; }
+
+    //public int? id { get; set; }
+    // public bool Readonly { get; set; }
+    // public bool Verify { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionIFastTagServiceEdit = await Irole.HasClaim(FasTagDocTypeID.ToString(), "Edit", ctc.Token);
+        // HasPermissionSundryPaymentServiceApprove = await Irole.HasClaim(FasTagDocTypeID.ToString(), "Approve", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+        // MainModel.BranchID = branchID;
+        MainModel.NatureOfTransaction = "FastTag";
+        UserID = user.Identity.Name;
+
+        // if (id != null && Readonly == true)
+        // {
+        //     MainModel = IFTService.GetProcessViewModel(id);
+        //     selectedDocumentNumber = MainModel;
+
+        //     collection = IFTService.GetProcessViewCollection(id).ToList();
+        // }
+        // else if (id == 0 && Readonly == false)
+        // {
+        //     DocumentNumbers = IFTService.SelectPendingFTDoc().ToList();
+        // }
+        // //collection = IFTService.SelectByBranch(branchID).ToList();
+        // // DocNumber = MainModel.DocumentNumber;
+        // // DocDate = MainModel.DocumentDate;
+        // DocType = "FasTag";
+    }
+
+    protected override void OnParametersSet()
+    {
+        id = Convert.ToInt32(EncryptionHelper.Decrypt(encryptedId));
+        // Readonly = Convert.ToBoolean(EncryptionHelper.Decrypt(encryptedReadonly));
+        // Verify = Convert.ToBoolean(EncryptionHelper.Decrypt(encryptedVerify));
+
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        if (id != null && Readonly == true)
+        {
+            MainModel = IFTService.GetProcessViewModel(id);
+            selectedDocumentNumber = MainModel;
+            collection = IFTService.GetProcessViewCollection(id).ToList();
+        }
+        else if (id == 0 && Readonly == false)
+        {
+            DocumentNumbers = IFTService.SelectPendingFTDoc().ToList();
+        }
+        DocType = "FasTag";
+    }
 
     protected async Task ApproveEntry(DataApprovedStatus aprvd)
     {
@@ -197,36 +263,7 @@
         }
     }
 
-    protected override async Task OnInitializedAsync()
-    {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionIFastTagServiceEdit = await Irole.HasClaim(FasTagDocTypeID.ToString(), "Edit", ctc.Token);
-        // HasPermissionSundryPaymentServiceApprove = await Irole.HasClaim(FasTagDocTypeID.ToString(), "Approve", ctc.Token);
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
-        // MainModel.BranchID = branchID;
-        MainModel.NatureOfTransaction = "FastTag";
-        UserID = user.Identity.Name;
-
-        if (id != null && Readonly == true)
-        {
-            MainModel = IFTService.GetProcessViewModel(id);
-            selectedDocumentNumber = MainModel;
-
-            collection = IFTService.GetProcessViewCollection(id).ToList();
-        }
-        else if (id == 0 && Readonly == false)
-        {
-            DocumentNumbers = IFTService.SelectPendingFTDoc().ToList();
-        }
-        //collection = IFTService.SelectByBranch(branchID).ToList();
-        // DocNumber = MainModel.DocumentNumber;
-        // DocDate = MainModel.DocumentDate;
-        DocType = "FasTag";
-    }
-
+    
     public async Task Cancel()
     {
         NavigationManager.NavigateTo("/FastTagTollProcessView");
