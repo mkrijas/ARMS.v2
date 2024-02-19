@@ -84,7 +84,7 @@ namespace ArmsModels.BaseModels
         }
         public int? VendorPostingGroupID { get; set; }
         [Required]
-        public string Title { get; set; }
+        public string Title { get; set; }        
         [ValidateComplexType]
         [Required]
         public ChartOfAccountModel Payable { get; set; }
