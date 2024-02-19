@@ -112,5 +112,31 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+        public IEnumerable<StockistFreightReceivableModel> GetStockistFreightReceivables(int? ConsigneeID, int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ConsigneeID", ConsigneeID),
+               new SqlParameter("@BranchID", BranchID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.StockistFreight.Select]", parameters))
+            {
+                yield return new StockistFreightReceivableModel()
+                {
+                    Amount = dr.GetDecimal("Amount"),
+                    EntryRef = dr.GetString("EntryRef"),
+                    DocumentDate = dr.GetDateTime("DocumentDate"),
+                    Consignee = new ConsigneeModel()
+                    {
+                        ConsigneeID = dr.GetInt32("ConsigneeID"),
+                        ArdCode = dr.GetString("ArdCode"),
+                        Mobile = dr.GetString("Mobile"),
+                        ConsigneeName = dr.GetString("ConsigneeName"),                        
+                    }
+                };
+            }
+        }
     }
 }

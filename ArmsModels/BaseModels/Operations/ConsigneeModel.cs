@@ -36,4 +36,12 @@ namespace ArmsModels.BaseModels
         public AddressModel Address { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
+
+    public class StockistFreightReceivableModel
+    {
+        public ConsigneeModel Consignee { get; set; }
+        public string EntryRef { get; set; }
+        public decimal? Amount { get; set; }
+        public DateTime? DocumentDate { get; set; }
+    }
 }

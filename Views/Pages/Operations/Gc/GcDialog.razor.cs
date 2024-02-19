@@ -185,8 +185,13 @@ namespace Views.Pages.Operations.Gc
                         model.ConsigneeID = Consignee.ConsigneeID;
                     }
                 }
+                GetFreight(model);
             }
-            GetFreight(model);
+            else
+            {
+                model.Gcs.ForEach(x=> x.Freight = 0);
+            }
+            
         }
 
         private void RouteChanged(RouteModel obj)

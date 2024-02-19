@@ -4,7 +4,7 @@ using System.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using ArmsModels.BaseModels.Finance.Transactions;
+using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
@@ -182,6 +182,16 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },
             };
+        }
+
+        public int Reverse(int? PID, string UserID, string Remarks)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<SundryReceiptModel> Select(int? BranchID)
+        {
+            throw new NotImplementedException();
         }
     }
 
