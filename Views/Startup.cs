@@ -238,6 +238,7 @@ namespace Views
 
             services.AddScoped<IbaseInterface<PaymentMemoModel> , PaymentService>();
             services.AddScoped <IbaseInterface<TaxPurchaseModel> , TaxPurchaseService>();
+            services.AddScoped<IbaseInterface<SundryReceiptModel>, SundryReceiptService>();
 
 
             //------------FINANCE POSTING GROUP-------------------

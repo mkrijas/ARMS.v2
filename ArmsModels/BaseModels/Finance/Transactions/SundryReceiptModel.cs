@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 
-namespace ArmsModels.BaseModels.Finance.Transactions
+namespace ArmsModels.BaseModels
 {
     public class SundryReceiptModel : TransactionBaseModel, ICloneable
     {

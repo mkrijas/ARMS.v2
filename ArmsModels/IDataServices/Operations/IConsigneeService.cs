@@ -16,5 +16,7 @@ namespace ArmsServices.DataServices
         Task<int> Delete(int? ConsigneeID, string UserID);  //Delete
         IAsyncEnumerable<ConsigneeModel> Select(int? ConsigneeID);
         IAsyncEnumerable<ConsigneeModel> SelectByOrder(int? ID);
+        IEnumerable<StockistFreightReceivableModel> GetStockistFreightReceivables(int? ConsigneeID,int? BranchID);
+
     }
 }
