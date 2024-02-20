@@ -96,31 +96,32 @@
             try
             {
                 SundryReceiptModel StockistsReceiptModel = new SundryReceiptModel()
-                {
-                    BranchID = BranchID,
-                    NatureOfTransaction = "StockistFreight",
-                    PayerContactNo = data.First().Consignee.Mobile,
-                    PayerName = data.First().Consignee.ConsigneeName,
-                    TotalAmount = data.Sum(x=> x.Amount)
+                    {
+                        BranchID = BranchID,
+                        NatureOfTransaction = "StockistFreight",
+                        PayerContactNo = data.First().Consignee.Mobile,
+                        PayerName = data.First().Consignee.ConsigneeName,
+                        TotalAmount = data.Sum(x => x.Amount)
 
-                };
+                    };
                 GstUsageCodeModel UsageCode = Iusage.SelectByCode(Iconfig.GetByID("ConsigneeUsageCode").ValueString);
 
                 foreach (var item in data)
                 {
                     StockistsReceiptModel.Entries.Add(new SundryReceiptEntryModel()
                         {
-                            Amount = item.Amount * -1,
+                            Amount = item.Amount,
                             BranchID = BranchID,
                             CoaID = UsageCode.CoaID,
                             Reference = item.EntryRef,
                             UsageCode = UsageCode.UsageCode,
-                            UsageCodeDescription = UsageCode.Description
+                            UsageCodeDescription = UsageCode.Description,
+                            SubArdCode = item.Consignee.ArdCode
                         });
                 }
 
-                await OpenForm(StockistsReceiptModel, false);
-                
+                await OpenForm(StockistsReceiptModel, false, true);
+
             }
             catch (Exception ex)
             {
@@ -151,7 +152,7 @@
         }
     }
 
-    protected override async Task OpenForm(SundryReceiptModel ppm, bool ReadOnly)
+    protected override async Task OpenForm(SundryReceiptModel ppm, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -162,6 +163,7 @@
         DialogParameters parms = new DialogParameters();
         parms.Add("model", ppm.Clone());
         parms.Add("ReadOnly", ReadOnly);
+        parms.Add("DisableAddition", DisableAddition);
         var dialog = dialogService.Show<SundryReceiptDialog>(ppm.SundryReceiptID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
         if (!result.Canceled)
