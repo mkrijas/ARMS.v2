@@ -42,6 +42,7 @@ namespace ArmsModels.BaseModels
         public ConsigneeModel Consignee { get; set; }
         public string EntryRef { get; set; }
         public decimal? Amount { get; set; }
+        [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
         public DateTime? DocumentDate { get; set; }
     }
 }
