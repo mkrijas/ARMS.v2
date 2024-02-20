@@ -69,8 +69,10 @@ namespace Views.Data
         }
 
         protected abstract List<T> collection { get; set; }
-       // protected abstract void LoadData(bool val, int numberOfRecords);
-        protected abstract Task OpenForm(T editModel, bool ReadOnly);
+        // protected abstract void LoadData(bool val, int numberOfRecords);
+
+        
+        protected abstract Task OpenForm(T editModel, bool ReadOnly, bool DisableAddition = false);
         
         protected virtual async Task Delete(int? ID)
         {

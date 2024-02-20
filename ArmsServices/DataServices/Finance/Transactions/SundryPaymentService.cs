@@ -103,6 +103,7 @@ namespace ArmsServices.DataServices
                     CoaID = dr.GetInt32("CoaID"),
                     UsageCode = dr.GetString("UsageCode"),
                     UsageCodeDescription = dr.GetString("Description"),
+                    SubArdCode = dr.GetString("SubArdCode"),
                     Amount = dr.GetDecimal("Amount"),
                     Reference = dr.GetString("Reference"),
                     CostCenterVal = dr.GetString("CostCenter"),
