@@ -44,6 +44,7 @@ using Core.IDataServices.Operations;
 using DAL.DataServices.Operations;
 using Core.IDataServices.Finance;
 using DAL.DataServices.Finance;
+using ArmsModels.BaseModels.Finance.Transactions;
 
 namespace Views
 {
@@ -239,6 +240,7 @@ namespace Views
             services.AddScoped<IbaseInterface<PaymentMemoModel> , PaymentService>();
             services.AddScoped <IbaseInterface<TaxPurchaseModel> , TaxPurchaseService>();
             services.AddScoped<IbaseInterface<SundryReceiptModel>, SundryReceiptService>();
+            services.AddScoped<IbaseInterface<ReceiptModel>, ReceiptService>();
 
 
             //------------FINANCE POSTING GROUP-------------------
