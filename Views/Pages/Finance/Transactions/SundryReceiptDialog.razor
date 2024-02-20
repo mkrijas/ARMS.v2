@@ -1,27 +1,8 @@
 ﻿@inject ISundryReceiptService Iservice
-@using System.Threading;
-@using ArmsModels.BaseModels.Finance.Transactions
-
-@inject IOutstandingBillsService OBIservice
-@inject ICostCenterService costIservice
-@inject TruckDataArrayModel data
-@inject IChartOfAccountService accountService
-@inject IDimensionService dimensionIservice
-@inject NavigationManager uriHelper;
-@inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
-@inject IDialogService DialogService
+@inherits DialogFormComponentBase<SundryReceiptModel>
 
 
-<style>
-    .zero-width {
-        width: 0;
-    }
-</style>
-
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sundry Receipt" formID="sundryReceiptForm" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sundry Receipt" formID="sundryReceiptForm" DocumentDetails="DocInfo" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="sundryReceiptForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
@@ -84,7 +65,7 @@
                                             <MudTextField @bind-Value="spe.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => spe.Reference)"></MudTextField>
                                         </MudItem>
                                         <MudItem xs="1" Class="d-flex align-center">
-                                            <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+                                            <MudFab OnClick="AddParticulars" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
                                         </MudItem>
                                     }
                                 </MudGrid>
@@ -96,71 +77,40 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@SundryReceiptDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.SundryReceiptID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocumentID="model.SundryReceiptID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
 @code {
 
     [Parameter]
-    public SundryReceiptModel model { get; set; }
-    [Parameter]
-    public bool ReadOnly { get; set; }
+    public override SundryReceiptModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.SundryReceiptID; } }
+    private SundryReceiptModel _model;
+
     [Parameter]
     public bool DisableAddition {get; set;} = false;
 
-    private EditContext editContext;
-    DialogForm dialogForm;
     private SundryReceiptEntryModel spe = new SundryReceiptEntryModel();
-    private int? branchID = null;
-    private string UserID = null;
-    public GstUsageCodeModel gstusge = new();
+    private GstUsageCodeModel gstusge = new();    
+    //public stringBranchIDer { get; set; }
 
-    [Parameter]
-    public string PageToRedirectLink { get; set; }
-    public string DocNumber { get; set; }
-    public DateTime? DocDate { get; set; }
-    public string DocType { get; set; }
-    private bool _busy;
-
-
-    public DocumentInfoModel DocumentDetails { get; set; } = new();
-
-
-    public bool HasPermissionSundryReceiptServiceEdit { get; set; } = false;
-    public bool HasPermissionSundryReceiptServiceApprove { get; set; } = false;
-    int SundryReceiptDocTypeID = 12;
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 12,
+            DocumentName = "SundryReceipt"
+        };
 
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionSundryReceiptServiceEdit = await Irole.HasClaim(SundryReceiptDocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionSundryReceiptServiceApprove = await Irole.HasClaim(SundryReceiptDocTypeID.ToString(), "Approve", ctc.Token);
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
-        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
-        UserID = User.Identity.Name;
+        await base.OnInitializedAsync();
         if (model.SundryReceiptID == null)
         {
             model.NatureOfTransaction = "Sundry Receipt";
-            model.BranchID = branchID;
         }
         else
         {
             model.Entries = Iservice.GetEntries(model.SundryReceiptID).ToList();
-        }
-
-        DocNumber = model.DocumentNumber;
-        DocDate = model.DocumentDate;
-        DocType = model.NatureOfTransaction;
-    }
-
-    protected override void OnParametersSet()
-    {
-        editContext = new EditContext(model);
-        DocumentDetails.DocumentTypeID = SundryReceiptDocTypeID;
-        DocumentDetails.DocumentID = model.SundryReceiptID;
+        }    
     }
 
     void UsageCodeChanged(GstUsageCodeModel uc)
@@ -171,9 +121,9 @@
         spe.CoaID = uc?.CoaID;
     }
 
-    public void AddItems()
+    public void AddParticulars()
     {
-        spe.BranchID = branchID;
+        spe.BranchID = BranchID;
         if (dialogForm.validate(spe, editContext))
         {
             model.Entries.Add(spe);
@@ -182,65 +132,16 @@
             gstusge = null;
         }
     }
-
-
-    protected async Task Approve(DataApprovedStatus aprvd)
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
-        if (HasPermissionSundryReceiptServiceApprove)
-        {
-            if (aprvd.IsApprove)
-            {
-                try
-                {
-                    model.UserInfo.UserID = UserID;
-                    Iservice.Approve(model.SundryReceiptID, model.UserInfo.UserID, aprvd.Remarks);
-                    snackbar.Add("Approved Successfully", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Approve SundryReceipt.");
-        }
+        int result = Iservice.Approve(model.SundryReceiptID, model.UserInfo.UserID, aprvd.Remarks);
+        return result;
     }
 
-    public async Task OnValidSubmit(EditContext context)
-    {
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-
-        if (HasPermissionSundryReceiptServiceEdit)
-        {
-            model.UserInfo.UserID = UserID;
-            try
-            {
-                Iservice.Update(model);
-                model = new();
-                snackbar.Add("Saved Successfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
-            dialogForm.Close(model);
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Edit SundryReceipt.");
-        }
-        await Task.Delay(200);
-        _busy = false;
+    protected override async Task<int> Update(SundryReceiptModel editModel)
+    {       
+            model = Iservice.Update(model);
+            return model.SundryReceiptID.Value;   
     }
+    
 }

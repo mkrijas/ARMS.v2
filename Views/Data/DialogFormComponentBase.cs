@@ -67,6 +67,7 @@ namespace Views.Data
             BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
             var user = authprov.User;
             UserID = user.Identity.Name;  
+            model.BranchID = BranchID;
         }
 
         protected override void OnParametersSet()
