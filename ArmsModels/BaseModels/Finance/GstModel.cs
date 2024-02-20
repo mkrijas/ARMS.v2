@@ -18,7 +18,7 @@ namespace ArmsModels.BaseModels
         public int? Id { get; set; }
         public virtual string UsageCode { get; set; }
         [Required]
-        [StringLength(maximumLength: 25)]
+        [StringLength(maximumLength: 50)]
         public string Description { get; set; }
         [Required(ErrorMessage = "The Account field is required!")]
         public int? CoaID { get; set; }

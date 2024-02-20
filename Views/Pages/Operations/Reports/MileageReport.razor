@@ -2,13 +2,21 @@
 @inject ISnackbar Snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
+@inject IBranchService Ibranchservice
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
             <MudGrid>
                 <MudItem xs="4">
-                    <BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@OtherBranchChanged"></BranchSelector>
+                    <MudSelect T="string" Label="Select Branch" MultiSelection="true" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="BranchID" @bind-SelectedValues="BranchIDS" OffsetY="true" Direction="Direction.Bottom"
+                               AdornmentColor="Color.Secondary" Required>
+                        @foreach (BranchModel ditem in BranchList)
+                        {
+                            <MudSelectItem T="string" Value="@(ditem.BranchID.Value.ToString())">@ditem.BranchName</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
                 <MudItem xs="3">
                     <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
@@ -34,24 +42,40 @@
     public Dictionary<string, string> ReportParameters { get; set; } = new();
     public DateTime? FromDate { get; set; } = DateTime.Now;
     public DateTime? ToDate { get; set; } = DateTime.Now;
-    public int? BranchID { get; set; } = 0;
     public BranchModel SelectedBranch { get; set; } = new();
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
+    private List<BranchModel> BranchList = new();
+    public string BranchID { get; set; } = "";
+    private IEnumerable<string> BranchIDS { get; set; } = new HashSet<string>() { };
 
-    private async Task OtherBranchChanged(BranchModel branch)
+    protected override void OnInitialized()
     {
-        SelectedBranch = branch;
-        BranchID = SelectedBranch.BranchID;
+        BranchList = Ibranchservice.Select().ToList();
+    }
+
+    private string GetMultiSelectionText(List<string> selectedValues)
+    {
+        string Result = "";
+        foreach (var item in selectedValues)
+        {
+            if (BranchList.Any(s => s.BranchID.Value.ToString() == item))
+            {
+                if (Result == "")
+                {
+                    Result = BranchList.FirstOrDefault(s => s.BranchID.Value.ToString() == item).BranchName;
+                }
+                else
+                {
+                    Result = Result + ", " + BranchList.FirstOrDefault(s => s.BranchID.Value.ToString() == item).BranchName;
+                }
+            }
+        }
+        return Result;
     }
 
     public void RenderReportViewer()
     {
-        if (SelectedBranch == null || SelectedBranch.BranchID == null)
-        {
-            Snackbar.Add("Please select branch.", Severity.Error);
-            return;
-        }
         if (FromDate == null)
         {
             Snackbar.Add("Please select From Date.", Severity.Error);
@@ -64,9 +88,10 @@
         }
 
         ShowReport = true;
-        ReportName = "rptMileageShortageReport";
+        ReportName = "rpt.Operation.MileageReport";
         ReportParameters.Clear();
-        ReportParameters.Add("BranchID", SelectedBranch.BranchID.ToString());
+        string branches = String.Join(',', BranchIDS);
+        ReportParameters.Add("BranchIDS", branches);
         ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
         ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
     }
