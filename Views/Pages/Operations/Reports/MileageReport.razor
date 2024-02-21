@@ -42,15 +42,20 @@
     public Dictionary<string, string> ReportParameters { get; set; } = new();
     public DateTime? FromDate { get; set; } = DateTime.Now;
     public DateTime? ToDate { get; set; } = DateTime.Now;
-    public BranchModel SelectedBranch { get; set; } = new();
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
     private List<BranchModel> BranchList = new();
     public string BranchID { get; set; } = "";
     private IEnumerable<string> BranchIDS { get; set; } = new HashSet<string>() { };
+    public BranchModel CurrentBranch { get; set; } = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
+        CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+        CurrentBranch.BranchID = int.Parse(BranchIDString);
         BranchList = Ibranchservice.Select().ToList();
     }
 
@@ -92,6 +97,7 @@
         ReportParameters.Clear();
         string branches = String.Join(',', BranchIDS);
         ReportParameters.Add("BranchIDS", branches);
+        ReportParameters.Add("BranchName", CurrentBranch.BranchName);
         ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
         ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
     }
