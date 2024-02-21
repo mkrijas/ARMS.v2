@@ -1,20 +1,11 @@
-﻿@using System.Threading;
+﻿@inherits DialogFormComponentBase<ReceiptModel>
 
-@using Microsoft.Extensions.Configuration
-@using Views.Pages.Finance.Transactions.PurchaseAndPayment
 @inject IReceiptService Iservice
-@inject IPartyService partyIservice
-@inject IOutstandingBillsService OutstandingIservice
-@inject TruckDataArrayModel data
-@inject IConfiguration configuration
-@inject IChartOfAccountService accountService
-@inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
-@inject IDialogService DialogService
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Receipt" formID="receiptForm" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+@using PurchaseAndPayment
+
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Receipt" formID="receiptForm" DocumentDetails="DocInfo" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="receiptForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
@@ -32,22 +23,23 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" NatureOfBusiness="@model.BusinessNature" BranchID="branchID" For="(() => model.PartyInfo)" />
+                        <PartySelector Value="model.PartyInfo" ValueChanged="PartyChanged" NatureOfBusiness="@model.BusinessNature" BranchID="BranchID" For="(() => model.PartyInfo)" />
                     </MudItem>
                     <MudItem xs="12" md="2">
-                        <MudSelect Label="Nature Of Receipt" ReadOnly="ReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionchanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-                            <MudSelectItem Value="@("Deposit")" />
-                            @if (!(model.BusinessNature == "Supplier"))
+                        <MudSelect Label="Nature Of Receipt" ReadOnly="ReadOnly" Value="model.NatureOfTransaction" ValueChanged="nTransactionChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @if (model.PartyInfo is not null)
                             {
-                                <MudSelectItem Value="@("Reciept")" />
+                                foreach (var item in natureOfBusinessGroup)
+                                {
+                                    <MudSelectItem Value="@(item)" />
+                                }
                             }
-                            <MudSelectItem Value="@("Prepayment")" />
                         </MudSelect>
                     </MudItem>
                     @if (model.Bills.Any())
                     {
                         <MudItem xs="12">
-                            <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Bordered Elevation="0" >
+                            <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Bordered Elevation="0" Outlined >
                                 <thead>
                                     <tr>
                                         <th>Invoice info</th>
@@ -61,7 +53,7 @@
                                         <tr>
                                             <td>@item.InvoiceNumber - @item.InvoiceDate?.ToShortDateString()</td>
                                             <td>@item.BranchName</td>
-                                            <td> <MudTextField T="decimal?" @bind-Value="item.ReceiptAmount" TextChanged="calcTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
+                                            <td> <MudTextField ReadOnly="@ReadOnly" T="decimal?" @bind-Value="item.ReceiptAmount" TextChanged="setTotalAmt" Variant="Variant.Outlined" Margin="Margin.Dense"> </MudTextField></td>
                                         </tr>
                                     }                                    
                                 </tbody>
@@ -81,14 +73,8 @@
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="@ReadOnly" Disabled="@model.Bills.Any()" @bind-Value="model.TotalAmount" Label="TotalAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
-                    </MudItem>
-                    
-                    @* <MudItem xs="12" md="3">
-                        <CostCenterSelector @bind-Value="@model.CostCenter"></CostCenterSelector>
-                    </MudItem>
-                    <MudItem xs="12" md="3">
-                        <DimensionSelector @bind-Value="@model.Dimension"></DimensionSelector>
-                    </MudItem> *@
+                    </MudItem>                    
+                   
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
@@ -97,65 +83,76 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="ReceiptDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.ReceiptID" OnApprove="ApproveData"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="DocInfo.DocumentTypeID" DocDate="@DocDate" DocumentID="model.ReceiptID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
 @code {
 
-    [Parameter]
-    public ReceiptModel model { get; set; }
-    [Parameter]
-    public bool ReadOnly { get; set; }
-    private int? branchID = null;
-    private string UserID = null;
-    private EditContext editContext;
-    DialogForm dialogForm;
-    [Parameter]
-    public string PageToRedirectLink { get; set; }
-    public string DocNumber { get; set; }
-    public DateTime? DocDate { get; set; }
-    public string DocType { get; set; }
-    private bool _busy;
 
-    public DocumentInfoModel DocumentDetails { get; set; } = new();
+    [Parameter]
+    public override ReceiptModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.ReceiptID; } }
+    private ReceiptModel _model;
 
-    public bool HasPermissionReceiptServiceEdit { get; set; } = false;
-    public bool HasPermissionReceiptServiceApprove { get; set; } = false;
-    public int ReceiptDocTypeID = 14;
 
+    string[] natureOfBusinessGroup = new string[] { };
+    string[] RentGroup = { "Rent", "Deposit", "Other" };
+    string[] SupplierGroup = { "Deposit", "Payable", "Prepayment" };
+    string[] CustomerGroup = { "Deposit", "Receivable", "Prepayment" };
+
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 14,
+            DocumentName = "Receipt"
+        };
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionReceiptServiceEdit = await Irole.HasClaim(ReceiptDocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionReceiptServiceApprove = await Irole.HasClaim(ReceiptDocTypeID.ToString(), "Approve", ctc.Token);
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var User = authprov.User;
-        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
-        UserID = User.Identity.Name;
+        await base.OnInitializedAsync();
         if (model.ReceiptID != null)
         {
-            model.Bills = Iservice.GetBills(model.ReceiptID).ToList();
-            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
+            model.Bills = Iservice.GetBills(model.ReceiptID.Value).ToList();
         }
         else
         {
-            model.BranchID = branchID;
+            model.BranchID = BranchID;
+            model.BusinessNature = "Customer";
         }
-
-        DocNumber = model.DocumentNumber;
-        DocDate = model.DocumentDate;
-        DocType = model.NatureOfTransaction;
+        SetNTransaction(model.BusinessNature);
     }
 
-    protected override void OnParametersSet()
+    protected override async Task<int> Update(ReceiptModel editModel)
     {
-        editContext = new EditContext(model);
-
-        DocumentDetails.DocumentTypeID = ReceiptDocTypeID;
-        DocumentDetails.DocumentID = model.ReceiptID;
+        model = Iservice.Update(model);
+        return model.ReceiptID.Value;
     }
+
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
+    {
+        int result = Iservice.Approve(model.ReceiptID, model.UserInfo.UserID, aprvd.Remarks);
+        return result;
+    }
+
+
+    void SetNTransaction(string nBusiness)
+    {
+        if (nBusiness == "Renter")
+        {
+            natureOfBusinessGroup = RentGroup;
+        }
+        else if (nBusiness == "Customer")
+        {
+            natureOfBusinessGroup = CustomerGroup;
+        }
+        else if (nBusiness == "Supplier")
+        {
+            natureOfBusinessGroup = SupplierGroup;
+        }
+        else
+        {
+            natureOfBusinessGroup = new string[] { };
+        }
+    }    
+
 
     async Task BusinessNatureChanged(string bn)
     {
@@ -167,23 +164,36 @@
     async Task PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
-        await nTransactionchanged(null);
+        await nTransactionChanged(null);
     }
 
-    private async Task nTransactionchanged(string nt)
+
+    private async Task nTransactionChanged(string nt)
     {
         model.NatureOfTransaction = nt;
-        if (nt != "Reciept")
+        if (model.NatureOfTransaction is not null)
         {
-            model.Bills.Clear();
+            model.PartyCoaID = partyService.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
+            if (model.PartyCoaID == null)
+            {
+                bool? result = await dialogService.ShowMessageBox(
+                    "Account Not Mapped!",
+                    "Party Account is not mapped for " + model.NatureOfTransaction + "!");
+                model.NatureOfTransaction = null;
+            }
         }
-        else
+
+        if (nt == "Receivable")
         {
             await OpenOutstandingBills();
         }
-    }
+        else
+        {
+            model.Bills.Clear();
+        }
+    }    
 
-    private void calcTotalAmt()
+    private void setTotalAmt()
     {
         model.TotalAmount = model.Bills.Sum(x => x.ReceiptAmount);
     }
@@ -193,8 +203,8 @@
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("PartyID", model.PartyInfo?.PartyID ?? null);
-        parms.Add("BranchID", branchID);
-        var dialog = DialogService.Show<OutstandingBillView>("Outstanding Bill", parms, maxWidth);
+        parms.Add("BranchID", BranchID);
+        var dialog = dialogService.Show<OutstandingBillView>("Outstanding Bill", parms, maxWidth);
         var result = await dialog.Result;
         List<OutstandingBillsModel> SelectedItems = new List<OutstandingBillsModel>();
         if (!result.Canceled)
@@ -219,71 +229,8 @@
         }
         else
         {
-            await nTransactionchanged(null);
+            await nTransactionChanged(null);
         }
     }
-
-    public async Task OnValidSubmit(EditContext context)
-    {
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-
-        if (HasPermissionReceiptServiceEdit)
-        {
-            try
-            {
-                model.PartyCoaID = partyIservice.GetPartyCoaID(model.PartyInfo.PartyID, model.BusinessNature, model.NatureOfTransaction);
-                if (model.PartyCoaID == null)
-                {
-                    throw new Exception("Party Account is not mapped for " + model.NatureOfTransaction + "!");
-                }
-                model.UserInfo.UserID = UserID;
-                Iservice.Update(model);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                dialogForm.Close(model);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Edit Receipt.");
-        }
-        await Task.Delay(200);
-        _busy = false;
-    }
-
-    protected async Task ApproveData(DataApprovedStatus aprvd)
-    {
-        if (HasPermissionReceiptServiceApprove)
-        {
-            if (aprvd.IsApprove)
-            {
-                model.UserInfo.UserID = UserID;
-                try
-                {
-                    Iservice.Approve(model.ReceiptID, model.UserInfo.UserID, aprvd.Remarks);
-                    snackbar.Add("Approved Successfully", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Approve Receipt.");
-        }
-    }
+  
 }
