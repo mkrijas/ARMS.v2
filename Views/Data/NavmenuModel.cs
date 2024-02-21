@@ -15,6 +15,7 @@ namespace Views.Data
         public bool Expanded { get; set; } = false;
         public string Description { get; set; }
         public List<NavMenuModel> navItems { get; set; } = new();
+        public List<NavMenuModel> Path { get; set; } = new();
         public bool Visible { get; set; } = true;
     }
 
