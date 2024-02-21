@@ -298,5 +298,10 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+        public int Reverse(int? PID, string UserID, string Remarks)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
