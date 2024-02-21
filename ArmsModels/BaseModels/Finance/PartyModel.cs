@@ -48,8 +48,8 @@ namespace ArmsModels.BaseModels
         [RequiredIf("GstType", "Registered")]
         [StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
         public string GstNo { get; set; }
-        [RequiredIf("NatureOfBusiness", "Customer")]
-        [StringLength(10, MinimumLength = 10, ErrorMessage = "Must have 10 characters")]
+        
+        [StringLength(10, MinimumLength = 10, ErrorMessage = "Must be 10 characters")]
         public string TanNo { get; set; }
         public int? CreditPeriod { get; set; } // Days
         public decimal? CreditLimit { get; set; }
