@@ -31,9 +31,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string BankTitle { get; set; }
         public string BankBranch { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }
-        [Required]
-        public string TANNo { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } 
     }
 
     public class OwnBankModel : ICloneable
@@ -66,6 +64,7 @@ namespace ArmsModels.BaseModels
         [RequiredIfTrue("IsGstRegistered")]
         [StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
         public string GstNo { get; set; }
+        public string TANNo { get; set; }
         public SharedModels.UserInfoModel UserInfo
         {
             get

@@ -40,7 +40,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BankCode", model.BankCode),
                new SqlParameter("@PostingGroupID", model.PostingGroup.ID),
                new SqlParameter("@IsRegistered", model.IsGstRegistered),
-               new SqlParameter("@GstNo", model.GstNo),               
+               new SqlParameter("@GstNo", model.GstNo),      
+               new SqlParameter("@TanNo", model.TANNo),
             };
             
             foreach(IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.Own.Update]", parameters))
@@ -95,6 +96,7 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 IsGstRegistered = dr.GetBoolean("IsGstRegistered"),
                 GstNo = dr.GetString("GstNo"),
+                TANNo = dr.GetString("TanNo"),
                 AddressInfo = new AddressModel() { AddressID = dr.GetInt32("AddressID")},
                 ContactInfo = new ContactModel() { ContactID = dr.GetInt32("ContactID")},
                 PostingGroup = new BankPostingGroupModel() { ID = dr.GetInt32("PostingGroupID") },
