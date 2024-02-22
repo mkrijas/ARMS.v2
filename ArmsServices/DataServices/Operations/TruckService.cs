@@ -278,7 +278,7 @@ namespace ArmsServices.DataServices
             return TripID;
         }
 
-        public IEnumerable<TruckModel> SelectByBranch(int? BranchID = null, string Filer = "All",string HomeOrOperation = "Operation")
+        public IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer, string HomeOrOperation = "Operation")
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
