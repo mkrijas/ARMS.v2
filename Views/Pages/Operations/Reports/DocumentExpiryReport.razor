@@ -8,9 +8,9 @@
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
             <MudGrid>
-                <MudItem xs="4">
+                <MudItem xs="12">
                     <MudSelect T="string" Label="Select Branch" MultiSelection="true" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="BranchID" @bind-SelectedValues="BranchIDS" OffsetY="true" Direction="Direction.Bottom"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="BranchID" @bind-SelectedValues="BranchIDS" OffsetY="true" AnchorOrigin="Origin.BottomCenter"
                                AdornmentColor="Color.Secondary" Required>
                         @foreach (BranchModel ditem in BranchList)
                         {
@@ -18,14 +18,14 @@
                         }
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="3">
+                <MudItem xs="5">
                     <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="3">
+                <MudItem xs="5">
                     <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
                 <MudItem xs="2">
-                    <MudButton Style="margin-top: 4px;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                    <MudButton Style="margin-top: 4px; width:-webkit-fill-available" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
                 </MudItem>
             </MudGrid>
         </MudPaper>
@@ -48,9 +48,16 @@
     private List<BranchModel> BranchList = new();
     public string BranchID { get; set; } = "";
     private IEnumerable<string> BranchIDS { get; set; } = new HashSet<string>() { };
+    public BranchModel CurrentBranch { get; set; } = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
+        CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+        CurrentBranch.BranchID = int.Parse(BranchIDString);
+
         BranchList = Ibranchservice.Select().ToList();
     }
 
@@ -88,10 +95,11 @@
         }
 
         ShowReport = true;
-        ReportName = "rpt.Operation.AssetDocumentExpiry";
+        ReportName = "AssetDocumentExpiry";
         ReportParameters.Clear();
         string branches = String.Join(',', BranchIDS);
         ReportParameters.Add("BranchIDS", branches);
+        ReportParameters.Add("BranchName", CurrentBranch.BranchName);
         ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
         ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
     }
