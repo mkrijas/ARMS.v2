@@ -35,7 +35,7 @@ namespace DAL.DataServices.General
                new SqlParameter("Id",model.SettingId),
                new SqlParameter("@Value", model.Value),
                new SqlParameter("UserID",model.UserInfo.UserID),
-               new SqlParameter("@SettingName", model.SettingName)
+               new SqlParameter("@SettingName", model.KeyString)
             };
 
             //Iservice.ExecuteNonQuery("[usp.User.GeneralSettings.Update]", parameters);
