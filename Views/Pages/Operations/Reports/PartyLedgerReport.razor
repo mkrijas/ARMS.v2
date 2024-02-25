@@ -1,26 +1,25 @@
 ﻿@page "/PartyLedgerReport"
-@inject ISnackbar Snackbar
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
+@inherits ReportComponentBase
+
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
-            <MudGrid>
-                <MudItem xs="6">
-                    <BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@OtherBranchChanged"></BranchSelector>
-                </MudItem>
-                <MudItem xs="6">
-                    <PartySelector label="Select Party" Value="SelectedParty" ValueChanged="@OtherPartyChanged" BranchID="@BranchID"></PartySelector>
-                </MudItem>
+            <MudGrid>                
                 <MudItem xs="4">
+                    <PartySelector label="Select Party" Value="SelectedParty" ValueChanged="@OtherPartyChanged" BranchID="@BranchID" ></PartySelector>
+                </MudItem>
+                <MudItem xs="3">
                     <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="4">
+                <MudItem xs="3">
                     <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="4">
-                    <MudButton Style="margin-top: 4px;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                <MudItem xs="1">
+                    <MudIconButton Icon="@Icons.Material.Filled.Laptop" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
+                </MudItem>
+                <MudItem xs="1">
+                    <MudIconButton Icon="@Icons.Material.Filled.Laptop" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer"></MudIconButton>
                 </MudItem>
             </MudGrid>
         </MudPaper>
@@ -34,53 +33,61 @@
 
 @code {
 
-    public Dictionary<string, string> ReportParameters { get; set; } = new();
+
     public DateTime? FromDate { get; set; } = DateTime.Now;
     public DateTime? ToDate { get; set; } = DateTime.Now;
-    public int? BranchID { get; set; } = 0;
-    public BranchModel SelectedBranch { get; set; } = new();
+
     public PartyModel SelectedParty { get; set; } = new();
     public string PartyCode { get; set; }
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
 
-    private async Task OtherBranchChanged(BranchModel branch)
-    {
-        SelectedBranch = branch;
-        BranchID = SelectedBranch.BranchID;
-    }
-
     private async Task OtherPartyChanged(PartyModel party)
     {
         SelectedParty = party;
-        PartyCode = party.PartyCode;
+        PartyCode = party?.PartyCode;
+    }
+
+
+
+    protected bool Validate()
+    {
+        if (!SelectedBranches.Any())
+        {
+            snackbar.Add("Please select branch.", Severity.Error);
+            return false;
+        }
+        if (FromDate == null)
+        {
+            snackbar.Add("Please select From Date.", Severity.Error);
+            return false;
+        }
+        if (ToDate == null)
+        {
+            snackbar.Add("Please select To Date.", Severity.Error);
+            return false;
+        }
+        return true;
     }
 
     public void RenderReportViewer()
     {
-        if (SelectedBranch == null || SelectedBranch.BranchID == null)
+        try
         {
-            Snackbar.Add("Please select branch.", Severity.Error);
-            return;
+            if(Validate())
+            {
+                ShowReport = true;
+                ReportName = "PartyLedgerReport";
+                ReportParameters.Clear();        
+                ReportParameters.Add("ArdCode", PartyCode);
+                ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+                ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
+                ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
+            }
         }
-        if (FromDate == null)
+        catch(Exception ex)
         {
-            Snackbar.Add("Please select From Date.", Severity.Error);
-            return;
+            snackbar.Add(ex.Message, Severity.Error);
         }
-        if (ToDate == null)
-        {
-            Snackbar.Add("Please select To Date.", Severity.Error);
-            return;
-        }
-
-        ShowReport = true;
-        ReportName = "PartyLedgerReport";
-        ReportParameters.Clear();
-        ReportParameters.Add("PartyID",SelectedParty.PartyID.ToString());
-        ReportParameters.Add("ArdCode", PartyCode);
-        ReportParameters.Add("BranchID", SelectedBranch.BranchID.ToString());
-        ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
-        ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
     }
 }
