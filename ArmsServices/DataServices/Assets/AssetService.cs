@@ -329,9 +329,8 @@ namespace ArmsServices.DataServices
 
         }
         private List<AssetModel> assets = new();
-        public List<AssetViewModel> GetAssetView(int BranchID,int? ParentID = null, int? NumberOfRecords = 100, string searchTerm = "")
-        {         
-
+        public List<AssetViewModel> GetAssetView(int BranchID,int? ParentID = null, int? NumberOfRecords = 1000, string searchTerm = "")
+        {    
             if(assets.Count == 0)
             {
                assets = SelectByBranch(BranchID, false, NumberOfRecords, searchTerm).ToList();
