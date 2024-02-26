@@ -18,8 +18,7 @@ namespace ArmsModels.BaseModels
         [StringLength(maximumLength: 200)]
         public string BeneficiaryName { get; set; }
         [Required]
-        [StringLength(18, ErrorMessage = "Account number should between 9 to 18 digit", MinimumLength = 9)]
-        [RegularExpression("^[0-9]*$", ErrorMessage = "Account Number must be numeric")]
+        [StringLength(18, ErrorMessage = "Account number should between 9 to 18 digit", MinimumLength = 9)]        
         public string AccountNumber { get; set; }
         [Required]
         [StringLength(maximumLength: 11, MinimumLength = 11, ErrorMessage = "IFSC Code must be a string with a length of 11")]
