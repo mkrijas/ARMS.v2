@@ -65,12 +65,14 @@ namespace Views
             services.AddServerSideBlazor();
             services.AddControllers();
 
+        
+            // Allow CORS
             services.AddCors(options =>
             {
-                options.AddPolicy("AllowAnyOriginPolicy", builder =>
-                builder.WithOrigins("http://10.200.50.39/ReportServer/")
+                options.AddPolicy("AllowCors", builder =>
+                builder.WithOrigins("https:*/ReportServer/")
                        .SetIsOriginAllowedToAllowWildcardSubdomains()
-                       .AllowAnyMethod().AllowAnyHeader().AllowCredentials()); 
+                       .AllowAnyMethod().AllowAnyHeader().AllowCredentials());
             });
 
             services.AddControllersWithViews();
@@ -274,22 +276,16 @@ namespace Views
     
             #endregion
 
-            services.AddCors(options =>
-            {
-                options.AddPolicy("AllowAny",
-                    builder => builder.AllowAnyOrigin()
-                                      .AllowAnyHeader()
-                                      .AllowAnyMethod());
-            });
-            services.AddCors(options =>
-            {
-                options.AddPolicy("CorsPolicy",
-                    builder => builder
-                        .WithOrigins("http://10.200.50.39:8484/") // Add the origin of your Blazor application
-                        .AllowAnyMethod()
-                        .AllowAnyHeader()
-                        .AllowCredentials());
-            });
+         
+            //services.AddCors(options =>
+            //{
+            //    options.AddPolicy("CorsPolicy",
+            //        builder => builder
+            //            .WithOrigins("http://10.200.50.39:8484/") // Add the origin of your Blazor application
+            //            .AllowAnyMethod()
+            //            .AllowAnyHeader()
+            //            .AllowCredentials());
+            //});
             #region------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
@@ -360,10 +356,11 @@ namespace Views
             //    });
             //});
 
-            app.UseCors("AllowAny");
-            app.UseCors("AllowAnyOriginPolicy");
-            app.UseCors("CorsPolicy");
-            app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+            app.UseCors("AllowCors");
+            //app.UseCors("AllowAnyOriginPolicy");
+            //app.UseCors("CorsPolicy");
+           // app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+
             //app.UseStaticFiles(new StaticFileOptions()
             //{
             //    FileProvider = new PhysicalFileProvider(

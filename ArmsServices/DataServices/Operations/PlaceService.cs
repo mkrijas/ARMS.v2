@@ -23,7 +23,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PlaceID", model.PlaceID),
-               new SqlParameter("@PlaceName", model.PlaceName.ToUpper()),
+               new SqlParameter("@PlaceName", model.PlaceName),
                //new SqlParameter("@LatLong", model.LatLong),
                new SqlParameter("@PinCode", model.PinCode),
                new SqlParameter("@DistrictID", model.DistrictID),
