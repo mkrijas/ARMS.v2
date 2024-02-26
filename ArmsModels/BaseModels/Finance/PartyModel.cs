@@ -38,7 +38,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public bool PanAvailable { get; set; }
         [RequiredIfTrue("PanAvailable")]
-        [StringLength(10, MinimumLength = 10, ErrorMessage = "PAN must be 10 digits!")]
+        //[StringLength(10, MinimumLength = 10, ErrorMessage = "PAN must be 10 digits!")]
         public string PAN { get; set; }
         [Required]
         public bool TdsApplicable { get; set; }
