@@ -146,7 +146,8 @@ namespace ArmsModels.BaseModels
         public bool? IsExisting { get; set; }
         [Required]
         public long? AccountEntryID { get; set; }
-        public string AccountEntryName { get; set; }
+        public DateTime? DocDate { get; set; }
+        public string AccountName { get; set; }
         public decimal? Amount { get; set; }
         public string Remarks { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
