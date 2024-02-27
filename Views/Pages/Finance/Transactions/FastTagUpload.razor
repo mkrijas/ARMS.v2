@@ -50,7 +50,7 @@
                                  </MudItem>
                                  <MudItem xs="12">
                                      <MudGrid>
-                                         <MudItem xs="8"><b>Total Excel Debit Amount &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: @((Readonly) ? ((MainModel.TotalAmount ?? 0).ToString("c")) : (collection.Sum(e => e.DebitAmount).ToString("c")))</b></MudItem>
+                                         <MudItem xs="8"><b>Total Excel Debit Amount &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: @((Readonly) ? ((MainModel.TotalAmount ?? 0).ToString("c")) : (excelcollection.Sum(e => e.DebitAmount).ToString("c")))</b></MudItem>
                                         @if (!Readonly)
                                         {
                                             <MudItem xs="2">
@@ -79,7 +79,7 @@
 
         <MudPaper Style="margin-top:26px; min-width:min-content;">
             <MudItem xs="12" Style="padding: 26px 26px 26px 26px;">
-                <MudTable Items="@collection" Context="item" Filter="new Func<FastTagModel, bool>(search)" RowsPerPage="100" Class="fullborder" Style="padding: 0px" Elevation="0" Dense="true" Hover="true" Striped="true">
+                <MudTable Items="@ExcelModelCollection" Context="item" Filter="new Func<FastTagModel, bool>(search)" RowsPerPage="100" Class="fullborder" Style="padding: 0px" Elevation="0" Dense="true" Hover="true" Striped="true">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">Transactions List</MudText>
                         <MudSpacer></MudSpacer>
@@ -100,6 +100,10 @@
                         <MudTh>Unique Transaction ID</MudTh>
                         <MudTh>Reimbursable</MudTh>
                         <MudTh>Amount(DR)</MudTh>
+                        @* @if (!Readonly)
+                        {
+                        <MudTh>Action</MudTh>
+                        } *@
                     </HeaderContent>
                     <RowTemplate>
                         @if (Readonly)
@@ -110,14 +114,40 @@
                         }
                         <MudTd DataLabel="Transaction DateTime">@item.TransactionDateTime</MudTd>
                         <MudTd DataLabel="NumberPlate">@item.NumberPlate</MudTd>
-                        <MudTd DataLabel="Branch Name">@item.BranchName</MudTd>
+                        @if (item.BranchID.HasValue)
+                        {
+                            <MudTd DataLabel="Branch Name">@item.BranchName</MudTd>
+                        }
+                        else
+                        {
+                            <BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@((newValue) => BranchChanged(newValue, item))" />
+                        }
                         <MudTd DataLabel="Trip No">@item.TripNumberDisplay</MudTd>
                         <MudTd DataLabel="PlazaCode">@item.PlazaCode</MudTd>
                         <MudTd DataLabel="TransactionDescription">@item.Description</MudTd>
                         <MudTd DataLabel="Unique Transaction ID">@item.TransactionID</MudTd>
-                        <MudTh><MudCheckBox T="bool" @bind-Checked="@item.Reimbursable" ReadOnly></MudCheckBox></MudTh>
+                        <MudTd><MudCheckBox T="bool" @bind-Checked="@item.Reimbursable" ReadOnly></MudCheckBox></MudTd>
                          <MudTd DataLabel="Debit Amount">@item.DebitAmount</MudTd>
+                         @* @if (!Readonly)
+                        {
+                        <MudTd></MudTd>
+                        } *@
                      </RowTemplate>
+                     @* <FooterContent>
+                    @if (!Readonly)
+                    {
+                    <MudTd><MudDatePicker @bind-Date="@newItem.TransactionDateTime" Placeholder="Transaction DateTime" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy hh:mm tt" For="@(()=> newItem.TransactionDateTime)" Required /></MudTd>
+                    <MudTd><MudTextField @bind-Value="@newItem.NumberPlate" Placeholder="Licence Plate No" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
+                    <MudTd><BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@OtherBranchChanged"></BranchSelector></MudTd>
+                    <MudTd><MudTextField @bind-Value="@newItem.TripNumber" Placeholder="Trip No" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
+                    <MudTd><MudTextField @bind-Value="@newItem.PlazaCode" Placeholder="PlazaCode" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
+                    <MudTd><MudTextField @bind-Value="@newItem.Description" Placeholder="TransactionDescription" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
+                    <MudTd><MudTextField @bind-Value="@newItem.TransactionID" Placeholder="Unique Transaction ID" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
+                    <MudTd><MudCheckBox T="bool" @bind-Checked="@newItem.Reimbursable" ReadOnly></MudCheckBox></MudTd>
+                    <MudTd><MudTextField @bind-Value="@newItem.DebitAmount" Placeholder="Debit Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
+                    <MudTd><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@AddNewItem">Add</MudButton></MudTd>
+                    }
+                    </FooterContent> *@
                      <PagerContent>
                          <MudTablePager PageSizeOptions="new int[] {5 ,10 ,50 , 100 , 150, 200}" />
                      </PagerContent>
@@ -137,12 +167,15 @@
     private List<FastTagModel> collection = new List<FastTagModel>();
     private List<FastTagModel> Pendingcollection = new List<FastTagModel>();
     private List<FastTagModel> excelcollection = new List<FastTagModel>();
+    private List<FastTagModel> ExcelModelCollection = new List<FastTagModel>();
     private List<FastTagList> collectionlist = new List<FastTagList>();
     private string searchplatenumber = "";
     public string fileExtension = "";
     private bool _busy;
     public int branchID;
     private string UserID = null;
+    FastTagModel newItem = new FastTagModel();
+    public BranchModel SelectedBranch { get; set; } = new();
 
     //[Parameter]
     public int? id { get; set; }
@@ -179,6 +212,29 @@
         // }
     }
 
+    // private async Task BranchChanged(BranchModel branch)
+    // {
+    //     SelectedBranch = branch;
+    //     newItem.BranchName = branch?.BranchName;
+    //     newItem.BranchID = branch?.BranchID;
+    // }
+
+    private async Task BranchChanged(BranchModel newValue, FastTagModel item)
+    {
+        if (newValue != null)
+        {
+            item.BranchID = newValue.BranchID;
+            item.BranchName = newValue.BranchName;
+        }
+    }
+
+    // private void AddNewItem()
+    // {
+    //     collection.Add(newItem);
+    //     newItem = new FastTagModel();
+    //     SelectedBranch = new();
+    // }
+
     protected override void OnParametersSet()
     {
         try
@@ -200,7 +256,8 @@
         if (id != null && Readonly == true)
         {
             MainModel = IFTService.GetUploadViewModel(id);
-            collection = IFTService.GetUploadViewCollection(id).ToList();
+            ExcelModelCollection = IFTService.GetUploadViewCollection(id).ToList();
+            //collection = IFTService.GetUploadViewCollection(id).ToList();
             //selectedcollection = new HashSet<FastTagModel>(IFTService.GetUploadViewSelectedCollection(id));
 
             // Pendingcollection = IFTService.GetUploadViewSelectedCollection(id).ToList();
@@ -232,8 +289,8 @@
             UserID = user.Identity.Name;
 
             MainModel.BranchID = branchID;
-            MainModel.FastTagModelList = collection.ToList();
-            MainModel.TotalAmount = collection.Sum(e => e.DebitAmount);
+            MainModel.FastTagModelList = ExcelModelCollection.ToList();
+            MainModel.TotalAmount = ExcelModelCollection.Sum(e => e.DebitAmount);
             MainModel.UserInfo.UserID = UserID;
 
             if (MainModel.FastTagModelList.Count != 0)
@@ -430,7 +487,7 @@
                                         Model.DebitAmount = decimal.Parse(worksheet.Cells[row, DRAmountRow].Value?.ToString());
                                     }
                                 }
-                                if (Model.NumberPlate != null && Model.DebitAmount > 0)
+                                if (Model.DebitAmount > 0) //&& Model.NumberPlate != null)
                                 {
                                     excelcollection.Add(Model);
                                 }
@@ -446,31 +503,48 @@
                         collection = IFTService.MatchTrucks(collectionlist).ToList();
                         MainModel.NatureOfTransaction = "FastTag";
                         MainModel.BranchID = branchID;
-                        @if (collection.Count != 0)
+                        if (collection.Count == 0)
                         {
-                            foreach (var data in collection)
+                            bool? errorresult = await DialogService.ShowMessageBox(
+                                "Oops !",
+                                "No matching data found.");
+                            excelcollection = new();
+                            collection = new();
+                            collectionlist = new();
+                        }
+                        else if (collection.Count != 0)
+                        {
+                            //foreach (var data in collection)
+                            foreach (var data in excelcollection)
                             {
-                                var matchingCollectionData = excelcollection.FirstOrDefault(x => x.TransactionDateTime == data.TransactionDateTime
-                                                                                              && x.NumberPlate == data.NumberPlate);
+                                // var matchingCollectionData = excelcollection.FirstOrDefault(x => x.TransactionDateTime == data.TransactionDateTime
+                                //                                                                && x.NumberPlate == data.NumberPlate);
+                                var matchingCollectionData = collection.FirstOrDefault(x => x.TransactionDateTime == data.TransactionDateTime
+                                                                                               && x.NumberPlate == data.NumberPlate);
                                 if (matchingCollectionData != null)
                                 {
                                     // Update 'excelData' properties with corresponding 'matchingCollectionData' values
-                                    data.PlazaCode = matchingCollectionData.PlazaCode;
-                                    data.Description = matchingCollectionData.Description;
-                                    data.TransactionID = matchingCollectionData.TransactionID;
-                                    data.CreditAmount = matchingCollectionData.CreditAmount;
-                                    data.DebitAmount = matchingCollectionData.DebitAmount;
-                                    // data.BranchName = matchingCollectionData.BranchName;
+                                    // data.PlazaCode = matchingCollectionData.PlazaCode;
+                                    // data.Description = matchingCollectionData.Description;
+                                    // data.TransactionID = matchingCollectionData.TransactionID;
+                                    // data.CreditAmount = matchingCollectionData.CreditAmount;
+                                    // data.DebitAmount = matchingCollectionData.DebitAmount;
+                                    data.BranchID = matchingCollectionData.BranchID;
+                                    data.BranchName = matchingCollectionData.BranchName;
+                                    data.TruckID = matchingCollectionData.TruckID;
+                                    data.TripID = matchingCollectionData.TripID;
+                                    data.TripPrefix = matchingCollectionData.TripPrefix;
+                                    data.TripNumber = matchingCollectionData.TripNumber;
                                     // if (matchingCollectionData.Trip != null)
-                                    // {
-                                    //     data.Trip = new TripModel
-                                    //         {
-                                    //             TripID = matchingCollectionData.Trip.TripID,
-                                    //             TruckID = matchingCollectionData.Trip.TruckID,
-                                    //             TripPrefix = matchingCollectionData.Trip.TripPrefix,
-                                    //             TripNumber = matchingCollectionData.Trip.TripNumber
-                                    //         };
-                                    // };
+                                    //     {
+                                    //         data.Trip = new TripModel
+                                    //             {
+                                    //                 TripID = matchingCollectionData.Trip.TripID,
+                                    //                 TruckID = matchingCollectionData.Trip.TruckID,
+                                    //                 TripPrefix = matchingCollectionData.Trip.TripPrefix,
+                                    //                 TripNumber = matchingCollectionData.Trip.TripNumber
+                                    //             };
+                                    //     };
                                     // ... Update other properties as needed ...
                                 }
                                 else
@@ -479,13 +553,17 @@
                                     // You may choose to add default values or handle it as needed
                                 }
                             }
+                            ExcelModelCollection = excelcollection;
                         }
-                        else
-                        {
-                            bool? errorresult = await DialogService.ShowMessageBox(
-                                "Oops !",
-                                "No matching data found.");
-                        }
+                        // else
+                        // {
+                        //     bool? errorresult = await DialogService.ShowMessageBox(
+                        //         "Oops !",
+                        //         "No matching data found.");
+                        //     excelcollection = new();
+                        //     collection = new();
+                        //     collectionlist = new();
+                        // }
                     }
                     else
                     {

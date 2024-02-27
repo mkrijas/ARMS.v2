@@ -40,7 +40,7 @@ namespace ArmsModels.BaseModels
 
     public class AccountInfoViewModel
     {
-        public DateTime? DocumentDate { get; set; }
+        public DateTime? DocumentDate { get; set; } = new();
         public string DocumentNumber { get; set; }        
         public string Narration { get; set; }
         public List<AccountInfoViewSubModel> Entries { get; set; } = new List<AccountInfoViewSubModel>();
