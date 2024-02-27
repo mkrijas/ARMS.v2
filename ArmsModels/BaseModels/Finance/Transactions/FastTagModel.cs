@@ -1,6 +1,7 @@
 ﻿using ArmsModels.BaseModels;
 using ArmsModels.SharedModels;
 using FluentValidation;
+using Microsoft.AspNetCore.Components;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using System;
@@ -9,6 +10,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using System.Text;
 using System.Transactions;
+using TableDependency.SqlClient.Base;
 
 namespace Core.BaseModels.Finance.Transactions
 {
@@ -61,6 +63,7 @@ namespace Core.BaseModels.Finance.Transactions
         public int? TruckID { get; set; }
         public long? TripID { get; set; }
         public long? TripNumber { get; set; }
+        public string NumberPlate { get; set; }
         public string PlazaCode { get; set; }
         public string Description { get; set; }
         public string TransactionID { get; set; }
@@ -68,9 +71,21 @@ namespace Core.BaseModels.Finance.Transactions
         public decimal DebitAmount { get; set; }
         public virtual Boolean IsProcessed { get; set; }
         public virtual string BranchName { get; set; }
-        public virtual string NumberPlate { get; set; }
         public virtual string TripPrefix { get; set; }
-        public virtual string TripNumberDisplay { get { return TripPrefix + TripNumber.ToString().PadLeft(4, '0'); } }
+        public virtual string TripNumberDisplay
+        {
+            get
+            {
+                if (TripPrefix == null || TripNumber== null)
+                {
+                    return null;
+                }
+                else
+                {
+                    return TripPrefix + TripNumber.ToString().PadLeft(4, '0');
+                }
+            }
+        }
         //public int TagAccountNumber { get; set; }
         //public string Group { get; set; }
         //public string Activity { get; set; }
@@ -115,7 +130,7 @@ namespace Core.BaseModels.Finance.Transactions
                     key[i] = randomeKeyByte[0];
                     iv[i] = randomIVByte[0];
                 }
-                return (key,iv);
+                return (key, iv);
             }
         }
 
