@@ -38,7 +38,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public bool PanAvailable { get; set; }
         [RequiredIfTrue("PanAvailable")]
-        [StringLength(10, MinimumLength = 10, ErrorMessage = "PAN must be 10 digits!")]
+        //[StringLength(10, MinimumLength = 10, ErrorMessage = "PAN must be 10 digits!")]
         public string PAN { get; set; }
         [Required]
         public bool TdsApplicable { get; set; }
@@ -46,7 +46,7 @@ namespace ArmsModels.BaseModels
         [RequiredIf("GstType", "Registered")]
         public string GstRegType { get; set; }  // GSTIN,UID,GID
         [RequiredIf("GstType", "Registered")]
-        [StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
+        //[StringLength(15, ErrorMessage = "Gst number must have 15 characters")]
         public string GstNo { get; set; }
         
         //[StringLength(10, MinimumLength = 10, ErrorMessage = "Must be 10 characters")]
