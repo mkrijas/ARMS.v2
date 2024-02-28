@@ -272,7 +272,8 @@ namespace ArmsServices.DataServices
                 IsExisting = dr.GetBoolean("IsExisting"),
                 ReconciledDate = dr.GetDateTime("ReconciledDate"),
                 AccountEntryID = dr.GetInt64("AccountEntryID"),
-                AccountEntryName = dr.GetString("AccountEntryName"),
+                AccountName = dr.GetString("AccountName"),
+                DocDate = dr.GetDateTime("DocDate"),
                 Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
