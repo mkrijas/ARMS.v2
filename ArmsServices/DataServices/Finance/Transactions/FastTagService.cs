@@ -276,6 +276,7 @@ namespace DAL.DataServices.Finance.Transactions
                 FastTagTollID = dr?.GetInt32("FastTagTollID"),
                 IsProcessed = dr.GetBoolean("IsProcessed"),
                 TransactionDateTime = dr.GetDateTime("TollCrossTime"),
+                //NumberPlate = dr.GetString("NumberPlate"),
                 NumberPlate = dr.GetString("RegNo"),
                 BranchID = dr.GetInt32("BranchID"),
                 BranchName = dr.GetString("BranchName"),

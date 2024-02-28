@@ -1,4 +1,4 @@
-﻿var _0x1751 = ["RIJASMK", "Ri*tt012"];
+﻿var _0x1751 = ["arms", "arms@123"];
 
 function getHTTPObject() {
     if (typeof XMLHttpRequest != 'undefined') {
@@ -35,8 +35,8 @@ function runReport(url) {
             }
         }
     };
-    http.open("get", url, true);
-    /*http.open("get", url, true, _0x1751[0x0], _0x1751[0x1]);*/
+    /*http.open("get", url, true);*/
+    http.open("get", url, true, _0x1751[0x0], _0x1751[0x1]);
     http.send(null);
     return false;
 }
