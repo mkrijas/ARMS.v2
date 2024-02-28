@@ -212,24 +212,23 @@ namespace ArmsServices.DataServices
             return Task.FromResult(0);
         }
 
-        public void SelectAllPermissions(RoleModel role)
+        public void SelectAllPermissions(RoleModel role, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@RoleID", role.RoleID),
-               new SqlParameter("UserID",role.UserInfo.UserID),
+               new SqlParameter("UserID",UserID),
                new SqlParameter("Operation","CHECKALL"),
             };
-
             Iservice.ExecuteNonQuery("[usp.user.RoleClaims.Update]", parameters);
         }
 
-        public void DeSelectAllPermissions(RoleModel role)
+        public void DeSelectAllPermissions(RoleModel role, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@RoleID", role.RoleID),
-               new SqlParameter("UserID",role.UserInfo.UserID),
+               new SqlParameter("UserID",UserID),
                new SqlParameter("Operation","UNCHECKALL"),
             };
 
