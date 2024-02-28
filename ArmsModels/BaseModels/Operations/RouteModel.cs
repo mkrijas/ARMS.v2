@@ -28,7 +28,7 @@ namespace ArmsModels.BaseModels
         public decimal? Distance { get; set; }
         public byte? SpeedLimit { get; set; }
         [Required]
-        public short? RunningHours { get; set; }
+        public decimal? RunningHours { get; set; }
         public decimal? MieageModifier { get; set; }
         [Required]
         public string RouteType { get; set; }
