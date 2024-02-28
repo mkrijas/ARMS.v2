@@ -1,0 +1,111 @@
+﻿@* @page "/OperationSummer"
+@inject ISnackbar Snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IBranchService IBranchService
+@inject IAssetClassService IAssetClassService
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Class="mb-5 p-4">
+            <MudGrid>
+                <MudItem xs="4">
+                    <BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@BranchChanged"></BranchSelector>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudSelect Label="Select AssetClass" @bind-Value="SelectedAsset" SelectedValuesChanged="@((e) => AssetClassChanged(e.FirstOrDefault()))" T="AssetClassModel"
+                               ToStringFunc="@(e => e == null ? null : $"{e.AssetClassName}")" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
+                        @foreach (var item in assetclassList)
+                        {
+                            <MudSelectItem Value="@item">@item.AssetClassName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudSelect Label="Select SubClass" @bind-Value="SelectedSubAsset" T="AssetSubClassModel" ToStringFunc="@(e => e == null ? null : $"{e.AssetSubclass}")"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
+                        @foreach (var ditem in assetsubclassList)
+                        {
+                            <MudSelectItem Value="@ditem">@ditem.AssetSubclass</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="5">
+                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="5">
+                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="2">
+                    <MudButton Style="margin-top: 4px; width:-webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
+    public DateTime? FromDate { get; set; } = DateTime.Now;
+    public DateTime? ToDate { get; set; } = DateTime.Now;
+    public bool ShowReport { get; set; } = false;
+    public string ReportName { get; set; }
+    public BranchModel SelectedBranch { get; set; } = new();
+    private List<AssetClassModel> assetclassList = new();
+    private List<AssetSubClassModel> assetsubclassList = new();
+    public AssetClassModel SelectedAsset { get; set; } = new();
+    public AssetSubClassModel SelectedSubAsset { get; set; } = new();
+    public BranchModel CurrentBranch { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
+        CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+        CurrentBranch.BranchID = int.Parse(BranchIDString);
+
+        assetclassList = IAssetClassService.SelectClasses().ToList();
+    }
+
+    private async Task BranchChanged(BranchModel branch)
+    {
+        SelectedBranch = branch;
+    }
+
+    private async Task AssetClassChanged(AssetClassModel asset)
+    {
+        SelectedAsset = asset;
+        assetsubclassList = IAssetClassService.SelectSubClassesByClass(SelectedAsset.AssetClassID.Value).ToList();
+    }
+
+    public void RenderReportViewer()
+    {
+        if (FromDate == null)
+        {
+            Snackbar.Add("Please select From Date.", Severity.Error);
+            return;
+        }
+        if (ToDate == null)
+        {
+            Snackbar.Add("Please select To Date.", Severity.Error);
+            return;
+        }
+
+        ShowReport = true;
+        ReportName = "AssetTransferReport";
+        ReportParameters.Clear();
+        ReportParameters.Add("BranchName", CurrentBranch.BranchName);
+        ReportParameters.Add("BranchID", (SelectedBranch?.BranchID ?? 0).ToString());
+        ReportParameters.Add("AssetID", (SelectedAsset?.AssetClassID ?? 0).ToString());
+        ReportParameters.Add("AssetSubClassID", (SelectedSubAsset?.AssetSubClassID ?? 0).ToString());
+        ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
+        ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
+    }
+} *@
