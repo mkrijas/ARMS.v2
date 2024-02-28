@@ -119,7 +119,7 @@ namespace ArmsServices.DataServices
                 RouteID = dr.GetInt32("RouteID"),
                 RouteName = dr.GetString("RouteName"),
                 RouteType = dr.GetString("RouteType"),
-                RunningHours = dr.GetInt16("RunningHours"),
+                RunningHours = dr.GetDecimal("RunningHours"),
                 SpeedLimit = dr.GetByte("SpeedLimit"),
                 TollBooths = dr.GetByte("TollBooths"),
                 Via = new PlaceModel
