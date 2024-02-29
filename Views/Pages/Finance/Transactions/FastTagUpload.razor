@@ -22,6 +22,7 @@
     </MudToolBar>
     <MudDivider />
     <MudItem Style="padding: 26px; background-color: whitesmoke; margin: 38px; border-radius: 4px; box-shadow: inset 0px 0px 4px 0px rgba(0,0,0,0.3);">
+
         <MudPaper Style="padding-bottom: 15px; min-width:min-content;">
             <MudItem xs="12" Style="padding: 38px">
                 <MudGrid>
@@ -30,7 +31,7 @@
                         <MudItem xs="4">
                             <h6>Upload XLSX File : </h6>
                             <InputFile @ref="fileInput" OnChange="HandleXLSXFileButtonSelected" />
-                            <MudButton Disabled="@_busy" Style="background-color: burlywood;" OnClick="UploadXLSXFile" Variant="Variant.Filled">Upload</MudButton>
+                            <MudButton Disabled="@_busy" Style="background-color: burlywood;" OnClick="@((args) => LoadExcelData())" Variant="Variant.Filled">Upload</MudButton>
                         </MudItem>
                     }
                     <MudItem xs="@((Readonly) ? 12 : 8)">
@@ -50,7 +51,7 @@
                                  </MudItem>
                                  <MudItem xs="12">
                                      <MudGrid>
-                                         <MudItem xs="8"><b>Total Excel Debit Amount &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: @((Readonly) ? ((MainModel.TotalAmount ?? 0).ToString("c")) : (excelcollection.Sum(e => e.DebitAmount).ToString("c")))</b></MudItem>
+                                         <MudItem xs="8"><b>Total Excel Debit Amount &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: @((Readonly) ? ((MainModel.TotalAmount ?? 0).ToString("c")) : (ExcelModelCollection.Sum(e => e.DebitAmount).ToString("c")))</b></MudItem>
                                         @if (!Readonly)
                                         {
                                             <MudItem xs="2">
@@ -79,13 +80,16 @@
 
         <MudPaper Style="margin-top:26px; min-width:min-content;">
             <MudItem xs="12" Style="padding: 26px 26px 26px 26px;">
-                <MudTable Items="@ExcelModelCollection" Context="item" Filter="new Func<FastTagModel, bool>(search)" RowsPerPage="100" Class="fullborder" Style="padding: 0px" Elevation="0" Dense="true" Hover="true" Striped="true">
+                @* <MudProgressLinear Color="Color.Primary" Value="@Value" Class="my-7" /> *@
+                <MudTable Items="@ExcelModelCollection" Loading="@IsLoading" HorizontalScrollbar="true" Context="item" Filter="new Func<FastTagModel, bool>(search)" RowsPerPage="100" Class="fullborder" Style="padding: 0px" Elevation="0" Dense="true" Hover="true" Striped="true">
+
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">Transactions List</MudText>
                         <MudSpacer></MudSpacer>
                         <MudTextField @bind-Value="searchplatenumber" Placeholder="Search Licence Plate No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0">
                         </MudTextField>
                     </ToolBarContent>
+
                     <HeaderContent>
                         @if (Readonly)
                         {
@@ -100,11 +104,8 @@
                         <MudTh>Unique Transaction ID</MudTh>
                         <MudTh>Reimbursable</MudTh>
                         <MudTh>Amount(DR)</MudTh>
-                        @* @if (!Readonly)
-                        {
-                        <MudTh>Action</MudTh>
-                        } *@
                     </HeaderContent>
+
                     <RowTemplate>
                         @if (Readonly)
                         {
@@ -120,7 +121,7 @@
                         }
                         else
                         {
-                            <BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@((newValue) => BranchChanged(newValue, item))" />
+                            <MudTd DataLabel="Branch Name"><BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@((newValue) => BranchChanged(newValue, item))" /></MudTd>
                         }
                         <MudTd DataLabel="Trip No">@item.TripNumberDisplay</MudTd>
                         <MudTd DataLabel="PlazaCode">@item.PlazaCode</MudTd>
@@ -133,21 +134,7 @@
                         <MudTd></MudTd>
                         } *@
                      </RowTemplate>
-                     @* <FooterContent>
-                    @if (!Readonly)
-                    {
-                    <MudTd><MudDatePicker @bind-Date="@newItem.TransactionDateTime" Placeholder="Transaction DateTime" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy hh:mm tt" For="@(()=> newItem.TransactionDateTime)" Required /></MudTd>
-                    <MudTd><MudTextField @bind-Value="@newItem.NumberPlate" Placeholder="Licence Plate No" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
-                    <MudTd><BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@OtherBranchChanged"></BranchSelector></MudTd>
-                    <MudTd><MudTextField @bind-Value="@newItem.TripNumber" Placeholder="Trip No" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
-                    <MudTd><MudTextField @bind-Value="@newItem.PlazaCode" Placeholder="PlazaCode" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
-                    <MudTd><MudTextField @bind-Value="@newItem.Description" Placeholder="TransactionDescription" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
-                    <MudTd><MudTextField @bind-Value="@newItem.TransactionID" Placeholder="Unique Transaction ID" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
-                    <MudTd><MudCheckBox T="bool" @bind-Checked="@newItem.Reimbursable" ReadOnly></MudCheckBox></MudTd>
-                    <MudTd><MudTextField @bind-Value="@newItem.DebitAmount" Placeholder="Debit Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></MudTd>
-                    <MudTd><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@AddNewItem">Add</MudButton></MudTd>
-                    }
-                    </FooterContent> *@
+
                      <PagerContent>
                          <MudTablePager PageSizeOptions="new int[] {5 ,10 ,50 , 100 , 150, 200}" />
                      </PagerContent>
@@ -176,6 +163,7 @@
     private string UserID = null;
     FastTagModel newItem = new FastTagModel();
     public BranchModel SelectedBranch { get; set; } = new();
+    public bool IsLoading = false;
 
     //[Parameter]
     public int? id { get; set; }
@@ -257,8 +245,8 @@
         {
             MainModel = IFTService.GetUploadViewModel(id);
             ExcelModelCollection = IFTService.GetUploadViewCollection(id).ToList();
-            //collection = IFTService.GetUploadViewCollection(id).ToList();
-            //selectedcollection = new HashSet<FastTagModel>(IFTService.GetUploadViewSelectedCollection(id));
+            // collection = IFTService.GetUploadViewCollection(id).ToList();
+            // selectedcollection = new HashSet<FastTagModel>(IFTService.GetUploadViewSelectedCollection(id));
 
             // Pendingcollection = IFTService.GetUploadViewSelectedCollection(id).ToList();
 
@@ -280,6 +268,13 @@
 
     public async Task OnValidSubmit()
     {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
         try
         {
             var authprov = await auth.GetAuthenticationStateAsync();
@@ -295,11 +290,20 @@
 
             if (MainModel.FastTagModelList.Count != 0)
             {
-                IFTService.UpdateNew(MainModel);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                NavigationManager.NavigateTo("/FastTagTollUploadView");
-                // MainModel = new();
-                // collection = new();
+                if (MainModel.FastTagModelList.Any(f => !f.BranchID.HasValue))
+                {
+                    bool? result = await DialogService.ShowMessageBox(
+                        "Oops !",
+                        "Branch not assigned to one or more Transaction !");
+                }
+                else
+                {
+                    IFTService.UpdateNew(MainModel);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    NavigationManager.NavigateTo("/FastTagTollUploadView");
+                    // MainModel = new();
+                    // collection = new();
+                }
             }
             else
             {
@@ -312,6 +316,8 @@
         {
             snackbar.Add(ex.Message, Severity.Error);
         }
+        await Task.Delay(100);
+        _busy = false;
     }
 
     private bool search(FastTagModel model)
@@ -356,15 +362,20 @@
         }
     }
 
-    private async Task UploadXLSXFile()
+    private async Task LoadExcelData()
     {
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        _busy = true;
+        IsLoading = true;
+        StateHasChanged();
+        await Task.Delay(1);
 
+        await UploadXLSXFile();
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    public async Task UploadXLSXFile()
+    {
         try
         {
             // if (fileExtension == ".xls")
@@ -410,12 +421,12 @@
                         int rowCount = worksheet.Dimension.Rows;
                         int colCount = worksheet.Dimension.Columns;
                         int TransactionDateTimeRow = 0,
-                            LicencePlateNoRow = 0,
-                            PlazaCodeRow = 0,
-                            TransactionDescriptionRow = 0,
-                            UniqueTransactionIDRow = 0,
-                            //CRAmountRow = 0,
-                            DRAmountRow = 0;
+                        LicencePlateNoRow = 0,
+                        PlazaCodeRow = 0,
+                        TransactionDescriptionRow = 0,
+                        UniqueTransactionIDRow = 0,
+                        Activity = 0,
+                        DRAmountRow = 0;
 
                         for (int row = 1; row <= (rowCount - 1); row++)
                         {
@@ -431,6 +442,10 @@
                                     else if (worksheet.Cells[row, col].Value?.ToString() == "Licence Plate No")
                                     {
                                         LicencePlateNoRow = col;
+                                    }
+                                    else if (worksheet.Cells[row, col].Value?.ToString() == "Activity")
+                                    {
+                                        Activity = col;
                                     }
                                     else if (worksheet.Cells[row, col].Value?.ToString() == "Plaza Code")
                                     {
@@ -466,6 +481,10 @@
                                     {
                                         Model.NumberPlate = worksheet.Cells[row, LicencePlateNoRow].Value?.ToString();
                                     }
+                                    if (Activity == col)
+                                    {
+                                        Model.Activity = worksheet.Cells[row, Activity].Value?.ToString();
+                                    }
                                     if (PlazaCodeRow == col)
                                     {
                                         Model.PlazaCode = worksheet.Cells[row, PlazaCodeRow].Value?.ToString();
@@ -487,7 +506,7 @@
                                         Model.DebitAmount = decimal.Parse(worksheet.Cells[row, DRAmountRow].Value?.ToString());
                                     }
                                 }
-                                if (Model.DebitAmount > 0) //&& Model.NumberPlate != null)
+                                if (Model.DebitAmount > 0 && Model.Activity != "ADJUSTMENT") //&& Model.NumberPlate != null)
                                 {
                                     excelcollection.Add(Model);
                                 }
@@ -499,8 +518,8 @@
                                 TransactionDateTime = model.TransactionDateTime,
                                 NumberPlate = model.NumberPlate
                             }).ToList();
-
                         collection = IFTService.MatchTrucks(collectionlist).ToList();
+
                         MainModel.NatureOfTransaction = "FastTag";
                         MainModel.BranchID = branchID;
                         if (collection.Count == 0)
@@ -520,7 +539,7 @@
                                 // var matchingCollectionData = excelcollection.FirstOrDefault(x => x.TransactionDateTime == data.TransactionDateTime
                                 //                                                                && x.NumberPlate == data.NumberPlate);
                                 var matchingCollectionData = collection.FirstOrDefault(x => x.TransactionDateTime == data.TransactionDateTime
-                                                                                               && x.NumberPlate == data.NumberPlate);
+                                                                                           && x.NumberPlate == data.NumberPlate);
                                 if (matchingCollectionData != null)
                                 {
                                     // Update 'excelData' properties with corresponding 'matchingCollectionData' values
@@ -579,6 +598,5 @@
         {
             snackbar.Add(ex.Message, Severity.Error);
         }
-        _busy = false;
     }
 }

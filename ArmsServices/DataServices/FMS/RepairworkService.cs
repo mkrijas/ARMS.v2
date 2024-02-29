@@ -46,13 +46,45 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@RepairJobID", ID),
             };
-            RepairJobModel model = new();
-
+            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RepairJob.Select]", parameters))
             {
-                model = GetModel(dr);
+                return GetModel(dr);
             }
-            return model;
+            return null;
+        }
+
+        public IEnumerable<RepairJobGroup> SelectGroup()
+        {
+            
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RepairJobGroup.Select]", null))
+            {
+                yield return new RepairJobGroup()
+                {
+                    ID = dr.GetInt32("RepaiJobGroupID"),
+                    Title = dr.GetString("Title"),
+                };
+            }
+           
+        }
+
+        public IEnumerable<RepairJobGroup> SelectSubGroup(int? GroupID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@RepairJobGroupID", GroupID),
+            };
+        
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RepairJobSubGroup.Select]", parameters))
+            {
+                yield return new RepairJobGroup()
+                {
+                    ID = dr.GetInt32("RepaiJobSubGroupID"),
+                    Title = dr.GetString("Title"),
+                    ParentID = dr.GetInt32("RepaiJobGroupID")
+                };
+            }
         }
 
         public RepairJobModel Update(RepairJobModel model)
@@ -60,9 +92,10 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@RepairJobID", model.RepairJobID),
-                new SqlParameter("@RepairJobTitle", model.RepairJobTitle),
-               new SqlParameter("@Description", model.Description),
+               new SqlParameter("@Title", model.Title),
                new SqlParameter("@MechanicalHours", model.MechanicalHours),
+               new SqlParameter("@RepairJobGupID", model.JobGroup.ID),
+               new SqlParameter("@RepairJobSubgroupID", model.JobSubGroup.ID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -78,9 +111,20 @@ namespace ArmsServices.DataServices
             return new RepairJobModel
             {
                 RepairJobID = dr.GetInt32("RepairJobID"),
-                RepairJobTitle = dr.GetString("RepairJobTitle"),
-                Description = dr.GetString("Description"),
+                Title = dr.GetString("Title"),
+                JobCode = dr.GetString("JobCode"),
                 MechanicalHours = dr.GetDecimal("MechanicalHours"),
+                JobGroup = new RepairJobGroup()
+                {
+                    ID = dr.GetInt32("RepairJobGroupID"),
+                    Title = dr.GetString("GroupTitle"),
+                },
+                JobSubGroup = new RepairJobGroup()
+                {
+                    ID = dr.GetInt32("RepairJobSubGroupID"),
+                    Title = dr.GetString("SubGroupTitle"),
+                    ParentID = dr.GetInt32("RepairJobGroupID"),
+                },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

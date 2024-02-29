@@ -70,6 +70,7 @@ namespace Core.BaseModels.Finance.Transactions
         public bool Reimbursable { get; set; }
         public decimal DebitAmount { get; set; }
         public virtual Boolean IsProcessed { get; set; }
+        public virtual string Activity { get; set; }
         public virtual string BranchName { get; set; }
         public virtual string TripPrefix { get; set; }
         public virtual string TripNumberDisplay
