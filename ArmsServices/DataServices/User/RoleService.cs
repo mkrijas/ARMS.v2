@@ -160,23 +160,23 @@ namespace ArmsServices.DataServices
         public async Task<bool> HasClaim(string DocTypeID, string ClaimValue, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
             var authprov = await auth.GetAuthenticationStateAsync();
-            string RoleID = "";
-            if (authprov.User.Claims.Any(x => x.Type == ClaimTypes.Role))
-                RoleID = authprov.User.Claims.First(x => x.Type == ClaimTypes.Role).Value;
+           // string RoleID = "";
+            //if (authprov.User.Claims.Any(x => x.Type == ClaimTypes.Role))
+            //    RoleID = authprov.User.Claims.First(x => x.Type == ClaimTypes.Role).Value;
 
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@RoleID", RoleID)
-            };
+            //List<SqlParameter> parameters = new List<SqlParameter>
+            //{
+            //   new SqlParameter("@RoleID", RoleID)
+            //};
 
-            IList<Claim> Claims = new List<Claim>();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.RoleClaims.Select]", parameters))
-            {
-                Claims.Add(new Claim(dr.GetString("ClaimType"), dr.GetString("ClaimValue")));
-            };
-            return Claims.Any(s => s.Type == DocTypeID && s.Value == ClaimValue);
+            //IList<Claim> Claims = new List<Claim>();
+
+            //foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.RoleClaims.Select]", parameters))
+            //{
+            //    Claims.Add(new Claim(dr.GetString("ClaimType"), dr.GetString("ClaimValue")));
+            //};
+            return authprov.User.Claims.Any(s => s.Type == DocTypeID && s.Value == ClaimValue);
         }
 
         public Task AddClaimAsync(RoleModel role, Claim claim, CancellationToken cancellationToken = default)
@@ -212,24 +212,23 @@ namespace ArmsServices.DataServices
             return Task.FromResult(0);
         }
 
-        public void SelectAllPermissions(RoleModel role)
+        public void SelectAllPermissions(RoleModel role, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@RoleID", role.RoleID),
-               new SqlParameter("UserID",role.UserInfo.UserID),
+               new SqlParameter("UserID",UserID),
                new SqlParameter("Operation","CHECKALL"),
             };
-
             Iservice.ExecuteNonQuery("[usp.user.RoleClaims.Update]", parameters);
         }
 
-        public void DeSelectAllPermissions(RoleModel role)
+        public void DeSelectAllPermissions(RoleModel role, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@RoleID", role.RoleID),
-               new SqlParameter("UserID",role.UserInfo.UserID),
+               new SqlParameter("UserID",UserID),
                new SqlParameter("Operation","UNCHECKALL"),
             };
 

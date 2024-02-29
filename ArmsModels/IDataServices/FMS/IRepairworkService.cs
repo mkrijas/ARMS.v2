@@ -14,5 +14,8 @@ namespace ArmsServices.DataServices
         RepairJobModel SelectByID(int? ID);
         int Delete(int? RepairJobID, string UserID);  //Delete
         IEnumerable<RepairJobModel> Select(int? RepairJobID);
+        IEnumerable<RepairJobGroup> SelectGroup();
+        IEnumerable<RepairJobGroup> SelectSubGroup(int? GroupID);
+
     }
 }

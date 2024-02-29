@@ -21,13 +21,25 @@
                 <MudContainer>
                     <MudGrid Spacing="4">
                         <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="@model.RepairJobTitle" Label="Job Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RepairJobTitle)"></MudTextField>
+                            <MudTextField @bind-Value="@model.Title" Label="Job Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)"></MudTextField>
                         </MudItem>
                         <MudItem xs="12" md="6">
                             <MudTextField @bind-Value="@model.MechanicalHours" Label="Mechanical Hours" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.MechanicalHours)"></MudTextField>
                         </MudItem>
                         <MudItem xs="12" md="12">
-                            <MudTextField Lines="4" @bind-Value="@model.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Description)"></MudTextField>
+                            <MudSelect T = "RepairJobGroup" Value="@model.JobGroup" ValueChanged="SetGroup"  Label="Group" ToStringFunc="@((e) => e?.Title)" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.JobGroup)">
+                                @foreach(var group in Groups){
+                                   <MudSelectItem Value="group">@group?.Title</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="12">
+                            <MudSelect @bind-Value="@model.JobSubGroup" Label="Sub Group" ToStringFunc="@((e) => e?.Title)" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.JobSubGroup)">
+                                @foreach (var group in SubGroups)
+                                {
+                                    <MudSelectItem Value="group">@group?.Title</MudSelectItem>
+                                }
+                            </MudSelect>
                         </MudItem>
                     </MudGrid>
                 </MudContainer>
@@ -44,26 +56,29 @@
 
     [Parameter]
     public RepairJobModel model { get; set; }
-    private List<RepairJobModel> collection = new();
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    private string searchString = string.Empty;
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }  
     private bool _busy;
 
     public bool HasPermissionRepairWorkServiceEdit { get; set; } = false;
     public int RepairWorkDocTypeID = 76;
 
+    private List<RepairJobGroup> Groups = new();
+    private List<RepairJobGroup> SubGroups = new();
+
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionRepairWorkServiceEdit = await Irole.HasClaim(RepairWorkDocTypeID.ToString(), "Edit", ctc.Token);
-
-        GetAll();
+        Groups = Iservice.SelectGroup().ToList();         
     }
 
-    private void GetAll()
+    void SetGroup(RepairJobGroup Group)
     {
-        collection = Iservice.Select(null).ToList();
+        model.JobGroup = Group;
+        SubGroups = Iservice.SelectSubGroup(Group.ID).ToList();
     }
+    
 
     private void Cancel()
     {
@@ -85,8 +100,7 @@
             if (HasPermissionRepairWorkServiceEdit)
             {
                 model = Iservice.Update(model);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                collection.Add(model);
+                snackbar.Add("Saved Successfully", Severity.Success);                
                 MudDialog.Close(model);
                 model = new();
             }
