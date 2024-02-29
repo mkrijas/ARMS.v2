@@ -19,7 +19,7 @@ namespace ArmsServices.DataServices
         Task<IList<Claim>> GetClaimsAsync(RoleModel role, CancellationToken cancellationToken = default);
         IEnumerable<RoleModel> Select(string RoleID);
         Task<bool> HasClaim(string DocTypeID, string ClaimValue, CancellationToken cancellationToken = default);
-        void SelectAllPermissions(RoleModel role);
-        void DeSelectAllPermissions(RoleModel role);
+        void SelectAllPermissions(RoleModel role, string UserID);
+        void DeSelectAllPermissions(RoleModel role, string UserID);
     }
 }

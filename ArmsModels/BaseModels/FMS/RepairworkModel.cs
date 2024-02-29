@@ -15,17 +15,24 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<RepairJobModel>(Json);
         }
-        public RepairJobModel()
-        {
-            UserInfo = new();
-        }
+       
         public int? RepairJobID { get; set; }
         [Required]
-        public string RepairJobTitle { get; set; }
-        public string Description { get; set; }
+        public string Title { get; set; }
+        public string JobCode { get; set; }
         [Required]
         public decimal? MechanicalHours { get; set; }
-        public UserInfoModel UserInfo { get; set; }
+        public RepairJobGroup JobGroup { get; set; }
+        public RepairJobGroup JobSubGroup { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
+    }
+
+    public class RepairJobGroup
+    {        
+        public int? ID { get; set; }
+        [Required]
+        public string Title { get; set; }
+        public int? ParentID { get; set; }
     }
 
     public class JobInProgressModel
