@@ -1,0 +1,108 @@
+﻿@page "/FinanceAccountLedgerReport"
+@inherits ReportComponentBase
+@using ArmsModels.BaseModels.Finance.Report;
+@inject IDialogService DialogService
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Class="mb-5 p-4">
+            <MudGrid>
+                <MudItem xs="6" md="3">
+                    <CoaSelector @bind-Value="SelectedAccount" LabelName="Select Account" IsFetchAll="true" />
+                </MudItem>               
+                <MudItem xs="4" md="2">
+                    <MudDatePicker Label="Start Date" @bind-Date="@(StartDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="4" md="2">
+                    <MudDatePicker Label="End Date" @bind-Date="@(EndDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="2" md="2">
+                    <MudButton Variant="Variant.Filled" Color="@(IsMoreParameterHasValues ?Color.Success:Color.Primary)" OnClick="OpenDialogAddOrEditReference">
+                        Add More @(IsMoreParameterHasValues ? "(Has Value)" : "")
+                    </MudButton>
+                    <MudIconButton Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
+                    <MudIconButton Title="Render Report" Icon="@Icons.Material.Filled.DocumentScanner" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer"></MudIconButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters  @ref="@report"></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+    ReportViewer report;
+    public DateTime? StartDate { get; set; } = DateTime.Now;
+    public DateTime? EndDate { get; set; } = DateTime.Now;   
+    public ChartOfAccountModel SelectedAccount = new();
+    public bool ShowReport { get; set; } = false;
+    public string ReportName { get; set; }
+    public LedgerTransactionsReportMoreParameterModel MoreParameter { get; set; } = new();
+    public bool IsMoreParameterHasValues { get; set; } = false;  
+
+    private async Task OpenDialogAddOrEditReference()
+    {
+        var model = new DialogParameters { ["model"] = MoreParameter };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var dialog = DialogService.Show<LedgerTransactionsReportMoreParameterDialog>("More parameters", model, options);
+        var result = await dialog.Result;
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+            MoreParameter = (LedgerTransactionsReportMoreParameterModel)result.Data;
+            if (MoreParameter.Reference != null && MoreParameter.Reference != "")
+            {
+                IsMoreParameterHasValues = true;
+            }
+            else
+            {
+                IsMoreParameterHasValues = false;
+            }
+        }
+    }
+
+    protected bool Validate()
+    {
+        if (!SelectedBranches.Any())
+        {
+            snackbar.Add("Please select branch.", Severity.Error);
+            return false;
+        }
+        if (StartDate == null)
+        {
+            snackbar.Add("Please select Start-Date.", Severity.Error);
+            return false;
+        }
+        if (EndDate == null)
+        {
+            snackbar.Add("Please select End-Date.", Severity.Error);
+            return false;
+        }
+        if(SelectedAccount is null)
+        {
+            snackbar.Add("Please select Account", Severity.Error);
+            return false;
+        }
+        return true;
+    }
+
+    public async Task RenderReportViewer()
+    {
+        ShowReport = false;
+        if (Validate())
+        {
+            ShowReport = true;
+            ReportName = "FinanceAccountLedger";
+            ReportParameters.Clear();            
+            ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+            ReportParameters.Add("CoaID", SelectedAccount.CoaID.ToString());
+            ReportParameters.Add("StartDate", StartDate.Value.ToString("yyyy/MM/dd"));
+            ReportParameters.Add("EndDate", EndDate.Value.ToString("yyyy/MM/dd"));
+            ReportParameters.Add("Reference", MoreParameter != null ? MoreParameter.Reference : "");
+            await report.RenderReport();
+        }
+    }    
+}

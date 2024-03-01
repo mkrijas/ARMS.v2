@@ -30,6 +30,7 @@ namespace Views.Data
         {   
             var authprov = await auth.GetAuthenticationStateAsync();
             BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+            SelectedBranches.Add(BranchID.Value);
             var user = authprov.User;
             UserID = user.Identity.Name;           
             await Task.Delay(100);
