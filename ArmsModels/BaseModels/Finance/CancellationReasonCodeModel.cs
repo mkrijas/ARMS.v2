@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
-namespace Core.BaseModels.Finance
+namespace ArmsModels.BaseModels
 {
     public class CancellationReasonCodesByDocumentType : ICloneable
     {

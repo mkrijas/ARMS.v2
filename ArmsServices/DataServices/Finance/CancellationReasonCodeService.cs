@@ -1,6 +1,6 @@
 ﻿using ArmsModels.BaseModels;
 using ArmsServices;
-using Core.IDataServices.Finance;
+using ArmsServices.DataServices;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
@@ -132,7 +132,5 @@ namespace DAL.DataServices.Finance
                 },
             };
         }
-
-
     }
 }

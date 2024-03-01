@@ -167,17 +167,8 @@ namespace ArmsServices.DataServices.General
         }
 
         public ConfigModel GetCloseTripEventTypeID()
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@KeyString", "CloseTripEventTypeID"),
-               new SqlParameter("@Operation", "ByID")
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.Select]", parameters))
-            {
-                return GetModel(dr);
-            }
-            return null;
+        {            
+            return new ConfigModel() { KeyString= "CloseEvent",ValueString = "6"};
         }
 
         public ConfigModel GetFinancePayableGroupID()

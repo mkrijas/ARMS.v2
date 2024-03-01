@@ -299,7 +299,7 @@ namespace ArmsServices.DataServices
             {
                 DrCrNoteID = dr.GetInt32("DrCrNoteID"),
                 DrCrType = dr.GetString("DrCrType"),
-                Reason = new Core.BaseModels.Finance.CancellationReasonCode()
+                Reason = new CancellationReasonCode()
                 {
                     ReasonCodeID = dr.GetInt32("ReasonCodeID"),
                     ReasonCodeDescription = dr.GetString("ReasonCodeDescription")
