@@ -2,7 +2,7 @@
 using Core.BaseModels.Finance;
 using System.Collections.Generic;
 
-namespace Core.IDataServices.Finance
+namespace ArmsServices.DataServices
 {
     public interface ICancellationReasonCodeService
     {
