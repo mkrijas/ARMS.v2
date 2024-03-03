@@ -369,13 +369,14 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public decimal? GetBalance(int? CoaID, string ArdCode, string SubARdCode, DateTime _date)
+        public decimal? GetBalance( int? BranchID,int? CoaID, string ArdCode, string SubARdCode, DateTime _date)
         {
 
-            string Query = "SELECT dbo.GetBalance(@CoaID,@ArdCode,@SubArdCode,@Date)";
+            string Query = "SELECT dbo.GetBalance(@BranchID,@CoaID,@ArdCode,@SubArdCode,@Date)";
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@BranchID", BranchID ),
                new SqlParameter("@CoaID", CoaID ?? (object)DBNull.Value),
                new SqlParameter("@ArdCode", ArdCode ?? (object)DBNull.Value),
                new SqlParameter("@SubARdCode",SubARdCode ??(object) DBNull.Value),
