@@ -247,6 +247,7 @@ namespace Views
             services.AddScoped<IbaseInterface<SundryPaymentModel>, SundryPaymentService>();
             services.AddScoped<IbaseInterface<ReceiptModel>, ReceiptService>();
             services.AddScoped<IbaseInterface<DrCrNoteModel>, DrCrNoteService>();
+            services.AddScoped<IbaseInterface<OpTranModel>, OpTranService>();
 
 
 

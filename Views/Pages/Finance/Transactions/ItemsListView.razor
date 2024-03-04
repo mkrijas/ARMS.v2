@@ -34,7 +34,7 @@
                         <MudIconButton Title="Show Taxes" Color="Color.Info" @onclick="@(()=> OpenDialogTaxRates(@item))" Icon="@Icons.Material.Filled.CurrencyExchange" Size="Size.Small" />
                     </MudItem>
                 }
-                @if (!ReadOnly && !NonInventoryItems)
+                @if (!ReadOnly && !NonInventory)
                 {
                     <MudItem xs="3">
                         <InventoryItemSelector Value="InventoryItem" ValueChanged="ItemSelected" />
@@ -71,9 +71,7 @@
     [Parameter]
     public List<TaxPurchaseItemModel> ItemList { get; set; }
     [Parameter]
-    public bool ReadOnly { get; set; }
-    [Parameter]
-    public bool NonInventoryItems { get; set; }
+    public bool ReadOnly { get; set; }    
     [Parameter]
     public int? BranchID { get; set; }
     [Parameter]
@@ -83,7 +81,7 @@
     [Parameter]
     public bool IsTaxable { get; set; } = true;
     [Parameter]
-    public bool NonInventory { get; set; } = true;
+    public bool NonInventory { get; set; }
     [Parameter]
     public EventCallback<TaxPurchaseItemModel> OnItemAdded { get; set; }
     [Parameter]
@@ -105,15 +103,7 @@
     }
 
     protected override void OnInitialized()
-    {
-        // if(ItemList.Count == 0)
-        // {
-        //     NonInventoryItems = false;
-        // }
-        // else
-        // {
-        //     NonInventoryItems = true;
-        // }
+    {  
         if (!EditMode)
         {
             foreach (var item in ItemList)
@@ -206,6 +196,8 @@
             }
             var gstItem = gstIservice.SelectByItem(item?.ItemID ?? 0, DateTime.Today);
             item.GstRate = (gstItem?.TaxRate)??0;
+            decimal tdsRate = tdsService.GetTdsRate(PartyInfo.PartyID, item.CoaID);
+            item.TDS = Math.Round((item.Amount.Value * tdsRate) / 100, 2);
             if (!IsTaxable)
             {
                 return true;
@@ -220,8 +212,7 @@
             {
                 item.SGST = item.CGST = Math.Round(item.Amount.Value * taxRate / 200, 2);
             }
-            decimal tdsRate = tdsService.GetTdsRate(PartyInfo.PartyID, item.CoaID);
-            item.TDS = Math.Round((item.Amount.Value * tdsRate) / 100, 2);
+           
             return true;
         }
         return false;
