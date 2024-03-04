@@ -16,6 +16,8 @@ namespace ArmsModels.BaseModels
         public int? MID { get; set; }
         public int? ReverseMID { get; set; }
         [Required]
+        [DataType(DataType.Date)]
+        [DisplayFormat(ApplyFormatInEditMode = true, DataFormatString = "{0:dd/MM/yyyy}")]
         public DateTime? DocumentDate { get; set; } = DateTime.Today;
         public string DocumentNumber { get; set; } = "New";
         [Required]
