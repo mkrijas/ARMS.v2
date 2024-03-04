@@ -50,7 +50,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public int Delete(long? ID, string UserID)
+        public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -217,6 +217,28 @@ namespace ArmsServices.DataServices
                     UserID = dr.GetString("UserID"),
                 },                
             };
+        }
+
+     
+
+        public OpTranModel SelectByID(int? ID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<OpTranModel> Select(int? BranchID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<OpTranModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<OpTranModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        {
+            throw new NotImplementedException();
         }
     }
 }

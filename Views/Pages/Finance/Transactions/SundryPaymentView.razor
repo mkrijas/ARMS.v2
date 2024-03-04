@@ -1,20 +1,14 @@
 ﻿@page "/SundryPaymentView"
 @page "/SundryPaymentView/{id:int}"
-@using System.Threading;
-@attribute [Authorize]
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@inject MudBlazor.ISnackbar snackbar
-@inject IDialogService DialogService
+@inherits ViewComponentBase<SundryPaymentModel>
 @inject ISundryPaymentService Iservice
-@inject SignalRService signalRService
-@inject IPushNotificationService IpushNotificationService
+
 
 <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Sundry Payment </MudText>
         <MudTooltip Text="New Sundry Payment">
-            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialog(new SundryPaymentModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new SundryPaymentModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
         </MudTooltip>
         <MudSpacer></MudSpacer>
         <MudTextField @bind-Value="searchTerm" Placeholder="Search Sundry..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -25,7 +19,7 @@
         <MudItem xs="1">
             <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
         </MudItem>
-        <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedToggled(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
+        <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ToggleData(value))" Checked="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
     </ToolBarContent>
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
@@ -43,24 +37,24 @@
             @if (@context.AuthLevelId == null)
             {
                 <MudTooltip Text="Edit">
-                    <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudIconButton @onclick="@(()=> OpenForm(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
                 </MudTooltip>
                 <MudTooltip Text="Delete">
-                    <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    <MudIconButton @onclick="@(()=> Delete(context.SundryPaymentID))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
                 </MudTooltip>
             }
             @if (@context.AuthLevelId != 99)
             {
                 <MudTooltip Text="Verify">
-                    <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" IconSize="Size.Small" />
+                    <MudIconButton @onclick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" Variant="Variant.Filled" />
                 </MudTooltip>
             }
             <MudTooltip Text="View">
-                <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+                <MudIconButton @onclick="@(()=> OpenForm(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" Variant="Variant.Filled" />
             </MudTooltip>
             @if (@context.AuthLevelId == 99)
             {
-                <EntryReversedComponent DocTypeID="SundryPaymentDocTypeID" DocumentID="context.SundryPaymentID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.SundryPaymentID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
             }
         </MudTd>
     </RowTemplate>
@@ -71,118 +65,38 @@
 
 @code {
 
-    public bool IsApproved { get; set; } = false;
-    private List<SundryPaymentModel> collection = new List<SundryPaymentModel>();
-    private int numberOfRecords = 100;
-    private int? branchID = null;
+    protected override List<SundryPaymentModel> collection { get; set; } = new();
 
-    private string searchTerm = "";
-    private bool _busy;
-
-    [Parameter]
-    public int? id { get; set; } = null;
-
-    public bool HasPermissionSundryPaymentServiceDelete { get; set; } = false;
-    int SundryPaymentDocTypeID = 11;
-
-    #region SignaIR Notification
-
-    private PushNotificationModel notificationMessage = new PushNotificationModel();
-    #endregion
-    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
-            await ReloadTable();
-        }
-    }
+            DocumentTypeID = 11,
+            DocumentName = "SundryPayment"
+        };
 
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionSundryPaymentServiceDelete = await Irole.HasClaim(SundryPaymentDocTypeID.ToString(), "Delete", ctc.Token);
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        GetAll(IsApproved, NumberOfRecords);
-        await Task.Delay(200);
-        await signalRService.StartAsync();
+        await base.OnInitializedAsync();
         if (id != null && collection != null && collection.Any(g => g.SundryPaymentID == id))
         {
-            await OpenDialog(collection.FirstOrDefault(s => s.SundryPaymentID == id), true);
+            await OpenForm(collection.FirstOrDefault(s => s.SundryPaymentID == id), true);
         }
     }
-
-    void ApprovedToggled(bool value)
-    {
-        IsApproved = value;
-        GetAll(IsApproved, NumberOfRecords);
-    }
-
-    private void GetAll(bool val, int numberOfRecords)
+   
+    private void GeLoadData(bool val, int numberOfRecords)
     {
         int NumberOfRecords = numberOfRecords;
         if (val)
         {
-            collection = Iservice.SelectByApproved(branchID, NumberOfRecords, searchTerm).ToList();
+            collection = Iservice.SelectByApproved(BranchID, NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.SelectByUnapproved(branchID, NumberOfRecords, searchTerm).ToList();
+            collection = Iservice.SelectByUnapproved(BranchID, NumberOfRecords, searchTerm).ToList();
         }
     }
 
-    private async Task ReloadTable()
-    {
-        GetAll(IsApproved, NumberOfRecords);
-    }
-
-    private int NumberOfRecords
-    {
-        get => numberOfRecords;
-        set
-        {
-            if (numberOfRecords != value)
-            {
-                numberOfRecords = value;
-                _ = ReloadTable();
-            }
-        }
-    }
-
-    private async Task Delete(SundryPaymentModel model)
-    {
-        if (HasPermissionSundryPaymentServiceDelete)
-        {
-            try
-            {
-                bool? result = await DialogService.ShowMessageBox(
-                    "Warning !",
-                    "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
-                if (result == true)
-                {
-                    var authprov = await auth.GetAuthenticationStateAsync();
-                    var user = authprov.User;
-                    var UserID = user.Identity.Name;
-                    Iservice.Delete(model.SundryPaymentID, UserID);
-                    snackbar.Add("Deleted Successfully", Severity.Success);
-                    GetAll(IsApproved, NumberOfRecords);
-                }
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Delete SundryPayment.");
-        }
-    }
-
-    private async Task OpenDialog(SundryPaymentModel model, bool ReadOnly = false)
+    
+    protected override async Task OpenForm(SundryPaymentModel model, bool ReadOnly = false, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -193,29 +107,16 @@
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model.Clone());
-        parms.Add("PageToRedirectLink", "/SundryPaymentView");
         parms.Add("ReadOnly", ReadOnly);
-        var dialog = DialogService.Show<SundryPaymentDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var dialog = dialogService.Show<SundryPaymentDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
-        var isCancelled = result.Cancelled;
+        var isCancelled = result.Canceled;
         if (!isCancelled)
         {
             var ReturnData = (SundryPaymentModel)result.Data;
-            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
-            notificationMessage.RedirectedTo = 0;
-            notificationMessage.ExpiredBy = 7;
-            notificationMessage.DocumentID = ReturnData.SundryPaymentID;
-            notificationMessage.MessageGroupID = "PendingVerification";
-            notificationMessage.PageToRedirectLink = "/SundryPaymentView";
-            notificationMessage.ClaimValue = "Verify 1";
-            notificationMessage.DocumentTypeID = SundryPaymentDocTypeID;
-            notificationMessage.MsgDate = DateTime.Now;
-            await signalRService.Send(notificationMessage);
+            LoadData(ShowApproved, NumberOfRecords);
+           
         }
-        GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;
     }

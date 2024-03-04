@@ -1,80 +1,59 @@
-﻿@page "/FinanceTransactionReport"
-@using Microsoft.JSInterop
-@using Microsoft.AspNetCore.Components
-@using Views.Data;
-@using System.Text;
-@using System.Net;
-@inject AuthenticationStateProvider auth
-@inject IBranchService Ibranchservice
-@inject ISnackbar Snackbar
+﻿@page "/Daybook"
+@inherits ReportComponentBase
 
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudPaper Class="mb-5 p-4">
-            <MudItem xs="12" md="12">
-                <MudItem xs="6">
-                    <BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@OtherBranchChanged"></BranchSelector>
-                </MudItem>
-            </MudItem>
-            <MudGrid>
-                <MudItem xs="5" md="5">
-                    <MudDatePicker Label="Start Date" @bind-Date="@(StartDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                </MudItem>
-                <MudItem xs="5" md="5">
-                    <MudDatePicker Label="End Date" @bind-Date="@(EndDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                </MudItem>
-                <MudItem xs="2" md="2">
-                    <MudButton Style="margin-top:9%;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
-                </MudItem>
-            </MudGrid>
-        </MudPaper>
+
+<MudGrid>
+    <MudItem xs="4" md="2">
+        <MudDatePicker Label="Start Date" @bind-Date="@(StartDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem xs="4" md="2">
+        <MudDatePicker Label="End Date" @bind-Date="@(EndDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem xs="2" md="2">
+        <MudIconButton Title="Select Branch" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
+        <MudIconButton Title="Render Report" Icon="@Icons.Material.Filled.DocumentScanner" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer"></MudIconButton>
     </MudItem>
 </MudGrid>
 <MudGrid Style="@(ShowReport?"":"Display:none")">
     <MudItem xs="12">
-        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters  @ref="@report"></ReportViewer>
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
     </MudItem>
 </MudGrid>
 
 @code {
     ReportViewer report;
-    public Dictionary<string, string> ReportParameters { get; set; } = new();
+
     public DateTime? StartDate { get; set; } = DateTime.Now;
     public DateTime? EndDate { get; set; } = DateTime.Now;
-    public int? BranchID { get; set; } = 0;
-    public BranchModel SelectedBranch { get; set; } = new();
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
 
-    private async Task OtherBranchChanged(BranchModel branch)
-    {
-        SelectedBranch = branch;
-    }
+
 
     public async Task RenderReportViewer()
     {
-        if (SelectedBranch == null || SelectedBranch.BranchID == null)
+        if (!SelectedBranches.Any() || SelectedBranches.Count > 1)
         {
-            Snackbar.Add("Please select branch.", Severity.Error);
+            snackbar.Add("Please select One Branch!.", Severity.Warning);
             return;
         }
         if (StartDate == null)
         {
-            Snackbar.Add("Please select start date.", Severity.Error);
+            snackbar.Add("Please select start date.", Severity.Error);
             return;
         }
         if (EndDate == null)
         {
-            Snackbar.Add("Please select end date.", Severity.Error);
+            snackbar.Add("Please select end date.", Severity.Error);
             return;
         }
 
         ShowReport = true;
         ReportName = "FinanceDaybook";
         ReportParameters.Clear();
-        ReportParameters.Add("BranchID", SelectedBranch.BranchID.ToString());
+        ReportParameters.Add("BranchID", SelectedBranches.First().ToString());
         ReportParameters.Add("StartDate", StartDate.Value.ToString("yyyy/MM/dd"));
         ReportParameters.Add("EndDate", EndDate.Value.ToString("yyyy/MM/dd"));
         await report.RenderReport();
     }
-}
+    }

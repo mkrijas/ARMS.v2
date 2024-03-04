@@ -32,8 +32,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string workshop { get; set; }
         [Required]
-        public string job { get; set; }
-        [Required]
+        public string job { get; set; }       
         public string mechanic { get; set; }
         public List<JobcardWorkshopModel> Workshops { get; set; }
         public List<JobInProgressModel> Jobs { get; set; }

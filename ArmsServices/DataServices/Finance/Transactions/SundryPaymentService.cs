@@ -218,6 +218,11 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+        public IEnumerable<SundryPaymentModel> Select(int? BranchID)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }

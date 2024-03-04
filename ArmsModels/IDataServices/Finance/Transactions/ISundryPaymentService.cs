@@ -9,16 +9,16 @@ using ArmsModels.BaseModels.Finance.Transactions;
 
 namespace ArmsServices.DataServices
 {
-    public interface ISundryPaymentService
+    public interface ISundryPaymentService : IbaseInterface<SundryPaymentModel>
     {
-        SundryPaymentModel Update(SundryPaymentModel model);  //Edit
-        SundryPaymentModel SelectByID(int? ID);
-        int Delete(int? ID, string UserID);  //Delete
+        //SundryPaymentModel Update(SundryPaymentModel model);  //Edit
+        //SundryPaymentModel SelectByID(int? ID);
+        //int Delete(int? ID, string UserID);  //Delete
         IEnumerable<SundryPaymentModel> Select();
-        IEnumerable<SundryPaymentModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<SundryPaymentModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        //IEnumerable<SundryPaymentModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
+        //IEnumerable<SundryPaymentModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<SundryPaymentEntryModel> GetEntries(int? SID);
-        int Approve(int? SundryPaymentID, string UserID, string Remarks);  //Approve
-        int Reverse(int? SundryPaymentID, string UserID, string Remarks);  //Reverse
+        //int Approve(int? SundryPaymentID, string UserID, string Remarks);  //Approve
+        //int Reverse(int? SundryPaymentID, string UserID, string Remarks);  //Reverse
     }
 }

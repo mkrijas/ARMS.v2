@@ -1,28 +1,21 @@
-﻿@using System.Threading;
+﻿@inherits DialogFormComponentBase<OpTranModel>
 
 @inject IOpTranService Iservice
 @inject ITripService tripIservice
 @inject ITripFuelService tripFuelIservice
-@inject ICostCenterService costIservice
-@inject IGstUsageIDService usageIservice
-@inject IDimensionService dimensionIservice
-@inject MudBlazor.ISnackbar snackbar
+
+@* @inject IGstUsageIDService usageIservice
 @inject ITdsRateService tdsIService
 @inject IChartOfAccountService accountService
-@inject IBranchService brIservice
-@inject ITripAdvanceService advanceService
+ *@
 @inject ITruckService truckService
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
-@attribute [Authorize]
-@inject IDialogService DialogService
-@inject IInventoryItemService itemIservice
-@inject IOperationPostingGroupService IOperationPostingGroupService
+@inject ITripAdvanceService advanceService
+@inject IOperationPostingGroupService IOpsArd
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Trip Settlement" formID="Optranform" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Trip Settlement" formID="Optranform" DocumentDetails="DocInfo" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
-            <EditForm id="Optranform" EditContext="editContext" OnValidSubmit="Submit">
+            <EditForm id="Optranform" EditContext="editContext" OnValidSubmit="@OnValidSubmit">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
@@ -75,12 +68,12 @@
                                                                  ResetValueOnEmptyText="true" SearchFunc="@SearchOperationPostingGroup" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                                  ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ADCode,e.Title))"></MudAutocomplete>
                                             </td>
-                                            <td><MudTextField @bind-Value="opTranSubModel.Reference" Variant="Variant.Outlined" Margin="Margin.Dense" ></MudTextField></td>
+                                            <td><MudTextField @bind-Value="opTranSubModel.Reference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></td>
                                             <td><CostCenterSelector @bind-Value="opTranSubModel.CostCenter" @bind-ValueText="@opTranSubModel.CostCenterVal" ReadOnly="@ReadOnly" /></td>
                                             <td><DimensionSelector @bind-Value="opTranSubModel.Dimension" @bind-ValueText="@opTranSubModel.DimensionVal" ReadOnly="@ReadOnly" /></td>
-                                            <td><MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Amount" Variant="Variant.Outlined" Margin="Margin.Dense" ></MudNumericField></td>
-                                             <td><MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" ></MudNumericField></td>
-                                             <td><MudTextField @bind-Value="opTranSubModel.Unit" Variant="Variant.Outlined" Margin="Margin.Dense" ></MudTextField></td>
+                                            <td><MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField></td>
+                                             <td><MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Quantity" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField></td>
+                                             <td><MudTextField @bind-Value="opTranSubModel.Unit" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></td>
                                              <td><MudIconButton OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" /></td>
                                          </tr>
                                     }
@@ -112,54 +105,43 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@OpTranDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.OpTranID" OnApprove="OnApprove"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocNumber="@DocNumber" DocumentID="model.OpTranID" OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
 @code {
 
     [Parameter]
-    public OpTranModel model { get; set; }
-    [Parameter]
-    public bool ReadOnly { get; set; } = false;
-    private int? branchID = null;
-    private string UserID = null;
-    private EditContext editContext;
-    [Parameter]
-    public string PageToRedirectLink { get; set; }
-    public string DocNumber { get; set; }
-    public DateTime? DocDate { get; set; }
-    public string DocType { get; set; }
-    DialogForm dialogForm;
+    public override OpTranModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.OpTranID; } }
+    private OpTranModel _model;
+
+
     public GstUsageCodeModel gstusge = new();
     private OpTranSubModel opTranSubModel = new();
     private List<OperationPostingGroupModel> OperationPostingList = new();
     private TripAdvanceModel Advance = new();
-    private bool _busy;
     private decimal? Balance;
     private decimal? amount;
     private string displayBalance;
 
-    public DocumentInfoModel DocumentDetails { get; set; } = new();
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 6,
+            DocumentName = "OpTran"
+        };
 
-
-    public bool HasPermissionOpTranServiceEdit { get; set; } = false;
-    public bool HasPermissionOpTranServiceApprove { get; set; } = false;
-    public int OpTranDocTypeID = 6;
 
     protected override async Task OnInitializedAsync()
     {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionOpTranServiceEdit = await Irole.HasClaim(OpTranDocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionOpTranServiceApprove = await Irole.HasClaim(OpTranDocTypeID.ToString(), "Edit", ctc.Token);
-
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        UserID = user.Identity.Name;
-        branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
-        if (model == null)
+        await base.OnInitializedAsync();
+        if (model.OpTranID is null)
         {
-            model = new() { Area = "Operation", };
+            model.NatureOfTransaction = "Trip Expenses";
+            var tripInfo = tripIservice.GetTripInfo(model.TripID);
+            if (tripInfo is not null)
+            {
+                model.Narration = string.Format("Trip : {0}; Truck : {1}; Driver : {2};", tripInfo.TripNumber, tripInfo.Truck, tripInfo.Driver);
+            }
         }
         else
         {
@@ -170,27 +152,16 @@
             model.PaymentMode = "Cash";
         }
         model.NatureOfTransaction = model.Area;
-        model.BranchID = branchID;
+        model.BranchID = BranchID;
         model.UserInfo.UserID = UserID;
-
-        DocNumber = model.DocumentNumber;
-        DocDate = model.DocumentDate;
-        DocType = model.NatureOfTransaction;
-
-        OperationPostingList = IOperationPostingGroupService.Select().ToList();
+        OperationPostingList = IOpsArd.Select().ToList();
 
         Advance = advanceService.GetTotal(model.TripID);
         Balance = Advance.Amount;
         displayBalance = Balance.ToString();
     }
 
-    protected override void OnParametersSet()
-    {
-        editContext = new EditContext(model);
 
-        DocumentDetails.DocumentTypeID = OpTranDocTypeID;
-        DocumentDetails.DocumentID = model.OpTranID;
-    }
 
     void AddOperationPostingGroup(OperationPostingGroupModel uc)
     {
@@ -203,40 +174,19 @@
                                                                 x.Title.Contains(searchString ?? string.Empty, StringComparison.InvariantCultureIgnoreCase)));
     }
 
-    protected async Task OnApprove(DataApprovedStatus aprvd)
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
     {
-        if (HasPermissionOpTranServiceApprove)
-        {
-            if (aprvd.IsApprove)
-            {
-                try
-                {
-                    var authprov = await auth.GetAuthenticationStateAsync();
-                    var user = authprov.User;
-                    model.UserInfo.UserID = user.Identity.Name;
-                    Iservice.Approve(model.OpTranID, model.UserInfo.UserID, aprvd.Remarks);
-                    snackbar.Add("Approved Successfully", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Approve OpTran.");
-        }
+        int result = Iservice.Approve(model.OpTranID, model.UserInfo.UserID, aprvd.Remarks);
+        return result;
     }
 
     public void AddItems()
     {
-        if (opTranSubModel.OperationPostingGroupModel is not null &&  (opTranSubModel.Amount??0) != 0 )
+        if (opTranSubModel.OperationPostingGroupModel is not null && (opTranSubModel.Amount ?? 0) != 0)
         {
             //opTranSubModel.ExpenseUsageCode = gstusge.UsageCode;
             opTranSubModel.ExpenseUsageCode = opTranSubModel.OperationPostingGroupModel.ADCode;
+            opTranSubModel.ExpenseTitle = opTranSubModel.OperationPostingGroupModel.Title;
             model.Transactions.Add(opTranSubModel);
             model.TotalAmount = model.TotalAmount + (opTranSubModel.Amount * opTranSubModel.Quantity);
             opTranSubModel = new();
@@ -260,60 +210,35 @@
         displayBalance = (Balance < 0) ? (-Balance).ToString() : Balance.ToString();
     }
 
-    private async Task Submit()
+    protected override async Task<int> Update(OpTranModel editModel)
     {
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        _busy = true;
+        var updatedModel = Iservice.Update(model);
 
-        if (HasPermissionOpTranServiceEdit)
+        if (updatedModel.OpTranID != null && model.OpTranID is null && model.TripID is not null)
         {
-            try
+            var driverId = truckService.GetAssignedDriver(updatedModel.TruckID);
+            if (Balance > 0)
             {
-                var updatedModel = Iservice.Update(model);
-                snackbar.Add("Saved Successfully", Severity.Success);
-                dialogForm.Close(model);
+                amount = model.TotalAmount;
+            }
+            else
+            {
+                amount = Advance.Amount;
+            }
 
-                if (updatedModel.TripID != null)
+            TripAdvanceModel advanceModel = new()
                 {
-                    var driverId = truckService.GetAssignedDriver(updatedModel.TruckID);
-                    if (Balance > 0)
-                    {
-                        amount = model.TotalAmount;
-                    }
-                    else
-                    {
-                        amount = Advance.Amount;
-                    }
-
-                    TripAdvanceModel advanceModel = new()
-                        {
-                            BranchID = branchID,
-                            TripID = updatedModel.TripID,
-                            DriverID = driverId,
-                            Amount = -(amount),
-                            CoaID = updatedModel.CreditCoaID,
-                            DocumentTypeID = OpTranDocTypeID,
-                            DocumentID = updatedModel.OpTranID
-                        };
-                    advanceService.Update(advanceModel);
-                }
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+                    BranchID = BranchID,
+                    TripID = Advance.TripID,
+                    DriverID = Advance.DriverID,
+                    Amount = -(amount),
+                    CoaID = Advance.CoaID,
+                    DocumentTypeID = DocInfo.DocumentTypeID,
+                    DocumentID = updatedModel.OpTranID
+                };
+            advanceService.Update(advanceModel);
         }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Edit OpTran.");
-        }
-        await Task.Delay(200);
-        _busy = false;
+        return updatedModel.OpTranID.Value;
     }
+
 }

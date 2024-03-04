@@ -239,10 +239,16 @@ namespace Views
             services.AddScoped<IFastTagService, FastTagService>();
             services.AddScoped<IReimbursementService, ReimbursementService>();
 
+
+            //----IBASE GROUP
             services.AddScoped<IbaseInterface<PaymentMemoModel> , PaymentService>();
             services.AddScoped <IbaseInterface<TaxPurchaseModel> , TaxPurchaseService>();
             services.AddScoped<IbaseInterface<SundryReceiptModel>, SundryReceiptService>();
+            services.AddScoped<IbaseInterface<SundryPaymentModel>, SundryPaymentService>();
             services.AddScoped<IbaseInterface<ReceiptModel>, ReceiptService>();
+            services.AddScoped<IbaseInterface<DrCrNoteModel>, DrCrNoteService>();
+            services.AddScoped<IbaseInterface<OpTranModel>, OpTranService>();
+
 
 
             //------------FINANCE POSTING GROUP-------------------

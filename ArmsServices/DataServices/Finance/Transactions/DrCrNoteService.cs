@@ -335,5 +335,10 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+        public IEnumerable<DrCrNoteModel> Select(int? BranchID)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
