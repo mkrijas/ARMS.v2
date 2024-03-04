@@ -1,0 +1,105 @@
+﻿@page "/DriverIncentiveReport"
+@inject ISnackbar Snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IBranchService Ibranchservice
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Class="mb-5 p-4">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudSelect T="string" Label="Select Branch" MultiSelection="true" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="BranchID" @bind-SelectedValues="BranchIDS" OffsetY="true" AnchorOrigin="Origin.BottomCenter"
+                               AdornmentColor="Color.Secondary" Required>
+                        @foreach (BranchModel ditem in BranchList)
+                        {
+                            <MudSelectItem T="string" Value="@(ditem.BranchID.Value.ToString())">@ditem.BranchName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="5">
+                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="5">
+                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="2">
+                    <MudButton Style="margin-top: 4px; width:-webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters  @ref="@report"></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+    ReportViewer report;
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
+    public DateTime? FromDate { get; set; } = DateTime.Now;
+    public DateTime? ToDate { get; set; } = DateTime.Now;
+    public bool ShowReport { get; set; } = false;
+    public string ReportName { get; set; }
+    private List<BranchModel> BranchList = new();
+    public string BranchID { get; set; } = "";
+    private IEnumerable<string> BranchIDS { get; set; } = new HashSet<string>() { };
+    public BranchModel CurrentBranch { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
+        CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+        CurrentBranch.BranchID = int.Parse(BranchIDString);
+        BranchList = Ibranchservice.Select().ToList();
+    }
+
+    private string GetMultiSelectionText(List<string> selectedValues)
+    {
+        string Result = "";
+        foreach (var item in selectedValues)
+        {
+            if (BranchList.Any(s => s.BranchID.Value.ToString() == item))
+            {
+                if (Result == "")
+                {
+                    Result = BranchList.FirstOrDefault(s => s.BranchID.Value.ToString() == item).BranchName;
+                }
+                else
+                {
+                    Result = Result + ", " + BranchList.FirstOrDefault(s => s.BranchID.Value.ToString() == item).BranchName;
+                }
+            }
+        }
+        return Result;
+    }
+
+    public async Task RenderReportViewer()
+    {
+        if (FromDate == null)
+        {
+            Snackbar.Add("Please select From Date.", Severity.Error);
+            return;
+        }
+        if (ToDate == null)
+        {
+            Snackbar.Add("Please select To Date.", Severity.Error);
+            return;
+        }
+
+        ShowReport = true;
+        ReportName = "DriverPerformanceIncentiveReport";
+        ReportParameters.Clear();
+        string branches = String.Join(',', BranchIDS);
+        ReportParameters.Add("BranchIDS", branches);
+        ReportParameters.Add("BranchName", CurrentBranch.BranchName);
+        ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
+        ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
+        await report.RenderReport();
+    }
+}
