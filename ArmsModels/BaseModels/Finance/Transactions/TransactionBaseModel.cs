@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class TransactionBaseModel
+    public class TransactionBaseModel: IValidatableObject
     {
         public TransactionBaseModel()
         {
@@ -38,7 +38,14 @@ namespace ArmsModels.BaseModels
         public int? OtherBranchID { get; set; }
         public string OtherBranchName { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
-    }
+        public virtual IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        { 
+              if(DocumentDate.HasValue && DocumentDate.Value > DateTime.Today)
+            {
+                yield return new ValidationResult("Document date cannot be a future date!");
+            }
+        }
+        }
 
     public class AccountInfoViewModel
     {

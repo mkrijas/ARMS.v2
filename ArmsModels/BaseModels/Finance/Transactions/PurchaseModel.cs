@@ -43,10 +43,21 @@ namespace ArmsModels.BaseModels
         public List<TaxPurchaseItemModel> Items { get; set; } = new();
         [ValidateComplexType]
         public List<AssetPOModel> Assets { get; set; } = new();
-        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        public override IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
+            var baseErrors = base.Validate(validationContext);
+            if (baseErrors != null && baseErrors.Any())
+            {
+                foreach (var item in baseErrors)
+                {
+                    yield return item;
+                }
+            }
+
             if (Expenses.Count == 0 && Items.Count == 0 && Assets.Count == 0)
                 yield return new ValidationResult("No Items or Expenses selected!");
+            else if (InvoiceDate.HasValue && DocumentDate.HasValue && InvoiceDate.Value > DocumentDate.Value)
+                yield return new ValidationResult("Invoice Date must be on or before document date!");
         }
         
     }
