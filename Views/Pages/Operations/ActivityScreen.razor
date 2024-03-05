@@ -30,7 +30,8 @@
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <TruckSelector Class="bg-white" Value="SelectedTruck" BranchID="branchID" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" HomeOrOperation="Operation" />
+        <TruckSelector Class="bg-white" Value="SelectedTruck" BranchID="BranchID" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" HomeOrOperation="Operation" />
+       
     </MudItem>
     <MudItem xs="12" Class="d-flex">
         @if (CurrentTrip != null)
@@ -54,7 +55,7 @@
         <MudSpacer></MudSpacer>
         @if (HideControls && SelectedTruck != null)
         {
-            <MudText Typo="Typo.h4" Color="Color.Error">@EventType.EventStatusText</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Error">@EventType?.EventStatusText</MudText>
         }
         else if (!HideControls)
         {
@@ -99,10 +100,8 @@
 </MudGrid>
 @if (SelectedTruck != null)
 {
-    <TripViewComponent Trip="CurrentTrip" @ref="TripViewRef" OnTripStatusUpdated="@TripStatusUpdated"></TripViewComponent>
+    <TripViewComponent Trip="CurrentTrip" OnTripStatusUpdated="@TripStatusUpdated" @ref="@TripViewRef"></TripViewComponent>
 }
-
-
 
 
 @code {
@@ -110,7 +109,7 @@
     [Parameter]
     public TruckModel SelectedTruck { get; set; }
     TripViewComponent TripViewRef;
-    private int branchID;
+    private int BranchID;
     private string UserID = null;
     private DriverModel AssignedDriver { get; set; }
     private EventModel CurrentEvent { get; set; }
@@ -135,10 +134,10 @@
         HasPermissionTripServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        branchID = int.Parse(brancIDString);
+        BranchID = int.Parse(brancIDString);
         var user = authprov.User;
-        UserID = user.Identity.Name;
-        OnTruckSelected(SelectedTruck);
+        UserID = user.Identity.Name;        
+       // OnTruckSelected(SelectedTruck);
     }
 
     private void GetTruckInfo()
@@ -185,11 +184,11 @@
             advanceEntry.UsageCodeDescription = UsageCodeModel.Description;
             advanceEntry.CoaID = UsageCodeModel.CoaID;
             advanceEntry.Reference = CurrentTrip.TripNumberDisplay.ToString() + " Advance";
-            advanceEntry.BranchID = branchID;
+            advanceEntry.BranchID = BranchID;
 
             SundryPaymentModel spModel = new()
                 {
-                    BranchID = branchID,
+                    BranchID = BranchID,
                     PayeeName = AssignedDriver.DriverName,
                     PayeeContactNo = AssignedDriver.Mobile,
                     Reference = CurrentTrip.TripNumberDisplay.ToString() + " Advance",
@@ -210,7 +209,7 @@
 
                 TripAdvanceModel advanceModel = new()
                     {
-                        BranchID = branchID,
+                        BranchID = BranchID,
                         TripID = CurrentTrip.TripID,
                         DriverID = AssignedDriver.DriverID,
                         Amount = advanceEntry.Amount,
@@ -237,19 +236,16 @@
         {
             return;
         }
+        _busy = true;
         var parameters = new DialogParameters();
         parameters.Add("Truck", SelectedTruck);
         parameters.Add("AssignedDriver", AssignedDriver);
         if (EventButtonLabel == "Start New Trip")
-        {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-            var branchid = int.Parse(brancIDString);
-            bool IsbranchSetting = branchSettingsService.IsEnabled(branchid, 1);
+        {           
+            bool IsbranchSetting = branchSettingsService.IsEnabled(BranchID, 1);
             if (IsbranchSetting)
             {
-                var ResultList = IserviceRoutineMaster.SelectItemByBranch(branchid).Where(item => !item.IsDisabled).ToList();
+                var ResultList = IserviceRoutineMaster.SelectItemByBranch(BranchID).Where(item => !item.IsDisabled).ToList();
                 var TruckListTempSub = IroutineCheckListService.GetLastRoutineCheckListDetailsUsingTruckId(SelectedTruck.TruckID);
                 if (TruckListTempSub != null)
                 {
@@ -281,19 +277,20 @@
                     string resultString = string.Join(",", expiredItems);
                     string message = "Some of the checklist item(s) " + resultString + " is expired.";
                     bool? result1 = await DialogService.ShowMessageBox("Expired", message);
+
+                    _busy = false;
                     return;
                 }
             }
-            _busy = true;
-            var dialog = DialogService.Show<NewTripView>("Start Trip", parameters);
+            
+            var dialog = DialogService.Show<NewTripView>("Start Trip", parameters,new DialogOptions(){MaxWidth= MaxWidth.Large });
             var result = await dialog.Result;
             if (!result.Canceled)
             {
-                CurrentTrip = (TripModel)result.Data;
-                await TripViewRef.RefreshEvents();
+                CurrentTrip = (TripModel)result.Data;               
                 truckStatusUpdated(Ievent.GetCurrentEvent(SelectedTruck.TruckID));
                 TripViewRef.LoadGcs();
-                await TripViewRef.LoadAllUsingCurrentTrip(CurrentTrip);
+                TripViewRef.LoadAllUsingCurrentTrip(CurrentTrip);
             }
         }
         else
@@ -303,12 +300,10 @@
             var result = await dialog.Result;
             if (!result.Canceled)
             {
-                CurrentEvent = (EventModel)result.Data;
-                await TripViewRef.RefreshEvents();
+                CurrentEvent = (EventModel)result.Data;               
                 truckStatusUpdated(CurrentEvent);
-
                 TripViewRef.LoadGcs();
-                await TripViewRef.LoadAllUsingCurrentTrip(CurrentTrip);
+                TripViewRef.LoadAllUsingCurrentTrip(CurrentTrip);
             }
         }
         await Task.Delay(200);
@@ -339,7 +334,7 @@
             }
             var authState = await auth.GetAuthenticationStateAsync();
             Itrip.Cancel(CurrentTrip.TripID, authState.User.Identity.Name);
-            await TripViewRef.LoadAll();
+            TripViewRef.LoadAll();
             StateHasChanged();
         }
         else
@@ -438,16 +433,15 @@
             {
                 CurrentTrip.Closed = Itrip.IsClosed(CurrentTrip.TripID);
             }
-            truckStatusUpdated(Ievent.GetCurrentEvent(model.TruckID));
-            var Result = Itruck.Select(model.TruckID);
-            if (branchID != (Result?.FirstOrDefault()?.CurrentBranchID ?? null))
+            try
             {
-                ShowReportBreakdownButton = false;
+                truckStatusUpdated(Ievent.GetCurrentEvent(model.TruckID));
             }
-            else
+            catch(Exception ex)
             {
-                ShowReportBreakdownButton = true;
+                
             }
+            ShowReportBreakdownButton = BranchID == (model.CurrentBranchID??model.HomeBranchID);            
         }
         else
         {
@@ -492,15 +486,15 @@
 
     protected void TripStatusUpdated(EventModel em)
     {
-        truckStatusUpdated(em);
+        // truckStatusUpdated(em);
     }
 
     private void truckStatusUpdated(EventModel ev)
     {
-        HideControls = true;
-        HideStatus = true;
-        EventType = null;
+        HideControls = true;HideStatus = true;EventType = null;
+
         CurrentEvent = ev;
+
         if (SelectedTruck != null)
         {
             int? DriverID = Itruck.GetAssignedDriver(SelectedTruck.TruckID);
@@ -522,7 +516,7 @@
                 {
                     TruckStatusAppend = " At " + ev.OriginName;
                 }
-                TruckStatus = EventType?.EventStatusText + " On " + ev?.EventTime + TruckStatusAppend + " (Reported by " + Ibranch.GetBranchName(ev.BranchID) + ")";
+                TruckStatus = string.Format("{0} On {1}{2} (Reported by {3}", EventType?.EventStatusText ,ev?.EventTime , TruckStatusAppend , Ibranch.GetBranchName(ev.BranchID) );
             }
 
             //Hide-Show Controls
@@ -532,14 +526,12 @@
             }
             else if (EventType == null || EventType.EventStatusText == "UnAssigned")
             {
-                HideControls = false;
-                HideStatus = true;
+                HideControls = false; HideStatus = true;
                 EventButtonLabel = "Start New Trip";
             }
             else
             {
-                HideControls = false;
-                HideStatus = false;
+                HideControls = false;  HideStatus = false;
                 EventButtonLabel = "Update Status";
             }
         }

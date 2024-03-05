@@ -17,7 +17,7 @@
             </div>
         </TitleContent>
         <ChildContent>
-            <TripEventsComponent Trip="@Trip" OnEventCount="@OnEventCount" @ref="teComp"></TripEventsComponent>
+            <TripEventsComponent Trip="@_trip"></TripEventsComponent>
         </ChildContent>
     </MudExpansionPanel>
     @if (AssignedGCs != null)
@@ -48,9 +48,22 @@
 @code {
 
     [Parameter]
-    public TripModel Trip { get; set; }
-    private TripModel _trip;
-    TripEventsComponent teComp;
+    public TripModel Trip { 
+        get { return _trip; } 
+        set {
+            if (_trip?.TripID != value?.TripID)
+            {
+                _trip = value;
+                LoadAll();
+                OnTripStatusUpdated.InvokeAsync();
+            }
+        } 
+    }
+    private TripModel _trip;    
+
+    [Parameter]
+    public EventCallback<EventModel> OnTripStatusUpdated { get; set; }
+
     private bool hidden = false;
     private TruckModel Truck;
     private List<EventModel> TripEvents = new();
@@ -61,40 +74,24 @@
     private string CancelledStatus;
     private bool Isloading = false;
     private int? EventCount = 0;
-    [Parameter]
-    public EventCallback<EventModel> OnTripStatusUpdated { get; set; }
 
-    protected async override Task OnInitializedAsync()
+
+    protected override void OnInitialized()
     {
-        hidden = false;
-        if (_trip?.TripID != Trip?.TripID)
-        {
-            _trip = new TripModel { TripID = Trip?.TripID };
-            await LoadAll();
-        }
-    }
-
-    public async Task RefreshEvents()
-    {
-        await teComp.Refresh();
-    }
-
-    protected override void OnParametersSet()
-    {
-
-    }
+        hidden = false;        
+    }   
 
     protected void gcRemoved(long? gcSetID)
     {
         AssignedGCs.RemoveAll(x => x.GcSetID == gcSetID);
     }
 
-    public async Task LoadAll()
+    public void LoadAll()
     {
-        if (Trip != null)
+        if (_trip != null)
         {
             hidden = false;
-            if (Itrip.Select(Trip.TripID)?.UserInfo.RecordStatus == 4)
+            if (Itrip.Select(_trip.TripID)?.UserInfo.RecordStatus == 4)
             {
                 CancelledStatus = "Cancelled";
             }
@@ -107,17 +104,28 @@
         {
             hidden = true;
         }
-        Truck = Itruck.SelectByID(Trip?.TruckID);
-        LoadGcs();
-        await IsLoading();
-        StateHasChanged();
+        Truck = Itruck.SelectByID(_trip?.TruckID);
+        EventCount = null;
+        if (Trip != null)
+        {
+            var eventList = Ievent.SelectByTrip(Trip.TripID).ToList();
+            EventCount = eventList.Count();
+        }
+       
+        LoadGcs();        
+        IsLoading();
     }
 
-    public async Task LoadAllUsingCurrentTrip(TripModel CurrentTrip)
+    public void LoadAllUsingCurrentTrip(TripModel CurrentTrip)
     {
         if (CurrentTrip != null)
         {
             Trip = CurrentTrip;
+            if (Trip != null)
+            {
+                var eventList = Ievent.SelectByTrip(Trip.TripID).ToList();
+                EventCount = eventList.Count();
+            }
             hidden = false;
             if (Itrip.Select(CurrentTrip.TripID)?.UserInfo.RecordStatus == 4)
             {
@@ -134,7 +142,7 @@
         }
         Truck = Itruck.SelectByID(CurrentTrip?.TruckID);
         LoadGcs();
-        await IsLoading();
+        IsLoading();
         StateHasChanged();
     }
 
@@ -148,19 +156,14 @@
 
     // To check whether truck is in loading status currently and enable Gc removal button
     // Also invoke Tripstatus Changed method
-    public async Task IsLoading()
+    public void IsLoading()
     {
         if (Trip != null)
         {
             EventModel ev = Ievent.GetCurrentEvent(Trip.TruckID);
-            await OnTripStatusUpdated.InvokeAsync(ev);
+            //await OnTripStatusUpdated.InvokeAsync(ev);
             Isloading = ev?.EventTypeID == 2;
         }
-    }
-
-    protected void OnEventCount(int? eventCount)
-    {
-        EventCount = eventCount;
     }
 
     private async Task UpdateEvent(EventModel ev)
@@ -174,9 +177,9 @@
         if (!Data.Canceled)
         {
             ev = (EventModel)Data.Data;
-            await OnTripStatusUpdated.InvokeAsync(ev);
-            await IsLoading();
-            await RefreshEvents();
+           // await OnTripStatusUpdated.InvokeAsync(ev);
+            IsLoading();
+          //  await RefreshEvents();
         }
     }
 }
