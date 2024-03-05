@@ -34,7 +34,7 @@ namespace Views.Data
 
 
         [Parameter]
-         public virtual T model { get; set; }
+        public virtual T model { get; set; }
 
 
 
@@ -52,21 +52,21 @@ namespace Views.Data
         protected string UserID = null;
 
         protected string DocNumber { get; set; }
-        protected DateTime? DocDate { get; set; }       
+        protected DateTime? DocDate { get; set; }
         protected bool _busy;
 
         protected abstract DocumentInfoModel DocInfo { get; set; }
 
 
         protected override async Task OnInitializedAsync()
-        {   
+        {
             await base.OnInitializedAsync();
             await setPermissions();
 
             var authprov = await auth.GetAuthenticationStateAsync();
             BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
             var user = authprov.User;
-            UserID = user.Identity.Name;  
+            UserID = user.Identity.Name;
             model.BranchID = BranchID;
         }
 
@@ -86,7 +86,7 @@ namespace Views.Data
 
         protected abstract Task<int> Update(T editModel);
         protected abstract int UpdateApproval(DataApprovedStatus aprvd);
-        
+
 
         protected async Task OnValidSubmit(EditContext context)
         {
@@ -102,18 +102,20 @@ namespace Views.Data
                 _busy = false;
                 return;
             }
-            if(!EditPermission)
+            if (!EditPermission)
             {
                 bool? result = await dialogService.ShowMessageBox("Permission denied!", "You dont have permission to Edit Payment!.");
-            }    
+            }
             try
             {
                 model.UserInfo.UserID = UserID;
-                int ID = await Update(model);                
-                
-                notiService.CreateAuthNotifications(BranchID.Value, DocInfo.DocumentTypeID.Value, DocInfo.DocumentID.Value);
-                snackbar.Add("Submitted Successfully", Severity.Success);
-                dialogForm.Close(model);
+                int ID = await Update(model);
+                if (ID != 0)
+                {
+                    notiService.CreateAuthNotifications(BranchID.Value, DocInfo.DocumentTypeID.Value, DocInfo.DocumentID.Value);
+                    snackbar.Add("Submitted Successfully", Severity.Success);
+                    dialogForm.Close(model);
+                }
             }
             catch (Exception ex)
             {
@@ -124,7 +126,7 @@ namespace Views.Data
             _busy = false;
         }
 
-       
+
 
         protected async Task Approve(DataApprovedStatus aprvd)
         {
@@ -136,7 +138,7 @@ namespace Views.Data
                     {
                         model.UserInfo.UserID = UserID;
                         UpdateApproval(aprvd);
-                        notiService.AcknowledgeAuthNotification(99,DocInfo.DocumentTypeID.Value,DocInfo.DocumentID.Value,UserID);
+                        notiService.AcknowledgeAuthNotification(99, DocInfo.DocumentTypeID.Value, DocInfo.DocumentID.Value, UserID);
                         snackbar.Add("Approved Successfully", Severity.Success);
                     }
                     catch (Exception ex)
@@ -149,10 +151,10 @@ namespace Views.Data
             {
                 bool? result = await dialogService.ShowMessageBox(
                     "Permission denied!",
-                    string.Format( "You dont have permission to Approve {0} !.",DocInfo.DocumentName));
+                    string.Format("You dont have permission to Approve {0} !.", DocInfo.DocumentName));
             }
         }
 
     }
-    
+
 }

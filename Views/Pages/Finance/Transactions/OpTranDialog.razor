@@ -14,9 +14,9 @@
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Trip Settlement" formID="Optranform" DocumentDetails="DocInfo" model="@model" _busy="_busy">
     <FormContent>
-        <MudPaper Class="p-3">    
+        <MudPaper Class="p-3">
             <EditForm id="Optranform" EditContext="editContext" OnValidSubmit="@OnValidSubmit">
-                <DataAnnotationsValidator />
+                <ObjectGraphDataAnnotationsValidator/>
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="12">
@@ -211,33 +211,34 @@
     }
 
     protected override async Task<int> Update(OpTranModel editModel)
-    {
-        var updatedModel = Iservice.Update(model);
-
-        if (updatedModel.OpTranID != null && model.OpTranID is null && model.TripID is not null)
-        {
-            var driverId = truckService.GetAssignedDriver(updatedModel.TruckID);
-            if (Balance > 0)
+    {      
+            var updatedModel = Iservice.Update(model);
+            if (updatedModel.OpTranID != null && model.OpTranID is null && model.TripID is not null)
             {
-                amount = model.TotalAmount;
-            }
-            else
-            {
-                amount = Advance.Amount;
-            }
-            TripAdvanceModel advanceModel = new()
+                model.OpTranID = updatedModel.OpTranID;
+                var driverId = truckService.GetAssignedDriver(updatedModel.TruckID);
+                if (Balance > 0)
                 {
-                    BranchID = BranchID,
-                    TripID = Advance.TripID,
-                    DriverID = Advance.DriverID,
-                    Amount = -(amount),
-                    CoaID = Advance.CoaID,
-                    DocumentTypeID = DocInfo.DocumentTypeID,
-                    DocumentID = updatedModel.OpTranID
-                };
-            advanceService.Update(advanceModel);
-        }
-        return updatedModel.OpTranID.Value;
+                    amount = model.TotalAmount;
+                }
+                else
+                {
+                    amount = Advance.Amount;
+                }
+                TripAdvanceModel advanceModel = new()
+                    {
+                        BranchID = BranchID,
+                        TripID = Advance.TripID,
+                        DriverID = Advance.DriverID,
+                        Amount = -(amount),
+                        CoaID = Advance.CoaID,
+                        DocumentTypeID = DocInfo.DocumentTypeID,
+                        DocumentID = updatedModel.OpTranID
+                    };
+                advanceService.Update(advanceModel);
+            }
+            return updatedModel.OpTranID.Value;      
     }
+
 
 }
