@@ -44,6 +44,7 @@ namespace Views.Pages.Operations.Gc
         private int _tabIndex = 0;
         private bool _tabAdded = false;
         private bool _busy;
+        string UserID;int BranchID;
         public bool HasPermissionGcServiceEdit { get; set; } = false;
         public int DocTypeID = 46;
 
@@ -54,7 +55,8 @@ namespace Views.Pages.Operations.Gc
 
             var e = await auth.GetAuthenticationStateAsync();
             string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
-            int BranchID = int.Parse(BranchIDString);
+             BranchID = int.Parse(BranchIDString);
+            UserID =   e.User.Identity.Name;
 
             GcTypes = Iservice.SelectGcTypes().ToList();
             Orders = await Iorder.SelectByBranch(BranchID).ToListAsync();
@@ -87,8 +89,6 @@ namespace Views.Pages.Operations.Gc
             GcSet.Gcs.ForEach(x => x.Freight = ITariff.GetPrimaryFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
             return GcSet;
         }
-
-
 
         private async Task<IEnumerable<ConsigneeModel>> SearchConsignee(string searchString)
         {
@@ -123,11 +123,9 @@ namespace Views.Pages.Operations.Gc
                 model.OrderID = Order.OrderID;
                 model.RouteID = Route.RouteID;
                 model.ConsignorID = Consignor.ConsigneeID;
-                model.ConsigneeID = Consignee.ConsigneeID;
-
-                var authprov = await auth.GetAuthenticationStateAsync();
-                model.UserInfo.UserID = authprov.User.Identity.Name;
-                model.BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+                model.ConsigneeID = Consignee.ConsigneeID;                
+                model.UserInfo.UserID = UserID; 
+                model.BranchID = BranchID;
                 model.Gcs.ForEach(x => x.UserInfo = model.UserInfo);
                 try
                 {
@@ -269,6 +267,19 @@ namespace Views.Pages.Operations.Gc
             {
                 _tabAdded = false;
                 _tabIndex = model.Gcs.Count - 1;
+                StateHasChanged();
+            }
+        }
+
+        private async Task Delete()
+        {
+            bool? result = await DialogService.ShowMessageBox(
+           "Warning",
+           "Deleting can not be undone!",
+           yesText: "Delete!", cancelText: "Cancel");
+            if (result is not null && result.Value)
+            {
+                Iservice.DeleteSet(model.GcSetID, UserID);
                 StateHasChanged();
             }
         }
