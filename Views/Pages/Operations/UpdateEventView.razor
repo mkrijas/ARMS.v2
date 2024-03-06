@@ -229,115 +229,122 @@
         }
         if (HasPermissionEventServiceEdit)
         {
-            List<GcSetModel> gcSetList = Igc.SelectToUnload(model.TripID);
-            if (gcSetList != null && gcSetList.Count() != 0)
+            if (model.EventTime <= DateTime.UtcNow)
             {
-                if (gcSetList.Any() && model.EventTypeID == 6)
+                List<GcSetModel> gcSetList = Igc.SelectToUnload(model.TripID);
+                if (gcSetList != null && gcSetList.Count() != 0)
                 {
-                    snackbar.Add("The trip is not unloaded", Severity.Warning);
-                    return;
-                }
-            }
-            if (isSubmitting)
-                return;
-            isSubmitting = true;
-            _busy = true;
-            try
-            {
-                if (model.TruckEventID == null && SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
-                {
-                    snackbar.Add("Cannot start this event without Driver", Severity.Warning);
-                    return;
-                }
-                model.EventTypeID = SelectedEvent.EventTypeID;
-                if (model.EventTypeID == 5)
-                {
-                    List<GcSetModel> GcsToUnload = new();
-                    GcsToUnload = Igc.SelectedUnloadEvent(model.TripID);
-                    if(GcsToUnload.Count == 0)
+                    if (gcSetList.Any() && model.EventTypeID == 6)
                     {
-                        snackbar.Add("No Consignment being Unloaded", Severity.Error);
+                        snackbar.Add("The trip is not unloaded", Severity.Warning);
                         return;
                     }
-
-                    foreach (var item in GcsToUnload)
+                }
+                if (isSubmitting)
+                    return;
+                isSubmitting = true;
+                _busy = true;
+                try
+                {
+                    if (model.TruckEventID == null && SelectedEvent.IsDriverRequired == true && AssignedDriver == null)
                     {
-                        if (item.SetUnloadQuantity == null)
-                        {
-                            item.SetUnloadQuantity = item.TotalBillQuantity;
-                        }                        
+                        snackbar.Add("Cannot start this event without Driver", Severity.Warning);
+                        return;
                     }
-
-                    DialogParameters parms = new DialogParameters();                    
-                    parms.Add("GcsToUnload", GcsToUnload);
-                    var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Consignment", parms);
-                    var result = await dialog.Result;
-                    if (!result.Canceled)
+                    model.EventTypeID = SelectedEvent.EventTypeID;
+                    if (model.EventTypeID == 5)
                     {
-                        List<GcSetModel> gcs = (List<GcSetModel>)result.Data;
-                        foreach (var item in gcs)
+                        List<GcSetModel> GcsToUnload = new();
+                        GcsToUnload = Igc.SelectedUnloadEvent(model.TripID);
+                        if (GcsToUnload.Count == 0)
                         {
-                            Igc.UpdateUnloadingQuantity(item);
+                            snackbar.Add("No Consignment being Unloaded", Severity.Error);
+                            return;
                         }
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-                if (model.EventTypeID == 6)
-                {
-                    bool IsbranchSetting = branchSettingsService.IsEnabled(model.BranchID, 109);
-                    if (IsbranchSetting)
-                    {
-                        DialogOptions DialogWidth = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true };
-                        var dialog = DialogService.Show<AcceptedKMDialog>("Update Accepted KM", DialogWidth);
+
+                        foreach (var item in GcsToUnload)
+                        {
+                            if (item.SetUnloadQuantity == null)
+                            {
+                                item.SetUnloadQuantity = item.TotalBillQuantity;
+                            }
+                        }
+
+                        DialogParameters parms = new DialogParameters();
+                        parms.Add("GcsToUnload", GcsToUnload);
+                        var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Consignment", parms);
                         var result = await dialog.Result;
                         if (!result.Canceled)
                         {
-                            int AcceptedKM = (int)result.Data;
-                            model.AcceptedKM = AcceptedKM;
+                            List<GcSetModel> gcs = (List<GcSetModel>)result.Data;
+                            foreach (var item in gcs)
+                            {
+                                Igc.UpdateUnloadingQuantity(item);
+                            }
                         }
                         else
                         {
                             return;
                         }
                     }
-                }
-                if (!ValidateEvent(model))
-                {
-                    return;
-                }
-                if (SelectedEvent.EventTypeID == 4)
-                {
-                    if (!SelectedGCs.Any())
+                    if (model.EventTypeID == 6)
                     {
-                        snackbar.Add("No GCs selected to Unload!", Severity.Warning);
-                        return;
-                    }                   
-                }
-
-                model = Ievent.Update(model);
-
-                if (SelectedEvent.EventTypeID == 4)
-                {
-                    foreach (GcSetModel item in SelectedGCs)
-                    {
-                        Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
-                        await DisableEwayBillNotifications(item);
+                        bool IsbranchSetting = branchSettingsService.IsEnabled(model.BranchID, 109);
+                        if (IsbranchSetting)
+                        {
+                            DialogOptions DialogWidth = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true };
+                            var dialog = DialogService.Show<AcceptedKMDialog>("Update Accepted KM", DialogWidth);
+                            var result = await dialog.Result;
+                            if (!result.Canceled)
+                            {
+                                int AcceptedKM = (int)result.Data;
+                                model.AcceptedKM = AcceptedKM;
+                            }
+                            else
+                            {
+                                return;
+                            }
+                        }
                     }
+                    if (!ValidateEvent(model))
+                    {
+                        return;
+                    }
+                    if (SelectedEvent.EventTypeID == 4)
+                    {
+                        if (!SelectedGCs.Any())
+                        {
+                            snackbar.Add("No GCs selected to Unload!", Severity.Warning);
+                            return;
+                        }
+                    }
+
+                    model = Ievent.Update(model);
+
+                    if (SelectedEvent.EventTypeID == 4)
+                    {
+                        foreach (GcSetModel item in SelectedGCs)
+                        {
+                            Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                            await DisableEwayBillNotifications(item);
+                        }
+                    }
+                    MudDialog.Close(DialogResult.Ok(model));
                 }
-                MudDialog.Close(DialogResult.Ok(model));
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
+                finally
+                {
+                    isSubmitting = false;
+                    await Task.Delay(200);
+                    _busy = false;
+                }
             }
-            catch (Exception ex)
+            else
             {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
-            finally
-            {
-                isSubmitting = false;
-                await Task.Delay(200);
-                _busy = false;
+                snackbar.Add("EventDate cannot be a greater than today's date.", Severity.Warning);
             }
         }
         else
@@ -399,7 +406,8 @@
         return true;
     }
 
-    private string GetMultiSelectionText(List<string> Gcs)
+    private string GetMultiSelectionText(List<string>
+    Gcs)
     {
 
         string resulString = $"{Gcs.Count()}  Gc{(Gcs.Count > 1 ? "s" : "")} Selected ";
