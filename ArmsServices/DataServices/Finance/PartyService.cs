@@ -333,6 +333,10 @@ namespace ArmsServices.DataServices
         {
             var branchModel = _branch.SelectByID(BranchID);
             var partyModel = SelectByID(PartyID);
+            if(string.IsNullOrEmpty(partyModel.GstNo))
+            {
+                return false;
+            }
             string branchState = branchModel.GstNo?.Substring(0, 2);
             string partyState = partyModel.GstNo?.Substring(0, 2);
             return branchState != null && partyState != null && branchState == partyState; // branchState.Equals(partyState);

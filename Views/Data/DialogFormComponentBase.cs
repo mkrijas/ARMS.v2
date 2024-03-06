@@ -31,12 +31,10 @@ namespace Views.Data
 
         [Parameter]
         public bool ReadOnly { get; set; }
-
-
         [Parameter]
         public virtual T model { get; set; }
-
-
+        [Parameter]
+        public EventCallback OnApproved { get; set; }
 
         protected bool ViewPermission { get; set; }
         protected bool EditPermission { get; set; }
@@ -69,7 +67,6 @@ namespace Views.Data
             UserID = user.Identity.Name;
             model.BranchID = BranchID;
         }
-
         protected override void OnParametersSet()
         {
             editContext = new EditContext(model);
@@ -82,7 +79,6 @@ namespace Views.Data
             DeletePermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
             ApprovePermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Approve", ctc.Token);
         }
-
 
         protected abstract Task<int> Update(T editModel);
         protected abstract int UpdateApproval(DataApprovedStatus aprvd);
@@ -126,8 +122,6 @@ namespace Views.Data
             _busy = false;
         }
 
-
-
         protected async Task Approve(DataApprovedStatus aprvd)
         {
             if (ApprovePermission)
@@ -140,6 +134,7 @@ namespace Views.Data
                         UpdateApproval(aprvd);
                         notiService.AcknowledgeAuthNotification(99, DocInfo.DocumentTypeID.Value, DocInfo.DocumentID.Value, UserID);
                         snackbar.Add("Approved Successfully", Severity.Success);
+                        await OnApproved.InvokeAsync();
                     }
                     catch (Exception ex)
                     {

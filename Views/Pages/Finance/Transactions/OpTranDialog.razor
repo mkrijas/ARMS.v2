@@ -3,6 +3,7 @@
 @inject IOpTranService Iservice
 @inject ITripService tripIservice
 @inject ITripFuelService tripFuelIservice
+@inject IConfigTable configTable
 
 @* @inject IGstUsageIDService usageIservice
 @inject ITdsRateService tdsIService
@@ -16,7 +17,7 @@
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="Optranform" EditContext="editContext" OnValidSubmit="@OnValidSubmit">
-                <ObjectGraphDataAnnotationsValidator/>
+                <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="12">
@@ -29,71 +30,86 @@
                         <PaymentAccountSelector ReadOnly="@ReadOnly" @bind-PaymentMode="@model.PaymentMode" HideMode LabelName="Cash A/c" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.CreditCoaID" />
                      </MudItem>
                      <MudItem xs="12" md="12">
-                         <div style="overflow-x:scroll;">
-                             <MudSimpleTable Style="width : 1500px; " Hover="true" Dense="true" FixedHeader="true">
-                                 <thead>
-                                     <tr>
-                                         <th>Particulars</th>
-                                         <th>Reference</th>
-                                         <th>Cost Center</th>
-                                         <th>Dimension</th>
-                                         <th>Amount</th>
-                                         <th style="width:150px;">Quantity</th>
-                                         <th style="width:150px;">Unit</th>
-                                         <th style="width:50px;"></th>
-                                     </tr>
-                                 </thead>
-                                 <tbody>
-                                     @foreach (var item in model.Transactions)
-                                    {
-                                        <tr>
-                                            <td>@item.ExpenseUsageCode - @item.ExpenseTitle</td>
-                                            <td>@item.Reference</td>
-                                            <td>@item.CostCenterVal</td>
-                                            <td>@item.DimensionVal</td>
-                                            <td>@item.Amount</td>
-                                            <td>@item.Quantity</td>
-                                            <td>@item.Unit</td>
-                                            @if (!ReadOnly)
-                                            {
-                                                <td><MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" /></td>
-                                            }
-                                        </tr>
-                                    }
-                                    @if (!ReadOnly)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <MudAutocomplete T="OperationPostingGroupModel" Label="Particulars" Value="opTranSubModel.OperationPostingGroupModel" ValueChanged="AddOperationPostingGroup"
-                                                                 ResetValueOnEmptyText="true" SearchFunc="@SearchOperationPostingGroup" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                                 ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ADCode,e.Title))"></MudAutocomplete>
-                                            </td>
-                                            <td><MudTextField @bind-Value="opTranSubModel.Reference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></td>
-                                            <td><CostCenterSelector @bind-Value="opTranSubModel.CostCenter" @bind-ValueText="@opTranSubModel.CostCenterVal" ReadOnly="@ReadOnly" /></td>
-                                            <td><DimensionSelector @bind-Value="opTranSubModel.Dimension" @bind-ValueText="@opTranSubModel.DimensionVal" ReadOnly="@ReadOnly" /></td>
-                                            <td><MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField></td>
-                                             <td><MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Quantity" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField></td>
-                                             <td><MudTextField @bind-Value="opTranSubModel.Unit" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField></td>
-                                             <td><MudIconButton OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" /></td>
-                                         </tr>
-                                    }
+                         <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Elevation="0">
+                             <thead>
+                                 <tr>
+                                     <th>Particulars</th>
+                                     <th>Reference</th>
+                                     <th>Cost Center</th>
+                                     <th>Dimension</th>
+                                     <th>Amount</th>
+                                     <th style="width:150px;">Quantity</th>
+                                     <th style="width:150px;">Unit</th>
+                                     <th style="width:50px;"></th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                 @foreach (var item in model.Transactions)
+                                {
                                     <tr>
-                                        <td colspan="2">Total</td>
-                                        <td>@model.TotalAmount</td>
-                                        <td colspan="2"></td>
+                                        <td>@item.ExpenseUsageCode - @item.ExpenseTitle</td>
+                                        <td>@item.Reference</td>
+                                        <td>@item.CostCenterVal</td>
+                                        <td>@item.DimensionVal</td>
+                                        <td>@item.Amount</td>
+                                        <td>@item.Quantity</td>
+                                        <td>@item.Unit</td>
+                                        @if (!ReadOnly)
+                                        {
+                                            <td><MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" /></td>
+                                        }
                                     </tr>
-                                </tbody>
-                            </MudSimpleTable>
-                        </div>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                        @if (!ReadOnly)
+                        {
+                            @* <div @ref="@ScrollableDiv" style="overflow-x:scroll;"> *@
+                            <MudGrid>
+                                <MudItem xs="12" md="5" lg="5">
+                                    <MudAutocomplete SelectValueOnTab T="OperationPostingGroupModel" Label="Particulars"
+                                                              CoerceValue
+                                                      Value="opTranSubModel.OperationPostingGroupModel" ValueChanged="AddOperationPostingGroup"
+                                                      ResetValueOnEmptyText="true" @ref="@OperationTitleControl"
+                                                      SearchFunc="@SearchOperationPostingGroup" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                      ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0} | {1}",e.ADCode,e.Title))"></MudAutocomplete>
+                                 </MudItem>
+                                 <MudItem xs="12" md="3" lg="3">
+                                     <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                                 </MudItem>
+                                 <MudItem xs="12" md="4" lg="4">
+                                     <MudTextField @bind-Value="opTranSubModel.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                                 </MudItem>
+                                 <MudItem xs="12" md="3" lg="3">
+                                     <CostCenterSelector @bind-Value="opTranSubModel.CostCenter" @bind-ValueText="@opTranSubModel.CostCenterVal" ReadOnly="@ReadOnly" />
+                                 </MudItem>
+                                 <MudItem xs="12" md="3" lg="3">
+                                     <DimensionSelector @bind-Value="opTranSubModel.Dimension" @bind-ValueText="@opTranSubModel.DimensionVal" ReadOnly="@ReadOnly" />
+                                 </MudItem>
+
+                                 <MudItem xs="12" md="2" lg="2">
+                                     <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Quantity" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                                 </MudItem>
+                                 <MudItem xs="12" md="2" lg="2">
+                                     <MudTextField @bind-Value="opTranSubModel.Unit" Label="Unit" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                                 </MudItem>
+                                 <MudItem xs="12" md="2" lg="2" Class="d-flex align-content-center">
+                                     <MudIconButton OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" Title="ADD" Edge="Edge.False" />
+                                 </MudItem>
+                             </MudGrid>
+                            @*   </div> *@
+                        }
+
+
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="@ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
                     <MudItem>
                         <b>Trip Advance: @Advance.Amount</b><br />
-                        @if (Balance > 0)
+                        @if (AdvanceBalance > 0)
                         {
-                            <b>Receivable Amount: @displayBalance</b>
+                            <b> @string.Format(" Payment will be deducted from Advance..{0} will be pending!" , displayBalance ) </b>
                         }
                         else
                         {
@@ -115,13 +131,17 @@
     public override OpTranModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.OpTranID; } }
     private OpTranModel _model;
 
+    MudAutocomplete<OperationPostingGroupModel> OperationTitleControl;
+
+    private ElementReference ScrollableDiv;
 
     public GstUsageCodeModel gstusge = new();
     private OpTranSubModel opTranSubModel = new();
-    private List<OperationPostingGroupModel> OperationPostingList = new();
+    private List
+    <OperationPostingGroupModel> OperationPostingList = new();
     private TripAdvanceModel Advance = new();
-    private decimal? Balance;
-    private decimal? amount;
+    private decimal? AdvanceBalance;
+    private decimal? AdvanceReturnAmount;
     private string displayBalance;
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
@@ -157,10 +177,15 @@
         OperationPostingList = IOpsArd.Select().ToList();
 
         Advance = advanceService.GetTotal(model.TripID);
-        Balance = Advance.Amount;
-        displayBalance = Balance.ToString();
+        AdvanceBalance = Advance.Amount;
+        displayBalance = AdvanceBalance.ToString();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (OperationTitleControl is not null && firstRender)
+            await OperationTitleControl.FocusAsync();
+    }
 
 
     void AddOperationPostingGroup(OperationPostingGroupModel uc)
@@ -180,7 +205,7 @@
         return result;
     }
 
-    public void AddItems()
+    public async Task AddItems()
     {
         if (opTranSubModel.OperationPostingGroupModel is not null && (opTranSubModel.Amount ?? 0) != 0)
         {
@@ -189,9 +214,12 @@
             opTranSubModel.ExpenseTitle = opTranSubModel.OperationPostingGroupModel.Title;
             model.Transactions.Add(opTranSubModel);
             model.TotalAmount = model.TotalAmount + (opTranSubModel.Amount * opTranSubModel.Quantity);
-            opTranSubModel = new();
+            opTranSubModel = new() { OperationPostingGroupModel = null };
             //gstusge = new();
             SetTotal();
+            await OperationTitleControl.Clear();
+            await OperationTitleControl.FocusAsync();
+            //await JsRuntime.InvokeVoidAsync("resetHorizontalScrollbarForElement", ScrollableDiv);
         }
     }
 
@@ -206,38 +234,56 @@
     private void SetTotal()
     {
         model.TotalAmount = model.Transactions.Sum(x => x.Amount);
-        Balance = Advance.Amount - model.TotalAmount;
-        displayBalance = (Balance < 0) ? (-Balance).ToString() : Balance.ToString();
+        AdvanceBalance = Advance.Amount - model.TotalAmount;
+        displayBalance = Math.Abs(AdvanceBalance ?? 0).ToString(); 
     }
 
     protected override async Task<int> Update(OpTranModel editModel)
-    {      
-            var updatedModel = Iservice.Update(model);
-            if (updatedModel.OpTranID != null && model.OpTranID is null && model.TripID is not null)
+    {
+        if (model.OpTranID is null)
+        {
+            if (AdvanceBalance > 0)
             {
-                model.OpTranID = updatedModel.OpTranID;
-                var driverId = truckService.GetAssignedDriver(updatedModel.TruckID);
-                if (Balance > 0)
-                {
-                    amount = model.TotalAmount;
-                }
-                else
-                {
-                    amount = Advance.Amount;
-                }
-                TripAdvanceModel advanceModel = new()
-                    {
-                        BranchID = BranchID,
-                        TripID = Advance.TripID,
-                        DriverID = Advance.DriverID,
-                        Amount = -(amount),
-                        CoaID = Advance.CoaID,
-                        DocumentTypeID = DocInfo.DocumentTypeID,
-                        DocumentID = updatedModel.OpTranID
-                    };
-                advanceService.Update(advanceModel);
+                AdvanceReturnAmount = model.TotalAmount;
             }
-            return updatedModel.OpTranID.Value;      
+            else
+            {
+                AdvanceReturnAmount = Advance.Amount;
+            }
+
+            if (AdvanceReturnAmount > 0)
+            {
+                var AdvanceUsageCode = configTable.GetTripAdvanceUsageCode();
+                model.Transactions.Add(new OpTranSubModel()
+                    {
+                        Amount = -1 * AdvanceReturnAmount,
+                        CoaID = Advance.CoaID,
+                        ExpenseUsageCode = AdvanceUsageCode.ValueString,
+                        Reference = "Advance Reimbursed",
+                    });
+                model.TotalAmount = model.TotalAmount - AdvanceReturnAmount;
+            }
+        }
+
+        var updatedModel = Iservice.Update(model);
+        if (updatedModel.OpTranID != null && model.OpTranID is null && model.TripID is not null)
+        {
+            model.OpTranID = updatedModel.OpTranID;
+            var driverId = truckService.GetAssignedDriver(updatedModel.TruckID);
+
+            TripAdvanceModel advanceModel = new()
+                {
+                    BranchID = BranchID,
+                    TripID = Advance.TripID,
+                    DriverID = Advance.DriverID,
+                    Amount = - (AdvanceReturnAmount),
+                    CoaID = Advance.CoaID,
+                    DocumentTypeID = DocInfo.DocumentTypeID,
+                    DocumentID = updatedModel.OpTranID
+                };
+            advanceService.Update(advanceModel);
+        }
+        return updatedModel.OpTranID.Value;
     }
 
 

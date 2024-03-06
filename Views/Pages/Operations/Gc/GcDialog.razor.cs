@@ -231,9 +231,7 @@ namespace Views.Pages.Operations.Gc
         private void QtyChanged(decimal? Qty, GcModel gc)
         {
             gc.BillQuantity = Qty;            
-            gc.Freight = ITariff.GetPrimaryFreight(model.OrderID, model.RouteID, null, gc.BillQuantity, gc.Freight);
-            
-            //gc.EFreight = gc.Freight;
+            gc.Freight = ITariff.GetPrimaryFreight(model.OrderID, model.RouteID, null, gc.BillQuantity, gc.Freight);  
         }
 
         private void FrChanged(decimal? Freight, GcModel gc)
