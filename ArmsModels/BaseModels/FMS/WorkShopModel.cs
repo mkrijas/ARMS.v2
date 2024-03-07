@@ -28,7 +28,7 @@ namespace ArmsModels.BaseModels
         [StringLength(10, ErrorMessage = "Contact number should digit", MinimumLength = 10)]
         [RegularExpression("^[0-9]*$", ErrorMessage = "Contact Number must be numeric")]
         public string ContactNumber { get; set; }
-        [Required]
+        [RequiredIf("WorkshopType","Outside",ErrorMessage = "Outside workshop cannot be created without party!")]
         public int? PartyID { get; set; }
         public PartyModel Party { get; set; }
         public int? GstID { get; set; }
