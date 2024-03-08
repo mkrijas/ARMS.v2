@@ -221,6 +221,8 @@ namespace ArmsServices.DataServices
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
+                IsApplicable = dr.GetBoolean("IsApplicable"),
+                CashWithdrawal = dr.GetDecimal("CashWithdrawal"),
 
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
