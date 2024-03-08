@@ -238,6 +238,7 @@ namespace Views
             services.AddScoped<IInventoryReleaseService, InventoryReleaseService>();
             services.AddScoped<IFastTagService, FastTagService>();
             services.AddScoped<IReimbursementService, ReimbursementService>();
+            services.AddScoped<IReverseEntryService, ReverseEntryService>();
 
 
             //----IBASE GROUP
@@ -248,6 +249,7 @@ namespace Views
             services.AddScoped<IbaseInterface<ReceiptModel>, ReceiptService>();
             services.AddScoped<IbaseInterface<DrCrNoteModel>, DrCrNoteService>();
             services.AddScoped<IbaseInterface<OpTranModel>, OpTranService>();
+            services.AddScoped<IbaseInterface<CancellationReasonCodesByDocumentType>, ReverseEntryService>();
 
 
 
