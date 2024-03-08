@@ -190,18 +190,21 @@ namespace ArmsServices.DataServices
             return new ContraModel
             {              
                 ContraID = dr.GetInt32("ContraID"),
+
+                BranchID = dr.GetInt32("BranchID"),
                 ContraModeHome = dr.GetString("ContraModeHome"),
                 CoaIDHome = dr.GetInt32("CoaIDHome"),
                 ArdCodeHome = dr.GetString("ArdCodeHome"),
+
                 OtherBranchID = dr.GetInt32("BranchIDOther"),
                 ContraModeOther = dr.GetString("ContraModeOther"),
                 CoaIDOther = dr.GetInt32("CoaIDOther"),
                 ArdCodeOther = dr.GetString("ArdCodeOther"),
+
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 EntryReference = dr.GetString("Reference"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
-                AuthStatus = dr.GetString("AuthStatus"),
-                BranchID = dr.GetInt32("BranchID"),
+                AuthStatus = dr.GetString("AuthStatus"),                
                 IsPayment = dr.GetBoolean("IsPayment"),
                 PaymentTool = dr.GetString("PaymentTool"),
                 BankCharges = dr.GetDecimal("BankCharges"),
@@ -221,6 +224,8 @@ namespace ArmsServices.DataServices
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
+                IsApplicable = dr.GetBoolean("IsApplicable"),
+                CashWithdrawal = dr.GetDecimal("CashWithdrawal"),
 
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
