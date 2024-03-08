@@ -262,9 +262,7 @@ namespace ArmsServices.DataServices
         //}
 
         public decimal? GetPrimaryFreight(int? OrderID, int? RouteID, int? Wheels, decimal? Qty, decimal? Frt)
-        {
-            if (Frt == null)
-            {
+        {            
                 List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@RouteID",RouteID),
@@ -277,9 +275,7 @@ namespace ArmsServices.DataServices
                 {
                     return dr.GetDecimal("Freight");
                 }
-                return null;
-            }
-            return Frt;   
+                return null;          
         }
 
         public decimal? GetTariffAmount(GcSetModel GcSet, TariffModel Tariff)

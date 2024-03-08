@@ -27,10 +27,12 @@
                     <MudItem xs="12" md="4">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)"></MudTextField>
                     </MudItem>
+                    
                     <MudItem xs="12" md="12">
                         <strong>Debit/Deposit A/c</strong>
                         <PaymentAccountSelector @bind-PaymentMode="@model.ContraModeHome" @bind-ArdCode="@model.ArdCodeHome" @bind-CoaID="@model.CoaIDHome" @bind-BankCharges="@model.BankCharges" HideBankCharges @bind-BankTool="@model.PaymentTool" />
                      </MudItem>
+                    
                      <MudItem xs="12" md="12">
                          <strong>Credit/Draw A/c</strong>
                          <PaymentAccountSelector PaymentMode="@model.ContraModeOther" PaymentModeChanged="OnPaymentModeOtherChange" @bind-ArdCode="@model.ArdCodeOther" @bind-CoaID="@model.CoaIDOther" @bind-BankCharges="@model.BankCharges" HideBankCharges BankTool="@model.PaymentTool" BankToolChanged="OnPaymentToolChange" />
@@ -43,6 +45,16 @@
                         <MudItem xs="12" md="6">
                             <MudDatePicker ReadOnly="ReadOnly" Label="ChequeDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.ChequeInfo.ChequeDate" DateFormat="dd/MM/yyyy" />
                         </MudItem>
+                    }
+                    @if (model.ContraModeHome == "Cash" && model.ContraModeOther == "Bank")
+                    {
+                        <MudItem xs="12" md="4">
+                            <MudCheckBox @bind-Checked="@model.IsApplicable">Is Applicable</MudCheckBox>
+                        </MudItem>
+
+                        <MudItem xs="12" md="8">
+                            <MudNumericField ReadOnly="ReadOnly" @bind-Value="model.CashWithdrawal" Label="TDS For Cash Withdrawal" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.CashWithdrawal)"></MudNumericField>
+                    </MudItem>
                     }
                     <MudItem xs="12" md="6">
                         <CostCenterSelector @bind-Value="model.CostCenter" ReadOnly="@ReadOnly" />
@@ -181,14 +193,18 @@
                 snackbar.Add("Please fill the cheque NO. !", Severity.Warning);
                 return;
             }
+
+            if (model.ContraModeHome == "Cash" && model.ContraModeOther == "Bank" && model.IsApplicable == true && (model.CashWithdrawal == null))
+            {
+                ValidationMessage = "Please enter cash withdrawal amount !";
+                snackbar.Add("Please fill the cheque NO. !", Severity.Warning);
+                return;
+            }
+
             _busy = true;
             try
             {
-                model.IsPayment = model.PaymentTool == "CHEQUE" && model.ContraModeOther == "Bank";
-                if (!model.IsPayment)
-                {
-                    model.ChequeInfo = new();
-                }
+                model.IsPayment = true;                
                 model.UserInfo.UserID = UserID;
                 model = Iservice.Update(model);
                 dialogForm.Close(model);

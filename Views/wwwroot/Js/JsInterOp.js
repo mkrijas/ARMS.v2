@@ -87,3 +87,10 @@ function saveAsFile(filename, bytesBase64) {
     link.click();
     document.body.removeChild(link);
 }
+
+
+function resetHorizontalScrollbarForElement(element) {
+    if (element) {
+        element.scrollLeft = 0;
+    }
+}

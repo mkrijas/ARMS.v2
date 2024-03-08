@@ -24,7 +24,7 @@ namespace Views.Data
         [Inject] protected IbaseInterface<T> Ibase { get; set; }        
 
         [Parameter]
-        public int? id { get; set; } = null;
+        public int? id { get; set; } = null;     
 
         protected abstract DocumentInfoModel DocInfo { get; set; }
 
@@ -70,10 +70,8 @@ namespace Views.Data
 
         protected abstract List<T> collection { get; set; }
         // protected abstract void LoadData(bool val, int numberOfRecords);
-
         
-        protected abstract Task OpenForm(T editModel, bool ReadOnly, bool DisableAddition = false);
-        
+        protected abstract Task OpenForm(T editModel, bool ReadOnly, bool DisableAddition = false);        
         protected virtual async Task Delete(int? ID)
         {
             if (DeletePermission)
@@ -114,8 +112,6 @@ namespace Views.Data
             DeletePermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
             ApprovePermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Approve", ctc.Token);
         }
-
-
         protected virtual void LoadData(bool val, int numberOfRecords)
         {
             if (val)

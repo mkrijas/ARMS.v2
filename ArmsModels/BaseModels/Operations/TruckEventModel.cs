@@ -55,6 +55,7 @@ namespace ArmsModels.BaseModels
         public string EventTypeName { get; set; }
         public string DefaultNextEventTypeName { get; set; }
         public bool IsStationary { get; set; }
+        public virtual string StationoryText { get { return IsStationary ? "Reached" : "Left"; } }
         public bool IsGcRelated { get; set; }
         public bool IsTripRelated { get; set; }
         public bool IsDriverRelated { get; set; }

@@ -34,27 +34,17 @@
         <MudTd DataLabel="PaymentMode">@context.PaymentMode</MudTd>
         <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
         <MudTd DataLabel="">
-            @if (@context.AuthLevelId == null)
-            {
-                <MudTooltip Text="Edit">
-                    <MudIconButton @onclick="@(()=> OpenForm(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-                </MudTooltip>
-                <MudTooltip Text="Delete">
-                    <MudIconButton @onclick="@(()=> Delete(context.SundryPaymentID))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
-                </MudTooltip>
-            }
-            @if (@context.AuthLevelId != 99)
-            {
-                <MudTooltip Text="Verify">
-                    <MudIconButton @onclick="@(()=> OpenForm(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" title="Verify" Size="Size.Small" Variant="Variant.Filled" />
-                </MudTooltip>
-            }
-            <MudTooltip Text="View">
-                <MudIconButton @onclick="@(()=> OpenForm(context,true))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" Variant="Variant.Filled" />
-            </MudTooltip>
+            <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
+            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.SundryPaymentID))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
+
             @if (@context.AuthLevelId == 99)
             {
                 <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.SundryPaymentID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+            }
+            else
+            {
+                <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
             }
         </MudTd>
     </RowTemplate>
@@ -81,7 +71,7 @@
             await OpenForm(collection.FirstOrDefault(s => s.SundryPaymentID == id), true);
         }
     }
-   
+
     private void GeLoadData(bool val, int numberOfRecords)
     {
         int NumberOfRecords = numberOfRecords;
@@ -95,7 +85,7 @@
         }
     }
 
-    
+
     protected override async Task OpenForm(SundryPaymentModel model, bool ReadOnly = false, bool DisableAddition = false)
     {
         if (_busy)
@@ -108,6 +98,7 @@
         DialogParameters parms = new DialogParameters();
         parms.Add("model", model.Clone());
         parms.Add("ReadOnly", ReadOnly);
+        parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
         var dialog = dialogService.Show<SundryPaymentDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         var isCancelled = result.Canceled;
@@ -115,9 +106,12 @@
         {
             var ReturnData = (SundryPaymentModel)result.Data;
             LoadData(ShowApproved, NumberOfRecords);
-           
+
         }
         await Task.Delay(200);
         _busy = false;
     }
+
+
+   
 }

@@ -373,6 +373,7 @@ namespace ArmsServices.DataServices
         {
 
             string Query = "SELECT dbo.GetBalance(@BranchID,@CoaID,@ArdCode,@SubArdCode,@Date)";
+            var _tomorrow = _date.AddDays(1);
 
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -380,7 +381,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@CoaID", CoaID ?? (object)DBNull.Value),
                new SqlParameter("@ArdCode", ArdCode ?? (object)DBNull.Value),
                new SqlParameter("@SubARdCode",SubARdCode ??(object) DBNull.Value),
-               new SqlParameter("@Date",_date),
+               new SqlParameter("@Date", _tomorrow),
             };
 
             foreach (IDataRecord dr in Iservice.QuerySql(Query, parameters))
