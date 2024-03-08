@@ -9,7 +9,7 @@
       <am:Name>SSDTRS</am:Name>
       <am:Version>17.7.34031.279</am:Version>
     </am:UpdatedBy>
-    <am:LastModifiedTimestamp>2024-03-04T06:32:15.5246612Z</am:LastModifiedTimestamp>
+    <am:LastModifiedTimestamp>2024-03-08T04:35:31.4751042Z</am:LastModifiedTimestamp>
   </am:AuthoringMetadata>
   <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
   <AutoRefresh>0</AutoRefresh>
@@ -34,50 +34,12 @@
           <QueryParameter Name="@ToDate">
             <Value>=Parameters!ToDate.Value</Value>
           </QueryParameter>
+          <QueryParameter Name="@Filter">
+            <Value>= "EXPENSES"</Value>
+          </QueryParameter>
         </QueryParameters>
-        <CommandText>WITH CTE AS
-	(
-		SELECT OPTRANSUB.OPERATIONCODE, UPPER(POSTINGROUP.Title) as Title, SUM(OPTRANSUB.AMOUNT) AS TOTALAMOUNT, OPTRAN.TripID, TRIPS.TripDate, TRIPS.BranchID, AccountType
-		FROM [Finance.Transactions.OpTran.Sub] OPTRANSUB WITH (NOLOCK)
-		INNER JOIN [Finance.Transactions.OpTran] OPTRAN WITH (NOLOCK) ON OPTRAN.OpTranID = OPTRANSUB.OpTranID
-		INNER JOIN [Finance.PostingGroup.Operation] POSTINGROUP WITH (NOLOCK) ON POSTINGROUP.ADCode = OPTRANSUB.OperationCode
-		INNER JOIN [Operation.Trips] TRIPS WITH (NOLOCK) ON TRIPS.TripID = OPTRAN.TripID
-		LEFT JOIN [Finance.COA] COA WITH (NOLOCK) ON COA.CoaID = OPTRANSUB.CoaID
-		WHERE MID IS NOT NULL
-		GROUP BY OPTRANSUB.OPERATIONCODE, OPTRAN.TripID, POSTINGROUP.Title, TRIPS.TripDate, TRIPS.BranchID, AccountType
-
-		UNION ALL
-
-		SELECT ArdCode, 'TOLL EXPENSE' AS Title, (TOLL.Amount) AS TOTALAMOUNT, TOLL.TripID, TRIPS.TripDate, TRIPS.BranchID, 'EXPENSES' AS AccountType
-		FROM [Finance.Transactions.FastTag.Upload] UPLOAD WITH (NOLOCK)
-		JOIN [Finance.Transactions.FastTag.Tolls] TOLL WITH (NOLOCK) ON TOLL.FastTagUploadID = UPLOAD.FastTagUploadID
-		JOIN [Finance.Transactions.FastTag.Process] PROCESS WITH (NOLOCK) ON PROCESS.FastTagUploadID = UPLOAD.FastTagUploadID
-		INNER JOIN [Operation.Trips] TRIPS WITH (NOLOCK) ON TRIPS.TripID = TOLL.TripID
-		WHERE PROCESS.MID IS NOT NULL AND TOLL.TripID IS NOT NULL
-		GROUP BY ArdCode, TOLL.TripID, TOLL.Amount, TRIPS.TripDate, TRIPS.BranchID--, POSTINGROUP.Title
-
-		UNION ALL
-
-		SELECT '','FUEL EXPENSE' AS Title, SUM(FUEL.TotalAmount) AS TOTALAMOUNT, FUEL.TripID, TRIPS.TripDate, TRIPS.BranchID, 'EXPENSES' AS AccountType
-		FROM [Operation.Trips.Fuel] FUEL WITH (NOLOCK)
-		INNER JOIN [Operation.Trips] TRIPS WITH (NOLOCK) ON TRIPS.TripID = FUEL.TripID
-		WHERE FUEL.TripID IS NOT NULL
-		GROUP BY FUEL.TripID, TRIPS.TripDate, TRIPS.BranchID
-
-		UNION ALL
-
-		SELECT '','MILEAGE SHORT RECOVERY' AS Title, SUM(MILEAGE.TotalAmount) AS TOTALAMOUNT, MILEAGE.TripID, TRIPS.TripDate, TRIPS.BranchID, 'EXPENSES' AS AccountType
-		FROM [Finance.Transactions.MileageShortageReceipt] MILEAGE WITH (NOLOCK)
-		INNER JOIN [Operation.Trips] TRIPS WITH (NOLOCK) ON TRIPS.TripID = MILEAGE.TripID
-		WHERE MID IS NOT NULL
-		GROUP BY MILEAGE.TripID, TRIPS.TripDate, TRIPS.BranchID
-	)
-
-SELECT DISTINCT OPERATIONCODE, Title, CTE.TOTALAMOUNT, CTE.TripID, TripDate, BranchID, AccountType--, CTE4.EXPENSE
-	FROM CTE WITH (NOLOCK)
-	WHERE (BranchID = @BranchID OR @BranchID = 0)
-	AND (TripDate BETWEEN @FromDate AND @ToDate)
-	ORDER BY TripID;</CommandText>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>rptOperationTripExpense</CommandText>
         <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
       </Query>
       <Fields>
@@ -674,7 +636,7 @@ SELECT DISTINCT OPERATIONCODE, Title, CTE.TOTALAMOUNT, CTE.TripID, TripDate, Bra
             <DataSetName>DataSet1</DataSetName>
             <Top>1.47689in</Top>
             <Left>2.58455cm</Left>
-            <Height>0.5354in</Height>
+            <Height>0.53541in</Height>
             <Width>5.31993in</Width>
             <Style>
               <Border>
@@ -1044,6 +1006,11 @@ SELECT DISTINCT OPERATIONCODE, Title, CTE.TOTALAMOUNT, CTE.TripID, TripDate, Bra
           <ParameterName>BranchID</ParameterName>
         </CellDefinition>
         <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>BranchName</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
           <ColumnIndex>0</ColumnIndex>
           <RowIndex>1</RowIndex>
           <ParameterName>FromDate</ParameterName>
@@ -1052,11 +1019,6 @@ SELECT DISTINCT OPERATIONCODE, Title, CTE.TOTALAMOUNT, CTE.TripID, TripDate, Bra
           <ColumnIndex>1</ColumnIndex>
           <RowIndex>1</RowIndex>
           <ParameterName>ToDate</ParameterName>
-        </CellDefinition>
-        <CellDefinition>
-          <ColumnIndex>1</ColumnIndex>
-          <RowIndex>0</RowIndex>
-          <ParameterName>BranchName</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>
