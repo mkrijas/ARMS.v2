@@ -74,7 +74,7 @@
 </MudGrid>
 <br />
 
-    @code {
+@code {
 
     private List<GcTariffModel> collection = new List<GcTariffModel>();
     private List<OrderModel> Orders = new();
@@ -86,13 +86,18 @@
 
     public bool HasPermissionFreightBillingServiceEditConsolidatedDraftBill { get; set; } = false;
     public int FreightBillingDocTypeID = 2;
+    int? BranchID;
+    string UserID;
 
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionFreightBillingServiceEditConsolidatedDraftBill = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "EditConsolidatedDraftBill", ctc.Token);
-
-        Orders = await orderIservice.Select(0).ToListAsync();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int BrancID = int.Parse(brancIDString);
+        string UserID = authprov.User.Identity.Name;
+        Orders = await orderIservice.SelectByBranch(BranchID).ToListAsync();
         TariffTypes = tariffIservice.SelectTariffTypes("All").ToList();
     }
 
@@ -117,15 +122,11 @@
         {
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
             if (selectedItems1.Count > 0)
-            {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-                int brancID = int.Parse(brancIDString);
-                var user = authprov.User;
+            {   
                 ConsolidatedDraftBillModel cdm = new()
                     {
-                        UserInfo = new() { UserID = user.Identity.Name },
-                        BranchID = brancID,
+                        UserInfo = new() { UserID = UserID },
+                        BranchID = BranchID,
                         NatureOfTransaction = "Billing",
                         BookedGCs = selectedItems1.ToList(),
                         Order = SelectedOrder,
