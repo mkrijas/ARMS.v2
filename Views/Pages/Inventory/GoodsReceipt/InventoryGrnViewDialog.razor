@@ -59,25 +59,27 @@
     public bool HasPermissionInventoryGrnServiceReverse { get; set; } = false;
     int InventoryGrnDocTypeID = 16;
 
+    int? BranchID;
+    string UserID;
+
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionInventoryGrnServiceReverse = await Irole.HasClaim(InventoryGrnDocTypeID.ToString(), "Reverse", ctc.Token);
 
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;       
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        BranchID = int.Parse(brancIDString);
+
         model = new();
-        await GetAll();
+        GetAll();
     }
 
-    private async Task GetAll()
+    private void GetAll()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
-        collection = new List<InventoryGrnModel>();
-        foreach (var item in Iservice.PendingToInvoice(brancID))
-        {
-            collection.Add(item);
-        }
+        collection = Iservice.PendingToInvoice(BranchID.Value).ToList();
     }
 
     private async Task OpenDialog(InventoryGrnModel tds)
@@ -96,9 +98,8 @@
         var result = await dialog.Result;
         if (!result.Canceled)
         {
-            await GetAll();
-        }
-        await GetAll();
+            GetAll();
+        }        
         await Task.Delay(200);
         _busy = false;
     }
@@ -123,15 +124,27 @@
 
     private async Task ToPurchase(InventoryGrnModel grn)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        model.UserInfo.UserID = user.Identity.Name;
+       
+
+      
+        model.UserInfo.UserID = UserID;
         TaxPurchaseModel tpm = new TaxPurchaseModel()
             {
                 GRNID = grn.GrnID,
                 PartyInfo = partyIservice.SelectByID(grn.PartyID),
                 NonStoreInventory = false
             };
+
+        // bool Local = false, IsTaxable = false;
+
+        // if (grn.PartyID != null)
+        // {           
+        //     IsTaxable = tpm.PartyInfo.GstType == "Registered" || tpm.PartyInfo.GstType == "SEZ";
+        //     Local = partyIservice.IsLocal(tpm.PartyInfo.PartyID, BranchID);
+        // }
+        // else { Local = false; }
+
+
         foreach (var item in Iservice.GetItemEntries(grn.GrnID.Value))
         {
             tpm.Items.Add(
@@ -142,18 +155,22 @@
                         ItemQty = item.ItemQty,
                         Amount = item.ItemRate * item.ItemQty,
                         CoaID = item.CoaID,
-                        ItemDescription = item.ItemDescription,                        
+                        ItemDescription = item.ItemDescription,     
+                        // CGST = IsTaxable ? (Local ? (item.ItemGstVal / 2) : 0) : 0,
+                        // SGST = IsTaxable ? (Local ? (item.ItemGstVal / 2) : 0) : 0,
+                        // IGST = IsTaxable ? (Local ? 0 : (item.ItemGstVal)) : 0,
+                        IGST = item.ItemGstVal,
                     }
             );
         }
-        tpm.TotalAmount = tpm.Items.Sum(x => x.Amount + x.CGST +  x.SGST + x.IGST);
+        tpm.TotalAmount = tpm.Items.Sum(x => x.Amount + x.IGST);
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tpm.Clone());
         var dialog = DialogService.Show<TaxPurchaseDialog>(tpm.PID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
-            await GetAll();
+            GetAll();
         }
     }
 }
