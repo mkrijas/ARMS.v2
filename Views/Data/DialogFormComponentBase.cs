@@ -108,7 +108,7 @@ namespace Views.Data
                 int ID = await Update(model);
                 if (ID != 0)
                 {
-                    notiService.CreateAuthNotifications(BranchID.Value, DocInfo.DocumentTypeID.Value, DocInfo.DocumentID.Value);
+                    notiService.CreateAuthNotifications(BranchID.Value, DocInfo.DocumentTypeID.Value, ID);
                     snackbar.Add("Submitted Successfully", Severity.Success);
                     dialogForm.Close(model);
                 }
