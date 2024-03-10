@@ -125,6 +125,7 @@ namespace ArmsServices.DataServices
                         UserID = reader.GetString("UserID"),
                     },
                 },
+                MID = reader.GetInt32 ("MID"),
                 IsPurchase = reader.GetBoolean("IsPurchase"),
                 Quantity = reader.GetDecimal("Quantity"),
                 RatePerLitre = reader.GetDecimal("RatePerLitre"),
