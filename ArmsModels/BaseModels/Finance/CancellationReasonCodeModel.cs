@@ -8,7 +8,7 @@ namespace ArmsModels.BaseModels
 {
     public class CancellationReasonCodesByDocumentType : TransactionBaseModel, ICloneable
     {
-        public long? ReverseEntryID { get; set; }
+        public int? ReverseEntryID { get; set; }
         public int? ReasonCodeID { get; set; }
         public int? DocumentID { get; set; }
         public int? DocumentTypeID { get; set; }

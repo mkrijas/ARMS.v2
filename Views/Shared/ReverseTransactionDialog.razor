@@ -1,8 +1,8 @@
 ﻿@using Core.BaseModels.Finance;
 @using Core.IDataServices.Finance;
 
-
 @inject IDataAuthorizationService Iservice
+@inject IReverseEntryService Ireverseservice
 @inject IDataAuthorizationSettingsService IDataAuthorizationService
 @inject ICancellationReasonCodeService IcancellationReasonCodeService
 @inject NavigationManager uriHelper
@@ -18,13 +18,17 @@
         <MudGrid>
             <MudItem xs="6" md="6" lg="6">
                 <MudAutocomplete FullWidth Label="Reason Code" Value="SelectedReasonCode" ValueChanged="ValueChanged" T="CancellationReasonCode" SearchFunc="@Search" ToStringFunc="@((e) => e?.ReasonCodeDescription)"
-                                 Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                                 ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
                 </MudAutocomplete>
             </MudItem>
             <MudItem xs="12" md="12" lg="12">
-                <MudTextField Label="Remarks" @bind-Value="model.Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="4"></MudTextField>
+                <MudTextField ReadOnly="ReadOnly" Label="Remarks" @bind-Value="model.Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="4"></MudTextField>
             </MudItem>
         </MudGrid>
+        @if (model.ReverseEntryID != null)
+        {   
+            <AutherizationStatusComponent DocTypeID="@DocInfo.DocumentTypeID" DocumentID="model.ReverseEntryID" OnApprove="Approve"></AutherizationStatusComponent>
+        }
     </DialogContent>
     <DialogActions>
         <MudButton Disabled="@_busy" @onclick="OnSubmit" Variant="Variant.Filled" Color="Color.Success">@btn_txt1</MudButton>
@@ -38,7 +42,14 @@
     public CancellationReasonCodesByDocumentType model { get; set; }
     [Parameter]
     public int? DocumentTypeID { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
 
+    protected DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 126,
+            DocumentName = "REVERSED ENTRY"
+        };
     private List<DocTypeModel> doctypelist;
 
     private DocTypeModel SelectedDocType = new();
@@ -136,6 +147,26 @@
     void ValueChanged(CancellationReasonCode val)
     {
         SelectedReasonCode = val;
+    }
+
+    protected async Task Approve(DataApprovedStatus aprvd)
+    {
+        
+        if (aprvd.IsApprove)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Ireverseservice.Approve(model.ReverseEntryID, model.UserInfo.UserID, aprvd.Remarks);
+                snackbar.Add("Approved Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
     }
 
 }

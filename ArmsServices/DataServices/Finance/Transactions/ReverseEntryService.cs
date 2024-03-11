@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@DocumentID", ID),
+               new SqlParameter("@ReverseEntryID", ID),
                new SqlParameter("@UserID", UserID),
 
             };
@@ -162,6 +162,7 @@ namespace ArmsServices.DataServices
         {
             return new CancellationReasonCodesByDocumentType
             {
+                ReverseEntryID = dr.GetInt32("ReverseEntryID"),
                 DocumentTypeID = dr.GetInt32("DocumentTypeID"),
                 DocumentTypeName = dr.GetString("DocumentTypeName"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
