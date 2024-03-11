@@ -148,12 +148,12 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
-        public IEnumerable<FastTagModel> SelectByBranch(int? FastTagUploadID, int BranchID)
+        public IEnumerable<FastTagModel> SelectByBranch(int? FastTagProcessUploadID, int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@Operation", "ForBranch"),
-                new SqlParameter("@FastTagUploadID", FastTagUploadID),
+                new SqlParameter("@FastTagUploadID", FastTagProcessUploadID),
                 new SqlParameter("@BranchID", BranchID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.Select]", parameters))
@@ -194,7 +194,8 @@ namespace DAL.DataServices.Finance.Transactions
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "Process"),
-               new SqlParameter("@FastTagUploadID", model.FastTagProcessID),
+               new SqlParameter("@FastTagProcessID", model.FastTagProcessID),
+               new SqlParameter("@FastTagUploadID", model.FastTagProcessUploadID),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@DocDate", model.DocumentDate),
                new SqlParameter("@BranchID", model.BranchID),
@@ -274,6 +275,7 @@ namespace DAL.DataServices.Finance.Transactions
             return new FastTagModel
             {
                 FastTagTollID = dr?.GetInt32("FastTagTollID"),
+                FastTagProcessID = dr?.GetInt32("FastTagProcessID"),
                 IsProcessed = dr.GetBoolean("IsProcessed"),
                 TransactionDateTime = dr.GetDateTime("TollCrossTime"),
                 //NumberPlate = dr.GetString("NumberPlate"),
