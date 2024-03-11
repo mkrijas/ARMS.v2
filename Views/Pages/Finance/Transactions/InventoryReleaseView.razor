@@ -1,4 +1,5 @@
 ﻿@page "/InventoryReleaseView"
+@page "/InventoryReleaseView/{id:int}"
 @using ArmsModels.BaseModels.Finance.Transactions;
 @using ArmsServices.DataServices.Finance.Transactions;
 @using Microsoft.AspNetCore.Authorization;
@@ -42,29 +43,21 @@
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                        <MudTd DataLabel="Store Name">@context.Store.StoreName</MudTd>
-                        <MudTd DataLabel="Jobcard Number">@context.Jobcard.JobcardNumber</MudTd>
-                        <MudTd DataLabel="Truck Reg No">@context.Truck.RegNo</MudTd>
-                        <MudTd DataLabel="Status">@context.Status</MudTd>
-                        <MudTd DataLabel="">
-                            <MudTooltip Text="View">
-                                <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTooltip>
-                        @if (@context.AuthLevelId == null && context.Status == "Pending")
-                        {
-                            <MudTooltip Text="Reverse">
-                                <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTooltip>
-                        }
-                        @if (@context.AuthLevelId != 99)
-                        {
-                            <MudTooltip Text="View authentication Status">
-                                <MudFab @onclick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Icon="@Icons.Material.Filled.Verified" Size="Size.Small" IconSize="Size.Small" />
-                            </MudTooltip>
-                        }
+                    <MudTd DataLabel="Store Name">@context.Store.StoreName</MudTd>
+                    <MudTd DataLabel="Jobcard Number">@context.Jobcard.JobcardNumber</MudTd>
+                    <MudTd DataLabel="Truck Reg No">@context.Truck.RegNo</MudTd>
+                    <MudTd DataLabel="Status">@context.Status</MudTd>
+                    <MudTd DataLabel="">
+                        <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                        <MudIconButton Disabled="@(context.AuthLevelId != null && context.Status != "Pending")" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
+
                         @if (@context.AuthLevelId == 99)
                         {
                             <EntryReversedComponent DocTypeID="InventoryReleaseDocTypeID" DocumentID="context.RID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                        }
+                        else
+                        {
+                            <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="View authentication Status" Size="Size.Small" Variant="Variant.Filled" />
                         }
                     </MudTd>
                 </RowTemplate>
@@ -85,6 +78,8 @@
     public StoreModel SelectedStore { get; set; } = new();
     private bool _busy;
 
+    [Parameter] public int? id { get; set; }
+
     public bool HasPermissionInventoryReleaseServiceDelete { get; set; } = false;
     public int InventoryReleaseDocTypeID = 97;
 
@@ -95,6 +90,14 @@
 
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        if (id != null )
+        {
+            await Task.Delay(200);
+            var item = Iservice.SelectByID(id);
+            SelectedStore = item.Store;
+            await OpenDialog(item, true);
+        }
     }
 
     private void GetAll(bool val)

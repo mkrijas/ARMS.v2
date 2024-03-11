@@ -60,6 +60,8 @@ namespace ArmsModels.BaseModels
         public CustomerPostingGroupModel CustomerPostingGroup { get; set; }
         [RequiredIf("NatureOfBusiness", "Renter")]
         public RenterPostingGroupModel RenterPostingGroup { get; set; }
+        [RequiredIf("NatureOfBusiness", "SisterConcern")]
+        public SisterPostingGroupModel SisterPostingGroup { get; set; }
         [Required]
         public bool InterCompany { get; set; }
         public string IcPartnerCode { get; set; }
@@ -88,6 +90,29 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         [Required]
         public ChartOfAccountModel Payable { get; set; }
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel PrePayment { get; set; }
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel Deposit { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+    }
+
+
+    public class SisterPostingGroupModel : ICloneable
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<VendorPostingGroupModel>(Json);
+        }
+        public int? SisterPostingGroupID { get; set; }
+        [Required]
+        public string Title { get; set; }
+        [ValidateComplexType]
+        [Required]
+        public ChartOfAccountModel Trade { get; set; }
         [ValidateComplexType]
         [Required]
         public ChartOfAccountModel PrePayment { get; set; }

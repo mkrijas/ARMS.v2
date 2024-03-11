@@ -1,4 +1,6 @@
 ﻿@using System.Threading;
+@using System.ComponentModel.DataAnnotations
+
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject ITripService Iservice
@@ -7,12 +9,13 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
+@inject IBranchSettingsService IbranchSettings
 
 <MudDialog>
     <DialogContent>
         <EditForm id="formStartTrip" Model="@model" OnValidSubmit="OnValidSubmit">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
+            <ObjectGraphDataAnnotationsValidator />
+            <ValidationSummary/>            
             <MudGrid Spacing="4">
                 @if (IsLoading)
                 {
@@ -35,23 +38,29 @@
                         <MudText></MudText>
                     </MudItem>
                     <MudItem xs="12" md="12">
-                        <MudCheckBox Checked="@startWithLoading" Label="Start with Loading" CheckedChanged="((bool e) => EventSelected(e))"></MudCheckBox>
+                        <MudCheckBox Checked="@startWithLoading" Label="Start with Loading" T="bool" CheckedChanged="EventSelected"></MudCheckBox>
+                    </MudItem>
+                }              
+                @if (_canEditTime)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Date n Time" Format="s" Variant="Variant.Outlined" @bind-Value="@currentEvent.EventTime" InputType="InputType.DateTimeLocal" Margin="Margin.Dense"></MudTextField>
                     </MudItem>
                 }
                 <MudItem xs="12" md="6">
-                    <MudAutocomplete T="PlaceModel" Label="Origin" @bind-Value="Origin" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudNumericField HideSpinButtons @bind-Value="KmReading" Label="Audometer Reading" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                    <MudNumericField HideSpinButtons @bind-Value="currentEvent.EventReading" Label="Audometer Reading" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                 </MudItem>
+                 <MudItem xs="12" md="6">
+                     <MudAutocomplete T="PlaceModel" Variant="Variant.Outlined" Label="Origin" Value="Origin" ValueChanged="OriginChanged" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Margin="Margin.Dense"></MudAutocomplete>
                  </MudItem>
                  @if (!startWithLoading)
                 {
                     <MudItem xs="12" md="6">
-                        <MudAutocomplete T="PlaceModel" Label="Destination" Value="Destination" ValueChanged="((e)=> {Destination =e ; model.DestinationID =e?.PlaceID??null;})" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")"></MudAutocomplete>
+                        <MudAutocomplete T="PlaceModel" Variant="Variant.Outlined" Label="Destination" Value="Destination" ValueChanged="DestinationChanged" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Margin="Margin.Dense"></MudAutocomplete>
                     </MudItem>
                 }
                 <MudItem xs="12" md="6">
-                    <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="currentEvent.NextEventTypeID" OffsetY="true" Variant="Variant.Outlined" AdornmentColor="Color.Secondary">
+                    <MudSelect Label="Select Destination Event" T="byte?" @bind-Value="currentEvent.NextEventTypeID" Variant="Variant.Outlined" AdornmentColor="Color.Secondary" Margin="Margin.Dense">
                         @foreach (var item in DestinationEventTypes)
                         {
                             <MudSelectItem T="byte?" Value="@item.EventTypeID">@item.EventTypeName</MudSelectItem>
@@ -78,16 +87,21 @@
     private bool startWithLoading = false;
     private PlaceModel Origin = new();
     private PlaceModel Destination = new();
-    private long? KmReading;
+    //private long? KmReading;
     bool isSubmitting;
     EventModel currentEvent = new();
     private List<PlaceModel> places;
     private List<EventTypeModel> EventTypes;
     private List<EventTypeModel> DestinationEventTypes;
     private bool _busy;
-    public bool HasPermissionTripServiceEdit { get; set; } = false;
-    public bool HasPermissionTripServiceDelete { get; set; } = false;
-    public int DocTypeID = 39;
+    private bool HasPermissionTripServiceEdit { get; set; } = false;
+    private bool HasPermissionTripServiceDelete { get; set; } = false;
+    private int DocTypeID = 39;
+
+    int BranchID;
+    string UserID;
+    bool _canEditTime;
+
 
     private void Cancel()
     {
@@ -96,9 +110,15 @@
 
     protected override async Task OnInitializedAsync()
     {
+        model.StartEvent = currentEvent;
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionTripServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionTripServiceDelete = await Irole.HasClaim(DocTypeID.ToString(), "Delete", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        _canEditTime = IbranchSettings.IsEnabled(BranchID,2);
 
         places = new();
         places = Iplace.Select(0).ToList();
@@ -109,12 +129,26 @@
         {
             currentEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 1).DefaultNextEventTypeID;
         }
-        KmReading = lastEvent?.EventReading;
+        currentEvent.EventReading = lastEvent?.EventReading;
         int? OriginID = lastEvent?.DestinationID;
         Origin = OriginID == null ? null : await Iplace.SelectByID(OriginID.Value);
-        model.BranchID = int.Parse(Task.Run(() => auth.GetAuthenticationStateAsync()).Result.User.Claims.FirstOrDefault(c => c.Type == "BranchID").Value);
+
+
+        #region Add Start event
+
+        currentEvent.BranchID = BranchID;       
+        currentEvent.DriverID = AssignedDriver?.DriverID;
+        currentEvent.EventTime = DateTime.Now;        
+        currentEvent.EventTypeID = 1;        
+        currentEvent.TruckID = Truck.TruckID;
+        currentEvent.UserInfo.UserID = UserID;
+
+        #endregion
+
+
+        model.BranchID = BranchID;
         model.TruckID = Truck.TruckID;
-        model.TripDate = DateTime.Today;
+        model.TripDate = currentEvent.EventTime.Value.Date;
     }
 
     private async Task<IEnumerable<PlaceModel>> SearchPlaces(string searchString)
@@ -122,9 +156,27 @@
         return await Task.FromResult(places.Where(x => x.PlaceName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
+
+    private void OriginChanged(PlaceModel _origin)
+    {
+        Origin = _origin;
+        currentEvent.OriginID = _origin?.PlaceID;
+        currentEvent.OriginName = _origin?.PlaceName;
+        if(startWithLoading)
+        {
+            currentEvent.DestinationID = _origin?.PlaceID;
+        }       
+    }
+
+    private void DestinationChanged(PlaceModel _destination)
+    {
+        Destination = _destination;
+        currentEvent.DestinationID = _destination?.PlaceID;
+        currentEvent.DestinationName = _destination?.PlaceName;
+    }    
+
     private void EventSelected(bool startLoading)
     {
-
         DestinationEventTypes = EventTypes.Where(s => s.EventTypeID != null && startLoading == false && s.EventTypeID > 1 || s.EventTypeID != null && startLoading == true && s.EventTypeID > 2).ToList();
 
         if (EventTypes != null && EventTypes.Count() != 0)
@@ -143,11 +195,16 @@
                 {
                     currentEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 2).DefaultNextEventTypeID;
                 }
+                currentEvent.DestinationID = currentEvent.OriginID;
             }
         }
         startWithLoading = startLoading;
         model.StartWithLoading = startLoading;
     }
+
+
+
+
 
     private async Task OnValidSubmit(EditContext context)
     {
@@ -156,65 +213,60 @@
             snackbar.Add("Please wait while form is closing!", Severity.Warning);
             return;
         }
-        if (HasPermissionTripServiceEdit)
-        {
-            if (isSubmitting)
+
+      
+            if (HasPermissionTripServiceEdit)
             {
-                return;
-            }
-            isSubmitting = true;
-            try
-            {
-                var authprov = await auth.GetAuthenticationStateAsync();
-                if (AssignedDriver == null)
+                if (isSubmitting)
                 {
-                    snackbar.Add("Driver is not assigned", Severity.Warning);
                     return;
                 }
-                _busy = true;
-                model.DriverID = AssignedDriver?.DriverID;
-                model.UserInfo.UserID = authprov.User.Identity.Name;
-                model = Iservice.Update(model);
-
-                #region Add loading event
-
-                currentEvent.BranchID = model.BranchID;
-                currentEvent.DestinationID = startWithLoading ? Origin?.PlaceID ?? null : Destination?.PlaceID ?? null;
-                currentEvent.OriginID = Origin?.PlaceID ?? null;
-                currentEvent.DriverID = model.DriverID;
-                currentEvent.EventTime = DateTime.Now;
-                currentEvent.EventReading = KmReading;
-                currentEvent.EventTypeID = 1;
-                currentEvent.TripID = model.TripID;
-                currentEvent.TruckID = model.TruckID;
-                currentEvent.UserInfo.UserID = model.UserInfo.UserID;
-                currentEvent = Ievent.Update(currentEvent);
-                #endregion
-
-                if (startWithLoading)
+                isSubmitting = true;
+                try
                 {
-                    currentEvent.TruckEventID = null;
-                    currentEvent.EventTypeID = 2;
+                    if (AssignedDriver == null)
+                    {
+                        snackbar.Add("Driver is not assigned", Severity.Warning);
+                        return;
+                    }
+                    _busy = true;
+                    model.DriverID = AssignedDriver?.DriverID;
+                    model.TripDate = currentEvent.EventTime.Value.Date;
+                    model.UserInfo.UserID = UserID;
+                    model = Iservice.Update(model);
+
+                    #region Add Start event
+
+                    currentEvent.TripID = model.TripID;                  
                     currentEvent = Ievent.Update(currentEvent);
+
+                    #endregion
+
+                    if (startWithLoading)
+                    {
+                        currentEvent.TruckEventID = null;
+                        currentEvent.EventTypeID = 2;
+                        currentEvent = Ievent.Update(currentEvent);
+                    }
+                    MudDialog.Close(DialogResult.Ok(model));
                 }
-                MudDialog.Close(DialogResult.Ok(model));
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
+                finally
+                {
+                    isSubmitting = false;
+                    await Task.Delay(200);
+                    _busy = false;
+                }
             }
-            catch (Exception ex)
+            else
             {
-                snackbar.Add(ex.Message, Severity.Warning);
+                bool? ResultModel = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Add or Edit Trip.");
             }
-            finally
-            {
-                isSubmitting = false;
-                await Task.Delay(200);
-                _busy = false;
-            }
-        }
-        else
-        {
-            bool? ResultModel = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to Add or Edit Trip.");
-        }
+       
     }
 }

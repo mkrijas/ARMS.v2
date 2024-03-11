@@ -48,20 +48,22 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private string searchPurchase = "";
     private bool _busy;
+    int? BranchID;
 
     protected override async Task OnInitializedAsync()
     {
         model = new();
-        await GetAll();
-    }
-
-    private async Task GetAll()
-    {
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int brancID = int.Parse(brancIDString);
+        BranchID = int.Parse(brancIDString);
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+       
         collection = new List<PurchaseOrderModel>();
-        foreach (var item in Iservice.PendingForGrn(brancID))
+        foreach (var item in Iservice.PendingForGrn(BranchID.Value))
         {
             collection.Add(item);
         }
@@ -84,7 +86,7 @@
         parms.Add("IsView", true);
         var dialog = DialogService.Show<PurchaseOrderDialog>("Purchase Order", parms, maxWidth);
         var result = await dialog.Result;
-        if (!result.Cancelled)
+        if (!result.Canceled)
         {
             GetAll();
         }
@@ -122,7 +124,7 @@
         parms.Add("model", grn.Clone());
         var dialog = DialogService.Show<InventoryGrnDialog>(grn.GrnID == null ? "ADD" : "EDIT", parms, maxWidth);
         var result = await dialog.Result;
-        if (!result.Cancelled)
+        if (!result.Canceled)
         {
             GetAll();
         }

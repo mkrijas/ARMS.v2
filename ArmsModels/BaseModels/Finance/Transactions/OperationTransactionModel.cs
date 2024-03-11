@@ -49,7 +49,7 @@ namespace ArmsModels.BaseModels
         public int? CoaID { get; set; }
         public string Reference { get; set; }
         [Required]
-        [Range(1, double.MaxValue, ErrorMessage = "Must have Non-Zero Value {1}")]
+        //[Range(1, double.MaxValue, ErrorMessage = "Must have Non-Zero Value {1}")]
         public decimal? Amount { get; set; }
         public decimal? Quantity { get; set; }
         public string Unit { get; set; }
