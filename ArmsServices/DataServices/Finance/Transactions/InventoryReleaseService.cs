@@ -188,7 +188,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PID", ID),
+               new SqlParameter("@ID", ID),
                new SqlParameter("@Operation", "ByID")
             };
             InventoryReleaseModel model = new();

@@ -25,14 +25,16 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         [Required]
         public DateTime? TripDate { get; set; }
-        [ExpressiveAnnotations.Attributes.RequiredIf("StartWithLoading == false", ErrorMessage ="Please select destination.")]
-        public int? DestinationID { get; set; }
+        //[ExpressiveAnnotations.Attributes.RequiredIf("StartWithLoading == false", ErrorMessage ="Please select destination.")]
+        //public int? DestinationID { get; set; }
         public decimal? Mileage { get; set; }
         public int? RunKM { get; set; }
         public decimal? Fuel { get; set; }
         public bool Closed { get; set; }
         public bool IsLocked { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
+        [ValidateComplexType]
+        public EventModel StartEvent { get; set; }
     }
 
 
@@ -81,6 +83,7 @@ namespace ArmsModels.BaseModels
         public bool IsPurchase { get; set; } = false;
         public TaxPurchaseModel PurchaseModel { get; set; } = new();
         public string UsageID { get; set; }
+        public int? MID { get; set; }
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
     }

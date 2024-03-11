@@ -67,6 +67,7 @@ namespace ArmsModels.BaseModels
     }
 
     public class EventReadingValidator : AbstractValidator<EventModel>
+    public class EventReadingValidator : AbstractValidator<EventModel>
     {
         public EventReadingValidator(IEventService _eventservice)
         {
