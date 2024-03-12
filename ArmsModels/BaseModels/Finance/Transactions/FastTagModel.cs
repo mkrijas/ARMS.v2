@@ -45,6 +45,7 @@ namespace Core.BaseModels.Finance.Transactions
             return JsonConvert.DeserializeObject<FastTagProcessModel>(Json);
         }
         public int? FastTagProcessID { get; set; }
+        public int? FastTagProcessUploadID { get; set; }
         public string ProcessDocumentNumber { get; set; } = "New";
         [Required]
         public DateTime? DocumentDate { get; set; } = DateTime.Today;
@@ -57,6 +58,7 @@ namespace Core.BaseModels.Finance.Transactions
     public class FastTagModel
     {
         public int? FastTagTollID { get; set; }
+        public int? FastTagProcessID { get; set; }
         public DateTime? TransactionDateTime { get; set; }
         //public DateTime? ProcessedDateTime { get; set; }
         public int? BranchID { get; set; }

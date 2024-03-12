@@ -1,0 +1,193 @@
+﻿@page "/SisterConcernPostingGroup"
+@inject ISisterPostingGroupService Iservice
+@inject IChartOfAccountService accountService
+@inject MudBlazor.ISnackbar snackbar
+@inject IChartOfAccountService accountService
+@inject IConfigTable IConfig
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+@using System.Threading;
+@using ArmsServices.DataServices.General
+
+<MudGrid>
+    <MudItem xs="4" lg="4">
+        <MudPaper Width="100%" Class="p-2">
+            <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
+                <MudText Typo="Typo.h6" style="padding: 4px; margin-top: -8px; margin-bottom: -22px; margin-left: 8px;">
+                    Sister Posting Group
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudText>
+                <br />
+                @if (listOfItems?.Any() == true)
+                {
+                    @foreach (var item in listOfItems)
+                    {
+                        <ContextMenuTrigger MenuId="myMenu" Data="@item">
+                            <MudListItem OnClick="((e) => ViewDetails(e,item))" Class="border-solid border-2 pa-4 mb-2 mt-2" Style="border-color:#ccc; border-radius:3%" Value="item">
+                                <MudText Typo=Typo.subtitle1> @item.Title.ToString() </MudText>
+                                </MudListItem>
+                            </ContextMenuTrigger>
+                    }
+                }
+            </MudList>
+        </MudPaper>
+    </MudItem>
+    @if (@value == true)
+    {
+        <MudItem xs="8" lg="8">
+            <MudPaper>
+                <MudContainer>
+                    <h4 style="padding-top:18px;">@titleValue</h4>
+                    <br />
+                    <EditForm Model="model" OnValidSubmit="CreateSisterPostingGroup">
+                        <ObjectGraphDataAnnotationsValidator />
+                        <MudGrid Spacing="4">
+                            <MudItem xs="12" lg="12">
+                                <MudTextField @bind-Value="model.Title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Title)" Disabled="IsOnlyView"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="12" md="12">
+                                <CoaSelector @bind-Value="model.Trade" LabelName="Account For Trade" IsDisable="IsOnlyView" />
+                            </MudItem>
+                            <MudItem xs="12" md="12">
+                                <CoaSelector @bind-Value="model.PrePayment" LabelName="Account For PrePayment" IsDisable="IsOnlyView" />
+                            </MudItem>
+                            <MudItem xs="12" md="12">
+                                <CoaSelector @bind-Value="model.Deposit" LabelName="Account For Deposit" IsDisable="IsOnlyView" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <ValidationSummary />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudButton @onclick="CancelSisterPostingGroup" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Warning">Cancel</MudButton>
+                                @if (!IsOnlyView)
+                                {
+                                    <MudButton Disabled="@_busy" ButtonType="ButtonType.Submit" Class="ml-2 mr-2" Variant="Variant.Filled" Color="Color.Success">Submit</MudButton>
+                                }
+                            </MudItem>
+                        </MudGrid>
+                    </EditForm>
+                </MudContainer>
+            </MudPaper>
+        </MudItem>
+    }
+</MudGrid>
+
+<ContextMenu Id="myMenu" OnAppearing="OnAppearing">
+    <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Group</Item>
+</ContextMenu>
+
+@code {
+
+    SisterPostingGroupModel model = new SisterPostingGroupModel();
+    private MudListItem SelectedItem;
+    private List<SisterPostingGroupModel> listOfItems = new();
+    SisterPostingGroupModel SelectedModel = new();
+    public bool value = false;
+    public string titleValue = null;
+    private List<SisterPostingGroupModel> collection = new List<SisterPostingGroupModel>();
+    private bool IsOnlyView { get; set; } = false;
+    private bool _busy;
+
+    public bool HasPermissionSisterPostingGroupServiceEdit { get; set; } = false;
+    public int SisterPostingGroupDocTypeID = 103;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionSisterPostingGroupServiceEdit = await Irole.HasClaim(SisterPostingGroupDocTypeID.ToString(), "Edit", ctc.Token);
+
+        GetAll();
+    }
+
+    protected void SelectedItemChanged(object obj)
+    {
+        SelectedItem = (MudListItem)obj;
+        SelectedModel = (SisterPostingGroupModel)SelectedItem.Value;
+    }
+
+    private void GetAll()
+    {
+        listOfItems = Iservice.Select().ToList();
+    }
+
+    public void CancelSisterPostingGroup()
+    {
+        IsOnlyView = false;
+        value = false;
+        model = new();
+    }
+
+    public async Task CreateSisterPostingGroup()
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        if (HasPermissionSisterPostingGroupServiceEdit)
+        {
+            IsOnlyView = false;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                Iservice.Update(model);
+                snackbar.Add("Successfully Submitted", Severity.Success);
+                GetAll();
+                value = false;
+            }
+            catch (Exception a)
+            {
+                snackbar.Add(a.Message, Severity.Error);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit SisterPostingGroup.");
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async Task OpenDialog(SisterPostingGroupModel ii)
+    {
+
+    }
+
+    private void OpenDialogGroup(SisterPostingGroupModel ig)
+    {
+        IsOnlyView = false;
+        value = true;
+        model = new();
+        titleValue = "Add Sister Posting Group";
+    }
+
+    void OnAppearing(MenuAppearingEventArgs e)
+    {
+
+    }
+
+    protected void ContextMenuOnClickedit(ItemClickEventArgs e)
+    {
+        IsOnlyView = false;
+        model = (SisterPostingGroupModel)((SisterPostingGroupModel)e.Data).Clone();
+        value = true;
+        titleValue = "Edit Sister Posting Group";
+    }
+
+    protected void ViewDetails(MouseEventArgs e, SisterPostingGroupModel Data)
+    {
+        IsOnlyView = true;
+        model = Data;
+        value = true;
+        titleValue = "Sister Posting Group | " + Data.Title;
+    }
+}
