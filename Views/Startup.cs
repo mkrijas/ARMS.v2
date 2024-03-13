@@ -259,6 +259,7 @@ namespace Views
             services.AddScoped<ICustomerPostingGroupService, CustomerPostingGroupService>();
             services.AddScoped<IRenterPostingGroupService, RenterPostingGroupService>();
             services.AddScoped<IVendorPostingGroupService, VendorPostingGroupService>();
+            services.AddScoped<ISisterPostingGroupService, SisterPostingGroupService>();
             services.AddScoped<ICashAccountService, CashAccountService>();
             services.AddScoped<IAssetPostingGroupService, AssetPostingGroupService>();
             services.AddScoped<IUnreconciledBankEntryService, UnreconciledBankEntryService>();

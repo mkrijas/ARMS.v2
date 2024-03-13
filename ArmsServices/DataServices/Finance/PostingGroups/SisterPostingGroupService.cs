@@ -74,7 +74,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.SisterPostingGroupID),
-               new SqlParameter("@Payable", model.Trade.CoaID),
+               new SqlParameter("@Trade", model.Trade.CoaID),
                new SqlParameter("@PrePayment", model.PrePayment.CoaID),
                new SqlParameter("@Deposit", model.Deposit.CoaID),
                new SqlParameter("@Title", model.Title),
@@ -95,10 +95,10 @@ namespace ArmsServices.DataServices
                 Title = dr.GetString("Title"),
                 Trade = new ChartOfAccountModel()
                 {
-                    CoaID = dr.GetInt32("Payable"),
-                    ParentID = dr.GetInt32("PayableParentID"),
-                    AccountCode = dr.GetString("PayableCoaCode"),
-                    AccountName = dr.GetString("PayableCoa"),
+                    CoaID = dr.GetInt32("Trade"),
+                    ParentID = dr.GetInt32("TradeParentID"),
+                    AccountCode = dr.GetString("TradeCoaCode"),
+                    AccountName = dr.GetString("TradeCoa"),
                 },
                 PrePayment = new ChartOfAccountModel()
                 {

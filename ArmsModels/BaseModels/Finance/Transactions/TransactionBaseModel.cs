@@ -43,7 +43,7 @@ namespace ArmsModels.BaseModels
         public decimal? CashWithdrawal { get; set; }
         public virtual IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         { 
-              if(DocumentDate.HasValue && DocumentDate.Value > DateTime.Today)
+              if(DocumentDate.HasValue && DocumentDate.Value.Date > DateTime.Today)
             {
                 yield return new ValidationResult("Document date cannot be a future date!");
             }
@@ -58,6 +58,7 @@ namespace ArmsModels.BaseModels
         public List<AccountInfoViewSubModel> Entries { get; set; } = new List<AccountInfoViewSubModel>();
     }
 
+
     public class AccountInfoViewSubModel
     {
         public string AccountName { get; set; }
@@ -68,7 +69,6 @@ namespace ArmsModels.BaseModels
         public string CostCenter { get; set; }
         public string Dimension { get; set; }
     }
-
     public class GstModel : IValidatableObject, ICloneable
     {
         public object Clone()
