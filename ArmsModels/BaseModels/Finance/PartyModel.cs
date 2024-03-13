@@ -33,7 +33,7 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(200)]
         public string RegName { get; set; }
-        public string NatureOfBusiness { get; set; } //Supplier/Customer/Renter 
+        public string NatureOfBusiness { get; set; } //Supplier/Customer/Renter//SisterConcern
         public virtual string AssesseeType { get; set; }
         [Required]
         public bool PanAvailable { get; set; }
