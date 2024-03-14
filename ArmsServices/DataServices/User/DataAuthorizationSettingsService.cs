@@ -17,11 +17,12 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int? Delete(int? ID, string UserID)
+        public int? Delete(int? DocTypeID,int? AuthLevelID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", ID),
+               new SqlParameter("@DocTypeID", DocTypeID),
+               new SqlParameter("@AuthLevelID", AuthLevelID),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.User.DataAuthorization.Settings.Delete]", parameters);
@@ -57,6 +58,7 @@ namespace ArmsServices.DataServices
                 {
                 Description= dr.GetString("Description"),
                 ID = dr.GetInt32("ID"),
+                AuthImplemented = dr.GetBoolean("AuthImplemented")
                 };
             }           
         }

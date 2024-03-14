@@ -30,6 +30,7 @@ namespace ArmsModels.BaseModels
     {
         public int? ID { get; set; }
         public string Description { get; set; }
+        public bool AuthImplemented { get; set; }
     }
 
     public class DataAuthorizationSettingsModel : ICloneable
