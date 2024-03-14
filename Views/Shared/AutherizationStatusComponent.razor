@@ -1,11 +1,12 @@
 ﻿@inject IDataAuthorizationService Iservice
 @inject AuthenticationStateProvider auth
-@inject SignalRService signalRService
-@inject IPushNotificationService IpushNotificationService
+@* @inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService *@
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
-
+@using System.Threading;
 
 @if (collection.Any())
 {
@@ -79,15 +80,7 @@
     public int? authlevelID;
     public bool Authorized = false;
     bool Rejected = false;
-    private List<DataAuthorizationModel> collection = new List<DataAuthorizationModel>();
-
-
-
-    #region SignaIR Notification
-    //private IEnumerable<PushNotificationModel> allNotificationMessages = null;
-    //private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
-    // private PushNotificationModel notificationMessage = new PushNotificationModel();
-    #endregion
+    private List<DataAuthorizationModel> collection = new List<DataAuthorizationModel>();  
 
     protected override async Task OnInitializedAsync()
     {
@@ -109,11 +102,13 @@
 
     public async Task OpenDialog(DataAuthorizationModel statusModel)
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
         if (_busy)
         {
             snackbar.Add("Please wait while form is closing!", Severity.Warning);
             return;
         }
+        var HasClaim = await Irole.HasClaim(statusModel.DocTypeID.ToString(), statusModel.ClaimValue, ctc.Token);
         _busy = true;
         DialogParameters parms = new DialogParameters();
         parms.Add("model", statusModel);
