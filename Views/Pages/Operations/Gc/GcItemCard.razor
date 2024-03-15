@@ -4,12 +4,12 @@
 @inject IGcService Iservice
 @inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
+@* @using Views.Shared; *@
 
 <div style="position:relative">
     @if (item.UnloadEndEventID != null)
     {
         <span class="stamp is-Delivered">DELIVERED</span>
-        @* <h2 class="Finished">DELIVERED</h2> *@
     }
 
     <MudCard Class="@Class" Style="@Style">
@@ -31,13 +31,11 @@
             </CardHeaderActions>
         </MudCardHeader>
         <MudCardContent>
-            
             <MudText Typo="Typo.h6"><b> @item.ConsigneeName </b></MudText>
             <MudText>From:  @item.ConsignorName</MudText>
             <MudText Typo="Typo.body2" Color="Color.Info">@item.RouteName</MudText>
             <MudText>Rs @item.TotalFreight</MudText>            
             <MudText Typo="Typo.h5" Color="Color.Primary">@item.TotalBillQuantity   @item.UoM  @item.Content</MudText>
-            
             @if (unloading)
             {
                 <MudTextField @bind-Value="@item.SetUnloadQuantity" Label="UnloadingQuantity" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @item.SetUnloadQuantity)"></MudTextField>
@@ -54,12 +52,13 @@
                 </MudItem>
             }
         </MudCardContent>
-        <MudCardActions>
+        <MudCardActions Style="place-content: space-between;">
             @if (!unloading)
             {
                 <MudButton @onclick="@(() => Edit(item.GcSetID))" Color="Color.Primary" Disabled="@IsLocked">EDIT</MudButton>
-                <MudButton @onclick="@(() => EwayBill(item.GcSetID))" Variant="Variant.Text" Color="@ewaycolor">Eway Bill</MudButton>
+                <MudButton @onclick="@(() => EwayBill(item.GcSetID))" Color="@ewaycolor">Eway Bill</MudButton>
                 <MudButton @onclick="@(() => Delete(item.GcSetID))" Color="Color.Primary" Disabled="@(item.TripID!= null)">DELETE</MudButton>
+                <MudButton @onclick="@(() => Print(item.GcSetID))" Color="Color.Success" StartIcon="@Icons.Material.Filled.Print" Disabled="@(item.TripID!= null)">Print</MudButton>
             }
             @if (unloading)
             {
@@ -92,7 +91,8 @@
     [Parameter]
     public EventCallback<long?> OnGcDeleted { get; set; }
 
-
+    public string ReportName { get; set; }
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
 
     private Color ewaycolor = new();
     private Color FillExpColor = new();
@@ -116,7 +116,6 @@
         {
             await EwayBill(item.GcSetID);
         }
-
     }
 
     protected override void OnParametersSet()
@@ -169,6 +168,17 @@
         _busy = false;
     }
 
+    private async Task Print(long? GcSetID)
+    {
+        ReportParameters.Clear();
+        ReportParameters.Add("GcSetID", GcSetID.ToString());
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintConsignmentNoteBill");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+    }
 
     private async Task Delete(long? id)
     {
@@ -189,7 +199,6 @@
                 snackbar.Add(ex.Message, Severity.Error);
             }
         }
-
     }
 
     private async Task Edit(long? id)

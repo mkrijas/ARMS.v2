@@ -1,0 +1,57 @@
+﻿@using System.Net;
+@inject IJSRuntime JSRuntime
+
+
+<style>
+    .rptStyle {
+        height: 800px;
+        margin-bottom: 10px;
+        background-color: white;
+        border: 1px solid #D5D5D5;
+        border-radius: 6px;
+    }
+</style>
+
+<MudDialog>
+    <DialogContent>
+        <iframe id="PreviewClaim" class="rptStyle" src="@URL" scrolling="no" credentialless></iframe>
+    </DialogContent>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public string ReportName { get; set; }
+    [Parameter]
+    public Dictionary<string, string> Parameters { get; set; }
+    private string URL { get; set; } = string.Empty;
+    bool progress = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RenderReport();
+    }
+
+    public async Task RenderReport()
+    {
+        if (ReportName == null)
+        {
+            await Task.Delay(500);
+        }
+        if (ReportName != null)
+        {
+            progress = true;
+            string encodedUsername = Uri.EscapeDataString("arms");
+            string encodedPassword = Uri.EscapeDataString("arms@123");
+            URL = $"http://10.200.50.90/ReportServer/Pages/ReportViewer.aspx?%2fARMS_V2%2fARMS_Reports%2f{ReportName}";
+            URL += $"&rc:showbackbutton=true";
+            URL += $"&rc:Parameters=false&rs:Command=Render&rc:Format=EXCEL&rs:embed=true";
+            foreach (var item in Parameters)
+            {
+                URL = URL + "&" + item.Key + "=" + item.Value;
+            }
+            bool success = await JSRuntime.InvokeAsync<bool>("runReport", URL);
+            progress = false;
+        }
+    }
+}
