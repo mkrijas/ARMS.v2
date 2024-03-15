@@ -1,47 +1,55 @@
 ﻿@inject IDataAuthorizationService Iservice
 @inject AuthenticationStateProvider auth
-@inject SignalRService signalRService
-@inject IPushNotificationService IpushNotificationService
+@* @inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService *@
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
+@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
+@using System.Threading;
 
-
-@if(collection.Any())
+@if (collection.Any())
 {
-<MudContainer>
-    <MudGrid>
-        <MudItem xs="5">
-            <b> Verification Type</b>
-        </MudItem>
-        <MudItem xs="7">
-            <b>   Verified By</b>
-        </MudItem>
-        @foreach (var item in collection)
-        {
-            Color color = item.IsCompleted ? Color.Primary : Color.Error;
+    <MudContainer>
+        <MudGrid>
             <MudItem xs="5">
-                <MudText Color="@color"> @item.AuthType     </MudText>
+                <b> Verification Type</b>
             </MudItem>
             <MudItem xs="7">
-                @if (!Authorized && authlevelID != null && item.AuthLevelID == authlevelID)
-                {
-                    <MudTooltip Text="Pending for Verification">
-                        <MudFab @onclick="@(()=> OpenDialog(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>
-                }
-                else if (!Authorized && authlevelID != null && item.AuthLevelID > authlevelID)
-                {
-                    <MudText Color="@color"> Pending </MudText>
-                }
-                else
-                {
-                    <MudText Color="@color"> @item.DisplayString </MudText>
-                }
+                <b>   Verified By</b>
             </MudItem>
-        }
-    </MudGrid>
-</MudContainer>
+            @foreach (var item in collection)
+            {
+                Color color = item.IsCompleted ? Color.Primary : Color.Error;
+                <MudItem xs="5">
+                    <MudText Color="@color"> @item.AuthType     </MudText>
+                </MudItem>
+                <MudItem xs="7">
+                   
+                    @if (!Rejected && !Authorized && authlevelID != null && (item.AuthLevelID == authlevelID))
+                    {
+                        <MudTooltip Text="Pending for Verification">
+                            <MudFab @onclick="@(()=> OpenDialog(item))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                    }
+                    else if (!Rejected && !Authorized && authlevelID != null && (item.AuthLevelID == 100))
+                    {
+                        <MudTooltip Text="Reject the Entry">
+                            <MudFab @onclick="@(()=> OpenDialog(item))" Color="Color.Error" StartIcon="@Icons.Material.Filled.Close" Size="Size.Small" IconSize="Size.Small" />
+                        </MudTooltip>
+                    }
+                    else if (!Rejected && !Authorized && authlevelID != null && item.AuthLevelID > authlevelID)
+                    {
+                        <MudText Color="@color"> Pending </MudText>
+                    }
+                    else
+                    {
+                        <MudText Color="@color"> @item.DisplayString </MudText>
+                    }
+                </MudItem>
+            }
+        </MudGrid>
+    </MudContainer>
 }
 
 @code {
@@ -71,15 +79,8 @@
     private bool _busy;
     public int? authlevelID;
     public bool Authorized = false;
-    private List<DataAuthorizationModel> collection = new List<DataAuthorizationModel>();
-
-   
-
-    #region SignaIR Notification
-    //private IEnumerable<PushNotificationModel> allNotificationMessages = null;
-    //private List<PushNotificationModel> currentNotificationMessages = new List<PushNotificationModel>();
-   // private PushNotificationModel notificationMessage = new PushNotificationModel();
-    #endregion
+    bool Rejected = false;
+    private List<DataAuthorizationModel> collection = new List<DataAuthorizationModel>();  
 
     protected override async Task OnInitializedAsync()
     {
@@ -88,7 +89,7 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
-        UserID = user.Identity.Name;       
+        UserID = user.Identity.Name;
     }
 
     private void GetAll()
@@ -96,88 +97,37 @@
         collection = Iservice.GetAuthStatus(DocTypeID, DocumentID).OrderBy(x => x.AuthLevelID).ToList();
         authlevelID = collection.Where(x => x.IsCompleted == false).Min(y => y.AuthLevelID);
         Authorized = collection.Any(x => x.AuthLevelID == 99 && x.IsCompleted);
+        Rejected = collection.Any(x => x.AuthLevelID == 100 && x.IsCompleted);
     }
 
     public async Task OpenDialog(DataAuthorizationModel statusModel)
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
         if (_busy)
         {
             snackbar.Add("Please wait while form is closing!", Severity.Warning);
             return;
         }
+        var HasClaim = await Irole.HasClaim(statusModel.DocTypeID.ToString(), statusModel.ClaimValue, ctc.Token);
         _busy = true;
         DialogParameters parms = new DialogParameters();
         parms.Add("model", statusModel);
         parms.Add("ApproveWithin", ApproveWithin);
         var dialog = DialogService.Show<AutherizationVerificationDialog>(statusModel?.ID == null ? "ADD" : "EDIT", parms);
         var result = await dialog.Result;
-              
-        //urrentNotificationMessages = IpushNotificationService.SelectActiveNotifications(BranchID).ToList();  
+
+        
         if (!result.Canceled)
         {
             DataApprovedStatus aprd = new DataApprovedStatus();
-            aprd = (DataApprovedStatus)result.Data;            
+            aprd = (DataApprovedStatus)result.Data;
 
             if (aprd.IsApprove)
             {
                 await OnApprove.InvokeAsync(aprd);
-               @*  var authprov = await auth.GetAuthenticationStateAsync();
-                var user = authprov.User;
-                if (currentNotificationMessages != null && currentNotificationMessages.Any(g => g.DocumentID == DocumentID && g.DocumentTypeID == DocTypeID && g.MessageID != null))
-                {
-                    string MessageIDs = String.Join(",", currentNotificationMessages.Where(g => g.DocumentID == DocumentID && g.DocumentTypeID == DocTypeID && g.MessageID != null).Select(d => d.MessageID).ToList());
-                    try
-                    {
-                        if (!string.IsNullOrEmpty(MessageIDs))
-                        {
-                            IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        snackbar.Add(ex.Message, Severity.Error);
-                    }
-                } *@
-               // IpushNotificationService.UpdatePushNotification(notificationMessage);
-            }
-            else
-            {
-               @*  string verficationType = "";
-                string claimValue = "";
-                if (collection.Any(s => s.AuthLevelID > statusModel.AuthLevelID))
-                {
-                    verficationType = collection.OrderBy(g => g.AuthLevelID).FirstOrDefault(s => s.AuthLevelID > statusModel.AuthLevelID).AuthType;
-                    claimValue = collection.OrderBy(g => g.AuthLevelID).FirstOrDefault(s => s.AuthLevelID > statusModel.AuthLevelID).ClaimValue;
-                }
-                if (currentNotificationMessages != null && currentNotificationMessages.Any(g => g.DocumentID == DocumentID && g.DocumentTypeID == DocTypeID))
-                {
-                    string MessageIDs = string.Join(",", currentNotificationMessages.Where(g => g.DocumentID == DocumentID && g.DocumentTypeID == DocTypeID).Select(d => d.MessageID).ToList());
-                    try
-                    {
-                        IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
-                    }
-                    catch (Exception ex)
-                    {
-
-                    }
-                }
-
-                notificationMessage.InitiateBranch = new BranchModel() { BranchID = BranchID };
-                notificationMessage.ReceivedBranch = new BranchModel() { BranchID = BranchID };
-                notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(DocType, DocNumber, verficationType);
-                notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(DocType, DocNumber, verficationType, DocDate);
-                notificationMessage.RedirectedTo = 0;
-                notificationMessage.ExpiredBy = 7;
-                notificationMessage.DocumentID = DocumentID;
-                notificationMessage.MessageGroupID = "PendingVerification";
-                notificationMessage.PageToRedirectLink = PageToRedirectLink;
-                notificationMessage.ClaimValue = claimValue;
-                notificationMessage.DocumentTypeID = DocTypeID;
-                notificationMessage.MsgDate = DateTime.Now;
                
-               // await signalRService.Send(notificationMessage);
-                IpushNotificationService.UpdatePushNotification(notificationMessage); *@
             }
+           
             GetAll();
         }
         await Task.Delay(200);

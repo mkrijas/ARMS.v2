@@ -17,6 +17,6 @@ namespace ArmsServices.DataServices
         IEnumerable<DataAuthorizationSettingsModel> Select(int? DocTypeID);
         IEnumerable<DataAuthorizationSettingsModel> Select(string DocType);
         int? Update(DataAuthorizationSettingsModel model);
-        int? Delete(int? ID, string UserID);
+        int? Delete(int? DocTypeID, int? AuthLevelID, string UserID);
     }
 }

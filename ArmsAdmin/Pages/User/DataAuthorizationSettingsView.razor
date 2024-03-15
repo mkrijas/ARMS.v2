@@ -7,134 +7,92 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-<MudItem Style="padding-top:16px; padding-bottom:30px;">
-    <MudPaper Class="d-flex p-3 mb-3">
-        <div style="width:150%; margin-left:14px; margin-right:14px;">
-            <MudAutocomplete FullWidth Label="Document Type" Value="SelectedDocType" ValueChanged="ValueChanged" T="DocTypeModel" SearchFunc="@Search" ToStringFunc="@((e) => e?.Description)"
-                              Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
-            </MudAutocomplete>
-         </div>
-         <div style="width:15%; padding-top:5px;">
-             <MudButton OnClick="FetchDocData" Variant="Variant.Filled" Color="Color.Primary">Fetch Data</MudButton>
-         </div>
-     </MudPaper>
-     @if (SelectedDocType != null)
-    {
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="1" @bind-place="model">
-            <ToolBarContent>
-                <div style="width:150%;">
-                    <MudText Typo="Typo.h6">@(SelectedDocType.Description) Settings </MudText>
-                </div>
-                <div style="width:12%;">
-                    <MudTooltip Text="Add Verification level">
-                        <MudButton Style="margin-top:4px;" OnClick="AddNewAuthentication" Variant="Variant.Filled" Color="Color.Primary">Add New</MudButton>
-                    </MudTooltip>
-                </div>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<DataAuthorizationSettingsModel, object>(x=> x.AuthorizeType)" InitialDirection="SortDirection.Ascending">AuthorizeType</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<DataAuthorizationSettingsModel, object>(x=> x.DocType)" InitialDirection="SortDirection.Ascending">DocType</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="AuthorizeType">@context.AuthorizeType</MudTd>
-                <MudTd DataLabel="DocType">@context.DocType</MudTd>
-                <MudTd DataLabel="">
-                    <MudTooltip Text="Delete">
-                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                    </MudTooltip>
-                </MudTd>
-            </RowTemplate>
-            <ChildRowContent>
-                @if (@collection.Count == 0)
-                {
-                    <MudText>There is no authentication settings</MudText>
-                }
 
-            </ChildRowContent>
-            <FooterContent>
-                <br>
-            </FooterContent>
-        </MudTable>
-    }
-</MudItem>
+<MudTable Items="@doctypelist" Hover Bordered Striped Filter="new Func<DocTypeModel,bool>(Search)">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Authorization Settings for Documents</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Document Name</MudTh>
+        <MudTh>Authorization Types</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Nr">@context.Description</MudTd>
+            <MudTd DataLabel="auths">
+            <MudStack Row="true" Spacing="5">
+                @foreach (var item in authTypelist)
+            {
+                <MudCheckBox T="bool" Checked="@IsSelected(context.ID ,@item.AuthLevelID)" CheckedChanged="@((e) => CheckedChanged(context.ID ,@item.AuthLevelID,e))" Dense="true" Color="Color.Primary" Class="ml-2 mr-2">@item.Description</MudCheckBox>
+            }
+            </MudStack>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
 
 @code {
 
-    private DataAuthorizationSettingsModel model = new DataAuthorizationSettingsModel();
-    private List<DataAuthorizationSettingsModel> collection = new List<DataAuthorizationSettingsModel>();
-    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
-    private DocTypeModel SelectedDocType;
+    List<DataAuthorizationSettingsModel> collection = new List<DataAuthorizationSettingsModel>();
+    List<DataAuthorizationTypeModel> authTypelist = new List<DataAuthorizationTypeModel>();
+    List<DocTypeModel> doctypelist = new List<DocTypeModel>();
+    string searchString1 = string.Empty;
+    string UserID = string.Empty;
 
-    private List<DocTypeModel> doctypelist;
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        model = new();
-        doctypelist = Iservice.GetDocTypesList().ToList();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+
+        collection = Iservice.Select(0).ToList();
+        doctypelist = Iservice.GetDocTypesList().Where(x => x.AuthImplemented).ToList();
+        authTypelist = Iservice.GetAuthTypes().OrderBy(x => x.AuthLevelID).ToList();
     }
 
-    private async Task<IEnumerable<DocTypeModel>> Search(string value)
-    {
-        // In real life use an asynchronous function for fetching data from an api.
-        await Task.Delay(5);
-
+    private bool Search(DocTypeModel doc)
+    {  
         // if text is null or empty, show complete list
-        if (string.IsNullOrEmpty(value))
-            return doctypelist;
-        return doctypelist.Where(x => x.Description.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+        if (string.IsNullOrEmpty(searchString1))
+            return true;
+        if (doc.Description.Contains(searchString1, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
     }
 
-    void ValueChanged(DocTypeModel val)
+    private bool IsSelected(int? DoctypeID, int? AuthLevelID)
     {
-        SelectedDocType = val;
-        GetAll();
+        return collection.Any(y => y.AuthLevelID == AuthLevelID && y.DocTypeID == DoctypeID);
     }
-
-    public void FetchDocData()
+    private void CheckedChanged(int? DoctypeID, int? AuthLevelID, bool val)
     {
-        if (SelectedDocType == null || SelectedDocType.ID == null)
+        if (val)
         {
-            snackbar.Add("Please Select Doctype", Severity.Warning);
-            return;
+            DataAuthorizationSettingsModel updateModel = new()
+                {
+                    AuthLevelID = AuthLevelID,
+                    DocTypeID = DoctypeID,
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel() { UserID = UserID }
+                };
+
+            Iservice.Update(updateModel);
+            collection.Add(updateModel);
         }
         else
         {
-            GetAll();
+            if(AuthLevelID == 99)
+            {
+                snackbar.Add("Cannot disable Approval !", Severity.Warning);
+            }
+            else{
+            Iservice.Delete(DoctypeID, AuthLevelID, UserID);
+            collection.Remove(collection.First(x => x.AuthLevelID == AuthLevelID && x.DocTypeID == DoctypeID));
+            }
         }
     }
 
-    public async Task AddNewAuthentication()
-    {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", new DataAuthorizationSettingsModel() { DocTypeID = SelectedDocType.ID });
-        var dialog = DialogService.Show<DataAuthorizationSettingsDialog>(model.ID == null ? "ADD" : "EDIT", parms, maxWidth);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            GetAll();
-        }
-    }
-
-    public async Task Delete(DataAuthorizationSettingsModel model)
-    {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure, you want to delete - AuthorizeType : " + model.AuthorizeType + " for DocType : " + model.DocType + "?");
-        if (result == true)
-        {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            Iservice.Delete(model.ID, user.Identity.Name);
-            snackbar.Add("Deleted Successfully", Severity.Success);
-        }
-        GetAll();
-    }
-
-    public void GetAll()
-    {
-        collection = Iservice.Select(SelectedDocType.ID).ToList();
-    }
 }
