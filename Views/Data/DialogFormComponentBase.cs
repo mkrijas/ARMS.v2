@@ -13,6 +13,7 @@ using ArmsServices;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Permissions;
 using Microsoft.JSInterop;
+using System.Collections.Generic;
 
 namespace Views.Data
 {
@@ -25,6 +26,8 @@ namespace Views.Data
         [Inject] protected IRoleService<RoleModel> Irole { get; set; }
         [Inject] protected IOutstandingBillsService OBIservice { get; set; }
         [Inject] protected IPartyService partyService { get; set; }
+        [Inject] protected IInterBranchMappingService interbranchService { get; set; }
+        [Inject] protected IGstUsageIDService usageCodeService { get; set; }
         [Inject] protected IPushNotificationService notiService { get; set; }
         [Inject] protected IJSRuntime JsRuntime { get; set; }
 
@@ -51,6 +54,7 @@ namespace Views.Data
 
         protected string DocNumber { get; set; }
         protected DateTime? DocDate { get; set; }
+        protected List<InterBranchTransactionTypeModel> InterBranchTranTypes = new();
         protected bool _busy;
 
         protected abstract DocumentInfoModel DocInfo { get; set; }
@@ -66,6 +70,8 @@ namespace Views.Data
             var user = authprov.User;
             UserID = user.Identity.Name;
             model.BranchID = BranchID;
+
+            InterBranchTranTypes = interbranchService.GetTypes().ToList();
         }
         protected override void OnParametersSet()
         {

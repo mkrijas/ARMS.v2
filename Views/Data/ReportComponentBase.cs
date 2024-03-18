@@ -22,6 +22,8 @@ namespace Views.Data
 
         protected int? BranchID = null;
         protected string UserID = null;
+
+        private int? HoID = 7;
         protected List<int> SelectedBranches { get; set; } = new();
 
         protected Dictionary<string, string> ReportParameters { get; set; } = new();
@@ -38,8 +40,11 @@ namespace Views.Data
 
         protected async Task SelectBranches()
         {
-            DialogParameters parms = new DialogParameters();
-            parms.Add("SelectedBranches", SelectedBranches);
+            DialogParameters parms = new DialogParameters
+            {
+                { "SelectedBranches", SelectedBranches },
+                { "EnableSelector" , HoID == BranchID }
+            };
             var dialog = dialogService.Show<MultiBranchSelector>("Select Branches", parms, new DialogOptions() { MaxWidth = MaxWidth.Large });
             var result = await dialog.Result;
 
