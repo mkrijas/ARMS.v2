@@ -107,7 +107,9 @@ namespace ArmsServices.DataServices
                     NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                     MID = dr.GetInt32("MID"),
                     Narration = dr.GetString("Narration"),
-                    TotalAmount = dr.GetDecimal("TotalAmount"),  
+                    TotalAmount = dr.GetDecimal("TotalAmount"),
+                    AuthLevelId = dr.GetInt32("AuthLevelId"),
+                    AuthStatus = dr.GetString("AuthStatus")
                 };
             }
         }

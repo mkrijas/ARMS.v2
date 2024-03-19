@@ -4,15 +4,15 @@
 @inject IFreightBillingService Iservice
 @inject IDimensionService dimensionIservice
 @inject ICostCenterService costIservice
-@inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
-@inject IDialogService DialogService
+@inject AuthenticationStateProvider auth
+@inject NavigationManager uriHelper;
 @inject SignalRService signalRService
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 @inject IPushNotificationService IpushNotificationService
-@layout BillsLayout
+@layout BillsLayout    
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -53,6 +53,7 @@
                     {
                         <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Success" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
                     }
+                    <MudIconButton OnClick="@(()=> Print(context.ProformaInvoiceID,(context.AuthLevelId == 99) ? "TAX INVOICE" : "PORFORMA INVOICE"))" Color="Color.Tertiary" Title="Print Performa Invoice" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -98,6 +99,22 @@
                 _ = ReloadTable();
             }
         }
+    }
+
+    public string ReportName { get; set; }
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
+
+    private async Task Print(int? ProformaInvoiceID, string Title)
+    {
+        ReportParameters.Clear();
+        ReportParameters.Add("ProformaInvoiceID", ProformaInvoiceID.ToString());
+        ReportParameters.Add("Title", Title);
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintTaxInvoice");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
     }
 
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)

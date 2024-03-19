@@ -177,6 +177,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@IsInterBranch", model.IsInterBranch),
                new SqlParameter("@InterBranchTranID", model.InterBranchTranID),
+               new SqlParameter("@IsTdsApplicable", model.IsTdsApplicable),
+               new SqlParameter("@TdsAmount", model.TdsAmount),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Update]", parameters))
@@ -224,8 +226,8 @@ namespace ArmsServices.DataServices
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
-                IsApplicable = dr.GetBoolean("IsApplicable"),
-                CashWithdrawal = dr.GetDecimal("CashWithdrawal"),
+                IsTdsApplicable = dr.GetBoolean("IsTdsApplicable"),
+                TdsAmount = dr.GetDecimal("TdsAmount"),
 
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
