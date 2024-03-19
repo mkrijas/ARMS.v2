@@ -178,7 +178,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@IsInterBranch", model.IsInterBranch),
                new SqlParameter("@InterBranchTranID", model.InterBranchTranID),
                new SqlParameter("@IsApplicable", model.IsApplicable),
-               new SqlParameter("@Narration", model.Narration),
+               //new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Contra.Update]", parameters))
