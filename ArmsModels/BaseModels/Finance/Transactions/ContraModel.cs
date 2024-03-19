@@ -36,5 +36,7 @@ namespace ArmsModels.BaseModels
         public bool IsPayment { get; set; }
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
+        public bool? IsTdsApplicable { get; set; }
+        public decimal? TdsAmount { get; set; }
     }
 }
