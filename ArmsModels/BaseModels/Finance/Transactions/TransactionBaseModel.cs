@@ -38,10 +38,12 @@ namespace ArmsModels.BaseModels
         public int? OtherBranchID { get; set; }
         public string OtherBranchName { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
-        public bool IsDisabled { get; set; }        
+        public bool IsDisabled { get; set; }
+        public bool? IsApplicable { get; set; }
+        public decimal? CashWithdrawal { get; set; }
         public virtual IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         { 
-            if(DocumentDate.HasValue && DocumentDate.Value.Date > DateTime.Today)
+              if(DocumentDate.HasValue && DocumentDate.Value.Date > DateTime.Today)
             {
                 yield return new ValidationResult("Document date cannot be a future date!");
             }
