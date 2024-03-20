@@ -21,6 +21,8 @@ namespace ArmsServices.DataServices.General
         ConfigModel GetFinancePayableGroupID();
         ConfigModel GetFinanceReceivableGroupID();
         ConfigModel GetBaseFinanceGroupId(string groupName);
+        ConfigModel GetFastTagUsageCode();
+        ConfigModel GetUnloadingChargeUsageCode();
         IEnumerable<ConfigModel> GetAll();
     }
 }

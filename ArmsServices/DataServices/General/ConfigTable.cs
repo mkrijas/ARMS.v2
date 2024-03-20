@@ -166,6 +166,34 @@ namespace ArmsServices.DataServices.General
             return null;
         }
 
+        public ConfigModel GetFastTagUsageCode()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@KeyString", "FasTagTollUsageCode"),
+               new SqlParameter("@Operation", "ByID")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
+
+        public ConfigModel GetUnloadingChargeUsageCode()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@KeyString", "LoadingAndUnloadingUsageCode"),
+               new SqlParameter("@Operation", "ByID")
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.ConfigTable.Select]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
+
         public ConfigModel GetCloseTripEventTypeID()
         {            
             return new ConfigModel() { KeyString= "CloseEvent",ValueString = "6"};
