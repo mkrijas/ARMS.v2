@@ -4,6 +4,7 @@
 @inject ITripService tripIservice
 @inject ITripFuelService tripFuelIservice
 @inject IConfigTable configTable
+@inject IGstUsageIDService usage
 
 @* @inject IGstUsageIDService usageIservice
 @inject ITdsRateService tdsIService
@@ -40,7 +41,7 @@
                                      <th>Amount</th>
                                      <th style="width:150px;">Quantity</th>
                                      <th style="width:150px;">Unit</th>
-                                     <th style="width:50px;"></th>
+                                     <th style="width:150px;">Reimbursement</th>
                                  </tr>
                              </thead>
                              <tbody>
@@ -54,6 +55,7 @@
                                         <td>@item.Amount</td>
                                         <td>@item.Quantity</td>
                                         <td>@item.Unit</td>
+                                        <td>@item.Reimbursement</td>
                                         @if (!ReadOnly)
                                         {
                                             <td><MudFab Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" /></td>
@@ -64,7 +66,6 @@
                         </MudSimpleTable>
                         @if (!ReadOnly)
                         {
-                            @* <div @ref="@ScrollableDiv" style="overflow-x:scroll;"> *@
                             <MudGrid>
                                 <MudItem xs="12" md="5" lg="5">
                                     <MudAutocomplete SelectValueOnTab T="OperationPostingGroupModel" Label="Particulars"
@@ -90,14 +91,16 @@
                                  <MudItem xs="12" md="2" lg="2">
                                      <MudNumericField HideSpinButtons @bind-Value="opTranSubModel.Quantity" Label="Quantity" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
                                  </MudItem>
-                                 <MudItem xs="12" md="2" lg="2">
+                                 <MudItem xs="12" md="1" lg="1">
                                      <MudTextField @bind-Value="opTranSubModel.Unit" Label="Unit" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                                  </MudItem>
-                                 <MudItem xs="12" md="2" lg="2" Class="d-flex align-content-center">
+                                <MudItem xs="12" md="2" lg="2" Class="d-flex align-content-center">
+                                    <MudCheckBox Label="Reimbursement" CheckedChanged="((bool value)=>ToggleData(value))" Checked="@opTranSubModel.IsReimbursed" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
+                                </MudItem>
+                                 <MudItem xs="12" md="1" lg="1" Class="d-flex align-content-center">
                                      <MudIconButton OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" Title="ADD" Edge="Edge.False" />
                                  </MudItem>
                              </MudGrid>
-                            @*   </div> *@
                         }
 
 
@@ -133,8 +136,8 @@
 
 @code {
 
-    [Parameter]
-    public override OpTranModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.OpTranID; } }
+        [Parameter]
+        public override OpTranModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.OpTranID; } }
     private OpTranModel _model;
 
     MudAutocomplete<OperationPostingGroupModel> OperationTitleControl;
@@ -149,6 +152,8 @@
     private decimal? AdvanceBalance;
     private decimal? AdvanceReturnAmount;
     private string displayBalance;
+    private GstUsageCodeModel FastTagUsageCodeModel { get; set; }
+    private GstUsageCodeModel LoadingAndUnlodingUsageCodeModel { get; set; }
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
@@ -193,6 +198,10 @@
             await OperationTitleControl.FocusAsync();
     }
 
+    protected void ToggleData(bool value)
+    {
+        opTranSubModel.IsReimbursed = value;
+    }
 
     void AddOperationPostingGroup(OperationPostingGroupModel uc)
     {
@@ -214,6 +223,21 @@
 
     public async Task AddItems()
     {
+        if(opTranSubModel.IsReimbursed)
+        {
+            ConfigModel cFModel = configTable.GetFastTagUsageCode();
+            FastTagUsageCodeModel = usage.SelectByCode(cFModel.ValueString);
+
+            ConfigModel cLModel = configTable.GetUnloadingChargeUsageCode();
+            LoadingAndUnlodingUsageCodeModel = usage.SelectByCode(cLModel.ValueString);
+
+            if((opTranSubModel.OperationPostingGroupModel.UsageCode.UsageCode != FastTagUsageCodeModel.UsageCode) && (opTranSubModel.OperationPostingGroupModel.UsageCode.UsageCode != LoadingAndUnlodingUsageCodeModel.UsageCode))
+            {
+                snackbar.Add("Please Check Particulars", Severity.Error);
+                return;
+            }
+        }
+
         if (opTranSubModel.OperationPostingGroupModel is not null && (opTranSubModel.Amount ?? 0) != 0)
         {
             //opTranSubModel.ExpenseUsageCode = gstusge.UsageCode;

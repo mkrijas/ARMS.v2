@@ -56,7 +56,22 @@ namespace ArmsModels.BaseModels
         public int? CostCenter { get; set; }
         public virtual string CostCenterVal { get; set; }
         public int? Dimension { get; set; }
+        public bool IsReimbursed { get; set; }
         public virtual string DimensionVal { get; set; }
         public virtual OperationPostingGroupModel OperationPostingGroupModel { get; set; }
+        public virtual string Reimbursement
+        {
+            get
+            {
+                if(IsReimbursed)
+                {
+                    return "Yes";
+                }
+                else
+                {
+                    return "No";
+                }
+            }
+        }
     }
 }
