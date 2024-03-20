@@ -27,7 +27,7 @@ namespace ArmsModels.BaseModels
         public string ArdCodeOther { get; set; }
         [Required]
         public int? CoaIDOther { get; set; }
-        [RequiredIf("ContraModeHome", "Bank",ErrorMessage ="Please select Payment Tool!")]        
+        [RequiredIf("ContraModeHome", "Bank",ErrorMessage = "Please select Payment Tool!")]        
         public string PaymentTool { get; set; }
         public decimal? BankCharges { get; set; }
         [RequiredIf("PaymentTool", "CHEQUE", ErrorMessage = "Cheque details must be specified")]
