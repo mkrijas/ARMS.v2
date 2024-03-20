@@ -66,11 +66,16 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="InvoiceDate">@context.InvoiceDate?.ToShortDateString()</MudTd>
-                    <MudTd DataLabel="InvoiceNo">@context.InvoiceNo</MudTd>
-                    <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                    <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
-                    <MudTd DataLabel="">
-                        @*     @if (@context.AuthLevelId == null)
+                <MudTd DataLabel="InvoiceNo">@context.InvoiceNo</MudTd>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber
+                    @if (context.AuthLevelId == 100)
+                    {
+                        <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
+                    }
+                </MudTd>
+                <MudTd DataLabel="">
+                    @*     @if (@context.AuthLevelId == null)
                     {
                     <MudFab @onclick="@(()=> SelectAssets()(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
                     <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
@@ -83,30 +88,32 @@
                     {
                     <MudFab @onclick="@(()=> GetAccountDetails(context))" Color="Color.Info" Icon="@Icons.Material.Filled.CurrencyExchange" title="Accounts" Size="Size.Small" IconSize="Size.Small" />
                     } *@
-                        <MudFab @onclick="@(()=> Edit(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                        <MudFab @onclick="@(()=> Edit(context,true,false))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
-                        <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
-                        @* @if (@context.AuthLevelId == 99)
+                    <MudFab @onclick="@(()=> Edit(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(()=> Edit(context,true,false))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+                    @* <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" /> *@
+                    <MudFab Disabled="@((context.AuthLevelId??100) != 100 || context.AuthLevelId == 0)" @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    @* <MudIconButton Disabled="@((context.AuthLevelId??100) != 100 || context.AuthLevelId == 0)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" /> *@
+                    @* @if (@context.AuthLevelId == 99)
                     {
                     <EntryReversedComponent DocTypeID="TaxPurchaseDocTypeID" DocumentID="context.PID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
                     } *@
-                    </MudTd>
-                </RowTemplate>
-                <PagerContent>
-                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
-                </PagerContent>
-            </MudTable>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
 
-        </MudItem>
-    </MudGrid>
+    </MudItem>
+</MudGrid>
 
 
 
-    @code {
+@code {
     bool IsOpen = false;
     private TaxPurchaseModel model = new TaxPurchaseModel();
     private List<TaxPurchaseModel> collection = new List<TaxPurchaseModel>();
-    private int numberOfRecords = 100;    
+    private int numberOfRecords = 100;
 
     [Parameter]
     public int? id { get; set; } = null;
@@ -161,7 +168,7 @@
 
         if (id != null && collection != null && collection.Any(g => g.PID == id))
         {
-            await Edit(collection.FirstOrDefault(s => s.PID == id), true,true);
+            await Edit(collection.FirstOrDefault(s => s.PID == id), true, true);
         }
     }
 
@@ -178,13 +185,13 @@
             {
                 var data = (List<AssetPOModel>)result.Data;
                 AssetPurchaseModel PI = new AssetPurchaseModel()
-                    {                        
+                    {
                         BranchID = BranchID,
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel() { UserID = UserID },
                         SelectedAssets = data,
                     };
                 parms = new DialogParameters();
-                parms.Add("model", model.Clone());                
+                parms.Add("model", model.Clone());
                 parms.Add("PI", PI);
                 parms.Add("ReadOnly", false);
                 var dialog2 = DialogService.Show<AssetPurchaseConsolidateDialog>("Asset Purchase", parms, maxWidth);
@@ -258,12 +265,12 @@
             parms.Add("ReadOnly", ReadOnly);
 
             var dialog = DialogService.Show<AssetTaxPurchaseDialog>(tds.PID == null ? "ADD" : "EDIT", parms, maxWidth);
-            var result = await dialog.Result; 
+            var result = await dialog.Result;
 
             if (!result.Canceled)
             {
                 var ResultData = (TaxPurchaseModel)result.Data;
-                
+
             }
             await GetAll(IsApproved, NumberOfRecords);
             await Task.Delay(200);
@@ -289,7 +296,7 @@
                 var authprov = await auth.GetAuthenticationStateAsync();
                 var user = authprov.User;
                 Iservice1.Delete(model.PID, user.Identity.Name);
-                IpushNotificationService.CancelAuthNotifications( DocTypeID, model.PID.Value); 
+                IpushNotificationService.CancelAuthNotifications(DocTypeID, model.PID.Value);
                 snackbar.Add("Deleted Successfully", Severity.Success);
             }
             await GetAll(IsApproved, NumberOfRecords);

@@ -4,15 +4,15 @@
 @inject IFreightBillingService Iservice
 @inject IDimensionService dimensionIservice
 @inject ICostCenterService costIservice
-@inject NavigationManager uriHelper;
 @inject MudBlazor.ISnackbar snackbar
-@inject AuthenticationStateProvider auth
-@inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
-@inject IDialogService DialogService
+@inject AuthenticationStateProvider auth
+@inject NavigationManager uriHelper;
 @inject SignalRService signalRService
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
 @inject IPushNotificationService IpushNotificationService
-@layout BillsLayout
+@layout BillsLayout    
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -48,11 +48,13 @@
                     @if (@context.AuthLevelId == 99)
                     {
                         <EntryReversedComponent DocTypeID="FreightBillingDocTypeID" DocumentID="context.ProformaInvoiceID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                        <MudIconButton OnClick="@(()=> PrintAnnexure(context.ProformaInvoiceID))" Color="Color.Tertiary" Title="Annexure Invoice" Class="ml-2" Icon="@Icons.Material.Filled.Assignment" Size="Size.Small" Variant="Variant.Filled" />
                     }
                     else
                     {
                         <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Success" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
                     }
+                    <MudIconButton OnClick="@(()=> Print(context.ProformaInvoiceID,(context.AuthLevelId == 99) ? "TAX INVOICE" : "PORFORMA INVOICE"))" Color="Color.Tertiary" Title="Print Performa Invoice" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
                 </MudTd>
             </RowTemplate>
             <PagerContent>
@@ -100,6 +102,36 @@
         }
     }
 
+    public string BranchName = "";
+    public string ReportName { get; set; }
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
+
+    private async Task Print(int? ProformaInvoiceID, string Title)
+    {
+        ReportParameters.Clear();
+        ReportParameters.Add("ProformaInvoiceID", ProformaInvoiceID.ToString());
+        ReportParameters.Add("Title", Title);
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintTaxInvoice");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+    }
+
+    private async Task PrintAnnexure(int? ProformaInvoiceID)
+    {
+        ReportParameters.Clear();
+        ReportParameters.Add("ProformaInvoiceID", ProformaInvoiceID.ToString());
+        ReportParameters.Add("BranchName", BranchName);
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "AnnexureToInvoice");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+    }
+
     private async Task HandleSearchKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
@@ -123,6 +155,7 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
         UserID = User.Identity.Name;
         GetPerfomaInvoice(IsApproved, NumberOfRecords);
 
