@@ -110,7 +110,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PMIID", model.PMIID),
                new SqlParameter("@RecordStatus", model.UserInfo.RecordStatus),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-               new SqlParameter("@Odometer", model.Odometer)
+               new SqlParameter("@Odometer", model.Odometer),
+               new SqlParameter("@TripID", model.TripID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.Update]", parameters))

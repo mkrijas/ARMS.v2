@@ -157,6 +157,7 @@ namespace ArmsServices.DataServices
                     Quantity = dr.GetDecimal("Quantity"),
                     Reference = dr.GetString("Reference"),
                     Unit = dr.GetString("Unit"),
+                    IsReimbursed = dr.GetBoolean("IsReimbursed"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),
                     CostCenter = dr.GetInt32("CostCenterID"),

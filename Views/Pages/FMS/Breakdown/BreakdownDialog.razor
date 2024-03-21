@@ -54,6 +54,8 @@
     [Parameter] public TruckModel Truck { get; set; }
     [Parameter] public TripModel CurrentTrip { get; set; }
     [Parameter] public int PendingGcs { get; set; }
+    [Parameter] public bool IsGcRemoved { get; set; }
+    [Parameter] public int CurentEventTypeId { get; set; }
     private BreakdownModel model { get; set; }
 
     private List<string> BreakdownTypes = new() { "Accident", "BreakdownType1", "BreakdownType2" };
@@ -91,18 +93,21 @@
         _busy = true;
         if (HasPermissionBreakdownServiceEdit)
         {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        model.UserInfo.UserID = authprov.User.Identity.Name;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            model.UserInfo.UserID = authprov.User.Identity.Name;
             try
             {
-                if (CurrentTrip != null && !Itrip.IsClosed(CurrentTrip.TripID))
+                if (IsGcRemoved)
                 {
-                    var authState = auth.GetAuthenticationStateAsync().Result;
-                    if (PendingGcs > 0)
+                    if (CurrentTrip != null && !Itrip.IsClosed(CurrentTrip.TripID))
                     {
-                        Itrip.Cancel(CurrentTrip.TripID, authState.User.Identity.Name);
+                        var authState = auth.GetAuthenticationStateAsync().Result;
+                        if (PendingGcs > 0)
+                        {
+                            Itrip.Cancel(CurrentTrip.TripID, authState.User.Identity.Name);
+                        }
+                        Itrip.CloseTrip(CurrentTrip.TripID, int.Parse(authState.User.Claims.First(x => x.Type == "BranchID").Value), authState.User.Identity.Name);
                     }
-                    Itrip.CloseTrip(CurrentTrip.TripID, int.Parse(authState.User.Claims.First(x => x.Type == "BranchID").Value), authState.User.Identity.Name);
                 }
                 model = Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);
