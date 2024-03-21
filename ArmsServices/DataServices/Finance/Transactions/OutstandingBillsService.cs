@@ -236,7 +236,8 @@ namespace ArmsServices.DataServices
                 ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
                 ReferenceDocNo = dr.GetString("ReferenceDocNo"),
                 isMemo=dr.GetBoolean("IsMemo"),
-                CoaID = dr.GetInt32("CoaID"),              
+                CoaID = dr.GetInt32("CoaID"),  
+                SubArdCode = dr.GetString("SubArdCode"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
