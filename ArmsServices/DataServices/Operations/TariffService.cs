@@ -21,7 +21,7 @@ namespace ArmsServices.DataServices
             Configuration = configuration;
             Iroute = _IRoute;
         }
-        public string[] TariffGroups { get { return new string[] { "FREIGHT", "INCENTIVE" }; } }
+        public string[] TariffGroups { get { return new string[] { "FREIGHT", "INCENTIVE", "REIMBURSIBLE" }; } }
 
         public int Delete(int? ID, string UserID)
         {
