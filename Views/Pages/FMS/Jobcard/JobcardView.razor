@@ -11,6 +11,7 @@
 @inject ITruckService Itruck
 @inject IAssetService Iasset
 @inject IEventService Ievent
+@inject ITripService Itrip
 @inject IJobcardWorkshopService Ijw
 @inject IJobInProgressService Ijp
 @inject IWorkshopService Iworkshop
@@ -351,7 +352,7 @@
     protected async override Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-       
+
         HasPermissionInventoryRequestDelete = await Irole.HasClaim(InventoryRequestDocTypeID.ToString(), "Delete", ctc.Token);       
         HasPermissionJobcardServiceEdit = await Irole.HasClaim(JobcardDocTypeID.ToString(), "Edit", ctc.Token);       
 
@@ -530,30 +531,31 @@
             var authProvider = await auth.GetAuthenticationStateAsync();
             int BraanchID = int.Parse(authProvider.User.Claims.First(x => x.Type == "BranchID").Value);
             SelectedJobcard.UserInfo.RecordStatus = 4;
-            Iservice.Update(SelectedJobcard);
             EventModel CurrentEvent = Ievent.GetCurrentEvent(SelectedTruck.TruckID);
+            SelectedJobcard.TripID = CurrentEvent.TripID;
+            Iservice.Update(SelectedJobcard);
             if (CurrentEvent.NextEventTypeID == null)
             {
                 CurrentEvent.NextEventTypeID = EventTypes.FirstOrDefault(s => s.EventTypeID == CurrentEvent.EventTypeID)?.DefaultNextEventTypeID ?? null;
             }
-            Ievent.Update(new EventModel()
-                {
-                    EventTypeID = 6,
-                    BranchID = BraanchID,
-                    DriverID = CurrentEvent.DriverID,
-                    DestinationID = CurrentEvent.DestinationID,
-                    OriginID = CurrentEvent.DestinationID,
-                    EventReading = CurrentEvent.EventReading,
-                    EventTime = DateTime.Now,
-                    TripID = CurrentEvent.TripID,
-                    TruckID = CurrentEvent.TruckID,
-                    GcSetID = CurrentEvent.GcSetID,
-                    NextEventTypeID = CurrentEvent.NextEventTypeID,
-                    UserInfo =
-                        {
-                            UserID = authProvider.User.Identity.Name
-                        }
-                });
+            // Ievent.Update(new EventModel()
+            //     {
+            //         //EventTypeID = 6,
+            //         BranchID = BraanchID,
+            //         DriverID = CurrentEvent.DriverID,
+            //         DestinationID = CurrentEvent.DestinationID,
+            //         OriginID = CurrentEvent.DestinationID,
+            //         EventReading = CurrentEvent.EventReading,
+            //         EventTime = DateTime.Now,
+            //         TripID = CurrentEvent.TripID,
+            //         TruckID = CurrentEvent.TruckID,
+            //         GcSetID = CurrentEvent.GcSetID,
+            //         NextEventTypeID = CurrentEvent.NextEventTypeID,
+            //         UserInfo =
+            //             {
+            //                 UserID = authProvider.User.Identity.Name
+            //             }
+            //     });
         }
         else
         {

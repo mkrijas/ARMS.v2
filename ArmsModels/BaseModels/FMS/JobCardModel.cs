@@ -41,6 +41,7 @@ namespace ArmsModels.BaseModels
         public int? PMIID { get; set; } = null;
         [Required]
         public decimal Odometer { get; set; }
+        public long? TripID { get; set; }
     }
 
     //public class MaterialRequestModel

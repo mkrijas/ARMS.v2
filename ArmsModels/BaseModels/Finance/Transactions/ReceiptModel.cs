@@ -45,6 +45,7 @@ namespace ArmsModels.BaseModels
         public int? MID { get; set; }
         public bool? IsMemo { get; set; } = false;
         public int? CoaID { get; set; }
+        public string SubArdCode { get; set; }
         public decimal? ReceiptAmount
         {
             get { return _ReceiptAmount; }

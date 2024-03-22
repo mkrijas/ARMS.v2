@@ -52,6 +52,7 @@ namespace ArmsModels.BaseModels
         public int? MID { get; set; }
         public bool IsMemo { get; set; } = false;
         public int? CoaID { get; set; }
+        public string SubArdCode { get; set; }
         public virtual decimal? OutstandingAmount { get; set; }
         public virtual string OutstandingAmountDisplayText { get { return Math.Abs(OutstandingAmount ?? 0).ToString() + " " + ((OutstandingAmount ?? 0) < 0 ? "Cr" : "Dr"); } }
         public decimal? PayAmount
