@@ -16,6 +16,10 @@ namespace ArmsModels.BaseModels
         }
         public int? DraftBillID { get; set; }
         [Required]
+        public DateTime? DocFromDate { get; set; }
+        [Required]
+        public DateTime? DocToDate { get; set; }
+        [Required]
         public OrderModel Order { get; set; }
         [Required]
         public TariffTypeModel TariffType { get; set; }

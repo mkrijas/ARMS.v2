@@ -448,6 +448,8 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@DraftBillID", model.DraftBillID),
                new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@DocFromDate", model.DocFromDate),
+               new SqlParameter("@DocToDate", model.DocToDate),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@OrderID", model.Order.OrderID),
