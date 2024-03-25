@@ -35,7 +35,9 @@ namespace Views.Data
             // send email
             using (var smtp = new SmtpClient())
             {
-                smtp.Connect(Options.Host_Address, Options.Host_Port, Options.Host_SecureSocketOptions);
+                smtp.CheckCertificateRevocation = false;                
+                smtp.Connect(Options.Host_Address, Options.Host_Port);
+                
                 smtp.Authenticate(Options.Host_Username, Options.Host_Password);
                 smtp.Send(email);
                 smtp.Disconnect(true);
