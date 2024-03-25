@@ -111,11 +111,15 @@ namespace Views
             services.AddTransient<IEmailSender, EmailSender>();
             services.Configure<EmailSenderOptions>(options =>
             {
-                options.Host_Address = "smtp-relay.sendinblue.com";
-                options.Host_Port = 587;
-                options.Host_Username = "mkrijas@gmail.com";
-                options.Host_Password = "wbrhVfpAD4c210yU";
-                options.Sender_EMail = "noreply@teamthai.in";
+                options.Host_Address = "10.200.50.20";
+                options.Host_Port = 25;
+                options.Host_Username = "noreply_arms@teamthai.in";
+                options.Host_Password = "arms@123";
+                //options.Host_Address = "smtp-relay.sendinblue.com";
+                //options.Host_Port = 587;
+                //options.Host_Username = "mkrijas@gmail.com";
+                //options.Host_Password = "wbrhVfpAD4c210yU";
+                options.Sender_EMail = "noreply_arms@teamthai.in";
                 options.Sender_Name = "ArmsV2";
             });
         #endregion
