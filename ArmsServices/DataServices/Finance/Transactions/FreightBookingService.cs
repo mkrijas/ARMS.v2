@@ -294,6 +294,7 @@ namespace ArmsServices.DataServices
             }
             return ID;
         }
+
         private BillingModel GetFinalInvoiceModel(IDataRecord dr)
         {
             return new BillingModel
@@ -526,16 +527,16 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Reverse]", parameters);
         }
 
-        public IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, DateTime? begin, DateTime? end)
+        public IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end)
         {
-
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "Pending"),
-               new SqlParameter("Begin",begin),
-               new SqlParameter("End",end),
+               new SqlParameter("@Begin",begin),
+               new SqlParameter("@End",end),
                new SqlParameter("@OrderID", OrderID),
                new SqlParameter("@TariffTypeID", TariffTypeID),
+               new SqlParameter("@GcTypeID", GcTypeID)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
@@ -544,16 +545,16 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<GcTariffModel> GenerateTariffs(int? OrderID, short? TariffTypeID, DateTime? begin, DateTime? end)
+        public IEnumerable<GcTariffModel> GenerateTariffs(int? OrderID, short? TariffTypeID, int?GcTypeID, DateTime? begin, DateTime? end)
         {
-
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "Generate"),
-               new SqlParameter("Begin",begin),
-               new SqlParameter("End",end),
+               new SqlParameter("@Begin", begin),
+               new SqlParameter("@End", end),
                new SqlParameter("@OrderID", OrderID),
                new SqlParameter("@TariffTypeID", TariffTypeID),
+               new SqlParameter("@GcTypeID", GcTypeID)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Generate]", parameters))
@@ -561,7 +562,6 @@ namespace ArmsServices.DataServices
                 yield return GetTariffEntries(dr);
             }
         }
-
 
         GcTariffModel GetTariffEntries(IDataRecord dr)
         {
@@ -579,7 +579,6 @@ namespace ArmsServices.DataServices
                 ConsigneeName = dr.GetString("ConsigneeName"),
             };
         }
-
 
         public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks, string InvoiceNumber)
         {

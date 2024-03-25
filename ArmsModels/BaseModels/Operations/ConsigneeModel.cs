@@ -44,5 +44,6 @@ namespace ArmsModels.BaseModels
         public decimal? Amount { get; set; }
         [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
         public DateTime? DocumentDate { get; set; }
+        public string InvoiceNo { get; set; }
     }
 }
