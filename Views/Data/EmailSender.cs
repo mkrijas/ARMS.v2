@@ -34,11 +34,10 @@ namespace Views.Data
 
             // send email
             using (var smtp = new SmtpClient())
-            {
-                smtp.CheckCertificateRevocation = false;                
+            {                                
                 smtp.Connect(Options.Host_Address, Options.Host_Port, Options.Host_SecureSocketOptions = MailKit.Security.SecureSocketOptions.None);
                 
-                smtp.Authenticate(Options.Host_Username, Options.Host_Password);
+                //smtp.Authenticate(Options.Host_Username, Options.Host_Password);
                 smtp.Send(email);
                 smtp.Disconnect(true);
             }
