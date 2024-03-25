@@ -128,6 +128,7 @@ namespace ArmsServices.DataServices
                     Amount = dr.GetDecimal("Amount"),
                     EntryRef = dr.GetString("EntryRef"),
                     DocumentDate = dr.GetDateTime("DocumentDate"),
+                    InvoiceNo = dr.GetString("InvoiceNo"),
                     Consignee = new ConsigneeModel()
                     {
                         ConsigneeID = dr.GetInt32("ConsigneeID"),
