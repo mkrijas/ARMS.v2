@@ -10,6 +10,7 @@
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
 @layout BillsLayout
+@inject IGcService IGcService
 
 <MudPaper Class="p-4">
     <MudGrid>
@@ -29,18 +30,26 @@
                 }
             </MudSelect>
         </MudItem>
-        <MudItem xs="12" md="4">
+        <MudItem xs="12" md="3">
+            <MudSelect Label="Select GC Type" @bind-Value="GcType" T="GcTypeModel" ToStringFunc="@((p) => p?.GcTypeName)" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                @foreach (var item in GcTypes)
+                {
+                    <MudSelectItem Value="@item">@item.GcTypeName</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
             <MudDateRangePicker Label="Select Period" @bind-DateRange="@dateRange" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Required></MudDateRangePicker>
         </MudItem>
-        <MudItem xs="12" md="2" Class="d-flex align-center">
+        <MudItem xs="12" md="3" Class="d-flex align-left">
             <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Fetch</MudButton>
-            <MudButton OnClick="Generate" Variant="Variant.Filled" Color="Color.Secondary" ButtonType="ButtonType.Button">Generate</MudButton>
+            <MudButton OnClick="Generate" Style="margin-left: 20px;" Variant="Variant.Filled" Color="Color.Secondary" ButtonType="ButtonType.Button">Generate</MudButton>
         </MudItem>
         @if (collection.Any())
         {
-            <MudItem Class="" >
+            <MudSpacer></MudSpacer>
+            <MudItem Class="">
                 <MudButton OnClick="Create" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Create Consolidate Draft Bill</MudButton>
-            
             </MudItem>
         }
     </MudGrid>
@@ -70,7 +79,6 @@
             </PagerContent>
         </MudTable>
     </MudItem>
-
 </MudGrid>
 <br />
 
@@ -79,6 +87,8 @@
     private List<GcTariffModel> collection = new List<GcTariffModel>();
     private List<OrderModel> Orders = new();
     private OrderModel SelectedOrder = new();
+    private List<GcTypeModel> GcTypes = new();
+    private GcTypeModel GcType = new();
     private List<TariffTypeModel> TariffTypes = new();
     private TariffTypeModel SelectedTariffType = new();
     private HashSet<GcTariffModel> selectedItems1 = new HashSet<GcTariffModel>();
@@ -99,21 +109,64 @@
         string UserID = authprov.User.Identity.Name;
         Orders = await orderIservice.SelectByBranch(BranchID).ToListAsync();
         TariffTypes = tariffIservice.SelectTariffTypes("All").ToList();
+        GcTypes = IGcService.SelectGcTypes().ToList();
     }
 
     public void fetch()
     {
-        GetTariffData();
-    }
-
-    public void GetTariffData()
-    {
-        collection = Iservice.GetPending(SelectedOrder.OrderID, SelectedTariffType.TariffTypeID, dateRange?.Start ?? null, dateRange?.End ?? null).ToList();
+        LoadData("Fetch");
     }
 
     void Generate()
     {
-        collection = Iservice.GenerateTariffs(SelectedOrder.OrderID, SelectedTariffType.TariffTypeID, dateRange?.Start ?? null, dateRange?.End ?? null).ToList();
+        LoadData("Generate");
+    }
+
+    public async Task LoadData(string a)
+    {
+        if (SelectedOrder.OrderID == null)
+        {
+            snackbar.Add("Order not selected ! ", Severity.Error);
+            return;
+        }
+        if (SelectedTariffType.TariffTypeID == null)
+        {
+            snackbar.Add("TafiffType not selected ! ", Severity.Error);
+            return;
+        }
+        if (GcType.GcTypeID == null)
+        {
+            snackbar.Add("GcType not selected ! ", Severity.Error);
+            return;
+        }
+        if (dateRange?.Start == null || dateRange?.End == null)
+        {
+            snackbar.Add("Period Date not selected ! ", Severity.Error);
+            return;
+        }
+        if (a == "Fetch")
+        {
+            collection = Iservice.GetPending(SelectedOrder.OrderID, SelectedTariffType.TariffTypeID, GcType.GcTypeID, dateRange?.Start ?? null, dateRange?.End ?? null).ToList();
+        }
+        if (a == "Generate")
+        {
+            collection = Iservice.GenerateTariffs(SelectedOrder.OrderID, SelectedTariffType.TariffTypeID, GcType.GcTypeID, dateRange?.Start ?? null, dateRange?.End ?? null).ToList();
+        }
+        if (collection.Count == 0)
+        {
+            if (a == "Fetch")
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Oops !",
+                    "No collection found on fetching !");
+            }
+            if (a == "Generate")
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                   "Oops !",
+                   "No collection found on Generating !");
+            }
+        }
     }
 
     private async Task Create()
@@ -122,7 +175,7 @@
         {
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
             if (selectedItems1.Count > 0)
-            {   
+            {
                 ConsolidatedDraftBillModel cdm = new()
                     {
                         UserInfo = new() { UserID = UserID },
@@ -148,7 +201,7 @@
                     Iservice.UpdateConsolidatedDraftBill(UpatedModel);
                     snackbar.Add("Created Successfully ", Severity.Success);//value = "visible";
                 }
-                GetTariffData();
+                LoadData("Fetch");
             }
             else
             {
