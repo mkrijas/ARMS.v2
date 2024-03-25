@@ -112,7 +112,7 @@ namespace Views
             services.Configure<EmailSenderOptions>(options =>
             {
                 options.Host_Address = "10.200.50.20";
-                options.Host_Port = 80;
+                options.Host_Port = 25;
                 options.Host_Username = "noreply_arms@teamthai.in";
                 options.Host_Password = "arms@123";
                 //options.Host_Address = "smtp-relay.sendinblue.com";
