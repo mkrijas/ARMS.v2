@@ -15,6 +15,11 @@
         <MudItem xs="12" md="5">
             <MudTextField @bind-Value="tripnumber" Label="Trip Number" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
         </MudItem>
+        <MudItem xs="12" md="2">
+            <MudToggleIconButton @bind-Toggled="@ListView"
+                                 Icon="@Icons.Material.Filled.FilterListOff" Color="@Color.Error" Title="Off"
+                                 ToggledIcon="@Icons.Material.Filled.FilterList" ToggledColor="@Color.Success" ToggledTitle="On" />
+        </MudItem>
         <MudItem xs="12" md="5">
             <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
         </MudItem>
@@ -26,22 +31,61 @@
         </MudItem>
     </MudGrid>
 </MudPaper>
-<MudGrid Class="mt-5">
-    @foreach (var item in collection)
-    {
-        <MudItem sm="12" xl="4" lg="6">
-            <TripDetailsCard Trip="item" IsLocked="item.IsLocked"></TripDetailsCard>
+@if(!ListView && collection != null)
+{
+    <MudGrid Class="mt-5">
+        @foreach (var item in collection)
+        {
+            <MudItem sm="12" xl="4" lg="6">
+                <TripDetailsCard Trip="item" IsLocked="item.IsLocked"></TripDetailsCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+else if (ListView && collection != null && collection.Any())
+{
+    <MudGrid Class="mt-5">
+        <MudItem xs="12">
+            <MudSimpleTable>
+                <thead>
+                    <tr>
+                        <th>Trip Number</th>
+                        <th>Trip Date</th>
+                        <th>Truck</th>
+                        <th>Driver</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in collection)
+                    {
+                        <tr>                            
+                            <td>@item.TripNumberDisplay</td>
+                            <td>@item.TripDate?.ToString("dd/MM/yyyy")</td>
+                            <td>@TripInfoMdl.Truck</td>
+                            <td>@TripInfoMdl.Driver</td>
+                            <td>
+                                <MudTooltip Text="View">
+                                    <MudFab style="font-size:5px" @onclick="@(()=> OpenTripCard(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Size="Size.Small" IconSize="Size.Small" />
+                                </MudTooltip>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
         </MudItem>
-    }
-</MudGrid>
+    </MudGrid>
+}
 
 @code {
 
     public TruckModel SelectedTruck { get; set; }
     private List<TripModel> collection = new List<TripModel>();
     private string tripnumber = string.Empty;
-    public DateTime? FromDate { get; set; } = DateTime.Now;
-    public DateTime? ToDate { get; set; } = DateTime.Now;
+    public DateTime? FromDate { get; set; } = null;
+    public DateTime? ToDate { get; set; } = null;
+    public bool ListView { get; set; }
+    private TripInfoModel TripInfoMdl = new();
 
     public async Task fetch()
     {
@@ -51,9 +95,13 @@
         int branchID = int.Parse(brancIDString);
         if (string.IsNullOrEmpty(tripnumber) || (tripnumber.Length == 3))
         {
-            await foreach (var item in tripIservice.SearchTrips(SelectedTruck?.TruckID, branchID, tripnumber))
+            await foreach (var item in tripIservice.SearchTrips(SelectedTruck?.TruckID, branchID, tripnumber, FromDate, ToDate))
             {
                 collection.Add(item);
+                if (item.TripID != null)
+                {
+                    TripInfoMdl = tripIservice.GetTripInfo(item.TripID);
+                }
             }
         }
         else
@@ -62,5 +110,12 @@
                 "Warning !",
                 "There should be atleast 3 numbers in Trip Number.");
         }
+    }
+
+    private async void OpenTripCard(TripModel Trip)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("Trip", Trip);
+        var result = DialogService.Show<TripDetailsCard>(Trip.TripNumberDisplay.ToString() + " Details", parameters, new DialogOptions { MaxWidth = MaxWidth.Large });
     }
 }
