@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
         int LockedTrip(long? TripID, bool LockedStatus, string UserID); //EnableLock  //DisableLock
         bool IsSettled(long? TripID);
         TripInfoModel GetTripInfo(long? TripID);
-        IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString);
+        IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString, DateTime? FromDate, DateTime? ToDate);
         IEnumerable<object> GetOutstandingBills(long? TripID);
         IEnumerable<GcTariffModel> GetTariffs(long? TripID);
     }

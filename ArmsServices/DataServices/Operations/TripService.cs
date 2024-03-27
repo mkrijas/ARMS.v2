@@ -199,6 +199,7 @@ namespace ArmsServices.DataServices
                     Driver = reader.GetString("Driver"),
                     Fuel = reader.GetDecimal("Fuel"),
                     RunKM = reader.GetInt32("RunKm"),
+                    RunDuration = reader.GetString("TimeDifference"),
                     TripID = reader.GetInt64("TripID"),                    
                     TripNumber = reader.GetString("TripNumber"),
                     Truck = reader.GetString("Truck"),
@@ -211,13 +212,15 @@ namespace ArmsServices.DataServices
             return null;
         }
 
-        public async IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString)
+        public async IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString, DateTime? FromDate, DateTime? ToDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripNumber", TripNumberSearchString),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@TruckID", TruckID),
+               new SqlParameter("@FromDate", FromDate),
+               new SqlParameter("@ToDate", ToDate),
                new SqlParameter("@Operation", "SearchTrip"),
             };
             await foreach (var reader in Iservice.GetDataReaderAsync("[usp.Operation.Trip.Select]", parameters))

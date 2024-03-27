@@ -46,6 +46,7 @@ namespace ArmsModels.BaseModels
         public string Driver { get; set; }
         public decimal? Mileage { get; set; }
         public int? RunKM { get; set; }
+        public string RunDuration { get; set; }
         public decimal? Fuel { get; set; }
         public decimal? Freight { get; set; }
         public decimal? Expenses { get; set; }

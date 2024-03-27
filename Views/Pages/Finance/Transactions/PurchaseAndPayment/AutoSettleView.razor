@@ -43,7 +43,7 @@
                 <MudItem xs="1">
                     <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
                 </MudItem>
-               @*  <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox> *@
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<AutoSettleModel , object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
@@ -130,13 +130,13 @@
 
     private void ReloadTable()
     {
-        GetAll(NumberOfRecords);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
     void ApprovedChanged(bool value)
     {
         IsApproved = value;
-        GetAll(NumberOfRecords);
+        GetAll(IsApproved, NumberOfRecords);
     }
 
     protected override async Task OnInitializedAsync()
@@ -150,7 +150,7 @@
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         UserID = user.Identity.Name;
-        GetAll( NumberOfRecords);
+        GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         await signalRService.StartAsync();
         if (id != null && collection != null && collection.Any(g => g.AutoSettleID == id))
@@ -159,9 +159,16 @@
         }
     }
 
-    private void GetAll( int numberOfRecords)
-    {         
-            collection = Iservice.SelectAutoSettledEntries(branchID, NumberOfRecords).ToList();      
+    private void GetAll(bool val, int numberOfRecords)
+    {      
+        if (val)
+        {
+            collection = Iservice.SelectAutoSettledEntriesByApproved(branchID, NumberOfRecords).ToList();
+        }
+        else
+        {
+            collection = Iservice.SelectAutoSettledEntriesByUnapproved(branchID, NumberOfRecords).ToList();
+        }
     }
 
     public async Task OpenDialogpayment(AutoSettleModel obj, bool ReadOnly)
@@ -196,7 +203,7 @@
             // await signalRService.Send(notificationMessage);
 
         }
-        GetAll( NumberOfRecords);
+        GetAll(IsApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;
     }
@@ -213,7 +220,7 @@
                 Iservice.DeleteAutoSettle(model.AutoSettleID, UserID);
                 snackbar.Add("Deleted Successfully", Severity.Success);
             }
-            GetAll( NumberOfRecords);
+            GetAll(IsApproved, NumberOfRecords);
         }
         else
         {
