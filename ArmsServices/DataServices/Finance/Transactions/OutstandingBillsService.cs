@@ -18,7 +18,18 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-       
+
+        public int Approve(int? ID, string UserID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AutoSettleID", ID),
+               new SqlParameter("@Remarks", Remarks),
+               new SqlParameter("@UserID", UserID),
+
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Approve]", parameters);
+        }
 
         public int? AutoSettle(AutoSettleModel model)
         {
@@ -82,11 +93,43 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<AutoSettleModel> SelectAutoSettledEntries(int? BranchID, int numberOfRecords)
+        public IEnumerable<AutoSettleModel> SelectAutoSettledEntriesByApproved(int? BranchID, int numberOfRecords)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByBranch"),
+               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@numberOfRecords", numberOfRecords),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Select]", parameters))
+            {
+                yield return new AutoSettleModel()
+                {
+                    PartyInfo = new PartyModel()
+                    {
+                        PartyID = dr.GetInt32("PartyID"),
+                        TradeName = dr.GetString("tradeName"),
+                    },
+                    AutoSettleID = dr.GetInt32("AutoSettleID"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    DocumentDate = dr.GetDateTime("DocumentDate"),
+                    DocumentNumber = dr.GetString("DocumentNumber"),
+                    NatureOfTransaction = dr.GetString("NatureOfTransaction"),
+                    MID = dr.GetInt32("MID"),
+                    Narration = dr.GetString("Narration"),
+                    TotalAmount = dr.GetDecimal("TotalAmount"),
+                    AuthLevelId = dr.GetInt32("AuthLevelId"),
+                    AuthStatus = dr.GetString("AuthStatus")
+                };
+            }
+        }
+
+        public IEnumerable<AutoSettleModel> SelectAutoSettledEntriesByUnapproved(int? BranchID, int numberOfRecords)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByUnapproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@numberOfRecords", numberOfRecords),
             };

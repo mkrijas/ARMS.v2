@@ -19,7 +19,9 @@ namespace ArmsServices.DataServices
         // int SettleBillsToPayment(int? OPID, List<BillsReceiptModel> Bills);
         int? AutoSettle(AutoSettleModel model);  //AutoSettle
         IEnumerable<BillsPaidModel> GetAutoSettledBills(int? ID);
-        IEnumerable<AutoSettleModel> SelectAutoSettledEntries(int? BranchID,int numberOfRecords);
+        IEnumerable<AutoSettleModel> SelectAutoSettledEntriesByApproved(int? BranchID, int numberOfRecords);
+        IEnumerable<AutoSettleModel> SelectAutoSettledEntriesByUnapproved(int? BranchID,int numberOfRecords);
         int DeleteAutoSettle(int? ID, string userID);
+        int Approve(int? ID, string UserID, string Remarks);
     }
 }
