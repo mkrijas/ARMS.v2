@@ -12,7 +12,7 @@ namespace ArmsServices.DataServices
     {
         int? UpdateFinalInvoice(BillingModel model);  
         int? UpdateProformaInvoice(ProformaInvoiceModel model);  //EditProformaInvoice
-        int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks,string InvoiceNumber);  //Approve
+        int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks,string InvoiceNumber, string InvoiceRefNumber);  //Approve
         int? ReverseProformaInvoice(int? ProformaInvoiceID, string userID);  //ReverseProformaInvoice
         int? UpdateConsolidatedDraftBill(ConsolidatedDraftBillModel model);  //EditConsolidatedDraftBill
         BillingModel SelectFinalInvoice(int? ID);

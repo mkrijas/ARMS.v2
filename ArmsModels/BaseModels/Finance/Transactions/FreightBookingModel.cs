@@ -64,6 +64,7 @@ namespace ArmsModels.BaseModels
         public virtual DateTime? BillDate { get; set; }
         public virtual DateTime? InvoiceDate { get; set; }
         public virtual string BillNumber { get; set; }
+        public virtual string PassNumber { get; set; }
         public virtual string ConsigneeName { get; set; }
         public virtual decimal? BillQuantity { get; set; }
         public virtual string GcNumber { get; set; }

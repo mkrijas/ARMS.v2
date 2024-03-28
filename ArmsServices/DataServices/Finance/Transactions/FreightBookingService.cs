@@ -577,17 +577,19 @@ namespace ArmsServices.DataServices
                 BillNumber = dr.GetString("BillNumber"),
                 BillQuantity = dr.GetDecimal("BillQuantity"),
                 ConsigneeName = dr.GetString("ConsigneeName"),
+                PassNumber = dr.GetString("PassNumber"),
             };
         }
 
-        public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks, string InvoiceNumber)
+        public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks, string InvoiceNumber, string InvoiceRefNumber)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ProformaInvoiceID", ProformaInvoiceID),
                new SqlParameter("@UserID", userID),
                new SqlParameter("@Remarks", Remarks),
-               new SqlParameter("InvoiceNumber", InvoiceNumber)
+               new SqlParameter("InvoiceNumber", InvoiceNumber),
+               new SqlParameter("InvoiceRefNumber", InvoiceRefNumber)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Approve]", parameters);
         }
