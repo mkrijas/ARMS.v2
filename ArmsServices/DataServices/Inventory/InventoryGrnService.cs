@@ -198,7 +198,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Operation","Reverse")
             };
-            return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Reverse]", parameters);
         }
     }
 }
