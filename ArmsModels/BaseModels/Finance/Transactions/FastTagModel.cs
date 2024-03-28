@@ -65,6 +65,7 @@ namespace Core.BaseModels.Finance.Transactions
         public int? TruckID { get; set; }
         public long? TripID { get; set; }
         public long? TripNumber { get; set; }
+        public string Destination { get; set; }
         public string NumberPlate { get; set; }
         public string PlazaCode { get; set; }
         public string Description { get; set; }
