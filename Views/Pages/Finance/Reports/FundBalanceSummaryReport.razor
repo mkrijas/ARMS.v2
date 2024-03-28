@@ -1,0 +1,84 @@
+﻿@page "/FundBalanceSummery"
+@inherits ReportComponentBase
+
+<MudText Typo="Typo.h4"> Party Balance Summary </MudText>
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Class="mb-5 p-4">
+            <MudGrid>  
+                <MudItem xs="3">
+                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="3">
+                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="2">
+                    <MudIconButton Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>              
+                    <MudIconButton Title="Render Report" Icon="@Icons.Material.Filled.DocumentScanner" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer"></MudIconButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters  @ref="@report"></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    ReportViewer report;
+    public DateTime? FromDate { get; set; } = DateTime.Now;
+    public DateTime? ToDate { get; set; } = DateTime.Now;
+
+    public PartyModel SelectedParty { get; set; } = new();
+    public string PartyCode { get; set; }
+    public bool ShowReport { get; set; } = false;
+    public string ReportName { get; set; }
+    public BranchModel CurrentBranch { get; set; } = new();
+
+   
+
+    protected bool Validate()
+    {
+        if (!SelectedBranches.Any())
+        {
+            snackbar.Add("Please select branch.", Severity.Error);
+            return false;
+        }
+        if (FromDate == null)
+        {
+            snackbar.Add("Please select From Date.", Severity.Error);
+            return false;
+        }
+        if (ToDate == null)
+        {
+            snackbar.Add("Please select To Date.", Severity.Error);
+            return false;
+        }
+        return true;
+    }
+
+    public async Task RenderReportViewer()
+    {
+        ShowReport = true;
+        try
+        {
+            if(Validate())
+            {
+                ShowReport = true;
+                ReportName = "FinancePartyBalanceSummary";
+                ReportParameters.Clear();   
+                ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+                ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
+                ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
+                await report.RenderReport();
+            }
+        }
+        catch(Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}
