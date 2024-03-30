@@ -11,6 +11,10 @@
 @inject IRoleService<RoleModel> Irole
 @layout BillsLayout
 @inject IGcService IGcService
+@using OfficeOpenXml;
+@using System.IO;
+@using System.Collections.Generic;
+@using OfficeOpenXml.Style;
 
 <MudPaper Class="p-4">
     <MudGrid>
@@ -49,7 +53,8 @@
         {
             <MudSpacer></MudSpacer>
             <MudItem Class="">
-                <MudButton OnClick="Create" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Create Consolidate Draft Bill</MudButton>
+                <MudButton OnClick="ExcelDownload" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
+                <MudButton Style="margin-left: 14px;" OnClick="Create" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Create Consolidate Draft Bill</MudButton>
             </MudItem>
         }
     </MudGrid>
@@ -60,7 +65,7 @@
         <MudTable Items="@collection" @bind-SelectedItems="selectedItems1" MultiSelection="true" Dense="true" Hover="true" Striped="true" Elevation="1" Filter="new Func<GcTariffModel, bool>(search)">
             <ToolBarContent>
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchBookFreight" Placeholder="Search Stockist Freight... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudTextField @bind-Value="searchBookFreight" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillNumber)" InitialDirection="SortDirection.Ascending">Bill Number</MudTableSortLabel></MudTh>
@@ -180,6 +185,69 @@
         }
     }
 
+    public void ExcelDownload()
+    {
+        using (ExcelPackage excelPackage = new ExcelPackage())
+        {
+            // Add a worksheet
+            ExcelWorksheet worksheet = excelPackage.Workbook.Worksheets.Add("Sheet1");
+
+            // Add column headers
+            worksheet.Cells[1, 1].Value = "BillNumber";
+            worksheet.Cells[1, 2].Value = "BillDate";
+            worksheet.Cells[1, 3].Value = "PassNumber";
+            worksheet.Cells[1, 4].Value = "ConsigneeName";
+            worksheet.Cells[1, 5].Value = "BillQuantity";
+            worksheet.Cells[1, 6].Value = "Amount";
+            for (int i = 1; i <= 6; i++)
+            {
+                worksheet.Cells[1, i].Style.Font.Bold = true;
+            }
+
+            worksheet.Column(2).Style.Numberformat.Format = "dd-MM-yyyy"; // Date format
+            worksheet.Column(5).Style.Numberformat.Format = "0.00"; // Integer format
+            worksheet.Column(6).Style.Numberformat.Format = "0.00";
+
+            // Add data rows
+            int row = 2;
+            foreach (var item in collection)
+            {
+                worksheet.Cells[row, 1].Value = item.BillNumber;
+                worksheet.Cells[row, 2].Value = item.BillDate;
+                worksheet.Cells[row, 3].Value = item.PassNumber;
+                worksheet.Cells[row, 4].Value = item.ConsigneeName;
+                worksheet.Cells[row, 5].Value = item.BillQuantity;
+                worksheet.Cells[row, 6].Value = item.Amount;
+
+                row++;
+            }
+
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+
+            string filePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Downloads";
+
+            // Save the Excel package to a file
+            // FileInfo excelFile = new FileInfo(@"C:\~\Downloads\Pending_Consignments.xlsx");
+            // excelPackage.SaveAs(excelFile);
+            string url = Path.Combine(filePath, "Pending Consignments.xlsx");
+            FileInfo excelFile = new FileInfo(url);
+
+            var byteArray = excelPackage.GetAsByteArray();
+            if (byteArray != null && byteArray.Length > 0)
+            {
+                excelPackage.SaveAs(excelFile);
+                snackbar.Add("File Downloaded Successfully ", Severity.Success);
+            }
+            else
+            {
+                snackbar.Add("File Downloaded error ! ", Severity.Error);
+            }
+        }
+    }
+
     private async Task Create()
     {
         if (HasPermissionFreightBillingServiceEditConsolidatedDraftBill)
@@ -235,5 +303,4 @@
         }
         return false;
     }
-
 }
