@@ -71,4 +71,10 @@ namespace ArmsModels.BaseModels
         public virtual long? TripNumber { get; set; }
         public virtual string TariffTypeName { get; set; }
     }
+
+    public class RefModel
+    {
+        public string InvoiceNumber { get; set; }
+        public string InvoiceRefNumber { get; set; }
+    }
 }
