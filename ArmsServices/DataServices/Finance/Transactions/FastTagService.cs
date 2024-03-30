@@ -286,6 +286,7 @@ namespace DAL.DataServices.Finance.Transactions
                 TruckID = dr.GetInt32("TruckID"),
                 TripPrefix = dr.GetString("TripPrefix"),
                 TripNumber = dr.GetInt64("TripNumber"),
+                Destination = dr.GetString("Destination"),
                 PlazaCode = dr.GetString("PlazaCode"),
                 Description = dr.GetString("Description"),
                 TransactionID = dr.GetString("TransactionID"),
