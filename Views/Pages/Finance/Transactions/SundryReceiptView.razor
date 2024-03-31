@@ -1,12 +1,10 @@
 ﻿@page "/SundryReceiptView"
 @page "/SundryReceiptView/{id:int}"
-
 @inherits ViewComponentBase<SundryReceiptModel>
-
 @inject ISundryReceiptService Iservice
 @inject IConfigTable Iconfig
 @inject IGstUsageIDService Iusage
-
+@inject IDialogService DialogService
 @using Views.Shared
 
 @* @using System.Threading;
@@ -59,6 +57,7 @@
                     @if (@context.AuthLevelId == 99)
                     {
                         <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.SundryReceiptID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                        <MudIconButton OnClick="@(()=> Print(context.SundryReceiptID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
                     }
                     else
                     {
@@ -75,7 +74,28 @@
 
 @code {
 
+    protected override List<SundryReceiptModel> collection { get; set; } = new();
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 12,
+            DocumentName = "SundryReceipt"
+        };
 
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
+    public string BranchName = "";
+        
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+
+        if (id != null && collection != null && collection.Any(g => g.SundryReceiptID == id))
+        {
+            await OpenForm(collection.FirstOrDefault(s => s.SundryReceiptID == id), true);
+        }
+    }
 
     private async Task StockistsFreightSelection()
     {
@@ -126,26 +146,6 @@
         }
     }
 
-
-    protected override List<SundryReceiptModel> collection { get; set; } = new();
-
-    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
-        {
-            DocumentTypeID = 12,
-            DocumentName = "SundryReceipt"
-        };
-
-
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-
-        if (id != null && collection != null && collection.Any(g => g.SundryReceiptID == id))
-        {
-            await OpenForm(collection.FirstOrDefault(s => s.SundryReceiptID == id), true);
-        }
-    }
-
     protected override async Task OpenForm(SundryReceiptModel ppm, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
@@ -182,4 +182,16 @@
         }
     }
 
+    private async Task Print(int? SundryReceiptID)
+    {
+        ReportParameters.Clear();
+        ReportParameters.Add("SundryReceiptID", SundryReceiptID.ToString());
+        ReportParameters.Add("BranchName", BranchName);
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintSundryReceipt");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+    }   
 }
