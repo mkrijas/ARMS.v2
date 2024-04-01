@@ -11,6 +11,7 @@ namespace ArmsServices.DataServices
     public interface IJobcardService
     {
         JobcardModel Update(JobcardModel model);  //Edit
+        int? CloseJobcard(int? JobcardID, string UserID);
         JobcardModel SelectByID(int? ID);
         int Delete(int? JobcardID, string UserID);  //Delete
         IEnumerable<JobcardModel> Select(int? ID);

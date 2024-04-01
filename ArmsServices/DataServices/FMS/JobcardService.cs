@@ -201,5 +201,15 @@ namespace ArmsServices.DataServices
                 Mechanic = dr.GetString("Mechanic")
             };
         }
+
+        public int? CloseJobcard(int? JobcardID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@JobcardID", JobcardID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.Close]", parameters);
+        }
     }
 }

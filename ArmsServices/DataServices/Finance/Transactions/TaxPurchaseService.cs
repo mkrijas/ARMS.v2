@@ -288,6 +288,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+                new SqlParameter("@PID", model.PID),
                 new SqlParameter("@InvoiceDate", model.InvoiceDate),
                 new SqlParameter("@InvoiceNo", model.InvoiceNo),
                 new SqlParameter("@PartyID", model.PartyInfo.PartyID),

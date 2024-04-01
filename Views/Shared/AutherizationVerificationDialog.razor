@@ -4,6 +4,8 @@
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
 @inject IDialogService DialogService
+@inject IRoleService<RoleModel> Irole
+@using System.Threading;
 
 <MudDialog>
     <TitleContent><h3> @model.AuthType</h3></TitleContent>
@@ -68,18 +70,28 @@
         aprvd.Remarks = model.Remarks;
         try
         {
-            if (!IsApprove)
+            CancellationTokenSource ctc = new CancellationTokenSource();
+            var Permission = await Irole.HasClaim(model.DocTypeID.ToString(), model.ClaimValue , ctc.Token);
+
+            if (Permission)
             {
-                Iservice.Update(model);
-                snackbar.Add("Verified Successfully", Severity.Success);
+                if (!IsApprove)
+                {
+                    Iservice.Update(model);
+                    snackbar.Add("Verified Successfully", Severity.Success);
+                }
+                else if (ApproveWithin)
+                {
+                    Iservice.Update(model);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                model = new();
+                MudDialog.Close(aprvd);
             }
-            else if (ApproveWithin)
+            else
             {
-                Iservice.Update(model);
-                snackbar.Add("Approved Successfully", Severity.Success);
+                snackbar.Add("Permission Denied!", Severity.Warning);
             }
-            model = new();
-            MudDialog.Close(aprvd);
         }
         catch (Exception ex)
         {
