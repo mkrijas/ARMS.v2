@@ -2,7 +2,7 @@
 @page "/SundryPaymentView/{id:int}"
 @inherits ViewComponentBase<SundryPaymentModel>
 @inject ISundryPaymentService Iservice
-
+@inject IDialogService DialogService
 
 <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
     <ToolBarContent>
@@ -48,6 +48,7 @@
             @if (@context.AuthLevelId == 99)
             {
                 <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.SundryPaymentID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                <MudIconButton OnClick="@(()=> Print(context.SundryPaymentID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
             }
             else if(context.AuthLevelId != 100)
             {
@@ -63,16 +64,22 @@
 @code {
 
     protected override List<SundryPaymentModel> collection { get; set; } = new();
-
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
             DocumentTypeID = 11,
             DocumentName = "SundryPayment"
         };
 
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
+    public string BranchName = "";
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+
         if (id != null && collection != null && collection.Any(g => g.SundryPaymentID == id))
         {
             await OpenForm(collection.FirstOrDefault(s => s.SundryPaymentID == id), true);
@@ -91,7 +98,6 @@
     //         collection = Iservice.SelectByUnapproved(BranchID, NumberOfRecords, searchTerm).ToList();
     //     }
     // }
-
 
     protected override async Task OpenForm(SundryPaymentModel model, bool ReadOnly = false, bool DisableAddition = false)
     {
@@ -119,6 +125,16 @@
         _busy = false;
     }
 
+    private async Task Print(int? SundryPaymentID)
+    {
+        ReportParameters.Clear();
+        ReportParameters.Add("SundryPaymentID", SundryPaymentID.ToString());
+        ReportParameters.Add("BranchName", BranchName);
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintSundryPayment");
 
-   
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+    }   
 }
