@@ -15,6 +15,7 @@
 @using System.IO;
 @using System.Collections.Generic;
 @using OfficeOpenXml.Style;
+@inject IJSRuntime JSRuntime
 
 <MudPaper Class="p-4">
     <MudGrid>
@@ -90,6 +91,9 @@
     </MudItem>
 </MudGrid>
 <br />
+
+<script src="~/Js/FileSaver.js"></script>
+
 
 @code {
 
@@ -185,7 +189,7 @@
         }
     }
 
-    public void ExcelDownload()
+    public async Task ExcelDownload()
     {
         using (ExcelPackage excelPackage = new ExcelPackage())
         {
@@ -227,27 +231,43 @@
             worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
             worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
 
-            //string filePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Downloads";
-            string filePath = ((Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX) ? Environment.GetEnvironmentVariable("HOME") : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%")) + "\\Downloads";
-            // Save the Excel package to a file
-            // FileInfo excelFile = new FileInfo(@"C:\~\Downloads\Pending_Consignments.xlsx");
-            // excelPackage.SaveAs(excelFile);
-            string time = DateTime.Now.ToString("dd-MM-yyyy");
-            string filename = $"Pending Consignments({time}).xlsx";
-            string url = Path.Combine(filePath,filename);
+            // string filePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Downloads";
+            // //string filePath = ((Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX) ? Environment.GetEnvironmentVariable("HOME") : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%")) + "\\Downloads";
+            // // Save the Excel package to a file
+            // // FileInfo excelFile = new FileInfo(@"C:\~\Downloads\Pending_Consignments.xlsx");
+            // // excelPackage.SaveAs(excelFile);
+            // string time = DateTime.Now.ToString("dd-MM-yyyy");
+            // string filename = $"Pending Consignments({time}).xlsx";
+            // string url = Path.Combine(filePath,filename);
 
-            FileInfo excelFile = new FileInfo(url);
+            // FileInfo excelFile = new FileInfo(url);
 
-            var byteArray = excelPackage.GetAsByteArray();
-            if (byteArray != null && byteArray.Length > 0)
-            {
-                excelPackage.SaveAs(excelFile);
-                snackbar.Add("File Downloaded Successfully ", Severity.Success);
-            }
-            else
-            {
-                snackbar.Add("File Downloaded error ! ", Severity.Error);
-            }
+            // var byteArray = excelPackage.GetAsByteArray();
+            // if (byteArray != null && byteArray.Length > 0)
+            // {
+            //     excelPackage.SaveAs(excelFile);
+            //     snackbar.Add("File Downloaded Successfully ", Severity.Success);
+            // }
+            // else
+            // {
+            //     snackbar.Add("File Downloaded error ! ", Severity.Error);
+            // }
+
+
+            // Save the Excel package to a memory stream
+            var memoryStream = new MemoryStream();
+            await excelPackage.SaveAsAsync(memoryStream);
+
+            // Convert the memory stream to byte array
+            var byteArray = memoryStream.ToArray();
+
+            // Trigger file download using JavaScript interop
+            await JSRuntime.InvokeVoidAsync("saveAsFile", 
+                Convert.ToBase64String(byteArray), 
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                $"Pending_Consignments({DateTime.Now.ToString("dd-MM-yyyy")}).xlsx");
+
+            snackbar.Add("File Downloaded Successfully", Severity.Success);
         }
     }
 
