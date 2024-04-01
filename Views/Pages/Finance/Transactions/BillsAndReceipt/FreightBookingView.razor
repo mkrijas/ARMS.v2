@@ -92,8 +92,32 @@
 </MudGrid>
 <br />
 
-<script src="~/Js/FileSaver.js"></script>
+  <script>
+    window.triggerFileDownload = function (fileName, fileData) {
+        // Convert Base64 string to a Blob
+        var byteCharacters = atob(fileData);
+        var byteNumbers = new Array(byteCharacters.length);
+        for (var i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        var byteArray = new Uint8Array(byteNumbers);
+        var blob = new Blob([byteArray], { type: 'application/octet-stream' });
 
+        // Create a URL for the Blob
+        var url = URL.createObjectURL(blob);
+
+        // Create an anchor element for downloading
+        var anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = fileName;
+
+        // Programmatically click the anchor to initiate download
+        anchor.click();
+
+        // Release the object URL
+        URL.revokeObjectURL(url);
+    }
+</script>
 
 @code {
 
@@ -189,12 +213,24 @@
         }
     }
 
-    public async Task ExcelDownload()
+    private async Task ExcelDownload()
     {
-        using (ExcelPackage excelPackage = new ExcelPackage())
+        var fileName = "Pending Consignments.xlsx";
+        var sheetName = "Sheet1"; // Change the sheet name as needed
+        var fileBytes = GenerateExcelBytes(sheetName);
+
+        await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
+    }
+
+    private byte[] GenerateExcelBytes(string sheetName)
+    {
+        // Generate your Excel data and file here, specifying the sheet name
+        // You can use libraries like EPPlus or ClosedXML to generate Excel files
+        // Below is just a placeholder method, implement according to your requirements
+
+        using (var package = new ExcelPackage())
         {
-            // Add a worksheet
-            ExcelWorksheet worksheet = excelPackage.Workbook.Worksheets.Add("Sheet1");
+            var worksheet = package.Workbook.Worksheets.Add(sheetName);
 
             // Add column headers
             worksheet.Cells[1, 1].Value = "BillNumber";
@@ -231,43 +267,12 @@
             worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
             worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
 
-            // string filePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Downloads";
-            // //string filePath = ((Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX) ? Environment.GetEnvironmentVariable("HOME") : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%")) + "\\Downloads";
-            // // Save the Excel package to a file
-            // // FileInfo excelFile = new FileInfo(@"C:\~\Downloads\Pending_Consignments.xlsx");
-            // // excelPackage.SaveAs(excelFile);
-            // string time = DateTime.Now.ToString("dd-MM-yyyy");
-            // string filename = $"Pending Consignments({time}).xlsx";
-            // string url = Path.Combine(filePath,filename);
-
-            // FileInfo excelFile = new FileInfo(url);
-
-            // var byteArray = excelPackage.GetAsByteArray();
-            // if (byteArray != null && byteArray.Length > 0)
-            // {
-            //     excelPackage.SaveAs(excelFile);
-            //     snackbar.Add("File Downloaded Successfully ", Severity.Success);
-            // }
-            // else
-            // {
-            //     snackbar.Add("File Downloaded error ! ", Severity.Error);
-            // }
-
-
             // Save the Excel package to a memory stream
-            var memoryStream = new MemoryStream();
-            await excelPackage.SaveAsAsync(memoryStream);
-
-            // Convert the memory stream to byte array
-            var byteArray = memoryStream.ToArray();
-
-            // Trigger file download using JavaScript interop
-            await JSRuntime.InvokeVoidAsync("saveAsFile", 
-                Convert.ToBase64String(byteArray), 
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                $"Pending_Consignments({DateTime.Now.ToString("dd-MM-yyyy")}).xlsx");
-
-            snackbar.Add("File Downloaded Successfully", Severity.Success);
+            using (var stream = new MemoryStream())
+            {
+                package.SaveAs(stream);
+                return stream.ToArray();
+            }
         }
     }
 
