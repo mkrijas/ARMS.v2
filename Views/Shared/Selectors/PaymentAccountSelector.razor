@@ -58,8 +58,6 @@ else
     public string LabelName { get; set; } = "Select";
 
 
-
-
     [Parameter]
     public string PaymentMode { get; set; }
     [Parameter]
@@ -88,6 +86,7 @@ else
     PaymentCodeModel PaymentCode = new();
     bool IsLoaded = false;
 
+
     private async Task<IEnumerable<PaymentCodeModel>> SearchAccounts(string searchString)
     {
         await Task.Delay(5);
@@ -100,10 +99,10 @@ else
     async Task Modechanged(string mode)
     {
         PaymentMode = mode;
-        PaymentCode = null;
-        await getAll();
+        await _ardCodeChanged(null);
+        await GetCodesNsetDefault(BranchID,mode);
         await PaymentModeChanged.InvokeAsync(mode);
-      
+
     }
 
     async Task _ardCodeChanged(PaymentCodeModel ard)
@@ -113,6 +112,8 @@ else
         CoaID = ard?.CoaID;
         await ArdCodeChanged.InvokeAsync(ard?.ArdCode);
         await CoaIDChanged.InvokeAsync(ard?.CoaID);
+        await _BankToolChanged(null);
+        BankCharges = 0;
     }
 
     async Task _BankChargesChanged(decimal? val)
@@ -129,23 +130,19 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await getAll();
-        PaymentCode = paymentCodes.FirstOrDefault(s => s.CoaID == CoaID && s.ArdCode == ArdCode);        
-    }
-
-    public async Task getAll()
-    {
-        @if (BranchID != 0)
-        {
-            paymentCodes = accountService.GetPaymentCodes(BranchID, PaymentMode).ToList();
-        }
-        else
+        if (BranchID == 0)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-            int branchID = int.Parse(brancIDString);
-            paymentCodes = accountService.GetPaymentCodes(branchID, PaymentMode).ToList();
+            BranchID = int.Parse(brancIDString);
         }
+        await GetCodesNsetDefault(BranchID,PaymentMode);
+        PaymentCode = paymentCodes.FirstOrDefault(s => s.CoaID == CoaID && s.ArdCode == ArdCode);        
+    }
+
+    public async Task GetCodesNsetDefault(int? _BranchID,string _PaymentMode)
+    {       
+        paymentCodes = accountService.GetPaymentCodes(_BranchID, _PaymentMode).ToList();
         if (CoaID is null && paymentCodes.Count == 1)
         {
             await _ardCodeChanged(paymentCodes.First());
