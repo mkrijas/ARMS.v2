@@ -65,13 +65,13 @@ namespace Core.BaseModels.Finance.Transactions
         public int? TruckID { get; set; }
         public long? TripID { get; set; }
         public long? TripNumber { get; set; }
-        public string Destination { get; set; }
         public string NumberPlate { get; set; }
         public string PlazaCode { get; set; }
         public string Description { get; set; }
         public string TransactionID { get; set; }
         public bool Reimbursable { get; set; }
         public decimal DebitAmount { get; set; }
+        public virtual string Destination { get; set; }
         public virtual Boolean IsProcessed { get; set; }
         public virtual string Activity { get; set; }
         public virtual string BranchName { get; set; }
