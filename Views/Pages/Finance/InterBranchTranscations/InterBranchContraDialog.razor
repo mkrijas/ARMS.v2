@@ -175,12 +175,15 @@
     private List<BranchModel> branches = new();    
     private PaymentCodeModel accountRuleDefinitionH = new();
     private PaymentCodeModel accountRuleDefinitionO = new();
+    List<PaymentCodeModel> PcodesHome = new();
+    List<PaymentCodeModel> PcodesOther = new();
+
     private bool _busy;
 
     //public bool bnktl = true;   
     public string value = "invisible";
     private string hmbarnchName;
-    private int? branchID = null;
+    private int? BranchID = null;
     private string UserID = null;
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
@@ -218,11 +221,10 @@
 
     private async Task<IEnumerable<PaymentCodeModel>> SearchAccountsH(string searchString)
     {
-        await Task.Delay(5);
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        int branchID = int.Parse(brancIDString);
-        return accountService.GetPaymentCodes(branchID, model.ContraModeHome).ToList(); ;
+        await Task.Delay(5);      
+        if (string.IsNullOrEmpty(searchString))
+            return PcodesHome;
+        return PcodesHome.Where(x => x.Title.Contains(searchString, StringComparison.InvariantCultureIgnoreCase) || x.ArdCode.Contains(searchString, StringComparison.InvariantCultureIgnoreCase));
     }
 
     private async Task<IEnumerable<PaymentCodeModel>> SearchAccountsO(string searchString)
@@ -230,7 +232,9 @@
         await Task.Delay(5);
         if (model.OtherBranchID != null)
         {
-            return accountService.GetPaymentCodes(model?.OtherBranchID ?? null, model.ContraModeOther).ToList();
+            if (string.IsNullOrEmpty(searchString))
+                return PcodesOther;
+            return PcodesOther.Where(x => x.Title.Contains(searchString, StringComparison.InvariantCultureIgnoreCase) || x.ArdCode.Contains(searchString, StringComparison.InvariantCultureIgnoreCase));
         }
         else
         {
@@ -256,6 +260,8 @@
     public void BankModeChanged(string val)
     {
         model.ContraModeHome = val;
+        PcodesHome = accountService.GetPaymentCodes(BranchID, model.ContraModeHome).ToList();
+
         if (model.IsPayment)
         {
             if (model.ContraModeHome == "Bank")
@@ -274,6 +280,7 @@
     public void ModeChangeOther(string val)
     {
         model.ContraModeOther = val;
+        PcodesOther = accountService.GetPaymentCodes(model.OtherBranchID, model.ContraModeOther).ToList();
         if (!model.IsPayment)
         {
             if (model.ContraModeOther == "Bank")
@@ -301,7 +308,7 @@
         HasPermissionContraServiceApprove = await Irole.HasClaim(ContraDocTypeID.ToString(), "Approve", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
-        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         UserID = user.Identity.Name;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
@@ -327,7 +334,7 @@
                 accountRuleDefinitionO = accountService.GetPaymentCodes(model.OtherBranchID, model.ContraModeOther).FirstOrDefault(s => s.ArdCode == model.ArdCodeOther);
             }
         }
-        model.BranchID = branchID;
+        model.BranchID = BranchID;
         model.NatureOfTransaction = "Contra";
         model.UserInfo.UserID = UserID;
         costCenter = costIservice.Select().ToList();
@@ -365,7 +372,7 @@
                 model.ArdCodeHome = accountRuleDefinitionH.ArdCode;
                 model.CoaIDOther = accountRuleDefinitionO.CoaID;
                 model.ArdCodeOther = accountRuleDefinitionO.ArdCode;
-                model.BranchID = branchID;                
+                model.BranchID = BranchID;                
                 model.IsInterBranch = true;
                 model.NatureOfTransaction = "Contra";
                 model.UserInfo.UserID = UserID;
