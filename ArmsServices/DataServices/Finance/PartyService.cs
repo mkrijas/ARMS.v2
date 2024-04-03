@@ -436,5 +436,13 @@ namespace ArmsServices.DataServices
         {
             return AllocateBranch(PartyID, BranchID, UserID, "REMOVE");
         }
+
+        public IEnumerable<string> GetPostingGroupNames()
+        {
+            foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.PostingGroups.Select]", null))
+            {
+                yield return reader.GetString("Title");
+            }
+        }
     }
 }

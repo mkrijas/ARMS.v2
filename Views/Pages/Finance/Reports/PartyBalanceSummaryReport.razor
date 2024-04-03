@@ -1,11 +1,18 @@
 ﻿@page "/PartyBalanceSummery"
 @inherits ReportComponentBase
+@inject IPartyService partyService
 
 <MudText Typo="Typo.h4"> Party Balance Summary </MudText>
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
             <MudGrid>  
+                <MudItem xs="4">
+                <MudAutocomplete SelectValueOnTab T="string" @bind-Value="@SelectedPG"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense" Label="Account Rule Defenition" ResetValueOnEmptyText="true"                                 
+                                 SearchFunc="@SearchPGs" >
+                </MudAutocomplete>
+                </MudItem>
                 <MudItem xs="3">
                     <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
@@ -38,7 +45,8 @@
     public string ReportName { get; set; }
     public BranchModel CurrentBranch { get; set; } = new();
 
-   
+    string SelectedPG;
+    List<string> PGs = new();
 
     protected bool Validate()
     {
@@ -60,6 +68,19 @@
         return true;
     }
 
+    protected override void OnInitialized()
+    {
+        PGs = partyService.GetPostingGroupNames().ToList();
+    }
+
+    private async Task<IEnumerable<string>> SearchPGs(string searchString)
+    {
+        await Task.Delay(5);
+        if (searchString is null)
+            return PGs;
+        return await Task.FromResult(PGs.Where(x => (x.Contains(searchString, StringComparison.InvariantCultureIgnoreCase))));
+    }
+
     public async Task RenderReportViewer()
     {
         ShowReport = true;
@@ -68,8 +89,9 @@
             if(Validate())
             {
                 ShowReport = true;
-                ReportName = "FinanceFundBalanceSummary";
+                ReportName = "FinancePartyBalanceSummary";
                 ReportParameters.Clear();   
+                ReportParameters.Add("PostingGroupName", SelectedPG);
                 ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
                 ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
                 ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));

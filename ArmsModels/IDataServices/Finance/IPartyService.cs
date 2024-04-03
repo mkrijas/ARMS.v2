@@ -35,8 +35,8 @@ namespace ArmsServices.DataServices
         bool IsLocal(int? PartyID, int? BranchID);
         int? GetPartyCoaID(int? PartyID, string BusinessNature, string NatureOfTransaction);
         IEnumerable<int> GetAllocatedBranches(int PartyID);
-
         int AddToBranch(int? PartyID, int? BranchID, string UserID);
-        int RemoveFromBranch(int? PartyID, int? BranchID, string UserID);        
+        int RemoveFromBranch(int? PartyID, int? BranchID, string UserID);   
+        IEnumerable<string> GetPostingGroupNames();
     }
 }
