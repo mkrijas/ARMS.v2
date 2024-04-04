@@ -24,6 +24,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? BranchID { get; set; }
         [Required]
+        [NotFutureDateTime(ErrorMessage = "Trip date and time cannot be in the future.")]
         public DateTime? TripDate { get; set; }
         //[ExpressiveAnnotations.Attributes.RequiredIf("StartWithLoading == false", ErrorMessage ="Please select destination.")]
         //public int? DestinationID { get; set; }

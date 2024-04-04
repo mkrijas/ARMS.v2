@@ -209,4 +209,20 @@ namespace ArmsModels.BaseModels
     //    }
     //}
     //////////////
+    ///
+    public class NotFutureDateTimeAttribute : ValidationAttribute
+    {
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            if (value != null)
+            {
+                DateTime tripDate = (DateTime)value;
+                if (tripDate > DateTime.Now)
+                {
+                    return new ValidationResult("Trip date and time cannot be in the future.");
+                }
+            }
+            return ValidationResult.Success;
+        }
+    }
 }
