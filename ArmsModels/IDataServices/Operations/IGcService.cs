@@ -26,7 +26,9 @@ namespace ArmsServices.DataServices
         IEnumerable<GcTypeModel> SelectGcTypes();
         int AppendToTrip(long? TripID, long? GcSetID, string UserID);  //AppentToTrip
         int BeginUnload(long? TripID, long? GcSetID);
-        int RemoveFromTrip(long? GcSetID, long? TripID, string UserID);  //AppentToTrip
+        int RemoveFromTrip(long? GcSetID, long? TripID, string UserID); 
+        
+        //AppentToTrip
         EwayBillModel UpdateEwayBill(EwayBillModel model);  //Edit
         //decimal? GetPrimaryFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty, decimal? freight);
         //decimal? GetFreight(int? orderID, int? routeID, object value, decimal? billQuantity, decimal? freight);
