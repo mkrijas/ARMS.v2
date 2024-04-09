@@ -105,7 +105,7 @@ namespace ArmsModels.BaseModels
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<VendorPostingGroupModel>(Json);
+            return JsonConvert.DeserializeObject<SisterPostingGroupModel>(Json);
         }
         public int? SisterPostingGroupID { get; set; }
         [Required]
