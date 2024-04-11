@@ -18,5 +18,6 @@ namespace ArmsServices.DataServices
         IEnumerable<PaymentMemoModel> SelectInitiated(int? PaymentInitiatedID);
         IEnumerable<PaymentMemoModel> SelectPending(int? BranchID);
         IEnumerable<BillsPaidModel> GetBills(int? PID);
+        int Delete(int? PaymentMemoID, string UserID);
     }
 }
