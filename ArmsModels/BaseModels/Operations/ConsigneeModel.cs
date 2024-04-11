@@ -45,5 +45,6 @@ namespace ArmsModels.BaseModels
         [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
         public DateTime? DocumentDate { get; set; }
         public string InvoiceNo { get; set; }
+        public virtual bool IsChecked { get; set; }
     }
 }
