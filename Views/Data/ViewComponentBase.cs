@@ -24,7 +24,9 @@ namespace Views.Data
         [Inject] protected IbaseInterface<T> Ibase { get; set; }        
 
         [Parameter]
-        public int? id { get; set; } = null;     
+        public int? id { get; set; } = null;
+        [Parameter]
+        public bool interbranch { get; set; } = false;
 
         protected abstract DocumentInfoModel DocInfo { get; set; }
 
@@ -115,12 +117,12 @@ namespace Views.Data
         protected virtual void LoadData(bool val, int numberOfRecords)
         {
             if (val)
-            {
-                collection = Ibase.SelectByApproved(BranchID, numberOfRecords, searchTerm).ToList();
+            {                
+                collection = Ibase.SelectByApproved(BranchID, numberOfRecords, interbranch, searchTerm).ToList();
             }
             else
             {
-                collection = Ibase.SelectByUnapproved(BranchID, numberOfRecords, searchTerm).ToList();
+                collection = Ibase.SelectByUnapproved(BranchID, numberOfRecords, interbranch, searchTerm).ToList();
             }
         }
     }

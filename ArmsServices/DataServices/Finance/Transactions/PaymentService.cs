@@ -64,9 +64,6 @@ namespace ArmsServices.DataServices
             }
         }
 
-
-
-
         public int Reverse(int? PID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -92,12 +89,14 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<PaymentMemoModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<PaymentMemoModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByApproved"),
                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsInterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
             };
@@ -108,12 +107,14 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<PaymentMemoModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<PaymentMemoModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@Operation", "ByUnApproved"),
                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsInterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
 
@@ -124,56 +125,56 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-        public IEnumerable<PaymentMemoModel> SelectInterBranch(int? BranchID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByID"),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@IsInterBranch", true),
-            };
+        //public IEnumerable<PaymentMemoModel> SelectInterBranch(int? BranchID)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@Operation", "ByID"),
+        //       new SqlParameter("@BranchID", BranchID),
+        //       new SqlParameter("@IsInterBranch", true),
+        //    };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
-            {
-                yield return GetModel(dr);
-            }
-        }
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+        //    {
+        //        yield return GetModel(dr);
+        //    }
+        //}
 
-        public IEnumerable<PaymentMemoModel> SelectInterBranchByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByApproved"),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@IsInterBranch", true),
-               new SqlParameter("@numberOfRecords", NumberOfRecords),
-               new SqlParameter("@searchTerm", searchTerm)
+        //public IEnumerable<PaymentMemoModel> SelectInterBranchByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@Operation", "ByApproved"),
+        //       new SqlParameter("@BranchID", BranchID),
+        //       new SqlParameter("@IsInterBranch", true),
+        //       new SqlParameter("@numberOfRecords", NumberOfRecords),
+        //       new SqlParameter("@searchTerm", searchTerm)
 
-            };
+        //    };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
-            {
-                yield return GetModel(dr);
-            }
-        }
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+        //    {
+        //        yield return GetModel(dr);
+        //    }
+        //}
 
-        public IEnumerable<PaymentMemoModel> SelectInterBranchByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByUnapproved"),
-               new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@IsInterBranch", true),
-               new SqlParameter("@numberOfRecords", NumberOfRecords),
-               new SqlParameter("@searchTerm", searchTerm)
+        //public IEnumerable<PaymentMemoModel> SelectInterBranchByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@Operation", "ByUnapproved"),
+        //       new SqlParameter("@BranchID", BranchID),
+        //       new SqlParameter("@IsInterBranch", true),
+        //       new SqlParameter("@numberOfRecords", NumberOfRecords),
+        //       new SqlParameter("@searchTerm", searchTerm)
 
-            };
+        //    };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
-            {
-                yield return GetModel(dr);
-            }
-        }
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
+        //    {
+        //        yield return GetModel(dr);
+        //    }
+        //}
 
         public IEnumerable<PaymentMemoModel> SelectInitiated(int? PaymentInitiatedID)
         {

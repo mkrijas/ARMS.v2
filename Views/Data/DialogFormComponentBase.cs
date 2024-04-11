@@ -46,6 +46,7 @@ namespace Views.Data
 
         protected bool Local;
         protected bool IsTaxable;
+        protected BranchModel OtherBranch = new();       
 
         protected EditContext editContext;
         protected DialogForm dialogForm;
@@ -70,6 +71,7 @@ namespace Views.Data
             var user = authprov.User;
             UserID = user.Identity.Name;
             model.BranchID = BranchID;
+            model.OtherBranchID = model.IsInterBranch?model.OtherBranchID: BranchID;
 
             InterBranchTranTypes = interbranchService.GetTypes().ToList();
         }
@@ -84,6 +86,12 @@ namespace Views.Data
             EditPermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Edit", ctc.Token);
             DeletePermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
             ApprovePermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Approve", ctc.Token);
+        }
+
+        protected void OtherBranchSelected(BranchModel branch)
+        {
+            OtherBranch = branch;
+            model.OtherBranchID = branch?.BranchID;            
         }
 
         protected abstract Task<int> Update(T editModel);

@@ -33,6 +33,7 @@ namespace ArmsModels.BaseModels
         public int? AuthLevelId { get; set; }
         public string AuthStatus { get; set; }
         public bool IsInterBranch { get; set; } = false;
+        [RequiredIfTrue("IsInterBranch")]
         public int? InterBranchTranID { get; set; } = null;
         [RequiredIfTrue("IsInterBranch")]
         public int? OtherBranchID { get; set; }
