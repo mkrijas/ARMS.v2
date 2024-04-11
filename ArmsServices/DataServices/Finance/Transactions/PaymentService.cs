@@ -29,11 +29,11 @@ namespace ArmsServices.DataServices
         }
 
 
-        public int Delete(int? ID, string UserID)
+        public int Delete(int? PaymentMemoID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PaymentMemoID", ID),
+               new SqlParameter("@PaymentMemoID", PaymentMemoID),
                new SqlParameter("@UserID", UserID),
 
             };

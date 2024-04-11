@@ -4,6 +4,7 @@
 @inject AuthenticationStateProvider auth
 @inject IBranchService IBranchService
 @inject IAssetClassService IAssetClassService
+@inherits ReportComponentBase
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -13,17 +14,15 @@
             </MudToolBar>
             <MudDivider />
             <MudGrid Style="padding-top: 22px;">
-                <MudItem xs="4">
-                    <BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@BranchChanged"></BranchSelector>
-                </MudItem>                
-                <MudItem xs="3">
+                <MudItem xs="5">
                     <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="3">
+                <MudItem xs="5">
                     <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="2">
-                    <MudButton Style="margin-top: 4px; width:-webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                <MudItem xs="2" Style="display: flex; align-items: center;">
+                    <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
+                    <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
                 </MudItem>
             </MudGrid>
         </MudPaper>
@@ -31,7 +30,7 @@
 </MudGrid>
 <MudGrid Style="@(ShowReport?"":"Display:none")">
     <MudItem xs="12">
-        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters  @ref="@report"></ReportViewer>
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
     </MudItem>
 </MudGrid>
 
@@ -42,25 +41,31 @@
     public DateTime? ToDate { get; set; } = DateTime.Now;
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
-    public BranchModel SelectedBranch { get; set; } = new();
+    //public BranchModel SelectedBranch { get; set; } = new();
     public BranchModel CurrentBranch { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
         CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
-        CurrentBranch.BranchID = int.Parse(BranchIDString);
+        // CurrentBranch.BranchID = int.Parse(BranchIDString);
     }
 
-    private async Task BranchChanged(BranchModel branch)
-    {
-        SelectedBranch = branch;
-    }
+    // private async Task BranchChanged(BranchModel branch)
+    // {
+    //     SelectedBranch = branch;
+    // }
 
     public async Task RenderReportViewer()
     {
+        if (!SelectedBranches.Any())
+        {
+            snackbar.Add("Please select branch.", Severity.Error);
+            return;
+        }
         if (FromDate == null)
         {
             Snackbar.Add("Please select From Date.", Severity.Error);
@@ -76,7 +81,8 @@
         ReportName = "OperationSummaryReport";
         ReportParameters.Clear();
         ReportParameters.Add("BranchName", CurrentBranch.BranchName);
-        ReportParameters.Add("BranchID", (SelectedBranch?.BranchID ?? 0).ToString());
+        ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+        // ReportParameters.Add("BranchID", (SelectedBranch?.BranchID ?? 0).ToString());
         ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
         ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
         await report.RenderReport();

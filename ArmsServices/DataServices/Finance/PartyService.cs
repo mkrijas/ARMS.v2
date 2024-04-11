@@ -19,12 +19,18 @@ namespace ArmsServices.DataServices
         IVendorPostingGroupService _vendor;
         ICustomerPostingGroupService _customer;
         IRenterPostingGroupService _renter;
+        ISisterPostingGroupService _sister;
         IBranchService _branch;
 
-        public PartyService(IDbService iservice, IAddressService addressService,
-            IBankAccountService bankAccountService, IContactService contactService,
-            IVendorPostingGroupService vendor, ICustomerPostingGroupService customer,
-            IRenterPostingGroupService renter, IBranchService branch)
+        public PartyService(IDbService iservice, 
+            IAddressService addressService,
+            IBankAccountService bankAccountService, 
+            IContactService contactService,
+            IVendorPostingGroupService vendor, 
+            ICustomerPostingGroupService customer,
+            IRenterPostingGroupService renter, 
+            ISisterPostingGroupService sister,
+            IBranchService branch)
         {
             Iservice = iservice;
             _addressService = addressService;
@@ -33,6 +39,7 @@ namespace ArmsServices.DataServices
             _vendor = vendor;
             _customer = customer;
             _renter = renter;
+            _sister = sister;
             _branch = branch;
         }
 
@@ -301,6 +308,21 @@ namespace ArmsServices.DataServices
             return _vendor.GetPostingGroup(VendorID).PrePayment.CoaID;
         }
 
+        public int? GetSisterTradeCoaID(int? ID)
+        {
+            return _sister.GetPostingGroup(ID).Trade.CoaID;
+        }
+
+        public int? GetSisterDepositCoaID(int? ID)
+        {
+            return _sister.GetPostingGroup(ID).Deposit.CoaID;
+        }
+
+        public int? GetSisterPrepaymentCoaID(int? ID)
+        {           
+            return _sister.GetPostingGroup(ID).PrePayment.CoaID;
+        }
+
         public int? GetCustomerReceivableCoaID(int? CustomerID)
         {
             return _customer.GetPostingGroup(CustomerID)?.Receivable?.CoaID ?? null;
@@ -386,6 +408,19 @@ namespace ArmsServices.DataServices
                         return GetRenterOtherCoaID(PartyID);
                 }
             }
+            if (BusinessNature == "SisterConcern")
+            {
+                switch (NatureOfTransaction)
+                {
+                    case "Deposit":
+                        return GetSisterDepositCoaID(PartyID);
+                    case "Trade":
+                        return GetSisterTradeCoaID(PartyID);
+                    case "Prepayment":
+                        return GetSisterPrepaymentCoaID(PartyID);
+                }
+            }
+
             return null;
         }
 
