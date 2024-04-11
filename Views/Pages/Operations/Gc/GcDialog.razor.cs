@@ -86,7 +86,7 @@ namespace Views.Pages.Operations.Gc
         }
         private GcSetModel GetFreight(GcSetModel GcSet)
         {
-            GcSet.Gcs.ForEach(x => x.Freight = ITariff.GetPrimaryFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
+            GcSet.Gcs.Where(x => (x.Freight??0) == 0 ).ToList().ForEach(x => x.Freight = ITariff.GetPrimaryFreight(GcSet.OrderID, GcSet.RouteID, null, x.BillQuantity, x.Freight));
             return GcSet;
         }
 
