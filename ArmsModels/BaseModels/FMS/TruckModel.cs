@@ -30,6 +30,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public short? TruckTypeID { get; set; }
         public string TruckType { get; set; }
+        public string BSType { get; set; }
         [Required]
         [StringLength(maximumLength: 50)]
         public string BodyType { get; set; }
