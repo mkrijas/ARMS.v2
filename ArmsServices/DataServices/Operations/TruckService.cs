@@ -298,10 +298,17 @@ namespace ArmsServices.DataServices
                     HomeBranchName = dr.GetString("HomeBranchName"),
                     TruckTypeID = dr.GetInt16("TruckTypeID"),
                     TruckType = dr.GetString("TruckType"),
+                    BSType = dr.GetString("BSType"),
+                    TransmissionType = dr.GetString("TransmissionType"),
                     FuelType = dr.GetString("FuelType"),
                     FuelTankCapacity = dr.GetDecimal("FuelTankCapacity"),
                     BodyType = dr.GetString("BodyType"),
                     ManufacturedYear = dr.GetInt16("ManufacturedYear"),
+                    EngineNumber = dr.GetString("EngineNumber"),
+                    ChassisNumber = dr.GetString("ChassisNumber"),
+                    GrossWeight = dr.GetDecimal("GrossWeight"),
+                    UnladenWeight = dr.GetDecimal("UnladenWeight"),
+                    PurchaseDate = dr.GetDateTime("PurchaseDate"),
                     CurrentRegistration = new()
                     {
                         RegID = dr.GetInt32("RegID"),

@@ -24,7 +24,7 @@ namespace ArmsModels.BaseModels
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            if (Particulars.Count == 0 )
+            if (Particulars.Count == 0)
                 yield return new ValidationResult("No Expense to reimburse!");
         }
     }
@@ -52,7 +52,7 @@ namespace ArmsModels.BaseModels
         public decimal? SGST { get; set; } = 0;
         public decimal? CGST { get; set; } = 0;
         public decimal? IGST { get; set; } = 0;
-        public  byte RecordStatus { get; set; }
+        public byte RecordStatus { get; set; }
 
 
         public string UsageCodeDesc { get; set; }
