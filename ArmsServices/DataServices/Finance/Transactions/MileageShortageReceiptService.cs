@@ -154,6 +154,7 @@ namespace DAL.DataServices.Finance.Transactions
                new SqlParameter("@AllottedDistance", model.AllottedDistance),
                new SqlParameter("@FuelPrice", model.FuelPrice),
                new SqlParameter("@TotalAmount", model.TotalAmount),
+               new SqlParameter("@AllowanceAmount", model.AllowanceAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -191,6 +192,7 @@ namespace DAL.DataServices.Finance.Transactions
                 CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
+                AllowanceAmount = dr.GetDecimal("AllowanceAmount"),
                 Narration = dr.GetString("Narration"),
 
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
