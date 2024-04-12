@@ -88,6 +88,7 @@ namespace ArmsModels.BaseModels
         public int? MID { get; set; }
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
+        public string Narration { get; set; }
     }
 
     public class TripAdvanceModel
