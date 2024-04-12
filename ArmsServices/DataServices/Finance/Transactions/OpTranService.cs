@@ -241,5 +241,15 @@ namespace ArmsServices.DataServices
         {
             throw new NotImplementedException();
         }
+
+        public IEnumerable<OpTranModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<OpTranModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

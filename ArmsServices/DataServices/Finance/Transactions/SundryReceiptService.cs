@@ -42,12 +42,14 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<SundryReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<SundryReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByApproved"),
                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsInterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
 
@@ -58,12 +60,14 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<SundryReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<SundryReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
+
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByUnapproved"),
+               new SqlParameter("@Operation", "ByUnApproved"),
                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@IsInterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
 
