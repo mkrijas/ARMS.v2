@@ -24,11 +24,11 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public bool IsAgent { get; set; }
         [RequiredIfTrue("IsAgent")]
         public PartyModel Agent { get; set; }
-        [ExpressiveAnnotations.Attributes.RequiredIf("IsAgent == false")]
+         [RequiredIf("IsAgent"," false")]
         public string PaymentMode { get; set; }
-        [ExpressiveAnnotations.Attributes.RequiredIf("IsAgent == false")]
+         [RequiredIf("IsAgent"," false")]
         public string PaymentArdCode { get; set; }
-        [ExpressiveAnnotations.Attributes.RequiredIf("IsAgent == false")]
+         [RequiredIf("IsAgent"," false")]
         public int? PaymentCoaID { get; set; }
         [RequiredIf("PaymentMode", "Bank")]
         public string PaymentTool { get; set; }
