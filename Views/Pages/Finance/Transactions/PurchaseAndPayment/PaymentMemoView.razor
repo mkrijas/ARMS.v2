@@ -1,24 +1,11 @@
 ﻿@page "/PaymentMemoView"
 @page "/PaymentMemoView/{id:int}"
 @inherits ViewComponentBase<PaymentMemoModel>
+@inject IDialogService DialogService
 
 @inject IPaymentService Iservice
 @inject IPaymentInitiatedService IinitiateService
 
-
-@* <style>
-    .selected {
-        background-color: #1E88E5 !important;
-    }
-
-        .selected > td {
-            color: white !important;
-        }
-
-            .selected > td .mud-input {
-                color: white !important;
-            }
-</style> *@
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -66,6 +53,7 @@
                     @if (@context.AuthLevelId == 99)
                     {
                         <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.PaymentMemoID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                        <MudIconButton OnClick="@(()=> Print(context.PaymentMemoID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
                     }
                     else
                     {
@@ -94,7 +82,7 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-               
+
         if (id != null && collection != null && collection.Any(g => g.PaymentMemoID == id))
         {
             await OpenForm(collection.FirstOrDefault(s => s.PaymentMemoID == id), true);
@@ -109,6 +97,7 @@
             return;
         }
         _busy = true;
+        ppm.IsInterBranch = interbranch;
         DialogParameters parms = new DialogParameters();
         parms.Add("model", ppm.Clone());        
         parms.Add("ReadOnly", ReadOnly);
@@ -123,4 +112,17 @@
         await Task.Delay(200);
         _busy = false;
     }   
+
+    private async Task Print(int? ID)
+    {
+        Dictionary<string, string> ReportParameters = new();
+        ReportParameters.Add("ID", ID.ToString());
+        ReportParameters.Add("Operation", "Memo");
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintPaymentMemo");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+    }
 }

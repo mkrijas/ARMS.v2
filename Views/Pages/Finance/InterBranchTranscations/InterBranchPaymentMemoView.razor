@@ -72,6 +72,7 @@
                         @if (context.MID != null)
                         {
                             <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.PaymentMemoID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                            <MudIconButton OnClick="@(()=> Print(context.PaymentMemoID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
                         }
                         else
                         {
@@ -102,6 +103,7 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+        interbranch  = true;
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var UserID = authprov.User.Identity.Name;
@@ -134,18 +136,7 @@
         await Task.Delay(200);
         _busy = false;
     }
-
-    protected override void LoadData(bool val, int numberOfRecords)
-    {
-        if (val)
-        {
-            collection = Iservice.SelectInterBranchByApproved(BranchID, numberOfRecords, searchTerm).ToList();
-        }
-        else
-        {
-            collection = Iservice.SelectInterBranchByUnapproved(BranchID, numberOfRecords, searchTerm).ToList();
-        }
-    }
+   
 
     private async Task DeleteNoMID(int? PaymentMemoID)
     {
@@ -166,5 +157,18 @@
         {
             snackbar.Add(ex.Message, Severity.Warning);
         }
+    }
+
+    private async Task Print(int? ID)
+    {
+        Dictionary<string, string> ReportParameters = new();
+        ReportParameters.Add("ID", ID.ToString());
+        ReportParameters.Add("Operation", "Memo");
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintPaymentMemo");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
     }
 }
