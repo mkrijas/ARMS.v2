@@ -1,6 +1,9 @@
 ﻿@page "/trucks"
 @using System.Threading;
 @using System.Globalization
+@using OfficeOpenXml
+@using System.IO
+@using OfficeOpenXml.Style
 @using Views.Pages.Inventory.TyreManager
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -12,7 +15,7 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
-
+@inject IJSRuntime JSRuntime
 
 <style>
 
@@ -107,7 +110,7 @@
 
     private void GetAll()
     {
-        collection = Iservice.SelectByBranch(BranchID, "All").ToList();
+        collection = Iservice.SelectByBranch(BranchID, "All", "Operation").ToList();
     }
 
     private string RowClassFunc(TruckModel truck, Int32 index)
@@ -126,7 +129,92 @@
 
     private async Task ExcelDownload()
     {
+        var fileName = "TruckList.xlsx";
+        var sheetName = "Sheet1"; // Change the sheet name as needed
+        var fileBytes = GenerateExcelBytes(sheetName);
 
+        await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
+    }
+
+    private byte[] GenerateExcelBytes(string sheetName)
+    {
+        using (var package = new ExcelPackage())
+        {
+            var worksheet = package.Workbook.Worksheets.Add(sheetName);
+
+            // Add column headers
+            worksheet.Cells[1, 1].Value = "HomeBranch Name";
+            worksheet.Cells[1, 2].Value = "Reg No";
+            worksheet.Cells[1, 3].Value = "Truck Type";
+            worksheet.Cells[1, 4].Value = "BS Type";
+            worksheet.Cells[1, 5].Value = "Body Type";
+            worksheet.Cells[1, 6].Value = "Transmission Type";
+            worksheet.Cells[1, 7].Value = "Fuel Type";
+            worksheet.Cells[1, 8].Value = "FuelTank Capacity";
+            worksheet.Cells[1, 9].Value = "Manufactured Year";
+            worksheet.Cells[1, 10].Value = "Purchase Date Year";
+            worksheet.Cells[1, 11].Value = "Valid From";
+            worksheet.Cells[1, 12].Value = "Valid To";
+            worksheet.Cells[1, 13].Value = "Engine Number";
+            worksheet.Cells[1, 14].Value = "Chassis Number";
+            worksheet.Cells[1, 15].Value = "Unladen Weight";
+            worksheet.Cells[1, 16].Value = "Gross Weight";
+            for (int i = 1; i <= 16; i++)
+            {
+                worksheet.Cells[1, i].Style.Font.Bold = true;
+            }
+
+            //worksheet.Column(11).Style.Numberformat.Format = "dd-MM-yyyy"; // Date format
+            worksheet.Column(15).Style.Numberformat.Format = "0.00"; // Integer format
+            worksheet.Column(16).Style.Numberformat.Format = "0.00"; // Integer format
+                                                                     // worksheet.Column(5).Style.Numberformat.Format = "0.00"; // Integer format
+                                                                     // worksheet.Column(6).Style.Numberformat.Format = "0.00";
+
+            // Add data rows
+            int row = 2;
+            foreach (var item in collection)
+            {
+                worksheet.Cells[row, 1].Value = item.HomeBranchName;
+                worksheet.Cells[row, 2].Value = item.RegNo;
+                worksheet.Cells[row, 3].Value = item.TruckType;
+                worksheet.Cells[row, 4].Value = item.BSType;
+                worksheet.Cells[row, 5].Value = item.BodyType;
+                worksheet.Cells[row, 6].Value = item.TransmissionType;
+                worksheet.Cells[row, 7].Value = item.FuelType;
+                worksheet.Cells[row, 8].Value = item.FuelTankCapacity;
+                worksheet.Cells[row, 9].Value = item.ManufacturedYear;
+                worksheet.Cells[row, 10].Value = item.PurchaseDate.Value.ToString("dd-MM-yyyy"); 
+                worksheet.Cells[row, 11].Value = item.CurrentRegistration.EffectFrom.Value.ToString("dd-MM-yyyy");
+                worksheet.Cells[row, 12].Value = item.CurrentRegistration.EffectTo.Value.ToString("dd-MM-yyyy");
+                worksheet.Cells[row, 13].Value = item.EngineNumber;
+                worksheet.Cells[row, 14].Value = item.ChassisNumber;
+                worksheet.Cells[row, 15].Value = item.UnladenWeight;
+                worksheet.Cells[row, 16].Value = item.GrossWeight;
+
+                if (!item.CurrentRegistration.IsValid)
+                {
+                    using (var range = worksheet.Cells[row, 1, row, 16])
+                    {
+                        range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                        range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Red);
+                    }
+                }
+
+                row++;
+            }
+
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+
+            // Save the Excel package to a memory stream
+            using (var stream = new MemoryStream())
+            {
+                package.SaveAs(stream);
+                return stream.ToArray();
+            }
+        }
     }
 
     private async void TruckMountDetails(int? id)
