@@ -138,9 +138,10 @@ namespace ArmsModels.BaseModels
         public bool TaxIncluded { get; set; }
         public TyreModel Tyre { get; set; }
         public bool Status { get; set; } = true;
-        [ExpressiveAnnotations.Attributes.RequiredIf("Status == true")]
+        [RequiredIf("Status", " true")]
         public decimal? Amount { get; set; }
-        [ExpressiveAnnotations.Attributes.RequiredIf("TaxIncluded == true")]
+        [RequiredIf("TaxIncluded", " true")]
+
         public decimal? Tax { get; set; }
         public decimal? TotalAmount { get; set; }
     }
