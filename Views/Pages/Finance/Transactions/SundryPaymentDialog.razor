@@ -10,6 +10,20 @@
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
+                    @if(model.IsInterBranch)
+                    {
+                    <MudItem xs="12" md="6">
+                        <BranchSelector Value="@OtherBranch" ValueChanged="@OtherBranchSelected"  LabelName="Target Branch Payment Made for"></BranchSelector>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect Label="Select Transaction Type" ReadOnly="ReadOnly" @bind-Value="model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense"  AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in InterBranchTranTypes)
+                            {
+                                <MudSelectItem Value="@ditem.ID">@ditem?.TransactionTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    }
                     <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
@@ -20,7 +34,7 @@
                         <MudNumericField HideSpinButtons MaxLength="10" ReadOnly="ReadOnly" @bind-Value="model.PayeeContactNo" Label="Payee Contact No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayeeContactNo)"></MudNumericField>
                      </MudItem>
                      <MudItem xs="12" md="12">
-                         <PaymentAccountSelector PaymentMode="@model.PaymentMode" PaymentModeChanged="OnChangePaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" BankCharges="@model.BankCharges" @bind-BankTool="@model.PaymentTool" BankChargesChanged="CalculateTotalAmount" />
+                         <PaymentAccountSelector BranchID = "@BranchID.Value" PaymentMode="@model.PaymentMode" PaymentModeChanged="OnChangePaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" BankCharges="@model.BankCharges" @bind-BankTool="@model.PaymentTool" BankChargesChanged="CalculateTotalAmount" />
                      </MudItem>
                      <MudItem xs="12" md="4">
                          <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
@@ -29,7 +43,7 @@
                          <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                      </MudItem>
                      <MudItem xs="4" md="4">
-                         <MudCheckBox Label="Is Deferred Expenditure?" @bind-Checked="@model.deferredExpenditure" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+                         <MudCheckBox Label="Is Deferred Expenditure?" @bind-Value="@model.deferredExpenditure" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
                      </MudItem>
                      @if (model.deferredExpenditure)
                     {
@@ -114,20 +128,18 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (model == null || (model != null && model.NatureOfTransaction == null))
+        await base.OnInitializedAsync(); 
+
+        if (model.NatureOfTransaction == null)
         {
-            model = new()
-                {
-                    NatureOfTransaction = "Sundry Payment",
-                    TotalAmount = 0,
-                };
+            model.NatureOfTransaction = "Sundry Payment";
+            model.TotalAmount = 0;
         }
-        else if (model.Entries.Count == 0)
+        else if (model.SundryPaymentID != null && model.Entries.Count == 0)
         {
             model.Entries = Iservice.GetEntries(model.SundryPaymentID).ToList();
-        }
-        await base.OnInitializedAsync();        
-      
+        }              
+
     }    
 
     void UsageCodeChanged(GstUsageCodeModel uc)
@@ -183,6 +195,8 @@
             snackbar.Add(string.Format("insufficient balance! Only Rs {0} Available", balance), Severity.Warning);
             return 0;
         }
+        if (model.OtherBranchID is not null && model.OtherBranchID != BranchID)
+            model.Entries.ForEach(x => x.BranchID = model.OtherBranchID);
         model = Iservice.Update(model);
         return model.SundryPaymentID.Value;    
     }
