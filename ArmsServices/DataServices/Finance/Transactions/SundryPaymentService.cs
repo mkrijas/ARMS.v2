@@ -176,6 +176,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@EndDate", model.EndDate),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@IsInterBranch", model.IsInterBranch),
+               new SqlParameter("@InterBranchTranID", model.InterBranchTranID),
+               new SqlParameter("@OtherBranchID", model.OtherBranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryPayment.Update]", parameters))
@@ -211,7 +214,9 @@ namespace ArmsServices.DataServices
                 beginDate = dr.GetDateTime("beginDate"),
                 EndDate = dr.GetDateTime("EndDate"),
                 Narration = dr.GetString("Narration"),
-
+                IsInterBranch = dr.GetBoolean("IsInterBranch"),
+                InterBranchTranID = dr.GetInt32("InterBranchTranID"),
+                OtherBranchID = dr.GetInt32("OtherBranchID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
