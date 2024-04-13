@@ -30,7 +30,7 @@ namespace Views.Data
         [Inject] protected IGstUsageIDService usageCodeService { get; set; }
         [Inject] protected IPushNotificationService notiService { get; set; }
         [Inject] protected IJSRuntime JsRuntime { get; set; }
-        [inject] protected IBranchService branchService { get; set; }
+        [Inject] protected IBranchService branchService { get; set; }
 
 
         [Parameter]
