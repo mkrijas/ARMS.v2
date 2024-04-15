@@ -117,28 +117,28 @@
             try
             {
                 SundryReceiptModel StockistsReceiptModel = new SundryReceiptModel()
-                    {
-                        BranchID = BranchID,
-                        NatureOfTransaction = "StockistFreight",
-                        PayerContactNo = data.First().Consignee.Mobile,
-                        PayerName = data.First().Consignee.ConsigneeName,
-                        TotalAmount = data.Sum(x => x.Amount)
+                {
+                    BranchID = BranchID,
+                    NatureOfTransaction = "StockistFreight",
+                    PayerContactNo = data.First().Consignee.Mobile,
+                    PayerName = data.First().Consignee.ConsigneeName,
+                    TotalAmount = data.Sum(x => x.Amount)
 
-                    };
+                };
                 GstUsageCodeModel UsageCode = Iusage.SelectByCode(Iconfig.GetByID("ConsigneeUsageCode").ValueString);
 
                 foreach (var item in data)
                 {
                     StockistsReceiptModel.Entries.Add(new SundryReceiptEntryModel()
-                        {
-                            Amount = item.Amount,
-                            BranchID = BranchID,
-                            CoaID = UsageCode.CoaID,
-                            Reference = item.EntryRef,
-                            UsageCode = UsageCode.UsageCode,
-                            UsageCodeDescription = UsageCode.Description,
-                            SubArdCode = item.Consignee.ArdCode
-                        });
+                    {
+                        Amount = item.Amount,
+                        BranchID = BranchID,
+                        CoaID = UsageCode.CoaID,
+                        Reference = item.EntryRef,
+                        UsageCode = UsageCode.UsageCode,
+                        UsageCodeDescription = UsageCode.Description,
+                        SubArdCode = item.Consignee.ArdCode
+                    });
                 }
 
                 await OpenForm(StockistsReceiptModel, false, true);
@@ -159,7 +159,44 @@
         var dialog = dialogService.Show<AdvanceReceivableView>("Advance", parms, mediumWidth);
 
         var result = await dialog.Result;
-        
+        if (!result.Canceled)
+        {
+            var data = (List<TripAdvanceModel>)result.Data;
+
+            try
+            {
+                SundryReceiptModel AdvaceReceiptModel = new SundryReceiptModel()
+                {
+                    BranchID = BranchID,
+                    NatureOfTransaction = "Advance",
+                    PayerContactNo = data.First().DriverMobile,
+                    PayerName = data.First().DriverName,
+                    TotalAmount = data.Sum(x => x.Amount)
+
+                };
+
+                foreach (var item in data)
+                {
+                    AdvaceReceiptModel.Entries.Add(new SundryReceiptEntryModel()
+                    {
+                        Amount = item.Amount,
+                        BranchID = BranchID,
+                        CoaID = item.CoaID,
+                        Reference = item.TripNo,
+                        UsageCode = item.UsageCode,
+                        UsageCodeDescription = item.UsageDescription,
+                        //SubArdCode = item.Consignee.ArdCode
+                    });
+                }
+
+                await OpenForm(AdvaceReceiptModel, false, true);
+
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }        
     }
 
     protected override async Task OpenForm(SundryReceiptModel ppm, bool ReadOnly, bool DisableAddition = false)
