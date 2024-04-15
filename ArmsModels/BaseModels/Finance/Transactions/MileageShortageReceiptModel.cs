@@ -29,8 +29,7 @@ namespace Core.BaseModels.Finance.Transactions
         public int? DriverID { get; set; }
         public decimal? AllottedMileage { get; set; }
         public decimal? AllottedDistance { get; set; }
-        public decimal? FuelPrice { get; set; }
-        [Range(1, (double)decimal.MaxValue, ErrorMessage = "Total amount must be greater than 0")]
+        public decimal? FuelPrice { get; set; }        
         public override decimal? TotalAmount { get; set; } = 0;
         public decimal? AllowanceAmount { get; set; } = 0;
         public int? CostCenter { get; set; }

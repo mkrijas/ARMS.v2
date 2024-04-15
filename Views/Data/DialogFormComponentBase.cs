@@ -30,6 +30,7 @@ namespace Views.Data
         [Inject] protected IGstUsageIDService usageCodeService { get; set; }
         [Inject] protected IPushNotificationService notiService { get; set; }
         [Inject] protected IJSRuntime JsRuntime { get; set; }
+        [Inject] protected IBranchService branchService { get; set; }
 
 
         [Parameter]
@@ -72,7 +73,7 @@ namespace Views.Data
             UserID = user.Identity.Name;
             model.BranchID = BranchID;
             model.OtherBranchID = model.IsInterBranch?model.OtherBranchID: BranchID;
-
+            OtherBranch = branchService.SelectByID(model.OtherBranchID);
             InterBranchTranTypes = interbranchService.GetTypes().ToList();
         }
         protected override void OnParametersSet()

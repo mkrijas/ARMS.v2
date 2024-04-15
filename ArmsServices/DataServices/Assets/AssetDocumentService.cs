@@ -193,6 +193,7 @@ namespace ArmsServices.DataServices
                 Amount = dr.GetDecimal("Amount"),
                 IsFinanciallyPosted = dr.GetBoolean("IsFinanciallyPosted"),
                 ExtendedEndDate = dr.GetDateTime("ExtendedEndDate"),
+                IsFitParameter = dr.GetBoolean("IsFitParameter"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

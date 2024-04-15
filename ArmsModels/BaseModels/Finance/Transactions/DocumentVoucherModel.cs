@@ -24,17 +24,17 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         public bool IsAgent { get; set; }
         [RequiredIfTrue("IsAgent")]
         public PartyModel Agent { get; set; }
-         [RequiredIf("IsAgent"," false")]
+        [RequiredIf("IsAgent", " false")]
         public string PaymentMode { get; set; }
-         [RequiredIf("IsAgent"," false")]
+        [RequiredIf("IsAgent", " false")]
         public string PaymentArdCode { get; set; }
-         [RequiredIf("IsAgent"," false")]
+        [RequiredIf("IsAgent", " false")]
         public int? PaymentCoaID { get; set; }
         [RequiredIf("PaymentMode", "Bank")]
         public string PaymentTool { get; set; }
         [RequiredIf("PaymentMode", "Bank")]
         public decimal? BankCharges { get; set; }
-        public virtual decimal? GstRate { get; set; }        
+        public virtual decimal? GstRate { get; set; }
         public decimal? SGST { get; set; } = 0;
         public decimal? CGST { get; set; } = 0;
         public decimal? IGST { get; set; } = 0;
@@ -62,7 +62,7 @@ namespace ArmsModels.BaseModels.Finance.Transactions
         //public virtual string CostCenterVal { get; set; }
         //public virtual string DimensionVal { get; set; }
         public virtual CostCenterModel CostCenterMod { get; set; }
-        public virtual DimensionModel DimensionMod { get; set; }        
+        public virtual DimensionModel DimensionMod { get; set; }
         public virtual string DocumentName { get; set; }
         public virtual string UsageCode { get; set; }
 
