@@ -16,5 +16,6 @@ namespace ArmsServices.DataServices
         TripAdvanceModel Select(int? TripAdvanceID);
         IEnumerable<TripAdvanceModel> SelectByTrip(long? TripID);
         TripAdvanceModel GetTotal(long? TripID);
+        IEnumerable<TripAdvanceModel> GetAdvanceReceivables(int? BranchID);   
     }
 }

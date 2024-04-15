@@ -5,6 +5,8 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Reflection.PortableExecutable;
+using System.Reflection;
 
 
 namespace ArmsServices.DataServices
@@ -93,6 +95,27 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public IEnumerable<TripAdvanceModel> GetAdvanceReceivables(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "GetUnsettled"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Trips.Advance.Select]", parameters))
+            {
+                yield return new TripAdvanceModel()
+                {
+                    BranchID = dr.GetInt32("BranchID"),
+                    TripNo = dr.GetString("TripNo"),
+                    DriverName = dr.GetString("DriverName"),
+                    AccountCode = dr.GetString("AccountCode"),
+                    AccountName = dr.GetString("AccountName"),
+                    Amount = dr.GetDecimal("Amount"),                    
+                };
+            }
+        }
+
         private TripAdvanceModel GetModel(IDataRecord reader)
         {
             return new TripAdvanceModel
@@ -105,6 +128,10 @@ namespace ArmsServices.DataServices
                 CoaID = reader.GetInt32("CoaID"),
                 DocumentTypeID = reader.GetInt32("DocumentTypeID"),
                 DocumentID = reader.GetInt32("DocumentID"),
+                TripNo = reader.GetString("TripNo"),
+                DriverName = reader.GetString("DriverName"),
+                AccountCode = reader.GetString("AccountCode"),
+                AccountName = reader.GetString("AccountName")
             };
         }
     }
