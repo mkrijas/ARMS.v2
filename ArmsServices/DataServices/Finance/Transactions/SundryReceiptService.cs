@@ -150,6 +150,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@entries", model.Entries.ToDataTable()),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
+               new SqlParameter("@IsInterBranch", model.IsInterBranch),
+               new SqlParameter("@InterBranchTranID", model.InterBranchTranID),
+               new SqlParameter("@OtherBranchID", model.OtherBranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryReceipt.Update]", parameters))
@@ -179,7 +182,9 @@ namespace ArmsServices.DataServices
                 FileName = dr.GetString("FilePath"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
-
+                IsInterBranch = dr.GetBoolean("IsInterBranch"),
+                InterBranchTranID = dr.GetInt32("InterBranchTranID"),
+                OtherBranchID = dr.GetInt32("OtherBranchID"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

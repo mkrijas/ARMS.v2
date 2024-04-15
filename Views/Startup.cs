@@ -45,6 +45,8 @@ using DAL.DataServices.Operations;
 using Core.IDataServices.Finance;
 using DAL.DataServices.Finance;
 using ArmsModels.BaseModels.Finance.Transactions;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace Views
 {
@@ -65,7 +67,6 @@ namespace Views
             services.AddServerSideBlazor();
             services.AddControllers();
 
-        
             // Allow CORS
             services.AddCors(options =>
             {
@@ -88,7 +89,6 @@ namespace Views
             services.AddBlazorContextMenu();
             services.AddBlazoredSessionStorage();
 
-
             // ------ SIgnalR & Hub ---------- //
             services.AddScoped<SignalRService>();
             services.AddSignalRCore();
@@ -97,7 +97,6 @@ namespace Views
                 opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
                       new[] { "application/octet-stream" });
             });
-
 
             // -------- Authorization----------- //
             services.AddAuthorization(config =>
@@ -397,7 +396,5 @@ namespace Views
                 
             });
         }
-
-
     }
 }
