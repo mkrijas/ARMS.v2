@@ -75,7 +75,7 @@ namespace ArmsModels.BaseModels
         public DateTime? BillDate { get; set; } = DateTime.Today;
         public string BillNumber { get; set; }
         [Required]
-        [Range(1, double.MaxValue)]
+        [Range(0, double.MaxValue)]
         public decimal? BillQuantity { get; set; }
         public string PassNumber { get; set; }
         [Required]

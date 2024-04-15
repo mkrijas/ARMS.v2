@@ -59,6 +59,7 @@ namespace ArmsModels.BaseModels
         public bool IsFinanciallyPosted { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public DateTime? ExtendedEndDate { get; set; }
+        public bool IsFitParameter { get; set; }
     }
 
     public class AssetDocumentTypeModel : ICloneable

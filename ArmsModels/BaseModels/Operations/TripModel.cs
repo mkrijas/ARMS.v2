@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -103,7 +104,15 @@ namespace ArmsModels.BaseModels
         [Required]
         public decimal? Amount { get; set; }
         public int? CoaID { get; set; }
+        public string UsageCode { get; set; }
+        public string UsageDescription { get; set; }
         public int? DocumentTypeID { get; set; }
         public int? DocumentID { get; set; }
+        public virtual bool IsChecked { get; set; }
+        public string TripNo { get; set; }
+        public string DriverName { get; set; }
+        public string DriverMobile { get; set; }
+        public string AccountCode { get; set; }
+        public string AccountName { get; set; }
     }
 }
