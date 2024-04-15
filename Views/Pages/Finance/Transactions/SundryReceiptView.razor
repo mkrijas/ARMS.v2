@@ -5,6 +5,7 @@
 @inject ISundryReceiptService Iservice
 @inject IConfigTable Iconfig
 @inject IGstUsageIDService Iusage
+@inject ITripAdvanceService Iadvance
 @inject IDialogService DialogService
 @using Views.Shared
 
@@ -107,7 +108,7 @@
         DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         DialogParameters parms = new DialogParameters();
         parms.Add("BranchID", BranchID);
-        var dialog = dialogService.Show<StockistsFreightView>("Stockists Freight", parms, mediumWidth);
+        var dialog = dialogService.Show<StockistsFreightView>("Stockists Freight", parms, mediumWidth);       
 
         var result = await dialog.Result;
         if (!result.Canceled)
@@ -189,7 +190,31 @@
                     });
                 }
 
-                await OpenForm(AdvaceReceiptModel, false, true);
+                //await OpenForm(AdvaceReceiptModel, false, true);
+                DialogParameters sparms = new DialogParameters();
+                sparms.Add("model", AdvaceReceiptModel);
+                sparms.Add("ReadOnly", false);
+                sparms.Add("DisableAddition", true);
+                //sparms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
+                var sdialog = dialogService.Show<SundryReceiptDialog>(AdvaceReceiptModel.SundryReceiptID == null ? "ADD" : "EDIT", sparms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+                var sresult = await sdialog.Result;
+                if (!sresult.Canceled)
+                {
+                    var ReturnData = (SundryReceiptModel)sresult.Data;
+                    ReturnData.Entries = Iservice.GetEntries(ReturnData.SundryReceiptID).ToList();
+                    foreach (var item in ReturnData.Entries)
+                    {
+                        var adv = data.First(x => x.TripNo == item.Reference);
+                        adv.TripAdvanceID = null;
+                        adv.BranchID = BranchID;
+                        adv.Amount = -1*(item.Amount);
+                        adv.DocumentID = ReturnData.SundryReceiptID;
+                        adv.DocumentTypeID = DocInfo.DocumentTypeID;
+                        Iadvance.Update(adv);                                            
+                    }
+
+                    LoadData(ShowApproved, NumberOfRecords);
+                }
 
             }
             catch (Exception ex)

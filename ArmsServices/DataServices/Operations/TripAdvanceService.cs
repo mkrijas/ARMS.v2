@@ -107,8 +107,10 @@ namespace ArmsServices.DataServices
             {
                 yield return new TripAdvanceModel()
                 {
+                    TripID = dr.GetInt64("TripID"),
                     BranchID = dr.GetInt32("BranchID"),
                     TripNo = dr.GetString("TripNo"),
+                    DriverID = dr.GetInt32("DriverID"),
                     DriverName = dr.GetString("DriverName"),
                     DriverMobile = dr.GetString("Mobile"),
                     CoaID = dr.GetInt32("CoaID"),
