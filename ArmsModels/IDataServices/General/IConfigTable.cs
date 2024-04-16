@@ -24,5 +24,6 @@ namespace ArmsServices.DataServices.General
         ConfigModel GetFastTagUsageCode();
         ConfigModel GetUnloadingChargeUsageCode();
         IEnumerable<ConfigModel> GetAll();
+        ConfigModel GetDefaultMileageShortageReceivableID();
     }
 }
