@@ -3,16 +3,23 @@
 @using Microsoft.AspNetCore.Hosting;
 @inject IWebHostEnvironment _env;
 @inject ISnackbar snckbar;
+@inject IDialogService DialogService
+
 @using System.Security.AccessControl
 @using MimeTypes
+
+@using iText.Kernel.Pdf;
+@using System.IO;
+@using iText.Pdfoptimizer;
+@using iText.Pdfoptimizer.Handlers;
 
 <MudContainer>
     <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="UploadFiles">
         <ButtonTemplate>
             @if (!ReadOnly && !fnames.Any())
-                {
-            <MudButton HtmlTag="label" Variant="Variant.Filled" Color="Color.Secondary" for="@context">Upload Files</MudButton>
-                }
+            {
+                <MudButton HtmlTag="label" Variant="Variant.Filled" Color="Color.Secondary" for="@context">Upload Files</MudButton>
+            }
         </ButtonTemplate>
         <SelectedTemplate>
             @if (context != null)
@@ -21,18 +28,18 @@
                 {
                     <MudText>@file.Name</MudText>
                 }
-            }            
+            }
         </SelectedTemplate>
-    </MudFileUpload>    
-        @foreach (var value in fnames)
-        {
-            <a href="@value" download="Attachments">
-                <MudText Typo="Typo.h6" Color="Color.Primary">
-                    Attachments
-                    <MudIcon Icon="@Icons.Material.Filled.Download" Title="Download" />
-                </MudText>
-            </a>
-        }
+    </MudFileUpload>
+    @foreach (var value in fnames)
+    {
+        <a href="@value" download="Attachments">
+            <MudText Typo="Typo.h6" Color="Color.Primary">
+                Attachments
+                <MudIcon Icon="@Icons.Material.Filled.Download" Title="Download" />
+            </MudText>
+        </a>
+    }
 </MudContainer>
 
 @code {
@@ -59,7 +66,7 @@
     {
         if (model.FileName != null)
         {
-            fnames = model.FileName.Split(',').ToList();            
+            fnames = model.FileName.Split(',').ToList();
         }
     }
 
@@ -104,21 +111,68 @@
             }
             try
             {
-                //Stream stream = file.OpenReadStream();
-                Stream stream = file.OpenReadStream(2097152); //I am giving '2097152' to set the maximum fileupload size as 2MB
-                FileStream fs = File.Create(filePath);
-                await stream.CopyToAsync(fs);
-                stream.Close();
-                fs.Close();
-                return DerivedFileName;
+                if (file.ContentType == "application/pdf")
+                {
+                    if (file.Size < 2097153)
+                    {
+                        // using (var stream = file.OpenReadStream(2097152))
+                        // using (var outputStream = File.Create(filePath))
+                        // {
+                        //     await CompressPdf(stream, outputStream);
+
+                        //     return DerivedFileName;
+                        // }
+
+
+                        //Stream stream = file.OpenReadStream();
+                        Stream stream = file.OpenReadStream(2097152); //I am giving '2097152' to set the maximum fileupload size as 2MB
+                        FileStream fs = File.Create(filePath);
+                        await stream.CopyToAsync(fs);
+                        stream.Close();
+                        fs.Close();
+                        return DerivedFileName;
+                    }
+                    else
+                    {
+                        bool? result = await DialogService.ShowMessageBox(
+                            "Oops !",
+                            "Uploaded file should not be greater than 2MB.");
+                    }
+                }
+                else
+                {
+                    bool? result = await DialogService.ShowMessageBox(
+                        "Oops !",
+                        "Uploaded file is not in PDF Format.");
+                }
             }
             catch (Exception ex)
             {
                 snckbar.Add(ex.Message, Severity.Error);
-            }           
+            }
         }
         return null;
     }
+
+    // private async Task CompressPdf(Stream inputStream, Stream outputStream)
+    // {
+    //     //using (var pdfDocument = new PdfReader(inputStream))
+    //     using (var pdfDocument = new StreamReader(inputStream))
+    //     {
+    //         //using (var pdfWriter = new PdfWriter(outputStream))
+    //         using (var pdfWriter = new StreamWriter(outputStream))
+    //         {
+    //             // Create a new PdfOptimizer instance
+    //             var pdfOptimizer = new PdfOptimizer();
+
+    //             pdfOptimizer.AddOptimizationHandler(new FontDuplicationOptimizer());
+    //             pdfOptimizer.AddOptimizationHandler(new CompressionOptimizer());
+
+    //             // Optimize the PDF and write it to the output stream
+    //             pdfOptimizer.Optimize(pdfDocument, pdfWriter);
+    //         }
+    //     }
+    // }
 
     private async Task<IBrowserFile> ResizeImage(IBrowserFile file)
     {
