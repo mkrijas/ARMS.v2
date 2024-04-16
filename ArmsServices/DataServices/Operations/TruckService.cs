@@ -296,6 +296,7 @@ namespace ArmsServices.DataServices
                     TruckID = dr.GetInt32("TruckID"),
                     HomeBranchID = dr.GetInt32("HomeBranchID"),
                     HomeBranchName = dr.GetString("HomeBranchName"),
+                    OperatingBranchName = dr.GetString("OperatingBranchName"),
                     TruckTypeID = dr.GetInt16("TruckTypeID"),
                     TruckType = dr.GetString("TruckType"),
                     BSType = dr.GetString("BSType"),
