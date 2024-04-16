@@ -5,6 +5,8 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Reflection.PortableExecutable;
+using System.Reflection;
 
 
 namespace ArmsServices.DataServices
@@ -82,6 +84,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DriverID", model.DriverID),
                new SqlParameter("@Amount", model.Amount),
                new SqlParameter("@CoaID", model.CoaID),
+               new SqlParameter("@UsageCode", model.UsageCode),
                new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
                new SqlParameter("@DocumentID", model.DocumentID),
             };
@@ -91,6 +94,33 @@ namespace ArmsServices.DataServices
                 model = GetModel(reader);
             }
             return model;
+        }
+
+        public IEnumerable<TripAdvanceModel> GetAdvanceReceivables(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "GetUnsettled"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.Trips.Advance.Select]", parameters))
+            {
+                yield return new TripAdvanceModel()
+                {
+                    TripID = dr.GetInt64("TripID"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    TripNo = dr.GetString("TripNo"),
+                    DriverID = dr.GetInt32("DriverID"),
+                    DriverName = dr.GetString("DriverName"),
+                    DriverMobile = dr.GetString("Mobile"),
+                    CoaID = dr.GetInt32("CoaID"),
+                    AccountCode = dr.GetString("AccountCode"),
+                    AccountName = dr.GetString("AccountName"),
+                    UsageCode = dr.GetString("UsageCode"),
+                    UsageDescription = dr.GetString("Description"),
+                    Amount = dr.GetDecimal("Amount"),                    
+                };
+            }
         }
 
         private TripAdvanceModel GetModel(IDataRecord reader)
@@ -103,6 +133,7 @@ namespace ArmsServices.DataServices
                 DriverID = reader.GetInt32("DriverID"),
                 Amount = reader.GetDecimal("Amount"),
                 CoaID = reader.GetInt32("CoaID"),
+                UsageCode = reader.GetString("UsageCode"),
                 DocumentTypeID = reader.GetInt32("DocumentTypeID"),
                 DocumentID = reader.GetInt32("DocumentID"),
             };
