@@ -2,14 +2,13 @@
 @page "/PaymentMemoView/{id:int}"
 @inherits ViewComponentBase<PaymentMemoModel>
 @inject IDialogService DialogService
-
 @inject IPaymentService Iservice
 @inject IPaymentInitiatedService IinitiateService
 
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10"  T="PaymentMemoModel">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" T="PaymentMemoModel">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Payment Memo</MudText>
                 <MudTooltip Text="New Payment Memo">
@@ -29,13 +28,14 @@
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.PaymentMemoID)" InitialDirection="SortDirection.Descending">Memo Number</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.PartyInfo.TradeName)" >Party Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.PartyInfo.TradeName)">Party Name</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.Reference)">Purpose</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.TotalAmount)" >Total Amount</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PaymentMemoModel, object>(x=> x.TotalAmount)">Total Amount</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()
+                <MudTd DataLabel="DocumentDate">
+                    @context.DocumentDate?.ToShortDateString()
                     @if (context.AuthLevelId == 100)
                     {
                         <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
@@ -52,7 +52,14 @@
 
                     @if (@context.AuthLevelId == 99)
                     {
-                        <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.PaymentMemoID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                        @if (context.MID != null)
+                        {
+                            <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.PaymentMemoID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                        }
+                        else
+                        {
+                            <MudIconButton @onclick="@(()=> DeleteNoMID(context.PaymentMemoID))" Color="Color.Error" Title="Delete Entry" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Class="ml-2" Variant="Variant.Filled" />
+                        }
                         <MudIconButton OnClick="@(()=> Print(context.PaymentMemoID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
                     }
                     else
@@ -80,14 +87,34 @@
         };
 
     protected override async Task OnInitializedAsync()
-    {        
+    {
         await base.OnInitializedAsync();
 
         if (id != null && collection != null && collection.Any(g => g.PaymentMemoID == id))
         {
             await OpenForm(collection.FirstOrDefault(s => s.PaymentMemoID == id), true);
-        }        
-    }   
+        }
+    }
+
+    private async Task DeleteNoMID(int? PaymentMemoID)
+    {
+        try
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "There are no Financial entries against this entry. Are you sure, you want to delete ?");
+            if (result == true)
+            {
+                Iservice.Delete(PaymentMemoID, UserID);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+                LoadData(ShowApproved, NumberOfRecords);
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
 
     protected override async Task OpenForm(PaymentMemoModel ppm, bool ReadOnly, bool DisableAddition = false)
     {
@@ -99,7 +126,7 @@
         _busy = true;
         ppm.IsInterBranch = interbranch;
         DialogParameters parms = new DialogParameters();
-        parms.Add("model", ppm.Clone());        
+        parms.Add("model", ppm.Clone());
         parms.Add("ReadOnly", ReadOnly);
         parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
         var dialog = dialogService.Show<PaymentMemoDialog>(ppm.PaymentMemoID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
@@ -111,7 +138,7 @@
         LoadData(ShowApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;
-    }   
+    }
 
     private async Task Print(int? ID)
     {
