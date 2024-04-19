@@ -65,7 +65,7 @@
                 <MudTextField @bind-Value="searchBookFreight" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
-                <MudTh></MudTh>
+                <MudTh><MudCheckBox ValueChanged="(bool isChecked) => SelectAll(isChecked)"></MudCheckBox></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillNumber)" InitialDirection="SortDirection.Ascending">Bill Number</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillDate)" InitialDirection="SortDirection.Ascending">Bill Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.PassNumber)" InitialDirection="SortDirection.Ascending">Pass Number</MudTableSortLabel></MudTh>
@@ -108,6 +108,24 @@
     int? BranchID;
     string UserID;
 
+
+    IEnumerable<GcTariffModel> FilteredCollection { get; set; }
+
+    void UpdateFilteredCollection(string searchString)
+    {
+        // Apply your filter to the collection
+        FilteredCollection = collection.Where(item => item.ConsigneeName.Contains(searchString, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    void SelectAll(bool isChecked)
+    {
+        FilteredCollection = collection.Where(item => search(item));
+        foreach (var item in FilteredCollection)
+        {
+            item.IsChecked = isChecked;
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
@@ -129,12 +147,12 @@
 
     public async Task fetch()
     {
-      await  LoadData("Fetch");
+        await  LoadData("Fetch");
     }
 
     async Task Generate()
     {
-       await  LoadData("Generate");
+        await  LoadData("Generate");
     }
 
     private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
@@ -142,6 +160,7 @@
         if (string.IsNullOrEmpty(searchString))
             return Orders;
 
+        UpdateFilteredCollection(searchString);
         return await Task.FromResult(Orders.Where(x => x.OrderName.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
@@ -306,6 +325,7 @@
         if ((gcTariff.BillNumber != null && gcTariff.BillNumber.Contains(searchBookFreight, StringComparison.OrdinalIgnoreCase)) ||
         (gcTariff.PassNumber != null && gcTariff.PassNumber.Contains(searchBookFreight, StringComparison.OrdinalIgnoreCase)))
         {
+            
             return true;
         }
         return false;
