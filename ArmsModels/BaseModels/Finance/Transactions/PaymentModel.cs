@@ -29,6 +29,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public byte? PaymentStatus { get; set; } = 0; // 0 - generated; 1 - initiated; 2 - completed;
         public List<BillsPaidModel> Bills { get; set; } = new();
+        public virtual bool IsChecked { get; set; }
     }
 
     public class PaymentMemoPrintDetailModel
