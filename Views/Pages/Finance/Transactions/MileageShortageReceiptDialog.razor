@@ -2,8 +2,10 @@
 @using System.Threading;
 @using ArmsModels.BaseModels.Finance.Transactions
 @using Core.BaseModels.Finance.Transactions;
+@using Core.IDataServices.Operations
 
 @inject ITripService tripService;
+@inject ITruckAvailabilityService truckAvailabilityService;
 @inject IOutstandingBillsService OBIservice
 @inject ICostCenterService costIservice
 @inject TruckDataArrayModel data
@@ -133,12 +135,22 @@
         UserID = User.Identity.Name;
         if (model.MileageShortageReceiptID == null)
         {
-            var info = tripService.GetTripInfo(model.TripID);
-            model.ConsumedFuel = info.Fuel;
-            model.RunningKM = info.RunKM;      
+            if(model.TripID == null)
+            {
+                var transferinfo = truckAvailabilityService.GetTransferInfo(model.RequestApprovalHistoryID);
+                model.ConsumedFuel = transferinfo.Fuel;
+                model.RunningKM = transferinfo.ClosingKM - transferinfo.OpeningKM;
+                model.Narration = string.Format("Transfer Truck : {0};", transferinfo.Truck);
+            }
+            else
+            {
+                var info = tripService.GetTripInfo(model.TripID);
+                model.ConsumedFuel = info.Fuel;
+                model.RunningKM = info.RunKM;
+                model.Narration = string.Format("Trip : {0}; Truck : {1}; Driver : {2};", info.TripNumber, info.Truck, info.Driver);
+            }
             model.NatureOfTransaction = "Mileage Shortage";
             model.BranchID = branchID;
-            model.Narration = string.Format("Trip : {0}; Truck : {1}; Driver : {2};", info.TripNumber, info.Truck, info.Driver);
         }
         else
         {

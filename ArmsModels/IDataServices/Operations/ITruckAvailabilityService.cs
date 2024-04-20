@@ -7,6 +7,7 @@ namespace Core.IDataServices.Operations
     {
         RequestApprovalHistoryModel UpdateOutgoing(RequestApprovalHistoryModel model);
         IEnumerable<RequestApprovalHistoryModel> SelectOutgoingRequests(int? ID, int? Branch);
+        public RequestApprovalHistoryModel GetTransferInfo(long? RequestApprovalHistoryID);
         int DeleteRequest(int? ID, string UserID);
         RequestApprovalHistoryModel UpdateStatus(RequestApprovalHistoryModel model);
         IEnumerable<RequestApprovalHistoryModel> SelectIncomingTrucks(int? ID, int? BranchID);
