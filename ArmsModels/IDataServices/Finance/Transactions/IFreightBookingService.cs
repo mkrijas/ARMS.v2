@@ -25,7 +25,7 @@ namespace ArmsServices.DataServices
         IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? BranchID, int? ID, int? NumberOfRecords, string searchTerm);
         IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID);
-        IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end);
+        IEnumerable<GcTariffModel> GetPending(int? PartyID,int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end);
         IEnumerable<GcTariffModel> GenerateTariffs(int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end);
         IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID);
         GstModel GetGstRate(int? DraftBillID);

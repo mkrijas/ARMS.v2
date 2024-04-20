@@ -527,13 +527,14 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Reverse]", parameters);
         }
 
-        public IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end)
+        public IEnumerable<GcTariffModel> GetPending(int? PartyID,int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "Pending"),
                new SqlParameter("@Begin",begin),
                new SqlParameter("@End",end),
+               new SqlParameter("@PartyID", PartyID),
                new SqlParameter("@OrderID", OrderID),
                new SqlParameter("@TariffTypeID", TariffTypeID),
                new SqlParameter("@GcTypeID", GcTypeID)
