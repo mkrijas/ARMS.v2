@@ -1,5 +1,6 @@
 ﻿@page "/jobcard"
 @page "/jobcard/{TruckID:int}"
+@page "/jobcard/{TruckID:int}/{JobcardID:int}"
 @using ArmsServices.DataServices.Inventory;
 @using Pages.FMS.InsuranceClaim
 @using Views.Pages.Finance.Transactions.PurchaseAndPayment;
@@ -309,6 +310,8 @@
 
     [Parameter]
     public int? TruckID { get; set; }
+    [Parameter]
+    public int? JobcardID { get; set; }
     private TruckModel SelectedTruck = new();
     private BreakdownModel Breakdown = new();
     private JobcardModel SelectedJobcard = new();
@@ -334,15 +337,8 @@
 
     public bool HasPermissionInventoryRequestDelete { get; set; } = false;
     public int InventoryRequestDocTypeID = 67;
-    // public bool HasPermissionMechanicJobServiceAdd { get; set; } = false;
-    // public bool HasPermissionMechanicJobServiceRemove { get; set; } = false;
-    // public int MechanicJobDocTypeID = 79;
-    // public bool HasPermissionJobInProgressServiceEdit { get; set; } = false;
-    // public int JobInProgressDocTypeID = 80;
-    // public bool HasPermissionJobcardWorkshopServiceEdit { get; set; } = false;
-    // public int JobcardWorkshopDocTypeID = 81;
-    public bool HasPermissionJobcardServiceEdit { get; set; } = false;
-    // public bool HasPermissionJobcardServiceAdd { get; set; } = false;
+
+    public bool HasPermissionJobcardServiceEdit { get; set; } = false;  
     public int JobcardDocTypeID = 82;
 
     InsuranceClaimModel InsModel = new();
@@ -360,10 +356,29 @@
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         Workshops = Iworkshop.Select(0).ToList();
         EventTypes = Ievent.GetEventTypes().ToList();
-        if (TruckID != null)
+        if (JobcardID != null)
+        {
+            SelectedTruck = Itruck.SelectByID(TruckID);
+            SelectedJobcard = Iservice.SelectByID(JobcardID);
+            Breakdown = Ibreakdown.SelectByID(SelectedJobcard?.BreakdownID);
+            jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
+            setJipList(SelectedJobcard);
+            InvRequestList = IInvRequestservice.SelectRequestReleaseByTruckID(SelectedTruck?.TruckID ?? 0).ToList();
+            ExpenseList = IInvRequestservice.SelectExpenseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
+            if (Breakdown.IsClaimInitiated == true)
+            {
+
+                InsModel = IClaimservice.SelectByBreakdownID(Breakdown.BreakdownID);
+                IEnumerable<InsuranceClaimEventStatusModel> statusModel;
+                statusModel = IClaimservice.GetEventStatusList(InsModel.InsuranceClaimID);
+                InsModel.Events = statusModel.ToList();
+            }
+        }
+        else if (TruckID != null)
         {
             await TruckSelected(Itruck.SelectByID(TruckID));
         }
+        
     }
 
     private async Task TruckSelected(TruckModel obj)
