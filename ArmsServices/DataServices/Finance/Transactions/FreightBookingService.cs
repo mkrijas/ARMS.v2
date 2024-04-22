@@ -140,7 +140,8 @@ namespace ArmsServices.DataServices
                     Party = new PartyModel()
                     {
                         PartyCode = dr.GetString("PartyCode"),
-                        PartyID = dr.GetInt32("PartyID")
+                        PartyID = dr.GetInt32("PartyID"),
+                        TradeName = dr.GetString("tradename")
                     },
 
                     TariffType = new TariffTypeModel()
@@ -160,6 +161,8 @@ namespace ArmsServices.DataServices
                     Dimension = dr.GetInt32("Dimension"),
                     FreightAmount = dr.GetDecimal("FreightAmount"),
                     TotalAmount = dr.GetDecimal("TotalAmount"),
+                    PeriodFrom = dr.GetDateTime("DocFromDate"),
+                    PeriodTo = dr.GetDateTime("DocToDate"),
                     Narration = dr.GetString("Narration"),
                     Gst = new()
                     {

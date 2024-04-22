@@ -41,6 +41,8 @@ namespace ArmsModels.BaseModels
         public PartyModel Party { get; set; }
         public int? PartyCoa { get; set; }
         public TariffTypeModel TariffType { get; set; }
+        public DateTime? PeriodFrom { get; set; }
+        public DateTime? PeriodTo { get; set; }
         public string Reference { get; set; }
         public GstModel Gst { get; set; } = new();
         public int? CostCenter { get; set; }
