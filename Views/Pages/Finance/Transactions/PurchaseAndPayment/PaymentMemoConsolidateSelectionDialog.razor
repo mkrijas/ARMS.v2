@@ -10,13 +10,14 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudTable T="PaymentMemoModel" Items="@Memos" MultiSelection="true"
-                  @bind-SelectedItems="selectedItems" Hover="true" SelectOnRowClick Filter="new Func<PaymentMemoModel, bool>(search)">
+        <MudTable T="PaymentMemoModel" Items="@Memos" 
+                  Hover="true" SelectOnRowClick Filter="new Func<PaymentMemoModel, bool>(search)">
             <ToolBarContent>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchMemo" Placeholder="Search.... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
+                <MudTh><MudCheckBox ValueChanged="(bool isChecked) => SelectAll(isChecked)"></MudCheckBox></MudTh>
                 <MudTh>Memo Number</MudTh>
                 <MudTh>Branch Name</MudTh>
                 <MudTh>Memo Date</MudTh>
@@ -25,6 +26,7 @@
                 <MudTh>Reference</MudTh>
             </HeaderContent>
             <RowTemplate>
+                <MudTd><MudCheckBox @bind-Value="@context.IsChecked"></MudCheckBox></MudTd>
                 <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
                 <MudTd DataLabel="BranchName">@context.OtherBranch</MudTd>
                 <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
@@ -50,8 +52,19 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private HashSet<PaymentMemoModel> selectedItems = new();
-    private List<PaymentMemoModel> Memos = new();
+    private List<PaymentMemoModel> Memos = new List<PaymentMemoModel>();
     private string searchMemo = "";
+
+    IEnumerable<PaymentMemoModel> FilteredCollection { get; set; }
+
+    void SelectAll(bool isChecked)
+    {
+        FilteredCollection = Memos.Where(item => search(item));
+        foreach (var item in FilteredCollection)
+        {
+            item.IsChecked = isChecked;
+        }
+    }
 
     protected override void OnInitialized()
     {
@@ -67,9 +80,9 @@
         }
         _busy = true;
 
-        if (selectedItems.Count > 0)
+        if (Memos.Where(x => x.IsChecked).ToList().Count > 0)
         {
-            MudDialog.Close(selectedItems.ToList());
+            MudDialog.Close(Memos.Where(x => x.IsChecked).ToList());
         }
         else
         {

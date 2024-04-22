@@ -5,8 +5,8 @@ namespace ArmsServices.DataServices
 {
     public interface IbaseInterface<T> where T : class
     {
-        int Approve(int? PID, string UserID, string Remarks);  //Approve
-        int Reverse(int? PID, string UserID, string Remarks);  //Reverse
+        int Approve(int? ID, string UserID, string Remarks);  //Approve
+        int Reverse(int? ID, string UserID, string Remarks);  //Reverse
         int Delete(int? ID, string UserID);  //Delete
         T SelectByID(int? ID);
         IEnumerable<T> Select(int? BranchID);

@@ -26,6 +26,7 @@ namespace ArmsModels.BaseModels
         public string RegNo { get; set; }
         public int? HomeBranchID { get; set; }
         public string HomeBranchName { get; set; }
+        public string OperatingBranchName { get; set; }
         public int? CurrentBranchID { get; set; }
         [Required]
         public short? TruckTypeID { get; set; }

@@ -19,34 +19,34 @@
 
 <MudPaper Class="p-4">
     <MudGrid>
-        <MudItem xs="12" md="3">
-            <MudSelect Label="Select Order" @bind-Value="@SelectedOrder" T="OrderModel" ToStringFunc="@((p) => p?.OrderName)" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
-                @foreach (var ditem in Orders)
-                {
-                    <MudSelectItem Value="@ditem">@ditem.OrderName</MudSelectItem>
-                }
-            </MudSelect>
+        <MudItem xs="12" md="4">
+            <PartySelector BranchID="@BranchID" NatureOfBusiness="Customer"  @bind-Value="@SelectedClient" IncludeSisterConcern></PartySelector>
         </MudItem>
-        <MudItem xs="12" md="3">
-            <MudSelect Label="Select Tariff" @bind-Value="SelectedTariffType" T="TariffTypeModel" ToStringFunc="@((p) => p?.TariffTypeName)" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+        <MudItem xs="12" md="4">
+            <MudAutocomplete Label="Select Contract" @bind-Value="@SelectedOrder" T="OrderModel" SearchFunc="SearchOrders" ToStringFunc="@((p) => p?.OrderName)" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+            </MudAutocomplete>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudSelect Label="Select Tariff" @bind-Value="SelectedTariffType" T="TariffTypeModel" ToStringFunc="@((p) => p?.TariffTypeName)" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
                 @foreach (var item in TariffTypes)
                 {
                     <MudSelectItem Value="@item">@item.TariffTypeName</MudSelectItem>
                 }
             </MudSelect>
         </MudItem>
-        <MudItem xs="12" md="3">
-            <MudSelect Label="Select GC Type" @bind-Value="GcType" T="GcTypeModel" ToStringFunc="@((p) => p?.GcTypeName)" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+        <MudItem xs="12" md="4">
+            <MudSelect Label="Select GC Type" @bind-Value="GcType" T="GcTypeModel" ToStringFunc="@((p) => p?.GcTypeName)" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
                 @foreach (var item in GcTypes)
                 {
                     <MudSelectItem Value="@item">@item.GcTypeName</MudSelectItem>
                 }
+    
             </MudSelect>
         </MudItem>
-        <MudItem xs="12" md="3">
+        <MudItem xs="12" md="4">
             <MudDateRangePicker Label="Select Period" @bind-DateRange="@dateRange" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Required></MudDateRangePicker>
         </MudItem>
-        <MudItem xs="12" md="3" Class="d-flex align-left">
+        <MudItem xs="12" md="4" Class="d-flex align-left">
             <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Fetch</MudButton>
             <MudButton OnClick="Generate" Style="margin-left: 20px;" Variant="Variant.Filled" Color="Color.Secondary" ButtonType="ButtonType.Button">Generate</MudButton>
         </MudItem>
@@ -63,12 +63,13 @@
 <br />
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" @bind-SelectedItems="selectedItems1" MultiSelection="true" Dense="true" Hover="true" Striped="true" Elevation="1" Filter="new Func<GcTariffModel, bool>(search)">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="1" Filter="new Func<GcTariffModel, bool>(search)">
             <ToolBarContent>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchBookFreight" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
+                <MudTh><MudCheckBox ValueChanged="(bool isChecked) => SelectAll(isChecked)"></MudCheckBox></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillNumber)" InitialDirection="SortDirection.Ascending">Bill Number</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillDate)" InitialDirection="SortDirection.Ascending">Bill Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.PassNumber)" InitialDirection="SortDirection.Ascending">Pass Number</MudTableSortLabel></MudTh>
@@ -77,6 +78,7 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Freight</MudTableSortLabel></MudTh>
             </HeaderContent>
             <RowTemplate>
+                <MudTd><MudCheckBox @bind-Value="@context.IsChecked"></MudCheckBox></MudTd>
                 <MudTd DataLabel="BillNumber">@context.BillNumber</MudTd>
                 <MudTd DataLabel="BillDate">@context.BillDate?.ToShortDateString()</MudTd>
                 <MudTd DataLabel="PassNumber">@context.PassNumber</MudTd>
@@ -105,10 +107,30 @@
     DateRange dateRange;
     private string searchBookFreight = "";
 
+    private PartyModel SelectedClient;
+
     public bool HasPermissionFreightBillingServiceEditConsolidatedDraftBill { get; set; } = false;
     public int FreightBillingDocTypeID = 2;
     int? BranchID;
     string UserID;
+
+
+    IEnumerable<GcTariffModel> FilteredCollection { get; set; }
+
+    void UpdateFilteredCollection(string searchString)
+    {
+        // Apply your filter to the collection
+        FilteredCollection = collection.Where(item => item.ConsigneeName.Contains(searchString, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    void SelectAll(bool isChecked)
+    {
+        FilteredCollection = collection.Where(item => search(item));
+        foreach (var item in FilteredCollection)
+        {
+            item.IsChecked = isChecked;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -131,19 +153,28 @@
 
     public async Task fetch()
     {
-      await  LoadData("Fetch");
+        await  LoadData("Fetch");
     }
 
     async Task Generate()
     {
-       await  LoadData("Generate");
+        await  LoadData("Generate");
+    }
+
+    private async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    {
+        if (string.IsNullOrEmpty(searchString))
+            return Orders.Where(x => x.ClientID == SelectedClient?.PartyID);
+
+        UpdateFilteredCollection(searchString);
+        return await Task.FromResult(Orders.Where(x => x.ClientID == SelectedClient?.PartyID && x.OrderName.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
     public async Task LoadData(string a)
     {
-        if (SelectedOrder.OrderID == null)
+        if (SelectedOrder?.OrderID is null  && SelectedClient?.PartyID is null )
         {
-            snackbar.Add("Order not selected ! ", Severity.Error);
+            snackbar.Add("Party/Contract not selected ! ", Severity.Error);
             return;
         }
         if (SelectedTariffType.TariffTypeID == null)
@@ -163,26 +194,22 @@
         }
         if (a == "Fetch")
         {
-            collection = Iservice.GetPending(SelectedOrder.OrderID, SelectedTariffType.TariffTypeID, GcType.GcTypeID, dateRange?.Start ?? null, dateRange?.End ?? null).ToList();
+            collection = Iservice.GetPending(SelectedClient?.PartyID,SelectedOrder?.OrderID, SelectedTariffType.TariffTypeID, GcType.GcTypeID, dateRange?.Start, dateRange?.End).ToList();
         }
         if (a == "Generate")
         {
-            collection = Iservice.GenerateTariffs(SelectedOrder.OrderID, SelectedTariffType.TariffTypeID, GcType.GcTypeID, dateRange?.Start ?? null, dateRange?.End ?? null).ToList();
+            if (SelectedOrder?.OrderID is null)
+            {
+                snackbar.Add("Contract not selected ! ", Severity.Error);
+                return;
+            }
+            collection = Iservice.GenerateTariffs(SelectedOrder.OrderID, SelectedTariffType.TariffTypeID, GcType.GcTypeID, dateRange?.Start, dateRange?.End ).ToList();
         }
         if (collection.Count == 0)
         {
-            if (a == "Fetch")
-            {
                 bool? result = await DialogService.ShowMessageBox(
                     "Oops !",
-                    "No collection found on fetching !");
-            }
-            if (a == "Generate")
-            {
-                bool? result = await DialogService.ShowMessageBox(
-                   "Oops !",
-                   "No collection found on Generating !");
-            }
+                    "No collection found!!");            
         }
     }
 
@@ -254,20 +281,20 @@
         if (HasPermissionFreightBillingServiceEditConsolidatedDraftBill)
         {
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            if (selectedItems1.Count > 0)
+            if (collection.Where(x => x.IsChecked).ToList().Count > 0)
             {
                 ConsolidatedDraftBillModel cdm = new()
                     {
                         UserInfo = new() { UserID = UserID },
                         BranchID = BranchID,
                         NatureOfTransaction = "Billing",
-                        BookedGCs = selectedItems1.ToList(),
+                        BookedGCs = collection.Where(x => x.IsChecked).ToList(),//selectedItems1.ToList(),
                         Order = SelectedOrder,
                         TariffType = SelectedTariffType,
                         DocumentDate = System.DateTime.Now,
                         DocFromDate = dateRange?.Start ?? null,
                         DocToDate = dateRange?.End ?? null,
-                        TotalAmount = selectedItems1.Sum(x => x.Amount)
+                        TotalAmount = collection.Where(x => x.IsChecked).Sum(x => x.Amount)
                     };
                 DialogParameters parms = new DialogParameters();
                 parms.Add("model", cdm);
@@ -280,8 +307,8 @@
                     ConsolidatedDraftBillModel UpatedModel = (ConsolidatedDraftBillModel)result.Data;
                     Iservice.UpdateConsolidatedDraftBill(UpatedModel);
                     snackbar.Add("Created Successfully ", Severity.Success);//value = "visible";
-                }
-                LoadData("Fetch");
+                    await LoadData("Fetch");
+                }                
             }
             else
             {
@@ -300,6 +327,7 @@
         if ((gcTariff.BillNumber != null && gcTariff.BillNumber.Contains(searchBookFreight, StringComparison.OrdinalIgnoreCase)) ||
         (gcTariff.PassNumber != null && gcTariff.PassNumber.Contains(searchBookFreight, StringComparison.OrdinalIgnoreCase)))
         {
+            
             return true;
         }
         return false;

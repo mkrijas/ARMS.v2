@@ -140,7 +140,8 @@ namespace ArmsServices.DataServices
                     Party = new PartyModel()
                     {
                         PartyCode = dr.GetString("PartyCode"),
-                        PartyID = dr.GetInt32("PartyID")
+                        PartyID = dr.GetInt32("PartyID"),
+                        TradeName = dr.GetString("tradename")
                     },
 
                     TariffType = new TariffTypeModel()
@@ -160,6 +161,8 @@ namespace ArmsServices.DataServices
                     Dimension = dr.GetInt32("Dimension"),
                     FreightAmount = dr.GetDecimal("FreightAmount"),
                     TotalAmount = dr.GetDecimal("TotalAmount"),
+                    PeriodFrom = dr.GetDateTime("DocFromDate"),
+                    PeriodTo = dr.GetDateTime("DocToDate"),
                     Narration = dr.GetString("Narration"),
                     Gst = new()
                     {
@@ -527,13 +530,14 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Reverse]", parameters);
         }
 
-        public IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end)
+        public IEnumerable<GcTariffModel> GetPending(int? PartyID,int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "Pending"),
                new SqlParameter("@Begin",begin),
                new SqlParameter("@End",end),
+               new SqlParameter("@PartyID", PartyID),
                new SqlParameter("@OrderID", OrderID),
                new SqlParameter("@TariffTypeID", TariffTypeID),
                new SqlParameter("@GcTypeID", GcTypeID)
