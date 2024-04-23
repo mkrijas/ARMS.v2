@@ -1,0 +1,49 @@
+﻿@page "/InsuranceStatusReport"
+@inject ISnackbar Snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IBranchService IBranchService
+@inherits ReportComponentBase
+
+<MudGrid>
+    <MudItem xs="2" md="2">
+        @* <MudIconButton Title="Select Branch" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton> *@
+        <MudIconButton Title="Render Report" Icon="@Icons.Material.Filled.DocumentScanner" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer"></MudIconButton>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+    ReportViewer report;
+    public bool ShowReport { get; set; } = false;
+    public string ReportName { get; set; }
+    //public BranchModel SelectedBranch { get; set; } = new();
+    public BranchModel CurrentBranch { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+    }
+
+    // private async Task BranchChanged(BranchModel branch)
+    // {
+    //     SelectedBranch = branch;
+    // }
+
+    public async Task RenderReportViewer()
+    {
+        ShowReport = true;
+        ReportName = "InsuranceStatusReport";
+        ReportParameters.Clear();
+        ReportParameters.Add("BranchName", CurrentBranch.BranchName);
+        await report.RenderReport();
+    }
+}
