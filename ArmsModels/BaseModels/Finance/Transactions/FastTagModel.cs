@@ -73,6 +73,7 @@ namespace Core.BaseModels.Finance.Transactions
         public decimal DebitAmount { get; set; }
         public virtual string Destination { get; set; }
         public virtual Boolean IsProcessed { get; set; }
+        public virtual Boolean IsChecked { get; set; }
         public virtual string Activity { get; set; }
         public virtual string BranchName { get; set; }
         public virtual string TripPrefix { get; set; }
