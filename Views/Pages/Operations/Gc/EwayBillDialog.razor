@@ -94,35 +94,23 @@
         {
             _busy = true;
             var authprov = await auth.GetAuthenticationStateAsync();
-            foreach (var item in model.Gcs)
+            try
             {
-                item.EwayBill.GcID = item.GcID;
-                item.EwayBill.UserInfo.UserID = authprov.User.Identity.Name;
-                try
+                foreach (var item in model.Gcs)
                 {
-                    EwayBillModel result = Iservice.UpdateEwayBill(item.EwayBill);
-                    if (MessageDocumentID != null && item != null && item.EwayBill != null && item.EwayBill.ExpireOn != null && (item.EwayBill.ExpireOn - DateTime.Now).Value.TotalHours >= 4)
-                    {
-                        notificationMessage = new();
-                        notificationMessage.DocumentID = MessageDocumentID;
-                        notificationMessage.MessageGroupID = "EWayBill";
-                        notificationMessage.DocumentTypeID = DocTypeID;
-                        currentNotificationMessages = IpushNotificationService.SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(BranchID, MessageDocumentID, DocTypeID).ToList();
-                        string MessageIDs = string.Join(",", currentNotificationMessages.Select(d => d.MessageID).ToList());
-                        IpushNotificationService.AknowledgedSelectedItems(MessageIDs, UserID);
-                        await signalRService.Send(notificationMessage);
-                    }
+                    item.EwayBill.GcID = item.GcID;
+                    item.EwayBill.UserInfo.UserID = authprov.User.Identity.Name;
+                    var EwayBill = Iservice.UpdateEwayBill(item.EwayBill);
                 }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Warning);
-                    return;
-                }
+                snackbar.Add("Saved Successfully", Severity.Success);
+                await Task.Delay(200);
+                MudDialog.Close(DialogResult.Ok(model));
             }
-            snackbar.Add("Saved Successfully", Severity.Success);
-            MudDialog.Close(DialogResult.Ok(model));
-            model = new GcSetModel();
-            await Task.Delay(200);
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+                return;
+            }
             _busy = false;
         }
         else
