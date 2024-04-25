@@ -46,6 +46,7 @@ namespace ArmsServices.DataServices
                     GcID = dr.GetInt64("GcID"),
                     TariffID = dr.GetInt32("TariffID"),
                     Amount = dr.GetDecimal("Amount"),
+                    Deduction = dr.GetDecimal("Deduction"),
                     BillDate = dr.GetDateTime("BillDate"),
                     InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     BillNumber = dr.GetString("BillNumber"),
@@ -195,6 +196,11 @@ namespace ArmsServices.DataServices
                 {
                     DraftBillID = dr.GetInt32("DraftBillID"),
                     BranchID = dr.GetInt32("BranchID"),
+                    Party = new()
+                    {
+                        PartyID = dr.GetInt32("PartyID"),
+                        TradeName = dr.GetString("TradeName"),
+                    },
                     Order = new OrderModel()
                     {
                         OrderID = dr.GetInt32("OrderID"),
@@ -239,6 +245,7 @@ namespace ArmsServices.DataServices
                     GcID = dr.GetInt64("GcID"),
                     TariffID = dr.GetInt32("TariffID"),
                     Amount = dr.GetDecimal("Amount"),
+                    Deduction = dr.GetDecimal("Deduction"),
                     BillDate = dr.GetDateTime("BillDate"),
                     InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     BillNumber = dr.GetString("BillNumber"),
@@ -305,7 +312,12 @@ namespace ArmsServices.DataServices
                 BillingID = dr.GetInt32("BillingID"),
                 ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
                 DraftBillID = dr.GetInt32("DraftBillID"),
-                OrderID = dr.GetInt32("PartyBranchID"),
+                OrderID = dr.GetInt32("OrderID"),
+                Party = new PartyModel()
+                {
+                    TradeName = dr.GetString("tradeName"),
+                    PartyID =   dr.GetInt32("PartyID"),
+                },
                 PartyCoa = dr.GetInt32("PartyCoaID"),
                 TariffType = new TariffTypeModel()
                 {
@@ -345,7 +357,12 @@ namespace ArmsServices.DataServices
             {
                 ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
                 DraftBillID = dr.GetInt32("DraftBillID"),
-                OrderID = dr.GetInt32("PartyBranchID"),
+                OrderID = dr.GetInt32("OrderID"),
+                Party = new PartyModel()
+                {
+                    TradeName = dr.GetString("tradeName"),
+                    PartyID = dr.GetInt32("PartyID"),
+                },
                 PartyCoa = dr.GetInt32("PartyCoaID"),
                 TariffType = new TariffTypeModel()
                 {
@@ -380,7 +397,6 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-
         private ConsolidatedDraftBillModel GetConsolidatedDraftBillModel(IDataRecord dr)
         {
             return new ConsolidatedDraftBillModel
@@ -397,6 +413,11 @@ namespace ArmsServices.DataServices
                     UsageCode = dr.GetString("UsageCode"),
                 },
                 DocumentDate = dr.GetDateTime("DocDate"),
+                Party = new PartyModel()
+                {
+                    PartyID = dr.GetInt32("PartyID"),
+                    TradeName = dr.GetString("TradeName")
+                },
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
@@ -417,8 +438,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ProformaInvoiceID", model.ProformaInvoiceID),
                new SqlParameter("@DraftBillID", model.DraftBillID),
                new SqlParameter("@OrderID", model.OrderID),
-               new SqlParameter("@PartyCoaID", model.PartyCoa),
-               new SqlParameter("@PartyCode", model.Party.PartyCode),
+               new SqlParameter("@PartyID", model.Party?.PartyID),
+               new SqlParameter("@PartyCoaID", model.PartyCoa),               
                new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
                new SqlParameter("@UsageCode", model.TariffType.UsageCode),
                new SqlParameter("@Reference", model.Reference),
@@ -456,7 +477,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocToDate", model.DocToDate),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
-               new SqlParameter("@OrderID", model.Order.OrderID),
+               new SqlParameter("@PartyID", model.Party?.PartyID),
+               new SqlParameter("@OrderID", (model.Order?.OrderID)??0),
                new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
@@ -464,7 +486,7 @@ namespace ArmsServices.DataServices
                //new SqlParameter("@BookedGcs", model.BookedGCs.ToDataTable()),
                new SqlParameter("@BookedGcs", SqlDbType.Structured)
                 {
-                    TypeName = "dbo.GcTariffTableType",
+                    TypeName = "dbo.GcTariffEntryTableType",
                     Value = model.BookedGCs.ToDataTable()
                 },
             new SqlParameter("@UserID", model.UserInfo.UserID),
