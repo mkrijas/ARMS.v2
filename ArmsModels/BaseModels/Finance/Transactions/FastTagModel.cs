@@ -104,6 +104,16 @@ namespace Core.BaseModels.Finance.Transactions
         public string NumberPlate { get; set; }
     }
 
+    public class FastTagBranchEditModel
+    {
+        public int? FastTagTollID { get; set; }
+        [Required]
+        public string TransactionID { get; set; }
+        [Required]
+        public BranchModel Branch { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new UserInfoModel();
+    }
+
     public static class EncryptionHelper
     {
         private static byte[] Key;

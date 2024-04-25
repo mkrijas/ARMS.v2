@@ -212,6 +212,21 @@ namespace DAL.DataServices.Finance.Transactions
             return model;
         }
 
+        public FastTagBranchEditModel UpdateBranch(FastTagBranchEditModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@FastTagTollID", model.FastTagTollID),
+               new SqlParameter("@BranchID", model.Branch.BranchID),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.BranchUpdate]", parameters))
+            {
+                return null;
+            }
+            return null;
+        }
+
         public int Approve(int? FastTagProcessID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
