@@ -214,7 +214,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByUnApproved"),
+               new SqlParameter("@Operation", "ByApproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@InterBranch", InterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
@@ -229,7 +229,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@Operation", "ByUnApproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@InterBranch", InterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),

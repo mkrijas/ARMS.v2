@@ -32,20 +32,28 @@
                                 @if (!ReadOnly && model.Entries is not null && model.Entries.Any())
                                 {
                                     <MudItem xs="3"><span class="HeadText">Usage Code</span></MudItem>
-                                    <MudItem xs="2"><span class="HeadText">InvoiceRef</span></MudItem>
-                                    <MudItem xs="2"><span class="HeadText">Cost Center</span></MudItem>
-                                    <MudItem xs="2"><span class="HeadText">Dimension</span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText">InvoiceRef</span></MudItem>
+                                    <MudItem xs="2"><span class="HeadText">Job</span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText">Truck</span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText">Cost Center</span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText">Dimension</span></MudItem>
                                     <MudItem xs="1"><span class="HeadText">Amount</span></MudItem>
                                     <MudItem xs="1"><span class="HeadText">Gst/TDS</span></MudItem>
                                     <MudItem xs="1"><span class="HeadText">Actions</span></MudItem>
                                     @foreach (var item in model.Entries)
                                     {
                                         <MudItem xs="3">@string.Format("{0} | {1}", item.UsageCode, item.UsageCodeDescription)</MudItem>
-                                        <MudItem xs="2">@item.InvoiceNo</MudItem>
-                                        <MudItem xs="2">
+                                        <MudItem xs="1">@item.InvoiceNo</MudItem>
+                                          <MudItem xs="2">
+                                            @item.JobTitle
+                                        </MudItem>
+                                        <MudItem xs="1">
+                                            @item.TruckRegNo
+                                        </MudItem>
+                                        <MudItem xs="1">
                                             @item.CostCenterVal
                                         </MudItem>
-                                        <MudItem xs="2">
+                                        <MudItem xs="1">
                                             @item.DimensionVal
                                         </MudItem>
                                         <MudItem xs="1">@item.Amount</MudItem>
@@ -62,13 +70,11 @@
                                 @if (!ReadOnly)
                                 {
                                     <MudItem xs="12" Class="d-flex gap-4">
-                                        <UsageCodeSelector Value=gstusage ValueChanged="UsageCodeSelected"></UsageCodeSelector>
-                                        @*  </MudItem>
-                                    <MudItem xs="2" md="6"> *@
+                                        <UsageCodeSelector Value=gstusage ValueChanged="UsageCodeSelected"></UsageCodeSelector>                                   
                                         <MudDatePicker ReadOnly="ReadOnly" Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="_entryModel.InvoiceDate" For="@(() => _entryModel.InvoiceDate)" />
                                         <MudTextField ReadOnly="ReadOnly" @bind-Value="_entryModel.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _entryModel.InvoiceNo)"></MudTextField>
-                                        <ServiceJobSelector @bind-Value="@_entryModel.Job" @bind-Title="@_entryModel.JobTitle"></ServiceJobSelector>
-                                        <TruckSelector BranchID="@BranchID" Value="@_truck" ValueChanged="@truckChanged"></TruckSelector>
+                                        <ServiceJobSelector ReadOnly="ReadOnly" Value="@_selectedJob" ValueChanged="JobSelected"></ServiceJobSelector>
+                                        <TruckSelector IsDisabled="ReadOnly" BranchID="@BranchID" Value="@_truck" ValueChanged="@truckChanged"></TruckSelector>
                                         <CostCenterSelector @bind-Value="@(_entryModel.CostCenter)" @bind-ValueText="@_entryModel.CostCenterVal" ReadOnly="@ReadOnly"></CostCenterSelector>
                                         <DimensionSelector @bind-Value="@(_entryModel.Dimension)" @bind-ValueText="@(_entryModel.DimensionVal)" ReadOnly="@ReadOnly"></DimensionSelector>
                                         <MudNumericField HideSpinButtons Label="Amount" @bind-Value="@_entryModel.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
@@ -93,9 +99,8 @@
     public override SundryMaintenanceModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.ID; } }
     private SundryMaintenanceModel _model;
 
-    ValidationMessageStore messageStore;
+    
     GstUsageCodeModel gstusage = new();
-
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
@@ -104,6 +109,7 @@
         };
 
     public SundryMaintenanceEntryModel _entryModel { get; set; }
+    private RepairJobModel _selectedJob;
     private TruckModel _truck { get; set; }
 
 
@@ -132,8 +138,16 @@
 
     void truckChanged(TruckModel truck)
     {
+        _truck = truck;
         _entryModel.TruckID = truck?.TruckID;
         _entryModel.TruckRegNo = truck?.RegNo;
+    }
+
+    void JobSelected(RepairJobModel job)
+    {
+        _selectedJob = job;
+        _entryModel.Job = job?.RepairJobID;
+        _entryModel.JobTitle = job?.Title;
     }
 
     void SetTotal()
@@ -180,12 +194,12 @@
             model.Entries = new();
         }
         editContext = new EditContext(_entryModel);
-        editContext.EnableDataAnnotationsValidation();
-        // editContext.OnValidationStateChanged += EditContext_OnValidationChanged;
+        editContext.EnableDataAnnotationsValidation();       
 
         if (AddTax() && editContext.Validate())
         {
-            model.Entries.Add(_entryModel);
+
+            model.Entries.Add((SundryMaintenanceEntryModel)_entryModel.Clone());
             SetTotal();
             gstusage = null;
         }

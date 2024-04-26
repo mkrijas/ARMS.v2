@@ -22,8 +22,13 @@ namespace ArmsModels.BaseModels
         }
     }
 
-    public class SundryMaintenanceEntryModel
+    public class SundryMaintenanceEntryModel: ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<SundryMaintenanceEntryModel>(Json);
+        }
         public int? ID { get; set; }        
         public int? ParentID { get; set; }
         [Required]
@@ -32,13 +37,14 @@ namespace ArmsModels.BaseModels
         public int? Job { get; set; }
         public virtual string JobTitle { get; set; }
         [Required]
+        public int? TruckID { get; set; }
+        public virtual string TruckRegNo { get; set; }
+        [Required]
         public string UsageCode { get; set; }
         public int? CoaID { get; set; }
         public virtual string UsageCodeDescription { get; set; }
-        public string SubArdCode { get; set; }
-        [Required]
-        public int? TruckID { get; set; }
-        public virtual string TruckRegNo { get; set; }
+        public string SubArdCode { get; set; }        
+       
         [Required]
         public string InvoiceNo { get; set; }
         [Required]
