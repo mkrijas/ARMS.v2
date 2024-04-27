@@ -65,7 +65,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@GcSetID", model.GcSetID),
-               new SqlParameter("@UnloadedQuantity", model.SetUnloadQuantity),
+               new SqlParameter("@UnloadedQuantity", model.TotalUnloadingQuantity),
                new SqlParameter("@Acknowledgement", model.Acknowledgement)
             };
             return Iservice.ExecuteNonQuery("[usp.GcSet.UpdateUnloadingQuantity]", parameters);
