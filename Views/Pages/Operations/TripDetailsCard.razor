@@ -24,30 +24,24 @@
 @inject IRoleService<RoleModel> Irole
 @inject IMileageShortageReceiptService IMileageService
 
-<MudCard Class="mt-3" Style="height:auto" Elevation="4">
+<MudCard Class="mt-3" Style="height:auto" Elevation="2">
     <MudCardHeader>
         <CardHeaderAvatar>
             <MudAvatar Color="Color.Dark" Size="Size.Medium">
                 <MudIcon Icon="@Icons.Material.Filled.ModeOfTravel" Title="Trip Number" Color="Color.Warning" />
-                </MudAvatar>
+            </MudAvatar>
         </CardHeaderAvatar>
-        <CardHeaderContent> 
-                    <MudText Typo="Typo.h6" GutterBottom="true">
-                        <b>@(Trip != null ? Trip.TripNumberDisplay : "")</b>
-                <MudSwitch Checked="@IsLocked" CheckedChanged="((bool value)=>TripLocked(value))" Color="Color.Error" Label="Trip Locked" />
-                    </MudText>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6" GutterBottom="true">
+                <b>@(Trip != null ? Trip.TripNumberDisplay : "")</b>
+                <MudSwitch Value="@IsLocked" ValueChanged="((bool value)=>TripLocked(value))" Color="Color.Error" Label="Trip Locked" />
+            </MudText>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudTooltip Text="Add Fuel">
-                <MudIconButton Icon="@Icons.Material.Filled.LocalGasStation" Disabled="@IsLocked" Size="Size.Large" Color="Color.Primary" @onclick="@(()=> OpenFuelForm())" />
-            </MudTooltip>
-            <MudTooltip Text="Add Expenses">
-                <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Disabled="@IsLocked" Color="Color.Primary" Size="Size.Large" @onclick="@(()=> OpenExpenseForm())" />
-            </MudTooltip>
-            <MudTooltip Text="Add Mileage Shortage Receipt">
-                <MudIconButton Icon="@Icons.Material.Filled.Toll" Disabled="@IsLocked" Color="Color.Primary" Size="Size.Large" @onclick="@(()=> OpenMileageShortageReceipt())" />
-            </MudTooltip>
-          
+            <MudIconButton Title="Add Fuel" Icon="@Icons.Material.Filled.LocalGasStation" Disabled="@IsLocked" Size="Size.Large" Color="Color.Primary" @onclick="@(()=> OpenFuelForm())" />
+            <MudIconButton Title="Add Expenses" Icon="@Icons.Material.Filled.MenuBook" Disabled="@IsLocked" Color="Color.Primary" Size="Size.Large" @onclick="@(()=> OpenExpenseForm())" />
+            <MudIconButton Title="Add Mileage Shortage Receipt" Icon="@Icons.Material.Filled.Toll" Disabled="@IsLocked" Color="Color.Primary" Size="Size.Large" @onclick="@(()=> OpenMileageShortageReceipt())" />
+            <MudIconButton Title="Update Unloding Qty" Icon="@Icons.Material.Filled.PictureAsPdf" Disabled="@IsLocked" Size="Size.Large" Color="Color.Primary" @onclick="@(()=> UpdateUnloadingQty())" />
         </CardHeaderActions>
     </MudCardHeader>
     <MudCardContent>
@@ -57,7 +51,7 @@
                     <MudList>
                         <MudGrid>
                             <MudItem md="6">
-                                <MudListItem Avatar="@Icons.Material.Rounded.DateRange"   IconColor="Color.Dark" IconSize="Size.Small">
+                                <MudListItem Avatar="@Icons.Material.Rounded.DateRange" IconColor="Color.Dark" IconSize="Size.Small">
                                     <b>@Trip?.TripDate?.ToString("dd/MM/yyyy")</b>
                                 </MudListItem>
                                 <MudListItem Avatar="@Icons.Material.Rounded.AirlineSeatReclineNormal" IconColor="Color.Dark" IconSize="Size.Small">
@@ -207,27 +201,27 @@
                         {
                             <MudGrid>
                                 <MudItem md="6">
-                                    <MudListItem >
+                                    <MudListItem>
                                         Document Number : <b>@MileageList[0].DocumentNumber</b>
                                     </MudListItem>
-                                    <MudListItem >
+                                    <MudListItem>
                                         Running Km : <b>@MileageList[0].RunningKM</b>
                                     </MudListItem>
-                                    <MudListItem >
+                                    <MudListItem>
                                         Consumed Fuel :<b>@MileageList[0].ConsumedFuel</b>
                                     </MudListItem>
-                                    <MudListItem >
+                                    <MudListItem>
                                         Allotted Mileage :<b>@MileageList[0].AllottedMileage</b>
                                     </MudListItem>
                                 </MudItem>
                                 <MudItem md="6">
-                                    <MudListItem >
+                                    <MudListItem>
                                         Allotted Distance : <b>@MileageList[0].AllottedDistance</b>
                                     </MudListItem>
-                                    <MudListItem >
+                                    <MudListItem>
                                         Fuel Price :<b>@MileageList[0].FuelPrice</b>
                                     </MudListItem>
-                                    <MudListItem >
+                                    <MudListItem>
                                         Total Amount :<b>@MileageList[0].TotalAmount</b>
                                     </MudListItem>
                                 </MudItem>
@@ -285,6 +279,34 @@
         }
     }
 
+    async Task UpdateUnloadingQty()
+    {
+        LoadGcs();
+        DialogParameters parms = new DialogParameters();
+        parms.Add("GcsToUnload", AssignedGCs);
+        var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Qty Update", parms);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            try
+            {
+                List<GcSetModel> gcs = (List<GcSetModel>)result.Data;
+                foreach (var item in gcs)
+                {
+                    Igc.UpdateUnloadingQuantity(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error, null);
+            }
+        }
+        else
+        {
+            return;
+        }
+    }
+
     public void Refresh(TripModel Trip)
     {
         if (Trip.TripID != null && tripIservice != null)
@@ -314,7 +336,7 @@
         var OpList = Iservice.SelectByTrip(Trip.TripID).ToList();
         foreach (var item in OpList)
         {
-            OptranList.AddRange(Iservice.GetExpenses(item.OpTranID) .Where(x=> x.Amount > 0).ToList());
+            OptranList.AddRange(Iservice.GetExpenses(item.OpTranID).Where(x => x.Amount > 0).ToList());
         }
 
     }
@@ -390,7 +412,7 @@
         parms.Add("model", omsrModel.Clone());
         var dialog = DialogService.Show<Finance.Transactions.MileageShortageReceiptDialog>("ADD", parms, maxWidth);
         var result = await dialog.Result;
-        if(!result.Canceled)
+        if (!result.Canceled)
         {
             MileageTabSelected();
         }
