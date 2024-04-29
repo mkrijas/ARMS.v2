@@ -69,7 +69,7 @@ namespace ArmsServices.DataServices
                     UsageCode = dr.GetString("UsageCode"),
                     SubArdCode = dr.GetString("SubArdCode"),
                     UsageCodeDescription = dr.GetString("UsageDescription"),
-                    ID = dr.GetInt32("ID"),
+                    ID = dr.GetInt64("ID"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),                    
                     CostCenter  = dr.GetInt32("CostCenterID"),
