@@ -116,23 +116,27 @@ namespace Views.Data
             if (!EditPermission)
             {
                 bool? result = await dialogService.ShowMessageBox("Permission denied!", "You dont have permission to Edit Payment!.");
-            }
-            try
-            {
-                model.UserInfo.UserID = UserID;
-                int ID = await Update(model);
-                if (ID != 0)
-                {
-                    notiService.CreateAuthNotifications(BranchID.Value, DocInfo.DocumentTypeID.Value, ID);
-                    snackbar.Add("Submitted Successfully", Severity.Success);
-                    dialogForm.Close(model);
-                }
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
 
+            }
+            else
+            {
+                try
+                {
+                    model.UserInfo.UserID = UserID;
+                    int ID = await Update(model);
+                    if (ID != 0)
+                    {
+                        notiService.CreateAuthNotifications(BranchID.Value, DocInfo.DocumentTypeID.Value, ID);
+                        snackbar.Add("Submitted Successfully", Severity.Success);
+                        dialogForm.Close(model);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
+
+            }
             await Task.Delay(200);
             _busy = false;
         }
