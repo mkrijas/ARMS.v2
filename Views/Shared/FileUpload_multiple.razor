@@ -4,6 +4,7 @@
 @inject IWebHostEnvironment _env;
 @inject ISnackbar snckbar;
 @inject IDialogService DialogService
+@inject ITaxPurchaseService ITaxPurchaseService
 @inject IJSRuntime JSRuntime
 @inject MudBlazor.ISnackbar snackbar
 
@@ -54,7 +55,7 @@
         <a id="downloadLink" href="@value" download="Attachments" style="display: none;"></a>
 
         <MudButton Style="width: 16%; height: 100%;" EndIcon="@Icons.Material.Filled.Download" Variant="Variant.Filled" Color="Color.Primary" OnClick="DownloadFile">Attachments</MudButton>
-        @* <MudButton Style="margin-left: 1%; width: 16%; height: 100%;" Variant="Variant.Filled" Color="Color.Error" OnClick="Remove">Remove</MudButton> *@
+        <MudButton Style="margin-left: 1%; width: 16%; height: 100%;" Variant="Variant.Filled" Color="Color.Error" OnClick="Remove">Remove</MudButton>
     }
 </MudContainer>
 
@@ -98,18 +99,27 @@
         await JSRuntime.InvokeVoidAsync("DownloadFile");
     }
 
-    protected void Remove()
+    [Parameter]
+    public EventCallback<bool> RemoveFile { get; set; }
+
+    protected async Task Remove()
     {
         try
         {
             // Check if the file exists before attempting to delete it
             if (fnames.Any())
             {
+                string PhysicalPath = Path.Combine(_env.WebRootPath, "ArmsStaticFiles", FolderName);
+                string VirtualPath = Path.Combine("ArmsStaticFiles", FolderName);
                 // Delete the file
                 @foreach (var file in fnames)
                 {
-                    File.Delete(file);
-                    snackbar.Add("File removed Successfully", Severity.Success);
+                    string fileName = Path.GetFileName(file);
+                    string filePath = Path.Combine(PhysicalPath, fileName);
+                    File.Delete(filePath);
+                    fnames = null;
+                    await RemoveFile.InvokeAsync(true);
+                    //snackbar.Add("File removed Successfully", Severity.Success);
                 }
             }
             else
