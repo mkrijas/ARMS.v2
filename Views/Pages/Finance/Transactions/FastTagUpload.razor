@@ -1,6 +1,6 @@
 ﻿@page "/FastTagTollUpload"
 @* @page "/FastTagTollUpload/{id:int}/{Readonly:bool}" *@
-@page "/FastTagTollUpload/{encryptedId}/{Readonly:bool}"
+@page "/FastTagTollUpload/{encryptedId}/{Readonly:bool}/{Edit:bool}"
 
 @using Core.BaseModels.Finance.Transactions;
 @using Core.IDataServices.Finance.Transactions;
@@ -71,8 +71,12 @@
                                         else
                                         {
                                             <MudItem xs="8"><b>Total Reimbursable Amount &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: @ExcelModelCollection.Where(e => e.Reimbursable).Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
-                                            <MudItem xs="4">
-                                                <MudButton Style="margin-left: 64%; width: 36%; height: 110%;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+                                            <MudItem xs="4" Style="display: flex; justify-content: flex-end;">
+                                                @if (Edit)
+                                                {
+                                                    <MudButton Style="width: 36%; height: 100%;" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@(()=> EditBranch())">Edit Branch</MudButton>
+                                                }
+                                                <MudButton Style="margin-left: 2%; width: 36%; height: 100%;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
                                             </MudItem>
                                         }
                                     </MudGrid>
@@ -175,6 +179,7 @@
     FastTagModel newItem = new FastTagModel();
     public BranchModel SelectedBranch { get; set; } = new();
     public bool IsLoading = false;
+    FastTagBranchEditModel BranchEditModel = new FastTagBranchEditModel();
 
     //[Parameter]
     public int? id { get; set; }
@@ -182,6 +187,8 @@
     public string encryptedId { get; set; }
     [Parameter]
     public bool Readonly { get; set; }
+    [Parameter]
+    public bool Edit { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -272,9 +279,48 @@
         }
     }
 
-    public async Task Delete(FastTagModel model)
+    public async Task EditBranch()
     {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
 
+        DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Small };
+        var dialog = DialogService.Show<FastTagBranchEditDialog>("Edit Branch", options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            var data = (FastTagBranchEditModel)result.Data;
+            try
+            {
+                FastTagModel itemToUpdate = ExcelModelCollection.Find(x =>
+                {
+                    string cleanedTransactionID1 = data.TransactionID?.Trim();
+                    string cleanedTransactionID2 = x.TransactionID?.Trim();
+
+                    return string.Equals(cleanedTransactionID1, cleanedTransactionID2, StringComparison.OrdinalIgnoreCase);
+                });
+                if (itemToUpdate != null)
+                {
+                    itemToUpdate.BranchID = data.Branch.BranchID;
+                    itemToUpdate.BranchName = data.Branch.BranchName;
+                    data.FastTagTollID = itemToUpdate.FastTagTollID;
+                    data.UserInfo.UserID = user.Identity.Name;
+
+                    IFTService.UpdateBranch(data);
+                    snackbar.Add("Updated Successfully", Severity.Success);
+                }
+                else
+                {
+                    bool? message = await DialogService.ShowMessageBox(
+                        "Oops !",
+                        (MarkupString)$"TransactionID : <b>{data.TransactionID}</b> do not exist in the collection !");
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
     }
 
     public async Task Cancel()

@@ -4,6 +4,8 @@
 @inject IWebHostEnvironment _env;
 @inject ISnackbar snckbar;
 @inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject MudBlazor.ISnackbar snackbar
 
 @using System.Security.AccessControl
 @using MimeTypes
@@ -20,7 +22,9 @@
 @using iText.Pdfoptimizer;
 @using iText.Pdfoptimizer.Handlers;
 
-<MudContainer>
+@inject HttpClient httpClient
+
+<MudContainer Style="margin-bottom: 6px;">
     <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="UploadFiles">
         <ButtonTemplate>
             @if (!ReadOnly && !fnames.Any())
@@ -40,14 +44,26 @@
     </MudFileUpload>
     @foreach (var value in fnames)
     {
-        <a href="@value" download="Attachments">
-            <MudText Typo="Typo.h6" Color="Color.Primary">
-                Attachments
-                <MudIcon Icon="@Icons.Material.Filled.Download" Title="Download" />
-            </MudText>
-        </a>
+        @* <a href="@value" download="Attachments">
+    <MudText Typo="Typo.h6" Color="Color.Primary">
+    Attachments
+    <MudIcon Icon="@Icons.Material.Filled.Download" Title="Download" />
+    </MudText>
+    </a> *@
+
+        <a id="downloadLink" href="@value" download="Attachments" style="display: none;"></a>
+
+        <MudButton Style="width: 16%; height: 100%;" EndIcon="@Icons.Material.Filled.Download" Variant="Variant.Filled" Color="Color.Primary" OnClick="DownloadFile">Attachments</MudButton>
+        @* <MudButton Style="margin-left: 1%; width: 16%; height: 100%;" Variant="Variant.Filled" Color="Color.Error" OnClick="Remove">Remove</MudButton> *@
     }
 </MudContainer>
+
+<script>
+    function DownloadFile() {
+        var downloadLink = document.getElementById('downloadLink');
+        downloadLink.click();
+    }
+</script>
 
 @code {
 
@@ -74,6 +90,36 @@
         if (model.FileName != null)
         {
             fnames = model.FileName.Split(',').ToList();
+        }
+    }
+
+    private async Task DownloadFile()
+    {
+        await JSRuntime.InvokeVoidAsync("DownloadFile");
+    }
+
+    protected void Remove()
+    {
+        try
+        {
+            // Check if the file exists before attempting to delete it
+            if (fnames.Any())
+            {
+                // Delete the file
+                @foreach (var file in fnames)
+                {
+                    File.Delete(file);
+                    snackbar.Add("File removed Successfully", Severity.Success);
+                }
+            }
+            else
+            {
+                snackbar.Add("File Do not Exist !", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
         }
     }
 

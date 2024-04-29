@@ -19,6 +19,7 @@ namespace ArmsModels.BaseModels
         public DateTime? DocFromDate { get; set; }
         [Required]
         public DateTime? DocToDate { get; set; }
+        public PartyModel Party { get; set; } = new();     
         [Required]
         public OrderModel Order { get; set; }
         [Required]
@@ -57,11 +58,14 @@ namespace ArmsModels.BaseModels
 
     public class GcTariffModel
     {
+        [Required]
         public long? GcTariffID { get; set; }
         public long? GcID { get; set; }
         public int? TariffID { get; set; }
-        public string UsageCode { get; set; }
+        [Required]
         public decimal? Amount { get; set; }
+        [Required]
+        public decimal? Deduction { get; set; } = 0;
         public int? ConsolidatedDraftBillID { get; set; }
         public virtual DateTime? BillDate { get; set; }
         public virtual DateTime? InvoiceDate { get; set; }

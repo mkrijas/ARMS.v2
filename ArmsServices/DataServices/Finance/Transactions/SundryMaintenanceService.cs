@@ -69,7 +69,7 @@ namespace ArmsServices.DataServices
                     UsageCode = dr.GetString("UsageCode"),
                     SubArdCode = dr.GetString("SubArdCode"),
                     UsageCodeDescription = dr.GetString("UsageDescription"),
-                    ID = dr.GetInt32("ID"),
+                    ID = dr.GetInt64("ID"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),                    
                     CostCenter  = dr.GetInt32("CostCenterID"),
@@ -214,7 +214,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByUnApproved"),
+               new SqlParameter("@Operation", "ByApproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@InterBranch", InterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
@@ -229,7 +229,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByApproved"),
+               new SqlParameter("@Operation", "ByUnApproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@InterBranch", InterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),

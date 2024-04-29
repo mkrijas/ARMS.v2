@@ -60,41 +60,48 @@
         string DerivedFileName = null;
         if (file != null && file.Size > 0)
         {
-            if (filename == "Original")
-            { 
-                DerivedFileName = file.Name; 
-            }
-            else
+            try
             {
-                DerivedFileName = filename + MimeTypeMap.GetExtension(file.ContentType);
-            }
-
-            DirectoryInfo di = new DirectoryInfo(physicalPath);
-            if (!di.Exists)
-            {
-                System.IO.Directory.CreateDirectory(physicalPath);
-            }
-
-            string filePath = Path.Combine(physicalPath, DerivedFileName);
-
-            if (FilePath != null)
-            {
-                string oldfileName = Path.Combine(_env.WebRootPath, FilePath);
-                if (File.Exists(oldfileName))
+                if (filename == "Original")
                 {
-                    File.Delete(oldfileName);
+                    DerivedFileName = file.Name;
                 }
+                else
+                {
+                    DerivedFileName = filename + MimeTypeMap.GetExtension(file.ContentType);
+                }
+
+                DirectoryInfo di = new DirectoryInfo(physicalPath);
+                if (!di.Exists)
+                {
+                    System.IO.Directory.CreateDirectory(physicalPath);
+                }
+
+                string filePath = Path.Combine(physicalPath, DerivedFileName);
+
+                if (FilePath != null)
+                {
+                    string oldfileName = Path.Combine(_env.WebRootPath, FilePath);
+                    if (File.Exists(oldfileName))
+                    {
+                        File.Delete(oldfileName);
+                    }
+                }
+
+                if (Resize)
+                {
+                    file = await ResizeImage(file);
+                }
+                Stream stream = file.OpenReadStream(2 * 1024 * 1024);
+                FileStream fs = File.Create(filePath);
+                await stream.CopyToAsync(fs);
+                stream.Close();
+                fs.Close();
             }
-           
-            if(Resize)
+            catch(Exception ex)
             {
-                file = await ResizeImage(file);
+                snackbar.Add(ex.Message, Severity.Error);
             }
-            Stream stream = file.OpenReadStream();
-            FileStream fs = File.Create(filePath);
-            await stream.CopyToAsync(fs);
-            stream.Close();
-            fs.Close();
         }
         return DerivedFileName;
     }
