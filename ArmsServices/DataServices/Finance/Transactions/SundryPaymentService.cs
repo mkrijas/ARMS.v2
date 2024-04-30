@@ -22,23 +22,30 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "DELETE"),
                new SqlParameter("@SundryPaymentID", ID),
                new SqlParameter("@UserID", UserID),
-
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPayment.Delete]", parameters);
+        }
 
+        public int RemoveFile(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "REMOVEFILE"),
+               new SqlParameter("@SundryPaymentID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPayment.Delete]", parameters);
         }
 
         public IEnumerable<SundryPaymentModel> Select()
         {
-
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
-
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryPayment.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -47,7 +54,6 @@ namespace ArmsServices.DataServices
 
         public IEnumerable<SundryPaymentModel> SelectByApproved(int? BranchID, int? NumberOfRecords,bool IsInterBranch ,string searchTerm)
         {
-
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByApproved"),
@@ -55,14 +61,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@IsInterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
-
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryPayment.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
-
         }
 
         public IEnumerable<SundryPaymentModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
@@ -75,16 +78,12 @@ namespace ArmsServices.DataServices
                new SqlParameter("@IsInterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
-
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryPayment.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
-
         }
-
 
         public IEnumerable<SundryPaymentEntryModel> GetEntries(int? SID)
         {
@@ -93,12 +92,10 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "GetEntries"),
                new SqlParameter("@SundryPaymentID", SID),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryPayment.Select]", parameters))
             {
                 yield return new SundryPaymentEntryModel()
                 {
-
                     ID = dr.GetInt32("ID"),
                     ParentID = dr.GetInt32("ParentID"),
                     BranchID = dr.GetInt32("BranchID"),
@@ -130,6 +127,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
         public int Approve(int? SundryPaymentID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -140,6 +138,7 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPayment.Approve]", parameters);
         }
+
         public int Reverse(int? SundryPaymentID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -150,7 +149,6 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPayment.Reverse]", parameters);
         }
-
 
         public SundryPaymentModel Update(SundryPaymentModel model)
         {
@@ -187,6 +185,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
         private SundryPaymentModel GetModel(IDataRecord dr)
         {
             return new SundryPaymentModel
@@ -230,11 +229,5 @@ namespace ArmsServices.DataServices
         {
             throw new NotImplementedException();
         }
-
-        public int RemoveFile(int? ID, string UserID)
-        {
-            throw new NotImplementedException();
-        }
     }
-
 }

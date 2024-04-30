@@ -32,10 +32,10 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ReceiptID", ID),
                new SqlParameter("@UserID", UserID),
-
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Receipt.Delete]", parameters);
         }
+
         public IEnumerable<BillsReceiptModel> GetBills(int? ReceiptID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

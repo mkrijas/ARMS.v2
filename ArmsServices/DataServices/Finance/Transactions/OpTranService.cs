@@ -14,10 +14,12 @@ namespace ArmsServices.DataServices
     public class OpTranService : IOpTranService
     {
         IDbService Iservice;
+
         public OpTranService(IDbService iservice)
         {
             Iservice = iservice;
         }
+
         public OpTranModel Update(OpTranModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -79,7 +81,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@OpTranID", ID),
                new SqlParameter("@Operation", "ByID"),
             };
-
             OpTranModel model = null;
             foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
             {
@@ -95,7 +96,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TripID", TripID),
                new SqlParameter("@Operation", "ByTrip"),
             };
-
             foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -112,7 +112,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
             };
-
             foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -129,7 +128,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
             };
-
             foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -143,7 +141,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@JobcardID", JobcardID),
                new SqlParameter("@Operation", "ByJobCard"),
             };
-
             foreach (var dr in Iservice.GetDataReader("[usp.Finance.Transactions.OpTran.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -189,6 +186,7 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Approve]", parameters);
         }
+
         public int Reverse(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -233,8 +231,6 @@ namespace ArmsServices.DataServices
             };
         }
 
-     
-
         public OpTranModel SelectByID(int? ID)
         {
             throw new NotImplementedException();
@@ -261,11 +257,6 @@ namespace ArmsServices.DataServices
         }
 
         public IEnumerable<OpTranModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int RemoveFile(int? ID, string UserID)
         {
             throw new NotImplementedException();
         }
