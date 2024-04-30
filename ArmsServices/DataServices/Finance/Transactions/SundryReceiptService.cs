@@ -21,20 +21,29 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "DELETE"),
                new SqlParameter("@SundryReceiptID", ID),
                new SqlParameter("@UserID", UserID),
-
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryReceipt.Delete]", parameters);
-
         }
 
+        public int RemoveFile(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "REMOVEFILE"),
+               new SqlParameter("@SundryReceiptID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryReceipt.Delete]", parameters);
+        }
+        
         public IEnumerable<SundryReceiptModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
-
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryReceipt.Select]", parameters))
             {
@@ -44,7 +53,6 @@ namespace ArmsServices.DataServices
 
         public IEnumerable<SundryReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
-
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByApproved"),
@@ -52,7 +60,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@IsInterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
-
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryReceipt.Select]", parameters))
             {
@@ -62,7 +69,6 @@ namespace ArmsServices.DataServices
 
         public IEnumerable<SundryReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
-
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByUnApproved"),
@@ -70,7 +76,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@IsInterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
-
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryReceipt.Select]", parameters))
             {
@@ -85,7 +90,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "GetEntries"),
                new SqlParameter("@SundryReceiptID", SID),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryReceipt.Select]", parameters))
             {
                 yield return new SundryReceiptEntryModel()
@@ -121,6 +125,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
         public int Approve(int? SundryReceiptID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -131,6 +136,7 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryReceipt.Approve]", parameters);
         }
+
         public SundryReceiptModel Update(SundryReceiptModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -161,6 +167,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
         private SundryReceiptModel GetModel(IDataRecord dr)
         {
             return new SundryReceiptModel
@@ -204,5 +211,4 @@ namespace ArmsServices.DataServices
             throw new NotImplementedException();
         }
     }
-
 }

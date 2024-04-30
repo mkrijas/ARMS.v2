@@ -31,6 +31,7 @@ namespace Views.Data
         [Inject] protected IPushNotificationService notiService { get; set; }
         [Inject] protected IJSRuntime JsRuntime { get; set; }
         [Inject] protected IBranchService branchService { get; set; }
+        [Inject] protected IbaseInterface<T> baseInterface { get; set; }
 
 
         [Parameter]
@@ -116,23 +117,27 @@ namespace Views.Data
             if (!EditPermission)
             {
                 bool? result = await dialogService.ShowMessageBox("Permission denied!", "You dont have permission to Edit Payment!.");
-            }
-            try
-            {
-                model.UserInfo.UserID = UserID;
-                int ID = await Update(model);
-                if (ID != 0)
-                {
-                    notiService.CreateAuthNotifications(BranchID.Value, DocInfo.DocumentTypeID.Value, ID);
-                    snackbar.Add("Submitted Successfully", Severity.Success);
-                    dialogForm.Close(model);
-                }
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
 
+            }
+            else
+            {
+                try
+                {
+                    model.UserInfo.UserID = UserID;
+                    int ID = await Update(model);
+                    if (ID != 0)
+                    {
+                        notiService.CreateAuthNotifications(BranchID.Value, DocInfo.DocumentTypeID.Value, ID);
+                        snackbar.Add("Submitted Successfully", Severity.Success);
+                        dialogForm.Close(model);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
+
+            }
             await Task.Delay(200);
             _busy = false;
         }
@@ -165,6 +170,20 @@ namespace Views.Data
             }
         }
 
-    }
+        public async Task RemoveFileChange(bool val)
+        {
+            if (val)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                UserID = user.Identity.Name;
 
+                baseInterface.RemoveFile(DocInfo.DocumentID, UserID);
+                model.FileName = null;
+                StateHasChanged();
+                snackbar.Add("File removed Successfully", Severity.Success);
+            }
+        }
+
+    }
 }

@@ -40,6 +40,18 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "DELETE"),
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Delete]", parameters);
+        }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "REMOVEFILE"),
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };

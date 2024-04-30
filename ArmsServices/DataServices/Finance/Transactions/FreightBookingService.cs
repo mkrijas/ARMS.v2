@@ -39,20 +39,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
             {
-                yield return new GcTariffModel()
-                {
-                    GcTariffID = dr.GetInt64("GcTariffID"),
-                    ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
-                    GcID = dr.GetInt64("GcID"),
-                    TariffID = dr.GetInt32("TariffID"),
-                    Amount = dr.GetDecimal("Amount"),
-                    Deduction = dr.GetDecimal("Deduction"),
-                    BillDate = dr.GetDateTime("BillDate"),
-                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
-                    BillNumber = dr.GetString("BillNumber"),
-                    BillQuantity = dr.GetDecimal("BillQuantity"),
-                    ConsigneeName = dr.GetString("ConsigneeName"),
-                };
+                yield return GetTariffEntries(dr);
             }
         }
 
@@ -69,51 +56,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
             {
-                yield return new ProformaInvoiceModel()
-                {
-                    ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
-                    DraftBillID = dr.GetInt32("DraftBillID"),
-                    OrderID = dr.GetInt32("OrderID"),
-                    PartyCoa = dr.GetInt32("PartyCoaID"),
-
-                    Party = new PartyModel()
-                    {
-                        PartyCode = dr.GetString("PartyCode"),
-                        PartyID = dr.GetInt32("PartyID")
-                    },
-
-                    TariffType = new TariffTypeModel()
-                    {
-                        TariffTypeID = dr.GetInt16("TariffTypeID"),
-                        UsageCode = dr.GetString("UsageCode"),
-                    },
-                    Reference = dr.GetString("Reference"),
-                    BranchID = dr.GetInt32("BranchID"),
-                    AuthLevelId = dr.GetInt32("AuthLevelId"),
-                    AuthStatus = dr.GetString("AuthStatus"),
-                    DocumentDate = dr.GetDateTime("DocumentDate"),
-                    DocumentNumber = dr.GetString("DocumentNumber"),
-                    MID = dr.GetInt32("MID"),
-                    CostCenter = dr.GetInt32("CostCenter"),
-                    FileName = dr.GetString("FilePath"),
-                    Dimension = dr.GetInt32("Dimension"),
-                    FreightAmount = dr.GetDecimal("FreightAmount"),
-                    TotalAmount = dr.GetDecimal("TotalAmount"),
-                    Narration = dr.GetString("Narration"),
-                    Gst = new()
-                    {
-                        GstRate = dr.GetDecimal("GstRate"),
-                        CGST = dr.GetDecimal("Cgst"),
-                        SGST = dr.GetDecimal("Sgst"),
-                        IGST = dr.GetDecimal("Igst"),
-                    },
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                    {
-                        RecordStatus = dr.GetByte("RecordStatus"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        UserID = dr.GetString("UserID"),
-                    },
-                };
+                yield return GetProformaInvoiceModel(dr);
             }
         }
 
@@ -131,54 +74,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ProformaInvoice.Select]", parameters))
             {
-                yield return new ProformaInvoiceModel()
-                {
-                    ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
-                    DraftBillID = dr.GetInt32("DraftBillID"),
-                    OrderID = dr.GetInt32("OrderID"),
-                    PartyCoa = dr.GetInt32("PartyCoaID"),
-
-                    Party = new PartyModel()
-                    {
-                        PartyCode = dr.GetString("PartyCode"),
-                        PartyID = dr.GetInt32("PartyID"),
-                        TradeName = dr.GetString("tradename")
-                    },
-
-                    TariffType = new TariffTypeModel()
-                    {
-                        TariffTypeID = dr.GetInt16("TariffTypeID"),
-                        UsageCode = dr.GetString("UsageCode"),
-                    },
-                    Reference = dr.GetString("Reference"),
-                    BranchID = dr.GetInt32("BranchID"),
-                    AuthLevelId = dr.GetInt32("AuthLevelId"),
-                    AuthStatus = dr.GetString("AuthStatus"),
-                    DocumentDate = dr.GetDateTime("DocumentDate"),
-                    DocumentNumber = dr.GetString("DocumentNumber"),
-                    MID = dr.GetInt32("MID"),
-                    FileName = dr.GetString("FilePath"),
-                    CostCenter = dr.GetInt32("CostCenter"),
-                    Dimension = dr.GetInt32("Dimension"),
-                    FreightAmount = dr.GetDecimal("FreightAmount"),
-                    TotalAmount = dr.GetDecimal("TotalAmount"),
-                    PeriodFrom = dr.GetDateTime("DocFromDate"),
-                    PeriodTo = dr.GetDateTime("DocToDate"),
-                    Narration = dr.GetString("Narration"),
-                    Gst = new()
-                    {
-                        GstRate = dr.GetDecimal("GstRate"),
-                        CGST = dr.GetDecimal("Cgst"),
-                        SGST = dr.GetDecimal("Sgst"),
-                        IGST = dr.GetDecimal("Igst"),
-                    },
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                    {
-                        RecordStatus = dr.GetByte("RecordStatus"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        UserID = dr.GetString("UserID"),
-                    },
-                };
+                yield return GetProformaInvoiceModel(dr);
             }
         }
 
@@ -192,39 +88,8 @@ namespace ArmsServices.DataServices
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Select]", parameters))
             {
-                yield return new ConsolidatedDraftBillModel()
-                {
-                    DraftBillID = dr.GetInt32("DraftBillID"),
-                    BranchID = dr.GetInt32("BranchID"),
-                    Party = new()
-                    {
-                        PartyID = dr.GetInt32("PartyID"),
-                        TradeName = dr.GetString("TradeName"),
-                    },
-                    Order = new OrderModel()
-                    {
-                        OrderID = dr.GetInt32("OrderID"),
-                        OrderName = dr.GetString("OrderName"),
-                    },
-                    TariffType = new TariffTypeModel()
-                    {
-                        TariffTypeID = dr.GetInt16("TariffTypeID"),
-                        TariffTypeName = dr.GetString("TariffTypeName"),
-                        UsageCode = dr.GetString("UsageCode"),
-                    },
-                    DocumentDate = dr.GetDateTime("DocumentDate"),
-                    DocumentNumber = dr.GetString("DocumentNumber"),
-                    TotalAmount = dr.GetDecimal("TotalAmount"),
-                    AuthLevelId = dr.GetInt32("AuthLevelId"),
-                    AuthStatus = dr.GetString("AuthStatus"),
-                    Narration = dr.GetString("Narration"),
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                    {
-                        RecordStatus = dr.GetByte("RecordStatus"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        UserID = dr.GetString("UserID"),
-                    },
-                };
+                yield return GetConsolidatedDraftBillModel(dr);
+
             }
         }
 
@@ -238,20 +103,7 @@ namespace ArmsServices.DataServices
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.TariffEntry.Select]", parameters))
             {
-                yield return new GcTariffModel()
-                {
-                    GcTariffID = dr.GetInt64("GcTariffID"),
-                    ConsolidatedDraftBillID = dr.GetInt32("ConsolidatedDraftBillID"),
-                    GcID = dr.GetInt64("GcID"),
-                    TariffID = dr.GetInt32("TariffID"),
-                    Amount = dr.GetDecimal("Amount"),
-                    Deduction = dr.GetDecimal("Deduction"),
-                    BillDate = dr.GetDateTime("BillDate"),
-                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
-                    BillNumber = dr.GetString("BillNumber"),
-                    BillQuantity = dr.GetDecimal("BillQuantity"),
-                    ConsigneeName = dr.GetString("ConsigneeName"),
-                };
+                yield return GetTariffEntries(dr);
             }
         }
 
@@ -316,7 +168,7 @@ namespace ArmsServices.DataServices
                 Party = new PartyModel()
                 {
                     TradeName = dr.GetString("tradeName"),
-                    PartyID =   dr.GetInt32("PartyID"),
+                    PartyID = dr.GetInt32("PartyID"),
                 },
                 PartyCoa = dr.GetInt32("PartyCoaID"),
                 TariffType = new TariffTypeModel()
@@ -358,12 +210,15 @@ namespace ArmsServices.DataServices
                 ProformaInvoiceID = dr.GetInt32("ProformaInvoiceID"),
                 DraftBillID = dr.GetInt32("DraftBillID"),
                 OrderID = dr.GetInt32("OrderID"),
+                PartyCoa = dr.GetInt32("PartyCoaID"),
+
                 Party = new PartyModel()
                 {
-                    TradeName = dr.GetString("tradeName"),
+                    PartyCode = dr.GetString("PartyCode"),
                     PartyID = dr.GetInt32("PartyID"),
+                    TradeName = dr.GetString("tradename")
                 },
-                PartyCoa = dr.GetInt32("PartyCoaID"),
+
                 TariffType = new TariffTypeModel()
                 {
                     TariffTypeID = dr.GetInt16("TariffTypeID"),
@@ -371,16 +226,18 @@ namespace ArmsServices.DataServices
                 },
                 Reference = dr.GetString("Reference"),
                 BranchID = dr.GetInt32("BranchID"),
-                DocumentDate = dr.GetDateTime("DocDate"),
-                DocumentNumber = dr.GetString("DocumentNumber"),
-                MID = dr.GetInt32("MID"),
-                CostCenter = dr.GetInt32("CostCenter"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
+                DocumentDate = dr.GetDateTime("DocumentDate"),
+                DocumentNumber = dr.GetString("DocumentNumber"),
+                MID = dr.GetInt32("MID"),
                 FileName = dr.GetString("FilePath"),
+                CostCenter = dr.GetInt32("CostCenter"),
                 Dimension = dr.GetInt32("Dimension"),
                 FreightAmount = dr.GetDecimal("FreightAmount"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
+                PeriodFrom = dr.GetDateTime("DocFromDate"),
+                PeriodTo = dr.GetDateTime("DocToDate"),
                 Narration = dr.GetString("Narration"),
                 Gst = new()
                 {
@@ -403,25 +260,28 @@ namespace ArmsServices.DataServices
             {
                 DraftBillID = dr.GetInt32("DraftBillID"),
                 BranchID = dr.GetInt32("BranchID"),
+                Party = new()
+                {
+                    PartyID = dr.GetInt32("PartyID"),
+                    TradeName = dr.GetString("TradeName"),
+                },
                 Order = new OrderModel()
                 {
-                    OrderID = dr.GetInt32("OrderID")
+                    OrderID = dr.GetInt32("OrderID"),
+                    OrderName = dr.GetString("OrderName"),
                 },
                 TariffType = new TariffTypeModel()
                 {
                     TariffTypeID = dr.GetInt16("TariffTypeID"),
+                    TariffTypeName = dr.GetString("TariffTypeName"),
                     UsageCode = dr.GetString("UsageCode"),
                 },
-                DocumentDate = dr.GetDateTime("DocDate"),
-                Party = new PartyModel()
-                {
-                    PartyID = dr.GetInt32("PartyID"),
-                    TradeName = dr.GetString("TradeName")
-                },
+                DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
+                AuthLevelId = dr.GetInt32("AuthLevelId"),
+                AuthStatus = dr.GetString("AuthStatus"),
                 Narration = dr.GetString("Narration"),
-                FileName = dr.GetString("FilePath"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -439,7 +299,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DraftBillID", model.DraftBillID),
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@PartyID", model.Party?.PartyID),
-               new SqlParameter("@PartyCoaID", model.PartyCoa),               
+               new SqlParameter("@PartyCoaID", model.PartyCoa),
                new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
                new SqlParameter("@UsageCode", model.TariffType.UsageCode),
                new SqlParameter("@Reference", model.Reference),
@@ -552,7 +412,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Reverse]", parameters);
         }
 
-        public IEnumerable<GcTariffModel> GetPending(int? PartyID,int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end)
+        public IEnumerable<GcTariffModel> GetPending(int? PartyID, int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -571,7 +431,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<GcTariffModel> GenerateTariffs(int? OrderID, short? TariffTypeID, int?GcTypeID, DateTime? begin, DateTime? end)
+        public IEnumerable<GcTariffModel> GenerateTariffs(int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -604,6 +464,7 @@ namespace ArmsServices.DataServices
                 BillQuantity = dr.GetDecimal("BillQuantity"),
                 ConsigneeName = dr.GetString("ConsigneeName"),
                 PassNumber = dr.GetString("PassNumber"),
+                Deduction = dr.GetDecimal("Deduction"),
             };
         }
 

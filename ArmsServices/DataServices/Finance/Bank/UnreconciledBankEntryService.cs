@@ -275,6 +275,8 @@ namespace ArmsServices.DataServices
                 AccountName = dr.GetString("AccountName"),
                 DocDate = dr.GetDateTime("DocDate"),
                 Remarks = dr.GetString("Remarks"),
+                DocNumber = dr.GetString("DocNumber"),
+                Narration = dr.GetString("Narration"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -283,7 +285,6 @@ namespace ArmsServices.DataServices
                 },
 
             };
-
         }
     }
 }

@@ -33,6 +33,18 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "DELETE"),
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryMaintenance.Delete]", parameters);
+        }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "REMOVEFILE"),
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };
@@ -46,7 +58,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "GetEntries"),
                new SqlParameter("@ID", ID),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryMaintenance.Select]", parameters))
             {
                 yield return new SundryMaintenanceEntryModel()
@@ -69,7 +80,7 @@ namespace ArmsServices.DataServices
                     UsageCode = dr.GetString("UsageCode"),
                     SubArdCode = dr.GetString("SubArdCode"),
                     UsageCodeDescription = dr.GetString("UsageDescription"),
-                    ID = dr.GetInt32("ID"),
+                    ID = dr.GetInt64("ID"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),                    
                     CostCenter  = dr.GetInt32("CostCenterID"),
@@ -95,7 +106,6 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByID"),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryMaintenance.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -140,7 +150,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@begin", begin),
                new SqlParameter("@end", end),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryMaintenance.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -181,12 +190,10 @@ namespace ArmsServices.DataServices
                 BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
-
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 MID = dr.GetInt32("MID"),
                 FileName = dr.GetString("FilePath"),
-
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
                 PartyInfo = new PartyModel()
@@ -203,7 +210,6 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-
 
         public IEnumerable<SundryMaintenanceModel> Select(int? BranchID)
         {
@@ -225,6 +231,7 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
         public IEnumerable<SundryMaintenanceModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -235,7 +242,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.SundryMaintenance.Select]", parameters))
             {
                 yield return GetModel(dr);

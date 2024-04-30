@@ -24,7 +24,6 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ReverseEntryID", ID),
                new SqlParameter("@UserID", UserID),
-
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transaction.Reverse.Delete]", parameters);
         }
@@ -35,9 +34,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByID"),
-
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transaction.Reverse.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -54,14 +51,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@IsInterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
-
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transaction.Reverse.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
-
         }
 
         public IEnumerable<CancellationReasonCodesByDocumentType> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
@@ -74,14 +68,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@IsInterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
-
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transaction.Reverse.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
-
         }
 
         public CancellationReasonCodesByDocumentType SelectByID(int? ID)
@@ -145,6 +136,7 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
         public bool? IsAlreadyReversed(int? DocumentID, int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -193,6 +185,10 @@ namespace ArmsServices.DataServices
         {
             throw new NotImplementedException();
         }
-    }
 
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
