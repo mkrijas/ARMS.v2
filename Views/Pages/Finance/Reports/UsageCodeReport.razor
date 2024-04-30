@@ -1,0 +1,115 @@
+﻿@page "/UsageCodeReport"
+@inherits ReportComponentBase
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Class="mb-5 p-4">
+            <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
+                <MudText Typo="Typo.h5" Style="font-weight:500;">Usage Code Report</MudText>
+            </MudToolBar>
+            <MudDivider />
+            <MudGrid Style="padding-top: 22px;">
+                @* <MudItem xs="4">
+                    <MudSelect Label="Select CashAccount" @bind-Value="SelectedCashAccount" T="CashAccountModel" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" ToStringFunc="@(e => e == null ? null : $"{e.CashCode}")">
+                        @foreach (var item in collection)
+                        {
+                            <MudSelectItem Value="@item">@item.CashCode | @item.Title</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem> *@
+                <MudItem xs="4">
+                    <UsageCodeSelector LabelName="Select UsageCode" Value="SelectedUsageCode" ValueChanged="@OtherUsageCodeChanged"></UsageCodeSelector>
+                </MudItem>
+                <MudItem xs="3">
+                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="3">
+                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                @* <MudItem xs="2">
+                <MudButton Style="margin-top: 4px; width:-webkit-fill-available" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                </MudItem> *@
+                <MudItem xs="2" Style="display: flex; align-items: center;">
+                    <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    ReportViewer report;
+    public bool ShowReport { get; set; } = false;
+    public string ReportName { get; set; }
+    int branch;
+    public DateTime? FromDate { get; set; } = DateTime.Now;
+    public DateTime? ToDate { get; set; } = DateTime.Now;
+    public string UsageCode { get; set; }
+    public GstUsageCodeModel SelectedUsageCode { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var authState = await auth.GetAuthenticationStateAsync();
+        branch = int.Parse(authState.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+    }
+
+    private async Task OtherUsageCodeChanged(GstUsageCodeModel usage)
+    {
+        SelectedUsageCode = usage;
+        UsageCode = usage?.UsageCode;
+    }
+
+    protected bool Validate()
+    {
+        if (!SelectedBranches.Any())
+        {
+            snackbar.Add("Please select branch.", Severity.Error);
+            return false;
+        }
+        if (SelectedUsageCode.UsageCode == null)
+        {
+            snackbar.Add("Please select UsageCode.", Severity.Error);
+            return false;
+        }
+        if (FromDate == null)
+        {
+            snackbar.Add("Please select From Date.", Severity.Error);
+            return false;
+        }
+        if (ToDate == null)
+        {
+            snackbar.Add("Please select To Date.", Severity.Error);
+            return false;
+        }
+        return true;
+    }
+
+    public async Task RenderReportViewer()
+    {
+        try
+        {
+            if (Validate())
+            {
+                ShowReport = true;
+                ReportName = "UsageCodeReport";
+                ReportParameters.Clear();
+                ReportParameters.Add("ArdCode", UsageCode);
+                ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+                ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
+                ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
+                await report.RenderReport();
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}
