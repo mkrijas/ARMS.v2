@@ -193,6 +193,11 @@ namespace ArmsServices.DataServices
         {
             throw new NotImplementedException();
         }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }

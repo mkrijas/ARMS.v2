@@ -13,5 +13,6 @@ namespace ArmsServices.DataServices
         IEnumerable<T> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm);
         IEnumerable<T> SelectByUnapproved(int? BranchID, int? NumberOfRecords,bool InterBranch, string searchTerm);
         T Update(T model);
+        int RemoveFile(int? ID, string UserID);
     }
 }

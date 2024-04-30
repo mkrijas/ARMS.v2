@@ -17,7 +17,7 @@ namespace ArmsServices.DataServices
         TaxPurchaseModel CheckInvoiceDuplication(TaxPurchaseModel model);
         TaxPurchaseModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);  //Delete
-        int RemoveFile(int? ID, string UserID);  //Delete
+        //int RemoveFile(int? ID, string UserID);  //Delete
         IEnumerable<TaxPurchaseModel> Select();
         IEnumerable<TaxPurchaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type);
         IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type);

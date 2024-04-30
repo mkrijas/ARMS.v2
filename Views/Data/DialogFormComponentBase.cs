@@ -31,6 +31,7 @@ namespace Views.Data
         [Inject] protected IPushNotificationService notiService { get; set; }
         [Inject] protected IJSRuntime JsRuntime { get; set; }
         [Inject] protected IBranchService branchService { get; set; }
+        [Inject] protected IbaseInterface<T> baseInterface { get; set; }
 
 
         [Parameter]
@@ -169,6 +170,20 @@ namespace Views.Data
             }
         }
 
-    }
+        public async Task RemoveFileChange(bool val)
+        {
+            if (val)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                UserID = user.Identity.Name;
 
+                baseInterface.RemoveFile(DocInfo.DocumentID, UserID);
+                model.FileName = null;
+                StateHasChanged();
+                snackbar.Add("File removed Successfully", Severity.Success);
+            }
+        }
+
+    }
 }

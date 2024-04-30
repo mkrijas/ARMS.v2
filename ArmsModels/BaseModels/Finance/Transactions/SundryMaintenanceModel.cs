@@ -29,7 +29,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<SundryMaintenanceEntryModel>(Json);
         }
-        public long? ID { get; set; }        
+        public int? ID { get; set; }        
         public int? ParentID { get; set; }
         [Required]
         public int? BranchID { get; set; }

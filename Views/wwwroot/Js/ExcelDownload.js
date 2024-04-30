@@ -10,15 +10,24 @@
 
     // Create a URL for the Blob
     var url = URL.createObjectURL(blob);
+    downloadfile(url, fileName);
+    URL.revokeObjectURL(url);
+}
 
+window.downloadfile = function (url, filename) {
     // Create an anchor element for downloading
     var anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = fileName;
+    anchor.download = filename;
 
     // Programmatically click the anchor to initiate download
     anchor.click();
 
     // Release the object URL
-    URL.revokeObjectURL(url);
+    anchor.remove();
 }
+
+//function DownloadFile() {
+//    var downloadLink = document.getElementById('downloadLink');
+//    downloadLink.click();
+//}
