@@ -33,11 +33,22 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "DELETE"),
                new SqlParameter("@PaymentMemoID", PaymentMemoID),
                new SqlParameter("@UserID", UserID),
-
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Delete]", parameters);
+        }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "REMOVEFILE"),
+               new SqlParameter("@PaymentMemoID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Delete]", parameters);
         }
 
         public IEnumerable<BillsPaidModel> GetBills(int? PID)
@@ -180,7 +191,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "ByPIID"),               
+               new SqlParameter("@Operation", "ByPIID"),
                new SqlParameter("@PIID", PaymentInitiatedID),
             };
 
@@ -248,7 +259,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),
                new SqlParameter("@Reference", model.Reference),
-               new SqlParameter("@Bills", model.Bills.ToDataTable()),               
+               new SqlParameter("@Bills", model.Bills.ToDataTable()),
                new SqlParameter("@PartyID", model.PartyInfo.PartyID),
                new SqlParameter("@PartyCode", model.PartyInfo.PartyCode),
                new SqlParameter("@PartyCoaID", model.PartyCoaID),
@@ -279,9 +290,9 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),
-                FileName = dr.GetString("FilePath"),                
+                FileName = dr.GetString("FilePath"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
-                AuthStatus = dr.GetString("AuthStatus"),                
+                AuthStatus = dr.GetString("AuthStatus"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 BankCharges = dr.GetDecimal("BankCharges"),
                 Reference = dr.GetString("Reference"),
@@ -312,18 +323,13 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByPending"),
-               new SqlParameter("@BranchID", BranchID),               
+               new SqlParameter("@BranchID", BranchID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
-        }
-
-        public int RemoveFile(int? ID, string UserID)
-        {
-            throw new NotImplementedException();
         }
     }
 }

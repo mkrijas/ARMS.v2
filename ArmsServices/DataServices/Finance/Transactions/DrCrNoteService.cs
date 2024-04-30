@@ -52,7 +52,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "REMOVEFILE"),
-               new SqlParameter("@PID", ID),
+               new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Delete]", parameters);
