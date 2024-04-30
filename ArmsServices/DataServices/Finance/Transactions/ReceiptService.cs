@@ -250,5 +250,10 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Receipt.Reverse]", parameters);
         }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

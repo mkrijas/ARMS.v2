@@ -150,6 +150,8 @@ namespace ArmsModels.BaseModels
         public string AccountName { get; set; }
         public decimal? Amount { get; set; }
         public string Remarks { get; set; }
+        public virtual string DocNumber { get; set; }
+        public virtual string Narration { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 

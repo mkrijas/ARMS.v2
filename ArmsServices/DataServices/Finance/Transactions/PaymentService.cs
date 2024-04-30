@@ -320,5 +320,10 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

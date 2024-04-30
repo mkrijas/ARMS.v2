@@ -2,10 +2,11 @@
 @using System.Linq
 @using Microsoft.AspNetCore.Hosting;
 @inject IWebHostEnvironment _env;
-@inject ISnackbar snckbar;
 @inject IDialogService DialogService
+@inject ITaxPurchaseService ITaxPurchaseService
 @inject IJSRuntime JSRuntime
-@inject MudBlazor.ISnackbar snackbar
+@inject ISnackbar snackbar
+@inject IDialogService DialogService
 
 @using System.Security.AccessControl
 @using MimeTypes
@@ -18,7 +19,6 @@
 @using iText.Kernel.Pdf.Canvas.Parser;
 @using iText.Kernel.Pdf.Canvas.Parser.Listener;
 
-@using System.IO;
 @using iText.Pdfoptimizer;
 @using iText.Pdfoptimizer.Handlers;
 
@@ -37,12 +37,12 @@
             {
                 @foreach (var file in context)
                 {
-                    <MudText>@file.Name</MudText>
+                    <span>@file.Name ,</span>
                 }
             }
         </SelectedTemplate>
     </MudFileUpload>
-    @foreach (var value in fnames)
+    @* @foreach (var value in fnames)
     {
         @* <a href="@value" download="Attachments">
     <MudText Typo="Typo.h6" Color="Color.Primary">
@@ -51,19 +51,25 @@
     </MudText>
     </a> *@
 
-        <a id="downloadLink" href="@value" download="Attachments" style="display: none;"></a>
+    @*<a id="downloadLink" href="@value" download="Attachments" style="display: none;"></a>
+    } *@
+    @if (fnames.Any())
+    {
+        <MudIconButton Style="width:10%;" Icon="@Icons.Material.Filled.Download" Variant="Variant.Filled" Color="Color.Primary" Title="Download File" OnClick="DownloadFile"></MudIconButton>
+        @if (!ReadOnly)
+        {
+            <MudIconButton Style="width:10%; margin-left: 8px;" Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" Title="Remove File" OnClick="Remove"></MudIconButton>
+        }
 
-        <MudButton Style="width: 16%; height: 100%;" EndIcon="@Icons.Material.Filled.Download" Variant="Variant.Filled" Color="Color.Primary" OnClick="DownloadFile">Attachments</MudButton>
-        @* <MudButton Style="margin-left: 1%; width: 16%; height: 100%;" Variant="Variant.Filled" Color="Color.Error" OnClick="Remove">Remove</MudButton> *@
     }
 </MudContainer>
-
+@* 
 <script>
     function DownloadFile() {
         var downloadLink = document.getElementById('downloadLink');
         downloadLink.click();
     }
-</script>
+</script> *@
 
 @code {
 
@@ -95,26 +101,48 @@
 
     private async Task DownloadFile()
     {
-        await JSRuntime.InvokeVoidAsync("DownloadFile");
+        if (fnames.Any())
+        {
+            foreach (var a in fnames)
+            {
+                await JSRuntime.InvokeVoidAsync("downloadfile", a, "Attachments");
+            }
+        }
     }
 
-    protected void Remove()
+    [Parameter]
+    public EventCallback<bool> OnFileRemoved { get; set; }
+
+    protected async Task Remove()
     {
         try
         {
-            // Check if the file exists before attempting to delete it
-            if (fnames.Any())
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to remove this document ?");
+            if (result == true)
             {
-                // Delete the file
-                @foreach (var file in fnames)
+                // Check if the file exists before attempting to delete it
+                if (fnames.Any())
                 {
-                    File.Delete(file);
-                    snackbar.Add("File removed Successfully", Severity.Success);
+                    string PhysicalPath = Path.Combine(_env.WebRootPath, "ArmsStaticFiles", FolderName);
+                    string VirtualPath = Path.Combine("ArmsStaticFiles", FolderName);
+                        // Delete the file
+                    @foreach (var file in fnames)
+                    {
+                        string fileName = Path.GetFileName(file);
+                        string filePath = Path.Combine(PhysicalPath, fileName);
+                        File.Delete(filePath);
+                        await OnFileRemoved.InvokeAsync(true);
+                        fnames = new();
+                        StateHasChanged();
+                        //snackbar.Add("File removed Successfully", Severity.Success);
+                    }
                 }
-            }
-            else
-            {
-                snackbar.Add("File Do not Exist !", Severity.Error);
+                else
+                {
+                    snackbar.Add("File Do not Exist !", Severity.Error);
+                }
             }
         }
         catch (Exception ex)
@@ -254,7 +282,7 @@
             }
             catch (Exception ex)
             {
-                snckbar.Add(ex.Message, Severity.Error);
+                snackbar.Add(ex.Message, Severity.Error);
             }
         }
         return null;

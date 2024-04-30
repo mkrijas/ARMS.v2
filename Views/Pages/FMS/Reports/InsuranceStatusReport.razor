@@ -7,7 +7,7 @@
 
 <MudGrid>
     <MudItem xs="2" md="2">
-        @* <MudIconButton Title="Select Branch" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton> *@
+        <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
         <MudIconButton Title="Render Report" Icon="@Icons.Material.Filled.DocumentScanner" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer"></MudIconButton>
     </MudItem>
 </MudGrid>
@@ -20,9 +20,10 @@
 
 @code {
     ReportViewer report;
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
-    //public BranchModel SelectedBranch { get; set; } = new();
+    public BranchModel SelectedBranch { get; set; } = new();
     public BranchModel CurrentBranch { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
@@ -30,6 +31,7 @@
         await base.OnInitializedAsync();
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
+        string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
         CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
     }
 
@@ -40,9 +42,15 @@
 
     public async Task RenderReportViewer()
     {
+        if (!SelectedBranches.Any())
+        {
+            snackbar.Add("Please select branch.", Severity.Error);
+            return;
+        }
         ShowReport = true;
         ReportName = "InsuranceStatusReport";
         ReportParameters.Clear();
+        ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
         ReportParameters.Add("BranchName", CurrentBranch.BranchName);
         await report.RenderReport();
     }
