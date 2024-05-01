@@ -357,13 +357,17 @@ namespace ArmsServices.DataServices
         {
             var branchModel = _branch.SelectByID(BranchID);
             var partyModel = SelectByID(PartyID);
-            if(string.IsNullOrEmpty(partyModel.GstNo))
+            if( partyModel.GstType == "UnRegistered")
+            {
+                return true;
+            }
+            else if(string.IsNullOrEmpty(partyModel.GstNo))
             {
                 return false;
             }
             string branchState = branchModel.GstNo?.Substring(0, 2);
             string partyState = partyModel.GstNo?.Substring(0, 2);
-            return (branchState != null && partyState != null && branchState == partyState)|| partyModel.GstType == "UnRegistered"; // branchState.Equals(partyState);
+            return (branchState != null && partyState != null && branchState == partyState); // branchState.Equals(partyState);
         }
 
 

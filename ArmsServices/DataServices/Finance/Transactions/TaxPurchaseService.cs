@@ -78,6 +78,7 @@ namespace ArmsServices.DataServices
                     UsageCode = dr.GetString("UsageCode"),
                     SubArdCode = dr.GetString("SubArdCode"),
                     UsageCodeDescription = dr.GetString("UsageDescription"),
+                    GstMechanism = dr.GetString("gstMechanism"),
                     TpeID = dr.GetInt64("TpeID"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),

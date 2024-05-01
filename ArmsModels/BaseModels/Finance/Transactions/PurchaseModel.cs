@@ -74,6 +74,7 @@ namespace ArmsModels.BaseModels
         public string UsageCode { get; set; }
         public string SubArdCode { get; set; }
         public virtual string UsageCodeDescription { get; set; }
+        public virtual string GstMechanism { get; set; }
         public int? CoaID { get; set; }
         [Required]
         public decimal? Amount { get; set; }
