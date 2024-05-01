@@ -363,7 +363,7 @@ namespace ArmsServices.DataServices
             }
             string branchState = branchModel.GstNo?.Substring(0, 2);
             string partyState = partyModel.GstNo?.Substring(0, 2);
-            return branchState != null && partyState != null && branchState == partyState; // branchState.Equals(partyState);
+            return (branchState != null && partyState != null && branchState == partyState)|| partyModel.GstType == "UnRegistered"; // branchState.Equals(partyState);
         }
 
 
