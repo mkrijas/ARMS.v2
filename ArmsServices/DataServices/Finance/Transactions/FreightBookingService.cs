@@ -465,6 +465,7 @@ namespace ArmsServices.DataServices
                 ConsigneeName = dr.GetString("ConsigneeName"),
                 PassNumber = dr.GetString("PassNumber"),
                 Deduction = dr.GetDecimal("Deduction"),
+                PaymentMode = dr.GetString("PaymentMode"),
             };
         }
 
