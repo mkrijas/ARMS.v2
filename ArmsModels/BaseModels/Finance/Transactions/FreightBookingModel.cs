@@ -77,6 +77,7 @@ namespace ArmsModels.BaseModels
         public virtual long? TripNumber { get; set; }
         public virtual string TariffTypeName { get; set; }
         public virtual bool IsChecked { get; set; }
+        public virtual string PaymentMode { get; set; }
     }
 
     public class RefModel
