@@ -255,6 +255,7 @@ namespace Views
             services.AddScoped<IbaseInterface<OpTranModel>, OpTranService>();
             services.AddScoped<IbaseInterface<CancellationReasonCodesByDocumentType>, ReverseEntryService>();
             services.AddScoped<IbaseInterface<SundryMaintenanceModel>, SundryMaintenanceService>();
+            services.AddScoped<IbaseInterface<InterBranchReimbursementModel>, ReimbursementService>();
 
 
 
