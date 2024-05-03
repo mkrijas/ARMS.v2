@@ -62,7 +62,7 @@ namespace DAL.DataServices.Finance
             }
         }
 
-        public IEnumerable<InterBranchReimbursementModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<InterBranchReimbursementModel> SelectByApproved(int? BranchID, int? NumberOfRecords , bool InterBranch , string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -93,7 +93,7 @@ namespace DAL.DataServices.Finance
             return model;
         }
 
-        public IEnumerable<InterBranchReimbursementModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<InterBranchReimbursementModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBarnch ,string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -200,6 +200,11 @@ namespace DAL.DataServices.Finance
                 CostCenterOtherDesc = dr.GetString("CostCenterOtherDesc"),
                 DimensionOtherDesc = dr.GetString("DimensionOtherDesc"),
             };
+        }
+
+        public int RemoveFile(int? ID, string UserID)
+        {
+            throw new NotImplementedException();
         }
     }
 }
