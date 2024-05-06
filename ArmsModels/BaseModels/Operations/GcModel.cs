@@ -107,6 +107,7 @@ namespace ArmsModels.BaseModels
         }
         public long? GcID { get; set; }
         [Required]
+        [StringLength(12,ErrorMessage = "Must be 12 Digits",MinimumLength = 12)]
         public string EwayBillRef { get; set; }
         [Required]
         public DateTime? EwayBillDate { get; set; } = DateTime.Today;
