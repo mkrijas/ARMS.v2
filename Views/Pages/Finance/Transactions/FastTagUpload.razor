@@ -9,12 +9,14 @@
 @using NPOI.SS.UserModel;
 @using OfficeOpenXml;
 @using System.Threading;
+@using OfficeOpenXml.Style
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject NavigationManager NavigationManager
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IFastTagService IFTService
+@inject IJSRuntime JSRuntime
 
 <style>
     .mud-table-container {
@@ -76,6 +78,10 @@
                                                 {
                                                     <MudButton Style="width: 36%; height: 100%;" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@(()=> EditBranch())">Edit Branch</MudButton>
                                                 }
+                                                else
+                                                {
+                                                    <MudButton OnClick="ExcelDownload" Style="width: 36%; height: 100%;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Secondary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
+                                                }
                                                 <MudButton Style="margin-left: 2%; width: 36%; height: 100%;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
                                             </MudItem>
                                         }
@@ -99,8 +105,11 @@
                         <ToolBarContent>
                             <MudText Typo="Typo.h6">Transactions List</MudText>
                             <MudSpacer></MudSpacer>
-                            <MudTextField @bind-Value="searchplatenumber" Placeholder="Search Licence Plate No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0">
-                            </MudTextField>
+                            <MudTextField @bind-Value="searchplatenumber" Placeholder="Search Licence Plate No..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                            @* @if (Readonly)
+                            {
+                                <MudButton OnClick="ExcelDownload" Style="margin: 14px; margin-left: 60px; margin-right: 6px;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
+                            } *@
                         </ToolBarContent>
 
                         <HeaderContent>
@@ -661,6 +670,72 @@
         catch (Exception ex)
         {
             snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ExcelDownload()
+    {
+        var fileName = "FasTagToll UploadList.xlsx";
+        var sheetName = "Sheet1"; // Change the sheet name as needed
+        var fileBytes = GenerateExcelBytes(sheetName);
+
+        await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
+    }
+
+    private byte[] GenerateExcelBytes(string sheetName)
+    {
+        using (var package = new ExcelPackage())
+        {
+            var worksheet = package.Workbook.Worksheets.Add(sheetName);
+
+            // Add column headers
+            worksheet.Cells[1, 1].Value = "Transaction DateTime";
+            worksheet.Cells[1, 2].Value = "Licence Plate No";
+            worksheet.Cells[1, 3].Value = "Branch Name";
+            worksheet.Cells[1, 4].Value = "Trip No";
+            worksheet.Cells[1, 5].Value = "Destination";
+            worksheet.Cells[1, 6].Value = "PlazaCode";
+            worksheet.Cells[1, 7].Value = "Transaction Description";
+            worksheet.Cells[1, 8].Value = "Unique Transaction ID";
+            worksheet.Cells[1, 9].Value = "Reimbursable";
+            worksheet.Cells[1, 10].Value = "Amount(Dr)";
+            for (int i = 1; i <= 10; i++)
+            {
+                worksheet.Cells[1, i].Style.Font.Bold = true;
+            }
+
+            worksheet.Column(1).Style.Numberformat.Format = "dd-MM-yyyy hh:mm AM/PM"; // Date format
+            worksheet.Column(10).Style.Numberformat.Format = "0.00"; // Integer format
+
+            // Add data rows
+            int row = 2;
+            foreach (var item in ExcelModelCollection)
+            {
+                worksheet.Cells[row, 1].Value = item.TransactionDateTime;
+                worksheet.Cells[row, 2].Value = item.NumberPlate;
+                worksheet.Cells[row, 3].Value = item.BranchName;
+                worksheet.Cells[row, 4].Value = item.TripNumberDisplay;
+                worksheet.Cells[row, 5].Value = item.Destination;
+                worksheet.Cells[row, 6].Value = item.PlazaCode;
+                worksheet.Cells[row, 7].Value = item.Description;
+                worksheet.Cells[row, 8].Value = item.TransactionID;
+                worksheet.Cells[row, 9].Value = item.Reimbursable;
+                worksheet.Cells[row, 10].Value = item.DebitAmount;
+
+                row++;
+            }
+
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+
+            // Save the Excel package to a memory stream
+            using (var stream = new MemoryStream())
+            {
+                package.SaveAs(stream);
+                return stream.ToArray();
+            }
         }
     }
 }
