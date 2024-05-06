@@ -142,6 +142,10 @@ namespace DAL.DataServices.Finance
             return new InterBranchReimbursementModel()
             {
                 ID = dr.GetInt32("ID"),
+                MID = dr.GetInt32("MID"),
+                AuthLevelId = dr.GetInt32("AuthLevelID"),
+                AuthStatus = dr.GetString("AuthStatus"),
+                FileName = dr.GetString("FilePath"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 OtherBranchName = dr.GetString("OtherBranchName"),
