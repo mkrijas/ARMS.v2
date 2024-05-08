@@ -1,24 +1,19 @@
-﻿@page "/DocumentExpiryReport"
-@inject ISnackbar Snackbar
+﻿@page "/JobMaintenanceReport"
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@inject IBranchService Ibranchservice
 @inherits ReportComponentBase
+@inject ISnackbar Snackbar
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
             <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
-                <MudText Typo="Typo.h5" Style="font-weight:500;">Document Expiry Report</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight:500;">Job Maintenance Report</MudText>
             </MudToolBar>
             <MudDivider />
-            <MudGrid Style="padding-top: 22px;">       
+            <MudGrid Style="padding-top: 22px;">
                 <MudItem xs="3">
-                    <MudSelect Label="Select Status" @bind-Value="DocStatus" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
-                        <MudSelectItem Value="@("EXPIRED")">EXPIRED</MudSelectItem>
-                        <MudSelectItem Value="@("EXTENDED")">EXTENDED</MudSelectItem>
-                        <MudSelectItem Value="@("-1")">ALL</MudSelectItem>
-                    </MudSelect>
+                    <TruckSelector Value="SelectedTruck" BranchID="BranchID" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" HomeOrOperation="Operation" />
                 </MudItem>
                 <MudItem xs="3">
                     <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
@@ -26,13 +21,9 @@
                 <MudItem xs="3">
                     <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                @* <MudItem xs="2">
-                    <MudButton Style="margin-top: 4px; width:-webkit-fill-available" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
-                </MudItem> *@
-                <MudItem xs="2" Style="display: flex; align-items: center;">
+                <MudItem xs="3" Style="display: flex; align-items: center;">
                     <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
                     <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
-                  
                 </MudItem>
             </MudGrid>
         </MudPaper>
@@ -40,20 +31,22 @@
 </MudGrid>
 <MudGrid Style="@(ShowReport?"":"Display:none")">
     <MudItem xs="12">
-        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters  @ref="@report"></ReportViewer>
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
     </MudItem>
 </MudGrid>
 
 @code {
+
     ReportViewer report;
     public Dictionary<string, string> ReportParameters { get; set; } = new();
-    public string DocStatus { get; set; }
+    public TruckModel SelectedTruck { get; set; }
     public DateTime? FromDate { get; set; } = DateTime.Now;
     public DateTime? ToDate { get; set; } = DateTime.Now;
-    public BranchModel SelectedBranch { get; set; } = new();
-    public bool ShowReport { get; set; } = false;
-    public string ReportName { get; set; }   
     public BranchModel CurrentBranch { get; set; } = new();
+    private TripModel CurrentTrip { get; set; }
+
+    public bool ShowReport { get; set; } = false;
+    public string ReportName { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -62,9 +55,12 @@
         var User = authprov.User;
         string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
         CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
-        //CurrentBranch.BranchID = int.Parse(BranchIDString);
-        //BranchList = Ibranchservice.Select().ToList();
-    }   
+    }
+
+    private void OnTruckSelected(TruckModel model)
+    {
+        SelectedTruck = model;
+    }
 
     public async Task RenderReportViewer()
     {
@@ -85,11 +81,11 @@
         }
 
         ShowReport = true;
-        ReportName = "AssetDocumentExpiryReport";
-        ReportParameters.Clear();       
-        ReportParameters.Add("DocStatus", DocStatus);
+        ReportName = "JobMaintenanceReport";
+        ReportParameters.Clear();
         ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
         ReportParameters.Add("BranchName", CurrentBranch.BranchName);
+        ReportParameters.Add("TruckID", SelectedTruck?.TruckID.ToString() ?? "0");
         ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
         ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
         await report.RenderReport();
