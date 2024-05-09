@@ -1,8 +1,8 @@
-﻿
-@using System.IO
+﻿@using System.IO
 @using Microsoft.AspNetCore.Hosting;
 @inject IWebHostEnvironment _env;
 @inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
 
 @using System.Security.AccessControl
 @using MimeTypes
@@ -12,11 +12,13 @@
 
 @code {
     [Parameter] public string FileName { get; set; } = "Original";
-    [Parameter] public string FolderName  { get; set; }
+    [Parameter] public string FolderName { get; set; }
     [Parameter] public string Label { get; set; }
-    [Parameter] public bool Resize { get; set; } = false;         
+    [Parameter] public bool Resize { get; set; } = false;
 
-    [Parameter] public string FilePath {
+    [Parameter]
+    public string FilePath
+    {
         get => _filepath;
         set
         {
@@ -45,8 +47,8 @@
         string VirtualPath = Path.Combine("ArmsStaticFiles", FolderName);
         var result = await UploadImage(DocImage, FileName, PhysicalPath);
         if (result != null)
-        { 
-            FilePath = Path.Combine(VirtualPath, result); 
+        {
+            FilePath = Path.Combine(VirtualPath, result);
         }
     }
 
@@ -60,48 +62,56 @@
         string DerivedFileName = null;
         if (file.Size > 0 && file.Size < 2097153)
         {
+            if (filename == "Original")
+            {
+                DerivedFileName = file.Name;
+            }
+            else
+            {
+                DerivedFileName = filename + MimeTypeMap.GetExtension(file.ContentType);
+            }
+
+            DirectoryInfo di = new DirectoryInfo(physicalPath);
+            if (!di.Exists)
+            {
+                System.IO.Directory.CreateDirectory(physicalPath);
+            }
+
+            string filePath = Path.Combine(physicalPath, DerivedFileName);
+
+            if (FilePath != null)
+            {
+                string oldfileName = Path.Combine(_env.WebRootPath, FilePath);
+                if (File.Exists(oldfileName))
+                {
+                    File.Delete(oldfileName);
+                }
+            }
+
+            if (Resize)
+            {
+                file = await ResizeImage(file);
+            }
+
             try
             {
-                if (filename == "Original")
-                {
-                    DerivedFileName = file.Name;
-                }
-                else
-                {
-                    DerivedFileName = filename + MimeTypeMap.GetExtension(file.ContentType);
-                }
-
-                DirectoryInfo di = new DirectoryInfo(physicalPath);
-                if (!di.Exists)
-                {
-                    System.IO.Directory.CreateDirectory(physicalPath);
-                }
-
-                string filePath = Path.Combine(physicalPath, DerivedFileName);
-
-                if (FilePath != null)
-                {
-                    string oldfileName = Path.Combine(_env.WebRootPath, FilePath);
-                    if (File.Exists(oldfileName))
-                    {
-                        File.Delete(oldfileName);
-                    }
-                }
-
-                if (Resize)
-                {
-                    file = await ResizeImage(file);
-                }
                 Stream stream = file.OpenReadStream(2097152);
-                FileStream fs = File.Create(filePath);
+                //FileStream fs = File.Create(filePath);
+                FileStream fs = new(filePath, FileMode.Create);
                 await stream.CopyToAsync(fs);
                 stream.Close();
                 fs.Close();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 snackbar.Add(ex.Message, Severity.Error);
             }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Oops !",
+                "Uploaded file should not be greater than 2MB.");
         }
         return DerivedFileName;
     }
@@ -117,9 +127,9 @@
     {
         try
         {
-            File.Delete(Path.Combine(_env.WebRootPath,path));
+            File.Delete(Path.Combine(_env.WebRootPath, path));
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             return false;
         }
