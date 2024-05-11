@@ -28,7 +28,7 @@
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search Assets..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
                 </MudTextField>
                 <MudTextField Class="pt-3" @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 80px;"></MudTextField>
-
+                <MudCheckBox Label="Approved Entries" ValueChanged="((bool value)=>ApprovedToggled(value))" Value="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
             </ToolBarContent>
             @* <HeaderContent>
             <MudTh><MudTableSortLabel SortBy="new Func<AssetPOModel, object>(x=> x.Description)" InitialDirection="SortDirection.Ascending">Description</MudTableSortLabel></MudTh>
@@ -63,7 +63,7 @@
                 <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.DocumentDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Ascending">Document Number</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<TaxPurchaseModel, object>(x=> x.TotalAmount)" InitialDirection="SortDirection.Ascending">Total Amount</MudTableSortLabel></MudTh>
-                @* <MudTh>Actions</MudTh> *@
+                <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="InvoiceDate">@context.InvoiceDate?.ToShortDateString()</MudTd>
@@ -77,6 +77,18 @@
                 </MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
+                    <MudIconButton OnClick="@(()=> Edit(context,true,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Edit(context,false,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
+
+                    @if (@context.AuthLevelId == 99)
+                    {
+                        @* <EntryReversedComponent DocTypeID="ContraDocTypeID" DocumentID="context.ContraID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent> *@
+                    }
+                    else if (@context.AuthLevelId != 100)
+                    {
+                        <MudIconButton OnClick="@(()=> Edit(context,true,false))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                    }
                     @*     @if (@context.AuthLevelId == null)
                     {
                     <MudFab @onclick="@(()=> SelectAssets()(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
@@ -90,10 +102,10 @@
                     {
                     <MudFab @onclick="@(()=> GetAccountDetails(context))" Color="Color.Info" Icon="@Icons.Material.Filled.CurrencyExchange" title="Accounts" Size="Size.Small" IconSize="Size.Small" />
                     } *@
-                    <MudFab @onclick="@(()=> Edit(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
-                    <MudFab @onclick="@(()=> Edit(context,true,false))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" />
+                    @* <MudFab @onclick="@(()=> Edit(context,true,false))" Color="Color.Info" Icon="@Icons.Material.Filled.GridView" title="View" Size="Size.Small" IconSize="Size.Small" /> *@
+                    @* <MudFab Disabled="@(context.AuthLevelId != null)" @onclick="@(()=> Edit(context,false,false))" Color="Color.Primary" title="Edit" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" /> *@
                     @* <MudFab @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" /> *@
-                    <MudFab Disabled="@((context.AuthLevelId??100) != 100 || context.AuthLevelId == 0)" @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                    @* <MudFab Disabled="@((context.AuthLevelId??100) != 100 || context.AuthLevelId == 0)" @onclick="@(()=> Delete(context))" Color="Color.Error" title="Delete" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" /> *@
                     @* <MudIconButton Disabled="@((context.AuthLevelId??100) != 100 || context.AuthLevelId == 0)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" /> *@
                     @* @if (@context.AuthLevelId == 99)
                     {
@@ -155,6 +167,12 @@
                 _ = GetAll(IsApproved, NumberOfRecords);
             }
         }
+    }
+
+    async Task ApprovedToggled(bool value)
+    {
+        IsApproved = value;
+        await GetAll(IsApproved, NumberOfRecords);
     }
 
     protected override async Task OnInitializedAsync()
