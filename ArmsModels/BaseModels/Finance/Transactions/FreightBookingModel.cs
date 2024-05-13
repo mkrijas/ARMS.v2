@@ -84,5 +84,6 @@ namespace ArmsModels.BaseModels
     {
         public string InvoiceNumber { get; set; }
         public string InvoiceRefNumber { get; set; }
+        public DateTime? InvoiceDate { get; set; }
     }
 }

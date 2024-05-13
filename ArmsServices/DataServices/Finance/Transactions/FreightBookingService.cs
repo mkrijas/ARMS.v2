@@ -469,15 +469,16 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks, string InvoiceNumber, string InvoiceRefNumber)
+        public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks, string InvoiceNumber, string InvoiceRefNumber, DateTime? InvoiceDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ProformaInvoiceID", ProformaInvoiceID),
                new SqlParameter("@UserID", userID),
                new SqlParameter("@Remarks", Remarks),
-               new SqlParameter("InvoiceNumber", InvoiceNumber),
-               new SqlParameter("InvoiceRefNumber", InvoiceRefNumber)
+               new SqlParameter("@InvoiceNumber", InvoiceNumber),
+               new SqlParameter("@InvoiceRefNumber", InvoiceRefNumber),
+               new SqlParameter("@InvoiceDate", InvoiceDate)
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Approve]", parameters);
         }
