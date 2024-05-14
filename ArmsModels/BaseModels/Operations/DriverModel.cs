@@ -22,6 +22,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string DriverName { get; set; }
         public int? HomeBranchID { get; set; }
+        public string HomeBranchName { get; set; }
         public string DriverImage { get; set; }
         [Required]
         [DataType(DataType.Date)]
@@ -43,6 +44,7 @@ namespace ArmsModels.BaseModels
         [ValidateComplexType]
         public AddressModel Address { get; set; }
         public BankAccountModel BankAccount { get; set; }
+        public DriverLicenceModel DriverLicence { get; set; } = new();
         public SharedModels.UserInfoModel UserInfo { get; set; }
         public List<ContactModel> Contacts { get; set; }
         public bool HasValidLicense { get; set; }

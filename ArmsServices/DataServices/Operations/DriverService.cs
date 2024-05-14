@@ -19,8 +19,7 @@ namespace ArmsServices.DataServices
         private readonly ITruckService truckService;
         private readonly ITripService tripService;
 
-        public DriverService(IDbService iservice, IAddressService Iaddress, ITruckService truckService,
-            ITripService tripService, IBankAccountService bankAccountService)
+        public DriverService(IDbService iservice, IAddressService Iaddress, ITruckService truckService, ITripService tripService, IBankAccountService bankAccountService)
         {
             Iservice = iservice;
             _addressService = Iaddress;
@@ -57,7 +56,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@FestivalBonus", model.FestivalBonus),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Update]", parameters))
             {
                 model = GetModel(dr);
@@ -92,7 +90,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DriverID", 0),
                new SqlParameter("@Operation", "ByID"),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -106,7 +103,6 @@ namespace ArmsServices.DataServices
                 new SqlParameter("@BranchID", BranchID),
                 new SqlParameter("@Operation", "ByBranch"),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -120,7 +116,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DriverID", DriverID),
                new SqlParameter("@Operation", "ByID"),
             };
-
             DriverModel model = new DriverModel();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
             {
@@ -129,22 +124,66 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public IEnumerable<DriverModel> ExcelDataCollection(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@BranchID", BranchID),
+                new SqlParameter("@Operation", "ForExcel"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         private DriverModel GetModel(IDataRecord reader)
         {
             return new DriverModel
             {
-                DriverName = reader.GetString("DriverName"),
-                DriverAgentID = reader.GetInt32("DriverAgentID"),
-                DriverAgent = new PartyModel() { PartyID = reader.GetInt32("DriverAgentID"), TradeName = reader.GetString("PartyName") },
                 HomeBranchID = reader.GetInt32("HomeBranchID"),
+                HomeBranchName = reader.GetString("HomeBranchName"),
+                DriverName = reader.GetString("DriverName"),
                 DriverImage = reader.GetString("DriverImage"),
+                //DriverAgentID = reader.GetInt32("DriverAgentID"),
+                Mobile = reader.GetString("Mobile"),
+                DriverAgent = new PartyModel()
+                {
+                    PartyID = reader.GetInt32("DriverAgentID"),
+                    TradeName = reader.GetString("PartyName")
+                },
                 DateOfBirth = reader.GetDateTime("DateOfBirth"),
                 AdhaarNo = reader.GetString("AdhaarNo"),
                 AdhaarImage = reader.GetString("AdhaarImage"),
+                Address = new AddressModel()
+                {
+                    Building = reader.GetString("Building"),
+                    Street = reader.GetString("Street"),
+                    Place = reader.GetString("Place"),
+                    City = reader.GetString("City"),
+                    PinCode = reader.GetString("PinCode"),
+                },
+                BankAccount = new BankAccountModel()
+                {
+                    BeneficiaryName = reader.GetString("BeneficiaryName"),
+                    AccountNumber = reader.GetString("AccountNumber"),
+                    IfscCode = reader.GetString("IfscCode"),
+                    MicrCode = reader.GetString("MicrCode"),
+                    SwiftCode = reader.GetString("SwiftCode"),
+                    BankTitle = reader.GetString("BankTitle"),
+                    BankBranch = reader.GetString("BankBranch"),
+                },
+                DriverLicence = new DriverLicenceModel()
+                {
+                    LicenceType = reader.GetString("LicenceType"),
+                    LicenceNo = reader.GetString("LicenceNo"),
+                    DLExpiryDate = reader.GetDateTime("DLExpiryDate"),
+                    BadgeNo = reader.GetString("BadgeNo"),
+                    BadgeExpiryDate = reader.GetDateTime("BadgeExpiryDate"),
+                },
                 FestivalBonus = reader.GetString("FestivalBonus"),
                 DriverID = reader.GetInt32("DriverID"),
                 AdditionalInfo = reader.GetString("AdditionalInfo"),
-                Mobile = reader.GetString("Mobile"),
                 Email = reader.GetString("Email"),
                 AddressID = reader.GetInt32("AddressID"),
                 BankAccountID = reader.GetInt32("BankAccountID"),
@@ -177,7 +216,6 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@DriverID", DriverID)
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Branch.Availability]", parameters))
             {
                 yield return dr.GetInt32("BranchID").GetValueOrDefault();
@@ -192,7 +230,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@AdhaarNo", model?.AdhaarNo),
                new SqlParameter("@LicenceNo", licence?.LicenceNo),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
             {
                 model = GetModel(dr);
@@ -223,9 +260,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@DriverID", DriverID),
             };
-
             DriverLeaveModel model = null;
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Leave.SelectLast]", parameters))
             {
                 model = new DriverLeaveModel()
@@ -252,8 +287,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public int 
-            Join(int? DriverID, int? BranchID, DateTime? StartDate, string UserID)
+        public int Join(int? DriverID, int? BranchID, DateTime? StartDate, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -289,7 +323,6 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Leave.End]", parameters);
         }
 
-
         public int? GetAssignedTruck(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -313,7 +346,6 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@AdhaarNo", AdhaarNo),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.GetAdhaar]", parameters))
             {
                 yield return GetModel(dr);
@@ -326,9 +358,7 @@ namespace ArmsServices.DataServices
             {
                 new SqlParameter("@DriverID", DriverID)
             };
-
             string workPeriod = "Unknown";
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.WorkPeriod.Select]", parameters))
             {
                 DateTime? startDate = dr.GetDateTime("StartDate");
@@ -336,7 +366,6 @@ namespace ArmsServices.DataServices
                 workPeriod = $"{startDate?.ToShortDateString()} - {endDate?.ToShortDateString()}";
                 break;
             }
-
             return workPeriod;
         }
 
@@ -353,11 +382,8 @@ namespace ArmsServices.DataServices
                     bool isTripClosed = tripService.IsClosed(currentTripID);
                     if (!isTripClosed)
                     {
-
                         return "OnTrip";
-             
                     }
-
                 }
                 // Assigned truck is not on a trip, remove the driver from the truck
                 try
@@ -370,7 +396,6 @@ namespace ArmsServices.DataServices
                 {
                     return ex.Message;
                 }
-
             }
             return "NoAssignedTruck";
         }
