@@ -12,11 +12,11 @@ namespace ArmsServices.DataServices
     {
         DriverModel Update(DriverModel model);  //Edit
         int Delete(int? DriverID, string UserID);  //Delete
-
         //int Resign(int? DriverID, string Narration);  
         IEnumerable<DriverModel> Select();
         IEnumerable<DriverModel> SelectByBranch(int BranchID);
         DriverModel SelectByID(int? DriverID);
+        IEnumerable<DriverModel> ExcelDataCollection(int? BranchID);
         int UpdateBranch(int? DriverID, int? BranchID, bool availStatus, string UserID);
         IEnumerable<int> GetAssignedBranches(int? DriverID);
         DriverModel FindDriver(DriverModel model = null, DriverLicenceModel licence = null);
@@ -30,6 +30,5 @@ namespace ArmsServices.DataServices
         IEnumerable<DriverModel> GetDriverByAdhaarNo(string AdhaarNo);
         public string GetWorkPeriod(int? DriverID);
         public string RemoveDriverFromTruck(int? driverId, string UserId);  //RemoveDriver
-
     }
 }
