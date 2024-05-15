@@ -22,6 +22,7 @@ namespace ArmsModels.BaseModels
         public string BusinessNature { get; set; } = "Select";// "Suppier,Customer,Renter"
         [Required]
         public PartyModel Party { get; set; }
+        [Required]
         public int? PartyCoaID { get; set; }
         [Required]
         public CancellationReasonCode Reason { get; set; }

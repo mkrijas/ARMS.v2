@@ -60,7 +60,7 @@ namespace Core.BaseModels.Finance.Transactions
         public int? FastTagTollID { get; set; }
         public int? FastTagProcessID { get; set; }
         public DateTime? TransactionDateTime { get; set; }
-        //public DateTime? ProcessedDateTime { get; set; }
+        public DateTime? ProcessedDateTime { get; set; }
         public int? BranchID { get; set; }
         public int? TruckID { get; set; }
         public long? TripID { get; set; }

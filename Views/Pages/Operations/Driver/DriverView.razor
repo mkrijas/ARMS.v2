@@ -13,7 +13,10 @@
 @inject NavigationManager nav
 @using MimeTypes
 @using System.Threading;
+@using OfficeOpenXml
+@using OfficeOpenXml.Style
 @inject IRoleService<RoleModel> Irole
+@inject IJSRuntime JSRuntime
 
 <style>
     .RedRow {
@@ -30,10 +33,15 @@
                 <MudIconButton Icon="@Icons.Material.Filled.TrackChanges" Title="Track" @onclick="OpenTracking" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchDriver" Placeholder="Search Drivers... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudButton OnClick="ExcelDownload" Style="margin: 14px; margin-left: 60px;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverName)" InitialDirection="SortDirection.Ascending">Driver</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.Mobile)" InitialDirection="SortDirection.Ascending">Mobile</MudTableSortLabel></MudTh>
+                @if (BranchID == 7)
+                {
+                    <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x=> x.HomeBranchName)" InitialDirection="SortDirection.Ascending">HomeBranchName</MudTableSortLabel></MudTh>
+                }
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DriverAgent.TradeName)" InitialDirection="SortDirection.Ascending">Contractor</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x => x.DateOfBirth)" InitialDirection="SortDirection.Ascending">AGE</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<DriverModel, object>(x=> x.Status)" InitialDirection="SortDirection.Ascending">Status</MudTableSortLabel></MudTh>
@@ -48,11 +56,15 @@
                     }
                 </MudTd>
                 <MudTd DataLabel="Mobile">@context.Mobile</MudTd>
+                @if (BranchID == 7)
+                {
+                    <MudTd DataLabel="HomeBranchName">@context.HomeBranchName</MudTd>
+                }
                 <MudTd DataLabel="PartyName">@context.DriverAgent.TradeName</MudTd>
                 <MudTd DataLabel="DOB">@(DateTime.Today.Year - context.DateOfBirth.Value.Year + (DateTime.Today.DayOfYear < context.DateOfBirth.Value.DayOfYear ? -1 : 0))</MudTd>
-                    <MudTd DataLabel="Status">@context.Status</MudTd>
-                    <MudTd DataLabel="">
-                        @if (context.UserInfo.RecordStatus != 4)
+                <MudTd DataLabel="Status">@context.Status</MudTd>
+                <MudTd DataLabel="">
+                    @if (context.UserInfo.RecordStatus != 4)
                     {
                         <MudTooltip Text="Put the Driver on leave">
                             <MudFab @onclick="@(() => BeginLeave(context.DriverID))" Color="Color.Warning" Class="mx-2" Icon="@Icons.Material.Filled.KeyboardArrowDown" IconSize="Size.Small" Size="Size.Small" />
@@ -102,6 +114,7 @@
     IBrowserFile driverImage;
     IBrowserFile adhaarImage;
     private List<DriverModel> collection = new List<DriverModel>();
+    private List<DriverModel> ExcelCollection = new List<DriverModel>();
 
     private string searchDriver = "";
     private bool _busy;
@@ -425,5 +438,122 @@
     {
         DialogOptions para = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         DialogService.Show<DriverTrackingDialog>("Driver Tracking", para);
+    }
+
+    public async Task ExcelDownload()
+    {
+        var fileName = "DriverList.xlsx";
+        var sheetName = "Sheet1"; // Change the sheet name as needed
+        ExcelCollection = Iservice.ExcelDataCollection(BranchID).ToList();
+        if (ExcelCollection.Count > 0)
+        {
+            var fileBytes = GenerateExcelBytes(sheetName);
+            await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Oops !",
+                "No Data Found.");
+        }
+    }
+
+    public byte[] GenerateExcelBytes(string sheetName)
+    {
+        using (var package = new ExcelPackage())
+        {
+            var worksheet = package.Workbook.Worksheets.Add(sheetName);
+
+            // Add column headers
+            worksheet.Cells[1, 1].Value = "HomeBranch Name";
+            worksheet.Cells[1, 2].Value = "Driver Name";
+            worksheet.Cells[1, 3].Value = "Date Of Birth";
+            worksheet.Cells[1, 4].Value = "Adhaar No";
+            worksheet.Cells[1, 5].Value = "Contractor/Supplier";
+            worksheet.Cells[1, 6].Value = "Reference";
+            worksheet.Cells[1, 7].Value = "Mobile No";
+            worksheet.Cells[1, 8].Value = "Email";
+            worksheet.Cells[1, 9].Value = "Building";
+            worksheet.Cells[1, 10].Value = "Street";
+            worksheet.Cells[1, 11].Value = "Place";
+            worksheet.Cells[1, 12].Value = "City";
+            worksheet.Cells[1, 13].Value = "PinCode";
+            worksheet.Cells[1, 14].Value = "Beneficiary Name";
+            worksheet.Cells[1, 15].Value = "Account Number";
+            worksheet.Cells[1, 16].Value = "IFSC Code";
+            worksheet.Cells[1, 17].Value = "MICR Code";
+            worksheet.Cells[1, 18].Value = "SWIFT Code";
+            worksheet.Cells[1, 19].Value = "Bank Name";
+            worksheet.Cells[1, 20].Value = "Bank Branch";
+            worksheet.Cells[1, 21].Value = "Licence Type";
+            worksheet.Cells[1, 22].Value = "Licence No";
+            worksheet.Cells[1, 23].Value = "Licence Expiry Date";
+            worksheet.Cells[1, 24].Value = "Badge No";
+            worksheet.Cells[1, 25].Value = "Badge Expiry Date";
+            for (int i = 1; i <= 25; i++)
+            {
+                worksheet.Cells[1, i].Style.Font.Bold = true;
+            }
+
+            worksheet.Column(3).Style.Numberformat.Format = "dd-MM-yyyy"; // Date format
+            worksheet.Column(23).Style.Numberformat.Format = "dd-MM-yyyy"; // Date format
+            worksheet.Column(25).Style.Numberformat.Format = "dd-MM-yyyy"; // Date format
+            //worksheet.Column(15).Style.Numberformat.Format = "0.00"; // Integer format
+            //worksheet.Column(16).Style.Numberformat.Format = "0.00"; // Integer format
+
+            // Add data rows
+            int row = 2;
+            foreach (var item in ExcelCollection)
+            {
+                worksheet.Cells[row, 1].Value = item.HomeBranchName;
+                worksheet.Cells[row, 2].Value = item.DriverName;
+                worksheet.Cells[row, 3].Value = item.DateOfBirth;
+                worksheet.Cells[row, 4].Value = item.AdhaarNo;
+                worksheet.Cells[row, 5].Value = item.DriverAgent.TradeName;
+                worksheet.Cells[row, 6].Value = item.AdditionalInfo;
+                worksheet.Cells[row, 7].Value = item.Mobile;
+                worksheet.Cells[row, 8].Value = item.Email;
+                worksheet.Cells[row, 9].Value = item.Address.Building;
+                worksheet.Cells[row, 10].Value = item.Address.Street;
+                worksheet.Cells[row, 11].Value = item.Address.Place;
+                worksheet.Cells[row, 12].Value = item.Address.City;
+                worksheet.Cells[row, 13].Value = item.Address.PinCode;
+                worksheet.Cells[row, 14].Value = item.BankAccount.BeneficiaryName;
+                worksheet.Cells[row, 15].Value = item.BankAccount.AccountNumber;
+                worksheet.Cells[row, 16].Value = item.BankAccount.IfscCode;
+                worksheet.Cells[row, 17].Value = item.BankAccount.MicrCode;
+                worksheet.Cells[row, 18].Value = item.BankAccount.SwiftCode;
+                worksheet.Cells[row, 19].Value = item.BankAccount.BankTitle;
+                worksheet.Cells[row, 20].Value = item.BankAccount.BankBranch;
+                worksheet.Cells[row, 21].Value = item.DriverLicence.LicenceType;
+                worksheet.Cells[row, 22].Value = item.DriverLicence.LicenceNo;
+                worksheet.Cells[row, 23].Value = item.DriverLicence.DLExpiryDate;
+                worksheet.Cells[row, 24].Value = item.DriverLicence.BadgeNo;
+                worksheet.Cells[row, 25].Value = item.DriverLicence.BadgeExpiryDate;
+
+                if (item.DriverLicence.DLExpiryDate < DateTime.Now)
+                {
+                    using (var range = worksheet.Cells[row, 1, row, 25])
+                    {
+                        range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                        range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Red);
+                    }
+                }
+
+                row++;
+            }
+
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+
+            // Save the Excel package to a memory stream
+            using (var stream = new MemoryStream())
+            {
+                package.SaveAs(stream);
+                return stream.ToArray();
+            }
+        }
     }
 }
