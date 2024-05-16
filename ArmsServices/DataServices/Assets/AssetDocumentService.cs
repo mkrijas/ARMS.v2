@@ -46,6 +46,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ValidatePeriod"),
+               new SqlParameter("@DocumentID", model.DocumentID),
                new SqlParameter("@EndDate", model.EndDate),
                new SqlParameter("@DocumentTypeID", model.DocumentType.DocumentTypeID),
                new SqlParameter("@StartDate", model.StartDate),
