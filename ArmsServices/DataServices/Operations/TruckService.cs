@@ -300,6 +300,7 @@ namespace ArmsServices.DataServices
                     TruckTypeID = dr.GetInt16("TruckTypeID"),
                     TruckType = dr.GetString("TruckType"),
                     BSType = dr.GetString("BSType"),
+                    wheels = dr.GetByte("wheels"),
                     TransmissionType = dr.GetString("TransmissionType"),
                     FuelType = dr.GetString("FuelType"),
                     FuelTankCapacity = dr.GetDecimal("FuelTankCapacity"),
