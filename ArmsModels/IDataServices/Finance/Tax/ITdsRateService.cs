@@ -18,5 +18,6 @@ namespace ArmsServices.DataServices
         IEnumerable<NatureOfPaymentModel> SelectTdsNP();
         IEnumerable<AssesseeTypeModel> SelectAssesseeTypes();
         decimal GetTdsRate(int? PartyID, int? AccountID);
+        decimal GetTdsRate(int? PartyID, string SectionCode);
     }
 }

@@ -243,6 +243,7 @@ namespace Views
             services.AddScoped<IReimbursementService, ReimbursementService>();
             services.AddScoped<IReverseEntryService, ReverseEntryService>();
             services.AddScoped<ISundryMaintenanceService, SundryMaintenanceService>();
+            services.AddScoped<ItdsEntryService, TdsEntryService>();
 
 
             //----IBASE GROUP
@@ -256,7 +257,7 @@ namespace Views
             services.AddScoped<IbaseInterface<CancellationReasonCodesByDocumentType>, ReverseEntryService>();
             services.AddScoped<IbaseInterface<SundryMaintenanceModel>, SundryMaintenanceService>();
             services.AddScoped<IbaseInterface<InterBranchReimbursementModel>, ReimbursementService>();
-
+            services.AddScoped<IbaseInterface<TdsTransactionModel>, TdsEntryService>();
 
 
             //------------FINANCE POSTING GROUP-------------------
