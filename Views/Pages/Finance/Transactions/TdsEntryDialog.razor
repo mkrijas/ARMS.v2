@@ -1,0 +1,221 @@
+﻿@inherits DialogFormComponentBase<TdsTransactionModel>
+
+@inject ItdsEntryService Iservice
+@inject ITdsRateService tdsIService
+
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="TDS RECEIVABLE/PAYABLE" formID="formTdsEntry" DocumentDetails="DocInfo" model="@model" _busy="_busy">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm autocomplete="off" id="formTdsEntry" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="12">
+                        <MudRadioGroup @bind-Value="@model.IsTdsPayable" ReadOnly="ReadOnly">
+                            <MudRadio Value="@(true)" Color="Color.Primary">Tds Payable</MudRadio>
+                            <MudRadio Value="@(false)" Color="Color.Secondary">Tds Receivable</MudRadio>
+                       </MudRadioGroup>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <PartySelector Value="model.PartyInfo" For="@(()=> model.PartyInfo)" ValueChanged="PartyChanged" BranchID="BranchID" NatureOfBusiness="Supplier" IncludeRenter IncludeSisterConcern></PartySelector>
+                        <MudText Typo="Typo.caption"> @model.PartyInfo?.GstRegType  @model.PartyInfo?.GstNo</MudText>
+                    </MudItem>                   
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
+                        <h6><u>Particulars</u></h6>
+                        <div style="width: 1600px;" class="pb-3">
+                            <MudGrid Justify="Justify.Center">
+                                @if (model.Entries is not null && model.Entries.Any())
+                                {
+                                    <MudItem xs="3"><span class="HeadText">Usage Code</span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText">InvoiceRef</span></MudItem>
+                                    <MudItem xs="2"><span class="HeadText">Job</span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText">Truck</span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText">Cost Center</span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText">Dimension</span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText">Amount</span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText">Gst/TDS</span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText">Actions</span></MudItem>
+                                    @foreach (var item in model.Tds)
+                                    {
+                                        <MudItem xs="3">@string.Format("{0} | {1}", item.UsageCode, item.UsageCodeDescription)</MudItem>
+                                        <MudItem xs="1">@item.InvoiceNo</MudItem>
+                                          <MudItem xs="2">
+                                            @item.JobTitle
+                                        </MudItem>
+                                        <MudItem xs="1">
+                                            @item.TruckRegNo
+                                        </MudItem>
+                                        <MudItem xs="1">
+                                            @item.CostCenterVal
+                                        </MudItem>
+                                        <MudItem xs="1">
+                                            @item.DimensionVal
+                                        </MudItem>
+                                        <MudItem xs="1">@item.Amount</MudItem>
+                                        <MudItem xs="1">@(item.CGST + item.SGST + item.IGST)/@item.TDS</MudItem>
+                                        <MudItem xs="1">
+                                            @if (!ReadOnly)
+                                            {
+                                                <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> DeleteExpenses(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                            }
+                                            <MudIconButton Title="Show Taxes" Color="Color.Info" @onclick="@(()=> OpenDialogTaxRates(@item))" Icon="@Icons.Material.Filled.CurrencyExchange" Size="Size.Small" />
+                                        </MudItem>
+                                    }
+                                }
+                                @if (!ReadOnly)
+                                {
+                                    <MudItem xs="12" Class="d-flex gap-4">
+                                        <UsageCodeSelector Value=gstusage ValueChanged="UsageCodeSelected"></UsageCodeSelector>                                   
+                                        <MudDatePicker ReadOnly="ReadOnly" Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="_entryModel.InvoiceDate" For="@(() => _entryModel.InvoiceDate)" />
+                                        <MudTextField ReadOnly="ReadOnly" @bind-Value="_entryModel.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _entryModel.InvoiceNo)"></MudTextField>
+                                        <ServiceJobSelector ReadOnly="ReadOnly" Value="@_selectedJob" ValueChanged="JobSelected"></ServiceJobSelector>
+                                        <TruckSelector IsDisabled="ReadOnly" BranchID="@BranchID" Value="@_truck" ValueChanged="@truckChanged"></TruckSelector>
+                                       
+                                            <MudSelect Label="Select Nature of payment" Value="model.TdsNPID" ValueChanged="TdsNPSelected" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                                @foreach (var ditem in naturepayment)
+                                                {
+                                                    <MudSelectItem Value="@ditem.TdsNPID">@ditem.NatureOfPayment</MudSelectItem>
+                                                }
+                                            </MudSelect>                                        
+                                        <MudNumericField HideSpinButtons Label="TDS Amount" @bind-Value="@_entryModel.TdsAmount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                                        <MudIconButton Title="Add" OnClick="ADD" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@DocInfo.DocumentTypeID" DocumentID="@model.ID" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
+
+@code {
+
+    [Parameter]
+    public override TdsTransactionModel model { get; set; }
+    private TdsTransactionModel _model { get { return model; } set { model = value; DocInfo.DocumentID = value.ID; } };
+
+
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 131,
+            DocumentName = "TdsEntry"
+        };
+
+    private TdsTransactionEntryModel _entryModel { get; set; }
+    private List<NatureOfPaymentModel> TdsNPs = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        TdsNPs = tdsIService.SelectTdsNP();
+        if (model.ID == null)
+        {                        
+            model.BranchID = BranchID;
+            if (model.PartyInfo != null)
+                PartyChanged(model.PartyInfo);
+        }
+        else
+        {
+            model.PartyInfo = partyService.SelectByID(model.PartyInfo.PartyID);
+            model.Tds = Iservice.GetEntries(model.ID).ToList();
+        }
+        model.NatureOfTransaction = "TdsEntry";
+    }
+
+    private void TdsNPSelected(int? val)
+    {
+        _entryModel.TdsNpID = val;
+        _entryModel.TdsNP = TdsNPs.FirstOrDefault(x => x.TdsNPID == val)?.NatureOfPayment;      
+        if(model.IsTdsPayable)
+        {
+            SetTds(_entryModel);
+        }
+    }
+
+    void SetTotal()
+    {
+        model.TotalAmount = model.Tds.Sum(x => x.TdsAmount);
+    }
+
+    void PartyChanged(PartyModel party)
+    {
+        model.PartyInfo = party;
+        // if (party != null)
+        // {
+        //     IsTaxable = party.GstType == "Registered" || party.GstType == "SEZ";
+        //     Local = partyService.IsLocal(model.PartyInfo.PartyID, BranchID);
+        // }
+        // else { Local = false; }
+    }
+
+    protected override async Task<int> Update(SundryMaintenanceModel editModel)
+    {
+        if (await validate(model))
+        {
+            model = Iservice.Update(model);
+            return model.ID.Value;
+        }
+        return 0;
+    }
+
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
+    {
+        int result = Iservice.Approve(model.ID, model.UserInfo.UserID, aprvd.Remarks);
+        return result;
+    }
+
+    async Task<bool> validate(SundryMaintenanceModel editModel)
+    {
+        return true;
+    }
+
+
+    private void ADD()
+    {
+        if (model.Entries is null)
+        {
+            model.Entries = new();
+        }
+        editContext = new EditContext(_entryModel);
+        editContext.EnableDataAnnotationsValidation();       
+
+        if (AddTax() && editContext.Validate())
+        {
+
+            model.Entries.Add((TdsTransactionEntryModel)_entryModel.Clone());
+            SetTotal();
+            _entryModel = new();
+            
+        }
+        else
+        {
+            editContext.NotifyValidationStateChanged();
+        }
+    }
+   
+
+    private void DeleteRow(TdsTransactionEntryModel i)
+    {
+        int rowIndex = model.Entries.IndexOf(i);
+        model.Entries.RemoveAt(rowIndex);
+        SetTotal();
+    }
+
+    private bool SetTds(TdsTransactionEntryModel e)
+    {
+        e.RateOfTds = tdsIService.GetTdsRate(model.Party.PartyID, TdsNPs.FirstOrDefault(x => x.TdsNPID == val)?.SectionCode);
+        e.TdsAmount = Math.Round(e.TaxableAmount * e.RateOfTds / 100, 0);
+    }
+}
