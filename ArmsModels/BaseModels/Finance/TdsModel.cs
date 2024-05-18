@@ -40,6 +40,7 @@ namespace ArmsModels.BaseModels
         public int? TdsNPID { get; set; }
         [Required]
         public string NatureOfPayment { get; set; }
+        public string SectionCode { get; set; }
     }
 
     public class AssesseeTypeModel
