@@ -15,6 +15,7 @@ namespace Core.BaseModels.Operations
     {
         public int? RequestApprovalHistoryID { get; set; }
         public int? TruckID { get; set; }
+        public int? DriverID { get; set; }
         public TruckModel Truck { get; set; }
         public int? RequestedBranchID { get; set; }
         public BranchModel RequestedBranch { get; set; }

@@ -134,6 +134,7 @@ namespace DAL.DataServices.Operations
             {
                 RequestApprovalHistoryID = dr.GetInt32("RequestApprovalHistoryID"),
                 TruckID = dr.GetInt32("TruckID"),
+                DriverID = dr.GetInt32("DriverID"),
                 Truck = new TruckModel()
                 {
                     TruckID = dr.GetInt32("TruckID"),
