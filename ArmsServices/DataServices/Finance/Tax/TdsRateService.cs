@@ -157,5 +157,22 @@ namespace ArmsServices.DataServices
             }
             return result??0;
         }
+
+        public decimal GetTdsRate(int? PartyID, string SectionCode)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetTaxRateForSectionCode"),
+               new SqlParameter("@PartyID", PartyID),
+               new SqlParameter("@SectionCode", SectionCode),
+            };
+
+            decimal? result = 0;
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.taxes.TDS.Rates.Select]", parameters))
+            {
+                result = dr.GetDecimal("TaxRate");
+            }
+            return result ?? 0;
+        }
     }
 }
