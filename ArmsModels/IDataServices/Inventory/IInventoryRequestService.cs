@@ -15,7 +15,7 @@ namespace ArmsServices.DataServices.Inventory
         IEnumerable<InventoryRequestModel> Select();
         IEnumerable<InventoryRequestModel> SelectByStore(int? StoreID, int? BranchID);
         IEnumerable<InventoryRequestModel> SelectByTruckID(int? TruckID);
-        IEnumerable<InventoryRequestModel> SelectRequestReleaseByTruckID(int? TruckID);
+        //IEnumerable<InventoryRequestModel> SelectRequestReleaseByTruckID(int? TruckID);
         IEnumerable<InventoryRequestModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<InventoryRequestModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<InventoryItemEntryModel> GetSub(int? ID);
