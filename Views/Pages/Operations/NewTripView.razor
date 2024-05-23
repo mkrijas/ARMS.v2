@@ -203,10 +203,6 @@
         model.StartWithLoading = startLoading;
     }
 
-
-
-
-
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -234,42 +230,67 @@
                 model.DriverID = AssignedDriver?.DriverID;
                 model.TripDate = currentEvent.EventTime.Value.Date;
                 model.UserInfo.UserID = UserID;
-                model = Iservice.Update(model);
 
-                #region Add Start event
-                if (model.TripID != null)
+                if (ValidateEvent())
                 {
-                    currentEvent.TripID = model.TripID;
-                    currentEvent = Ievent.Update(currentEvent);
-
-                    #endregion
-
-                    if (startWithLoading)
+                    model = Iservice.Update(model);
+                    #region Add Start event
+                    if (model.TripID != null)
                     {
-                        currentEvent.TruckEventID = null;
-                        currentEvent.EventTypeID = 2;
+                        currentEvent.TripID = model.TripID;
                         currentEvent = Ievent.Update(currentEvent);
+
+                        #endregion
+
+                        if (startWithLoading)
+                        {
+                            currentEvent.TruckEventID = null;
+                            currentEvent.EventTypeID = 2;
+                            currentEvent = Ievent.Update(currentEvent);
+                        }
+                        MudDialog.Close(DialogResult.Ok(model));
                     }
-                    MudDialog.Close(DialogResult.Ok(model));
                 }
-                }
-                catch (Exception ex)
+                else
                 {
-                    snackbar.Add(ex.Message, Severity.Warning);
-                }
-                finally
-                {
-                    isSubmitting = false;
-                    await Task.Delay(200);
-                    _busy = false;
+                    snackbar.Add("Time cannot be before previous  event", Severity.Warning);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                bool? ResultModel = await DialogService.ShowMessageBox(
-                    "Permission denied!",
-                    "You dont have any permission to Add or Edit Trip.");
+                snackbar.Add(ex.Message, Severity.Warning);
             }
-       
+            finally
+            {
+                isSubmitting = false;
+                await Task.Delay(200);
+                _busy = false;
+            }
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Trip.");
+        }
+
+    }
+
+
+    private bool ValidateEvent()
+    {
+        EventModel PreEvent = Ievent.GetCurrentEvent(Truck.TruckID);
+        
+        if (PreEvent != null && currentEvent.EventTime < PreEvent.EventTime)
+        {
+            snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
+            return false;
+        }       
+        if ((PreEvent != null && PreEvent.EventTypeID == currentEvent.EventTypeID))
+        {
+            snackbar.Add("Cannot enter an event twice in a row", Severity.Warning);
+            return false;
+        }      
+        return true;
     }
 }

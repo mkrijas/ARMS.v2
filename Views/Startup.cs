@@ -101,11 +101,12 @@ namespace Views
             // -------- Authorization----------- //
             services.AddAuthorization(config =>
             {
-                config.AddPolicy("Admin", policy => policy.RequireClaim("Admin"));                
+                config.AddPolicy("Admin", policy => policy.RequireClaim("Admin"));
+                config.AddPolicy("Limited_To_HO", policy => policy.RequireClaim("BranchID", "7"));
             });
 
 
-        #region Email_Sender
+            #region Email_Sender
 
             services.AddTransient<IEmailSender, EmailSender>();
             services.Configure<EmailSenderOptions>(options =>
