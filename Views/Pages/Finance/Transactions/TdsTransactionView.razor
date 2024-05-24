@@ -1,17 +1,14 @@
-﻿@page "/SundryMaintenance"
-@page "/SundryMaintenance/{id:int}"
-@inherits ViewComponentBase<SundryMaintenanceModel>
-
-@inject ISundryMaintenanceService Iservice
-@using Inventory.GoodsReceipt
-
+﻿@page "/TdsReceivable"
+@page "/TdsReceivable/{id:int}"
+@inherits ViewComponentBase<TdsTransactionModel>
+@inject ItdsEntryService Iservice
 
 
 <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
     <ToolBarContent>
-        <MudText Typo="Typo.h6">Sundry Maintenance Expenses</MudText>
-        <MudTooltip Text="New SundryMaintenance">
-            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new SundryMaintenanceModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+        <MudText Typo="Typo.h6">Tds Payable/Receivable</MudText>
+        <MudTooltip Text="New Entry">
+            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new TdsTransactionModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
         </MudTooltip>       
         <MudSpacer></MudSpacer>
         <MudTextField @bind-Value="searchTerm" Placeholder="Search..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -24,18 +21,15 @@
         </MudItem>
         <MudCheckBox Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
     </ToolBarContent>
-    <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryMaintenanceModel, object>(x=> x.BreakDownType)" >Invoice Date</MudTableSortLabel></MudTh>
-        
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryMaintenanceModel, object>(x=> x.PartyInfo.TradeName)" >Party Name</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryMaintenanceModel, object>(x=> x.DocumentDate)" >Document Date</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryMaintenanceModel, object>(x=> x.ID)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryMaintenanceModel, object>(x=> x.TotalAmount)"> Total Amount</MudTableSortLabel></MudTh>
+    <HeaderContent>        
+        <MudTh><MudTableSortLabel SortBy="new Func<TdsTransactionModel, object>(x=> x.Party.TradeName)" >Party Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<TdsTransactionModel, object>(x=> x.DocumentDate)" >Document Date</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<TdsTransactionModel, object>(x=> x.ID)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<TdsTransactionModel, object>(x=> x.TotalAmount)"> Total Amount</MudTableSortLabel></MudTh>
         <MudTh>Actions</MudTh>
     </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="InvoiceDate">@context.BreakDownType</MudTd>
-        <MudTd DataLabel="TradeName">@context.PartyInfo.TradeName</MudTd>
+    <RowTemplate>        
+        <MudTd DataLabel="TradeName">@context.Party.TradeName</MudTd>
         <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
         <MudTd DataLabel="DocumentNumber">@context.DocumentNumber
             @if (context.AuthLevelId == 100)
@@ -46,8 +40,7 @@
         <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
         <MudTd DataLabel="">
             <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
-            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-            @* <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.PID))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" /> *@
+            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />           
             <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.ID))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
             @if (@context.AuthLevelId == 99)
             {
@@ -66,11 +59,11 @@
 
 
 @code {
-    protected override List<SundryMaintenanceModel> collection { get; set; } = new List<SundryMaintenanceModel>();
+    protected override List<TdsTransactionModel> collection { get; set; } = new List<TdsTransactionModel>();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
-            DocumentTypeID = 130,
-            DocumentName = "SundryMaintenance"
+            DocumentTypeID = 131,
+            DocumentName = "TdsEntry"
         };
 
     protected override async Task OnInitializedAsync()
@@ -83,7 +76,7 @@
         }
     }
 
-    protected override async Task OpenForm(SundryMaintenanceModel ppm, bool ReadOnly, bool DisableAddition = false)
+    protected override async Task OpenForm(TdsTransactionModel ppm, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -95,11 +88,11 @@
         parms.Add("model", ppm.Clone());
         parms.Add("ReadOnly", ReadOnly);
         parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
-        var dialog = dialogService.Show<SundryMaintenanceDialog>(ppm.ID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+        var dialog = dialogService.Show<TdsEntryDialog>(ppm.ID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
         var result = await dialog.Result;
         if (!result.Canceled)
         {
-            var ReturnData = (SundryMaintenanceModel)result.Data;
+            var ReturnData = (TdsTransactionModel)result.Data;
             LoadData(ShowApproved, NumberOfRecords);
         }
        

@@ -90,6 +90,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@FuelItemID", model.FuelItemID),
                new SqlParameter("@Quantity", model.Quantity),
                new SqlParameter("@UserID", model.PurchaseModel.UserInfo.UserID),
+               new SqlParameter("@RefInvoiceNo", model.RefInvoiceNo),
                new SqlParameter("@IsPurchase", model.IsPurchase),
                new SqlParameter("@PID", model.PurchaseModel.PID),
                new SqlParameter("@RatePerLitre", model.RatePerLitre),
@@ -115,6 +116,7 @@ namespace ArmsServices.DataServices
                 ItemType = reader.GetString("ItemType"),
                 FuelItemID = reader.GetInt32("FuelItemID"),
                 FuelItemDescription = reader.GetString("FuelItemDescription"),
+                RefInvoiceNo = reader.GetString("RefInvoiceNo"),
                 PurchaseModel = new()
                 {
                     PID = reader.GetInt32("PID"),
