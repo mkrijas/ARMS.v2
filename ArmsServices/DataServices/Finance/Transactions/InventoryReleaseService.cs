@@ -4,6 +4,7 @@ using System;
 using ArmsModels.BaseModels;
 using System.Data.SqlClient;
 using System.Data;
+using System.Reflection.PortableExecutable;
 
 namespace ArmsServices.DataServices.Finance.Transactions
 {
@@ -247,6 +248,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                new SqlParameter("@RID", model.RID),
                new SqlParameter("@RequestID", model.RequestID),
                new SqlParameter("@DocumentDate", model.DocumentDate),
+               new SqlParameter("@RefInvoiceNo", model.RefInvoiceNo),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@StoreID", model.Store?.StoreID??0),
                new SqlParameter("@BranchID", model.BranchID),
@@ -275,6 +277,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                 RequestID = dr.GetInt32("RequestID"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
+                RefInvoiceNo = dr.GetString("RefInvoiceNo"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 Store = new()
                 {
