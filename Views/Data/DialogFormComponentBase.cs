@@ -48,7 +48,7 @@ namespace Views.Data
 
         protected bool Local;
         protected bool IsTaxable;
-        protected BranchModel OtherBranch = new();       
+        protected BranchModel OtherBranch = new();
 
         protected EditContext editContext;
         protected DialogForm dialogForm;
@@ -73,8 +73,12 @@ namespace Views.Data
             var user = authprov.User;
             UserID = user.Identity.Name;
             model.BranchID = BranchID;
-            model.OtherBranchID = model.IsInterBranch?model.OtherBranchID: BranchID;
-            OtherBranch = branchService.SelectByID(model.OtherBranchID);
+
+            model.OtherBranchID = model.IsInterBranch ? model.OtherBranchID : BranchID;
+            if (model.OtherBranchID != null)
+            {
+                OtherBranch = branchService.SelectByID(model.OtherBranchID);
+            }
             InterBranchTranTypes = interbranchService.GetTypes().ToList();
         }
         protected override void OnParametersSet()
@@ -93,7 +97,7 @@ namespace Views.Data
         protected void OtherBranchSelected(BranchModel branch)
         {
             OtherBranch = branch;
-            model.OtherBranchID = branch?.BranchID;            
+            model.OtherBranchID = branch?.BranchID;
         }
 
         protected abstract Task<int> Update(T editModel);
