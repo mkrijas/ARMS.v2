@@ -305,6 +305,18 @@ namespace ArmsServices.DataServices
             }
             return true;
         }
+
+        public IEnumerable<AssetDocumentModel> GetNewFileName()
+        {
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Attachment.Select]", null))
+            {
+                yield return new AssetDocumentModel()
+                {
+                    AttachedDocument = dr.GetString("attachment"),
+                    
+                };
+            }
+        }
     }
 }
 
