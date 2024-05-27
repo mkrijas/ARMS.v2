@@ -158,13 +158,13 @@ namespace ArmsServices.DataServices
             return result??0;
         }
 
-        public decimal GetTdsRate(int? PartyID, string SectionCode)
+        public decimal GetTdsRate2(int? PartyID, int? TdsNpID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "GetTaxRateForSectionCode"),
+               new SqlParameter("@Operation", "GetTaxRate"),
                new SqlParameter("@PartyID", PartyID),
-               new SqlParameter("@SectionCode", SectionCode),
+               new SqlParameter("@TdsNpID", TdsNpID),
             };
 
             decimal? result = 0;
