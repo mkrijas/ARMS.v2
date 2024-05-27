@@ -1,0 +1,111 @@
+﻿@page "/GeneralLedgerTransfer"
+@page "/GeneralLedgerTransfer/{id:int}"
+
+@inherits ViewComponentBase<GeneralLedgerTransferModel>
+@inject IGeneralLedgerTransferService Iservice
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Ledger Transfer</MudText>
+                <MudTooltip Text="Add Ledger Transfer">
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new GeneralLedgerTransferModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                </MudTooltip>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<GeneralLedgerTransferModel, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GeneralLedgerTransferModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GeneralLedgerTransferModel, object>(x=> x.UsageCode)">UsageCode</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GeneralLedgerTransferModel, object>(x=> x.OtherUsageCode)">Other UsageCode</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<GeneralLedgerTransferModel, object>(x=> x.TotalAmount)">Total Amount</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
+                <MudTd DataLabel="DocumentNumber">
+                    @context.DocumentNumber
+                    @if (context.AuthLevelId == 100)
+                    {
+                        <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
+                    }
+                </MudTd>
+                <MudTd DataLabel="UsageCode">@context.UsageCode </MudTd>
+                <MudTd DataLabel="OtherUsageCode">@context.OtherUsageCode </MudTd>
+                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
+                <MudTd DataLabel="">
+                    <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.LedgerTransferID))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
+
+                    @if (@context.AuthLevelId == 99)
+                    {
+                        <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.LedgerTransferID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                    }
+                    else if (@context.AuthLevelId != 100)
+                    {
+                        <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                    }
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" />
+                <MudItem xs="12" md="9"> </MudItem><MudItem xs="12" md="3">
+                </MudItem>
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    protected override List<GeneralLedgerTransferModel> collection { get; set; } = new List<GeneralLedgerTransferModel>();
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 0,
+            DocumentName = "GeneralLedgerTransfer"
+        };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (id != null && collection != null && collection.Any(g => g.LedgerTransferID == id))
+        {
+            await OpenForm(collection.FirstOrDefault(s => s.LedgerTransferID == id), true);
+        }
+    }
+
+    protected override async Task OpenForm(GeneralLedgerTransferModel gModel, bool ReadOnly, bool DisableAddition = false)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", gModel.Clone());
+        parms.Add("ReadOnly", ReadOnly);
+        parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
+        var _dialog = dialogService.Show<GeneralLedgerTransferDialog>(gModel.LedgerTransferID == null ? "ADD" : "EDIT", parms, new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true });
+        var result = await _dialog.Result;
+        if (!result.Canceled)
+        {
+            var ReturnData = (GeneralLedgerTransferModel)result.Data;
+        }
+        LoadData(ShowApproved, NumberOfRecords);
+        await Task.Delay(200);
+        _busy = false;
+    }
+}
