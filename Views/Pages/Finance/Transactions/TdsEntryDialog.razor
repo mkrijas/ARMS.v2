@@ -20,8 +20,7 @@
                         <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <PartySelector Value="model.Party" For="@(()=> model.Party)" ValueChanged="PartyChanged" BranchID="BranchID" NatureOfBusiness="Supplier" IncludeRenter IncludeSisterConcern></PartySelector>
-                        <MudText Typo="Typo.caption"> @model.Party?.GstRegType  @model.Party?.GstNo</MudText>
+                        <PartySelector Value="model.Party" For="@(()=> model.Party)" ValueChanged="PartyChanged" BranchID="BranchID" ></PartySelector>                        
                     </MudItem>                   
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
@@ -106,7 +105,7 @@
             DocumentName = "TdsEntry"
         };
 
-    private TdsTransactionEntryModel _entryModel { get; set; }
+    private TdsTransactionEntryModel _entryModel = new();
     private List<NatureOfPaymentModel> TdsNPs = new();
 
     protected override async Task OnInitializedAsync()
@@ -121,7 +120,7 @@
         }
         else
         {
-            model.Party = partyService.SelectByID(model.Party.PartyID);
+            model.Party = partyService.SelectByID(model.Party.PartyID);            
             model.Tds = Iservice.GetEntries(model.ID).ToList();
         }
         model.NatureOfTransaction = "TdsEntry";
@@ -153,7 +152,11 @@
 
     void PartyChanged(PartyModel party)
     {
-        model.Party = party;       
+        model.Party = party;
+        if (party is not null)
+            model.PartyCoaID = partyService.GetPartyDefaultCoaID(model.Party?.PartyID);
+        else
+            model.PartyCoaID = null;
     }
 
     protected override async Task<int> Update(TdsTransactionModel editModel)
@@ -207,9 +210,9 @@
 
     private void SetTds(TdsTransactionEntryModel e)
     {
-        if (e.TaxableAmount is not null && e.RateOfTds is not null)
+        if (e.TaxableAmount is not null && e.TdsNpID is not null && model.Party is not null)
         {
-            e.RateOfTds = tdsIService.GetTdsRate(model.Party.PartyID, TdsNPs.FirstOrDefault(x => x.TdsNPID == e.TdsNpID)?.SectionCode);
+            e.RateOfTds = tdsIService.GetTdsRate2(model.Party.PartyID, e.TdsNpID);
             e.TdsAmount = Math.Round((e.TaxableAmount.Value * e.RateOfTds.Value / 100), MidpointRounding.AwayFromZero);
         }
         else

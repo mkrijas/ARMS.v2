@@ -260,6 +260,13 @@ namespace ArmsServices.DataServices
             {
                 DraftBillID = dr.GetInt32("DraftBillID"),
                 BranchID = dr.GetInt32("BranchID"),
+                DocFromDate = dr.GetDateTime("DocFromDate"),
+                DocToDate = dr.GetDateTime("DocToDate"),
+                Truck = new TruckModel()
+                {
+                    TruckID = dr.GetInt32("TruckID"),
+                    RegNo = dr.GetString("RegNo"),
+                },
                 Party = new()
                 {
                     PartyID = dr.GetInt32("PartyID"),
@@ -298,6 +305,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ProformaInvoiceID", model.ProformaInvoiceID),
                new SqlParameter("@DraftBillID", model.DraftBillID),
                new SqlParameter("@OrderID", model.OrderID),
+               new SqlParameter("@PartyID", model.Party?.PartyID),
                new SqlParameter("@PartyID", model.Party?.PartyID),
                new SqlParameter("@PartyCoaID", model.PartyCoa),
                new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
@@ -340,6 +348,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyID", model.Party?.PartyID),
                new SqlParameter("@OrderID", (model.Order?.OrderID)??0),
                new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
+               new SqlParameter("@TruckID", model.Truck?.TruckID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@FilePath", model.FileName),
@@ -412,13 +421,14 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Reverse]", parameters);
         }
 
-        public IEnumerable<GcTariffModel> GetPending(int? PartyID, int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end)
+        public IEnumerable<GcTariffModel> GetPending(int? PartyID, int? OrderID, short? TariffTypeID, int? GcTypeID, int? TruckID, DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "Pending"),
                new SqlParameter("@Begin",begin),
                new SqlParameter("@End",end),
+               new SqlParameter("@TruckID",TruckID),
                new SqlParameter("@PartyID", PartyID),
                new SqlParameter("@OrderID", OrderID),
                new SqlParameter("@TariffTypeID", TariffTypeID),
@@ -462,6 +472,7 @@ namespace ArmsServices.DataServices
                 InvoiceDate = dr.GetDateTime("InvoiceDate"),
                 BillNumber = dr.GetString("BillNumber"),
                 BillQuantity = dr.GetDecimal("BillQuantity"),
+                TruckRegNo = dr.GetString("TruckRegNo"),
                 ConsigneeName = dr.GetString("ConsigneeName"),
                 PassNumber = dr.GetString("PassNumber"),
                 Deduction = dr.GetDecimal("Deduction"),

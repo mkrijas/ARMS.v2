@@ -41,8 +41,13 @@ namespace ArmsModels.BaseModels
         public string PayeeContactNo { get; set; }
     }
 
-    public class SundryPaymentEntryModel
+    public class SundryPaymentEntryModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<SundryPaymentEntryModel>(Json);
+        }
         public long? ID { get; set; }
         public int? ParentID { get; set; }
         [Required]

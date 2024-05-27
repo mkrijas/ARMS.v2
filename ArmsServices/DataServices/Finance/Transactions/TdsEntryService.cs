@@ -25,7 +25,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
                new SqlParameter("@Remarks", Remarks)
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TdsEntry.Approve]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TdsReceivable.Approve]", parameters);
         }
 
         public int Delete(int? ID, string UserID)
@@ -36,7 +36,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TdsEntry.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TdsReceivable.Delete]", parameters);
         }
 
         public IEnumerable<TdsTransactionEntryModel> GetEntries(int? ID)
@@ -46,17 +46,19 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "GetEntries"),
                new SqlParameter("@ID", ID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsEntry.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsReceivable.Select]", parameters))
             {
                 yield return new TdsTransactionEntryModel()
                 {
+                    ID = dr.GetInt32("ID"),
+                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     InvoiceNumber = dr.GetString("InvoiceNumber"),
                     RateOfTds = dr.GetDecimal("RateOfTds"),
                     TaxableAmount = dr.GetDecimal("TaxableAmount"),
                     TdsAmount = dr.GetDecimal("TdsAmount"),
                     TdsNP = dr.GetString("TdsNP"),
                     TdsNpID = dr.GetInt32("TdsNpID"),
-                    TransactionID = dr.GetInt32("TransactionID"),                    
+                    TransactionID = dr.GetInt32("TrID"),                    
                 };
             }
         }
@@ -69,7 +71,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TdsEntry.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TdsReceivable.Delete]", parameters);
         }
 
         public int Reverse(int? ID, string UserID, string Remarks)
@@ -83,7 +85,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByID"),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsEntry.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsReceivable.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -104,7 +106,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsEntry.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsReceivable.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -117,7 +119,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PID", ID),
                new SqlParameter("@Operation", "ByID")
             };            
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsEntry.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsReceivable.Select]", parameters))
             {
                return GetModel(dr);
             }
@@ -133,7 +135,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyBranchID", PartyBranchID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsEntry.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsReceivable.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -147,7 +149,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@begin", begin),
                new SqlParameter("@end", end),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsEntry.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsReceivable.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -163,7 +165,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsEntry.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsReceivable.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -174,20 +176,19 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@IsTdsPayable", model.IsTdsPayable),
+               new SqlParameter("@IsPayable", model.IsTdsPayable),
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@DocumentDate", model.DocumentDate),
-               new SqlParameter("@DocumentNumber", model.DocumentNumber),
+               new SqlParameter("@DocumentDate", model.DocumentDate),               
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
-               new SqlParameter("@Expenses", model.Tds.ToDataTable()),
+               new SqlParameter("@Entries", model.Tds.ToDataTable()),
                new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@PartyID", model.Party.PartyID),
-               new SqlParameter("@PartyCode", model.Party.PartyCode),
+               new SqlParameter("@PartyCoaID", model.PartyCoaID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsEntry.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TdsReceivable.Update]", parameters))
             {
                 model = GetModel(dr);
             }
@@ -199,10 +200,11 @@ namespace ArmsServices.DataServices
             return new TdsTransactionModel
             {
                 ID = dr.GetInt32("ID"),
-                IsTdsPayable = dr.GetBoolean("IsTdsPayable"),
+                IsTdsPayable = dr.GetBoolean("IsPayable"),
+                PartyCoaID = dr.GetInt32("PartyCoaID"),
                 BranchID = dr.GetInt32("BranchID"),
-                DocumentDate = dr.GetDateTime("DocDate"),
-                DocumentNumber = dr.GetString("DocNumber"),
+                DocumentDate = dr.GetDateTime("DocumentDate"),
+                DocumentNumber = dr.GetString("DocumentNumber"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 MID = dr.GetInt32("MID"),
