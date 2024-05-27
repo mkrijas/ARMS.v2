@@ -50,13 +50,15 @@ namespace ArmsServices.DataServices
             {
                 yield return new TdsTransactionEntryModel()
                 {
+                    ID = dr.GetInt32("ID"),
+                    InvoiceDate = dr.GetDateTime("InvoiceDate"),
                     InvoiceNumber = dr.GetString("InvoiceNumber"),
                     RateOfTds = dr.GetDecimal("RateOfTds"),
                     TaxableAmount = dr.GetDecimal("TaxableAmount"),
                     TdsAmount = dr.GetDecimal("TdsAmount"),
                     TdsNP = dr.GetString("TdsNP"),
                     TdsNpID = dr.GetInt32("TdsNpID"),
-                    TransactionID = dr.GetInt32("TransactionID"),                    
+                    TransactionID = dr.GetInt32("TrID"),                    
                 };
             }
         }
@@ -182,7 +184,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Expenses", model.Tds.ToDataTable()),
                new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@PartyID", model.Party.PartyID),
-               new SqlParameter("@PartyCode", model.Party.PartyCode),
+               new SqlParameter("@PartyCoaID", model.PartyCoaID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -200,6 +202,7 @@ namespace ArmsServices.DataServices
             {
                 ID = dr.GetInt32("ID"),
                 IsTdsPayable = dr.GetBoolean("IsTdsPayable"),
+                PartyCoaID = dr.GetInt32("PartyCoaID"),
                 BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),

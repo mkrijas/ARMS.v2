@@ -34,6 +34,7 @@ namespace ArmsServices.DataServices
         int? GetRenterOtherCoaID(int? RenterID);
         bool IsLocal(int? PartyID, int? BranchID);
         int? GetPartyCoaID(int? PartyID, string BusinessNature, string NatureOfTransaction);
+        int? GetPartyDefaultCoaID(int? PartyID);
         IEnumerable<int> GetAllocatedBranches(int PartyID);
         int AddToBranch(int? PartyID, int? BranchID, string UserID);
         int RemoveFromBranch(int? PartyID, int? BranchID, string UserID);   

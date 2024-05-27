@@ -370,7 +370,22 @@ namespace ArmsServices.DataServices
             return (branchState != null && partyState != null && branchState == partyState); // branchState.Equals(partyState);
         }
 
-
+        public int? GetPartyDefaultCoaID(int? PartyID)
+        {
+            var BusinessNature = SelectByID(PartyID).NatureOfBusiness;
+            switch (BusinessNature)
+            {
+                case "Supplier":
+                    return GetVendorPayableCoaID(PartyID);
+                case "Customer":
+                    return GetCustomerReceivableCoaID(PartyID);
+                case "Renter":
+                    return GetRenterRentCoaID(PartyID);
+                case "SisterConcern":
+                    return GetSisterTradeCoaID(PartyID);
+            }
+            return null;
+        }
 
         public int? GetPartyCoaID(int? PartyID, string BusinessNature, string NatureOfTransaction)
         {
@@ -482,6 +497,6 @@ namespace ArmsServices.DataServices
             {
                 yield return reader.GetString("Title");
             }
-        }
+        }        
     }
 }
