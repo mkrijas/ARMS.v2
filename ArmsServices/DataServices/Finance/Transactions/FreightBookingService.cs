@@ -348,7 +348,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@PartyID", model.Party?.PartyID),
                new SqlParameter("@OrderID", (model.Order?.OrderID)??0),
                new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
-               new SqlParameter("@TruckID", model.Truck.TruckID),
+               new SqlParameter("@TruckID", model.Truck?.TruckID),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@FilePath", model.FileName),
