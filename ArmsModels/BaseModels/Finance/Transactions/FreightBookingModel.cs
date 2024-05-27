@@ -19,6 +19,7 @@ namespace ArmsModels.BaseModels
         public DateTime? DocFromDate { get; set; }
         [Required]
         public DateTime? DocToDate { get; set; }
+        public TruckModel Truck { get; set; } = new();
         public PartyModel Party { get; set; } = new();     
         [Required]
         public OrderModel Order { get; set; }
@@ -69,6 +70,7 @@ namespace ArmsModels.BaseModels
         public int? ConsolidatedDraftBillID { get; set; }
         public virtual DateTime? BillDate { get; set; }
         public virtual DateTime? InvoiceDate { get; set; }
+        public virtual string TruckRegNo { get; set; }
         public virtual string BillNumber { get; set; }
         public virtual string PassNumber { get; set; }
         public virtual string ConsigneeName { get; set; }
