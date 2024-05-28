@@ -306,7 +306,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DraftBillID", model.DraftBillID),
                new SqlParameter("@OrderID", model.OrderID),
                new SqlParameter("@PartyID", model.Party?.PartyID),
-               new SqlParameter("@PartyID", model.Party?.PartyID),
                new SqlParameter("@PartyCoaID", model.PartyCoa),
                new SqlParameter("@TariffTypeID", model.TariffType.TariffTypeID),
                new SqlParameter("@UsageCode", model.TariffType.UsageCode),
