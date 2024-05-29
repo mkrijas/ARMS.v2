@@ -99,19 +99,19 @@ namespace ArmsServices.DataServices.Inventory
             }
         }
 
-        public IEnumerable<InventoryRequestModel> SelectRequestReleaseByTruckID(int? TruckID)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@Operation", "ByTruckID"),
-               new SqlParameter("@ID", TruckID),
-            };
+        //public IEnumerable<InventoryRequestModel> SelectRequestReleaseByTruckID(int? TruckID)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@Operation", "ByTruckID"),
+        //       new SqlParameter("@ID", TruckID),
+        //    };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Request.Release.Select]", parameters))
-            {
-                yield return GetModelRequestRelease(dr);
-            }
-        }
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Request.Release.Select]", parameters))
+        //    {
+        //        yield return GetModelRequestRelease(dr);
+        //    }
+        //}
 
         public InventoryRequestModel SelectByID(int? ID)
         {

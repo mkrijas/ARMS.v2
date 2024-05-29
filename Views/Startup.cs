@@ -245,6 +245,7 @@ namespace Views
             services.AddScoped<IReverseEntryService, ReverseEntryService>();
             services.AddScoped<ISundryMaintenanceService, SundryMaintenanceService>();
             services.AddScoped<ItdsEntryService, TdsEntryService>();
+            services.AddScoped<IGeneralLedgerTransferService, GeneralLedgerTransferService>();
 
 
             //----IBASE GROUP
@@ -259,6 +260,7 @@ namespace Views
             services.AddScoped<IbaseInterface<SundryMaintenanceModel>, SundryMaintenanceService>();
             services.AddScoped<IbaseInterface<InterBranchReimbursementModel>, ReimbursementService>();
             services.AddScoped<IbaseInterface<TdsTransactionModel>, TdsEntryService>();
+            services.AddScoped<IbaseInterface<GeneralLedgerTransferModel>, GeneralLedgerTransferService>();
 
 
             //------------FINANCE POSTING GROUP-------------------

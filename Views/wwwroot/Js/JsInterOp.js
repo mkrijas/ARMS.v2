@@ -42,7 +42,7 @@ function runReport(url) {
 }
 
 
-function focusElement (id) {
+function focusElement(id) {
     const element = document.getElementById(id);
     element.focus();
 }
@@ -50,7 +50,7 @@ function focusElement (id) {
 
 window.BlazorHelpers = {
     RedirectTo: function (path) {
-       $.post(path);
+        $.post(path);
     }
 };
 

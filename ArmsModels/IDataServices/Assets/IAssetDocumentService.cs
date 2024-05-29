@@ -26,5 +26,6 @@ namespace ArmsServices.DataServices
         bool IsValid(AssetDocumentModel model, DateTime? DateToCheck);
         bool? IsCostCenterIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID);
         bool? IsDimensionIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID);
+        IEnumerable<AssetDocumentModel> GetNewFileName();
     }
 }

@@ -41,9 +41,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public decimal? TaxableAmount { get; set; }
         [Required]
-        public int? RateOfTds { get; set; }
+        public decimal? RateOfTds { get; set; }
         [Required]
-        public int? TdsAmount { get; set; }       
+        public decimal? TdsAmount { get; set; }       
 
     }
 }

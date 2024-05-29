@@ -30,6 +30,7 @@ namespace ArmsModels.BaseModels
         public bool IsClosed { get; set; }
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
+        public string RefInvoiceNo { get; set; }
         [ValidateComplexType]
         public List<InventoryItemEntryModel> Items { get; set; } = new();
         public string Status
