@@ -58,7 +58,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByApproved"),
                new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@IsInterBranch", IsInterBranch),
+               new SqlParameter("@InterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
             };
@@ -76,7 +76,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "ByUnApproved"),
                new SqlParameter("@BranchID", BranchID),
-               new SqlParameter("@IsInterBranch", IsInterBranch),
+               new SqlParameter("@InterBranch", IsInterBranch),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm)
             };
@@ -108,17 +108,18 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@LedgerTransferID", model.LedgerTransferID),
                new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@UsageCode", model.UsageCode.Id),
+               new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
+               new SqlParameter("@UsageCode", model.UsageCode.UsageCode),
                new SqlParameter("@OtherBranchID", model.OtherBranchID),
-               new SqlParameter("@OtherUsageCode", model.OtherUsageCode.Id),
+               new SqlParameter("@OtherUsageCode", model.OtherUsageCode.UsageCode),
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocNumber", model.DocumentNumber),
-               new SqlParameter("@Referece", model.Reference),
+               new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@DrCrType", model.DrCrType),
-               //new SqlParameter("@IsInterBranch", model.IsInterBranch),
-               //new SqlParameter("@InterBranchTranID", model.InterBranchTranID),
+               new SqlParameter("@IsInterBranch", model.IsInterBranch),
+               new SqlParameter("@InterBranchTranID", model.InterBranchTranID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@RecordStatus", model.UserInfo.RecordStatus),
                new SqlParameter("@TimeStamp", model.UserInfo.TimeStampField),
@@ -135,20 +136,30 @@ namespace ArmsServices.DataServices
             {
                 LedgerTransferID = dr.GetInt32("LedgerTransferID"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
-                DocumentNumber = dr.GetString("DocumentNumber"),
+                DocumentNumber = dr.GetString("DocNumber"),
                 BranchID = dr.GetInt32("BranchID"),
-                OtherBranchName = dr.GetString("OtherBranchName"),
+                OtherBranchID = dr.GetInt32("OtherBranchID"),
+                //OtherBranchName = dr.GetString("OtherBranchName"),
+                UsageCode = new GstUsageCodeModel
+                { 
+                    UsageCode = dr.GetString("UsageCode"),
+                    Description = dr.GetString("UsageCodeDesc"),
+                },
+                OtherUsageCode = new GstUsageCodeModel
+                {
+                    UsageCode = dr.GetString("OtherUsageCode"),
+                    Description = dr.GetString("OtherUsageCodeDesc"),
+                },
                 MID = dr.GetInt32("MID"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
-                Reference = dr.GetString("Referece"),
+                Reference = dr.GetString("Reference"),
                 FileName = dr.GetString("FilePath"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
                 DrCrType = dr.GetInt32("DrCrType"),
-                //InterBranchTranID = dr.GetInt32("InterBranchTranID"),
-                //IsInterBranch = dr.GetBoolean("IsInterBranch"),
-                OtherBranchID = dr.GetInt32("OtherBranch"),
+                InterBranchTranID = dr.GetInt32("InterBranchTranID"),
+                IsInterBranch = dr.GetBoolean("IsInterBranch"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
