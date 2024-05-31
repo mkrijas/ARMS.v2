@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
-
 namespace ArmsServices.DataServices
 {
     public interface ITripService
@@ -25,5 +24,6 @@ namespace ArmsServices.DataServices
         IAsyncEnumerable<TripModel> SearchTrips(int? TruckID, int? BranchID, string TripNumberSearchString, DateTime? FromDate, DateTime? ToDate);
         IEnumerable<object> GetOutstandingBills(long? TripID);
         IEnumerable<GcTariffModel> GetTariffs(long? TripID);
+        IEnumerable<EventCardModel> GetEventList(long? TripID);
     }
 }

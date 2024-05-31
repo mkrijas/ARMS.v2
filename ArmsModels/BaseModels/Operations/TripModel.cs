@@ -39,7 +39,6 @@ namespace ArmsModels.BaseModels
         public EventModel StartEvent { get; set; }
     }
 
-
     public class TripInfoModel
     {
         public long? TripID { get; set; }
@@ -54,11 +53,11 @@ namespace ArmsModels.BaseModels
         public decimal? Expenses { get; set; }
         public string Gcs { get; set; }
     }
+
     public class TripFuelModel
     {
         DateTime? docdate = DateTime.Today;
         decimal? amount;
-
         public long? TripFuelID { get; set; }
         public string ItemType { get; set; }
         [Required]
@@ -115,5 +114,17 @@ namespace ArmsModels.BaseModels
         public string DriverMobile { get; set; }
         public string AccountCode { get; set; }
         public string AccountName { get; set; }
+    }
+
+    public class EventCardModel
+    {
+        public long? EventID { get; set; }
+        public string EventName { get; set; }
+        public string PlaceName { get; set; }
+        public DateTime? EventDateTime { get; set; }
+        public decimal? EventDateTimeDiff { get; set; }
+        public long? KMReading { get; set; }
+        public long? KMReadingDiff { get; set; }
+        public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 }

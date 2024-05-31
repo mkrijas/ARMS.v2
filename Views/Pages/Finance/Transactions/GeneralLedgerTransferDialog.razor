@@ -2,6 +2,7 @@
 
 @inject IBranchService branchService
 @inject IGeneralLedgerTransferService Iservice
+@inject IInterBranchMappingService intermappingIservice
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Ledger Transfer" formID="ledgerTransferForm" DocumentDetails="DocInfo" model="@_model" _busy="_busy">
     <FormContent>
@@ -33,7 +34,7 @@
                         <MudCard>
                             <MudCardContent>
                                 <MudItem xs="12" md="12">
-                                    <MudSelect ReadOnly="ReadOnly" Label="Select Other Branch" @bind-Value="_model.OtherBranchID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                                    <MudSelect ReadOnly="ReadOnly" Label="Target Branch" Value="_model.OtherBranchID" T="int?" ValueChanged="OtherBranchChanged" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                                         @foreach (var ditem in branches)
                                         {
                                             <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
@@ -42,7 +43,7 @@
                                 </MudItem>
                                 <br />
                                 <MudItem xs="12" md="12">
-                                    <UsageCodeSelector @bind-Value="@_model.OtherUsageCode" LabelName="Other Usage Code" />
+                                    <UsageCodeSelector @bind-Value="@_model.OtherUsageCode" LabelName="Target Usage Code" />
                                 </MudItem>
                             </MudCardContent>
                         </MudCard>
@@ -53,9 +54,20 @@
                     <MudItem xs="12" md="6">
                         <MudRadioGroup @bind-Value="@_model.DrCrType">
                             <MudRadio T="int?" Value="1" Color="Color.Primary">Debit</MudRadio>
-                            <MudRadio T="int?" Value="-1" Color="Color.Secondary">Credit</MudRadio>
+                            <MudRadio T="int?" Value="(-1)" Color="Color.Secondary">Credit</MudRadio>
                         </MudRadioGroup>
                     </MudItem>
+                    @if(_model.IsInterBranch)
+                    {
+                    <MudItem xs="12" md="6">
+                        <MudSelect Label="Transaction Type" ReadOnly="ReadOnly" @bind-Value="_model.InterBranchTranID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary" For="@(()=> _model.InterBranchTranID)">
+                            @foreach (var ditem in transactionTypeList)
+                            {
+                                <MudSelectItem Value="@ditem.ID">@ditem.TransactionTypeName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    }
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="_model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _model.Narration)"></MudTextField>
                     </MudItem>
@@ -75,6 +87,7 @@
     public override GeneralLedgerTransferModel model { get; set; }
     private GeneralLedgerTransferModel _model { get { return model; } set { model = value; DocInfo.DocumentID = value.LedgerTransferID; } }
     private List<BranchModel> branches = new();
+    private List<InterBranchTransactionTypeModel> transactionTypeList = new();
     private string hmbarnchName;
     private int? BranchID = null;
     private string UserID = null;
@@ -94,14 +107,18 @@
         UserID = user.Identity.Name;
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
         hmbarnchName = brancIDString.ToString();
+        _model = (GeneralLedgerTransferModel) model.Clone();
         _model.BranchID = BranchID;
         _model.NatureOfTransaction = "Ledger Transfer";
         branches = branchService.Select().ToList();
+        transactionTypeList = intermappingIservice.GetTypes().ToList();
     }
 
-    public void OtherBranchChanges(int? otherBranchID)
+    public void OtherBranchChanged(int? otherBranchID)
     {
         _model.OtherBranchID = otherBranchID;
+        _model.IsInterBranch = _model.BranchID != _model.OtherBranchID;
+        StateHasChanged();
     }
 
     protected override async Task<int> Update(GeneralLedgerTransferModel editModel)
