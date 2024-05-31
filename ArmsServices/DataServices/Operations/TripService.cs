@@ -184,6 +184,39 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public IEnumerable<EventCardModel> GetEventList(long? TripID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripID", TripID),
+               new SqlParameter("@Operation", "EventDetailsList"),
+            };
+
+            foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trip.Select]", parameters))
+            {
+                yield return GetEventDetailsModel(reader);
+            }
+        }
+
+        private EventCardModel GetEventDetailsModel(IDataRecord reader)
+        {
+            return new EventCardModel
+            {
+                EventID = reader?.GetInt64("EventID"),
+                EventName = reader.GetString("EventTypeName"),
+                PlaceName = reader.GetString("PlaceName"),
+                EventDateTime = reader?.GetDateTime("EventDateTime"),
+                EventDateTimeDiff = reader?.GetInt32("EventDateTimeDiff"),
+                KMReading = reader?.GetInt64("KMReading"),
+                KMReadingDiff = reader?.GetInt64("KMReadingDiff"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = reader.GetByte("RecordStatus"),
+                    TimeStampField = reader.GetDateTime("TimeStamp"),
+                    UserID = reader.GetString("UserID"),
+                },
+            };
+        }
 
         public TripInfoModel GetTripInfo(long? TripID)
         {
