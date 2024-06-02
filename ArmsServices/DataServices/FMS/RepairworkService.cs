@@ -94,7 +94,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RepairJobID", model.RepairJobID),
                new SqlParameter("@Title", model.Title),
                new SqlParameter("@MechanicalHours", model.MechanicalHours),
-               new SqlParameter("@RepairJobGupID", model.JobGroup.ID),
+               new SqlParameter("@RepairJobGroupID", model.JobGroup.ID),
                new SqlParameter("@RepairJobSubgroupID", model.JobSubGroup.ID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
