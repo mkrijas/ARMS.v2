@@ -206,7 +206,8 @@ namespace ArmsServices.DataServices
                 EventName = reader.GetString("EventTypeName"),
                 PlaceName = reader.GetString("PlaceName"),
                 EventDateTime = reader?.GetDateTime("EventDateTime"),
-                EventDateTimeDiff = reader?.GetDecimal("EventDateTimeDiff"),
+                //EventDateTimeDiff = reader?.GetDecimal("EventDateTimeDiff"),
+                EventDateTimeDiff = reader.GetString("EventDateTimeDiff"),
                 KMReading = reader?.GetInt64("KMReading"),
                 KMReadingDiff = reader?.GetInt64("KMReadingDiff"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
