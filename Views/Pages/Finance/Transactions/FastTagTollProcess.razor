@@ -8,6 +8,7 @@
 @using NPOI.HSSF.UserModel;
 @using NPOI.SS.UserModel;
 @using OfficeOpenXml;
+@using OfficeOpenXml.Style
 @using System.Threading;
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -16,6 +17,7 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IFastTagService IFTService
+@inject IJSRuntime JSRuntime
 
 <style>
     .mud-table-container {
@@ -74,14 +76,18 @@
                                 </MudGrid>
                             </MudItem>
                             <MudItem xs="6" Style="align-self: flex-end; text-align: right;">
+                                @if (collection.Count != 0)
+                                {
+                                    <MudButton OnClick="ExcelDownload" Style="width: 24%;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Secondary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
+                                }
                                 @if (!Readonly)
                                 {
-                                    <MudButton Style="width: 24%;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-                                    <MudButton Style="width: 24%; margin-left: 1%;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+                                    <MudButton Style="width: 24%; margin-left: 12px;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+                                    <MudButton Style="width: 24%; margin-left: 1%" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
                                 }
                                 else
                                 {
-                                    <MudButton Style="width: 24%; margin-left: 76%; height: 110%;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+                                    <MudButton Style="width: 24%; margin-left: 12px;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
                                 }
                             </MudItem>
                         </MudGrid>
@@ -97,7 +103,7 @@
             <MudItem Style="margin-top:30px; text-align-last: center;">
                 <AutherizationStatusComponent DocTypeID="@FasTagDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="MainModel.FastTagProcessID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
             </MudItem>
-            @if(MainModel.AuthLevelId == 99)
+            @if (MainModel.AuthLevelId == 99)
             {
                 <AccountInfoDialog MID="@MainModel.MID"></AccountInfoDialog>
             }
@@ -119,7 +125,7 @@
                             {
                                 <MudTh><MudCheckBox Value="allselected" ValueChanged="(bool isChecked) => SelectAll(isChecked)"></MudCheckBox></MudTh>
                             }
-                            <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.TransactionDateTime)" InitialDirection="SortDirection.Ascending"> DateTime</MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.TransactionDateTime)" InitialDirection="SortDirection.Ascending">Transaction DateTime</MudTableSortLabel></MudTh>
                             <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.NumberPlate)" InitialDirection="SortDirection.Ascending">Licence Plate No</MudTableSortLabel></MudTh>
                             <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.BranchName)" InitialDirection="SortDirection.Ascending">Branch Name</MudTableSortLabel></MudTh>
                             <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.TripNumber)" InitialDirection="SortDirection.Ascending">Trip No</MudTableSortLabel></MudTh>
@@ -402,6 +408,72 @@
         catch (Exception ex)
         {
             snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ExcelDownload()
+    {
+        var fileName = "FasTagToll ProcessList.xlsx";
+        var sheetName = "Sheet1"; // Change the sheet name as needed
+        var fileBytes = GenerateExcelBytes(sheetName);
+
+        await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
+    }
+
+    private byte[] GenerateExcelBytes(string sheetName)
+    {
+        using (var package = new ExcelPackage())
+        {
+            var worksheet = package.Workbook.Worksheets.Add(sheetName);
+
+            // Add column headers
+            worksheet.Cells[1, 1].Value = "Transaction DateTime";
+            worksheet.Cells[1, 2].Value = "Licence Plate No";
+            worksheet.Cells[1, 3].Value = "Branch Name";
+            worksheet.Cells[1, 4].Value = "Trip No";
+            worksheet.Cells[1, 5].Value = "Destination";
+            worksheet.Cells[1, 6].Value = "PlazaCode";
+            worksheet.Cells[1, 7].Value = "Transaction Description";
+            worksheet.Cells[1, 8].Value = "Unique Transaction ID";
+            worksheet.Cells[1, 9].Value = "Reimbursable";
+            worksheet.Cells[1, 10].Value = "Amount(Dr)";
+            for (int i = 1; i <= 10; i++)
+            {
+                worksheet.Cells[1, i].Style.Font.Bold = true;
+            }
+
+            worksheet.Column(1).Style.Numberformat.Format = "dd-MM-yyyy hh:mm AM/PM"; // Date format
+            worksheet.Column(10).Style.Numberformat.Format = "0.00"; // Integer format
+
+            // Add data rows
+            int row = 2;
+            foreach (var item in collection)
+            {
+                worksheet.Cells[row, 1].Value = item.TransactionDateTime;
+                worksheet.Cells[row, 2].Value = item.NumberPlate;
+                worksheet.Cells[row, 3].Value = item.BranchName;
+                worksheet.Cells[row, 4].Value = item.TripNumberDisplay;
+                worksheet.Cells[row, 5].Value = item.Destination;
+                worksheet.Cells[row, 6].Value = item.PlazaCode;
+                worksheet.Cells[row, 7].Value = item.Description;
+                worksheet.Cells[row, 8].Value = item.TransactionID;
+                worksheet.Cells[row, 9].Value = item.Reimbursable;
+                worksheet.Cells[row, 10].Value = item.DebitAmount;
+
+                row++;
+            }
+
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+
+            // Save the Excel package to a memory stream
+            using (var stream = new MemoryStream())
+            {
+                package.SaveAs(stream);
+                return stream.ToArray();
+            }
         }
     }
 }
