@@ -8,10 +8,10 @@
 
  *@
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Reimbursement/Cross Charge" formID="IReimForm" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Reimbursement/Cross Charge" formID="IReimForm" model="@_model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
-            <EditForm id="IReimForm" OnValidSubmit="OnValidSubmit" Model="@model">
+            <EditForm id="IReimForm" OnValidSubmit="OnValidSubmit" Model="@_model">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid Spacing="4">
@@ -86,7 +86,7 @@
                                 @if (!ReadOnly)
                                 {
                                     <MudItem xs="3">
-                                    <MudTextField ReadOnly Value="@subModel?.UsageCodeDesc" Label="Home Br UsageCode" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                                    <UsageCodeSelector ReadOnly = "@DisableUsageCodeSelection" Value="@gstusge" ValueChanged="usageChanged" LabelName="Home Br UsageCode"></UsageCodeSelector>
                                 </MudItem>
                                     <MudItem xs="3">
                                         <CostCenterSelector @bind-Value="@subModel.CostCenterID" @bind-ValueText="@subModel.CostCenterDesc" ReadOnly="@ReadOnly"></CostCenterSelector>
@@ -100,7 +100,7 @@
                                      </MudItem>
                                 <MudItem xs="1"></MudItem>
                                 <MudItem xs="3">
-                                    <MudTextField ReadOnly Value="@subModel?.UsageCodeOtherDesc" Label="Target Br UsageCode" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                                    <UsageCodeSelector ReadOnly="@DisableUsageCodeSelection" Value="@gstusgeother" ValueChanged="usageOtherChanged" LabelName="Target Br UsageCode" ></UsageCodeSelector>                               
                                 </MudItem>
                                     <MudItem xs="3">
                                         <CostCenterSelector @bind-Value="@subModel.CostCenterOtherID" @bind-ValueText="@subModel.CostCenterOtherDesc" ReadOnly="@ReadOnly"></CostCenterSelector>
@@ -132,10 +132,11 @@
 @code {
 
     [Parameter]
-    public override InterBranchReimbursementModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.ID; } }
-    private InterBranchReimbursementModel _model;
+    public override InterBranchReimbursementModel model { get; set; }
+    private InterBranchReimbursementModel _model { get { return model; } set { model = value; DocInfo.DocumentID = value.ID; } }
 
     private List<BranchModel> branches = new();
+    private bool DisableUsageCodeSelection = true;
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
@@ -163,7 +164,8 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        InterBranchTranTypes.RemoveAll(x => x.ID != 5 && x.ID != 6);
+        _model = (InterBranchReimbursementModel)model.Clone();
+        InterBranchTranTypes.RemoveAll(x => x.ID != 4 && x.ID != 5 && x.ID != 6);        
         branches = branchService.Select().ToList();
         HomeGst = branchService.GetGstNo(model.BranchID);
         if (model.ID == null)
@@ -201,43 +203,60 @@
         model.Particulars.Clear();
     }
 
+    private void usageOtherChanged(GstUsageCodeModel val)
+    {
+        gstusgeother = val;
+        subModel.UsageCodeOther = val?.UsageCode;
+        subModel.UsageCodeOtherDesc = val?.Description;
+    }
+
+    private void usageChanged(GstUsageCodeModel val)
+    {
+        gstusge = val;
+        subModel.UsageCode = val?.UsageCode;
+        subModel.UsageCodeDesc = val?.Description;
+    }
+
     private void TranTypeChanged(int? ID)
     {
         model.InterBranchTranID = ID;
         if (ID == 6)
         {
-
+            DisableUsageCodeSelection = true;
             gstusgeother =  usageCodeService.SelectByCode(configService.GetByID("CrossChargeExpenseUsageCode").ValueString);
             gstusge =  usageCodeService.SelectByCode(configService.GetByID("CrossChargeIncomeUsageCode").ValueString);
         }
         else if (ID == 5)
         {
+            DisableUsageCodeSelection = true;
             gstusgeother = usageCodeService.SelectByCode(configService.GetByID("ReimbursementExpenseUsageCode").ValueString);
             gstusge = usageCodeService.SelectByCode(configService.GetByID("ReimbursementIncomeUsageCode").ValueString);
         }
-        else
+        else if (ID == 4)
         {
-
+            DisableUsageCodeSelection = false;
+            gstusge = null;
+            gstusgeother = null;
         }
-        subModel.UsageCode = gstusge.UsageCode;
-        subModel.UsageCodeDesc = gstusge.Description;
-        subModel.UsageCodeOther = gstusgeother.UsageCode;
-        subModel.UsageCodeOtherDesc = gstusgeother.Description;
-    }
-
-    void UsageCodeSelected(GstUsageCodeModel u)
-    {
-        gstusge = u;
         subModel.UsageCode = gstusge?.UsageCode;
         subModel.UsageCodeDesc = gstusge?.Description;
-    }
-
-    void UsageCodeOtherSelected(GstUsageCodeModel u)
-    {
-        gstusgeother = u;
         subModel.UsageCodeOther = gstusgeother?.UsageCode;
         subModel.UsageCodeOtherDesc = gstusgeother?.Description;
     }
+
+    // void UsageCodeSelected(GstUsageCodeModel u)
+    // {
+    //     gstusge = u;
+    //     subModel.UsageCode = gstusge?.UsageCode;
+    //     subModel.UsageCodeDesc = gstusge?.Description;
+    // }
+
+    // void UsageCodeOtherSelected(GstUsageCodeModel u)
+    // {
+    //     gstusgeother = u;
+    //     subModel.UsageCodeOther = gstusgeother?.UsageCode;
+    //     subModel.UsageCodeOtherDesc = gstusgeother?.Description;
+    // }
 
     private async Task DeleteExpenses(ReimbursementSubModel i)
     {
