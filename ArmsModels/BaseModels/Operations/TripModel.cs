@@ -122,7 +122,8 @@ namespace ArmsModels.BaseModels
         public string EventName { get; set; }
         public string PlaceName { get; set; }
         public DateTime? EventDateTime { get; set; }
-        public decimal? EventDateTimeDiff { get; set; }
+        //public decimal? EventDateTimeDiff { get; set; }
+        public string EventDateTimeDiff { get; set; }
         public long? KMReading { get; set; }
         public long? KMReadingDiff { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }

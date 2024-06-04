@@ -274,6 +274,7 @@ namespace DAL.DataServices.Finance.Transactions
                 ProcessDocumentNumber = dr.GetString("ProcessDocNumber"),
                 TotalAmount = dr?.GetDecimal("TotalAmount"),
                 DocumentDate = dr?.GetDateTime("DocDate"),
+                MID = dr?.GetInt32("MID"),
                 Narration = dr.GetString("Narration"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 AuthStatus = dr.GetString("AuthStatus"),
