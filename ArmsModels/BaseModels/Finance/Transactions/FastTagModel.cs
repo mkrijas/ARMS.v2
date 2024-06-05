@@ -111,7 +111,6 @@ namespace Core.BaseModels.Finance.Transactions
         public string TransactionID { get; set; }
         public string TripNumberDisplay
         {
-            //get => _tripNumberDisplay;
             get
             {
                 if (TripPrefix == null || TripNumber == null)
@@ -125,7 +124,6 @@ namespace Core.BaseModels.Finance.Transactions
             }
             set
             {
-                //_tripNumberDisplay = value;
                 SetTripPrefixAndTripNumber(value);
             }
         }
@@ -134,8 +132,6 @@ namespace Core.BaseModels.Finance.Transactions
         [Required]
         public BranchModel Branch { get; set; }
         public UserInfoModel UserInfo { get; set; } = new UserInfoModel();
-
-        //private string _tripNumberDisplay;
         private void SetTripPrefixAndTripNumber(string tripNumberDisplay)
         {
             if (string.IsNullOrEmpty(tripNumberDisplay))
