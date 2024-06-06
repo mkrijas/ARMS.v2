@@ -5,6 +5,7 @@
 @inject ITripFuelService tripFuelIservice
 @inject IConfigTable configTable
 @inject IGstUsageIDService usage
+@inject IDialogService DialogService
 
 @* @inject IGstUsageIDService usageIservice
 @inject ITdsRateService tdsIService
@@ -136,8 +137,8 @@
 
 @code {
 
-        [Parameter]
-        public override OpTranModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.OpTranID; } }
+    [Parameter]
+    public override OpTranModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.OpTranID; } }
     private OpTranModel _model;
 
     MudAutocomplete<OperationPostingGroupModel> OperationTitleControl;
@@ -281,9 +282,23 @@
     {
         if (model.OpTranID is null || model.OpTranID == 0)
         {
+            bool? yesno = false;
             if (AdvanceBalance > 0)
             {
-                AdvanceReturnAmount = model.TotalAmount;
+                {
+                    yesno = await DialogService.ShowMessageBox(
+                    "Advance",
+                    "Do you want to Use This Advance",
+                    yesText: "Yes!", noText: "No");
+                }
+                if (yesno == null)
+                {
+                    return 0;
+                }
+                if (yesno == true)
+                {
+                    AdvanceReturnAmount = model.TotalAmount;
+                }
             }
             else
             {
@@ -295,7 +310,7 @@
                 //var AdvanceUsageCode = configTable.GetTripAdvanceUsageCode();
                 model.Transactions.Add(new OpTranSubModel()
                     {
-                        Amount = -1 * AdvanceReturnAmount,                        
+                        Amount = -1 * AdvanceReturnAmount,
                         CoaID = Advance.CoaID,
                         ExpenseUsageCode = Advance.UsageCode,
                         Reference = "Advance Reimbursed",
