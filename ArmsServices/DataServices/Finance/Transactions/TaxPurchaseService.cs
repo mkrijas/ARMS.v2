@@ -150,7 +150,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<TaxPurchaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type)
+        public IEnumerable<TaxPurchaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type, string TaxPurchaseType)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -158,7 +158,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm),
-               new SqlParameter("@Type", Type)
+               new SqlParameter("@Type", Type),
+               new SqlParameter("@TaxPurchaseType", TaxPurchaseType)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Select]", parameters))
@@ -167,7 +168,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type)
+        public IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type, string TaxPurchaseType)
 
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -176,7 +177,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
                new SqlParameter("@searchTerm", searchTerm),
-               new SqlParameter("@Type", Type)
+               new SqlParameter("@Type", Type),
+               new SqlParameter("@TaxPurchaseType", TaxPurchaseType)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Select]", parameters))
@@ -254,6 +256,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@Assets", model.Assets.ToDataTable()),
+               new SqlParameter("@TaxPurchaseType", model.TaxPurchaseType )
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.TaxPurchase.Update]", parameters))
             {

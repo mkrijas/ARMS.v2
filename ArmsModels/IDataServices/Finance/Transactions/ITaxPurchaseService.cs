@@ -19,8 +19,8 @@ namespace ArmsServices.DataServices
         int Delete(int? ID, string UserID);  //Delete
         //int RemoveFile(int? ID, string UserID);  //Delete
         IEnumerable<TaxPurchaseModel> Select();
-        IEnumerable<TaxPurchaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type);
-        IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type);
+        IEnumerable<TaxPurchaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type, string TaxPurchaseType);
+        IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type, string TaxPurchaseType);
         IEnumerable<TaxPurchaseModel> SelectByParty(int? PartyID, int? PartyBranchID);
         IEnumerable<TaxPurchaseModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? PID);
