@@ -79,15 +79,19 @@
                                 @if (collection.Count != 0)
                                 {
                                     <MudButton OnClick="ExcelDownload" Style="width: 24%;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Secondary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
+                                    @if (!Readonly)
+                                    {
+                                        <MudButton Style="width: 24%; margin-left:6px;" Variant="Variant.Filled" Color="Color.Dark" OnClick="EditTripNumber">Edit TripNumber</MudButton>
+                                    }
                                 }
                                 @if (!Readonly)
                                 {
-                                    <MudButton Style="width: 24%; margin-left: 12px;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
-                                    <MudButton Style="width: 24%; margin-left: 1%" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+                                    <MudButton Style="width: 24%; margin-left:6px;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+                                    <MudButton Style="width: 24%; margin-left:2px;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
                                 }
                                 else
                                 {
-                                    <MudButton Style="width: 24%; margin-left: 12px;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+                                    <MudButton Style="width: 24%; margin-left:6px;" Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Close</MudButton>
                                 }
                             </MudItem>
                         </MudGrid>
@@ -369,6 +373,54 @@
             return true;
         }
         return model.NumberPlate?.Contains(searchplatenumber, StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    public async Task EditTripNumber()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Small };
+        var dialog = DialogService.Show<FastTagBranchTripNumberDialog>("Edit TripNumber", options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            var data = (FastTagBranchEditModel)result.Data;
+            try
+            {
+                FastTagModel itemToUpdate = collection.Find(x =>
+                {
+                    string cleanedTransactionID1 = data.TransactionID?.Trim();
+                    string cleanedTransactionID2 = x.TransactionID?.Trim();
+
+                    return string.Equals(cleanedTransactionID1, cleanedTransactionID2, StringComparison.OrdinalIgnoreCase);
+                });
+                if (itemToUpdate != null)
+                {
+                    data.FastTagTollID = itemToUpdate.FastTagTollID;
+                    data.UserInfo.UserID = user.Identity.Name;
+
+                    bool a = IFTService.UpdateTripNumber(data);
+                    if (a)
+                    {
+                        itemToUpdate.TripPrefix = data.TripPrefix;
+                        itemToUpdate.TripNumber = data.TripNumber;
+                        StateHasChanged();
+                        snackbar.Add("Updated Successfully", Severity.Success);
+                    }
+                }
+                else
+                {
+                    bool? message = await DialogService.ShowMessageBox(
+                        "Oops !",
+                        (MarkupString)$"TransactionID : <b>{data.TransactionID}</b> do not exist in the collection !");
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
     }
 
     // void UpdateFilteredCollection(string searchString)

@@ -216,15 +216,33 @@ namespace DAL.DataServices.Finance.Transactions
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "BranchEdit"),
                new SqlParameter("@FastTagTollID", model.FastTagTollID),
                new SqlParameter("@BranchID", model.Branch.BranchID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.BranchUpdate]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.BranchOrTripNoUpdate]", parameters))
             {
                 return null;
             }
             return null;
+        }
+
+        public bool UpdateTripNumber(FastTagBranchEditModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "TripNumberEdit"),
+               new SqlParameter("@FastTagTollID", model.FastTagTollID),
+               new SqlParameter("@TripNumber", model.TripNumber),
+               new SqlParameter("@TripPrefix", model.TripPrefix),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.BranchOrTripNoUpdate]", parameters))
+            {
+                return true;
+            }
+            return true;
         }
 
         public int Approve(int? FastTagProcessID, string UserID, string Remarks)

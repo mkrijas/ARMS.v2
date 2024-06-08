@@ -81,7 +81,7 @@ namespace Core.BaseModels.Finance.Transactions
         {
             get
             {
-                if (TripPrefix == null || TripNumber== null)
+                if (TripPrefix == null || TripNumber == null)
                 {
                     return null;
                 }
@@ -109,10 +109,63 @@ namespace Core.BaseModels.Finance.Transactions
         public int? FastTagTollID { get; set; }
         [Required]
         public string TransactionID { get; set; }
+        public string TripNumberDisplay
+        {
+            get
+            {
+                if (TripPrefix == null || TripNumber == null)
+                {
+                    return "";
+                }
+                else
+                {
+                    return TripPrefix + TripNumber.ToString().PadLeft(4, '0');
+                }
+            }
+            set
+            {
+                SetTripPrefixAndTripNumber(value);
+            }
+        }
+        public string TripPrefix { get; set; }
+        public long? TripNumber { get; set; }
         [Required]
         public BranchModel Branch { get; set; }
         public UserInfoModel UserInfo { get; set; } = new UserInfoModel();
+        private void SetTripPrefixAndTripNumber(string tripNumberDisplay)
+        {
+            if (string.IsNullOrEmpty(tripNumberDisplay))
+            {
+                TripPrefix = null;
+                TripNumber = null;
+                return;
+            }
+
+            // Find the last '/' in the string
+            int lastSlashIndex = tripNumberDisplay.LastIndexOf('/');
+            if (lastSlashIndex != -1 && lastSlashIndex < tripNumberDisplay.Length - 1)
+            {
+                TripPrefix = tripNumberDisplay.Substring(0, lastSlashIndex + 1);
+                string tripNumberString = tripNumberDisplay.Substring(lastSlashIndex + 1);
+
+                if (long.TryParse(tripNumberString, out long tripNumber))
+                {
+                    TripNumber = tripNumber;
+                }
+                else
+                {
+                    TripPrefix = null;
+                    TripNumber = null;
+                }
+            }
+            else
+            {
+                TripPrefix = null;
+                TripNumber = null;
+            }
+        }
     }
+
 
     public static class EncryptionHelper
     {

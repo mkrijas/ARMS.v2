@@ -178,7 +178,7 @@ namespace ArmsServices.DataServices
                 }
                 bool IsFirst = set.Gcs.Count == 0;
 
-                set.SetBillNumber = set.SetBillNumber + (IsFirst ? null : ", ") + gc.BillNumber;
+                set.SetBillNumber = set.SetBillNumber + (IsFirst ? string.Empty : ", ") + "(" + gc.BillNumber + " - " + gc.BillDate?.ToString("dd/MM/yy") + ")";
                 set.SetGcNumber = set.SetGcNumber + (IsFirst ? gc.GcPrefix : ", ") + gc.GcNumber;
                 set.TotalBillQuantity = (set.TotalBillQuantity ?? 0) + gc.BillQuantity;
                 set.TotalUnloadingQuantity = (set.TotalUnloadingQuantity ?? 0) + gc.UnloadedQuantity;
