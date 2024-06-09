@@ -80,6 +80,8 @@ namespace ArmsModels.BaseModels
         public virtual string TariffTypeName { get; set; }
         public virtual bool IsChecked { get; set; }
         public virtual string PaymentMode { get; set; }
+        public virtual string DistrictName { get; set; }
+        public virtual string StateName { get; set; }
     }
 
     public class RefModel
