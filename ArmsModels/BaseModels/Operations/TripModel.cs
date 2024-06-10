@@ -120,6 +120,7 @@ namespace ArmsModels.BaseModels
     {
         public long? EventID { get; set; }
         public string EventName { get; set; }
+        public string NextEventName { get; set; }
         public string PlaceName { get; set; }
         public DateTime? EventDateTime { get; set; }
         //public decimal? EventDateTimeDiff { get; set; }

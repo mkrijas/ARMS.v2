@@ -204,9 +204,9 @@ namespace ArmsServices.DataServices
             {
                 EventID = reader?.GetInt64("EventID"),
                 EventName = reader.GetString("EventTypeName"),
+                NextEventName = reader?.GetString("NextEventTypeName"),
                 PlaceName = reader.GetString("PlaceName"),
                 EventDateTime = reader?.GetDateTime("EventDateTime"),
-                //EventDateTimeDiff = reader?.GetDecimal("EventDateTimeDiff"),
                 EventDateTimeDiff = reader.GetString("EventDateTimeDiff"),
                 KMReading = reader?.GetInt64("KMReading"),
                 KMReadingDiff = reader?.GetInt64("KMReadingDiff"),
