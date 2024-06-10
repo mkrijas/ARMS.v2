@@ -90,6 +90,7 @@ namespace ArmsModels.BaseModels
         public int? Dimension { get; set; }
         public string Narration { get; set; }
         public string RefInvoiceNo { get; set; }
+        public bool IsUsedItem { get; set; }
     }
 
     public class TripAdvanceModel
