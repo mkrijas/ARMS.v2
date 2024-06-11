@@ -21,6 +21,7 @@ namespace ArmsModels.BaseModels
         public PartyModel DriverAgent { get; set; }
         [Required]
         public string DriverName { get; set; }
+        public DateTime? JoiningDate { get; set; }
         public int? HomeBranchID { get; set; }
         public string HomeBranchName { get; set; }
         public string DriverImage { get; set; }
