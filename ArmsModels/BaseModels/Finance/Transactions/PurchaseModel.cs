@@ -37,6 +37,7 @@ namespace ArmsModels.BaseModels
         public decimal? AdditionalTDS { get; set; }
         [Required]
         public bool NonStoreInventory { get; set; }
+        public string TaxPurchaseType { get; set; }
         [ValidateComplexType]
         public List<TaxPurchaseExpenseModel> Expenses { get; set; } = new();
         [ValidateComplexType]

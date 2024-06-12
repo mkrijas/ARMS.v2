@@ -476,6 +476,8 @@ namespace ArmsServices.DataServices
                 PassNumber = dr.GetString("PassNumber"),
                 Deduction = dr.GetDecimal("Deduction"),
                 PaymentMode = dr.GetString("PaymentMode"),
+                DistrictName = dr.GetString("DistrictName"),
+                StateName = dr.GetString("StateName")
             };
         }
 

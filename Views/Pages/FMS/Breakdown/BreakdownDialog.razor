@@ -7,6 +7,7 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
+@inject IEventService Ievent
 
 <MudDialog>
     <TitleContent>
@@ -57,6 +58,8 @@
     [Parameter] public bool IsGcRemoved { get; set; }
     [Parameter] public int CurentEventTypeId { get; set; }
     private BreakdownModel model { get; set; }
+    private EventModel PreEvent { get; set; }
+
 
     private List<string> BreakdownTypes = new() { "Accident", "Breakdown", "General Service", "FC Work", "Periodic Service", "Special Work" , "Tyre Work"};
 
@@ -77,6 +80,7 @@
 
         var e = await auth.GetAuthenticationStateAsync();
         string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
+        PreEvent = Ievent.GetCurrentEvent(Truck.TruckID);
 
         model = new();
         model.BranchID = int.Parse(BranchIDString);
@@ -88,6 +92,11 @@
         if (_busy)
         {
             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        if (PreEvent != null && model.BreakdownTime < PreEvent.EventTime)
+        {
+            snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
             return;
         }
         _busy = true;
