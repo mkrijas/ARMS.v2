@@ -51,7 +51,14 @@ namespace ArmsServices.DataServices
 
         public int DeleteAutoSettle(int? ID, string userID)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "DELETE"),
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", userID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Delete]", parameters);
         }
 
         public IEnumerable<BillsPaidModel> GetAutoSettledBills(int? ID)
