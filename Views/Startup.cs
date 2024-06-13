@@ -70,10 +70,14 @@ namespace Views
             // Allow CORS
             services.AddCors(options =>
             {
-                options.AddPolicy("AllowCors", builder =>
-                builder.WithOrigins("https:*/ReportServer/")
-                       .SetIsOriginAllowedToAllowWildcardSubdomains()
-                       .AllowAnyMethod().AllowAnyHeader().AllowCredentials());
+                options.AddDefaultPolicy( policy =>
+                {
+                    //policy.WithOrigins("http://*ReportServer").SetIsOriginAllowedToAllowWildcardSubdomains()
+                     policy.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader()
+                           .AllowCredentials();
+                });
             });
 
             services.AddControllersWithViews();
@@ -375,7 +379,7 @@ namespace Views
             //    });
             //});
 
-            app.UseCors("AllowCors");
+            app.UseCors();
             //app.UseCors("AllowAnyOriginPolicy");
             //app.UseCors("CorsPolicy");
            // app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
