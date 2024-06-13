@@ -1,0 +1,76 @@
+﻿@page "/OutstandingBills"
+@inherits ReportComponentBase
+@inject ICashAccountService ICashAccountService
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Class="mb-5 p-4">
+            <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
+                <MudText Typo="Typo.h5" Style="font-weight:500;">Outstanding Bills Ageing Report</MudText>
+            </MudToolBar>
+            <MudDivider />
+            <MudGrid Style="padding-top: 22px;">     
+                 <MudItem xs="2" Style="display: flex; align-items: center;">
+                    
+</MudItem>
+                <MudItem xs="2" Style="display: flex; align-items: center;">
+                    <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    ReportViewer report;
+    public bool ShowReport { get; set; } = false;
+    public string ReportName { get; set; }
+    int branch;
+    string drcr = "Credit";
+   
+    private List<CashAccountModel> collection = new List<CashAccountModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var authState = await auth.GetAuthenticationStateAsync();
+        branch = int.Parse(authState.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+        collection = ICashAccountService.SelectByBranchALL(branch).ToList();
+    }
+
+    protected bool Validate()
+    {
+        if (!SelectedBranches.Any())
+        {
+            snackbar.Add("Please select branch.", Severity.Error);
+            return false;
+        }      
+        return true;
+    }
+
+    public async Task RenderReportViewer()
+    {
+        try
+        {
+            if (Validate())
+            {
+                ReportName = "OutstandingBillsAge";
+                ShowReport = true;                
+                ReportParameters.Clear();               
+                ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+                ReportParameters.Add("DrCr", drcr );
+                await report.RenderReport();
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}
