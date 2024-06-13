@@ -73,10 +73,10 @@ namespace Views
                 options.AddDefaultPolicy( policy =>
                 {
                     //policy.WithOrigins("http://*ReportServer").SetIsOriginAllowedToAllowWildcardSubdomains()
-                    policy.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader();
-                           
+                     policy.SetIsOriginAllowed( origin => true )
+                           .AllowAnyMethod()
+                           .AllowAnyHeader()
+                           .AllowCredentials();
                 });
             });
 
