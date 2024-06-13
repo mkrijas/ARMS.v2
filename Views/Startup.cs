@@ -73,7 +73,7 @@ namespace Views
                 options.AddDefaultPolicy( policy =>
                 {
                     //policy.WithOrigins("http://*ReportServer").SetIsOriginAllowedToAllowWildcardSubdomains()
-                     policy.AllowAnyOrigin()
+                     policy.SetIsOriginAllowed( origin => true )
                            .AllowAnyMethod()
                            .AllowAnyHeader()
                            .AllowCredentials();
@@ -354,6 +354,8 @@ namespace Views
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseCors();
+
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -379,7 +381,7 @@ namespace Views
             //    });
             //});
 
-            app.UseCors();
+           
             //app.UseCors("AllowAnyOriginPolicy");
             //app.UseCors("CorsPolicy");
            // app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
