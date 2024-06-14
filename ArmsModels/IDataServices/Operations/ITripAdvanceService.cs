@@ -12,6 +12,7 @@ namespace ArmsServices.DataServices
     public interface ITripAdvanceService
     {
         TripAdvanceModel Update(TripAdvanceModel model);
+        TripAdvanceModel Cancel(int? @DocumentTypeID, int? @DocumentID);
         int Delete(int? TripAdvanceID, string UserID);
         TripAdvanceModel Select(int? TripAdvanceID);
         IEnumerable<TripAdvanceModel> SelectByTrip(long? TripID);

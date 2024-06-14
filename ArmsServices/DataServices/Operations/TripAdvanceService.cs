@@ -96,6 +96,22 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public TripAdvanceModel Cancel(int? @DocumentTypeID, int? @DocumentID)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentTypeID", @DocumentTypeID),
+               new SqlParameter("@DocumentID", @DocumentID),
+            };
+            TripAdvanceModel model = new();
+            foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Advance.Cancel]", parameters))
+            {
+                model = GetModel(reader);
+            }
+            return model;
+        }
+
         public IEnumerable<TripAdvanceModel> GetAdvanceReceivables(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
