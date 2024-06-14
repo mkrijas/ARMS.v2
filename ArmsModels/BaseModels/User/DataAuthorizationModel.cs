@@ -66,6 +66,7 @@ namespace ArmsModels.BaseModels
     }
     public class DataApprovedStatus
     {
+        public int AuthLevelID { get; set; }
         public bool IsApprove { get; set; }
         public string Remarks { get; set; }
 
