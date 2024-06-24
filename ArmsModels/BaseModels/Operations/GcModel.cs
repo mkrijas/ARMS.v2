@@ -78,6 +78,7 @@ namespace ArmsModels.BaseModels
         [Range(0, double.MaxValue)]
         public decimal? BillQuantity { get; set; }
         public string PassNumber { get; set; }
+        public string LRNo { get; set; }
         [Required]
         public decimal? Freight { get; set; }
         public virtual string GcTypeName { get; set; }
