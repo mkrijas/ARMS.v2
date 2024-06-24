@@ -18,7 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int Delete(int? TripFuelID, string UserID)
+        public int Delete(long? TripFuelID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -28,14 +28,12 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Operation.Trips.Fuel.Delete]", parameters);
         }
 
-
-
         public TripFuelModel Select(int? TripFuelID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripID", TripFuelID),
-                new SqlParameter("@Operation", "SelectByID"),
+               new SqlParameter("@Operation", "SelectByID"),
             };
 
             TripFuelModel model = null;
@@ -72,6 +70,21 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(reader);
             }
+        }
+        public TripFuelModel SelectByTaxPurchase(int? TaxPurchaseID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TaxPurchaseID", TaxPurchaseID),
+                new SqlParameter("@Operation", "SelectByTaxPurchase"),
+            };
+
+            TripFuelModel model = null;
+            foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Fuel.Select]", parameters))
+            {
+                model = GetModel(reader);
+            }
+            return model;
         }
 
         public TripFuelModel Update(TripFuelModel model)
