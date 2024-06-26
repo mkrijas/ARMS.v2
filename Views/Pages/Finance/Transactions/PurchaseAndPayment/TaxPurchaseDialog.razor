@@ -1,11 +1,13 @@
-﻿@inherits DialogFormComponentBase<TaxPurchaseModel>
-
+﻿@attribute [Authorize]
+@inherits DialogFormComponentBase<TaxPurchaseModel>
+@inject AuthenticationStateProvider auth
 @inject ITaxPurchaseService Iservice
 @inject IInventoryGrnService grnIservice
 @inject IInventoryItemService itemIservice
 @inject IGstItemService gstitemIservice
 @inject IInventoryGroupService inventoryGroupIservice
 @inject ITdsRateService tdsIService
+@inject ITripFuelService Ifuelservice
 
 
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Purchase" formID="formTaxPurchase" DocumentDetails="DocInfo" OnFileRemoved="RemoveFileChange" model="@model" _busy="_busy">
@@ -52,7 +54,7 @@
         </MudPaper>
     </FormContent>
     <VerificationStatus>
-        <AutherizationStatusComponent DocTypeID="@DocInfo.DocumentTypeID" DocumentID="@model.PID" OnApprove="Approve"></AutherizationStatusComponent>
+        <AutherizationStatusComponent DocTypeID="@DocInfo.DocumentTypeID" DocumentID="@model.PID" OnReject="OnReject"  OnApprove="Approve"></AutherizationStatusComponent>
     </VerificationStatus>
 </DialogForm>
 
@@ -61,7 +63,10 @@
     [Parameter]
     public override TaxPurchaseModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.PID; } }
     private TaxPurchaseModel _model;
+    private TripFuelModel fuelModel;
 
+    int branchID;
+    string UserID;
     private decimal? TotalBillAmount;
 
     ValidationMessageStore messageStore;
@@ -167,5 +172,26 @@
             return false;
         }
         return true;
+    }
+
+    protected async void OnReject()
+    {
+        try
+        {
+            fuelModel = Ifuelservice.SelectByTaxPurchase(model.PID);
+            if (fuelModel != null && fuelModel.TripFuelID != null)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+                UserID = user.Identity.Name;
+                Ifuelservice.Delete(fuelModel.TripFuelID, UserID);
+                snackbar.Add("Fuel Removed", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            //snackbar.Add(ex.Message, Severity.Error);
+        }
     }
 }

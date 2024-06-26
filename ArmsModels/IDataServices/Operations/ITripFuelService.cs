@@ -12,10 +12,11 @@ namespace ArmsServices.DataServices
     public interface ITripFuelService
     {
         TripFuelModel Update(TripFuelModel model);  //Edit
-        int Delete(int? TripFuelID, string UserID);  //Edit
+        int Delete(long? TripFuelID, string UserID);  //Edit
         TripFuelModel Select(int? TripFuelID);
         IEnumerable<TripFuelModel> SelectByTrip(long? TripID);
         IEnumerable<TripFuelModel> SelectByAssetTransfer(int? AssetTransferID);
+        TripFuelModel SelectByTaxPurchase(int? TaxPurchaseID);
 
     }
 }
