@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -100,5 +101,7 @@ namespace ArmsModels.BaseModels
         public string StatusText { get; set; }
         public int? NoOfTrucks { get; set; }
         public string LoadStatus { get; set; }
+        public virtual string RegNo { get; set; }
+        public virtual DateTime? EventTime { get; set; }
     }
 }

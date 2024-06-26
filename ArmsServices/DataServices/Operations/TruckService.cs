@@ -439,5 +439,23 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+
+        public IEnumerable<TruckStatusModel> GetTruckStatusByEvent(int? BranchID, string SelectedValue)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@SelectedValue", SelectedValue),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[Operation.Trucks.Dashboard.Details]", parameters))
+            {
+                yield return new TruckStatusModel()
+                {
+                    RegNo = dr.GetString("RegNo"),
+                    EventTime = dr.GetDateTime("EventTime"),
+                };
+            }
+        }
     }
 }
