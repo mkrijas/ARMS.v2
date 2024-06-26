@@ -261,8 +261,10 @@ namespace DAL.DataServices.Finance.Transactions
             return new FastTagTollModel
             {
                 FastTagUploadID = dr?.GetInt32("FastTagUploadID"),
+                MID = dr?.GetInt32("MID"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 ProcessDocumentNumber = dr.GetString("ProcessDocNumber"),
+                ReverseDocumentNumber = dr.GetString("ReverseDocumentNumber"),
                 DocumentDate = dr?.GetDateTime("DocDate"),
                 BranchID = dr?.GetInt32("BranchID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
