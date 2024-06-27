@@ -23,6 +23,7 @@ namespace Core.BaseModels.Finance.Transactions
         }
         public int? FastTagUploadID { get; set; }
         public string ProcessDocumentNumber { get; set; } = "New";
+        public string ReverseDocumentNumber { get; set; }
         [Required]
         public string PaymentMode { get; set; }
         [Required]

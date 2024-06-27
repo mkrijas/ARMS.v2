@@ -12,6 +12,7 @@
 @inject ITruckService Iservice
 @inject ITruckTypeService Itrucktype
 @inject IBranchService Ibranch
+@inject IDriverService Idriver
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
@@ -82,6 +83,9 @@
             <MudTooltip Text="Registration Info">
                 <MudFab @onclick="@(()=> RegisterNumberList(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.List" Size="Size.Small" IconSize="Size.Small" />
             </MudTooltip>
+            <MudTooltip Text="Driver">
+                <MudFab @onclick="@(()=> AssignDriver(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Size="Size.Small" IconSize="Size.Small" />
+            </MudTooltip>
         </MudTd>
     </RowTemplate>
     <PagerContent>
@@ -96,9 +100,11 @@
     private List<TruckModel> collection = new List<TruckModel>();
     private List<TruckTypeModel> TruckTypes = new List<TruckTypeModel>();
     private List<BranchModel> Branches = new List<BranchModel>();
+    private DriverModel AssignedDriver { get; set; }
     public string TruckRegisterListurl = "/TruckRegisterList";
     private bool _busy;
     int BranchID = 0;
+    string AssignDriverLabel;
 
     public bool HasPermissionITruckServiceEdit { get; set; } = false;
     public bool HasPermissionITruckServiceDelete { get; set; } = false;
@@ -353,5 +359,32 @@
         }
         else if (Truck.RegNo == null) return true;
         return false;
+    }
+
+    private async Task AssignDriver(TruckModel truck)
+    {
+        int? DriverID = Iservice.GetAssignedDriver(truck.TruckID);
+        AssignedDriver = DriverID == null ? null : Idriver.SelectByID(DriverID.Value);
+        AssignDriverLabel = AssignedDriver == null ? "Assign Driver" : "Replace Driver";
+
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        var parameters = new DialogParameters();
+        parameters.Add("Truck", truck);
+        parameters.Add("AssignedDriver", AssignedDriver);
+        var result = DialogService.Show<AssignDriverView>(AssignDriverLabel, parameters);
+        var Data = await result.Result;
+        var ev = Data.Data;
+        if (!Data.Canceled)
+        {
+            AssignedDriver = (DriverModel)ev;
+            AssignDriverLabel = AssignedDriver == null ? "Assign Driver" : "Replace Driver";
+        }
+        await Task.Delay(200);
+        _busy = false;
     }
 }

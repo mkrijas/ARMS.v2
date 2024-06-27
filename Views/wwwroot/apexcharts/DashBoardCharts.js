@@ -1,6 +1,6 @@
 ﻿
 window.ChartResult = {
-    PieChart: function (labels, data) {
+    PieChart: function (labels, data, objRef) {
         var options = {
             series: data,
             labels: labels,
@@ -8,6 +8,17 @@ window.ChartResult = {
                 width: '100%',
                 height: '100%',
                 type: 'pie',
+                events: {
+                    dataPointSelection: function (event, chartContext, config) {
+                        //console.log(chartContext, config);
+                        //var selectedValue = config.w.globals.labels[config.seriesIndex];
+                        var selectedValue = labels[config.dataPointIndex];
+                        console.log("Selected value:", selectedValue + " " + "config.seriesIndex = " + config.dataPointIndex);
+                        //localStorage.setItem('selectedLabel', selectedLabel);
+                        //dotNetHelper.invokeMethodAsync('{HandleSelectedData}', { selectedValue }); //('HandleSelectedData', selectedValue);
+                        return objRef.invokeMethodAsync('HandleSelectedData', selectedValue);
+                    }
+                }
             },
             dataLabels: {
                 enabled: true,

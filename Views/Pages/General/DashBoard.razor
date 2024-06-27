@@ -1,9 +1,14 @@
 ﻿@page "/dashboard"
+@using System.Threading;
+@using System.Globalization
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject ITruckService TruckService
 @inject IDashboardService DashboardService
 @inject IJSRuntime JSRuntime
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@using Microsoft.JSInterop
 
 <MudPaper>
     <MudToolBar>
@@ -71,6 +76,7 @@
     DateTime? ToDate = null;
 
     int SelectedPeriod = 1;
+    private TruckStatusModel truckStatusModel = new TruckStatusModel();
 
     List<TruckStatusModel> TruckStatusData = new List<TruckStatusModel>();
     List<DashboardModel> ConsignmentLoadData = new List<DashboardModel>();
@@ -101,10 +107,58 @@
     {
         TruckStatusData = TruckService.GetTruckStatus(BranchID).ToList();
 
-        PieLabels = TruckStatusData.Select(x => x.StatusText + " " + x.LoadStatus).ToArray();
+        PieLabels = TruckStatusData.Select(x => x.StatusText + " " + x.LoadStatus + " - " + x.NoOfTrucks).ToArray();
         PieData = TruckStatusData.Select(x => (double)x.NoOfTrucks).ToArray();
+        var objRef = DotNetObjectReference.Create(this);
+        await JSRuntime.InvokeVoidAsync("ChartResult.PieChart", PieLabels, PieData, objRef);
 
-        await JSRuntime.InvokeVoidAsync("ChartResult.PieChart", PieLabels, PieData);
+        //var storedLabel = localStorage.GetItem<string>("selectedLabel");
+        // var storedLabel = await LocalStorage.GetItemAsync<string>("selectedLabel");
+        // snackbar.Add(await LocalStorage.GetItemAsync<string>("selectedLabel"), Severity.Warning);
+    }
+
+    // public async Task TriggerDotNetInstanceMethod()
+    // {
+    //     var objRef = DotNetObjectReference.Create(this);  // this is the instance reference you have to pass
+    //     var result = await JSRuntime.InvokeAsync<string>("ChartResult.PieChart", objRef);
+    // }
+
+
+
+    [JSInvokable]
+
+    public async Task HandleSelectedData(string selectedValue)
+    {
+        string result = selectedValue;
+        if (selectedValue.Contains("Loaded"))
+        {
+            int lastIndex = selectedValue.LastIndexOf("Loaded");
+            //result = selectedValue.Substring(0, lastIndex);
+
+            if (lastIndex >= 0)
+            {
+                result = selectedValue.Substring(0, lastIndex);
+                // Use 'result' as needed
+            }
+            // Use 'result' as needed
+        }
+        else
+        {
+            int lastSpaceIndex = selectedValue.LastIndexOf('-');
+            if (lastSpaceIndex >= 0)
+            {
+                result = selectedValue.Substring(0, lastSpaceIndex);
+                // Use 'result' after removing everything after the last space
+            }
+            // Handle the case when "Loaded" is not found
+            // You can set a default value or take an alternative action
+        }
+       
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("BranchId", BranchID);
+        parms.Add("SelectedValue", result);
+        var dialog = DialogService.Show<TruckStatusView>("TruckStatusList", parms, mediumWidth);
     }
 
     public async Task ConsignmentLoad(DateTime? From, DateTime? To)
@@ -122,7 +176,7 @@
     {
         DriverStatusData = DashboardService.SelectDonutData(BranchID);
 
-        DonutLabels = DriverStatusData.Select(x => x.Label).ToArray();
+        DonutLabels = DriverStatusData.Select(x => x.Label + " : " + x.Data).ToArray();
         DonutData = DriverStatusData.Select(x => x.Data).ToArray();
 
         await JSRuntime.InvokeVoidAsync("ChartResult.DonutChart", DonutLabels, DonutData);
