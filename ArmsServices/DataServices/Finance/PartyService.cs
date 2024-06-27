@@ -423,7 +423,7 @@ namespace ArmsServices.DataServices
                         return GetRenterRentCoaID(PartyID);
                     case "Rent":
                         return GetRenterDepositCoaID(PartyID);
-                    case "Others":
+                    case "Other":
                         return GetRenterOtherCoaID(PartyID);
                 }
             }
