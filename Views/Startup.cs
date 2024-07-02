@@ -190,6 +190,8 @@ namespace Views
 
         #region ------------INVENTORY-------------------
             services.AddScoped<IInventoryGroupService, InventoryGroupService>();
+            services.AddScoped<IInventoryGroup2Service, InventoryGroup2Service>();
+            services.AddScoped<IInventoryItemGroupService, InventoryItemGroupService>();
             services.AddScoped<IInventoryItemService, InventoryItemService>();
             services.AddScoped<IInventoryItemReOrderLevelService, InventoryItemReOrderLevelService>();
             services.AddScoped<IStoreService, StoreService>();

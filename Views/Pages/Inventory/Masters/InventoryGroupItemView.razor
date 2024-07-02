@@ -1,5 +1,7 @@
 ﻿@page "/InventoryGroupItem"
 @inject IInventoryGroupService GIservice
+@inject IInventoryGroup2Service G2Iservice
+@inject IInventoryItemGroupService IGIservice
 @inject IInventoryItemService IIservice
 @inject MudBlazor.ISnackbar snackbar
 @inject IChartOfAccountService accountService
@@ -14,7 +16,7 @@
         <MudPaper Width="100%" Class="p-2">
             <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
                 <MudText Typo="Typo.h6">
-                    Inventory Group
+                    Inventory Group 2
                     <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudText>
                 @if (listOfItems?.Any() == true)
@@ -23,7 +25,7 @@
                     {
                         <ContextMenuTrigger MenuId="myMenu" Data="@item">
                             <MudListItem Value="item">
-                                <MudText Typo=Typo.subtitle1> @item.InventoryGroupName.ToString() </MudText>
+                                <MudText Typo=Typo.subtitle1>@item.Group.InventoryGroupName.ToString() - @item.GroupDescription.ToString() </MudText>
                             </MudListItem>
                         </ContextMenuTrigger>
                     }
@@ -34,20 +36,20 @@
     <MudItem xs="8" lg="8">
         @if (SelectedItem != null)
         {
-            <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<InventoryItemModel, bool>(search)" @bind-TruckType="model">
+            <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10" Filter="new Func<InventoryItemGroupModel, bool>(search)" @bind-TruckType="model">
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Inventory Item</MudText>
                     <MudSpacer></MudSpacer>
                     <MudTextField @bind-Value="SearchItemCode" Placeholder="Search Item.... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
                 </ToolBarContent>
                 <HeaderContent>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemModel, object>(x=> x.InventoryItemCode)" InitialDirection="SortDirection.Ascending">Item Code</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemModel, object>(x=> x.ItemDescription)" InitialDirection="SortDirection.Ascending">Item Description</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemGroupModel, object>(x=> x.ItemGroupDescription)" InitialDirection="SortDirection.Ascending">Item Group Description</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<InventoryItemGroupModel, object>(x=> x.Makes)" InitialDirection="SortDirection.Ascending">Make</MudTableSortLabel></MudTh>
                     <MudTh>Actions</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="InventoryItemCode">@context.InventoryItemCode</MudTd>
-                    <MudTd DataLabel="ItemDescription">@context.ItemDescription</MudTd>
+                    <MudTd DataLabel="ItemGroupDescription">@context.ItemGroupDescription</MudTd>
+                    <MudTd DataLabel="Makes">@context.Makes</MudTd>
                     <MudTd DataLabel="">
                         <MudTooltip Text="Edit">
                             <MudFab @onclick="@(()=> OpenDialog(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
@@ -55,9 +57,9 @@
                         <MudTooltip Text="Delete">
                             <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
-                        <MudTooltip Text="ReOrder Level">
+                        @* <MudTooltip Text="ReOrder Level">
                             <MudFab @onclick="@(()=> ReOrderLevel(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.ProductionQuantityLimits" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip>
+                        </MudTooltip> *@
                     </MudTd>
                 </RowTemplate>
                 <PagerContent>
@@ -75,10 +77,10 @@
 @code {
 
     private string SearchItemCode = "";
-    InventoryGroupModel model = new InventoryGroupModel();
+    InventoryGroup2Model model = new InventoryGroup2Model();
     private MudListItem SelectedItem;
-    private List<InventoryGroupModel> listOfItems = new();
-    private List<InventoryItemModel> collection = new List<InventoryItemModel>();
+    private List<InventoryGroup2Model> listOfItems = new();
+    private List<InventoryItemGroupModel> collection = new List<InventoryItemGroupModel>();
     private string UserID = string.Empty;
     private bool _busy;
 
@@ -106,9 +108,9 @@
 
     protected void SelectedItemChanged(object obj)
     {
-        InventoryGroupModel SelectedModel = new();
+        InventoryGroup2Model SelectedModel = new();
         SelectedItem = (MudListItem)obj;
-        SelectedModel = (InventoryGroupModel)SelectedItem.Value;
+        SelectedModel = (InventoryGroup2Model)SelectedItem.Value;
         GetInventoryItem(SelectedModel);
     }
 
@@ -118,21 +120,24 @@
         {
             listOfItems.Clear();
         }
-        listOfItems = GIservice.SearchByName(string.Empty).ToList();
+        listOfItems = G2Iservice.SearchByName(string.Empty).ToList();
         StateHasChanged();
     }
 
-    private void GetInventoryItem(InventoryGroupModel ig)
+    private void GetInventoryItem(InventoryGroup2Model ig)
     {
-        collection = new List<InventoryItemModel>();
-        foreach (var item in IIservice.SelectByGroup(ig.InventoryGroupID))
+        collection = new List<InventoryItemGroupModel>();
+        foreach (var itemGroup in IGIservice.SelectByGroup(ig.Group2ID))
         {
-            collection.Add(item);
+            // foreach (var item in IIservice.SelectByGroup(itemGroup.ItemGroupID))
+            // {
+            collection.Add(itemGroup);
+            // }
         }
         StateHasChanged();
     }
 
-    private async Task OpenDialog(InventoryItemModel ii)
+    private async Task OpenDialog(InventoryItemGroupModel ii)
     {
         if (HasPermissionInventoryItemServiceEdit)
         {
@@ -147,18 +152,18 @@
 
             DialogParameters parms = new DialogParameters();
             parms.Add("model", ii.Clone());
-            var dialog = DialogService.Show<InventoryItemDialog>(ii.InventoryItemID == null ? "ADD" : "EDIT", parms);
+            var dialog = DialogService.Show<InventoryItemgroupDialog>(ii.ItemGroupID == null ? "ADD" : "EDIT", parms);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
-                InventoryItemModel UpatedModel = (InventoryItemModel)result.Data;
+                InventoryItemGroupModel UpatedModel = (InventoryItemGroupModel)result.Data;
                 UpatedModel.UserInfo.UserID = user.Identity.Name;
                 try
                 {
-                    IIservice.Update(UpatedModel);
+                    IGIservice.Update(UpatedModel);
                     snackbar.Add("Saved Successfully", Severity.Success);
-                    InventoryGroupModel igm = new InventoryGroupModel();
-                    igm.InventoryGroupID = UpatedModel.InventoryGroupID;
+                    InventoryGroup2Model igm = new InventoryGroup2Model();
+                    igm.Group2ID = UpatedModel.Group2ID;
                     GetInventoryItem(igm);
                 }
                 catch (Exception ex)
@@ -177,16 +182,16 @@
         }
     }
 
-    private async Task Delete(InventoryItemModel model)
+    private async Task Delete(InventoryItemGroupModel model)
     {
         if (HasPermissionInventoryItemServiceDelete)
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Warning !",
-                "Are you sure, you want to delete - " + model.InventoryItemCode + " (" + model.ItemDescription + ") ?");
+                "Are you sure, you want to delete - " + model.UoM + " (" + model.ItemGroupDescription + ") ?");
             if (result == true)
             {
-                IIservice.Delete(model.InventoryItemID, UserID);
+                IGIservice.Delete(model.ItemGroupID, UserID);
                 snackbar.Add("Deleted Successfully", Severity.Error);
                 SelectedItemChanged(SelectedItem);
             }
@@ -199,7 +204,7 @@
         }
     }
 
-    private async Task OpenDialogGroup(InventoryGroupModel ig)
+    private async Task OpenDialogGroup(InventoryGroup2Model ig)
     {
         if (HasPermissionInventoryGroupServiceEdit)
         {
@@ -214,15 +219,15 @@
 
             DialogParameters parms = new DialogParameters();
             parms.Add("model", ig.Clone());
-            var dialog = DialogService.Show<InventoryGroupDialog>(ig.InventoryGroupID == null ? "ADD" : "EDIT", parms);
+            var dialog = DialogService.Show<InventoryGroup2Dialog>(ig.Group2ID == null ? "ADD" : "EDIT", parms);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
-                InventoryGroupModel UpdatedModel = (InventoryGroupModel)result.Data;
+                InventoryGroup2Model UpdatedModel = (InventoryGroup2Model)result.Data;
                 UpdatedModel.UserInfo.UserID = user.Identity.Name;
                 try
                 {
-                    GIservice.Update(UpdatedModel);
+                    G2Iservice.Update(UpdatedModel);
                     snackbar.Add("Saved Successfully", Severity.Success);
                     GetAll();
                 }
@@ -249,36 +254,36 @@
 
     protected async Task ContextMenuOnClickedit(ItemClickEventArgs e)
     {
-        InventoryGroupModel ig = (InventoryGroupModel)((InventoryGroupModel)e.Data).Clone();
+        InventoryGroup2Model ig = (InventoryGroup2Model)((InventoryGroup2Model)e.Data).Clone();
         await OpenDialogGroup(ig);
     }
 
     protected async Task ContextMenuOnClickadd(ItemClickEventArgs e)
     {
-        InventoryGroupModel ig = (InventoryGroupModel)((InventoryGroupModel)e.Data).Clone();
-        InventoryItemModel ii = new InventoryItemModel();
-        ii.InventoryGroupID = ig.InventoryGroupID;
+        InventoryGroup2Model ig = (InventoryGroup2Model)((InventoryGroup2Model)e.Data).Clone();
+        InventoryItemGroupModel ii = new InventoryItemGroupModel();
+        ii.Group2ID = ig.Group2ID;
         await OpenDialog(ii);
     }
 
-    private async void ReOrderLevel(InventoryItemModel ii)
-    {
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-        DialogParameters parms = new DialogParameters();
-        parms.Add("iimodel", ii.Clone());
-        var dialog = DialogService.Show<InventoryItemReorderLevelDialog>("Quantity Manage", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
-        await Task.Delay(200);
-        _busy = false;
-    }
+    // // private async void ReOrderLevel(InventoryItemModel ii)
+    // // {
+    // //     if (_busy)
+    // //     {
+    // //         snackbar.Add("Please wait while form is closing!", Severity.Warning);
+    // //         return;
+    // //     }
+    // //     _busy = true;
+    // //     DialogParameters parms = new DialogParameters();
+    // //     parms.Add("iimodel", ii.Clone());
+    // //     var dialog = DialogService.Show<InventoryItemReorderLevelDialog>("Quantity Manage", parms, new DialogOptions() { MaxWidth = MaxWidth.Medium });
+    // //     await Task.Delay(200);
+    // //     _busy = false;
+    // // }
 
-    private bool search(InventoryItemModel ItemModel)
+    private bool search(InventoryItemGroupModel ItemModel)
     {
-        if (ItemModel.InventoryItemCode != null && ItemModel.InventoryItemCode.Contains(SearchItemCode, StringComparison.OrdinalIgnoreCase))
+        if (ItemModel.ItemGroupID != null && ItemModel.ItemGroupDescription.Contains(SearchItemCode, StringComparison.OrdinalIgnoreCase) || ItemModel.Makes.Contains(SearchItemCode, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }

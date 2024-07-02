@@ -1,0 +1,153 @@
+﻿@inject IInventoryItemService Iservice
+@inject IInventoryItemGroupService Igservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IInventoryGroupService groupIservice
+@inject IInventoryGroup2Service group2Iservice
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.ProductionQuantityLimits" Class="mr-3 mb-n1" />
+            Create Inventory Item
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="min-height:300px;max-height: 800px;">
+            <EditForm id="formtdsRate" Model="@model" OnValidSubmit="OnValidSubmit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" md="12">
+                        <MudSelect Label="Select Inventory Group 2" @bind-Value="model.Group2ID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary" ReadOnly>
+                            @foreach (var ditem in ivgroup)
+                            {
+                                <MudSelectItem Value="@ditem.Group2ID">@ditem.GroupDescription</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.ItemGroupDescription" Label="Item Description" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ItemGroupDescription)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.UoM" Label="Unit Of Measurement" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.UoM)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField @bind-Value="model.HsnCode" Label="Item HsnCode" Variant="Variant.Outlined" MaxLength="8" Margin="Margin.Dense" For="@(() => model.HsnCode)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12" Style="max-height: 450px; overflow-y: scroll">
+                        <MudItem xs="12">
+                            <MudGrid Class="ilb">
+                                <MudItem xs="12" Class="ilbib">
+                                    <MudGrid Justify="Justify.Center">
+                                        <MudItem xs="3"><b>ITEM CODE</b></MudItem>
+                                        <MudItem xs="3"><b>MAKE</b></MudItem>
+                                        <MudItem xs="3"><b>PART NUMBER</b></MudItem>
+                                        <MudItem xs="3"></MudItem>
+                                    </MudGrid>
+                                </MudItem>
+                                @foreach (var item in model.ItemMake)
+                                {
+                                    <MudItem xs="3" Class="ali-C">@item.InventoryItemCode</MudItem>
+                                    <MudItem xs="3" Class="ali-C">@item.ItemDescription</MudItem>
+                                    <MudItem xs="3" Class="ali-C">@item.PartNumber</MudItem>
+                                    <MudItem xs="3">
+                                        @if (!ReadOnly)
+                                        {
+                                            <MudFab Class="ali-C" Color="Color.Error" @onclick="@(()=> Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                                        }
+                                    </MudItem>
+                                }
+                                @if (!ReadOnly)
+                                {
+                                    <MudItem xs="3">
+                                        <MudTextField @bind-Value="itemMakeModel.InventoryItemCode" Label="ItemCode" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => itemMakeModel.InventoryItemCode)" Disabled></MudTextField>
+                                    </MudItem>
+                                    <MudItem xs="3">
+                                        <MudTextField @bind-Value="itemMakeModel.ItemDescription" Label="Item Make" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => itemMakeModel.ItemDescription)"></MudTextField>
+                                    </MudItem>
+                                    <MudItem xs="3">
+                                        <MudTextField @bind-Value="itemMakeModel.PartNumber" Label="Part Number" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => itemMakeModel.PartNumber)"></MudTextField>
+                                    </MudItem>
+                                    <MudItem xs="3">
+                                        <MudFab OnClick="AddItems" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        </MudItem>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Disabled="@_busy" form="formtdsRate" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public InventoryItemGroupModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    private List<InventoryGroup2Model> ivgroup = new();
+    private InventoryItemModel itemMakeModel = new InventoryItemModel();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    private bool _busy;
+
+    protected override void OnInitialized()
+    {
+        ivgroup = group2Iservice.SearchByName(string.Empty).ToList();
+        if (model.ItemGroupID != null)
+        {
+            model.ItemMake = Iservice.SelectByGroup(model.ItemGroupID).ToList();
+        }
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        if (model.ItemMake == null)
+        {
+            snackbar.Add("Select InventoryItemGroup", Severity.Success);
+            return;
+        }
+        _busy = true;
+        model.ItemGroupDescription = FontStyle.ConvertToCamelCase(model.ItemGroupDescription);
+        model.HsnCode = model.HsnCode.ToUpper();
+        MudDialog.Close(model);
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private void Delete(InventoryItemModel i)
+    {
+        int rowIndex = model.ItemMake.IndexOf(i);
+        model.ItemMake.RemoveAt(rowIndex);
+    }
+
+    private void AddItems()
+    {
+        if (itemMakeModel.ItemDescription == null)
+        {
+            snackbar.Add("Please fill in all Fields", Severity.Error);
+            return;
+        }
+        itemMakeModel.InventoryItemCode = null;
+        model.ItemMake.Add(itemMakeModel);
+        itemMakeModel = new();
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

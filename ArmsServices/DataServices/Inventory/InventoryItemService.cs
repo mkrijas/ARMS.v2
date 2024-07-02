@@ -161,11 +161,16 @@ namespace ArmsServices.DataServices
                 ItemDescription = dr.GetString("ItemDescription"),
                 Group2 = dr.GetString("Group2"),
                 Make = dr.GetString("Make"),
+                PartNumber = dr.GetString("PartNumber"),
                 Group = new InventoryGroupModel()
                 {
                     MappedConsumptionHead = dr.GetInt32("MappedConsumptionHead"),
                     MappedPurchaseHead = dr.GetInt32("MappedPurchaseHead"),
                     MappedNonInventoryPurchaseHead = dr.GetInt32("MappedNonInventoryPurchaseHead"),
+                },
+                ItemGroup = new InventoryItemGroupModel()
+                {
+                    ItemGroupDescription = dr.GetString("ItemGroupDescription"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
