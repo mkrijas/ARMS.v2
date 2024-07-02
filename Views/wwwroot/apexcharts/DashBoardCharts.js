@@ -21,7 +21,7 @@ window.ChartResult = {
                 }
             },
             dataLabels: {
-                enabled: true,
+                enabled: false,
                 formatter: function (val, opts) {
                     // Accessing the corresponding value from the 'data' array
                     return opts.w.globals.series[opts.seriesIndex]; // Assuming 'opts' contains the index
