@@ -147,7 +147,7 @@ window.ChartResult = {
         }
     },
 
-    DonutChart: function (labels, data) {
+    DonutChart: function (labels, data, objRef) {
         var options = {
             series: data,
             labels: labels,
@@ -155,6 +155,13 @@ window.ChartResult = {
                 width: '100%',
                 height: '100%',
                 type: 'donut',
+                events: {
+                    dataPointSelection: function (event, chartContext, config) {
+                        var selectedValue = labels[config.dataPointIndex];
+                        console.log("Selected value:", selectedValue + " " + "config.seriesIndex = " + config.dataPointIndex);
+                        return objRef.invokeMethodAsync('HandleSelectedDriverData', selectedValue);
+                    }
+                }
             },
             dataLabels: {
                 enabled: true,

@@ -69,5 +69,23 @@ namespace ArmsServices.DataServices
                 CumulativeTarget = dr.GetDecimal("CumulativeTarget")
             };
         }
+
+        public IEnumerable<DriverModel> GetDriverStatusByEvent(int? BranchID, string SelectedValue)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "DriverDetails"),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@SelectedValue", SelectedValue),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.DashBoard.ChartData.SelectOnClick]", parameters))
+            {
+                yield return new DriverModel()
+                {
+                    DriverName = dr.GetString("DriverName")
+                };
+            }
+        }
     }
 }
