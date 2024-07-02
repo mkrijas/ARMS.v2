@@ -109,8 +109,12 @@ namespace Views
                 config.AddPolicy("Limited_To_HO", policy => policy.RequireClaim("BranchID", "7"));
             });
 
+        #region ---------------DataBase Connection Name---------------
 
-            #region Email_Sender
+            services.AddTransient<ICatalogNameProvider, CatalogNameProvider>();
+        #endregion
+
+        #region ---------------Email_Sender---------------
 
             services.AddTransient<IEmailSender, EmailSender>();
             services.Configure<EmailSenderOptions>(options =>
@@ -129,8 +133,8 @@ namespace Views
         #endregion
 
             services.AddSingleton<IDbService, DbService>();
-            
-         #region  Operation_Services
+
+        #region  ------------Operation_Services---------------
 
             services.AddSingleton<TruckDataArrayModel>();            
             services.AddSingleton<SqlTableDependencyService>();
@@ -173,7 +177,7 @@ namespace Views
             services.AddScoped<IFinanceDashboardService, FinanceDashboardService>();
             #endregion
 
-            #region ------------FMS---------------
+        #region ------------FMS---------------
             services.AddScoped<IBreakdownService, BreakdownService>();
             services.AddScoped<IWorkshopService, WorkshopService>();
             services.AddScoped<IJobcardService, JobcardService>();
@@ -311,7 +315,7 @@ namespace Views
             //            .AllowAnyHeader()
             //            .AllowCredentials());
             //});
-            #region------------ASSETS-------------------
+        #region------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
             services.AddScoped<IAssetService, AssetService>();
             services.AddScoped<IAssetTransferService, AssetTransferService>();
@@ -320,7 +324,7 @@ namespace Views
             //------------General-------------------
             services.AddScoped<IConfigTable, ConfigTable>();
 
-         #region--------Identity configure--------------
+        #region--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
             services.AddScoped<IRoleService<RoleModel>, RoleStore>();
             services.AddTransient<IUserStore<UserModel>, UserStore>();
