@@ -3,20 +3,36 @@
 @inject IMechanicJobService Imjp
 @inject IJobInProgressService Ijip
 @inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@using Views.Pages.Operations.Driver
+@using System.Threading;
+@inject AuthenticationStateProvider auth
 
 <MudGrid Spacing="4">
     <MudItem xs="12" md="4">
         <MudAutocomplete T="RepairJobModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Job" Value="SelectedJob" ValueChanged="JobChanged" ResetValueOnEmptyText="true"
                          SearchFunc="SearchJob" ToStringFunc="@(e => e == null ? null : $"{e.Title}")"></MudAutocomplete>
     </MudItem>
-    <MudItem xs="12" md="8">
+    <MudItem xs="12" md="4">
         <MudSelect T="MechanicModel" MultiSelection="true" Label="Assign Mechanic/s" ToStringFunc="@(p=> p.MechanicName)"
-                   SelectedValuesChanged="mechanicChanged" SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                   SelectedValuesChanged="mechanicChanged" SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
             @foreach (var item in Mechanics)
             {
                 <MudSelectItem T="MechanicModel" Value="@item">@item.MechanicName</MudSelectItem>
             }
         </MudSelect>
+    </MudItem>
+    <MudItem xs="3" md="2">
+        <MudCheckBox @bind-Checked="UnderWarranty" T="bool" ValueChanged="@(UnderWarranty => WarrantyCheck(UnderWarranty))">Under Warranty</MudCheckBox>
+    </MudItem>
+    <MudItem xs="9" md="2">
+        @if (UnderWarranty)
+        {
+            <MudDatePicker @bind-Date="model.WarrantyExpiryDate" Label="Warranty Expiry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Required />
+        }
+    </MudItem>
+    <MudItem xs="12" md="12" Style="padding-top: 0px;">
+        <MudTextField T="string" @bind-Text="model.Remarks" Style="margin-bottom: 10px;" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
     </MudItem>
 </MudGrid>
 
@@ -32,6 +48,7 @@
     private List<RepairJobModel> jobslist = new();
     private List<MechanicModel> Mechanics = new();
     public HashSet<MechanicModel> SelectedMechanics;
+    public bool UnderWarranty = false;
 
     protected override void OnInitialized()
     {
@@ -43,6 +60,12 @@
     private async Task<IEnumerable<RepairJobModel>> SearchJob(string searchString)
     {
         return await Task.FromResult(jobslist.Where(x => x.Title.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private async Task WarrantyCheck(bool a)
+    {
+        UnderWarranty = a;
+        model.WarrantyCheck = UnderWarranty;
     }
 
     private async Task JobChanged(RepairJobModel obj)
@@ -86,14 +109,46 @@
         await base.OnParametersSetAsync();
     }
 
-    public void UpdateJob(JobInProgressModel job)
+    public async Task UpdateJob(JobInProgressModel job)
     {
-        var Createdjob = Ijip.Update(job);
-        foreach (var item in job.Mechanics)
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        job.UserInfo.UserID = user.Identity.Name;
+
+        DriverFaultModel DriverFault = new();
+        bool? result = await DialogService.ShowMessageBox("JOB CAUSE", string.Format("Is the job caused by a Driver Mistake ?"), "YES", "NO");
+        if (result == true)
         {
-            item.JipID = Createdjob.JipID;
-            item.UserInfo.UserID = job.UserInfo.UserID;
-            Imjp.Update(item);
+            DriverFault.Driver = new();
+            var parameters = new DialogParameters();
+            parameters.Add("model", DriverFault);
+            parameters.Add("DriverID", DriverFault.Driver.DriverID);
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<DriverFaultDialog>("Driver Fault", parameters, maxWidth);
+            var DriverFaultData = await dialog.Result;
+            if (!DriverFaultData.Cancelled)
+            {
+                DriverFault = DriverFaultData.Data as DriverFaultModel;
+                job.DriverFaultID = DriverFault.FaultID;
+            }
         }
+
+        try
+        {
+            var Createdjob = Ijip.Update(job);
+            foreach (var item in job.Mechanics)
+            {
+                item.JipID = Createdjob.JipID;
+                item.UserInfo.UserID = job.UserInfo.UserID;
+                Imjp.Update(item);
+            }
+            snackbar.Add("Job Successfull Added.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+
+        UnderWarranty = false;
     }
 }
