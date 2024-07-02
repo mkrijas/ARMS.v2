@@ -109,6 +109,7 @@ namespace Views
                 config.AddPolicy("Limited_To_HO", policy => policy.RequireClaim("BranchID", "7"));
             });
 
+            services.AddTransient<ICatalogNameProvider, CatalogNameProvider>();
 
         #region ---------------Email_Sender---------------
 
