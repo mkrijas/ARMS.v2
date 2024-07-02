@@ -72,12 +72,15 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@JipID", model.JipID),
+               new SqlParameter("@DriverFaultID",model.DriverFaultID),
                new SqlParameter("@RepairJobID", model.RepairJobID),
                new SqlParameter("@JobCardID", model.JobCardID),
                new SqlParameter("@WorkshopID", model.WorkshopID),
                new SqlParameter("@CreatedOn", model.CreatedOn),
                new SqlParameter("@FinishedOn", model.FinishedOn),
                new SqlParameter("@JobStatus", model.JobStatus),
+               new SqlParameter("@WarrantyCheck",model.WarrantyCheck),
+               new SqlParameter("@WarrantyExpiryDate",model.WarrantyExpiryDate),
                new SqlParameter("@Remarks", model.Remarks),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@Odometer", model.Odometer)
@@ -95,6 +98,7 @@ namespace ArmsServices.DataServices
             return new JobInProgressModel
             {
                 JipID = dr.GetInt32("JipID"),
+                DriverFaultID = dr.GetInt32("DriverFaultID"),
                 RepairJobID = dr.GetInt32("RepairJobID"),
                 RepairJobTitle = dr.GetString("RepairJobTitle"),
                 JobCardID = dr.GetInt32("JobCardID"),
@@ -102,6 +106,8 @@ namespace ArmsServices.DataServices
                 CreatedOn = dr.GetDateTime("CreatedOn"),
                 FinishedOn = dr.GetDateTime("FinishedOn"),
                 JobStatus = dr.GetInt32("JobStatus"),
+                WarrantyCheck = dr.GetBoolean("IsUnderWarranty"),
+                WarrantyExpiryDate = dr.GetDateTime("WarrantyExpiryDate"),
                 Remarks = dr.GetString("Remarks"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {

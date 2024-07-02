@@ -6,6 +6,7 @@
 @inject ITripService Itripservice
 @inject IBranchService Ibranchservice
 @inject IDialogService DialogService
+@inject IDriverService IDriverService
 @inject ISnackbar Snackbar
 @inject IRoleService<RoleModel> Irole
 
@@ -31,11 +32,13 @@
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="6">
-                        <MudTextField Value="model.Driver.DriverName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField>
+                        @* <MudTextField Value="model.Driver.DriverName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled></MudTextField> *@
+                        <MudAutocomplete T="DriverModel" Label="Select Driver" @bind-Value="model.Driver" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary"
+                                         SearchFunc="SearchDriver" ToStringFunc="@(e => e == null ? null : $"{e.DriverName}")"></MudAutocomplete>
                     </MudItem>
-                     <MudItem xs="12" md="6">
-                         <MudDatePicker Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.FaultDate" DateFormat="dd/MM/yyyy" For="@(() => model.FaultDate)" />
-                     </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.FaultDate" DateFormat="dd/MM/yyyy" For="@(() => model.FaultDate)" />
+                    </MudItem>
                     <MudItem xs="12" md="6">
                         <MudSelect Label="Severity" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="model.Severity" AnchorOrigin="Origin.TopCenter" TransformOrigin="Origin.TopCenter" AdornmentColor="Color.Secondary" For="@(() => model.Severity)">
                             <MudSelectItem T="byte?" Value="1">Warning</MudSelectItem>
@@ -46,24 +49,28 @@
                         <MudNumericField HideSpinButtons Label="Amount" @bind-Value="model.Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Amount)"></MudNumericField>
                     </MudItem>
                     <MudItem xs="12" md="12">
-                         <MudTextField @bind-Value="model.Detail" Label="Details" Variant="Variant.Outlined" Lines="3" Margin="Margin.Dense" For="@(() => model.Detail)"></MudTextField>
-                     </MudItem>
-                 </MudGrid>
-             </EditForm>
-         </MudContainer>
-     </DialogContent>
-     <DialogActions>
-         <MudButton Disabled="@_busy" form="formDefault" Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
-     </DialogActions>
- </MudDialog>
+                        <MudTextField @bind-Value="model.Detail" Label="Details" Variant="Variant.Outlined" Lines="3" Margin="Margin.Dense" For="@(() => model.Detail)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="@_busy" form="formDefault" Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-12">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
 
- @code {
+@code {
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter]
     public DriverFaultModel model { get; set; } = new();
     [Parameter]
     public int? DriverID { get; set; }
+
+    int? BranchID { get; set; }
+    private List<DriverModel> Driverlist = new();
+    private DriverModel SelectedDriver = null;
 
     public bool HasPermissionDriverFaultServiceEditDriver { get; set; } = false;
     public int DocTypeID = 53;
@@ -80,7 +87,14 @@
         {
             model.BranchID = new();
             model.BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+            Driverlist = IDriverService.SelectByBranch(model?.BranchID ?? 0).ToList();
         }
+    }
+
+    private async Task<IEnumerable<DriverModel>> SearchDriver(string searchString)
+    {
+        await Task.Delay(3);
+        return Driverlist.Where(x => (x.DriverName).Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase));
     }
 
     void Cancel()
@@ -97,6 +111,7 @@
         }
         if (HasPermissionDriverFaultServiceEditDriver)
         {
+            DriverFaultModel newmodel = new();
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
             var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
@@ -108,36 +123,64 @@
                     yesText: "OK");
                 return;
             }
-            string removedFromTruck = Idriverservice.RemoveDriverFromTruck(model.Driver?.DriverID, user.Identity.Name);
-            if (removedFromTruck == "OnTrip")
+            if (model.Driver.DriverID == null)
             {
-                await DialogService.ShowMessageBox("Warning", "The Driver is currently on a trip.", yesText: "OK");
+                Snackbar.Add("Please select Driver.", Severity.Warning);
                 return;
             }
-            else if (removedFromTruck == "DriverRemoved")
+            if (model.Severity == null)
             {
-                Snackbar.Add("Driver removed from the truck", Severity.Warning);
+                Snackbar.Add("Please select Severity.", Severity.Warning);
+                return;
+            }
+            if (model.Severity == 9)
+            {
+                string removedFromTruck = Idriverservice.RemoveDriverFromTruck(model.Driver?.DriverID, user.Identity.Name);
+                if (removedFromTruck == "OnTrip")
+                {
+                    await DialogService.ShowMessageBox("Warning", "The Driver is currently on a trip.", yesText: "OK");
+                    return;
+                }
+                else if (removedFromTruck == "DriverRemoved")
+                {
+                    Snackbar.Add("Driver removed from the truck", Severity.Warning);
+                }
+                else
+                {
+                    Snackbar.Add(removedFromTruck, Severity.Error);
+                }
+                if (removedFromTruck == "NoAssignedTruck" || removedFromTruck == "DriverRemoved")
+                {
+                    _busy = true;
+                    try
+                    {
+                        model.BranchID = int.Parse(brancIDString);
+                        model.UserInfo.UserID = user.Identity.Name;
+                        Iservice.Update(model);
+                        Snackbar.Add("Successfull Added.", Severity.Success);
+                    }
+                    catch (Exception ex)
+                    {
+                        Snackbar.Add(ex.Message, Severity.Error);
+                    }
+                }
             }
             else
-            {
-                Snackbar.Add(removedFromTruck, Severity.Error);
-            }
-            if (removedFromTruck == "NoAssignedTruck" || removedFromTruck == "DriverRemoved")
             {
                 _busy = true;
                 try
                 {
                     model.BranchID = int.Parse(brancIDString);
                     model.UserInfo.UserID = user.Identity.Name;
-                    Iservice.Update(model);
-                    Snackbar.Add("Success", Severity.Success);
+                    newmodel  = Iservice.Update(model);
+                    Snackbar.Add("Driver Fault Successfully Added.", Severity.Success);
                 }
                 catch (Exception ex)
                 {
                     Snackbar.Add(ex.Message, Severity.Error);
                 }
             }
-            MudDialog.Close(model);
+            MudDialog.Close(newmodel);
             await Task.Delay(200);
             _busy = false;
         }
