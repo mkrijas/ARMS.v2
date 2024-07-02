@@ -454,6 +454,7 @@ namespace ArmsServices.DataServices
                 {
                     RegNo = dr.GetString("RegNo"),
                     EventTime = dr.GetDateTime("EventTime"),
+                    EventDateTimeDiff = dr.GetString("EventDateTimeDiff")
                 };
             }
         }

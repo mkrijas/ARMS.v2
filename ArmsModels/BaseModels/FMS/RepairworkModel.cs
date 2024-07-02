@@ -43,6 +43,7 @@ namespace ArmsModels.BaseModels
             Mechanics = new();
         }
         public int? JipID { get; set; }
+        public int? DriverFaultID { get; set; }
         public string RepairJobTitle { get; set; }
         public int? RepairJobID { get; set; }
         public DateTime? CreatedOn { get; set; }
@@ -80,6 +81,9 @@ namespace ArmsModels.BaseModels
                 }
             }
         }
+        public bool WarrantyCheck { get; set; }
+        [RequiredIf("WarrantyCheck", " true")]
+        public DateTime? WarrantyExpiryDate { get; set; }
         public string Remarks { get; set; }
         public UserInfoModel UserInfo { get; set; }
         public List<MechanicJobModel> Mechanics { get; set; }
