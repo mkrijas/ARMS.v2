@@ -86,6 +86,20 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<InventoryItemModel> SelectByItemGroup(int? ItemGroupID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByItemGroup"),
+               new SqlParameter("@InventoryGroupID",ItemGroupID),
+                };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Item.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public InventoryItemModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
