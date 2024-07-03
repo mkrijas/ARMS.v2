@@ -113,6 +113,7 @@ namespace ArmsServices.DataServices
                     TDS = dr.GetDecimal("TDS"),
                     TpiID = dr.GetInt64("TpiID"),
                     ItemDescription = dr.GetString("ItemDescription"),
+                    ItemGroupDescription = dr.GetString("ItemGroupDescription"),
                     CostCenter = dr.GetInt32("CostCenterID"),
                     CostCenterVal = dr.GetString("CostCenter"),
                     Dimension = dr.GetInt32("DimensionID"),
