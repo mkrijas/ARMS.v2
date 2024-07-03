@@ -1,13 +1,56 @@
 ﻿
 window.ChartResult = {
-    PieChart: function (labels, data, objRef) {
+    //PieChart: function (labels, data, objRef) {
+    //    var options = {
+    //        series: data,
+    //        labels: labels,
+    //        chart: {
+    //            width: '100%',
+    //            height: '100%',
+    //            type: 'pie',
+    //            events: {
+    //                dataPointSelection: function (event, chartContext, config) {
+    //                    //console.log(chartContext, config);
+    //                    //var selectedValue = config.w.globals.labels[config.seriesIndex];
+    //                    var selectedValue = labels[config.dataPointIndex];
+    //                    console.log("Selected value:", selectedValue + " " + "config.seriesIndex = " + config.dataPointIndex);
+    //                    //localStorage.setItem('selectedLabel', selectedLabel);
+    //                    //dotNetHelper.invokeMethodAsync('{HandleSelectedData}', { selectedValue }); //('HandleSelectedData', selectedValue);
+    //                    return objRef.invokeMethodAsync('HandleSelectedData', selectedValue);
+    //                }
+    //            }
+    //        },
+    //        dataLabels: {
+    //            enabled: true,
+    //            formatter: function (val, opts) {
+    //                // Accessing the corresponding value from the 'data' array
+    //                return opts.w.globals.series[opts.seriesIndex]; // Assuming 'opts' contains the index
+    //            }
+    //        },
+    //        responsive: [{
+    //            breakpoint: 200,
+    //            options: {
+    //                chart: {
+    //                    minWidth: 300
+    //                },
+    //                legend: {
+    //                    position: 'center'
+    //                }
+    //            }
+    //        }]
+    //    };
+
+    //    var chart = new ApexCharts(document.querySelector("#PieChart"), options);
+    //    chart.render();
+    //},
+    DonutChartTruck: function (labels, data, objRef) {
         var options = {
             series: data,
             labels: labels,
             chart: {
                 width: '100%',
                 height: '100%',
-                type: 'pie',
+                type: 'donut',
                 events: {
                     dataPointSelection: function (event, chartContext, config) {
                         //console.log(chartContext, config);
@@ -27,6 +70,20 @@ window.ChartResult = {
                     return opts.w.globals.series[opts.seriesIndex]; // Assuming 'opts' contains the index
                 }
             },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        labels: {
+                            show: true,
+                            total: {
+                                showAlways: true,
+                                show: true,
+                                label: 'Total Trucks',
+                            }
+                        }
+                    }
+                }
+            },
             responsive: [{
                 breakpoint: 200,
                 options: {
@@ -34,13 +91,13 @@ window.ChartResult = {
                         minWidth: 300
                     },
                     legend: {
-                        position: 'center'
+                        position: 'bottom'
                     }
                 }
             }]
-        };
+        }
 
-        var chart = new ApexCharts(document.querySelector("#PieChart"), options);
+        var chart = new ApexCharts(document.querySelector("#DonutChartTruck"), options);
         chart.render();
     },
 
@@ -147,7 +204,7 @@ window.ChartResult = {
         }
     },
 
-    DonutChart: function (labels, data, objRef) {
+    DonutChartDriver: function (labels, data, objRef) {
         var options = {
             series: data,
             labels: labels,
@@ -197,7 +254,7 @@ window.ChartResult = {
             }]
         }
 
-        var chart = new ApexCharts(document.querySelector("#DonutChart"), options);
+        var chart = new ApexCharts(document.querySelector("#DonutChartDriver"), options);
         chart.render();
     },
 
