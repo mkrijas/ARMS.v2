@@ -13,6 +13,8 @@
 <MudPaper>
     <MudToolBar>
         <MudText Typo="Typo.h5" Style="font-weight:500;">DASHBOARD</MudText>
+        <MudSpacer />
+        <MudButton EndIcon="@Icons.Material.Outlined.Refresh" Variant="Variant.Outlined" OnClick="@(() => Refresh())">Refresh</MudButton>
     </MudToolBar>
     <MudDivider />
     <MudGrid Style="padding:36px; padding-bottom: 22px;">
@@ -34,16 +36,20 @@
             <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
                 <MudToolBar Style="justify-content:left;">
                     <MudText Style="width:500px;" Typo="Typo.h6">TRUCK STATUS</MudText>
+                    <MudSpacer />
+                    <b>@CurrentDateTime.Value.ToString("dd/MM/yyyy hh:mm tt")</b>
                 </MudToolBar>
-                <MudItem id="PieChart" style="padding:20px; width: 100%; height: auto;"></MudItem>
+                <MudItem id="DonutChartTruck" style="padding:20px; width: 100%; height: auto;"></MudItem>
             </MudPaper>
         </MudItem>
         <MudItem sm="6">
             <MudPaper Style="box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2), 0px 6px 20px 0px rgba(0, 0, 0, 0.19);">
                 <MudToolBar Style="justify-content:left;">
                     <MudText Style="width:500px;" Typo="Typo.h6">DRIVER STATUS</MudText>
+                    <MudSpacer />
+                    <b>@CurrentDateTime.Value.ToString("dd/MM/yyyy hh:mm tt")</b>
                 </MudToolBar>
-                <MudItem id="DonutChart" style="padding:20px; width: 100%; height: auto;"></MudItem>
+                <MudItem id="DonutChartDriver" style="padding:20px; width: 100%; height: auto;"></MudItem>
             </MudPaper>
         </MudItem>
         <MudItem sm="12">
@@ -74,8 +80,9 @@
     private int BranchID;
     DateTime? FromDate = null;
     DateTime? ToDate = null;
-
+    DateTime? CurrentDateTime = DateTime.Now;
     int SelectedPeriod = 1;
+
     private TruckStatusModel truckStatusModel = new TruckStatusModel();
 
     List<TruckStatusModel> TruckStatusData = new List<TruckStatusModel>();
@@ -95,112 +102,18 @@
     {
         if (firstRender)
         {
-            await SelectedValueChanged(1);
-            await TruckStatus();
-            await DriverStatus();
-            await FreightStatus();
-            StateHasChanged();
+            await Refresh();
         }
     }
 
-    public async Task TruckStatus()
+    private async Task Refresh()
     {
-        TruckStatusData = TruckService.GetTruckStatus(BranchID).ToList();
-
-        PieLabels = TruckStatusData.Select(x => x.StatusText + " " + x.LoadStatus + " - " + x.NoOfTrucks).ToArray();
-        PieData = TruckStatusData.Select(x => (double)x.NoOfTrucks).ToArray();
-        var objRef = DotNetObjectReference.Create(this);
-        await JSRuntime.InvokeVoidAsync("ChartResult.PieChart", PieLabels, PieData, objRef);
-
-        //var storedLabel = localStorage.GetItem<string>("selectedLabel");
-        // var storedLabel = await LocalStorage.GetItemAsync<string>("selectedLabel");
-        // snackbar.Add(await LocalStorage.GetItemAsync<string>("selectedLabel"), Severity.Warning);
-    }
-
-    // public async Task TriggerDotNetInstanceMethod()
-    // {
-    //     var objRef = DotNetObjectReference.Create(this);  // this is the instance reference you have to pass
-    //     var result = await JSRuntime.InvokeAsync<string>("ChartResult.PieChart", objRef);
-    // }
-
-
-
-    [JSInvokable]
-
-    public async Task HandleSelectedData(string selectedValue)
-    {
-        string result = selectedValue;
-        string extractedNumber = result.Substring(result.LastIndexOf(" ") + 1);
-        if (selectedValue.Contains("Loaded"))
-        {
-            int lastIndex = selectedValue.LastIndexOf("Loaded");
-            //result = selectedValue.Substring(0, lastIndex);
-
-            if (lastIndex >= 0)
-            {
-                result = selectedValue.Substring(0, lastIndex);
-                // Use 'result' as needed
-            }
-            // Use 'result' as needed
-        }
-        else
-        {
-            int lastSpaceIndex = selectedValue.LastIndexOf('-');
-            if (lastSpaceIndex >= 0)
-            {
-                result = selectedValue.Substring(0, lastSpaceIndex);
-                // Use 'result' after removing everything after the last space
-            }
-            // Handle the case when "Loaded" is not found
-            // You can set a default value or take an alternative action
-        }
-       
-        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true };
-        DialogParameters parms = new DialogParameters();
-        parms.Add("BranchId", BranchID);
-        parms.Add("SelectedValue", result);
-        parms.Add("Count", extractedNumber);
-        var dialog = DialogService.Show<TruckStatusView>("TruckStatusList", parms, mediumWidth);
-    }
-
-    
-    [JSInvokable]
-
-    public async Task HandleSelectedDriverData(string selectedValue)
-    {
-        string result = selectedValue;
-        string extractedNumber = result.Substring(result.LastIndexOf(" ") + 1);
-        int colonIndex = selectedValue.IndexOf(":");
-        // if (selectedValue.Contains("Loaded"))
-        // {
-        //     int lastIndex = selectedValue.LastIndexOf("Loaded");
-        //     //result = selectedValue.Substring(0, lastIndex);
-
-        if (colonIndex >= 0)
-            {
-            result = selectedValue.Substring(0, colonIndex).Trim();
-                // Use 'result' as needed
-            }
-        //     // Use 'result' as needed
-        // }
-        else
-        {
-            int lastSpaceIndex = selectedValue.LastIndexOf(':');
-            if (lastSpaceIndex >= 0)
-            {
-                result = selectedValue.Substring(0, lastSpaceIndex);
-                // Use 'result' after removing everything after the last space
-            }
-            // Handle the case when "Loaded" is not found
-            // You can set a default value or take an alternative action
-        }
-
-        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true };
-        DialogParameters parms = new DialogParameters();
-        parms.Add("BranchId", BranchID);
-        parms.Add("SelectedValue", result);
-        parms.Add("Count", extractedNumber);
-        var dialog = DialogService.Show<DriverStatusView>("DriverStatusList", parms, mediumWidth);
+        CurrentDateTime = DateTime.Now;
+        await SelectedValueChanged(1);
+        await TruckStatus();
+        await DriverStatus();
+        await FreightStatus();
+        StateHasChanged();
     }
 
     public async Task ConsignmentLoad(DateTime? From, DateTime? To)
@@ -214,6 +127,46 @@
         StateHasChanged();
     }
 
+    public async Task TruckStatus()
+    {
+        TruckStatusData = TruckService.GetTruckStatus(BranchID).ToList();
+
+        PieLabels = TruckStatusData.Select(x => x.StatusText + " " + x.LoadStatus + " - " + x.NoOfTrucks).ToArray();
+        PieData = TruckStatusData.Select(x => (double)x.NoOfTrucks).ToArray();
+        var objRef = DotNetObjectReference.Create(this);
+        await JSRuntime.InvokeVoidAsync("ChartResult.DonutChartTruck", PieLabels, PieData, objRef);
+    }
+
+    [JSInvokable]
+    public async Task HandleSelectedData(string selectedValue)
+    {
+        string result = selectedValue;
+        string extractedNumber = result.Substring(result.LastIndexOf(" ") + 1);
+        if (selectedValue.Contains("Loaded"))
+        {
+            int lastIndex = selectedValue.LastIndexOf("Loaded");
+            if (lastIndex >= 0)
+            {
+                result = selectedValue.Substring(0, lastIndex);
+            }
+        }
+        else
+        {
+            int lastSpaceIndex = selectedValue.LastIndexOf('-');
+            if (lastSpaceIndex >= 0)
+            {
+                result = selectedValue.Substring(0, lastSpaceIndex);
+            }
+        }
+
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("BranchId", BranchID);
+        parms.Add("SelectedValue", result);
+        parms.Add("Count", extractedNumber);
+        var dialog = DialogService.Show<TruckStatusView>("TruckStatusList", parms, mediumWidth);
+    }
+
     public async Task DriverStatus()
     {
         DriverStatusData = DashboardService.SelectDonutData(BranchID);
@@ -221,7 +174,34 @@
         DonutLabels = DriverStatusData.Select(x => x.Label + " : " + x.Data).ToArray();
         DonutData = DriverStatusData.Select(x => x.Data).ToArray();
         var objRef = DotNetObjectReference.Create(this);
-        await JSRuntime.InvokeVoidAsync("ChartResult.DonutChart", DonutLabels, DonutData, objRef);
+        await JSRuntime.InvokeVoidAsync("ChartResult.DonutChartDriver", DonutLabels, DonutData, objRef);
+    }
+
+    [JSInvokable]
+    public async Task HandleSelectedDriverData(string selectedValue)
+    {
+        string result = selectedValue;
+        string extractedNumber = result.Substring(result.LastIndexOf(" ") + 1);
+        int colonIndex = selectedValue.IndexOf(":");
+        if (colonIndex >= 0)
+        {
+            result = selectedValue.Substring(0, colonIndex).Trim();
+        }
+        else
+        {
+            int lastSpaceIndex = selectedValue.LastIndexOf(':');
+            if (lastSpaceIndex >= 0)
+            {
+                result = selectedValue.Substring(0, lastSpaceIndex);
+            }
+        }
+
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("BranchId", BranchID);
+        parms.Add("SelectedValue", result);
+        parms.Add("Count", extractedNumber);
+        var dialog = DialogService.Show<DriverStatusView>("DriverStatusList", parms, mediumWidth);
     }
 
     public async Task FreightStatus()
