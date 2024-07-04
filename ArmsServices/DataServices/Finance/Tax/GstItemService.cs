@@ -163,6 +163,7 @@ namespace ArmsServices.DataServices
                 GstMechanism = dr.GetString("GstMechanism"),
                 ItemDescription = dr.GetString("ItemDescription"),
                 HsnCode = dr.GetString("HsnCode"),
+                ItemGroupDescription = dr.GetString("ItemGroupDescription"),
                 PeriodFrom = dr.GetDateTime("PeriodFrom"),
                 PeriodTo = dr.GetDateTime("PeriodTo"),
                 RID = dr.GetInt32("RID"),

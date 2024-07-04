@@ -71,6 +71,7 @@ namespace ArmsModels.BaseModels
         public string HsnCode { get; set; }
         [Required]
         public int? RID { get; set; }
+        public virtual string ItemGroupDescription { get; set; }
         public virtual decimal? TaxRate { get; }
         [Required]
         public DateTime? PeriodFrom { get; set; }
