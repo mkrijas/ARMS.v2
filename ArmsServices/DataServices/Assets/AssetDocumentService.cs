@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
-
 namespace ArmsServices.DataServices
 {
     public class AssetDocumentService : IAssetDocumentService
@@ -16,6 +15,7 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
         public AssetDocumentModel Update(AssetDocumentModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -69,7 +69,6 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.FilePath]", parameters);
         }
 
-
         public AssetDocumentModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -105,7 +104,6 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.Type.Delete]", parameters);
         }
 
-
         public int Remove(AssetDocumentModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -117,7 +115,6 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.RemoveType]", parameters);
         }
 
-
         public int LinkDocumentTypeAndTaxPurchase(int? DocumentID, int? TaxPurchaseID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -127,7 +124,6 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.TaxPurchase.Link.Update]", parameters);
         }
-
 
         public IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate, DateTime? endDate)
         {
@@ -268,7 +264,6 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
         public bool? IsCostCenterIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -283,6 +278,7 @@ namespace ArmsServices.DataServices
             }
             return result;
         }
+
         public bool? IsDimensionIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -297,6 +293,7 @@ namespace ArmsServices.DataServices
             }
             return result;
         }
+
         public bool IsValid(AssetDocumentModel model, DateTime? DateToCheck)
         {
             if (!(model.StartDate?.Date <= DateToCheck?.Date && model.EndDate?.Date >= DateToCheck?.Date))
@@ -319,4 +316,3 @@ namespace ArmsServices.DataServices
         }
     }
 }
-
