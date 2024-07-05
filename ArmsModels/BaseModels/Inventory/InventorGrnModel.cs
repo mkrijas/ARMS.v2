@@ -123,6 +123,7 @@ namespace ArmsModels.BaseModels
         public int? ItemID { get; set; }
         public virtual int? CoaID { get; set; }
         public virtual string ItemDescription { get; set; }
+        public virtual string ItemGroupDescription { get; set; }
         [Required]
         public decimal ItemQty { get; set; }
         public virtual string UOM { get; set; }
