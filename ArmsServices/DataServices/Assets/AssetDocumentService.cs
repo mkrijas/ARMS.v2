@@ -30,6 +30,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@NotificationID", model.NotificationID),
                new SqlParameter("@ReceiptNo", model.ReceiptNo),
                new SqlParameter("@Refference", model.Refference),
+               new SqlParameter("@NCBPercentage", model.NCBPercentage),
+               new SqlParameter("@IDVAmount", model.IDVAmount),
                new SqlParameter("@Amount", model.Amount),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@ExtendedEndDate", model.ExtendedEndDate)
@@ -187,6 +189,8 @@ namespace ArmsServices.DataServices
                 NotificationID = dr.GetInt32("NotificationID"),
                 ReceiptNo = dr.GetString("ReceiptNo"),
                 Refference = dr.GetString("Refference"),
+                IDVAmount = dr.GetDecimal("IDVAmount"),
+                NCBPercentage = dr.GetDecimal("NCBPercentage"),
                 Amount = dr.GetDecimal("Amount"),
                 IsFinanciallyPosted = dr.GetBoolean("IsFinanciallyPosted"),
                 ExtendedEndDate = dr.GetDateTime("ExtendedEndDate"),
