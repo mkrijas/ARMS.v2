@@ -86,6 +86,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? ItemID { get; set; }
         public string ItemDescription { get; set; }
+        public string ItemGroupDescription { get; set; }
         [Required]
         public decimal? ItemQty { get; set; }
         public decimal? RequestQty { get; set; }

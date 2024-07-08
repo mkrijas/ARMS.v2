@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Reflection.Metadata;
 
 namespace ArmsModels.BaseModels
@@ -40,6 +41,10 @@ namespace ArmsModels.BaseModels
         [Required]
         public string ReceiptNo { get; set; }
         public string Refference { get; set; }
+        [RequiredIfDocumentType(19, 20)]
+        public decimal? IDVAmount { get; set; }
+        [RequiredIfDocumentType(19, 20)]
+        public decimal? NCBPercentage { get; set; }
         [Required]
         public decimal? Amount { get; set; }
         public string AttachedDocument { get; set; }
@@ -79,5 +84,26 @@ namespace ArmsModels.BaseModels
         public int? BlockAfter { get; set; }
         public GstUsageCodeModel UsageCode { get; set; }
         public UserInfoModel UserInfo { get; set; }
+    }
+
+    public class RequiredIfDocumentTypeAttribute : ValidationAttribute
+    {
+        private readonly int[] _documentTypeIds;
+
+        public RequiredIfDocumentTypeAttribute(params int[] documentTypeIds)
+        {
+            _documentTypeIds = documentTypeIds;
+        }
+
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            var model = (AssetDocumentModel)validationContext.ObjectInstance;
+            if (_documentTypeIds.Contains(model.DocumentType.DocumentTypeID.GetValueOrDefault()) && value == null)
+            {
+                return new ValidationResult($"{validationContext.DisplayName} is required for the specified document types.");
+            }
+
+            return ValidationResult.Success;
+        }
     }
 }

@@ -13,5 +13,6 @@ namespace ArmsServices.DataServices
         List<DashboardModel> SelectChartData(int? BranchID, DateTime? From, DateTime? To);
         List<DashboardModel> SelectDonutData(int? BranchID);
         List<DashboardModel> SelectLineChart(int? BranchID, DateTime? To);
+        IEnumerable<DriverModel> GetDriverStatusByEvent(int? BranchID, string SelectedValue);
     }
 }

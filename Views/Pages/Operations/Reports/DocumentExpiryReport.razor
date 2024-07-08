@@ -3,6 +3,7 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IBranchService Ibranchservice
+@inject IAssetDocumentService Iservice
 @inherits ReportComponentBase
 
 <MudGrid Spacing="4">
@@ -12,27 +13,31 @@
                 <MudText Typo="Typo.h5" Style="font-weight:500;">Document Expiry Report</MudText>
             </MudToolBar>
             <MudDivider />
-            <MudGrid Style="padding-top: 22px;">       
+            <MudGrid Style="padding-top: 22px;">   
                 <MudItem xs="3">
-                    <MudSelect Label="Select Status" @bind-Value="DocStatus" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                    <MudSelect T="AssetDocumentTypeModel" @bind-Value="@DocType" ToStringFunc="@(e => e == null ? null : $"{e.DocumentTypeName}")" Label="DocumentType Name" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
+                        @foreach (var item in DocTypeName)
+                        {
+                            <MudSelectItem Value="@item">@item.DocumentTypeName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="3">
+                    <MudSelect Label="Select Status" @bind-Value="DocStatus" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
                         <MudSelectItem Value="@("EXPIRED")">EXPIRED</MudSelectItem>
                         <MudSelectItem Value="@("EXTENDED")">EXTENDED</MudSelectItem>
                         <MudSelectItem Value="@("-1")">ALL</MudSelectItem>
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="3">
-                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudItem xs="2">
+                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter"/>
                 </MudItem>
-                <MudItem xs="3">
-                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudItem xs="2">
+                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter"/>
                 </MudItem>
-                @* <MudItem xs="2">
-                    <MudButton Style="margin-top: 4px; width:-webkit-fill-available" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
-                </MudItem> *@
                 <MudItem xs="2" Style="display: flex; align-items: center;">
                     <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
                     <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
-                  
                 </MudItem>
             </MudGrid>
         </MudPaper>
@@ -54,6 +59,8 @@
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }   
     public BranchModel CurrentBranch { get; set; } = new();
+    public AssetDocumentTypeModel DocType { get; set; } = new();
+    public List<AssetDocumentTypeModel> DocTypeName { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -62,6 +69,7 @@
         var User = authprov.User;
         string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
         CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+        DocTypeName = Iservice.GetDocumentTypes().ToList();
         //CurrentBranch.BranchID = int.Parse(BranchIDString);
         //BranchList = Ibranchservice.Select().ToList();
     }   
@@ -87,9 +95,10 @@
         ShowReport = true;
         ReportName = "AssetDocumentExpiryReport";
         ReportParameters.Clear();       
-        ReportParameters.Add("DocStatus", DocStatus);
         ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
         ReportParameters.Add("BranchName", CurrentBranch.BranchName);
+        ReportParameters.Add("DocStatus", DocStatus);
+        ReportParameters.Add("DocTypeID", (DocType.DocumentTypeID ?? 0).ToString());
         ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
         ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
         await report.RenderReport();

@@ -16,20 +16,21 @@ namespace ArmsServices
         Task<int> ExecuteNonQueryAsync(string procedureName, List<SqlParameter> parameters);
         IEnumerable<IDataRecord> GetDataReader(string procedureName, List<SqlParameter> parameters);
         int ExecuteNonQuery(string procedureName, List<SqlParameter> parameters);
-
         IEnumerable<IDataRecord> QuerySql(string Query, List<SqlParameter> parameters);
-
     }
 
     public class DbService : IDbService
     {
         private string ConnectionString { get; set; }
+
         ILogger<DbService> _logger;
-        public DbService(IConfiguration configuration,ILogger<DbService> logger)
+
+        public DbService(IConfiguration configuration, ILogger<DbService> logger)
         {
             this._logger = logger;
-            this.ConnectionString = configuration.GetConnectionString("ArmsDB");            
+            this.ConnectionString = configuration.GetConnectionString("ArmsDB");
         }
+
         public async IAsyncEnumerable<IDataRecord> GetDataReaderAsync(string procedureName, List<SqlParameter> parameters)
         {
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))
@@ -44,31 +45,30 @@ namespace ArmsServices
                     }
                     SqlDataReader dr = null;
                     dr = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection);
-            
+
                     while (await dr.ReadAsync())
                     {
                         yield return dr;
                     }
                 }
-            }            
+            }
         }
 
-
         public async Task<int> ExecuteNonQueryAsync(string procedureName, List<SqlParameter> parameters)
-        {          
-                using (SqlConnection connection = new SqlConnection(this.ConnectionString))
-                {
-                    SqlCommand cmd = connection.CreateCommand();
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.CommandText = procedureName;
+        {
+            using (SqlConnection connection = new SqlConnection(this.ConnectionString))
+            {
+                SqlCommand cmd = connection.CreateCommand();
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = procedureName;
 
-                    if (parameters != null && parameters.Count > 0)
-                    {
-                        cmd.Parameters.AddRange(parameters.ToArray());
-                    }
-                    await connection.OpenAsync();
-                    return await cmd.ExecuteNonQueryAsync();
-                }            
+                if (parameters != null && parameters.Count > 0)
+                {
+                    cmd.Parameters.AddRange(parameters.ToArray());
+                }
+                await connection.OpenAsync();
+                return await cmd.ExecuteNonQueryAsync();
+            }
         }
 
         public IEnumerable<IDataRecord> GetDataReader(string procedureName, List<SqlParameter> parameters)
@@ -76,7 +76,7 @@ namespace ArmsServices
             StringBuilder errorMessages = new StringBuilder();
 
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))
-            {                
+            {
                 connection.Open();
                 using (SqlCommand cmd = new SqlCommand(procedureName, connection))
                 {
@@ -85,15 +85,15 @@ namespace ArmsServices
                     {
                         cmd.Parameters.AddRange(parameters.ToArray());
                     }
-                    SqlDataReader dr = null;                   
-                        dr = cmd.ExecuteReader(CommandBehavior.CloseConnection);                   
+                    SqlDataReader dr = null;
+                    dr = cmd.ExecuteReader(CommandBehavior.CloseConnection);
                     while (dr.Read())
                     {
                         yield return dr;
                     }
                     dr.Close();
                 }
-            }            
+            }
         }
 
         public int ExecuteNonQuery(string procedureName, List<SqlParameter> parameters)
@@ -101,17 +101,17 @@ namespace ArmsServices
             StringBuilder errorMessages = new StringBuilder();
             using (SqlConnection connection = new SqlConnection(this.ConnectionString))
             {
-               
-                    SqlCommand cmd = connection.CreateCommand();
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.CommandText = procedureName;
 
-                    if (parameters != null && parameters.Count > 0)
-                    {
-                        cmd.Parameters.AddRange(parameters.ToArray());
-                    }
-                    connection.Open();
-                    return cmd.ExecuteNonQuery();
+                SqlCommand cmd = connection.CreateCommand();
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = procedureName;
+
+                if (parameters != null && parameters.Count > 0)
+                {
+                    cmd.Parameters.AddRange(parameters.ToArray());
+                }
+                connection.Open();
+                return cmd.ExecuteNonQuery();
             }
         }
 

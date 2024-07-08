@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
         IEnumerable<InventoryItemModel> SelectListByID(int? ID);
         int Delete(int? ID, string UserID);  //Delete
         IEnumerable<InventoryItemModel> SelectByGroup(int? GroupID);
+        IEnumerable<InventoryItemModel> SelectByItemGroup(int? ItemGroupID);
         IEnumerable<InventoryItemModel> SearchByItemCode(string itemCode);
         IEnumerable<InventoryItemModel> SearchByDescription(string itemDescription);
         IEnumerable<InventoryItemModel> SearchByHsn(string HsnCode);

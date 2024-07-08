@@ -444,11 +444,12 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@Operation", "TruckDetails"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@SelectedValue", SelectedValue),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[Operation.Trucks.Dashboard.Details]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.DashBoard.ChartData.SelectOnClick]", parameters))
             {
                 yield return new TruckStatusModel()
                 {

@@ -86,6 +86,20 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<InventoryItemModel> SelectByItemGroup(int? ItemGroupID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByItemGroup"),
+               new SqlParameter("@InventoryGroupID",ItemGroupID),
+                };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Item.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public InventoryItemModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -161,11 +175,16 @@ namespace ArmsServices.DataServices
                 ItemDescription = dr.GetString("ItemDescription"),
                 Group2 = dr.GetString("Group2"),
                 Make = dr.GetString("Make"),
+                PartNumber = dr.GetString("PartNumber"),
                 Group = new InventoryGroupModel()
                 {
                     MappedConsumptionHead = dr.GetInt32("MappedConsumptionHead"),
                     MappedPurchaseHead = dr.GetInt32("MappedPurchaseHead"),
                     MappedNonInventoryPurchaseHead = dr.GetInt32("MappedNonInventoryPurchaseHead"),
+                },
+                ItemGroup = new InventoryItemGroupModel()
+                {
+                    ItemGroupDescription = dr.GetString("ItemGroupDescription"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
