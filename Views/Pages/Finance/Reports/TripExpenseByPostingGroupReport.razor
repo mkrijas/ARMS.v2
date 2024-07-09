@@ -1,0 +1,108 @@
+﻿@page "/TripExpenseByPostingGroupReport"
+@inherits ReportComponentBase
+@using ArmsModels.BaseModels.Finance.Report;
+@inject IDialogService DialogService
+@inject IOperationPostingGroupService Iservice
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Class="mb-5 p-4">
+            <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
+                <MudText Typo="Typo.h5" Style="font-weight:500;">Trip Expense Report</MudText>
+            </MudToolBar>
+            <MudDivider />
+            <MudGrid Style="padding-top: 22px;">
+                <MudItem xs="3">
+                    <MudSelect Label="Select Posting Group" @bind-Value="@(SelectedpostingGroup)" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                        @foreach (var ditem in postingGroups)
+                        {
+                            <MudSelectItem Value="@ditem.Title">@ditem.Title</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="2">
+                    <MudDatePicker Label="Start Date" @bind-Date="@(StartDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="2">
+                    <MudDatePicker Label="End Date" @bind-Date="@(EndDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="5">
+                    <div class="d-flex gap-3">
+                        <MudIconButton Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
+                        <MudIconButton Title="Render Report" Icon="@Icons.Material.Filled.DocumentScanner" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer"></MudIconButton>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    ReportViewer report;
+    DateTime? StartDate { get; set; } = DateTime.Now;
+    DateTime? EndDate { get; set; } = DateTime.Now;
+    private List<OperationPostingGroupModel> postingGroups = new();
+    string SelectedpostingGroup { get; set; }
+
+    bool ShowReport { get; set; } = false;
+    string ReportName { get; set; }
+    LedgerTransactionsReportMoreParameterModel MoreParameter { get; set; } = new();
+    bool IsMoreParameterHasValues { get; set; } = false;
+
+    bool detailed = false;
+
+    protected override void OnInitialized()
+    {
+        postingGroups = Iservice.Select().ToList();
+        postingGroups.Add(new OperationPostingGroupModel { Title = "Toll Expense Fastag" });
+        postingGroups.Add(new OperationPostingGroupModel { Title = "Fuel Expense" });
+        postingGroups.Add(new OperationPostingGroupModel { Title = "Mileage Short Recovery" });
+    }
+    
+    protected bool Validate()
+    {
+        if (!SelectedBranches.Any())
+        {
+            snackbar.Add("Please select branch.", Severity.Error);
+            return false;
+        }
+        if (StartDate == null)
+        {
+            snackbar.Add("Please select Start-Date.", Severity.Error);
+            return false;
+        }
+        if (EndDate == null)
+        {
+            snackbar.Add("Please select End-Date.", Severity.Error);
+            return false;
+        }
+        if (SelectedpostingGroup is null)
+        {
+            snackbar.Add("Please select Posting Group", Severity.Error);
+            return false;
+        }
+        return true;
+    }
+
+    public async Task RenderReportViewer()
+    {
+        ShowReport = false;
+        if (Validate())
+        {
+            ShowReport = true;
+            ReportName = "TripExpenseByPostingGroupReport";
+            ReportParameters.Clear();
+            ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+            ReportParameters.Add("PostingGroup", SelectedpostingGroup);
+            ReportParameters.Add("FromDate", StartDate.Value.ToString("yyyy/MM/dd"));
+            ReportParameters.Add("ToDate", EndDate.Value.ToString("yyyy/MM/dd"));
+            await report.RenderReport();
+        }
+    }
+}
