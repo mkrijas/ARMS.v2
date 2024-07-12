@@ -165,10 +165,15 @@ namespace DAL.DataServices.Finance.Transactions
             {
                 OpInventoryReleaseID = dr.GetInt32("OpInventoryReleaseID"),
                 NatureOfTransaction = dr.GetString("NatureOfTransaction"),
-                Item = new InventoryItemModel() { 
+                Item = new InventoryItemModel() 
+                { 
                     InventoryItemID = dr.GetInt32("InventoryItemID"),
-                 ItemDescription = dr.GetString("ItemDescription"),
-                 InventoryItemCode = dr.GetString("InventoryItemCode"),
+                    ItemDescription = dr.GetString("ItemDescription"),
+                    InventoryItemCode = dr.GetString("InventoryItemCode"),
+                    ItemGroup = new InventoryItemGroupModel()
+                    {
+                        ItemGroupDescription = dr.GetString("ItemGroupDescription")
+                    },
                 },
                 Reference = dr.GetString("Reference"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
