@@ -3,6 +3,7 @@
 @inject IInsuranceClaimService Iservice
 @inject IAssetDocumentService IdocService
 @inject ITruckService Itruck
+@inject IAssetService IAsset
 @inject IBreakdownService Ibreakdown
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -10,6 +11,37 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
+<MudTable Items="@Collection" Elevation="8" Filter="new Func<InsuranceClaimModel, bool>(search)" @bind-Model="model">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Active Claims</MudText>
+        <MudSpacer></MudSpacer>
+        <MudTextField @bind-Value="SearchClaim" Placeholder="Search Claim... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<InsuranceClaimModel, object>(x=> x.TruckRegNo)" InitialDirection="SortDirection.Ascending">Truck RegNo</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<InsuranceClaimModel, object>(x=> x.DateOfAccident)" InitialDirection="SortDirection.Ascending">Date Of Accident</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<InsuranceClaimModel, object>(x=> x.UserInfo.TimeStampField)" InitialDirection="SortDirection.Ascending">Entry DateTime</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="TruckReg">@context.TruckRegNo</MudTd>
+        <MudTd DataLabel="DateOfAccident">@context.DateOfAccident?.ToString("dd/MM/yyy")</MudTd>
+        <MudTd DataLabel="TimeStampField">@context.UserInfo.TimeStampField</MudTd>
+        <MudTd DataLabel="">
+            <MudTooltip Text="Edit">
+                <MudFab style="font-size:5px" @onclick="@(()=> Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.EditNote" Size="Size.Small" IconSize="Size.Small" />
+            </MudTooltip>
+            @* <MudTooltip Text="Delete">
+            <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+            </MudTooltip> *@
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+    </PagerContent>
+</MudTable>
+@* <br />
+<br />
 <MudGrid>
     <MudItem xs="4" lg="3">
         <MudPaper Width="100%" Class="p-2">
@@ -17,103 +49,45 @@
                 <MudListSubheader>
                     Active Claims
                 </MudListSubheader>
-                @if (listOfItems?.Any() == true)
+                @if (Collection?.Any() == true)
                 {
-                    @foreach (var item in listOfItems)
+                    @foreach (var item in Collection)
                     {
                         string regNo = Ibreakdown.SelectByID(item.BreakdownID).RegNo;
                         <MudListItem Value="item">
                             <MudText Typo=Typo.subtitle1> @regNo </MudText>
-                                <MudText Typo="Typo.overline">Since : @item.UserInfo.TimeStampField?.ToString("dd/MM/yy")</MudText>
-                            </MudListItem>
+                            <MudText Typo="Typo.overline">Since : @item.UserInfo.TimeStampField?.ToString("dd/MM/yy")</MudText>
+                        </MudListItem>
                     }
                 }
             </MudList>
         </MudPaper>
     </MudItem>
-    @if(@SelectedItem != null)
+    @if (@SelectedItem != null)
     {
-    <MudItem xs="8" lg="9">
+        <MudItem xs="8" lg="9">
             <ManageClaimDialog OnClaimAdded="AddClaims" Visible="@dialogVisible" ClaimList="@SelectedItem" Page="Claim" />
-    </MudItem>
+        </MudItem>
     }
-    @* <MudItem xs="8" lg="9">
-    @if (SelectedItem != null)
-    {
-    <MudPaper Width="100%" Class="p-2">
-    @SelectedItem?.ChildContent
-    @if (EventMasterSource?.Any(x => x.IsMandatory) != true && SelectedModel.IsOpen)
-    {
-    <MudButton Color="Color.Primary" OnClick="CloseClaim">Close Claim</MudButton>
-    }
-    <MudList>
-    <MudListSubheader>
-    Event History
-    </MudListSubheader>
-    @if (ClaimEvents?.Any() == true)
-    {
-    <MudDivider></MudDivider>
-    @foreach (var item in ClaimEvents)
-    {
-    <MudListItem>
-    @item.Title On @item.EventDate?.ToString("dd/MM/yy")
-    </MudListItem>
-    <MudDivider></MudDivider>
-    }
-    }
-    @if (EventMasterSource?.Any() == true && SelectedModel.IsOpen)
-    {
-    <MudListItem>
-    <MudGrid>
-    <MudItem xs="5">
-    <MudSelect T="int?" Label="Event" Value="UpdateStatusModel.IcemID" ValueChanged="EventSelected" OffsetY="true" AdornmentColor="Color.Secondary" Variant="Variant.Outlined" Required>
-    @if (EventMasterSource?.Any() == true)
-    {
-    @foreach (var item in EventMasterSource)
-    {
-    <MudSelectItem T="int?" Value="item.IcemID">@item.Title</MudSelectItem>
-    }
-    }
-    </MudSelect>
-    </MudItem>
-    <MudItem xs="5">
-    <MudDatePicker Label="Date of Event" @bind-Date="UpdateStatusModel.EventDate" Variant=Variant.Outlined Required></MudDatePicker>
-    </MudItem>
-    <MudItem xs="2">
-    <MudButton OnClick="UpdateStatus" Color="Color.Primary">Update</MudButton>
-    </MudItem>
-    </MudGrid>
-    </MudListItem>
-    }
-    </MudList>
-    </MudPaper>
-    <h5>Images</h5>
-    <MudGrid Spacing="2" Justify="Justify.Center">
-    @foreach (var imagePath in SelectedModel?.Images)
-    {
-    <MudItem xs="12" md="6" Class="d-flex">
-    <MudPaper Class="p-2" Elevation="3">
-    <img src="@imagePath" alt="@imagePath" />
-    </MudPaper>
-    </MudItem>
-    }
-    </MudGrid>
-    }
-    </MudItem> *@
-</MudGrid>
+</MudGrid> *@
 
 @code {
 
     [Parameter] public int? BreakdownID { get; set; }
     private TruckModel Truck = new();
     private AssetDocumentModel Insurance = new();
-    private List<InsuranceClaimModel> listOfItems = new();
+    private List<InsuranceClaimModel> Collection = new();
     private List<InsuranceClaimEventStatusModel> ClaimEvents;
     private List<InsuranceClaimEventMasterModel> EventMasterSource;
     InsuranceClaimModel SelectedModel = new();
     private MudListItem SelectedItem;
     private InsuranceClaimEventStatusModel UpdateStatusModel = new();
+    private BreakdownModel Breakdown = new();
     MyFileUpload Mfu;
+
+    private InsuranceClaimModel model = new InsuranceClaimModel();
+    private string SearchClaim = "";
+
 
     public bool HasPermissionInsuranceClaimServiceEdit { get; set; } = false;
     public bool HasPermissionInsuranceClaimServiceUpdateList { get; set; } = false;
@@ -124,7 +98,12 @@
 
     protected override async Task OnInitializedAsync()
     {
-        listOfItems = Iservice.Select(null).ToList();
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+        Collection = Iservice.Select(null).ToList();
     }
 
     protected async Task SelectedItemChanged(object obj)
@@ -249,9 +228,45 @@
     {
         SelectedModel.Images.Add(filePath);
     }
+
     async Task AddClaims(MudListItem MudListItem)
     {
         SelectedItem = MudListItem;
         //model.Assets.Add(MudListItem);
+    }
+
+    private async Task Edit(InsuranceClaimModel model)
+    {
+        InsuranceClaimModel Model = new();
+        Breakdown = Ibreakdown.SelectByID(model.BreakdownID);
+        var asset = IAsset.SelectByTruckID(Breakdown.TruckID);
+        model.Asset = asset;
+        Model = model;
+        DialogOptions options = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Large,
+            };
+        DialogParameters parameters = new();
+        parameters.Add("Model", Model.Clone());
+        parameters.Add("ReadOnly", false);
+        parameters.Add("Jobcard", false);
+        var dialog = DialogService.Show<Dialog>("Manage Claim", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            model = (InsuranceClaimModel)result.Data;
+        }
+        Model = new();
+        GetAll();
+    }
+
+    private bool search(InsuranceClaimModel model)
+    {
+        if (model?.TruckRegNo != null && model.TruckRegNo.Contains(SearchClaim, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else
+            return false;
     }
 }

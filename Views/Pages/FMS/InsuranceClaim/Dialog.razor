@@ -1,0 +1,379 @@
+﻿@attribute [Authorize]
+@using System.Threading;
+@inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
+@inject IInsuranceClaimService IInsuranceClaim
+@inject IBreakdownService IBreakdown
+@inject IAssetDocumentService IAssetDocument
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+
+<MudDialog>
+    <TitleContent>
+        @if (Model.InsuranceClaimID == null)
+        {
+            <MudText Typo="Typo.h5">Initiate Claim</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h5">Manage Claim</MudText>
+            <MudSpacer />
+            @if (!Model.IsOpen)
+            {
+                <MudText Typo="Typo.h6" Style="color : red;">Claim Closed</MudText>
+            }
+        }
+    </TitleContent>
+    <DialogContent>
+        <div style="max-height:800px; overflow-y:scroll">
+            <MudItem Style="padding: 26px; background-color: whitesmoke; margin: 2px; padding: 26px; border-radius: 4px; box-shadow: inset 0px 0px 4px 0px rgba(0,0,0,0.3);">
+                <MudPaper Style="margin-bottom:24px; padding: 24px;">
+                    <EditForm id="formInsuranceClaim" Model="@Model" OnValidSubmit="OnValidSubmit">
+                        <ObjectGraphDataAnnotationsValidator />
+                        <ValidationSummary />
+                        <MudGrid Spacing="2">
+                            <MudItem xs="6">
+                                <MudTextField ReadOnly @bind-Value="@Model.TruckRegNo" Margin="Margin.Dense" Variant="Variant.Outlined" Label="TruckRegNo"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudDatePicker ReadOnly="@ReadOnly" Date="@Model?.DateOfAccident" DateChanged="DateChanged" Margin="Margin.Dense" Variant="Variant.Outlined" Label="Date Of Accident"></MudDatePicker>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudTextField ReadOnly @bind-Value="@Model.PolicyNo" Margin="Margin.Dense" Variant="Variant.Outlined" Label="Policy Number"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudTextField ReadOnly="@ReadOnly" @bind-Value="@Model.ClaimNo" Margin="Margin.Dense" Variant="Variant.Outlined" Label="Claim No"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="4">
+                                <MudNumericField ReadOnly="@(Jobcard && Model.IsOpen)" HideSpinButtons @bind-Value="@Model.EstimateAmount" Label="EstimateAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.EstimateAmount)"></MudNumericField>
+                            </MudItem>
+                            <MudItem xs="4">
+                                <MudNumericField ReadOnly="@(Jobcard && Model.IsOpen)" HideSpinButtons @bind-Value="@Model.InvoiceAmount" Label="InvoiceAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.InvoiceAmount)"></MudNumericField>
+                            </MudItem>
+                            <MudItem xs="4">
+                                <MudNumericField ReadOnly="@(Jobcard)" HideSpinButtons @bind-Value="@Model.ApprovedAmount" Label="ApprovedAmount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.ApprovedAmount)"></MudNumericField>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField ReadOnly="@ReadOnly" @bind-Value="@Model.Notes" Margin="Margin.Dense" Variant="Variant.Outlined" Lines="6" Label="Notes"></MudTextField>
+                            </MudItem>
+                        </MudGrid>
+                    </EditForm>
+                </MudPaper>
+                <MudPaper Style="margin-bottom: 30px;">
+                    <MudToolBar>
+                        <MudText Typo="Typo.h6">Accident Images</MudText>
+                        <MudSpacer />
+                        @if (Model.InsuranceClaimID == null || (!Jobcard && Model.IsOpen))
+                        {
+                            <MyFileUpload @ref="Mfu" Resize="true" FolderName="@("InsuranceClaim/Breakdown-"+Model.BreakdownID.ToString())" Label="Upload Photos" FilePathChanged="FileUploaded"></MyFileUpload>
+                        }
+                    </MudToolBar>
+                    <MudGrid Style="padding: 24px;" Spacing="2" Justify="Justify.Center">
+                        @foreach (var imagePath in Model?.Images)
+                        {
+                            <MudItem xs="12" md="6" Class="d-flex">
+                                <MudPaper Class="p-2" Elevation="3">
+                                    <img src="@imagePath" alt="@imagePath" />
+                                </MudPaper>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudPaper>
+                @if (Model.InsuranceClaimID != null)
+                {
+                    <MudExpansionPanels>
+                        <MudExpansionPanel HideIcon="true">
+                            <TitleContent>
+                                <div class="row m-0">
+                                    <MudText Typo="Typo.h6">Event History</MudText>
+                                    <MudSpacer />
+                                    @if (ClaimEvents?.Any() == true)
+                                    {
+                                        <MudText Style="margin-top: 6px;">@(ClaimEvents?.LastOrDefault().Title) on @(ClaimEvents?.LastOrDefault().EventDate?.ToString("dd/MM/yyyy"))</MudText>
+                                    }
+                                    <MudSpacer />
+                                </div>
+                            </TitleContent>
+                            <ChildContent>
+                                <MudList>
+                                    @if (ClaimEvents?.Any() == true)
+                                    {
+                                        @foreach (var item in ClaimEvents)
+                                        {
+                                            <MudListItem>
+                                                @item.Title on @item.EventDate?.ToString("dd/MM/yy")
+                                            </MudListItem>
+                                            <MudDivider></MudDivider>
+                                        }
+                                    }
+                                    @if (!Jobcard)
+                                    {
+                                        @if (EventMasterSource?.Any() == true)
+                                        {
+                                            <MudListItem>
+                                                <MudGrid>
+                                                    <MudItem xs="5">
+                                                        <MudSelect T="int?" Label="Event" Value="UpdateStatusModel.IcemID" ValueChanged="EventSelected" AdornmentColor="Color.Secondary" Variant="Variant.Outlined" Required>
+                                                            @foreach (var item in EventMasterSource)
+                                                            {
+                                                                <MudSelectItem T="int?" Value="item.IcemID">@item.Title</MudSelectItem>
+                                                            }
+                                                        </MudSelect>
+                                                    </MudItem>
+                                                    <MudItem xs="5">
+                                                        <MudDatePicker Label="Date of Event" @bind-Date="UpdateStatusModel.EventDate" Variant=Variant.Outlined Required></MudDatePicker>
+                                                    </MudItem>
+                                                    <MudItem xs="2">
+                                                        <MudButton OnClick="UpdateStatus" Color="Color.Primary">Update</MudButton>
+                                                    </MudItem>
+                                                </MudGrid>
+                                            </MudListItem>
+                                        }
+                                    }
+                                </MudList>
+                            </ChildContent>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                }
+            </MudItem>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        
+        @if (EventMasterSource?.Any(x => x.IsMandatory) != true && Model.IsOpen && !Jobcard)
+        {
+            <MudButton Color="Color.Primary" OnClick="CloseClaim">Close Claim</MudButton>
+        }
+        @if (Model.IsOpen && !Jobcard || (Jobcard && Model.InsuranceClaimID == null))
+        {
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton Disabled="@_busy" form="formInsuranceClaim" Style="margin: 0px 16px 10px 0px;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Save Truck</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public InsuranceClaimModel Model { get; set; } = new();
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    [Parameter]
+    public bool Jobcard { get; set; }
+    public DateTime? TimeOfDamage { get; set; } = DateTime.Today;
+    private AssetDocumentModel Insurance = new();
+    private List<InsuranceClaimEventMasterModel> EventMasterSource;
+    private List<InsuranceClaimEventStatusModel> ClaimEvents;
+    private InsuranceClaimEventStatusModel UpdateStatusModel = new();
+    MyFileUpload Mfu;
+    private bool _busy;
+
+    public bool HasPermissionInsuranceClaimServiceEdit { get; set; } = false;
+    public bool HasPermissionInsuranceClaimServiceUpdateList { get; set; } = false;
+    public int InsuranceClaimDocTypeID = 83;
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            if (Model.InsuranceClaimID != null)
+            {
+                Insurance = IAssetDocument.SelectByAsset(Model.Asset.AssetID).FirstOrDefault(x => x.DocumentType.DocumentTypeName.ToUpper().Contains("INSURANCE") && IAssetDocument.IsValid(x, Model.DateOfAccident));
+                Model.PolicyNo = Insurance.Refference;
+                Model.InsuranceID = Insurance.DocumentID;
+                ClaimEvents = IInsuranceClaim.GetEventStatusList(Model.InsuranceClaimID).ToList();
+                SetEventMaster();
+            }
+            else
+            {
+                // if (Model.BreakdownID != null)
+                // {
+                //     TimeOfDamage = IBreakdown.SelectByID(Model.BreakdownID).BreakdownTime;
+                // }
+                // Insurance = IAssetDocument.SelectByAsset(Model.Asset.AssetID).FirstOrDefault(x => x.DocumentType.DocumentTypeName.ToUpper().Contains("INSURANCE") && IAssetDocument.IsValid(x, Model?.DateOfAccident));
+                // Model.InsuranceID = Insurance.DocumentID;
+            }
+            PermissionSet();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private async Task PermissionSet()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionInsuranceClaimServiceEdit = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionInsuranceClaimServiceUpdateList = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "UpdateList", ctc.Token);
+    }
+
+    private void SetEventMaster()
+    {
+        int? maxval = null;
+        if (ClaimEvents.Any() == true)
+        {
+            maxval = ClaimEvents?.Max(x => x.IcesID).Value;
+        }
+        EventMasterSource = IInsuranceClaim.GetEventList(maxval).ToList();
+    }
+
+    private void EventSelected(int? IcemID)
+    {
+        var SelectedEvent = EventMasterSource.First(x => x.IcemID == IcemID);
+        if (EventMasterSource.Any(y => y.Order < SelectedEvent.Order && y.IsMandatory))
+        {
+            snackbar.Add("Other Mandatory Events are Missing!", Severity.Error);
+            return;
+        }
+        UpdateStatusModel.IcemID = IcemID;
+    }
+
+    private async Task DateChanged(DateTime? a)
+    {
+        if (a != null)
+        {
+            //TimeOfDamage = IBreakdown.SelectByID(Model.BreakdownID).BreakdownTime;
+            Model.DateOfAccident = a;
+            Insurance = IAssetDocument.SelectByAsset(Model.Asset.AssetID).FirstOrDefault(x => x.DocumentType.DocumentTypeName.ToUpper().Contains("INSURANCE") && IAssetDocument.IsValid(x, Model.DateOfAccident));
+            if (Insurance == null)
+            {
+                snackbar.Add("Insurance is Not Found !", Severity.Error);
+                return;
+            }
+            Model.PolicyNo = Insurance.Refference;
+            Model.InsuranceID = Insurance.DocumentID;
+        }
+    }
+
+    private async Task UpdateStatus()
+    {
+        if (HasPermissionInsuranceClaimServiceUpdateList)
+        {
+            try
+            {
+                var authState = await auth.GetAuthenticationStateAsync();
+                UpdateStatusModel.UserInfo.UserID = authState.User.Identity.Name;
+                UpdateStatusModel.InsuranceClaimID = Model.InsuranceClaimID;
+                UpdateStatusModel = IInsuranceClaim.UpdateClaimEvent(UpdateStatusModel);
+                ClaimEvents.Add(UpdateStatusModel);
+                UpdateStatusModel = new()
+                    {
+                        InsuranceClaimID = Model.InsuranceClaimID,
+                    };
+                SetEventMaster();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to UpdateList InsuranceClaim.");
+        }
+    }
+
+    private void FileUploaded(string filePath)
+    {
+        Model.Images.Add(filePath);
+    }
+
+    private void Cancel()
+    {
+        bool success = true;
+        // foreach (var item in Model.Images.ToList())
+        // {
+        //     if (Mfu.DeleteFile(item))
+        //     {
+        //         Model.Images.Remove(item);
+        //     }
+        //     else
+        //     {
+        //         success = false;
+        //     }
+        // }
+        if (success)
+        {
+            MudDialog.Cancel();
+        }
+    }
+
+    private async Task CloseClaim()
+    {
+        if (HasPermissionInsuranceClaimServiceEdit)
+        {
+            try
+            {
+                if (Model.EstimateAmount == null)
+                {
+                    snackbar.Add("EstimateAmount is Missing!", Severity.Error);
+                    return;
+                }
+                if (Model.InvoiceAmount == null)
+                {
+                    snackbar.Add("InvoiceAmount is Missing!", Severity.Error);
+                    return;
+                }
+                if (Model.ApprovedAmount == null)
+                {
+                    snackbar.Add("ApprovedAmount is Missing!", Severity.Error);
+                    return;
+                }
+                var authState = await auth.GetAuthenticationStateAsync();
+                Model.IsOpen = false;
+                Model.UserInfo.UserID = authState.User.Identity.Name;
+                IInsuranceClaim.Update(Model);
+                snackbar.Add("Claim Closed Successfully!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit InsuranceClaim.");
+        }
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        if (HasPermissionInsuranceClaimServiceEdit)
+        {
+            try
+            {
+                var authState = await auth.GetAuthenticationStateAsync();
+                Model.UserInfo.UserID = authState.User.Identity.Name;
+                //model.Images.AddRange(ImagePaths);
+                IInsuranceClaim.Update(Model);
+                snackbar.Add("Saved Successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(Model));
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit InsuranceClaim.");
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+}
