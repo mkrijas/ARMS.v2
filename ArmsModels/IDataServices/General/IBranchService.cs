@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
         string GetBranchName(int? BranchID);
         int Delete(int? AddressID, string UserID);  //Delete
         IEnumerable<BranchModel> Select();
+        IEnumerable<int?> SelectSubBranches(int BranchID);
         int AddContact(int? BranchID, ContactModel contact);  //Edit
         IEnumerable<ContactModel> GetContacts(int? PartyID);
         public IEnumerable<UserBranchRoleModel> GetUsersNRoles(int? BranchID);
