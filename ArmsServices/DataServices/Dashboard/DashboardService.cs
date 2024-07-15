@@ -25,8 +25,18 @@ namespace ArmsServices.DataServices
             };
             return GetChartData(parameters);
         }
-        
-        public List<DashboardModel> SelectDonutData(int? BranchID)
+
+        public List<DashboardModel> SelectTruckDonutData(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "TruckCurrentStatusChart"),
+               new SqlParameter("@BranchID", BranchID)
+            };
+            return GetChartData(parameters);
+        }
+
+        public List<DashboardModel> SelectDriverDonutData(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {

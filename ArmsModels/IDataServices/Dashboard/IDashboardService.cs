@@ -11,7 +11,8 @@ namespace ArmsServices.DataServices
     public interface IDashboardService
     {
         List<DashboardModel> SelectChartData(int? BranchID, DateTime? From, DateTime? To);
-        List<DashboardModel> SelectDonutData(int? BranchID);
+        List<DashboardModel> SelectTruckDonutData(int? BranchID);
+        List<DashboardModel> SelectDriverDonutData(int? BranchID);
         List<DashboardModel> SelectLineChart(int? BranchID, DateTime? To);
         IEnumerable<DriverModel> GetDriverStatusByEvent(int? BranchID, string SelectedValue);
     }
