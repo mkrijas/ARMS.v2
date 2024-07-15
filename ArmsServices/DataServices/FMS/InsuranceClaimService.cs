@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
@@ -65,6 +66,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BreakdownID", model.BreakdownID),
                new SqlParameter("@InsuranceID", model.InsuranceID),
                new SqlParameter("@IsOpen", model.IsOpen),
+               new SqlParameter("@DateOfAccident", model.DateOfAccident),
+               new SqlParameter("@ClaimNo", model.ClaimNo),
+               new SqlParameter("@EstimateAmount", model.EstimateAmount),
+               new SqlParameter("@InvoiceAmount", model.InvoiceAmount),
+               new SqlParameter("@ApprovedAmount", model.ApprovedAmount),
                new SqlParameter("@Notes", model.Notes),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -144,7 +150,13 @@ namespace ArmsServices.DataServices
                 Images = dr.GetString("Images").Split(";").ToList(),
                 BreakdownID = dr.GetInt32("BreakdownID"),
                 InsuranceID = dr.GetInt32("InsuranceID"),
+                TruckRegNo = dr.GetString("RegNo"),
+                DateOfAccident = dr.GetDateTime("AccidentDate"),
+                ClaimNo = dr.GetString("ClaimNo"),
                 IsOpen = dr.GetBoolean("IsOpen"),
+                EstimateAmount = dr.GetDecimal("EstimateAmount"),
+                InvoiceAmount = dr.GetDecimal("InvoiceAmount"),
+                ApprovedAmount = dr.GetDecimal("ApprovedAmount"),
                 Notes = dr.GetString("Notes"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
