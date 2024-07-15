@@ -185,5 +185,20 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        public IEnumerable<int?> SelectSubBranches(int BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "GetSubBranches"),
+            };
+            
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Branch.Select]", parameters))
+            {
+                yield return dr.GetInt32("BranchID");
+            }
+           
+        }
     }
 }
