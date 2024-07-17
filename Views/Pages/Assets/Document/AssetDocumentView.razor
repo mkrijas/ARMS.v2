@@ -13,75 +13,126 @@
 @using Views.Pages.Finance.Transactions.PurchaseAndPayment;
 
 <MudPaper Class="p-2 my-4 d-flex align-center">
-    <AssetSelector Value="Asset" ValueChanged="AssetSelected" BranchID="@BranchID" Class="mx-5 my-5 bg-white"/>
+    <AssetSelector Value="Asset" ValueChanged="AssetSelected" BranchID="@BranchID" Class="mx-5 my-5 bg-white" />
     @if (Asset != null)
     {
-        <MudIconButton Disabled="@_busy" OnClick="@(()=> OpenDialogEdit(new AssetDocumentModel()))" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Medium" Title="Add New" />
+        <MudButton Disabled="@_busy" OnClick="@(()=> OpenDialogEdit(new AssetDocumentModel(), false))" Style="margin-right: 1%;" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Size="Size.Medium">Add New Document</MudButton>
     }
 </MudPaper>
-<MudText Typo="Typo.h6">Active Documents</MudText>
-<MudGrid Spacing="2">
-    @foreach (var item in collection)
+<MudPaper>
+    <MudToolBar>
+        <MudText Typo="Typo.h6">Active Documents</MudText>
+        <MudSpacer />
+        <MudSwitch Color="Color.Primary" @bind-Value=@(ViewChange) Label="Change View" />
+    </MudToolBar>
+    <MudDivider></MudDivider>
+    @if (!ViewChange)
     {
-        <MudItem xs="12" sm="6" md="4" xl="3">
-            <div style="position:relative">
-                @if (item.ExtendedEndDate != null)
-                {
-                    @if (item.ExtendedEndDate < DateTime.Today)
-                    {
-                        <h2 class="Expired">EXPIRED</h2>
-                    }
-                }
+        <MudGrid Spacing="2" Style="padding: 14px;">
+            @foreach (var item in collection)
+            {
+                <MudItem xs="12" sm="6" md="4" xl="3">
+                    <div style="position:relative">
+                        @if ((item.ExtendedEndDate != null && item.ExtendedEndDate < DateTime.Today) || (item.EndDate < DateTime.Today))
+                        {
+                            <h2 class="Expired">EXPIRED</h2>
+                        }
+                        @if (item.ExtendedEndDate == null)
+                        {
+                            <MudCard Style="@(item.EndDate < DateTime.Today ? $"background:{Colors.BlueGrey.Lighten4};" : "")">
+                                <iframe class="mt-1 mr-1 ml-1" src="@item.AttachedDocument" style="height:350px" alt="@item.AttachedDocument" />
+                                <MudCardContent Class="overflow-auto" Style="min-width:500px">
+                                    <MudText Typo="Typo.h6">@item.DocumentType.DocumentTypeName</MudText>
+                                    <MudText Typo="Typo.body2">Period:  @string.Format("{0} - {1}", item.StartDate?.ToShortDateString(), item.EndDate?.ToShortDateString())</MudText>
+                                    <MudText Typo="Typo.body2">Doc Date:  @item.InvoiceDate?.ToShortDateString()</MudText>
+                                </MudCardContent>
+                                <MudCardActions>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item, false))">Edit</MudButton>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> Remove(item))">Remove</MudButton>
+                                    <MyFileUpload FileName="@(Guid.NewGuid().ToString())" FolderName="AssetDocuments" Label="Upload" FilePath="@item.AttachedDocument" FilePathChanged="((e)=> SaveImagePath(e,item.DocumentID))" AcceptOnlyPdf="true"></MyFileUpload>
+                                    @if (!item.IsFinanciallyPosted)
+                                    {
+                                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> OpenDialogTaxPurchase(item))">Add TaxPurchase</MudButton>
+                                    }
+                                </MudCardActions>
+                            </MudCard>
+                        }
+                        else
+                        {
 
-                else if (item.EndDate < DateTime.Today)
-                {
-                    <h2 class="Expired">EXPIRED</h2>
-                }
-                @if (item.ExtendedEndDate == null)
-                {
-                    <MudCard Style="@(item.EndDate < DateTime.Today ? $"background:{Colors.BlueGrey.Lighten4};" : "")">
-                        <iframe class="mt-1 mr-1 ml-1" src="@item.AttachedDocument" style="height:350px" alt="@item.AttachedDocument" />
-                        <MudCardContent Class="overflow-auto" Style="min-width:500px">
-                            <MudText Typo="Typo.h6">@item.DocumentType.DocumentTypeName</MudText>
-                            <MudText Typo="Typo.body2">Period:  @string.Format("{0} - {1}", item.StartDate?.ToShortDateString(), item.EndDate?.ToShortDateString())</MudText>
-                            <MudText Typo="Typo.body2">Doc Date:  @item.InvoiceDate?.ToShortDateString()</MudText>
-                        </MudCardContent>
-                        <MudCardActions>
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item))">Edit</MudButton>
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> Remove(item))">Remove</MudButton>
-                            <MyFileUpload FileName="@(Guid.NewGuid().ToString())" FolderName="AssetDocuments" Label="Upload" FilePath="@item.AttachedDocument" FilePathChanged="((e)=> SaveImagePath(e,item.DocumentID))" AcceptOnlyPdf="true"></MyFileUpload>
-                            @if (!item.IsFinanciallyPosted)
-                            {
-                                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> OpenDialogTaxPurchase(item))">Add TaxPurchase</MudButton>
-                            }
-                        </MudCardActions>
-                    </MudCard>
-                }
-                else
-                {
-
-                    <MudCard Style="@(item.ExtendedEndDate < DateTime.Today ? $"background:{Colors.BlueGrey.Lighten4};" : "")">
-                        <iframe class="mt-1 mr-1 ml-1" src="@item.AttachedDocument" style="height:350px" alt="@item.AttachedDocument" />
-                        <MudCardContent Class="overflow-auto" Style="min-width:500px">
-                            <MudText Typo="Typo.h6">@item.DocumentType.DocumentTypeName</MudText>
-                            <MudText Typo="Typo.body2">Period:  @string.Format("{0} - {1}", item.StartDate?.ToShortDateString(), item.EndDate?.ToShortDateString())</MudText>
-                            <MudText Typo="Typo.body2">Doc Date:  @item.InvoiceDate?.ToShortDateString()</MudText>
-                        </MudCardContent>
-                        <MudCardActions>
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item))">Edit</MudButton>
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> Remove(item))">Remove</MudButton>
-                            <MyFileUpload FileName="@Guid.NewGuid().ToString()" FolderName="AssetDocuments" Label="Upload" FilePath="@item.AttachedDocument" FilePathChanged="((e)=> SaveImagePath(e,item.DocumentID))" AcceptOnlyPdf="true"></MyFileUpload>
-                            @if (!item.IsFinanciallyPosted)
-                            {
-                                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> OpenDialogTaxPurchase(item))">Add TaxPurchase</MudButton>
-                            }
-                        </MudCardActions>
-                    </MudCard>
-                }
-            </div>
-        </MudItem>
+                            <MudCard Style="@(item.ExtendedEndDate < DateTime.Today ? $"background:{Colors.BlueGrey.Lighten4};" : "")">
+                                <iframe class="mt-1 mr-1 ml-1" src="@item.AttachedDocument" style="height:350px" alt="@item.AttachedDocument" />
+                                <MudCardContent Class="overflow-auto" Style="min-width:500px">
+                                    <MudText Typo="Typo.h6">@item.DocumentType.DocumentTypeName</MudText>
+                                    <MudText Typo="Typo.body2">Period:  @string.Format("{0} - {1}", item.StartDate?.ToShortDateString(), item.EndDate?.ToShortDateString())</MudText>
+                                    <MudText Typo="Typo.body2">Doc Date:  @item.InvoiceDate?.ToShortDateString()</MudText>
+                                </MudCardContent>
+                                <MudCardActions>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item, false))">Edit</MudButton>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> Remove(item))">Remove</MudButton>
+                                    <MyFileUpload FileName="@Guid.NewGuid().ToString()" FolderName="AssetDocuments" Label="Upload" FilePath="@item.AttachedDocument" FilePathChanged="((e)=> SaveImagePath(e,item.DocumentID))" AcceptOnlyPdf="true"></MyFileUpload>
+                                    @if (!item.IsFinanciallyPosted)
+                                    {
+                                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> OpenDialogTaxPurchase(item))">Add TaxPurchase</MudButton>
+                                    }
+                                </MudCardActions>
+                            </MudCard>
+                        }
+                    </div>
+                </MudItem>
+            }
+        </MudGrid>
     }
-</MudGrid>
+    else
+    {
+        <MudSimpleTable Dense="true" Hover="true" Style="overflow-x: auto;">
+            <thead>
+                <tr>
+                    <th><b>DocumentTypeName</b></th>
+                    <th><b>Document Date</b></th>
+                    <th><b>Document Period</b></th>
+                    <th><b>Update By</b></th>
+                    <th colspan="3"><b>Action</b></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in collection)
+                {
+                    <tr style="@GetRowStyle(item)">
+                        <td>
+                            @item.DocumentType.DocumentTypeName
+                            @if (item.ExtendedEndDate != null)
+                            {
+                                @if (item.ExtendedEndDate < DateTime.Today)
+                                {
+                                    <MudText Typo="Typo.caption" Style="color:red;">&nbsp;&nbsp;&nbsp;&nbsp;(EXPIRED)</MudText>
+                                }
+                            }
+                        </td>
+                        <td>@item.InvoiceDate?.ToShortDateString()</td>
+                        <td>@string.Format("{0} - {1}", item.StartDate?.ToShortDateString(), item.EndDate?.ToShortDateString())</td>
+                        <td>@item.UserInfo.UserID</td>
+                        <td>
+                            @if (item.AttachedDocument == null)
+                            {
+                                <MyFileUpload FileName="@Guid.NewGuid().ToString()" FolderName="AssetDocuments" Label="Upload" FilePath="@item.AttachedDocument" FilePathChanged="((e)=> SaveImagePath(e,item.DocumentID))" AcceptOnlyPdf="true"></MyFileUpload>
+                            }
+                            else
+                            {
+                                <MudIconButton Icon="@Icons.Material.Outlined.GridView" Title="View" Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item, true))">View</MudIconButton>
+                                <MudIconButton Icon="@Icons.Material.Outlined.Edit" Title="Edit" Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item, false))">Edit</MudIconButton>
+                                <MudIconButton Icon="@Icons.Material.Outlined.Remove" Title="Remove" Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> Remove(item))">Remove</MudIconButton>
+                                <a href="@item.AttachedDocument" download="Document">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Title="Download" />
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+</MudPaper>
 
 @code {
 
@@ -93,6 +144,7 @@
     int BranchID;
     private bool visible;
     private bool _busy;
+    private bool ViewChange = false;
 
     public int TaxPurchaseDocTypeID = 9;
     #region SignaIR Notification
@@ -127,6 +179,19 @@
         collection = Iservice.SelectByAsset(Asset?.AssetID).ToList();
     }
 
+    private string GetRowStyle(AssetDocumentModel item)  // Replace ItemType with your actual type
+    {
+        if (item.AttachedDocument == null)
+        {
+            return "background-color: orange;";
+        }
+        else if ((item.ExtendedEndDate != null && item.ExtendedEndDate < DateTime.Today) || (item.EndDate < DateTime.Today))
+        {
+            return "background-color: red;";
+        }
+        return string.Empty;
+    }
+
     private void AssetSelected(AssetModel selectedAsset)
     {
         Asset = selectedAsset;
@@ -149,7 +214,7 @@
         }
     }
 
-    private async Task OpenDialogEdit(AssetDocumentModel model)
+    private async Task OpenDialogEdit(AssetDocumentModel model, bool ReadOnly)
     {
         if (_busy)
         {
@@ -168,7 +233,8 @@
             {
                 ["model"] = model.Clone(),
                 ["Asset"] = Asset,
-                ["Dtypes"] = Dtypes
+                ["Dtypes"] = Dtypes,
+                ["ReadOnly"] = ReadOnly
             };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
         var dialog = DialogService.Show<AssetDocumentDialog>("ADD/EDIT", param, options);
