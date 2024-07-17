@@ -1,0 +1,90 @@
+﻿@using System.Threading;
+@inject AuthenticationStateProvider auth
+@inject IDriverService Iservice
+@inject IBranchService Ibranchservice
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Driver Rejoin
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <b>@model.DriverName</b>
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formDriver" Model="@model" OnValidSubmit="Submit">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="12">
+                        <MudSelect Label="Select Branch" @bind-Value="BranchID" T="int?" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                            @foreach (var ditem in branches)
+                            {
+                                <MudSelectItem Value="@ditem.BranchID">@ditem.BranchName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" Class="px-12">Rejoin</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public DriverModel model { get; set; } = new();
+    private List<BranchModel> branches = new();
+    private string UserID;
+    private int? BranchID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+
+        branches = Ibranchservice.Select().ToList();
+        // if (model.BranchID == null)
+        // {
+        //     model.BranchID = new();
+        //     model.BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        // }
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public async Task Submit()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+
+        if(BranchID == null)
+        {
+            Snackbar.Add("Select Rejoining Branch", Severity.Warning);
+            return;
+        }
+        try
+        {
+            UserID = user.Identity.Name;
+            Iservice.ReJoin(model.DriverID, UserID, BranchID);
+            Snackbar.Add("Driver Rejoined Successfully", Severity.Success);
+
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+
+        MudDialog.Close(model);        
+    }
+}

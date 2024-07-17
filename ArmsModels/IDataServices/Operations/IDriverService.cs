@@ -30,5 +30,6 @@ namespace ArmsServices.DataServices
         IEnumerable<DriverModel> GetDriverByAdhaarNo(string AdhaarNo);
         public string GetWorkPeriod(int? DriverID);
         public string RemoveDriverFromTruck(int? driverId, string UserId);  //RemoveDriver
+        int ReJoin(int? DriverID, string UserID, int? BranchID);
     }
 }
