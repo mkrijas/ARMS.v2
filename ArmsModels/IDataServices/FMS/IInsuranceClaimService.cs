@@ -11,6 +11,7 @@ namespace ArmsServices.DataServices
     public interface IInsuranceClaimService
     {
         InsuranceClaimModel Update(InsuranceClaimModel model);  //Edit
+        int RemovePhoto(InsuranceClaimModel model);  //Edit
         InsuranceClaimModel SelectByID(int? ID);
         InsuranceClaimModel SelectByBreakdownID(int? ID);
         int Delete(int? InsuranceClaimID, string UserID);  //Delete
