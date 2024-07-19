@@ -283,6 +283,7 @@ namespace ArmsServices.DataServices.Inventory
                 {
                     ItemID = dr.GetInt32("ItemID"),
                     ItemDescription = dr.GetString("ItemDescription"),
+                    ItemGroupDescription = dr.GetString("ItemGroupDescription"),
                     RequestQty = dr.GetDecimal("RequestQty"),
                     ItemQty = dr.GetDecimal("ReleaseQty"),
                 },
