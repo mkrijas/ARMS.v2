@@ -93,7 +93,9 @@ namespace ArmsServices.DataServices
             {
                 yield return new DriverModel()
                 {
-                    DriverName = dr.GetString("DriverName")
+                    DriverName = dr.GetString("DriverName"),
+                    Mobile = dr.GetString("Mobile"),
+                    SinceLastEvent = dr.GetDateTime("SinceDate"),
                 };
             }
         }
