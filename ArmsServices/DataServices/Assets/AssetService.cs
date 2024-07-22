@@ -147,7 +147,21 @@ namespace ArmsServices.DataServices
                return GetModel(dr);
             }
             return null;
-        }       
+        }
+
+        public AssetModel UpdateAssetStatus(AssetModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetID", model.AssetID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.AssetStatus.Update]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
+        }
 
         public int MoveAsset(int? AssetID, int? ParentAssetID,string Mode,string UserID)
         {
@@ -468,6 +482,7 @@ namespace ArmsServices.DataServices
                 AccountName = dr.GetString("AccountName"),
                 CoaID = dr.GetInt32("CoaID"),
                 TaxRate = dr.GetDecimal("TaxRate"),
+                AssetStatus = dr.GetString("AssetStatus"),
                 VendorInfo = new()
                 {
                     PartyID = dr.GetInt32("PartyID"),

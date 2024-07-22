@@ -3,10 +3,14 @@
 @inject NavigationManager _navigationManager
 @inject IAssetService Iservice
 @inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@attribute [Authorize]
+@inject IRoleService<RoleModel> Irole
+@using System.Threading;
 
 <MudPaper Outlined Class="pa-2">
-     <MudGrid Justify="Justify.FlexEnd">
-         <MudItem xs="1" md="1" Class="ia">
+    <MudGrid Justify="Justify.FlexEnd">
+        <MudItem xs="1" md="1" Class="ia">
             @if (this.hasChildren)
             {
                 <MudIconButton Icon="@btnIcon" @onclick="ToggleShow" Size="Size.Small" IconSize="Size.Small"></MudIconButton>
@@ -55,6 +59,12 @@
                     <MudIconButton @onclick="@(()=> OpenAssetLedgerViews(this.Model.Parent))" Color="Color.Primary" Icon="@Icons.Material.Filled.TableView" Size="Size.Small" IconSize="Size.Small" />
                 </MudTooltip>
             }
+            @if (this.Model.Parent.AssetStatus == "WIP")
+            {
+                <MudTooltip Text="Set As Ready To Use Asset">
+                    <MudIconButton @onclick="@(()=> ChangeAsset(this.Model.Parent))" Color="Color.Primary" Icon="@Icons.Material.Filled.AccountTree" Size="Size.Small" IconSize="Size.Small" />
+                </MudTooltip>
+            }
         </MudItem>
     </MudGrid>
 </MudPaper>
@@ -77,12 +87,18 @@
 
 @code {
 
-    [Parameter] 
+    [Parameter]
     public AssetViewModel Model { get; set; }
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     private bool Show;
     private bool _busy;
     private string btnIcon = Icons.Material.Filled.ArrowDownward;
+
+    bool HasPermissionAssetServiceEdit { get; set; } = false;
+    int AssetDocTypeID = 112;
+    string UserID;
+    [Parameter]
+    public EventCallback<bool> AssetChanged { get; set; }
 
     private void ToggleShow()
     {
@@ -173,6 +189,58 @@
         _busy = false;
     }
 
+    private async Task ChangeAsset(AssetModel model)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        bool? confirm = await DialogService.ShowMessageBox("CAUTION", string.Format("Are you Sure you want to change Asset from WIP to Ready to use?"), "Sure", "No");
+        if (confirm == true)
+        {
+            CancellationTokenSource ctc = new CancellationTokenSource();
+            HasPermissionAssetServiceEdit = await Irole.HasClaim(AssetDocTypeID.ToString(), "Edit", ctc.Token);
+
+            var authState = await auth.GetAuthenticationStateAsync();
+            UserID = authState.User.Identity.Name;
+            if (HasPermissionAssetServiceEdit)
+            {
+                if(model.DepreciationStartingDate == null || model.DepreciationEndingDate == null)
+                {
+                    snackbar.Add("Please enter depreciation date", Severity.Warning);
+                    return;
+                }
+                model.UserInfo.UserID = UserID;
+                try
+                {
+                    Iservice.UpdateAssetStatus(model);
+                    model = new();
+                    snackbar.Add("Changed Successfully", Severity.Success);
+                    await AssetChanged.InvokeAsync(true);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
+            }
+            else
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Edit Asset.");
+            }
+            await Task.Delay(200);
+            _busy = false;
+        }
+        else
+        {
+        }
+
+        StateHasChanged();
+    }
+
     private async Task RemoveAsset(AssetModel tds)
     {
         if (_busy)
@@ -184,21 +252,22 @@
 
         DialogParameters parms = new DialogParameters();
         parms.Add("model", tds.Clone());
-        var dialog = DialogService.Show<AssetMoveDialog>(tds.AssetID == null ? "ADD" : "EDIT", parms, maxWidth);
-        var result = await dialog.Result;
-        if (!result.Cancelled)
-        {
-            _navigationManager.NavigateTo("AssetSimpleView", true);
-        }
-        await Task.Delay(200);
-        _busy = false;
+        var dialog = DialogService.Show<AssetMoveDialog>
+    (tds.AssetID == null ? "ADD" : "EDIT", parms, maxWidth);
+    var result = await dialog.Result;
+    if (!result.Cancelled)
+    {
+    _navigationManager.NavigateTo("AssetSimpleView", true);
+    }
+    await Task.Delay(200);
+    _busy = false;
     }
 
     private void OpenAssetLedgerViews(AssetModel Asset)
     {
-        if (Asset != null && Asset.AssetID != null)
-        {
-            _navigationManager.NavigateTo("/AssetLedgerView/" + Asset.AssetID.ToString());
-        }
+    if (Asset != null && Asset.AssetID != null)
+    {
+    _navigationManager.NavigateTo("/AssetLedgerView/" + Asset.AssetID.ToString());
     }
-}
+    }
+    }

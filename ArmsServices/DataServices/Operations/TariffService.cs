@@ -178,6 +178,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TariffTypeName", model.TariffTypeName),
                new SqlParameter("@Unit", model.Unit),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@GCCreation", model.GCCreation)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.TariffType.Update]", parameters))
             {
