@@ -231,6 +231,7 @@ namespace Views
             services.AddScoped<IRoutineCheckListMasterService, RoutineCheckListMasterService>();
             services.AddScoped<IDocVoucherService, DocVoucherService>();
             services.AddScoped<IMileageShortageReceiptService, MileageShortageReceiptService>();
+            services.AddScoped<IShortageDamageCompensationService, ShortageDamageCompensationService>();
 
 
             //------------FINANCE TRANSACTIONS-------------------
