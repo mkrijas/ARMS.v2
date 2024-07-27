@@ -184,6 +184,7 @@ namespace ArmsServices.DataServices
                 },
                 ItemGroup = new InventoryItemGroupModel()
                 {
+                    Group2ID = dr.GetInt32("Group2ID"),
                     ItemGroupDescription = dr.GetString("ItemGroupDescription"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
