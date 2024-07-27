@@ -1,4 +1,5 @@
 ﻿using ArmsModels.SharedModels;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -7,8 +8,13 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class InsuranceClaimModel
+    public class InsuranceClaimModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<InsuranceClaimModel>(Json);
+        }
         public InsuranceClaimModel()
         {
             UserInfo = new();
@@ -18,9 +24,21 @@ namespace ArmsModels.BaseModels
         public int? InsuranceID { get; set; }
         public int? BreakdownID { get; set; }
         public bool IsOpen { get; set; }
-        public List<string> Images { get; set; } 
+        [Required]
+        public string ClaimNo { get; set; }
+        public string TruckRegNo { get; set; }
+        [Required]
+        public string PolicyNo { get; set; }
+        [Required]
+        public DateTime? DateOfAccident { get; set; }
+        public decimal? EstimateAmount { get; set; }
+        public decimal? InvoiceAmount { get; set; }
+        public decimal? ApprovedAmount { get; set; }
+        public List<string> Images { get; set; }
+        public string RemoveImage { get; set; }
         [Required]
         public string Notes { get; set; }
+        public virtual AssetModel Asset { get; set; }
         public virtual List<InsuranceClaimEventStatusModel> Events { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }

@@ -25,8 +25,18 @@ namespace ArmsServices.DataServices
             };
             return GetChartData(parameters);
         }
-        
-        public List<DashboardModel> SelectDonutData(int? BranchID)
+
+        public List<DashboardModel> SelectTruckDonutData(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "TruckCurrentStatusChart"),
+               new SqlParameter("@BranchID", BranchID)
+            };
+            return GetChartData(parameters);
+        }
+
+        public List<DashboardModel> SelectDriverDonutData(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -83,7 +93,9 @@ namespace ArmsServices.DataServices
             {
                 yield return new DriverModel()
                 {
-                    DriverName = dr.GetString("DriverName")
+                    DriverName = dr.GetString("DriverName"),
+                    Mobile = dr.GetString("Mobile"),
+                    SinceLastEvent = dr.GetDateTime("SinceDate"),
                 };
             }
         }

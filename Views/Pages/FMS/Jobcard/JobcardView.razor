@@ -250,7 +250,7 @@
                                         <MudTh></MudTh>
                                     </HeaderContent>
                                     <RowTemplate>
-                                        <MudTd DataLabel="Item">@context.ReleaseSubDetails?.ItemDescription</MudTd>
+                                        <MudTd DataLabel="Item">@context.ReleaseSubDetails?.ItemGroupDescription - @context.ReleaseSubDetails?.ItemDescription</MudTd>
                                         <MudTd DataLabel="Document Date / Request Number">@(context.RequestDate?.ToShortDateString()) / @(context.RequestNumber)</MudTd>
                                         <MudTd DataLabel="Request Qty">@context.ReleaseSubDetails?.RequestQty</MudTd>
                                         <MudTd DataLabel="Release Qty">@context.ReleaseSubDetails?.ItemQty</MudTd>
@@ -358,7 +358,7 @@
     </TitleContent>
     <DialogContent>
         <MudContainer Style="height: 300px; overflow-y: auto">
-            <MudSelect T="MechanicModel" MultiSelection="true" Label="Assign Mechanic/s" ToStringFunc="@(p => p.MechanicName)" @bind-SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+            <MudSelect T="MechanicModel" MultiSelection="true" Label="Assign Mechanic/s" ToStringFunc="@(p => p.MechanicName)" @bind-SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
                 @foreach (var item in Mechanics)
                 {
                     <MudSelectItem T="MechanicModel" Value="@item">@item.MechanicName</MudSelectItem>
@@ -421,27 +421,32 @@
         EventTypes = Ievent.GetEventTypes().ToList();
         if (JobcardID != null)
         {
-            SelectedTruck = Itruck.SelectByID(TruckID);
-            SelectedJobcard = Iservice.SelectByID(JobcardID);
-            Breakdown = Ibreakdown.SelectByID(SelectedJobcard?.BreakdownID);
-            jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
-            setJipList(SelectedJobcard);
-            InvRequestList = IInvRequestservice.SelectRequestReleaseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
-            ExpenseList = IInvRequestservice.SelectExpenseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
-            if (Breakdown.IsClaimInitiated == true)
-            {
-
-                InsModel = IClaimservice.SelectByBreakdownID(Breakdown.BreakdownID);
-                IEnumerable<InsuranceClaimEventStatusModel> statusModel;
-                statusModel = IClaimservice.GetEventStatusList(InsModel.InsuranceClaimID);
-                InsModel.Events = statusModel.ToList();
-            }
+            GetAll();
         }
         else if (TruckID != null)
         {
             await TruckSelected(Itruck.SelectByID(TruckID));
         }
 
+    }
+
+    public void GetAll()
+    {
+        SelectedTruck = Itruck.SelectByID(TruckID);
+        SelectedJobcard = Iservice.SelectByID(JobcardID);
+        Breakdown = Ibreakdown.SelectByID(SelectedJobcard?.BreakdownID);
+        jwList = Ijw.SelectByJobcard(SelectedJobcard?.JobcardID).ToList();
+        setJipList(SelectedJobcard);
+        InvRequestList = IInvRequestservice.SelectRequestReleaseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
+        ExpenseList = IInvRequestservice.SelectExpenseByJobCardID(SelectedJobcard?.JobcardID ?? 0).ToList();
+        if (Breakdown.IsClaimInitiated == true)
+        {
+
+            InsModel = IClaimservice.SelectByBreakdownID(Breakdown.BreakdownID);
+            IEnumerable<InsuranceClaimEventStatusModel> statusModel;
+            statusModel = IClaimservice.GetEventStatusList(InsModel.InsuranceClaimID);
+            InsModel.Events = statusModel.ToList();
+        }
     }
 
     private async Task TruckSelected(TruckModel obj)
@@ -708,18 +713,30 @@
             return;
         }
         _busy = true;
+        InsuranceClaimModel model = new() { IsOpen = true };
         var asset = Iasset.SelectByTruckID(Breakdown.TruckID);
+        InsModel.TruckRegNo = SelectedTruck.RegNo;
+        InsModel.BreakdownID = Breakdown.BreakdownID;
+        InsModel.Asset = asset;
+        model = InsModel;
         var parameters = new DialogParameters();
-        parameters.Add("BreakdownID", Breakdown.BreakdownID);
-        parameters.Add("Asset", asset.Clone());
+        parameters.Add("Model", model.Clone());
+        parameters.Add("ReadOnly", false);
+        parameters.Add("Jobcard", true);
+        //parameters.Add("model", InsModel);
+        //parameters.Add("BreakdownID", Breakdown.BreakdownID);
+        //parameters.Add("Asset", asset.Clone());
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<InitiateClaimDialog>("Initiate Claim", parameters, maxWidth);
+        //var dialog = DialogService.Show<InitiateClaimDialog>("Initiate Claim", parameters, maxWidth);
+        var dialog = DialogService.Show<ClaimDialog>("Initiate Claim", parameters, maxWidth);
         var result = await dialog.Result;
         if (!result.Canceled)
         {
-            InsuranceClaimModel InsModel = (InsuranceClaimModel)result.Data;
+            InsModel = (InsuranceClaimModel)result.Data;
             Breakdown.IsClaimInitiated = true;
         }
+        model = new();
+        GetAll();
         await Task.Delay(200);
         _busy = false;
     }
@@ -869,13 +886,29 @@
         _busy = true;
         if (HasPermissionJobcardServiceEdit)
         {
+            var asset = Iasset.SelectByTruckID(Breakdown.TruckID);
+            InsModel.TruckRegNo = SelectedTruck.RegNo;
+            InsModel.BreakdownID = Breakdown.BreakdownID;
+            InsModel.Asset = asset;
             var parameters = new DialogParameters();
-            parameters.Add("SelectedModels", InsModel);
-            parameters.Add("Visible", dialogVisible);
-            parameters.Add("Page", "JobCard");
-            parameters.Add("OnClaimAdded", null);
+            parameters.Add("Model", InsModel.Clone());
+            @if (dialogVisible)
+            {
+                parameters.Add("ReadOnly", true);
+            }
+            else
+            {
+                parameters.Add("ReadOnly", false);
+            }
+            parameters.Add("Jobcard", true);
+            // parameters.Add("SelectedModels", InsModel);
+            // parameters.Add("Visible", dialogVisible);
+            // parameters.Add("Page", "JobCard");
+            // parameters.Add("OnClaimAdded", null);
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-            var dialog = DialogService.Show<ManageClaimDialog>("Manage Claims", parameters, maxWidth);
+            //var dialog = DialogService.Show<ManageClaimDialog>("Manage Claims", parameters, maxWidth);
+            var dialog = DialogService.Show<ClaimDialog>("Initiate Claim", parameters, maxWidth);
+
             // var result = await dialog.Result;
             // if (!result.Canceled)
             // {

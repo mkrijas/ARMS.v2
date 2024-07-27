@@ -1,0 +1,146 @@
+﻿@inject IShortageDamageCompensationService Iservice
+@using System.Threading;
+@using ArmsModels.BaseModels.Finance.Transactions
+@using Core.BaseModels.Finance.Transactions;
+@using Core.IDataServices.Operations
+
+@inject IGcService gcService
+@inject ITripService tripService;
+@inject ITruckAvailabilityService truckAvailabilityService;
+@inject IOutstandingBillsService OBIservice
+@inject ICostCenterService costIservice
+@inject TruckDataArrayModel data
+@inject IChartOfAccountService accountService
+@inject IDimensionService dimensionIservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
+@attribute [Authorize]
+@inject IDialogService DialogService
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Shortage Damage Compensation" formID="ShortageDamageCompensationForm" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm id="ShortageDamageCompensationForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="model.DamagedQty" Label="Damaged Qty" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DamagedQty)" ></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="model.TotalAmount" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TotalAmount)" ></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@ShortageDamageCompensationDocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="model.DamageID" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
+
+ @code {
+
+    [Parameter]
+    public ShortageDamageCompensationModel model { get; set; }
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    private EditContext editContext;
+    DialogForm dialogForm;
+    [Parameter]
+    public string PageToRedirectLink { get; set; }
+    public string DocNumber { get; set; }
+    public DateTime? DocDate { get; set; }
+    public string DocType { get; set; }
+    private int? branchID = null;
+    private string UserID = null;
+    private bool _busy;
+    [Parameter]
+    public int ShortageDamageCompensationDocTypeID { get; set; }
+
+    public DocumentInfoModel DocumentDetails { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        editContext = new EditContext(model);
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        branchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        UserID = User.Identity.Name;
+        if (model.DamageID == null)
+        {
+            var info = tripService.GetTripInfo(model.TripID);
+            model.Narration = string.Format("Gc : {0}; Trip : {1}; Truck : {2}; Driver : {3};", model.SetGcNumber, info.TripNumber, info.Truck, info.Driver);
+            model.NatureOfTransaction = "Damage Compensation";
+            model.BranchID = branchID;
+        }
+        DocNumber = model.DocumentNumber;
+        DocDate = model.DocumentDate;
+        DocType = model.NatureOfTransaction;
+    }
+
+    protected override void OnParametersSet()
+    {
+
+        DocumentDetails.DocumentTypeID = ShortageDamageCompensationDocTypeID;
+        DocumentDetails.DocumentID = model.DamageID;
+    }
+
+    protected async Task Approve(DataApprovedStatus aprvd)
+    {
+        
+        if (aprvd.IsApprove)
+        {
+            model.UserInfo.UserID = UserID;
+            try
+            {
+                Iservice.Approve(model.DamageID, model.UserInfo.UserID, aprvd.Remarks);
+                snackbar.Add("Approved Successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        
+    }
+
+    public async Task OnValidSubmit(EditContext context)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+
+        model.UserInfo.UserID = UserID;
+        try
+        {
+            
+            Iservice.Update(model);
+            model = new();
+            snackbar.Add("Saved Successfully", Severity.Success);
+          
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+        dialogForm.Close(model);
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+}

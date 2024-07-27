@@ -50,6 +50,7 @@ namespace ArmsModels.BaseModels
         public List<ContactModel> Contacts { get; set; }
         public bool HasValidLicense { get; set; }
         public int? TruckID { get; set; }
+        public virtual DateTime? SinceLastEvent { get; set; }
         public string Status
         {
             get

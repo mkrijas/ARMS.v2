@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
@@ -65,6 +66,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@BreakdownID", model.BreakdownID),
                new SqlParameter("@InsuranceID", model.InsuranceID),
                new SqlParameter("@IsOpen", model.IsOpen),
+               new SqlParameter("@DateOfAccident", model.DateOfAccident),
+               new SqlParameter("@ClaimNo", model.ClaimNo),
+               new SqlParameter("@EstimateAmount", model.EstimateAmount),
+               new SqlParameter("@InvoiceAmount", model.InvoiceAmount),
+               new SqlParameter("@ApprovedAmount", model.ApprovedAmount),
                new SqlParameter("@Notes", model.Notes),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -74,6 +80,18 @@ namespace ArmsServices.DataServices
                 model = GetModel(dr);
             }
             return model;
+        }
+
+        public int RemovePhoto(InsuranceClaimModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@InsuranceClaimID", model.InsuranceClaimID),
+               new SqlParameter("@Images", model.RemoveImage),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+
+            return Iservice.ExecuteNonQuery("[usp.FMS.InsuranceClaim.RemovePhoto]", parameters);
         }
 
         public IEnumerable<InsuranceClaimEventMasterModel> GetEventList(int? limiter)
@@ -141,10 +159,17 @@ namespace ArmsServices.DataServices
             return new InsuranceClaimModel
             {
                 InsuranceClaimID = dr.GetInt32("InsuranceClaimID"),
+                //RemoveImage = dr.GetString("Images"),
                 Images = dr.GetString("Images").Split(";").ToList(),
                 BreakdownID = dr.GetInt32("BreakdownID"),
                 InsuranceID = dr.GetInt32("InsuranceID"),
+                TruckRegNo = dr.GetString("RegNo"),
+                DateOfAccident = dr.GetDateTime("AccidentDate"),
+                ClaimNo = dr.GetString("ClaimNo"),
                 IsOpen = dr.GetBoolean("IsOpen"),
+                EstimateAmount = dr.GetDecimal("EstimateAmount"),
+                InvoiceAmount = dr.GetDecimal("InvoiceAmount"),
+                ApprovedAmount = dr.GetDecimal("ApprovedAmount"),
                 Notes = dr.GetString("Notes"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
