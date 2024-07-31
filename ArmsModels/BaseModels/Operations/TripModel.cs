@@ -100,6 +100,7 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         [Required]
         public long? TripID { get; set; }
+        public long? GcSetID { get; set; }
         [Required]
         public int? DriverID { get; set; }
         [Required]
@@ -111,6 +112,7 @@ namespace ArmsModels.BaseModels
         public int? DocumentID { get; set; }
         public virtual bool IsChecked { get; set; }
         public string TripNo { get; set; }
+        public string GcNo { get; set; }
         public string DriverName { get; set; }
         public string DriverMobile { get; set; }
         public string AccountCode { get; set; }

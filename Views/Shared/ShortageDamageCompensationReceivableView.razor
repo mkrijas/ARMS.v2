@@ -1,0 +1,86 @@
+﻿@inject IShortageDamageCompensationService Iservice
+@inject IDialogService Idialog
+
+
+<MudDialog>
+
+    <TitleContent>
+        <MudText Typo="Typo.h5"> Select Receivable Advances</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        @* <MudSpacer></MudSpacer>
+        <MudTextField @bind-Value="searchTerm" Placeholder="Search Sundry Receipt..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
+        </MudTextField> *@
+        <MudTable T="TripAdvanceModel"
+                  Items="@_receivables"
+                  Filter="new Func<TripAdvanceModel, bool>(search)">
+            <ToolBarContent>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchDamage" Placeholder="Search... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh></MudTh>
+                <MudTh>GC NO</MudTh>
+                <MudTh>Driver</MudTh>
+                <MudTh>Account</MudTh>
+                <MudTh>Amount</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd><MudCheckBox @bind-Value="@context.IsChecked"></MudCheckBox></MudTd>
+                <MudTd DataLabel="GcNo">@context.GcNo</MudTd>
+                <MudTd DataLabel="Driver">@context.DriverName</MudTd>
+                <MudTd DataLabel="Account">@context.AccountCode - @context.AccountName</MudTd>
+                <MudTd DataLabel="Amount">@context.Amount</MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton ButtonType="ButtonType.Button" OnClick="Submit" Color="Color.Primary"> Proceed </MudButton>
+    </DialogActions>
+
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public int? BranchID { get; set; }
+
+    private List<TripAdvanceModel> _receivables = new List<TripAdvanceModel>();
+    private HashSet<TripAdvanceModel> _Selected = new HashSet<TripAdvanceModel>();
+    private List<TripAdvanceModel> advance = new List<TripAdvanceModel>();
+    private string searchDamage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _receivables = Iservice.GetDamageReceivables(BranchID).Where(x => x.Amount > 0).ToList();
+    }
+
+    private void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(_receivables.Where(x => x.IsChecked).ToList()));
+    }
+
+    private bool search(TripAdvanceModel Advance)
+    {
+        if (Advance.TripNo != null && Advance.TripNo.Contains(searchDamage, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void GetSelectedItems(HashSet<TripAdvanceModel> advances)
+    {
+        foreach (var item in advances)
+        {
+            _Selected.Add(item);
+            advance.Add(item);
+        }
+    }
+}
