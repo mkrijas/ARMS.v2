@@ -87,6 +87,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UsageCode", model.UsageCode),
                new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
                new SqlParameter("@DocumentID", model.DocumentID),
+               new SqlParameter("@DocType", model.DocType),
             };
 
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Advance.Update]", parameters))
@@ -134,7 +135,8 @@ namespace ArmsServices.DataServices
                     AccountName = dr.GetString("AccountName"),
                     UsageCode = dr.GetString("UsageCode"),
                     UsageDescription = dr.GetString("Description"),
-                    Amount = dr.GetDecimal("Amount"),                    
+                    Amount = dr.GetDecimal("Amount"),   
+                    DocType = dr.GetString("DocType")
                 };
             }
         }
@@ -152,6 +154,7 @@ namespace ArmsServices.DataServices
                 UsageCode = reader.GetString("UsageCode"),
                 DocumentTypeID = reader.GetInt32("DocumentTypeID"),
                 DocumentID = reader.GetInt32("DocumentID"),
+                DocType = reader.GetString("DocType")
             };
         }
     }

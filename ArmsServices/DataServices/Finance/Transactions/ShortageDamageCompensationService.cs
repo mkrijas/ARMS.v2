@@ -7,6 +7,7 @@ using ArmsServices.DataServices;
 using Core.BaseModels.Finance.Transactions;
 using ArmsModels.BaseModels.General;
 using ArmsServices.DataServices.General;
+using ArmsModels.BaseModels;
 
 
 namespace DAL.DataServices.Finance.Transactions
@@ -178,6 +179,36 @@ namespace DAL.DataServices.Finance.Transactions
                     UserID = dr.GetString("UserID"),
                 },
             };
+        }
+
+        public IEnumerable<TripAdvanceModel> GetDamageReceivables(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@Operation", "GetDamageReceivables"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.ShortageDamageCompensation.Select]", parameters))
+            {
+                yield return new TripAdvanceModel()
+                {
+                    GcSetID = dr.GetInt64("GcSetID"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    DriverID = dr.GetInt32("DriverID"),
+                    DriverName = dr.GetString("DriverName"),
+                    DriverMobile = dr.GetString("Mobile"),
+                    CoaID = dr.GetInt32("CoaID"),
+                    AccountCode = dr.GetString("AccountCode"),
+                    AccountName = dr.GetString("AccountName"),
+                    UsageCode = dr.GetString("UsageCode"),
+                    UsageDescription = dr.GetString("Description"),
+                    Amount = dr.GetDecimal("Amount"),
+                    GcNo = dr.GetString("GcNo"),
+                    TripID = dr.GetInt64("TripID"),
+                    TripNo = dr.GetString("TripNo"),
+                    DocType = dr.GetString("DocType")
+                };
+            }
         }
     }
 }

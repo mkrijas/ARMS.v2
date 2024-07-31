@@ -1,4 +1,5 @@
-﻿using ArmsModels.BaseModels.Finance.Transactions;
+﻿using ArmsModels.BaseModels;
+using ArmsModels.BaseModels.Finance.Transactions;
 using Core.BaseModels.Finance.Transactions;
 using System.Collections.Generic;
 
@@ -15,5 +16,6 @@ namespace ArmsServices.DataServices
         int Approve(int? DamageID, string UserID, string Remarks);  //Approve
         int Reverse(int? DamageID, string UserID, string Remarks);  //Reverse
         IEnumerable<ShortageDamageCompensationModel> SelectByGcSetID(long? GcSetID);
+        public IEnumerable<TripAdvanceModel> GetDamageReceivables(int? BranchID);
     }
 }
