@@ -233,6 +233,7 @@ namespace ArmsServices.DataServices
                 TariffTypeID = dr.GetInt16("TariffTypeID"),
                 TariffTypeName = dr.GetString("TariffTypeName"),
                 TariffGroup = dr.GetString("TariffGroup"),
+                GCCreation = dr.GetBoolean("GCCreation"),
                 Area = dr.GetString("Area"),
                 Unit = dr.GetString("Unit"),
                 AllowMultiple = dr.GetBoolean("AllowMultiple"),
