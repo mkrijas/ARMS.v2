@@ -110,6 +110,7 @@ namespace ArmsModels.BaseModels
         public string UsageDescription { get; set; }
         public int? DocumentTypeID { get; set; }
         public int? DocumentID { get; set; }
+        public string DocType { get; set; }
         public virtual bool IsChecked { get; set; }
         public string TripNo { get; set; }
         public string GcNo { get; set; }

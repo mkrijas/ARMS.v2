@@ -205,7 +205,8 @@ namespace DAL.DataServices.Finance.Transactions
                     Amount = dr.GetDecimal("Amount"),
                     GcNo = dr.GetString("GcNo"),
                     TripID = dr.GetInt64("TripID"),
-                    TripNo = dr.GetString("TripNo")
+                    TripNo = dr.GetString("TripNo"),
+                    DocType = dr.GetString("DocType")
                 };
             }
         }
