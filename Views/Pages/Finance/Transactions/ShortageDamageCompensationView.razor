@@ -1,0 +1,216 @@
+﻿@page "/ShortageDamageCompensationView"
+@page "/ShortageDamageCompensationView/{id:int}"
+@using System.Threading;
+@using ArmsModels.BaseModels.Finance.Transactions
+@using Core.BaseModels.Finance.Transactions;
+@inject IShortageDamageCompensationService Iservice
+@inject ICostCenterService costIservice
+@inject IDimensionService dimensionIservice
+@inject NavigationManager uriHelper;
+@inject MudBlazor.ISnackbar snackbar
+@inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
+@attribute [Authorize]
+@inject IDialogService DialogService
+@inject SignalRService signalRService
+@inject IPushNotificationService IpushNotificationService
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Damage Compensation </MudText>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search Mileage Shortage Receipt..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
+                </MudTextField>
+                <div class="tablefont">
+                    <span style="margin-right: 10px;">Maximum Records: </span>
+                </div>
+                <MudItem xs="1">
+                    <MudTextField @bind-Value="@NumberOfRecords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+                </MudItem>
+                <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ShortageDamageCompensationModel, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ShortageDamageCompensationModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ShortageDamageCompensationModel, object>(x=> x.DamagedQty)">Damaged Qty</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ShortageDamageCompensationModel, object>(x=> x.TotalAmount)">Amount</MudTableSortLabel></MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
+                <MudTd DataLabel="DocumentNumber">
+                    @context.DocumentNumber
+                    @if (context.AuthLevelId == 100)
+                    {
+                        <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
+                    }
+                </MudTd>
+                <MudTd DataLabel="TotalAmount">@context.DamagedQty</MudTd>
+                <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
+                <MudTd DataLabel="">
+                    <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
+                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
+
+                    @if (@context.AuthLevelId == 99)
+                    {
+                        @if (@context.MID != null)
+                        {
+                            <EntryReversedComponent DocTypeID="ShortageDamageCompensationDocTypeID" DocumentID="context.DamageID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                        }
+                        else
+                        {
+                            <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Filled" />
+                        }
+                    }
+                    else if (@context.AuthLevelId != 100)
+                    {
+                        <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                    }
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    public bool IsApproved { get; set; } = false;
+    private List<ShortageDamageCompensationModel> collection = new List<ShortageDamageCompensationModel>();
+    private int numberOfRecords = 100;
+    private string searchTerm = "";
+    private bool _busy;
+
+    [Parameter]
+    public int? id { get; set; } = null;
+
+    //public bool HasPermissionMileageShortageReceiptServiceDelete { get; set; } = false;
+    public int ShortageDamageCompensationDocTypeID = 135;
+    private int? branchID = null;
+
+    #region SignaIR Notification
+
+    private PushNotificationModel notificationMessage = new PushNotificationModel();
+    #endregion
+
+    private int NumberOfRecords
+    {
+        get => numberOfRecords;
+        set
+        {
+            if (numberOfRecords != value)
+            {
+                numberOfRecords = value;
+                _ = ReloadTable();
+            }
+        }
+    }
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ReloadTable();
+        }
+    }
+
+    private async Task ReloadTable()
+    {
+        GetAll(IsApproved, NumberOfRecords);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        //HasPermissionMileageShortageReceiptServiceDelete = await Irole.HasClaim(MileageShortageReceiptDocTypeID.ToString(), "Delete", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        GetAll(IsApproved, NumberOfRecords);
+
+        await Task.Delay(200);
+        await signalRService.StartAsync();
+        if (id != null && collection != null && collection.Any(g => g.DamageID == id))
+        {
+            await OpenDialog(collection.FirstOrDefault(s => s.DamageID == id), true);
+        }
+    }
+
+    private void GetAll(bool val, int numberOfRecords)
+    {
+        int NumberOfRecords = numberOfRecords;
+        if (val)
+        {
+            collection = Iservice.SelectByApproved(branchID, NumberOfRecords, searchTerm).ToList();
+        }
+        else
+        {
+            collection = Iservice.SelectByUnapproved(branchID, NumberOfRecords, searchTerm).ToList();
+        }
+    }
+
+    void ApprovedChanged(bool value)
+    {
+        IsApproved = value;
+        GetAll(IsApproved, NumberOfRecords);
+    }
+
+    private async Task OpenDialog(ShortageDamageCompensationModel RModel, bool ReadOnly)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("model", RModel.Clone());
+        parms.Add("PageToRedirectLink", "/MileageShortageReceiptView");
+        parms.Add("ReadOnly", ReadOnly);
+        parms.Add("ShortageDamageCompensationDocTypeID", ShortageDamageCompensationDocTypeID);
+        var dialog = DialogService.Show<ShortageDamageCompensationDialog>(RModel.DamageID == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var result = await dialog.Result;
+        var isCancelled = result.Canceled;
+        if (!isCancelled)
+        {
+            var ReturnData = (ShortageDamageCompensationModel)result.Data;
+            notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
+            notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+            notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+            notificationMessage.RedirectedTo = 0;
+            notificationMessage.ExpiredBy = 7;
+            notificationMessage.DocumentID = ReturnData.DamageID;
+            notificationMessage.MessageGroupID = "PendingVerification";
+            notificationMessage.PageToRedirectLink = "/ShortageDamageCompensationView";
+            notificationMessage.ClaimValue = "Verify 1";
+            notificationMessage.DocumentTypeID = ShortageDamageCompensationDocTypeID;
+            notificationMessage.MsgDate = DateTime.Now;
+            await signalRService.Send(notificationMessage);
+        }
+        GetAll(IsApproved, NumberOfRecords);
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async Task Delete(ShortageDamageCompensationModel model)
+    {
+          bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
+            if (result == true)
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                Iservice.Delete(model.DamageID, user.Identity.Name);
+                snackbar.Add("Deleted Successfully", Severity.Success);
+            }
+        
+    }
+}

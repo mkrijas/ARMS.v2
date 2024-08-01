@@ -17,12 +17,18 @@ namespace Core.BaseModels.Finance.Transactions
             NatureOfTransaction = "Damage Compensation";
         }
         public int? DamageID { get; set; }
-        public string GcNumber { get; set; }
-        public long? GcID { get; set; }
+        [Required]
+        public long? GcSetID { get; set; }
+        [Required]
         public int? DriverID { get; set; }
         public string DriverName { get; set; }
-        public override decimal? TotalAmount { get; set; } = 0;
+        [Required]
+        public override decimal? TotalAmount { get; set; }
+        [Required]
         public decimal? DamagedQty { get; set; }
         public string Reference { get; set; }
+        public virtual long? TripID { get; set; }
+        public virtual string SetGcNumber { get; set; }
+
     }
 }
