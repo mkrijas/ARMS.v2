@@ -52,6 +52,18 @@ namespace ArmsModels.BaseModels
         public string DepreciationMethod { get; set; }// Straigt Line,Diminishing Balance,Sum of Years Digits 
         [RequiredIf("IsComplex", " false")]
         public decimal? RateOfDepreciation { get; set; }
+        [RequiredIf("IsComplex", " false")]
+        public decimal? SalvageValue { get; set; }
+
+        [RequiredIf("IsComplex", " false")]
+        public decimal? BookValue { get; set; }
+
+        [RequiredIf("IsComplex", " false")]
+        public DateTime? ProjectedDisposalDate { get; set; }
+
+        [RequiredIf("IsComplex", " false")]
+        public int? GetAccountRuleDefinition { get; set; }
+
         [Required]
         public string AssetStatus { get; set; }
         //[RequiredIf("IsComplex", " false")]
@@ -60,14 +72,12 @@ namespace ArmsModels.BaseModels
         //[RequiredIf("IsComplex", " false")]
         [RequiredIfComplexAndAssetStatus("IsComplex", " false", "AssetStatus", "Ready to use")]
         public DateTime? DepreciationEndingDate { get; set; }
-        [RequiredIf("IsComplex", " false")]
-        public decimal? BookValue { get; set; }
+        
         public decimal? CurrentValue { get; set; }
         public decimal? TotalValue { get; set; }
         //[ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public decimal? SpanOfYear { get; set; }
-        [RequiredIf("IsComplex", " false")]
-        public decimal? SalvageValue { get; set; }
+        
         public virtual decimal? DepreciableValue
         {
             get
@@ -75,14 +85,12 @@ namespace ArmsModels.BaseModels
                 return BookValue - SalvageValue;
             }
         }
-        [RequiredIf("IsComplex", " false")]
-        public DateTime? ProjectedDisposalDate { get; set; }
+        
         public bool Scrap { get; set; } = false;
         public string Status { get; set; }//Scrap,Dismantled,Sold,Revaluated        
         public UserInfoModel UserInfo { get; set; } = new();
         public decimal? GSTValue { get; set; }
-        [RequiredIf("IsComplex", " false")]
-        public int? GetAccountRuleDefinition { get; set; }
+        
         public string AccountName { get; set; }
         public int? CoaID { get; set; }
         public decimal? TaxRate { get; set; }
