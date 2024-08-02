@@ -68,11 +68,18 @@
     private bool _busy;
     [Parameter]
     public int ShortageDamageCompensationDocTypeID { get; set; }
+    public bool HasPermissionhortageDamageCompensationServiceEdit { get; set; } = false;
+    public bool HasPermissionhortageDamageCompensationServiceApprove { get; set; } = false;
 
     public DocumentInfoModel DocumentDetails { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
+        ShortageDamageCompensationDocTypeID = 135;
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionhortageDamageCompensationServiceEdit = await Irole.HasClaim(ShortageDamageCompensationDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionhortageDamageCompensationServiceApprove = await Irole.HasClaim(ShortageDamageCompensationDocTypeID.ToString(), "Approve", ctc.Token);
+
         editContext = new EditContext(model);
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
@@ -99,21 +106,28 @@
 
     protected async Task Approve(DataApprovedStatus aprvd)
     {
-        
-        if (aprvd.IsApprove)
+        if (HasPermissionhortageDamageCompensationServiceApprove)
         {
-            model.UserInfo.UserID = UserID;
-            try
+            if (aprvd.IsApprove)
             {
-                Iservice.Approve(model.DamageID, model.UserInfo.UserID, aprvd.Remarks);
-                snackbar.Add("Approved Successfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
+                model.UserInfo.UserID = UserID;
+                try
+                {
+                    Iservice.Approve(model.DamageID, model.UserInfo.UserID, aprvd.Remarks);
+                    snackbar.Add("Approved Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Error);
+                }
             }
         }
-        
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve MileageShortageReceipt.");
+        }
     }
 
     public async Task OnValidSubmit(EditContext context)
@@ -125,20 +139,30 @@
         }
         _busy = true;
 
-        model.UserInfo.UserID = UserID;
-        try
+        if (HasPermissionhortageDamageCompensationServiceEdit)
         {
+            model.UserInfo.UserID = UserID;
+            try
+            {
             
-            Iservice.Update(model);
-            model = new();
-            snackbar.Add("Saved Successfully", Severity.Success);
+                Iservice.Update(model);
+                model = new();
+                snackbar.Add("Saved Successfully", Severity.Success);
           
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+
+            dialogForm.Close(model);
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit MileageShortageReceipt.");
         }
-        dialogForm.Close(model);
         await Task.Delay(200);
         _busy = false;
     }
