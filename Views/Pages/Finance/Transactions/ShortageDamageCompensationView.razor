@@ -89,7 +89,7 @@
     [Parameter]
     public int? id { get; set; } = null;
 
-    //public bool HasPermissionMileageShortageReceiptServiceDelete { get; set; } = false;
+    public bool HasPermissionShortageDamageCompensationServiceDelete { get; set; } = false;
     public int ShortageDamageCompensationDocTypeID = 135;
     private int? branchID = null;
 
@@ -127,7 +127,7 @@
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        //HasPermissionMileageShortageReceiptServiceDelete = await Irole.HasClaim(MileageShortageReceiptDocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionShortageDamageCompensationServiceDelete = await Irole.HasClaim(ShortageDamageCompensationDocTypeID.ToString(), "Delete", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -201,7 +201,9 @@
 
     private async Task Delete(ShortageDamageCompensationModel model)
     {
-          bool? result = await DialogService.ShowMessageBox(
+        if (HasPermissionShortageDamageCompensationServiceDelete)
+        {
+            bool? result = await DialogService.ShowMessageBox(
                 "Warning !",
                 "Are you sure, you want to delete - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
             if (result == true)
@@ -211,6 +213,12 @@
                 Iservice.Delete(model.DamageID, user.Identity.Name);
                 snackbar.Add("Deleted Successfully", Severity.Success);
             }
-        
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Delete MileageShortageReceipt.");
+        }
     }
 }
