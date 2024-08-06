@@ -1,0 +1,130 @@
+﻿@using System.Threading;
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IDriverService Iservice
+@inject IBranchService Ibranchservice
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+
+<MudDialog Style="overflow-y: hidden;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Autorenew" Class="mr-3 mb-n1" />
+            Driver Rejoin
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudPaper Class="p-4">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudAutocomplete T="DriverModel" Label="Select Driver" @bind-Value="model" ResetValueOnEmptyText="true" SearchFunc="SearchDrivers" ToStringFunc="@(e => e == null ? null : $"{e.DriverName}")" Variant="Variant.Outlined" Margin="Margin.Dense"></MudAutocomplete>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudNumericField HideSpinButtons MaxLength="12" @bind-Value="AdhaarNo" Label="ADHAAR No" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12" md="3" Class="d-flex align-left">
+                    <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Fetch</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+        <br />
+        <MudGrid Spacing="4">
+            <MudItem xs="12">
+                <MudSimpleTable Style="overflow-x: auto;">
+                    <thead>
+                        <tr>
+                            <th>Driver Name</th>
+                            <th>Aadhar No</th>
+                            <th>Mobile No</th>
+                            <th>Branch Name</th>
+                            <th>Rejoin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (model?.DriverID != null)
+                        {
+                            <tr>
+                            <td>@model.DriverName</td>
+                            <td>@model.AdhaarNo</td>
+                            <td>@model.Mobile</td>
+                            <td>@model.HomeBranchName</td>
+                            <td>
+                                <MudFab @onclick="@(() =>OpenRejoinDialog(model))" Color="Color.Warning" Icon="@Icons.Material.Filled.Autorenew" Size="Size.Small" IconSize="Size.Small" /> 
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            </MudItem>
+        </MudGrid>
+        <br />
+    </DialogContent>
+
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    public DriverModel model { get; set; } = new();
+    public DriverLicenceModel licencemodel { get; set; } = new();
+    private List<DriverModel> drivers;
+    private string AdhaarNo;
+    private string Branch;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var UserID = authprov.User.Identity.Name;
+        var BranchID = int.Parse(authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+
+        drivers = Iservice.Select().Where(x => x.UserInfo.RecordStatus == 0).ToList();
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task<IEnumerable<DriverModel>> SearchDrivers(string searchString)
+    {
+        return await Task.FromResult(drivers.Where(x => x.DriverName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    public async Task fetch()
+    {
+        if (model?.DriverID != null)
+        {
+            model = Iservice.SelectByID(model.DriverID);
+        }
+        else if (AdhaarNo != null)
+        {
+            model.AdhaarNo = AdhaarNo;
+            var result = Iservice.FindDriver(model, null);
+            if (result.DriverID != null && result.UserInfo.RecordStatus == 0)
+            {
+                model = result;
+            }
+            else
+            {
+                snackbar.Add("No data found", Severity.Error);
+                return;
+            }
+        }
+        else
+        {
+            snackbar.Add("Driver Or Adhar No required", Severity.Error);
+            return;
+        }
+    }
+
+    private async void OpenRejoinDialog(DriverModel Dmodel)
+    {
+            var parameters = new DialogParameters();
+            parameters.Add("model", Dmodel);
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<DriverRejoinDialog>("Rejoin", parameters, maxWidth);
+            var result = await dialog.Result;
+            MudDialog.Close(model);
+       
+    }
+}

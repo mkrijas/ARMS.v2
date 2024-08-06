@@ -35,6 +35,7 @@ namespace ArmsModels.BaseModels
         public decimal? InvoiceAmount { get; set; }
         public decimal? ApprovedAmount { get; set; }
         public List<string> Images { get; set; }
+        public string RemoveImage { get; set; }
         [Required]
         public string Notes { get; set; }
         public virtual AssetModel Asset { get; set; }

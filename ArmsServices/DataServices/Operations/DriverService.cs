@@ -400,5 +400,17 @@ namespace ArmsServices.DataServices
             }
             return "NoAssignedTruck";
         }
+
+        public int ReJoin(int? DriverID, string UserID, int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DriverID",DriverID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@BranchID", BranchID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Driver.Driver.Rejoin]", parameters);
+        }
+
     }
 }

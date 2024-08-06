@@ -72,5 +72,6 @@ namespace ArmsModels.BaseModels
         public int? TariffSign { get; set; } = 1;
         public string Area { get; set; }
         public UserInfoModel UserInfo { get; set; }
+        public bool GCCreation { get; set; }
     }
 }

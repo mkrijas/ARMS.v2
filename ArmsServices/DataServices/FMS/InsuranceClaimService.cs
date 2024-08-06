@@ -82,6 +82,18 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public int RemovePhoto(InsuranceClaimModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@InsuranceClaimID", model.InsuranceClaimID),
+               new SqlParameter("@Images", model.RemoveImage),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+
+            return Iservice.ExecuteNonQuery("[usp.FMS.InsuranceClaim.RemovePhoto]", parameters);
+        }
+
         public IEnumerable<InsuranceClaimEventMasterModel> GetEventList(int? limiter)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -147,6 +159,7 @@ namespace ArmsServices.DataServices
             return new InsuranceClaimModel
             {
                 InsuranceClaimID = dr.GetInt32("InsuranceClaimID"),
+                //RemoveImage = dr.GetString("Images"),
                 Images = dr.GetString("Images").Split(";").ToList(),
                 BreakdownID = dr.GetInt32("BreakdownID"),
                 InsuranceID = dr.GetInt32("InsuranceID"),

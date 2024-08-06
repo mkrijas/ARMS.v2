@@ -72,8 +72,12 @@
                         @foreach (var imagePath in Model?.Images)
                         {
                             <MudItem xs="12" md="6" Class="d-flex">
-                                <MudPaper Class="p-2" Elevation="3">
-                                    <img src="@imagePath" alt="@imagePath" />
+                                <MudPaper Class="p-2 position-relative" Elevation="3">
+                                    <img src="@imagePath" alt="@imagePath" class="w-100" />
+                                    @if (Model.IsOpen && !Jobcard || (Jobcard && Model.InsuranceClaimID == null))
+                                    {
+                                        <MudFab Style="width: 36px; height: 16px; margin-top: -20px; margin-left: -18px;" Icon="@Icons.Material.Rounded.Close" Color="Color.Error" Class="position-absolute top-0 end-0" OnClick="() => DeleteImage(imagePath)" />
+                                    }
                                 </MudPaper>
                             </MudItem>
                         }
@@ -139,7 +143,7 @@
         </div>
     </DialogContent>
     <DialogActions>
-        
+
         @if (EventMasterSource?.Any(x => x.IsMandatory) != true && Model.IsOpen && !Jobcard)
         {
             <MudButton Color="Color.Primary" OnClick="CloseClaim">Close Claim</MudButton>
@@ -208,6 +212,38 @@
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionInsuranceClaimServiceEdit = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionInsuranceClaimServiceUpdateList = await Irole.HasClaim(InsuranceClaimDocTypeID.ToString(), "UpdateList", ctc.Token);
+    }
+
+    private async Task DeleteImage(string imagePath)
+    {
+        try
+        {
+            var authState = await auth.GetAuthenticationStateAsync();
+
+            InsuranceClaimModel model = new();
+            model.InsuranceClaimID = Model.InsuranceClaimID;
+            model.RemoveImage = imagePath.Normalize();
+            model.UserInfo.UserID = authState.User.Identity.Name;
+            int a = IInsuranceClaim.RemovePhoto(model);
+            if (a == 1)
+            {
+                if (Mfu.DeleteFile(imagePath))
+                {
+                    Model.Images.Remove(imagePath);
+                }
+                snackbar.Add("Photo removed Successfully", Severity.Success);
+                return;
+            }
+            else
+            {
+                snackbar.Add("Photo not removed !", Severity.Error);
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
     }
 
     private void SetEventMaster()

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using ArmsModels.SharedModels;
 using Newtonsoft.Json;
@@ -52,17 +53,31 @@ namespace ArmsModels.BaseModels
         [RequiredIf("IsComplex", " false")]
         public decimal? RateOfDepreciation { get; set; }
         [RequiredIf("IsComplex", " false")]
-        public DateTime? DepreciationStartingDate { get; set; }
-        [RequiredIf("IsComplex", " false")]
-        public DateTime? DepreciationEndingDate { get; set; }
+        public decimal? SalvageValue { get; set; }
+
         [RequiredIf("IsComplex", " false")]
         public decimal? BookValue { get; set; }
+
+        [RequiredIf("IsComplex", " false")]
+        public DateTime? ProjectedDisposalDate { get; set; }
+
+        [RequiredIf("IsComplex", " false")]
+        public int? GetAccountRuleDefinition { get; set; }
+
+        [Required]
+        public string AssetStatus { get; set; }
+        //[RequiredIf("IsComplex", " false")]
+        [RequiredIfComplexAndAssetStatus("IsComplex", " false", "AssetStatus", "Ready to use")]
+        public DateTime? DepreciationStartingDate { get; set; }
+        //[RequiredIf("IsComplex", " false")]
+        [RequiredIfComplexAndAssetStatus("IsComplex", " false", "AssetStatus", "Ready to use")]
+        public DateTime? DepreciationEndingDate { get; set; }
+        
         public decimal? CurrentValue { get; set; }
         public decimal? TotalValue { get; set; }
         //[ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public decimal? SpanOfYear { get; set; }
-        [RequiredIf("IsComplex", " false")]
-        public decimal? SalvageValue { get; set; }
+        
         public virtual decimal? DepreciableValue
         {
             get
@@ -70,19 +85,16 @@ namespace ArmsModels.BaseModels
                 return BookValue - SalvageValue;
             }
         }
-        [RequiredIf("IsComplex", " false")]
-        public DateTime? ProjectedDisposalDate { get; set; }
+        
         public bool Scrap { get; set; } = false;
         public string Status { get; set; }//Scrap,Dismantled,Sold,Revaluated        
         public UserInfoModel UserInfo { get; set; } = new();
         public decimal? GSTValue { get; set; }
-        [RequiredIf("IsComplex", " false")]
-        public int? GetAccountRuleDefinition { get; set; }
+        
         public string AccountName { get; set; }
         public int? CoaID { get; set; }
         public decimal? TaxRate { get; set; }
-        [Required]
-        public string AssetStatus { get; set; }
+        
     }
 
     public class AssetViewModel
@@ -274,8 +286,53 @@ namespace ArmsModels.BaseModels
         public string SerialNumber { get; set; }
         [RequiredIf("IsComplex", " false")]
         public virtual PartyModel VendorInfo { get; set; }
+        public string AssetStatus { get; set; }
     }
 
+    public class RequiredIfComplexAndAssetStatusAttribute : ValidationAttribute
+    {
+        private readonly string _booleanPropertyName;
+        private readonly string _booleanExpectedValue;
+        private readonly string _stringPropertyName;
+        private readonly string _stringExpectedValue;
+
+        public RequiredIfComplexAndAssetStatusAttribute(string booleanPropertyName, string booleanExpectedValue, string stringPropertyName, string stringExpectedValue)
+        {
+            _booleanPropertyName = booleanPropertyName;
+            _booleanExpectedValue = booleanExpectedValue;
+            _stringPropertyName = stringPropertyName;
+            _stringExpectedValue = stringExpectedValue;
+        }
+
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            // Get the boolean property
+            PropertyInfo booleanProperty = validationContext.ObjectType.GetProperty(_booleanPropertyName);
+            if (booleanProperty == null)
+                return new ValidationResult($"Property '{_booleanPropertyName}' not found.");
+
+            bool booleanPropertyValue = (bool)booleanProperty.GetValue(validationContext.ObjectInstance);
+
+            // Get the string property
+            PropertyInfo stringProperty = validationContext.ObjectType.GetProperty(_stringPropertyName);
+            if (stringProperty == null)
+                return new ValidationResult($"Property '{_stringPropertyName}' not found.");
+
+            string stringPropertyValue = (string)stringProperty.GetValue(validationContext.ObjectInstance);
+
+            // Check the conditions
+            if (booleanPropertyValue.ToString().Equals(_booleanExpectedValue, StringComparison.InvariantCultureIgnoreCase) &&
+                stringPropertyValue.Equals(_stringExpectedValue, StringComparison.InvariantCultureIgnoreCase))
+            {
+                if (value == null)
+                {
+                    return new ValidationResult(ErrorMessage ?? $"{validationContext.DisplayName} is required.");
+                }
+            }
+
+            return ValidationResult.Success;
+        }
+    }
 
 
 }

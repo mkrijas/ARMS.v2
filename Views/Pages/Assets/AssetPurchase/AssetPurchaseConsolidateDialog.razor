@@ -34,7 +34,7 @@
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.InvoiceNo" Label="Invoice No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.InvoiceNo)"></MudTextField>
-                    </MudItem>                 
+                    </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
@@ -50,9 +50,10 @@
             <MudTable Class="mb-3" T="AssetPOModel" Items="@PI.SelectedAssets" Hover="true" SelectOnRowClick>
                 <HeaderContent>
                     <MudTh>Description</MudTh>
-                    <MudTh>Capitalization (A/C)</MudTh>
-                    <MudTh>Book Value</MudTh>
+                    <MudTh>Account Head</MudTh>
+                    <MudTh>Value</MudTh>
                     <MudTh>GST Rate</MudTh>
+                    <MudTh>GST Mechanism</MudTh>
                     <MudTh>CGST</MudTh>
                     <MudTh>SGST</MudTh>
                     <MudTh>IGST</MudTh>
@@ -61,33 +62,81 @@
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="Description">@context.Description</MudTd>
-                        <MudTd DataLabel="NatureOfAsset">@context.AccountName</MudTd>
-                        
-                    <MudTd DataLabel="BookValue">@context.BookValue</MudTd>
-                        <MudTd DataLabel="CurrentValue">@context.TaxRate</MudTd>
-                        <MudTd DataLabel="CGSTValue">
-                            @string.Format("{0:F3}", context.CGSTValue)
+                    <MudTd DataLabel="NatureOfAsset">@context.AccountName</MudTd>
+
+                    <MudTd DataLabel="BookValue">
+                        @* @context.BookValue *@
+
+                        @if (PI.SelectedAssets.Any(asset => asset.AssetStatus == "WIP"))
+                        {
+                            <!-- Editable text box -->
+                            <MudTextField @bind-Value="@context.BookValue" />
+                        }
+                        else
+                        {
+                            <!-- Non-editable value -->
+                            @context.BookValue
+                        }
+
+                    </MudTd>
+                    <MudTd DataLabel="CurrentValue">
+                        @* @context.TaxRate *@
+                        @if (PI.SelectedAssets.Any(asset => asset.AssetStatus == "WIP"))
+                        {
+                            <!-- Editable text box -->
+                            <MudTextField T="decimal?" Value="@context.TaxRate" Immediate="true" ValueChanged="((e)=> CalcTax(e,context))" />
+                            @* <MudTextField Value="@context.TaxRate" Immediate="true" ValueChanged="@(newValue => CalcTax(newValue))" /> *@
+                        }
+                        else
+                        {
+                            <!-- Non-editable value -->
+                            @context.TaxRate
+                        }
+                    </MudTd>
+                    <MudTd>
+                        @if (PI.SelectedAssets.Any(asset => asset.AssetStatus == "WIP"))
+                        {
+                            <GstMechanismSelector page="Asset" @bind-Value="@context.GstMechanism"></GstMechanismSelector>
+                        }
+                        else
+                        {
+                            <!-- Non-editable value -->
+                            @context.GstMechanism
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="CGSTValue">
+                        @string.Format("{0:F3}", context.CGSTValue)
                     </MudTd>
                     <MudTd DataLabel="SGSTValue">
-                            @string.Format("{0:F3}", context.SGSTValue)
+                        @string.Format("{0:F3}", context.SGSTValue)
                     </MudTd>
                     <MudTd DataLabel="IGSTValue">
                         @string.Format("{0:F3}", context.IGSTValue)
                     </MudTd>
                     <MudTd DataLabel="TDS">
-                        @string.Format("{0:F3}", context.TDS)
+                        @* @string.Format("{0:F3}", context.TDS) *@
+                        @if (PI.SelectedAssets.Any(asset => asset.AssetStatus == "WIP"))
+                        {
+                            <!-- Editable text box -->
+                            <MudTextField @bind-Value="@context.TDS" />
+                        }
+                        else
+                        {
+                            <!-- Non-editable value -->
+                            @string.Format("{0:F3}", context.TDS)
+                        }
                     </MudTd>
-                        @* <MudTd>
+                    @* <MudTd>
                     <MudIconButton Title="Delete" Color="Color.Error" @onclick="@(()=> Delete(@context))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
                     </MudTd> *@
-                    </RowTemplate>
-                </MudTable>
+                </RowTemplate>
+            </MudTable>
         </MudPaper>
-        </FormContent>
-        <VerificationStatus>
-            <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="@model.PID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
-        </VerificationStatus>
-    </DialogForm>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@DocTypeID" DocDate="@DocDate" DocType="@DocType" DocNumber="@DocNumber" PageToRedirectLink="@PageToRedirectLink" DocumentID="@model.PID" OnApprove="ApproveEntry"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
 
 
 @code {
@@ -203,16 +252,23 @@
                 {
                     model.UserInfo.UserID = UserID;
 
-
+                    decimal? amt = 0;
                     foreach (var asset in model.Assets)
                     {
                         asset.CoaID = iservice.GetCapitalizationCoaID(asset.AssetID);
-                        if(asset.CoaID is null)
+                        if (asset.CoaID is null)
                         {
-                            snackbar.Add( string.Format("Acpitalization Account is not mapped for {0}",asset.AssetCode), Severity.Error);
+                            snackbar.Add(string.Format("Acpitalization Account is not mapped for {0}", asset.AssetCode), Severity.Error);
                             return;
                         }
+                        // decimal? cgst = asset.CGSTValue ?? 0;
+                        // decimal? sgst = asset.SGSTValue ?? 0;
+                        // decimal? igst = asset.IGSTValue ?? 0;
+                        // amt = asset.BookValue + cgst + sgst + igst;
+                        //asset.GSTValue = cgst + sgst + igst;
                     }
+                    //model.TotalAmount = amt;
+                    //SetTotal();
                     var result = Iservice.Update(model);
                     snackbar.Add("Saved Successfully", Severity.Success);
                     dialogForm.Close(result);
@@ -250,7 +306,7 @@
                 snackbar.Add("Approved Successfully", Severity.Success);
                 model.AuthLevelId = 99;
                 model.AuthStatus = "Approved";
-                notiService.AcknowledgeAuthNotification(99, DocTypeID, model.PID.Value,UserID);
+                notiService.AcknowledgeAuthNotification(99, DocTypeID, model.PID.Value, UserID);
             }
             catch (Exception ex)
             {
@@ -279,7 +335,7 @@
             return false;
         }
         //Model.GstRateID = usageIservice.GetGstRate(Model.UsageCode, DateTime.Now);
-        foreach(var item in asset)
+        foreach (var item in asset)
         {
             decimal taxRate = item.TaxRate ?? 0;
             if (!Local)
@@ -294,7 +350,26 @@
             item.TDS = Math.Round((item.BookValue.Value * tdsRate) / 100, 2);
             //asset.Add(item);
         }
-        
+
         return true;
+    }
+
+    private void CalcTax(decimal? tax, AssetPOModel item)
+    {
+        //AssetPOModel item = new AssetPOModel();
+        decimal taxRate = tax ?? 0;
+        item.TaxRate = taxRate;
+        if (!Local)
+        {
+            item.IGSTValue = Math.Round(item.BookValue.Value * taxRate / 100, 2);
+        }
+        else
+        {
+            item.SGSTValue = item.CGSTValue = Math.Round(item.BookValue.Value * taxRate / 200, 2);
+        }
+        decimal tdsRate = tdsService.GetTdsRate(model.PartyInfo.PartyID, item.CoaID);
+        item.TDS = Math.Round((item.BookValue.Value * tdsRate) / 100, 2);
+        //asset.Add(item);
+
     }
 }
