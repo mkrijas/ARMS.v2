@@ -1,0 +1,174 @@
+﻿@page "/OpeningBalance"
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@using Core.IDataServices.Finance
+@using System.Threading
+@inject IOpeningBalanceService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+@inject IRoleService<RoleModel> Irole
+
+<MudPaper Class="pl-5" Elevation="4">
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudSelect Label="Select Period" @bind-Value="PeriodID" T="int?" Variant="Variant.Outlined" Margin="Margin.Normal" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
+                @foreach (var ditem in Periods)
+                {
+                    <MudSelectItem Value="@ditem.PeriodID">@ditem.PeriodDescription</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="6" Style="display: flex; align-items: center;">
+            <MudButton OnClick="fetch" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit">Fetch</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (collection.Any())
+{
+<MudGrid style="padding-top:16px;">
+    <MudItem xs="12" md="12">
+        <MudTable Dense Items="@collection">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Opening Balance</MudText>
+                <MudSpacer></MudSpacer>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh Style="width:40%;font-weight: bold;">ACCOUNTNAME</MudTh>
+                    <MudTh Style="width:40%;font-weight: bold;">ARDCODE</MudTh>
+                    <MudTh Style="width:40%;font-weight: bold;">SUBARDCODE</MudTh>
+                <MudTh Style="width:40%;font-weight: bold;">AMOUNT</MudTh>
+                <MudTh Style="width:20%;font-weight: bold;"></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Options">
+                    <MudText Margin="Margin.Dense"> @context.AccountName</MudText>
+                </MudTd>
+                <MudTd>
+                    <MudText Margin="Margin.Dense"> @context.ArdCode</MudText>
+                    </MudTd>
+                    <MudTd>
+                    <MudText Margin="Margin.Dense"> @context.SubArdCode</MudText>
+                    </MudTd>
+                <MudTd DataLabel="Value">
+                    @if (!context.hideTextField)
+                    {
+                        <MudText Style="font-weight: bold;" Margin="Margin.Dense"> @context.Amount</MudText>
+                    }
+                        @if (context.hideTextField)
+                    {
+                        <MudNumericField HideSpinButtons Label="Amount" @bind-Value="@context.Amount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Actions">
+                    @if (!context.hideTextField)
+                    {
+                        <MudFab Style="font-size:5px" @onclick="@(()=> Edit(context))"
+                                Color="Color.Primary" Icon="@Icons.Material.Filled.Edit"
+                                Size="Size.Small" IconSize="Size.Small" />
+                    }
+                    @if (context.hideTextField)
+                    {
+                        <MudFab Style="font-size:5px" @onclick="@(value => Submit(context.Amount, context))"
+                                Color="Color.Success" Icon="@Icons.Material.Filled.Save"
+                                Size="Size.Small" IconSize="Size.Small" />
+
+                        <MudFab Style="font-size:5px" @onclick="@(()=> Cancel(context))"
+                                Color="Color.Error" Icon="@Icons.Material.Filled.Cancel"
+                                Size="Size.Small" IconSize="Size.Small" />
+                    }
+                </MudTd>
+                <MudTd></MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+}
+
+
+
+@code {
+    private List<OpeningBalanceModel> collection = new();
+    private List<PeriodModel> Periods = new();
+    private int? PeriodID;
+    private int? BranchID;
+
+    private bool resetValueOnEmptyText;
+    private bool coerceText;
+    private bool coerceValue;
+    public bool HasPermissionOpeningBalanceSeriviceEdit { get; set; } = false;
+    private Dictionary<string, string> options = new Dictionary<string, string>();
+    public int DocTypeID = 136;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionOpeningBalanceSeriviceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var UserID = authprov.User.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+
+        Periods = Iservice.GetPeriods().ToList();
+    }
+
+    public async Task fetch()
+    {
+        if (PeriodID != null)
+        {
+            collection = Iservice.GetBalance(PeriodID, BranchID).ToList();
+        }
+        else
+        {
+            snackbar.Add("Select a period", Severity.Error);
+            return;
+        }
+    }
+
+    private void Edit(OpeningBalanceModel context)
+    {
+        context.hideTextField = true;
+    }
+
+    private void Cancel(OpeningBalanceModel context)
+    {
+        context.hideTextField = false;
+        StateHasChanged();
+        //Navigation.NavigateTo(Navigation.Uri, true);
+
+    }
+
+    private async Task Submit(decimal? newAmount,OpeningBalanceModel model)
+    {
+        if (HasPermissionOpeningBalanceSeriviceEdit)
+        {
+            try
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+
+                model.UserInfo.UserID = user.Identity.Name;
+                model.Amount = newAmount;
+                Iservice.Update(model);
+                snackbar.Add("Updated Successfully", Severity.Success);
+                model.hideTextField = false;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        else
+        {
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Driver.");
+        }
+
+    }
+
+}
