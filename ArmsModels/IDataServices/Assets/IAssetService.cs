@@ -31,6 +31,7 @@ namespace ArmsServices.DataServices
         int? GetAccumulatedDepreciationCoaID(int? AssetID);
         int? GetRevaluationCoaID(int? AssetID);
         int? GetRevaluationReserveCoaID(int? AssetID);
+        AssetPOModel SelectPOByID(int? ID);
         IEnumerable<AssetPOModel> GetAssetList(int BranchID, int? parentID, int? NumberOfRecords, string searchTerm);
         IEnumerable<AssetPOModel> GetAssetListNonInvoiced(int BranchID, int? parentID, int? NumberOfRecords, string searchTerm);
         IEnumerable<AccountRuleDefModel> GetAccountRuleDefinition();

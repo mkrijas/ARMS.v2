@@ -84,6 +84,7 @@ namespace ArmsServices.DataServices
                 CoaID = dr.GetInt32("CoaID"),
                 TaxRate = dr.GetDecimal("TaxRate"),
                 AssetStatus = dr.GetString("AssetStatus"),
+                IsSold = dr.GetBoolean("IsSold"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -431,6 +432,21 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModelPO(dr);
             }
+        }
+
+        public AssetPOModel SelectPOByID(int? ID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetID", ID),
+               new SqlParameter("@Operation", "POByID")
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Select]", parameters))
+            {
+                return GetModelPO(dr);
+            }
+            return null;
         }
 
         public IEnumerable<AccountRuleDefModel> GetAccountRuleDefinition()

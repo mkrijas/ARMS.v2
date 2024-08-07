@@ -1,4 +1,5 @@
 ﻿@using System.Threading;
+@using Views.Pages.Finance.Transactions
 
 @inject ISaleService Iservice
 @inject IPartyService partyIservice
@@ -16,7 +17,7 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JsRuntime
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sale" formID="saleForm" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Asset Sale" formID="saleForm" DocumentDetails="DocumentDetails" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
             <EditForm id="saleForm" Model="@model" OnValidSubmit="OnValidSubmit">
@@ -29,9 +30,6 @@
                     <MudItem xs="12" md="4">
                         <MudDatePicker Label="Document Date" ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DocumentDate)" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
-                    @* <MudItem xs="12" md="4">
-                        <MudTextField @bind-Value="model.AdditionalTCS" ReadOnly="ReadOnly" Label="Additional TDS" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdditionalTCS)"></MudTextField>
-                    </MudItem> *@
                     <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="model.Narration" ReadOnly="ReadOnly" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
                     </MudItem>
@@ -39,7 +37,7 @@
                         <ExpenseListView OnExpenseAdded="AddExpense" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ExpenseList="@model.Particulars" ReadOnly="@ReadOnly" />
                     </MudItem>
                     <MudItem xs="12">
-                        <ItemsListView OnItemAdded="AddItems" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" ItemList="@model.Items" ReadOnly="@ReadOnly" />
+                        <AssetsListView OnAssetAdded="AddAssets" OnAmountChange="SetTotal" BranchID="@branchID" PartyInfo="@model.PartyInfo" Local="@Local" IsTaxable="@IsTaxable" AssetList="@model.Assets" ReadOnly="@ReadOnly" EditMode="@(model.Assets != null)" />
                     </MudItem>
                 </MudGrid>
             </EditForm>
@@ -68,8 +66,8 @@
     public DateTime? DocDate { get; set; }
     public string DocType { get; set; }
     private bool _busy;
-    
-    
+
+
     public DocumentInfoModel DocumentDetails { get; set; } = new();
 
 
@@ -99,10 +97,10 @@
             {
                 model.Particulars = ResultParticulars.ToList();
             }
-            var ResultItems = Iservice.GetItems(model.SID);
+            var ResultItems = Iservice.GetAssets(model.SID);
             if (ResultItems!= null)
             {
-                model.Items = ResultItems.ToList();
+                model.Assets = ResultItems.ToList();
             }
         }
         else
@@ -128,7 +126,11 @@
 
     void SetTotal()
     {
-        model.TotalAmount = (model.Particulars.Where(x => x != null).Sum(x => x.Amount + x.IGST + x.CGST + x.SGST) ?? 0) + (model.Items.Where(y => y != null).Sum(y => y.Amount + y.IGST + y.CGST + y.SGST) ?? 0);
+        model.TotalAmount = (model.Particulars.Where(x => x != null).Sum(x => x.Amount + x.IGST + x.CGST + x.SGST) ?? 0) +
+                            (model.Assets.Where(y => y != null).Sum(y => (y.BookValue != null ? y.BookValue : 0) +
+                                                                       (y.IGSTValue != null ? y.IGSTValue : 0) +
+                                                                       (y.CGSTValue != null ? y.CGSTValue : 0) +
+                                                                       (y.SGSTValue != null ? y.SGSTValue : 0)) ?? 0);
     }
 
     void PartyChanged(PartyModel party)
@@ -148,9 +150,9 @@
         SetTotal();
     }
 
-    async Task AddItems(TaxPurchaseItemModel ItemModel)
+    async Task AddAssets(AssetPOModel AssetModel)
     {
-        model.Items.Add(ItemModel);
+        model.Assets.Add(AssetModel);
         SetTotal();
     }
 
@@ -192,7 +194,7 @@
         {
             try
             {
-                model.SalesType = "Item";
+                model.SalesType = "Asset";
                 model.UserInfo.UserID = UserID;
                 Iservice.Update(model);
                 snackbar.Add("Saved Successfully", Severity.Success);

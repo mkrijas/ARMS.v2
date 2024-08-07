@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using System.Security.Cryptography;
 
 
 namespace ArmsServices.DataServices
@@ -107,6 +108,68 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<AssetPOModel> GetAssets(int? PID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetAssets"),
+               new SqlParameter("@SID", PID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
+            {
+                yield return new AssetPOModel()
+                {
+                    AssetID = dr.GetInt32("AssetID"),
+                    BranchID = dr.GetInt32("BranchID"),
+                    AssetCode = dr.GetString("AssetCode"),
+                    IsComplex = dr.GetBoolean("IsComplex"),
+                    //ParentAssetID = dr.GetInt32("ParentAssetID"),
+                    //TotalValue = dr.GetDecimal("TotalValue"),
+                    Scrap = dr.GetBoolean("Scrap"),
+                    BookValue = dr.GetDecimal("BookValue"),
+                    DepreciationBookCode = dr.GetString("DepreciationBookCode"),
+                    DepreciationEndingDate = dr.GetDateTime("DepreciationEndingDate"),
+                    DepreciationStartingDate = dr.GetDateTime("DepreciationStartingDate"),
+                    DepreciationMethod = dr.GetString("DepreciationMethod"),
+                    Description = dr.GetString("Description"),
+                    CurrentValue = dr.GetDecimal("CurrentValue"),
+                    GstRateID = dr.GetInt32("GstRateID"),
+                    GstMechanism = dr.GetString("GstMechanism"),
+                    HsnCode = dr.GetString("HsnCode"),
+                    NatureOfAsset = dr.GetString("NatureOfAsset"),
+                    ProjectedDisposalDate = dr.GetDateTime("ProjectedDisposalDate"),
+                    RateOfDepreciation = dr.GetDecimal("RateOfDepreciation"),
+                    SalvageValue = dr.GetDecimal("SalvageValue"),
+                    SerialNumber = dr.GetString("SerialNumber"),
+                    SpanOfYear = dr.GetDecimal("SpanOfYear"),
+                    //Status = dr.GetString("Status"),
+                    WarrentyDate = dr.GetDateTime("WarrentyDate"),
+                    GSTValue = dr.GetDecimal("GSTValue"),
+                    GetAccountRuleDefinition = dr.GetInt32("AccountDef"),
+                    AccountName = dr.GetString("AccountName"),
+                    CoaID = dr.GetInt32("CoaID"),
+                    TaxRate = dr.GetDecimal("TaxRate"),
+                    VendorInfo = new()
+                    {
+                        PartyID = dr.GetInt32("PartyID"),
+                        TradeName = dr.GetString("TradeName"),
+                    },
+                    //Description = dr.GetString("Description"),
+                    //NatureOfAsset = dr.GetString("NatureOfAsset"),
+                    //AssetCode = dr.GetString("AssetCode"),
+                    //AccountName = dr.GetString("AccountName"),
+                    //BookValue = dr.GetDecimal("BookValue"),
+                    //TaxRate = dr.GetDecimal("TaxRate"),
+                    //GSTValue = dr.GetDecimal("GSTValue"),
+                    CGSTValue = dr.GetDecimal("CGSTValue"),
+                    SGSTValue = dr.GetDecimal("SGSTValue"),
+                    IGSTValue = dr.GetDecimal("IGSTValue"),
+                    TDS = dr.GetDecimal("TDS"),
+                };
+            }
+        }
+
         public int Reverse(int? PID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -131,14 +194,15 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<SaleModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<SaleModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByApproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
-               new SqlParameter("@searchTerm", searchTerm)
+               new SqlParameter("@searchTerm", searchTerm),
+               new SqlParameter("@Type", Type)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
@@ -147,14 +211,15 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<SaleModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
+        public IEnumerable<SaleModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm , string Type)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByUnapproved"),
                new SqlParameter("@BranchID", BranchID),
                new SqlParameter("@numberOfRecords", NumberOfRecords),
-               new SqlParameter("@searchTerm", searchTerm)
+               new SqlParameter("@searchTerm", searchTerm),
+               new SqlParameter("@Type", Type)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Select]", parameters))
@@ -219,12 +284,14 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Particulars", model.Particulars.ToDataTable()),
                new SqlParameter("@IsCredit", model.IsCredit),               
                new SqlParameter("@Items", model.Items.ToDataTable()),
+               new SqlParameter("@Assets", model.Assets.ToDataTable()),
                new SqlParameter("@CustomerID", model.PartyInfo.PartyID),
                new SqlParameter("@FilePath", model.FileName),
                new SqlParameter("@CustomerCode", model.PartyInfo.PartyCode),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
+               new SqlParameter("@SalesType", model.SalesType),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Update]", parameters))
             {
@@ -250,6 +317,7 @@ namespace ArmsServices.DataServices
                 AuthStatus = dr.GetString("AuthStatus"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
+                SalesType = dr.GetString("SalesType"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("CustomerID"),

@@ -20,6 +20,7 @@ namespace ArmsModels.BaseModels
         public PartyModel Party { get; set; }
         [Required]
         public int? PartyCoaID { get; set; }
+        public string TdsType { get; set; } = "TDS";
         [Required]
         public bool IsTdsPayable { get; set; }
 

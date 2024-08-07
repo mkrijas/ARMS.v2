@@ -19,9 +19,11 @@ namespace ArmsModels.BaseModels
         [Required]
         public bool IsCredit { get; set; } = true;
         public decimal? AdditionalTCS { get; set; }
+        public string SalesType { get; set; }
         [ValidateComplexType]
         public List<TaxPurchaseExpenseModel> Particulars { get; set; } = new();
         [ValidateComplexType]
         public List<TaxPurchaseItemModel> Items { get; set; } = new();
+        public List<AssetPOModel> Assets { get; set; } = new();
     }
 }
