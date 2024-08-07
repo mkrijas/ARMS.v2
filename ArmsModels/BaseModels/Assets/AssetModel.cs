@@ -77,7 +77,7 @@ namespace ArmsModels.BaseModels
         public decimal? TotalValue { get; set; }
         //[ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public decimal? SpanOfYear { get; set; }
-        
+        public bool? IsSold { get; set; }
         public virtual decimal? DepreciableValue
         {
             get
