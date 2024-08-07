@@ -1,0 +1,92 @@
+﻿@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@using Core.BaseModels.Finance
+@inject IBranchService Ibranch
+@inject IDataAuthorizationSettingsService Iservice
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />@Title
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" id="DayOpenForm" OnValidSubmit="Update">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudAutocomplete Label="Select Document Type" @bind-Value="model.DocType" SearchFunc="SearchDocType" T="DocTypeModel" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary" ToStringFunc="@(e => (e == null) ? null : (string.IsNullOrEmpty(e.Description) ? "" : string.Format("{0}",e.Description)))" Required></MudAutocomplete>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudDateRangePicker Label="Select Period" DateRange="@DateRange" DateRangeChanged="DateChanged" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Required></MudDateRangePicker>
+                </MudItem>
+            </MudGrid>
+            <ObjectGraphDataAnnotationsValidator />
+            <ValidationSummary />
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Style="margin: 0px 16px 16px 16px;" Variant="Variant.Filled" Color="Color.Success" form="DayOpenForm" ButtonType="ButtonType.Submit">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    public DayOpenRequestModel model { get; set; } = new();
+    // public DocTypeModel SelectedDocType = new();
+    List<DocTypeModel> Doctypelist = new List<DocTypeModel>();
+    private DateRange DateRange { get; set; }
+    public string Title = null;
+
+    private List<BranchModel> Branches = new List<BranchModel>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.Branch.BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+        model.Branch.BranchName = (user.Claims.FirstOrDefault(x => x.Type == "BranchName").Value);
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+
+        if (model.ID == null)
+        {
+            Title = "Add Day-Open Request";
+        }
+        else
+        {
+            Title = "Edit Day-Open Request";
+            // DateRange.Start = model.FromDate;
+            // DateRange.End = model.ToDate;
+        }
+        Doctypelist = Iservice.GetDocTypesList().Where(x => x.AuthImplemented).ToList();
+    }
+
+    void DateChanged(DateRange dates)
+    {
+        DateRange = dates;
+        if (DateRange != null)
+        {
+            model.FromDate = DateRange.Start;
+            model.ToDate = DateRange.End;
+        }
+        else
+        {
+            model.FromDate = null;
+            model.ToDate = null;
+        }
+    }
+
+    public async Task Update()
+    {
+        //model.DocType = SelectedDocType;
+        MudDialog.Close(model);
+    }
+
+    private async Task<IEnumerable<DocTypeModel>> SearchDocType(string searchString)
+    {
+        if (string.IsNullOrEmpty(searchString))
+            return Doctypelist;
+        return await Task.FromResult(Doctypelist.Where(x => x.Description.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+}

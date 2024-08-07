@@ -1,0 +1,195 @@
+﻿@page "/DayOpenRequestView"
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@using Core.BaseModels.Finance
+@using Core.IDataServices.Finance.DayOpen
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IDataAuthorizationSettingsService Iservice
+@inject IDayOpenService IDayOpenService
+
+<MudTable Items="@ShowModel" Class="item-shadow" Filter="new Func<DayOpenRequestModel, bool>(search)" @bind-model="Model">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Day-Open Requests</MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit())" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+        <MudSpacer></MudSpacer>
+        <MudTextField @bind-Value="searchmodel" Placeholder="Search DocumentName or Date... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
+        <div class="tablefont">
+            <span style="margin-right: 10px;">Maximum Records: </span>
+        </div>
+        <MudItem xs="1">
+            <MudTextField Value="@NumberOfRecords" ValueChanged="@((int? x)=> RecordNoChanged(x))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="padding5" Style="width: 80px;"></MudTextField>
+        </MudItem>
+        <MudCheckBox Style="margin: 0px; margin-right: 20px;" Label="Completed List" ValueChanged="((bool value)=>Completed(value))" Value="@IsCompleted" Size="Size.Medium" Color="Color.Primary"></MudCheckBox>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<DayOpenRequestModel, object>(x=> x.Branch.BranchName)" InitialDirection="SortDirection.Descending">Branch Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<DayOpenRequestModel, object>(x=> x.DocType.Description)" InitialDirection="SortDirection.Descending">Document Type</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<DayOpenRequestModel, object>(x=> x.FromDate)" InitialDirection="SortDirection.Descending">Date Period</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<DayOpenRequestModel, object>(x=> x.IsOpen)" InitialDirection="SortDirection.Descending">Status</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<DayOpenRequestModel, object>(x=> x.UserInfo.UserID)" InitialDirection="SortDirection.Descending">Requested By</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<DayOpenRequestModel, object>(x=> x.OpenDate)" InitialDirection="SortDirection.Descending">Opened By</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<DayOpenRequestModel, object>(x=> x.CloseDate)">Closed By</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="BranchName">@context.Branch.BranchName</MudTd>
+        <MudTd DataLabel="DocumentName">@context.DocType.Description</MudTd>
+        <MudTd DataLabel="Date Period">@context.FromDate?.ToString("dd/MM/yyyy") - @context?.ToDate?.ToString("dd/MM/yyyy")</MudTd>
+        <MudTd DataLabel="IsOpenOrIsClosed">@context.IsOpen</MudTd>
+        <MudTd DataLabel="RequestedBy">@context.UserInfo.UserID</MudTd>
+        <MudTd DataLabel="OpenedBy">@context.OpenByUsedID @context.OpenDate</MudTd>
+        <MudTd DataLabel="ClosedBy">@context.CloseByUsedID @context.CloseDate</MudTd>
+        <MudTd Class="d-flex">
+            @if (context.RecordStatus == 3)
+            {
+                <MudButton OnClick="@(e => Approve(context))" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Approve</MudButton>
+                <MudButton OnClick="@(e => Reject(context))" Style="margin-left: 20px;" Variant="Variant.Filled" Color="Color.Error" ButtonType="ButtonType.Button">Reject</MudButton>
+            }
+            @if (context.RecordStatus == 4)
+            {
+                <MudText Style="align-content: center;">APPROVED</MudText>
+                <MudButton OnClick="@(e => Reject(context))" Style="margin-left: 20px;" Variant="Variant.Filled" Color="Color.Error" ButtonType="ButtonType.Button">Close</MudButton>
+            }
+            @if (context.RecordStatus == 5 && context.OpenByUsedID != null && context.CloseByUsedID != null)
+            {
+                <MudText Style="align-content: center;">CLOSED</MudText>
+            }
+            @if (context.RecordStatus == 5 && context.OpenByUsedID == null && context.CloseByUsedID != null)
+            {
+                <MudText Style="align-content: center;">REJECTED</MudText>
+            }
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+
+    List<DocTypeModel> doctypelist = new List<DocTypeModel>();
+    private List<DayOpenRequestModel> Model = new List<DayOpenRequestModel>();
+    private List<DayOpenRequestModel> ShowModel = new List<DayOpenRequestModel>();
+    private string searchmodel = "";
+    private int? BranchID;
+    public int? NumberOfRecords = 100;
+    public bool IsCompleted { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+        await GetAll(NumberOfRecords);
+        await Completed(IsCompleted);
+    }
+
+    private async Task GetAll(int? RowNo)
+    {
+        Model = IDayOpenService.Select(RowNo, BranchID).ToList();
+    }
+
+    private async Task Completed(bool value)
+    {
+        IsCompleted = value;
+        if (IsCompleted)
+        {
+            ShowModel = Model.Where(x => x.RecordStatus == 5).ToList();
+        }
+        else
+        {
+            ShowModel = Model.Where(x => x.RecordStatus != 5).ToList();
+        }
+    }
+
+    public async Task RecordNoChanged(int? RowNo)
+    {
+        NumberOfRecords = RowNo;
+        await GetAll(RowNo);
+        await Completed(IsCompleted);
+    }
+
+    public async Task Edit()
+    {
+        DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Small };
+        var dialog = DialogService.Show<DayOpenDialog>("Add/Edit DayOpen Request", options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            try
+            {
+                DayOpenRequestModel UpatedModel = (DayOpenRequestModel)result.Data;
+                IDayOpenService.Update(UpatedModel);
+                snackbar.Add("Request Created Successfully.", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        await GetAll(NumberOfRecords);
+        await Completed(IsCompleted);
+    }
+
+    public async Task Approve(DayOpenRequestModel model)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "Are you sure you want to Approve ?");
+        if (result == true)
+        {
+            try
+            {
+                IDayOpenService.Approve(model);
+                snackbar.Add("Approved Successfully.", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        await GetAll(NumberOfRecords);
+        await Completed(IsCompleted);
+    }
+
+    public async Task Reject(DayOpenRequestModel model)
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        model.UserInfo.UserID = authprov.User.Identity.Name;
+
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "Are you sure you want to Reject ?");
+        if (result == true)
+        {
+            try
+            {
+                IDayOpenService.RejectOrClose(model);
+                snackbar.Add("Rejected Successfully.", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        await GetAll(NumberOfRecords);
+        await Completed(IsCompleted);
+    }
+
+    private bool search(DayOpenRequestModel model)
+    {
+        if (model.ID != null && model.DocType.Description.Contains(searchmodel, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (model.ID == null)
+        {
+            return true;
+        }
+        return false;
+    }
+}

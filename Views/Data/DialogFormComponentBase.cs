@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Permissions;
 using Microsoft.JSInterop;
 using System.Collections.Generic;
+using Core.IDataServices.Finance.DayOpen;
 
 namespace Views.Data
 {
@@ -32,7 +33,7 @@ namespace Views.Data
         [Inject] protected IJSRuntime JsRuntime { get; set; }
         [Inject] protected IBranchService branchService { get; set; }
         [Inject] protected IbaseInterface<T> baseInterface { get; set; }
-
+        [Inject] protected IDayOpenService DayOpenService { get; set; }
 
         [Parameter]
         public bool ReadOnly { get; set; }
