@@ -232,6 +232,7 @@ namespace Views
             services.AddScoped<IDocVoucherService, DocVoucherService>();
             services.AddScoped<IMileageShortageReceiptService, MileageShortageReceiptService>();
             services.AddScoped<IShortageDamageCompensationService, ShortageDamageCompensationService>();
+            services.AddScoped<IOpeningBalanceService, OpeningBalanceService>();
 
 
             //------------FINANCE TRANSACTIONS-------------------

@@ -176,6 +176,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
+               new SqlParameter("@TdsType", model.TdsType),
                new SqlParameter("@IsPayable", model.IsTdsPayable),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@DocumentDate", model.DocumentDate),               
@@ -200,6 +201,7 @@ namespace ArmsServices.DataServices
             return new TdsTransactionModel
             {
                 ID = dr.GetInt32("ID"),
+                TdsType = dr.GetString("TdsType"),
                 IsTdsPayable = dr.GetBoolean("IsPayable"),
                 PartyCoaID = dr.GetInt32("PartyCoaID"),
                 BranchID = dr.GetInt32("BranchID"),
