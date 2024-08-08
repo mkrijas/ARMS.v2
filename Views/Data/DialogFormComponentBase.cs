@@ -104,6 +104,22 @@ namespace Views.Data
         protected abstract Task<int> Update(T editModel);
         protected abstract int UpdateApproval(DataApprovedStatus aprvd);
 
+        public async Task<bool> validate(T model)
+        {
+            if (!DayOpenService.ValidateDayOpen(model.DocumentDate, DocInfo.DocumentTypeID, model.BranchID).Value)
+            {
+                bool? result = await dialogService.ShowMessageBox(
+                    "Oops !",
+                    new MarkupString("The specified DocumentDate : <b>" + model.DocumentDate.Value.ToString("dd/MM/yyyy") + "</b> is closed for this branch ! <br>Please create a request to open the date."));
+                return false;
+            }
+            if (model.TotalAmount <= 0)
+            {
+                snackbar.Add("Total amount should be greater than zero!", Severity.Error);
+                return false;
+            }
+            return true;
+        }
 
         protected async Task OnValidSubmit(EditContext context)
         {
@@ -113,35 +129,31 @@ namespace Views.Data
                 return;
             }
             _busy = true;
-            if (model.TotalAmount <= 0)
+            if (await validate(model))
             {
-                snackbar.Add("Total amount should be greater than zero!", Severity.Error);
-                _busy = false;
-                return;
-            }
-            if (!EditPermission)
-            {
-                bool? result = await dialogService.ShowMessageBox("Permission denied!", "You dont have permission to Edit Payment!.");
-
-            }
-            else
-            {
-                try
+                if (!EditPermission)
                 {
-                    model.UserInfo.UserID = UserID;
-                    int ID = await Update(model);
-                    if (ID != 0)
-                    {                        
-                        notiService.CreateAuthNotifications(BranchID.Value, DocInfo.DocumentTypeID.Value, ID);
-                        snackbar.Add("Submitted Successfully", Severity.Success);
-                        dialogForm.Close(model);
+                    bool? result = await dialogService.ShowMessageBox("Permission denied!", "You dont have permission to Edit !.");
+                }
+                else
+                {
+                    try
+                    {
+                        model.UserInfo.UserID = UserID;
+                        int ID = await Update(model);
+                        if (ID != 0)
+                        {
+                            notiService.CreateAuthNotifications(BranchID.Value, DocInfo.DocumentTypeID.Value, ID);
+                            snackbar.Add("Submitted Successfully", Severity.Success);
+                            dialogForm.Close(model);
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    snackbar.Add(ex.Message, Severity.Error);
-                }
+                    catch (Exception ex)
+                    {
+                        snackbar.Add(ex.Message, Severity.Error);
+                    }
 
+                }
             }
             await Task.Delay(200);
             _busy = false;

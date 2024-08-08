@@ -7,10 +7,10 @@ namespace Core.IDataServices.Finance.DayOpen
 {
     public interface IDayOpenService
     {
-        IEnumerable<DayOpenRequestModel> Select(int? NoOfRecords, int? BranchId);
-        DayOpenRequestModel Update(DayOpenRequestModel model);
-        DayOpenRequestModel Approve(DayOpenRequestModel model);
-        DayOpenRequestModel RejectOrClose(DayOpenRequestModel model);
+        IEnumerable<DayOpenRequestModel> Select(int? NoOfRecords, int? BranchId);  // View
+        DayOpenRequestModel Update(DayOpenRequestModel model);  // Edit
+        DayOpenRequestModel Approve(DayOpenRequestModel model);  // Approve
+        DayOpenRequestModel RejectOrClose(DayOpenRequestModel model);  // Reject OR Close
         bool? ValidateDayOpen(DateTime? DocDate, int? DocTypeID, int? BranchID);
     }
 }

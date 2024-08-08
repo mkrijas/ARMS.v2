@@ -1,6 +1,8 @@
 ﻿@page "/DayOpenRequestView"
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
+@inject IRoleService<RoleModel> Irole
+@using System.Threading;
 @using Core.BaseModels.Finance
 @using Core.IDataServices.Finance.DayOpen
 @inject MudBlazor.ISnackbar snackbar
@@ -76,8 +78,20 @@
     public int? NumberOfRecords = 100;
     public bool IsCompleted { get; set; } = false;
 
+    int DayOpenDocTypeID = 137;
+    public bool HasPermissionIDayOpenServiceEdit { get; set; } = false;
+    public bool HasPermissionIDayOpenServiceApprove { get; set; } = false;
+    public bool HasPermissionIDayOpenServiceReject { get; set; } = false;
+    public bool HasPermissionIDayOpenServiceClose { get; set; } = false;
+
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionIDayOpenServiceEdit = await Irole.HasClaim(DayOpenDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionIDayOpenServiceApprove = await Irole.HasClaim(DayOpenDocTypeID.ToString(), "Approve", ctc.Token);
+        HasPermissionIDayOpenServiceReject = await Irole.HasClaim(DayOpenDocTypeID.ToString(), "Reject", ctc.Token);
+        HasPermissionIDayOpenServiceClose = await Irole.HasClaim(DayOpenDocTypeID.ToString(), "Close", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
@@ -112,72 +126,99 @@
 
     public async Task Edit()
     {
-        DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Small };
-        var dialog = DialogService.Show<DayOpenDialog>("Add/Edit DayOpen Request", options);
-        var result = await dialog.Result;
-        if (!result.Canceled)
+        if (HasPermissionIDayOpenServiceEdit)
         {
-            try
+            DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Small };
+            var dialog = DialogService.Show<DayOpenDialog>("Add/Edit DayOpen Request", options);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                DayOpenRequestModel UpatedModel = (DayOpenRequestModel)result.Data;
-                IDayOpenService.Update(UpatedModel);
-                snackbar.Add("Request Created Successfully.", Severity.Success);
+                try
+                {
+                    DayOpenRequestModel UpatedModel = (DayOpenRequestModel)result.Data;
+                    IDayOpenService.Update(UpatedModel);
+                    snackbar.Add("Request Created Successfully.", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+            await GetAll(NumberOfRecords);
+            await Completed(IsCompleted);
         }
-        await GetAll(NumberOfRecords);
-        await Completed(IsCompleted);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit DayOpen.");
+        }
     }
 
     public async Task Approve(DayOpenRequestModel model)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        model.UserInfo.UserID = authprov.User.Identity.Name;
-
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure you want to Approve ?");
-        if (result == true)
+        if (HasPermissionIDayOpenServiceApprove)
         {
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            model.UserInfo.UserID = authprov.User.Identity.Name;
+
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure you want to Approve ?");
+            if (result == true)
             {
-                IDayOpenService.Approve(model);
-                snackbar.Add("Approved Successfully.", Severity.Success);
+                try
+                {
+                    IDayOpenService.Approve(model);
+                    snackbar.Add("Approved Successfully.", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+            await GetAll(NumberOfRecords);
+            await Completed(IsCompleted);
         }
-        await GetAll(NumberOfRecords);
-        await Completed(IsCompleted);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Approve DayOpen.");
+        }
     }
 
     public async Task Reject(DayOpenRequestModel model)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        model.UserInfo.UserID = authprov.User.Identity.Name;
-
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning !",
-            "Are you sure you want to Reject ?");
-        if (result == true)
+        if (HasPermissionIDayOpenServiceReject || HasPermissionIDayOpenServiceClose)
         {
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            model.UserInfo.UserID = authprov.User.Identity.Name;
+
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure you want to Reject ?");
+            if (result == true)
             {
-                IDayOpenService.RejectOrClose(model);
-                snackbar.Add("Rejected Successfully.", Severity.Success);
+                try
+                {
+                    IDayOpenService.RejectOrClose(model);
+                    snackbar.Add("Rejected Successfully.", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Warning);
-            }
+            await GetAll(NumberOfRecords);
+            await Completed(IsCompleted);
         }
-        await GetAll(NumberOfRecords);
-        await Completed(IsCompleted);
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Reject/Close DayOpen.");
+        }
     }
 
     private bool search(DayOpenRequestModel model)
