@@ -9,7 +9,6 @@
 @inject ITdsRateService tdsIService
 @inject ITripFuelService Ifuelservice
 
-
 <DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Purchase" formID="formTaxPurchase" DocumentDetails="DocInfo" OnFileRemoved="RemoveFileChange" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
@@ -103,8 +102,8 @@
     void SetTotal()
     {
         model.TotalAmount = 
-           (model.Expenses.Where(x => x != null).Sum(x => x.Amount) ??0)
-        +  (model.Expenses.Where(x => x != null && x.GstMechanism != "RCM").Sum(x => x.IGST + x.CGST + x.SGST) ?? 0) 
+          (model.Expenses.Where(x => x != null).Sum(x => x.Amount) ??0)
+        + (model.Expenses.Where(x => x != null && x.GstMechanism != "RCM").Sum(x => x.IGST + x.CGST + x.SGST) ?? 0) 
         + (model.Items.Where(y => y != null).Sum(y => y.Amount + y.IGST + y.CGST + y.SGST) ?? 0)
         + (model.Assets.Where(z => z != null).Sum(z=> z.BookValue) ?? 0)
         + (model.Assets.Where(z => z != null && z.GstMechanism != "RCM").Sum(z => z.GSTValue) ?? 0);
@@ -155,8 +154,15 @@
         return result;
     }
 
-    async Task<bool> validate(TaxPurchaseModel editModel)
+    public async Task<bool> validate(TaxPurchaseModel editModel)
     {
+        if (!DayOpenService.ValidateDayOpen(editModel.DocumentDate, DocInfo.DocumentTypeID, editModel.BranchID).Value)
+        {
+            bool? result = await dialogService.ShowMessageBox(
+                "Oops !",
+                new MarkupString("The specified DocumentDate : <b>" + editModel.DocumentDate.Value.ToString("dd/MM/yyyy") + "</b> is closed ! <br>Please create a request to open the date."));
+            return false;
+        }
         SetTotal();
         if (TotalBillAmount != editModel.TotalAmount)
         {
@@ -167,8 +173,8 @@
         if (check?.PID is not null)
         {
             bool? result = await dialogService.ShowMessageBox(
-                       "Warning",
-                       new MarkupString("Invoice already entered On <b>" + check.DocumentDate + "</b> as <b>" + check.DocumentNumber + "</b>!"));
+                "Warning",
+                new MarkupString("Invoice already entered On <b>" + check.DocumentDate + "</b> as <b>" + check.DocumentNumber + "</b>!"));
             return false;
         }
         return true;
@@ -191,7 +197,7 @@
         }
         catch (Exception ex)
         {
-            //snackbar.Add(ex.Message, Severity.Error);
+            snackbar.Add(ex.Message, Severity.Error);
         }
     }
 }

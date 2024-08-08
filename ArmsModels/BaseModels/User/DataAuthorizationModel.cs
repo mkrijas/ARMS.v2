@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-
     public class DataAuthorizationModel
     {
         public long? ID { get; set; }
