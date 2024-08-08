@@ -38,10 +38,10 @@
         <MudTd DataLabel="BranchName">@context.Branch.BranchName</MudTd>
         <MudTd DataLabel="DocumentName">@context.DocType.Description</MudTd>
         <MudTd DataLabel="Date Period">@context.FromDate?.ToString("dd/MM/yyyy") - @context?.ToDate?.ToString("dd/MM/yyyy")</MudTd>
-        <MudTd DataLabel="IsOpenOrIsClosed">@context.IsOpen</MudTd>
+        <MudTd DataLabel="IsOpenOrIsClosed"><b>@context.IsOpen</b></MudTd>
         <MudTd DataLabel="RequestedBy">@context.UserInfo.UserID</MudTd>
-        <MudTd DataLabel="OpenedBy">@context.OpenByUsedID @context.OpenDate</MudTd>
-        <MudTd DataLabel="ClosedBy">@context.CloseByUsedID @context.CloseDate</MudTd>
+        <MudTd DataLabel="OpenedBy">@context.OpenByUsedID  - <b>@context.OpenDate</b></MudTd>
+        <MudTd DataLabel="ClosedBy">@context.CloseByUsedID  - <b>@context.CloseDate</b></MudTd>
         <MudTd Class="d-flex">
             @if (context.RecordStatus == 3)
             {
@@ -50,16 +50,16 @@
             }
             @if (context.RecordStatus == 4)
             {
-                <MudText Style="align-content: center;">APPROVED</MudText>
-                <MudButton OnClick="@(e => Reject(context))" Style="margin-left: 20px;" Variant="Variant.Filled" Color="Color.Error" ButtonType="ButtonType.Button">Close</MudButton>
+                <MudText Style="align-content: center;color:green;">APPROVED</MudText>
+                <MudButton OnClick="@(e => Close(context))" Style="margin-left: 20px;" Variant="Variant.Filled" Color="Color.Error" ButtonType="ButtonType.Button">Close</MudButton>
             }
             @if (context.RecordStatus == 5 && context.OpenByUsedID != null && context.CloseByUsedID != null)
             {
-                <MudText Style="align-content: center;">CLOSED</MudText>
+                <MudText Style="align-content: center;color:orange;">CLOSED</MudText>
             }
             @if (context.RecordStatus == 5 && context.OpenByUsedID == null && context.CloseByUsedID != null)
             {
-                <MudText Style="align-content: center;">REJECTED</MudText>
+                <MudText Style="align-content: center; color:red;">REJECTED</MudText>
             }
         </MudTd>
     </RowTemplate>
@@ -190,7 +190,7 @@
 
     public async Task Reject(DayOpenRequestModel model)
     {
-        if (HasPermissionIDayOpenServiceReject || HasPermissionIDayOpenServiceClose)
+        if (HasPermissionIDayOpenServiceReject)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             model.UserInfo.UserID = authprov.User.Identity.Name;
@@ -217,7 +217,40 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to Reject/Close DayOpen.");
+                "You dont have any permission to Reject DayOpen.");
+        }
+    }
+
+    public async Task Close(DayOpenRequestModel model)
+    {
+        if (HasPermissionIDayOpenServiceClose)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            model.UserInfo.UserID = authprov.User.Identity.Name;
+
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure you want to Close ?");
+            if (result == true)
+            {
+                try
+                {
+                    IDayOpenService.RejectOrClose(model);
+                    snackbar.Add("Closed Successfully.", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
+            }
+            await GetAll(NumberOfRecords);
+            await Completed(IsCompleted);
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Close DayOpen.");
         }
     }
 
