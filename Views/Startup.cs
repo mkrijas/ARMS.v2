@@ -47,6 +47,8 @@ using DAL.DataServices.Finance;
 using ArmsModels.BaseModels.Finance.Transactions;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Http.Features;
+using Core.IDataServices.Finance.DayOpen;
+using DAL.DataServices.Finance.DayOpen;
 
 namespace Views
 {
@@ -258,6 +260,7 @@ namespace Views
             services.AddScoped<ISundryMaintenanceService, SundryMaintenanceService>();
             services.AddScoped<ItdsEntryService, TdsEntryService>();
             services.AddScoped<IGeneralLedgerTransferService, GeneralLedgerTransferService>();
+            services.AddScoped<IDayOpenService, DayOpenService>();
 
 
             //----IBASE GROUP

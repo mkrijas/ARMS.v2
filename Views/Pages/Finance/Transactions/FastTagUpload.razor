@@ -14,6 +14,7 @@
 @inject AuthenticationStateProvider auth
 @inject NavigationManager NavigationManager
 @inject MudBlazor.ISnackbar snackbar
+@inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 @inject IFastTagService IFTService
 @inject IJSRuntime JSRuntime
@@ -190,6 +191,10 @@
     public bool IsLoading = false;
     FastTagBranchEditModel BranchEditModel = new FastTagBranchEditModel();
 
+    int FasTagDocTypeID = 120;
+    public bool HasPermissionIFastTagServiceEdit { get; set; } = false;
+    public bool HasPermissionIFastTagServiceApprove { get; set; } = false;
+
     //[Parameter]
     public int? id { get; set; }
     [Parameter]
@@ -201,6 +206,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionIFastTagServiceEdit = await Irole.HasClaim(FasTagDocTypeID.ToString(), "Edit", ctc.Token);
+        HasPermissionIFastTagServiceApprove = await Irole.HasClaim(FasTagDocTypeID.ToString(), "Approve", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
@@ -290,45 +299,54 @@
 
     public async Task EditBranch()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-
-        DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Small };
-        var dialog = DialogService.Show<FastTagBranchEditDialog>("Edit Branch", options);
-        var result = await dialog.Result;
-        if (!result.Cancelled)
+        if (HasPermissionIFastTagServiceEdit)
         {
-            var data = (FastTagBranchEditModel)result.Data;
-            try
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Small };
+            var dialog = DialogService.Show<FastTagBranchEditDialog>("Edit Branch", options);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
             {
-                FastTagModel itemToUpdate = ExcelModelCollection.Find(x =>
+                var data = (FastTagBranchEditModel)result.Data;
+                try
                 {
-                    string cleanedTransactionID1 = data.TransactionID?.Trim();
-                    string cleanedTransactionID2 = x.TransactionID?.Trim();
+                    FastTagModel itemToUpdate = ExcelModelCollection.Find(x =>
+                    {
+                        string cleanedTransactionID1 = data.TransactionID?.Trim();
+                        string cleanedTransactionID2 = x.TransactionID?.Trim();
 
-                    return string.Equals(cleanedTransactionID1, cleanedTransactionID2, StringComparison.OrdinalIgnoreCase);
-                });
-                if (itemToUpdate != null)
-                {
-                    itemToUpdate.BranchID = data.Branch.BranchID;
-                    itemToUpdate.BranchName = data.Branch.BranchName;
-                    data.FastTagTollID = itemToUpdate.FastTagTollID;
-                    data.UserInfo.UserID = user.Identity.Name;
+                        return string.Equals(cleanedTransactionID1, cleanedTransactionID2, StringComparison.OrdinalIgnoreCase);
+                    });
+                    if (itemToUpdate != null)
+                    {
+                        itemToUpdate.BranchID = data.Branch.BranchID;
+                        itemToUpdate.BranchName = data.Branch.BranchName;
+                        data.FastTagTollID = itemToUpdate.FastTagTollID;
+                        data.UserInfo.UserID = user.Identity.Name;
 
-                    IFTService.UpdateBranch(data);
-                    snackbar.Add("Updated Successfully", Severity.Success);
+                        IFTService.UpdateBranch(data);
+                        snackbar.Add("Updated Successfully", Severity.Success);
+                    }
+                    else
+                    {
+                        bool? message = await DialogService.ShowMessageBox(
+                            "Oops !",
+                            (MarkupString)$"TransactionID : <b>{data.TransactionID}</b> do not exist in the collection !");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    bool? message = await DialogService.ShowMessageBox(
-                        "Oops !",
-                        (MarkupString)$"TransactionID : <b>{data.TransactionID}</b> do not exist in the collection !");
+                    snackbar.Add(ex.Message, Severity.Error);
                 }
             }
-            catch (Exception ex)
-            {
-                snackbar.Add(ex.Message, Severity.Error);
-            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit FasTag.");
         }
     }
 
@@ -339,56 +357,65 @@
 
     public async Task OnValidSubmit()
     {
-        if (_busy)
+        if (HasPermissionIFastTagServiceEdit)
         {
-            snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-
-        try
-        {
-            var authprov = await auth.GetAuthenticationStateAsync();
-            var user = authprov.User;
-            branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
-            MainModel.NatureOfTransaction = "FasTag";
-            UserID = user.Identity.Name;
-
-            MainModel.BranchID = branchID;
-            MainModel.FastTagModelList = ExcelModelCollection.ToList();
-            MainModel.TotalAmount = ExcelModelCollection.Sum(e => e.DebitAmount);
-            MainModel.UserInfo.UserID = UserID;
-
-            if (MainModel.FastTagModelList.Count != 0)
+            if (_busy)
             {
-                if (MainModel.FastTagModelList.Any(f => !f.BranchID.HasValue))
+                snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+
+            try
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+                MainModel.NatureOfTransaction = "FasTag";
+                UserID = user.Identity.Name;
+
+                MainModel.BranchID = branchID;
+                MainModel.FastTagModelList = ExcelModelCollection.ToList();
+                MainModel.TotalAmount = ExcelModelCollection.Sum(e => e.DebitAmount);
+                MainModel.UserInfo.UserID = UserID;
+
+                if (MainModel.FastTagModelList.Count != 0)
                 {
-                    bool? result = await DialogService.ShowMessageBox(
-                        "Oops !",
-                        "Branch not assigned to one or more Transaction !");
+                    if (MainModel.FastTagModelList.Any(f => !f.BranchID.HasValue))
+                    {
+                        bool? result = await DialogService.ShowMessageBox(
+                            "Oops !",
+                            "Branch not assigned to one or more Transaction !");
+                    }
+                    else
+                    {
+                        IFTService.UpdateNew(MainModel);
+                        snackbar.Add("Saved Successfully", Severity.Success);
+                        NavigationManager.NavigateTo("/FasTagTollUploadView");
+                        // MainModel = new();
+                        // collection = new();
+                    }
                 }
                 else
                 {
-                    IFTService.UpdateNew(MainModel);
-                    snackbar.Add("Saved Successfully", Severity.Success);
-                    NavigationManager.NavigateTo("/FasTagTollUploadView");
-                    // MainModel = new();
-                    // collection = new();
+                    bool? result = await DialogService.ShowMessageBox(
+                        "Oops !",
+                        "Please Upload the file !");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                bool? result = await DialogService.ShowMessageBox(
-                    "Oops !",
-                    "Please Upload the file !");
+                snackbar.Add(ex.Message, Severity.Error);
             }
+            await Task.Delay(100);
+            _busy = false;
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit FasTag.");
         }
-        await Task.Delay(100);
-        _busy = false;
     }
 
     private bool search(FastTagModel model)
