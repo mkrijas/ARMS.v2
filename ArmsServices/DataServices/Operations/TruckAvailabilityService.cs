@@ -54,9 +54,15 @@ namespace DAL.DataServices.Operations
                 return new RequestApprovalHistoryModel()
                 {
                     RequestApprovalHistoryID = reader.GetInt32("RequestApprovalHistoryID"),
+                    DocNumber = reader.GetString("DocNumber"),
                     OpeningKM = reader.GetInt32("OpeningKM"),
                     ClosingKM = reader.GetInt32("ClosingKM"),
-                    Fuel = reader.GetDecimal("Fuel")
+                    Fuel = reader.GetDecimal("Fuel"),
+                    Truck = new TruckModel()
+                    {
+                        TruckID = reader.GetInt32("TruckID"),
+                        RegNo = reader.GetString("RegNo"),
+                    }
                 };
             }
             return null;
@@ -133,6 +139,7 @@ namespace DAL.DataServices.Operations
             return new RequestApprovalHistoryModel
             {
                 RequestApprovalHistoryID = dr.GetInt32("RequestApprovalHistoryID"),
+                DocNumber = dr.GetString("DocNumber"),
                 TruckID = dr.GetInt32("TruckID"),
                 DriverID = dr.GetInt32("DriverID"),
                 Truck = new TruckModel()

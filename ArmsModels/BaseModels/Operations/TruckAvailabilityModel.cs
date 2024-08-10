@@ -14,6 +14,7 @@ namespace Core.BaseModels.Operations
     public class RequestApprovalHistoryModel : ICloneable
     {
         public int? RequestApprovalHistoryID { get; set; }
+        public string DocNumber {  get; set; }
         public int? TruckID { get; set; }
         public int? DriverID { get; set; }
         public TruckModel Truck { get; set; }
