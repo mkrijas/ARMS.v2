@@ -68,6 +68,29 @@ namespace DAL.DataServices.Operations
             return null;
         }
 
+        public RequestApprovalHistoryModel GetTransferByID(long? RequestApprovalHistoryID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", RequestApprovalHistoryID),
+               new SqlParameter("@Operation", "ByID"),
+            };
+            foreach (var reader in Iservice.GetDataReader("[usp.Operation.TruckAvailability.Request.Select]", parameters))
+            {
+                return new RequestApprovalHistoryModel()
+                {
+                    RequestApprovalHistoryID = reader.GetInt32("RequestApprovalHistoryID"),
+                    DocNumber = reader.GetString("DocNumber"),
+                    Truck = new TruckModel()
+                    {
+                        TruckID = reader.GetInt32("TruckID"),
+                        RegNo = reader.GetString("RegNo"),
+                    }
+                };
+            }
+            return null;
+        }
+
         public RequestApprovalHistoryModel UpdateOutgoing(RequestApprovalHistoryModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
