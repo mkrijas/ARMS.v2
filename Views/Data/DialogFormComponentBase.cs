@@ -15,6 +15,7 @@ using System.Security.Permissions;
 using Microsoft.JSInterop;
 using System.Collections.Generic;
 using Core.IDataServices.Finance.DayOpen;
+using Core.IDataServices.Finance.Transactions;
 
 namespace Views.Data
 {
@@ -34,6 +35,7 @@ namespace Views.Data
         [Inject] protected IBranchService branchService { get; set; }
         [Inject] protected IbaseInterface<T> baseInterface { get; set; }
         [Inject] protected IDayOpenService DayOpenService { get; set; }
+        [Inject] protected ISundryPaymentAssetService SundryPaymentAssetService { get; set; }
 
         [Parameter]
         public bool ReadOnly { get; set; }
@@ -102,6 +104,7 @@ namespace Views.Data
         }
 
         protected abstract Task<int> Update(T editModel);
+
         protected abstract int UpdateApproval(DataApprovedStatus aprvd);
 
         public async Task<bool> validate(T model)
@@ -121,8 +124,6 @@ namespace Views.Data
             return true;
         }
 
-
-
         protected async Task OnValidSubmit(EditContext context)
         {
             if (_busy)
@@ -135,7 +136,7 @@ namespace Views.Data
             {
                 if (!EditPermission)
                 {
-                    bool? result = await dialogService.ShowMessageBox("Permission denied!", "You dont have permission to Edit !.");
+                    bool? result = await dialogService.ShowMessageBox("Permission denied!", "You dont have permission to Edit !");
                 }
                 else
                 {
@@ -203,6 +204,5 @@ namespace Views.Data
                 snackbar.Add("File removed Successfully", Severity.Success);
             }
         }
-
     }
 }

@@ -31,6 +31,7 @@ namespace ArmsModels.BaseModels
         public virtual string RegNo { get; set; }
         [Required]
         public string Detail { get; set; }
+        [RegularExpression(@"^([0-9]{10})$", ErrorMessage = "ContactNumber must be 10 digits long")]
         public string ContactNumber { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }

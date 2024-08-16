@@ -1,20 +1,16 @@
-﻿@page "/SundryPaymentView/"
-@page "/SundryPaymentView/{interbranch:bool}/{id:int}"
-@page "/SundryPaymentView/{interbranch:bool}"
+﻿@page "/SundryPaymentAssetView/"
+@using Core.BaseModels.Finance.Transactions
+@using Core.IDataServices.Finance.Transactions
 
-@inherits ViewComponentBase<SundryPaymentModel>
-@inject ISundryPaymentService Iservice
+@inherits ViewComponentBase<SundryPaymentAssetModel>
+@inject ISundryPaymentAssetService IService
 @inject IDialogService DialogService
 
 <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
     <ToolBarContent>
-        <MudText Typo="Typo.h6">Sundry Payment </MudText>
-        @if (interbranch)
-        {
-            <MudText Typo="Typo.h6" Class="pl-2"> Interbranch </MudText>
-        }
-        <MudTooltip Text="New Sundry Payment">
-            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new SundryPaymentModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+        <MudText Typo="Typo.h6">Sundry Payment (Asset)</MudText>
+        <MudTooltip Text="New Sundry Payment Asset">
+            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new SundryPaymentAssetModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
         </MudTooltip>
         <MudSpacer></MudSpacer>
         <MudTextField @bind-Value="searchTerm" Placeholder="Search Sundry..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -28,10 +24,10 @@
         <MudCheckBox Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
     </ToolBarContent>
     <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.SundryPaymentID)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.PaymentMode)">Payment Mode</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentModel, object>(x=> x.TotalAmount)">Amount</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentAssetModel, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentAssetModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentAssetModel, object>(x=> x.PaymentMode)">Payment Mode</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<SundryPaymentAssetModel, object>(x=> x.TotalAmount)">Amount</MudTableSortLabel></MudTh>
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
@@ -40,8 +36,7 @@
             @context.DocumentNumber
             @if (context.AuthLevelId == 100)
             {
-                <MudText Color="Color.Error"
-                         GutterBottom> Rejected </MudText>
+                <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
             }
         </MudTd>
         <MudTd DataLabel="PaymentMode">@context.PaymentMode</MudTd>
@@ -49,12 +44,11 @@
         <MudTd DataLabel="">
             <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
             <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.SundryPaymentID))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
-
+            <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.SundryPaymentAssetID))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
             @if (@context.AuthLevelId == 99)
             {
-                <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.SundryPaymentID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
-                <MudIconButton OnClick="@(()=> Print(context.SundryPaymentID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
+                <EntryReversedComponent DocTypeID="DocInfo.DocumentTypeID" DocumentID="context.SundryPaymentAssetID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                @* <MudIconButton OnClick="@(()=> Print(context.SundryPaymentAssetID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" /> *@
             }
             else if (@context.AuthLevelId != 100)
             {
@@ -69,11 +63,11 @@
 
 @code {
 
-    protected override List<SundryPaymentModel> collection { get; set; } = new();
+    protected override List<SundryPaymentAssetModel> collection { get; set; } = new();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
-            DocumentTypeID = 11,
-            DocumentName = "SundryPayment"
+            DocumentTypeID = 138,
+            DocumentName = "SundryPaymentAsset"
         };
 
     public Dictionary<string, string> ReportParameters { get; set; } = new();
@@ -86,14 +80,13 @@
         var User = authprov.User;
         BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
 
-        if (id != null && collection != null && collection.Any(g => g.SundryPaymentID == id))
+        if (id != null && collection != null && collection.Any(g => g.SundryPaymentAssetID == id))
         {
-            await OpenForm(collection.FirstOrDefault(s => s.SundryPaymentID == id), true);
+            await OpenForm(collection.FirstOrDefault(s => s.SundryPaymentAssetID == id), true);
         }
     }
 
-
-    protected override async Task OpenForm(SundryPaymentModel model, bool ReadOnly = false, bool DisableAddition = false)
+    protected override async Task OpenForm(SundryPaymentAssetModel model, bool ReadOnly = false, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -107,28 +100,15 @@
         parms.Add("model", model.Clone());
         parms.Add("ReadOnly", ReadOnly);
         parms.Add("OnApproved", new EventCallbackFactory().Create(this, () => LoadData(ShowApproved, NumberOfRecords)));
-        var dialog = dialogService.Show<SundryPaymentDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
+        var dialog = dialogService.Show<SundryPaymentAssetDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
         var result = await dialog.Result;
         var isCancelled = result.Canceled;
         if (!isCancelled)
         {
-            var ReturnData = (SundryPaymentModel)result.Data;
+            var ReturnData = (SundryPaymentAssetModel)result.Data;
         }
         LoadData(ShowApproved, NumberOfRecords);
         await Task.Delay(200);
         _busy = false;
-    }
-
-    private async Task Print(int? SundryPaymentID)
-    {
-        ReportParameters.Clear();
-        ReportParameters.Add("SundryPaymentID", SundryPaymentID.ToString());
-        ReportParameters.Add("BranchName", BranchName);
-        var parameters = new DialogParameters();
-        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
-        parameters.Add("ReportName", "PrintSundryPayment");
-
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
     }
 }

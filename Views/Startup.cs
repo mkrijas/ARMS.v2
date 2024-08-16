@@ -49,6 +49,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Http.Features;
 using Core.IDataServices.Finance.DayOpen;
 using DAL.DataServices.Finance.DayOpen;
+using Core.BaseModels.Finance.Transactions;
 
 namespace Views
 {
@@ -246,6 +247,7 @@ namespace Views
             services.AddScoped<IPaymentFinalizeService, PaymentFinalizeService>();
             services.AddScoped<IOutstandingBillsService, OutstandingBillsService>();
             services.AddScoped<ISundryPaymentService, SundryPaymentService>();
+            services.AddScoped<ISundryPaymentAssetService, SundryPaymentAssetService>();
             services.AddScoped<ISundryReceiptService, SundryReceiptService>();
             services.AddScoped<IContraService, ContraService>();
             services.AddScoped<IFreightBillingService, FreightBillingService>();
@@ -268,6 +270,7 @@ namespace Views
             services.AddScoped <IbaseInterface<TaxPurchaseModel> , TaxPurchaseService>();
             services.AddScoped<IbaseInterface<SundryReceiptModel>, SundryReceiptService>();
             services.AddScoped<IbaseInterface<SundryPaymentModel>, SundryPaymentService>();
+            services.AddScoped<IbaseInterface<SundryPaymentAssetModel>, SundryPaymentAssetService>();
             services.AddScoped<IbaseInterface<ReceiptModel>, ReceiptService>();
             services.AddScoped<IbaseInterface<DrCrNoteModel>, DrCrNoteService>();
             services.AddScoped<IbaseInterface<OpTranModel>, OpTranService>();
