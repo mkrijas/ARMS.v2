@@ -21,7 +21,7 @@ namespace Views.Data
         [Inject] protected IDialogService dialogService { get; set; }
         [Inject] protected IRoleService<RoleModel> Irole { get; set; }
         [Inject] protected IPushNotificationService notiService { get; set; }
-        [Inject] protected IbaseInterface<T> Ibase { get; set; }        
+        [Inject] protected IbaseInterface<T> Ibase { get; set; }
 
         [Parameter]
         public int? id { get; set; } = null;
@@ -29,7 +29,6 @@ namespace Views.Data
         public bool interbranch { get; set; } = false;
 
         protected abstract DocumentInfoModel DocInfo { get; set; }
-
         public bool ShowApproved { get; set; } = false;
         private int numberOfRecords = 100;
         protected string searchTerm = "";
@@ -38,8 +37,6 @@ namespace Views.Data
         protected bool EditPermission { get; set; }
         protected bool DeletePermission { get; set; }
         protected bool ApprovePermission { get; set; }
-
-
         protected int? BranchID = null;
         protected string UserID = null;
 
@@ -49,7 +46,7 @@ namespace Views.Data
             {
                 LoadData(ShowApproved, NumberOfRecords);
             }
-        }        
+        }
 
         protected void ToggleData(bool value)
         {
@@ -65,15 +62,16 @@ namespace Views.Data
                 if (numberOfRecords != value)
                 {
                     numberOfRecords = value;
-                    LoadData(ShowApproved , numberOfRecords);
+                    LoadData(ShowApproved, numberOfRecords);
                 }
             }
         }
 
         protected abstract List<T> collection { get; set; }
         // protected abstract void LoadData(bool val, int numberOfRecords);
-        
-        protected abstract Task OpenForm(T editModel, bool ReadOnly, bool DisableAddition = false);        
+
+        protected abstract Task OpenForm(T editModel, bool ReadOnly, bool DisableAddition = false);
+
         protected virtual async Task Delete(int? ID)
         {
             if (DeletePermission)
@@ -95,9 +93,10 @@ namespace Views.Data
                     "You dont have any permission to Delete Payment.");
             }
         }
+
         protected override async Task OnInitializedAsync()
         {
-           await setPermissions();  
+            await setPermissions();
 
             var authprov = await auth.GetAuthenticationStateAsync();
             BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
@@ -106,6 +105,7 @@ namespace Views.Data
             LoadData(ShowApproved, NumberOfRecords);
             await Task.Delay(100);
         }
+
         private async Task setPermissions()
         {
             CancellationTokenSource ctc = new CancellationTokenSource();
@@ -114,10 +114,11 @@ namespace Views.Data
             DeletePermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Delete", ctc.Token);
             ApprovePermission = await Irole.HasClaim(DocInfo.DocumentTypeID.ToString(), "Approve", ctc.Token);
         }
+
         protected virtual void LoadData(bool val, int numberOfRecords)
         {
             if (val)
-            {                
+            {
                 collection = Ibase.SelectByApproved(BranchID, numberOfRecords, interbranch, searchTerm).ToList();
             }
             else

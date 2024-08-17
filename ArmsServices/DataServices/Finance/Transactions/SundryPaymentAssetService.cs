@@ -129,8 +129,6 @@ namespace DAL.DataServices.Finance.Transactions
                     Description = dr.GetString("Description"),
                     CoaID = dr.GetInt32("AssetCoaID"),
                 },
-                //Asset.AssetID = dr.GetInt64("AssetID"),
-                //Asset.AssetCoaID = dr.GetInt32("AssetCoaID"),
                 Amount = dr.GetDecimal("Amount"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
@@ -155,11 +153,6 @@ namespace DAL.DataServices.Finance.Transactions
         {
             throw new System.NotImplementedException();
         }
-
-        //SundryPaymentAssetModel IbaseInterface<SundryPaymentAssetModel>.Update(SundryPaymentAssetModel model)
-        //{
-        //    throw new System.NotImplementedException();
-        //}
 
         public SundryPaymentAssetModel SelectByID(int? ID)
         {
