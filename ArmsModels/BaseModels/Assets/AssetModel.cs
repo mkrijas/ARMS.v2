@@ -143,6 +143,7 @@ namespace ArmsModels.BaseModels
         public int? AccountTransactionID { get; set; }
         [Required]
         public decimal? Amount { get; set; }
+        public decimal? CumulativeAmount { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
