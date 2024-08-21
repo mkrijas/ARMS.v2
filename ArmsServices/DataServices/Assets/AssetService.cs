@@ -301,25 +301,18 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "GetHistory"),
                new SqlParameter("@AssetID", AssetID)
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.AssetStatus.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[rptAssetStatusHistory]", parameters))
             {
                 yield return new AssetStatusUpdateModel()
                 {
-                    Amount = dr.GetDecimal("Amount"),
+                    Amount = dr.GetDecimal("BookValue"),
                     AssetID = dr.GetInt32("AssetID"),
-                    Status = dr.GetString("Status"),
+                    Status = dr.GetString("AssetStatus"),
                     StatusDate = dr.GetDateTime("StatusDate"),
-                    StatusUpdateID = dr.GetInt32("StatusUpdateID"),
-                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
-                    {
-                        RecordStatus = dr.GetByte("RecordStatus"),
-                        TimeStampField = dr.GetDateTime("TimeStamp"),
-                        UserID = dr.GetString("UserID"),
-                    },
+                    StatusUpdateID = dr.GetInt32("StatusUpdateID"),                    
                 };
             }
         }
