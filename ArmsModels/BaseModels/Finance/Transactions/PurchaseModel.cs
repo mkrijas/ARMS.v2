@@ -99,9 +99,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? ItemID { get; set; }
         [Required]
-        public decimal? ItemRate { get { return _rate; } set { _rate = value; Amount = (_qty * value); } }
+        public decimal? ItemRate { get { return _rate; } set { _rate = value; Amount = Math.Round((_qty * value) ?? 0, 2); } }
         [Required]
-        public decimal? ItemQty { get { return _qty; } set { _qty = value; Amount = (_rate * value); } }
+        public decimal? ItemQty { get { return _qty; } set { _qty = value; Amount = Math.Round((_qty * value) ?? 0, 2); } }
         public int? CoaID { get; set; }
         [Required]
         public decimal? Amount { get; set; }
