@@ -27,5 +27,14 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<UserModel>(Json);
         }
+        /////////////////////////////////////////////////////////////
+
+        public TimeSpan Validity { get; set; }
+        //public Guid GuidId { get; set; }
+        public DateTime ExpiredTime { get; set; }
+        public string Token { get; set; }
+        public string RefreshToken { get; set; }
+
+        public string DeviceID { get; set; }
     }
 }
