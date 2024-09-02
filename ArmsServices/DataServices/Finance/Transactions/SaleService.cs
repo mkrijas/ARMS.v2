@@ -211,7 +211,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<SaleModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm , string Type)
+        public IEnumerable<SaleModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -282,7 +282,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentDate", model.DocumentDate),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@Particulars", model.Particulars.ToDataTable()),
-               new SqlParameter("@IsCredit", model.IsCredit),               
+               new SqlParameter("@IsCredit", model.IsCredit),
                new SqlParameter("@Items", model.Items.ToDataTable()),
                new SqlParameter("@Assets", model.Assets.ToDataTable()),
                new SqlParameter("@CustomerID", model.PartyInfo.PartyID),
@@ -292,6 +292,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Narration", model.Narration),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@SalesType", model.SalesType),
+               new SqlParameter("@InvoiceNo", model.InvoiceNo),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.Sales.Update]", parameters))
             {
@@ -311,13 +312,14 @@ namespace ArmsServices.DataServices
                 DocumentDate = dr.GetDateTime("DocDate"),
                 DocumentNumber = dr.GetString("DocNumber"),
                 IsCredit = dr.GetBoolean("IsCredit"),
-                MID = dr.GetInt32("MID"),                
+                MID = dr.GetInt32("MID"),
                 AuthLevelId = dr.GetInt32("AuthLevelId"),
                 FileName = dr.GetString("FilePath"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
                 SalesType = dr.GetString("SalesType"),
+                InvoiceNo = dr.GetString("InvoiceNo"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("CustomerID"),
