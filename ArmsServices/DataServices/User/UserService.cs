@@ -13,8 +13,14 @@ using Microsoft.Extensions.Configuration;
 
 namespace ArmsServices.DataServices
 {
-    public class UserStore : IUserStore<UserModel>, IUserEmailStore<UserModel>, IUserPhoneNumberStore<UserModel>,
-    IUserTwoFactorStore<UserModel>, IUserPasswordStore<UserModel>, IUserRoleStore<UserModel>, IUserClaimStore<UserModel>, IUserService
+    public class UserStore : IUserStore<UserModel>, 
+                             IUserEmailStore<UserModel>, 
+                             IUserPhoneNumberStore<UserModel>,
+                             IUserTwoFactorStore<UserModel>, 
+                             IUserPasswordStore<UserModel>, 
+                             IUserRoleStore<UserModel>, 
+                             IUserClaimStore<UserModel>, 
+                             IUserService
     {
 
         IDbService Iservice;
