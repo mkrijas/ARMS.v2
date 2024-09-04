@@ -59,6 +59,19 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        public IEnumerable<MileageShortageReceiptModel> SelectByTransferID(int? RequestApprovalHistoryID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByTransferID"),
+               new SqlParameter("@RequestApprovalHistoryID", RequestApprovalHistoryID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.MileageShortageReceipt.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public IEnumerable<MileageShortageReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

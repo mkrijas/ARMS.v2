@@ -1,0 +1,74 @@
+﻿@page "/AssetSatatusHistory"
+@inject IAssetService IAsset
+@inject MudBlazor.ISnackbar snackbar
+@attribute [Authorize]
+@using System.Threading;
+@inject AuthenticationStateProvider auth
+
+<MudPaper Class="p-2 my-4 d-flex align-center">
+    <AssetSelector Value="Asset" ValueChanged="AssetSelected" BranchID="@BranchID" Class="mx-5 my-5 bg-white" />
+</MudPaper>
+<MudPaper>
+    <MudToolBar>
+        <MudText Typo="Typo.h6">Asset Status History</MudText>
+        <MudSpacer />
+    </MudToolBar>
+    <MudDivider></MudDivider>
+        <MudSimpleTable Dense="true" Hover="true" Style="overflow-x: auto;">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th><b>Status</b></th>
+                    <th><b>Status Date</b></th>
+                    <th><b>Amount</b></th>
+                    @* <th><b>Cumulative Amount</b></th> *@
+                </tr>
+            </thead>
+            <tbody>                
+                @foreach (var item in collection)
+                {
+                    <tr>
+                        <td></td>
+                        <td>@item.Status</td>
+                        <td>@item.StatusDate?.ToShortDateString()</td>
+                        <td>@item.Amount</td>
+                        @* <td>@item.CumulativeAmount</td> *@
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+</MudPaper>
+
+@code {
+
+    private AssetModel Asset { get; set; }
+    private List<AssetStatusUpdateModel> collection = new();
+    string UserID;
+    int BranchID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
+    }
+
+    private void GetAll()
+    {
+        collection = IAsset.GetStatusHistory(Asset?.AssetID).ToList();
+        // decimal? cumulativeAmount = 0;
+        // foreach (var item in collection)
+        // {
+        //     cumulativeAmount += item.Amount;
+        //     item.CumulativeAmount = cumulativeAmount;
+        // }
+    }
+
+    private void AssetSelected(AssetModel selectedAsset)
+    {
+        Asset = selectedAsset;
+        GetAll();
+    }
+
+}

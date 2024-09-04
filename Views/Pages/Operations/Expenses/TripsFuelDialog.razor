@@ -2,9 +2,12 @@
 @inject AuthenticationStateProvider auth
 @using System.Threading;
 @using ArmsServices.DataServices.General
+@using Core.IDataServices.Operations
 @inject MudBlazor.ISnackbar snackbar
 @inject ITripFuelService Iservice
 @inject IInventoryItemService InvService
+@inject ITripService tripService;
+@inject ITruckAvailabilityService truckAvailabilityService;
 @inject IDialogService DialogService
 @inject IPartyService partyService
 @inject IGstItemService gstItemService
@@ -159,17 +162,17 @@
                 {
                     if (partyService.IsLocal(Tmodel.PurchaseModel.PartyInfo.PartyID, branchID))
                     {
-                        item.CGST = item.Amount * item.GstRate / 200;
-                        item.SGST = item.Amount * item.GstRate / 200;
+                        item.CGST = Math.Round((item.Amount ?? 0) * (item.GstRate ?? 0) / 200, 2);
+                        item.SGST = Math.Round((item.Amount ?? 0) * (item.GstRate ?? 0) / 200, 2);
                     }
                     else
                     {
-                        item.IGST = item.Amount * item.GstRate / 100;
+                        item.IGST = Math.Round((item.Amount ?? 0) * (item.GstRate ?? 0) / 100, 2);
                     }
                 }
                 //Tmodel.PurchaseModel.Narration = Tmodel.Quantity.ToString() + " Ltr";
                 var tdsRate = tdsService.GetTdsRate(Tmodel.PurchaseModel.PartyInfo.PartyID ?? 0, item.CoaID ?? 0);
-                item.TDS = item.Amount * tdsRate / 100;
+                item.TDS = Math.Round((item.Amount ?? 0) * tdsRate / 100, MidpointRounding.AwayFromZero);
                 Tmodel.Amount = item.Amount + (item.CGST??0) + (item.SGST??0) + (item.IGST??0);
                 try
                 {
@@ -224,8 +227,18 @@
         var user = authprov.User;
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         UserID = user.Identity.Name;
-        Tmodel.PurchaseModel.Narration = "Trip NO: " + TripNumberDisplay + " Truck NO: " + TruckNumber; // + " QTY: " + Tmodel.Quantity.ToString() + " Ltr";
-        Tmodel.Narration = "Trip NO: " + TripNumberDisplay + " Truck NO: " + TruckNumber; // + " QTY: " + Tmodel.Quantity.ToString() + " Ltr";
+        if (Tmodel.TripID == null)
+        {
+            var transfer = truckAvailabilityService.GetTransferByID(Tmodel.RequestApprovalHistoryID);
+            Tmodel.PurchaseModel.Narration = "Transfer NO: " + transfer.DocNumber + " Truck NO: " + transfer.Truck.RegNo; // + " QTY: " + Tmodel.Quantity.ToString() + " Ltr";
+            Tmodel.Narration = "Transfer NO: " + transfer.DocNumber + " Truck NO: " + transfer.Truck.RegNo; // + " QTY: " + Tmodel.Quantity.ToString() + " Ltr";
+        }
+        else
+        {
+            Tmodel.PurchaseModel.Narration = "Trip NO: " + TripNumberDisplay + " Truck NO: " + TruckNumber; // + " QTY: " + Tmodel.Quantity.ToString() + " Ltr";
+            Tmodel.Narration = "Trip NO: " + TripNumberDisplay + " Truck NO: " + TruckNumber; // + " QTY: " + Tmodel.Quantity.ToString() + " Ltr";
+        }
+
         if (Tmodel != null && Tmodel.FuelItemID != null)
         {
             invItem = InvService.SelectByID(Tmodel.FuelItemID);

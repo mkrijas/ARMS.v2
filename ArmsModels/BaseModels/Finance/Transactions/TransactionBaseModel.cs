@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
-    public class TransactionBaseModel: IValidatableObject
+    public class TransactionBaseModel : IValidatableObject
     {
         public TransactionBaseModel()
         {
@@ -27,7 +27,7 @@ namespace ArmsModels.BaseModels
         public virtual decimal? TotalTaxableAmount { get; set; }
         public string FileName { get; set; }
         [RequiredIf("FileName", "null")]
-        public virtual decimal? TotalAmount { get; set; }        
+        public virtual decimal? TotalAmount { get; set; }
         [Required]
         public string Narration { get; set; }
         public int? AuthLevelId { get; set; }
@@ -44,34 +44,33 @@ namespace ArmsModels.BaseModels
         public bool? IsApplicable { get; set; }
         public decimal? CashWithdrawal { get; set; }
         public virtual IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-        { 
-              if(DocumentDate.HasValue && DocumentDate.Value.Date > DateTime.Today)
+        {
+            if (DocumentDate.HasValue && DocumentDate.Value.Date > DateTime.Today)
             {
                 yield return new ValidationResult("Document date cannot be a future date!");
             }
-
         }
-        }
+    }
 
     public class AccountInfoViewModel
     {
         public DateTime? DocumentDate { get; set; } = new();
-        public string DocumentNumber { get; set; }        
+        public string DocumentNumber { get; set; }
         public string Narration { get; set; }
         public List<AccountInfoViewSubModel> Entries { get; set; } = new List<AccountInfoViewSubModel>();
     }
 
-
     public class AccountInfoViewSubModel
     {
         public string AccountName { get; set; }
-        public string BranchName { get; set; }       
+        public string BranchName { get; set; }
         public decimal? Amount { get; set; }
         public string drcr { get { return Amount != null && Amount < 0 ? "Cr" : "Dr"; } }
         public string Reference { get; set; }
         public string CostCenter { get; set; }
         public string Dimension { get; set; }
     }
+
     public class GstModel : IValidatableObject, ICloneable
     {
         public object Clone()
@@ -94,17 +93,17 @@ namespace ArmsModels.BaseModels
             {
                 yield return new ValidationResult("You can enter either IGST or CGST AND SGST Values");
             }
-
             else if ((CGST > 0 || SGST > 0) && IGST > 0)
             {
                 yield return new ValidationResult("You can enter either IGST or CGST AND SGST Values");
             }
-            if(CGST.Value != SGST.Value)
+            if (CGST.Value != SGST.Value)
             {
                 yield return new ValidationResult("CGST AND SGST Values must be equal");
             }
         }
     }
+
     public class ChequeModel
     {
         public int? ID { get; set; }

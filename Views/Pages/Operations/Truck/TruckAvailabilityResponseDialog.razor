@@ -32,12 +32,15 @@
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="6" md="6">
+                        <MudTextField @bind-Value="model.DocNumber" Label="Transfer No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Truck.RegNo)" ReadOnly></MudTextField>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
                         <MudTextField @bind-Value="model.Truck.RegNo" Label="Truck" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Truck.RegNo)" ReadOnly></MudTextField>
                     </MudItem>
                     <MudItem xs="6" md="6">
                         <MudTextField @bind-Value="model.RequestedBranch.BranchName" Label="Requested Branch" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.RequestedBranch.BranchName)" ReadOnly></MudTextField>
                     </MudItem>
-                     <MudItem xs="12" md="12">
+                     <MudItem xs="6" md="6">
                          <MudNumericField HideSpinButtons="true" @bind-Value="Odometer" Label="OdometerReading" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
                      </MudItem>
                 </MudGrid>
@@ -47,13 +50,14 @@
     <DialogActions>
         @if(model.RequestStatus == 1)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Complete" Class="px-12">Complete</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Complete" Class="px-12">Complete</MudButton>
         }
         else
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Approve" Class="px-12">Approve</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Approve" Class="px-12">Approve</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="Reject" Class="px-12">Reject</MudButton>
         }
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reject" Class="px-12">Reject</MudButton>
+        
     </DialogActions>
 </MudDialog>
 
@@ -65,9 +69,14 @@
     private int branchID { get; set; } = 0;
     private int? BranchID { get; set; } = 0;
     private int? Odometer;
+    public bool HasPermissionTruckAvailabilityServiceEdit { get; set; } = false;
+    public int TruckAvailabilityDocTypeID = 139;
 
     protected override async Task OnInitializedAsync()
     {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTruckAvailabilityServiceEdit = await Irole.HasClaim(TruckAvailabilityDocTypeID.ToString(), "Edit", ctc.Token);
+
         var authprov = await auth.GetAuthenticationStateAsync();
         var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
         BranchID = int.Parse(brancIDString);
@@ -87,32 +96,41 @@
 
     public async Task Approve()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        if (model.Truck == null || model.Truck.TruckID == 0)
+        if (HasPermissionTruckAvailabilityServiceEdit)
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning",
-                "Please, Select truck.", yesText: "OK");
-            return;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            if (model.Truck == null || model.Truck.TruckID == 0)
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Warning",
+                    "Please, Select truck.", yesText: "OK");
+                return;
+            }
+            if (model != null)
+            {
+                model.RespondedUserInfo = new();
+                model.RequestStatus = 1;
+                model.OpeningKM = Odometer;
+                model.RespondedUserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    Iservice.UpdateStatus(model);
+                    Snackbar.Add("Accepted succesfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+            MudDialog.Close(model);
         }
-        if (model != null)
+        else
         {
-            model.RespondedUserInfo = new();
-            model.RequestStatus = 1;
-            model.OpeningKM = Odometer;
-            model.RespondedUserInfo.UserID = user.Identity.Name;
-            try
-            {
-                Iservice.UpdateStatus(model);
-                Snackbar.Add("Accepted succesfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Driver.");
         }
-        MudDialog.Close(model);
     }
 
     public async Task Complete()
@@ -145,30 +163,39 @@
 
     public async Task Reject()
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        if (model.Truck == null || model.Truck.TruckID == 0)
+        if (HasPermissionTruckAvailabilityServiceEdit)
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning",
-                "Please, Select truck.", yesText: "OK");
-            return;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            if (model.Truck == null || model.Truck.TruckID == 0)
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Warning",
+                    "Please, Select truck.", yesText: "OK");
+                return;
+            }
+            if (model != null)
+            {
+                model.RespondedUserInfo = new();
+                model.RequestStatus = 99;
+                model.RespondedUserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    Iservice.UpdateStatus(model);
+                    Snackbar.Add("Rejected succesfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add(ex.Message, Severity.Error);
+                }
+            }
+            MudDialog.Close(model);
         }
-        if (model != null)
+        else
         {
-            model.RespondedUserInfo = new();
-            model.RequestStatus = 99;
-            model.RespondedUserInfo.UserID = user.Identity.Name;
-            try
-            {
-                Iservice.UpdateStatus(model);
-                Snackbar.Add("Rejected succesfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add(ex.Message, Severity.Error);
-            }
+            bool? ResultModel = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Add or Edit Driver.");
         }
-        MudDialog.Close(model);
     }
 } 

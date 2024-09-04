@@ -54,16 +54,12 @@ namespace ArmsModels.BaseModels
         public decimal? RateOfDepreciation { get; set; }
         [RequiredIf("IsComplex", " false")]
         public decimal? SalvageValue { get; set; }
-
         [RequiredIf("IsComplex", " false")]
         public decimal? BookValue { get; set; }
-
         [RequiredIf("IsComplex", " false")]
         public DateTime? ProjectedDisposalDate { get; set; }
-
         [RequiredIf("IsComplex", " false")]
         public int? GetAccountRuleDefinition { get; set; }
-
         [Required]
         public string AssetStatus { get; set; }
         //[RequiredIf("IsComplex", " false")]
@@ -72,12 +68,12 @@ namespace ArmsModels.BaseModels
         //[RequiredIf("IsComplex", " false")]
         [RequiredIfComplexAndAssetStatus("IsComplex", " false", "AssetStatus", "Ready to use")]
         public DateTime? DepreciationEndingDate { get; set; }
-        
+
         public decimal? CurrentValue { get; set; }
         public decimal? TotalValue { get; set; }
         //[ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
         public decimal? SpanOfYear { get; set; }
-        public bool? IsSold { get; set; }
+        public bool IsSold { get; set; }
         public virtual decimal? DepreciableValue
         {
             get
@@ -85,16 +81,13 @@ namespace ArmsModels.BaseModels
                 return BookValue - SalvageValue;
             }
         }
-        
         public bool Scrap { get; set; } = false;
         public string Status { get; set; }//Scrap,Dismantled,Sold,Revaluated        
         public UserInfoModel UserInfo { get; set; } = new();
         public decimal? GSTValue { get; set; }
-        
         public string AccountName { get; set; }
         public int? CoaID { get; set; }
         public decimal? TaxRate { get; set; }
-        
     }
 
     public class AssetViewModel
@@ -143,6 +136,7 @@ namespace ArmsModels.BaseModels
         public int? AccountTransactionID { get; set; }
         [Required]
         public decimal? Amount { get; set; }
+        public decimal? CumulativeAmount { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
@@ -268,7 +262,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public bool IsComplex { get; set; } = false;
         [Required]
-        public string NatureOfAsset { get; set; }//Tangible, Intangible
+        public string NatureOfAsset { get; set; } // Tangible, Intangible
         [RequiredIf("IsComplex", " false")]
         public DateTime? ProjectedDisposalDate { get; set; }
         [RequiredIf("IsComplex", " false")]
@@ -333,6 +327,4 @@ namespace ArmsModels.BaseModels
             return ValidationResult.Success;
         }
     }
-
-
 }

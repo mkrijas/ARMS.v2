@@ -55,5 +55,7 @@ namespace ArmsModels.BaseModels
         public virtual string CostCenterVal { get; set; }
         public int? Dimension { get; set; }
         public virtual string DimensionVal { get; set; }
+        public string ARDCode { get; set; } = null;
+        public string SubARDCodeVal { get; set; } = null;
     }
 }

@@ -20,6 +20,7 @@ namespace ArmsModels.BaseModels
         public bool IsCredit { get; set; } = true;
         public decimal? AdditionalTCS { get; set; }
         public string SalesType { get; set; }
+        public string InvoiceNo { get; set; }
         [ValidateComplexType]
         public List<TaxPurchaseExpenseModel> Particulars { get; set; } = new();
         [ValidateComplexType]

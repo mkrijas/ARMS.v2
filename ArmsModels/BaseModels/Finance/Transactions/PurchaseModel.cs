@@ -54,13 +54,11 @@ namespace ArmsModels.BaseModels
                     yield return item;
                 }
             }
-
             if (Expenses.Count == 0 && Items.Count == 0 && Assets.Count == 0)
                 yield return new ValidationResult("No Items or Expenses selected!");
             else if (InvoiceDate.HasValue && DocumentDate.HasValue && InvoiceDate.Value > DocumentDate.Value)
                 yield return new ValidationResult("Invoice Date must be on or before document date!");
         }
-        
     }
 
     public class TaxPurchaseExpenseModel
@@ -99,9 +97,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? ItemID { get; set; }
         [Required]
-        public decimal? ItemRate { get { return _rate; } set { _rate = value; Amount = (_qty * value); } }
+        public decimal? ItemRate { get { return _rate; } set { _rate = value; Amount = Math.Round((_qty * value) ?? 0, 2); } }
         [Required]
-        public decimal? ItemQty { get { return _qty; } set { _qty = value; Amount = (_rate * value); } }
+        public decimal? ItemQty { get { return _qty; } set { _qty = value; Amount = Math.Round((_qty * value) ?? 0, 2); } }
         public int? CoaID { get; set; }
         [Required]
         public decimal? Amount { get; set; }

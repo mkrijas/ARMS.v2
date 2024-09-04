@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
 using System.Transactions;
@@ -65,7 +66,8 @@ namespace Core.BaseModels.Finance.Transactions
         public int? BranchID { get; set; }
         public int? TruckID { get; set; }
         public long? TripID { get; set; }
-        public long? TripNumber { get; set; }
+        //public long? TripNumber { get; set; }
+        public virtual string TripNumberDisplay { get; set; }
         public string NumberPlate { get; set; }
         public string PlazaCode { get; set; }
         public string Description { get; set; }
@@ -77,24 +79,21 @@ namespace Core.BaseModels.Finance.Transactions
         public virtual Boolean IsChecked { get; set; }
         public virtual string Activity { get; set; }
         public virtual string BranchName { get; set; }
-        public virtual string TripPrefix { get; set; }
-        public virtual string TripNumberDisplay
-        {
-            get
-            {
-                if (TripPrefix == null || TripNumber == null)
-                {
-                    return null;
-                }
-                else
-                {
-                    return TripPrefix + TripNumber.ToString().PadLeft(4, '0');
-                }
-            }
-        }
-        //public int TagAccountNumber { get; set; }
-        //public string Group { get; set; }
-        //public string Activity { get; set; }
+        //public virtual string TripPrefix { get; set; }
+        //public virtual string TripNumberDisplay
+        //{
+        //    get
+        //    {
+        //        if (TripPrefix == null || TripNumber == null)
+        //        {
+        //            return null;
+        //        }
+        //        else
+        //        {
+        //            return TripPrefix + TripNumber.ToString().PadLeft(4, '0');
+        //        }
+        //    }
+        //}
         public virtual decimal CreditAmount { get; set; }
         public virtual byte? RecordStatus { get; set; }
     }
@@ -110,63 +109,66 @@ namespace Core.BaseModels.Finance.Transactions
         public int? FastTagTollID { get; set; }
         [Required]
         public string TransactionID { get; set; }
-        public string TripNumberDisplay
-        {
-            get
-            {
-                if (TripPrefix == null || TripNumber == null)
-                {
-                    return "";
-                }
-                else
-                {
-                    return TripPrefix + TripNumber.ToString().PadLeft(4, '0');
-                }
-            }
-            set
-            {
-                SetTripPrefixAndTripNumber(value);
-            }
-        }
-        public string TripPrefix { get; set; }
-        public long? TripNumber { get; set; }
+        //public string TripNumberDisplay
+        //{
+        //    get
+        //    {
+        //        if (TripPrefix == null || TripNumber == null)
+        //        {
+        //            return "";
+        //        }
+        //        else
+        //        {
+        //            return TripPrefix + TripNumber.ToString().PadLeft(4, '0');
+        //        }
+        //    }
+        //    set
+        //    {
+        //        SetTripPrefixAndTripNumber(value);
+        //    }
+        //}
+        //public string TripPrefix { get; set; }
+        //public long? TripNumber { get; set; }
+        [Required]
+        public string ActivityType { get; set; }
+        [Required]
+        public string TripNumberDisplay { get; set; }
         [Required]
         public BranchModel Branch { get; set; }
         public UserInfoModel UserInfo { get; set; } = new UserInfoModel();
-        private void SetTripPrefixAndTripNumber(string tripNumberDisplay)
-        {
-            if (string.IsNullOrEmpty(tripNumberDisplay))
-            {
-                TripPrefix = null;
-                TripNumber = null;
-                return;
-            }
+        //private void SetTripPrefixAndTripNumber(string tripNumberDisplay)
+        //{
+        //    if (string.IsNullOrEmpty(tripNumberDisplay))
+        //    {
+        //        TripPrefix = null;
+        //        TripNumber = null;
+        //        return;
+        //    }
 
-            // Find the last '/' in the string
-            int lastSlashIndex = tripNumberDisplay.LastIndexOf('/');
-            if (lastSlashIndex != -1 && lastSlashIndex < tripNumberDisplay.Length - 1)
-            {
-                TripPrefix = tripNumberDisplay.Substring(0, lastSlashIndex + 1);
-                string tripNumberString = tripNumberDisplay.Substring(lastSlashIndex + 1);
+        //    // Find the last '/' in the string
+        //    int lastSlashIndex = tripNumberDisplay.LastIndexOf('/');
+        //    if (lastSlashIndex != -1 && lastSlashIndex < tripNumberDisplay.Length - 1)
+        //    {
+        //        TripPrefix = tripNumberDisplay.Substring(0, lastSlashIndex + 1);
+        //        string tripNumberString = tripNumberDisplay.Substring(lastSlashIndex + 1);
 
-                if (long.TryParse(tripNumberString, out long tripNumber))
-                {
-                    TripNumber = tripNumber;
-                }
-                else
-                {
-                    TripPrefix = null;
-                    TripNumber = null;
-                }
-            }
-            else
-            {
-                TripPrefix = null;
-                TripNumber = null;
-            }
-        }
+        //        if (long.TryParse(tripNumberString, out long tripNumber))
+        //        {
+        //            TripNumber = tripNumber;
+        //        }
+        //        else
+        //        {
+        //            TripPrefix = null;
+        //            TripNumber = null;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        TripPrefix = null;
+        //        TripNumber = null;
+        //    }
+        //}
     }
-
 
     public static class EncryptionHelper
     {

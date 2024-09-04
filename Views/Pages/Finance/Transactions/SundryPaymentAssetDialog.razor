@@ -1,0 +1,164 @@
+﻿@using Core.BaseModels.Finance.Transactions;
+@using Core.IDataServices.Finance.Transactions;
+@inherits DialogFormComponentBase<SundryPaymentAssetModel>
+@inject ISundryPaymentAssetService Iservice
+@inject IChartOfAccountService Icoa
+@inject ITripAdvanceService Iadvance
+@inject IAssetService assetIservice
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Sundry Payment (Asset)" formID="sundryPaymentAssetForm" DocumentDetails="DocInfo" model="@model" _busy="_busy">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm id="sundryPaymentAssetForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.PayeeName" Label="Payee Name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayeeName)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField HideSpinButtons MaxLength="10" ReadOnly="ReadOnly" @bind-Value="model.PayeeContactNo" Label="Payee Contact No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.PayeeContactNo)"></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <PaymentAccountSelector BranchID="@BranchID.Value" PaymentMode="@model.PaymentMode" PaymentModeChanged="OnChangePaymentMode" @bind-ArdCode="@model.PaymentArdCode" @bind-CoaID="@model.PaymentCoaID" BankCharges="@model.BankCharges" @bind-BankTool="@model.PaymentTool" BankChargesChanged="CalculateBankCharges" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Reference)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        @* <AssetSelector Value="SelectedAsset" ValueChanged="AssetSelected" BranchID="BranchID??0" /> *@
+                        <MudAutocomplete T="AssetModel" Label="Select Parent Asset" Value="SelectedAsset" ValueChanged="AssetSelected" ResetValueOnEmptyText="true" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary"
+                                         SearchFunc="SearchAsset" ToStringFunc="@(e => (e == null || string.IsNullOrWhiteSpace(e.AssetCode) && string.IsNullOrWhiteSpace(e.Description)) ? null : string.Format("{0} | {1}",e.AssetCode,e.Description))"></MudAutocomplete>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField ReadOnly="ReadOnly" Value="@model.Amount" ValueChanged="@((decimal? x) => CalculateTotalAmount(x))" Label="Total Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Amount)"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocumentID="model.SundryPaymentAssetID" OnReject="OnReject" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
+
+@code {
+
+    [Parameter]
+    public override SundryPaymentAssetModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.SundryPaymentAssetID; } }
+    private SundryPaymentAssetModel _model;
+    [Parameter]
+    public bool DisableAddition { get; set; } = false;
+    private GstUsageCodeModel gstusge = new();
+    public AssetModel SelectedAsset { get; set; } = new();
+    public List<AssetModel> PassedListAssets = new();
+    int? AssetSubClassID;
+
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 138,
+            DocumentName = "SundryPaymentAsset"
+        };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        model.BranchID = BranchID;
+        if (model.NatureOfTransaction == null)
+        {
+            model.NatureOfTransaction = "Sundry Payment (Asset)";
+            model.TotalAmount = 0;
+        }
+        else
+        {
+            SelectedAsset = model.Asset;
+            // SelectedAsset.AssetCoaID = model.CoaID;
+        }
+    }
+
+    void UsageCodeChanged(GstUsageCodeModel uc)
+    {
+        gstusge = uc;
+    }
+
+    private async Task<IEnumerable<AssetModel>> SearchAsset(string searchString)
+    {
+        await Task.Delay(5);
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        int brancID = int.Parse(brancIDString);
+        return await Task.FromResult((assetIservice.SelectByBranch(brancID, false, null, searchString).Where(x => !x.IsComplex && x.AssetStatus == "WIP" && !x.IsSold)));
+    }
+
+    private void AssetSelected(AssetModel asset)
+    {
+        SelectedAsset = asset;
+        model.Asset = asset;
+        //model.AssetCoaID = asset?.CoaID;
+    }
+
+    protected void OnReject()
+    {
+
+    }
+
+    public void CalculateTotalAmount(decimal? val)
+    {
+        model.Amount = val;
+        model.TotalAmount = (model?.Amount ?? 0) + (model?.BankCharges ?? 0);
+    }
+
+    public void CalculateBankCharges(decimal? val)
+    {
+        model.BankCharges = val;
+        //model.TotalAmount = model.Amount;
+        model.TotalAmount = (model?.Amount ?? 0) + (model?.BankCharges ?? 0);
+        if (model.PaymentMode != null)
+        {
+            if (model.PaymentMode.ToLower().Trim() == ("Bank").ToLower().Trim())
+            {
+                //model.TotalAmount += model?.BankCharges ?? 0;
+            }
+        }
+        else
+        {
+            snackbar.Add("PaymentMode is not selected !", Severity.Warning);
+        }
+    }
+
+    public void OnChangePaymentMode(string? val)
+    {
+        model.PaymentMode = val;
+        if (model.PaymentMode.ToLower().Trim() == ("Bank").ToLower().Trim())
+        {
+            model.TotalAmount += model?.BankCharges ?? 0;
+        }
+        else
+        {
+            model.BankCharges = 0;
+        }
+        CalculateTotalAmount(model.BankCharges);
+    }
+
+    protected override async Task<int> Update(SundryPaymentAssetModel editModel)
+    {
+        if (model.PaymentMode == "Cash" && model.TotalAmount > 10000)
+        {
+            snackbar.Add("Cash Payment above 10000 is Restricted!", Severity.Warning);
+        }
+        var UpdatedModel = Iservice.Update(model);
+        return UpdatedModel.SundryPaymentAssetID.Value;
+    }
+
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
+    {
+        int result = Iservice.Approve(model.SundryPaymentAssetID, model.UserInfo.UserID, aprvd.Remarks);
+        return result;
+    }
+}

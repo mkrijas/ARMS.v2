@@ -286,6 +286,7 @@ namespace ArmsServices.DataServices
                 NonStoreInventory = dr.GetBoolean("NonStoreInventory"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
+                TaxPurchaseType = dr.GetString("TaxPurchaseType"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
