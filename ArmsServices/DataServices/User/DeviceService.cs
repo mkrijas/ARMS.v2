@@ -29,18 +29,6 @@ namespace DAL.DataServices.User
             }
         }
 
-        //public IEnumerable<DeviceModel> Approve(DeviceModel model)
-        //{
-        //    List<SqlParameter> parameters = new List<SqlParameter>
-        //    {
-        //       new SqlParameter("@Operation", "APPROVE")
-        //    };
-        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DeviceDetails.ApproveDeny]", parameters))
-        //    {
-        //        yield return GetModel(dr);
-        //    }
-        //}
-
         public async Task<int> Approve(DeviceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -51,18 +39,6 @@ namespace DAL.DataServices.User
             };
             return await Iservice.ExecuteNonQueryAsync("[usp.User.DeviceDetails.ApproveDeny]", parameters);
         }
-
-        //public IEnumerable<DeviceModel> Deny(DeviceModel model)
-        //{
-        //    List<SqlParameter> parameters = new List<SqlParameter>
-        //    {
-        //       new SqlParameter("@Operation", "DENY")
-        //    };
-        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DeviceDetails.ApproveDeny]", parameters))
-        //    {
-        //        yield return GetModel(dr);
-        //    }
-        //}
 
         public async Task<int> Deny(DeviceModel model)
         {
