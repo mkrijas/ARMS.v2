@@ -11,11 +11,13 @@
 @attribute [Authorize]
 @inject IDialogService DialogService
 
-
 <MudDialog>
     <TitleContent><h3> @(SelectedDocType.Description) Reverse Reason</h3></TitleContent>
     <DialogContent>
         <MudGrid>
+            <MudItem xs="6" md="6" lg="6">
+                <MudDatePicker ReadOnly="@ReadOnly" Label="Reverse DocumentDate" Date="@model.DocumentDate" DateChanged="DateChanged" Margin="Margin.Dense" Variant="Variant.Outlined"></MudDatePicker>
+            </MudItem>
             <MudItem xs="6" md="6" lg="6">
                 <MudAutocomplete FullWidth Label="Reason Code" Value="SelectedReasonCode" ValueChanged="ValueChanged" T="CancellationReasonCode" SearchFunc="@Search" ToStringFunc="@((e) => e?.ReasonCodeDescription)"
                                  ReadOnly="ReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
@@ -40,8 +42,10 @@
     </DialogActions>
 </MudDialog>
 
-
 @code {
+
+    [CascadingParameter] 
+    MudDialogInstance MudDialog { get; set; }
     [Parameter]
     public CancellationReasonCodesByDocumentType model { get; set; }
     [Parameter]
@@ -60,17 +64,22 @@
     private CancellationReasonCode SelectedReasonCode;
     public List<CancellationReasonCode> ReasonCodeList { get; set; }
 
-
     public string btn_txt1 = "Submit";
     public string btn_txt2 = "Cancel";
     public bool _busy;
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private async Task DateChanged(DateTime? a)
+    {
+        model.DocumentDate = a;
+    }
+
     protected override void OnInitialized()
     {
         _busy = ReadOnly;
         if (model == null)
         {
             model = new();
+            model.DocumentDate = DateTime.Today;
         }
         doctypelist = IDataAuthorizationService.GetDocTypesList().ToList();
         if (DocumentTypeID != null)
@@ -85,7 +94,7 @@
                 ReasonCodeList = Result.ToList();
             }
         }
-        if(model != null)
+        if (model != null)
         {
             var Result = IcancellationReasonCodeService.SelectSubById(model.DocumentTypeID);
             if (Result != null && Result.Count() != 0 && Result.Any(s => s.ReasonCodeID != null))
@@ -99,10 +108,12 @@
             model.UserInfo = new();
         }
     }
+
     private void Cancel()
     {
         MudDialog.Cancel();
     }
+
     public async Task OnSubmit()
     {
         if (_busy)
@@ -133,13 +144,11 @@
         model.DocumentTypeID = DocumentTypeID;
         try
         {
-
             //Iservice.Update(model);
             //snackbar.Add("Verified Successfully", Severity.Success);
 
             MudDialog.Close(model);
             model = new();
-
         }
         catch (Exception ex)
         {
@@ -165,7 +174,6 @@
 
     protected async Task Approve(DataApprovedStatus aprvd)
     {
-
         if (aprvd.IsApprove)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
@@ -182,5 +190,4 @@
             }
         }
     }
-
 }
