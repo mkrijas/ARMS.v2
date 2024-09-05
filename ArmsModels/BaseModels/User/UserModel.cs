@@ -36,5 +36,6 @@ namespace ArmsModels.BaseModels
         public string RefreshToken { get; set; }
 
         public string DeviceID { get; set; }
+        public Guid Id { get; set; }
     }
 }

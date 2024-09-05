@@ -1,5 +1,6 @@
 ﻿using ArmsModels.BaseModels;
 using ArmsServices.DataServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +17,7 @@ namespace MobileAPI.Controllers
         }
 
         [HttpGet]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
         public IEnumerable<UserBranchRoleModel> GetBranchList(string UserID)
         {
             return _userService.GetBranchesNRoles(UserID);

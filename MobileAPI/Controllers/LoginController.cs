@@ -44,7 +44,7 @@ namespace MobileAPI.Controllers
                 int? recordStatus = _userService.SelectDeviceExists(UserName, DeviceID, Operation);
                 if (recordStatus.HasValue)
                 {
-                    if (recordStatus.Value == -1)
+                    if (recordStatus.Value == -1 || recordStatus.Value == 0)
                     {
                         _userService.UpdateDeviceDetails(UserName, DeviceID);
                         return StatusCode(401, "Not allowed");
@@ -53,15 +53,17 @@ namespace MobileAPI.Controllers
                     {
                         return StatusCode(401, "Not allowed");
                     }
-                    else
+                    else if (recordStatus.Value == 3)
                     {
                         _logger.LogInformation("User logged in.");
-                        var Token = new UserModel();
-                        Token = JwtHelpers.GenTokenkey(new UserModel()
+                        var Token = new UserTokens();
+                        Token = JwtHelpers.GenTokenkey(new UserTokens()
                         {
+                            EmailId = user.Email,
+                            GuidId = Guid.NewGuid(),
                             UserName = UserName,
-                            PasswordHash = Password,
-                            DeviceID = DeviceID
+                            Id = Guid.NewGuid()//user.Id,
+
                         }, jwtSettings);
                         user.Token = Token.Token.ToString();
 
