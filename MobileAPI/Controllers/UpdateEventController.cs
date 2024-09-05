@@ -16,7 +16,7 @@ namespace MobileAPI.Controllers
     {
         private readonly IRoleService _roleService;
         private readonly IGcService _Igc;
-        public UpdateEventController(IRoleService roleService, IGcService igc, IEventService )
+        public UpdateEventController(IRoleService roleService, IGcService igc, IEventService Ievent)
         {
             _roleService = roleService;
             _Igc = igc;
