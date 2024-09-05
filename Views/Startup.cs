@@ -50,6 +50,9 @@ using Microsoft.AspNetCore.Http.Features;
 using Core.IDataServices.Finance.DayOpen;
 using DAL.DataServices.Finance.DayOpen;
 using Core.BaseModels.Finance.Transactions;
+using Core.IDataServices.User;
+using Core.BaseModels.User;
+using DAL.DataServices.User;
 
 namespace Views
 {
@@ -332,8 +335,9 @@ namespace Views
             //------------General-------------------
             services.AddScoped<IConfigTable, ConfigTable>();
 
-        #region--------Identity configure--------------
+            #region--------Identity configure--------------
             services.AddScoped<IUserService, UserStore>();
+            services.AddScoped<IDeviceService, DeviceService>();
             services.AddScoped<IRoleService<RoleModel>, RoleStore>();
             services.AddTransient<IUserStore<UserModel>, UserStore>();
             services.AddTransient<IRoleStore<RoleModel>, RoleStore>();            

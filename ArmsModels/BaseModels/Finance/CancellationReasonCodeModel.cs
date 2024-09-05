@@ -26,6 +26,7 @@ namespace ArmsModels.BaseModels
             return JsonConvert.DeserializeObject<CancellationReasonCodesByDocumentType>(Json);
         }
     }
+
     public class CancellationReasonCode
     {
         public int? ReasonCodeID { get; set; }
