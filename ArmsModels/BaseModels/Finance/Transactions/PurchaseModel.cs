@@ -54,13 +54,11 @@ namespace ArmsModels.BaseModels
                     yield return item;
                 }
             }
-
             if (Expenses.Count == 0 && Items.Count == 0 && Assets.Count == 0)
                 yield return new ValidationResult("No Items or Expenses selected!");
             else if (InvoiceDate.HasValue && DocumentDate.HasValue && InvoiceDate.Value > DocumentDate.Value)
                 yield return new ValidationResult("Invoice Date must be on or before document date!");
         }
-        
     }
 
     public class TaxPurchaseExpenseModel

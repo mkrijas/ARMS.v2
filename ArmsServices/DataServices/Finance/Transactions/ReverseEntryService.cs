@@ -105,6 +105,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@ReverseEntryID", model.ReverseEntryID),
                new SqlParameter("@DocumentID", model.DocumentID),
                new SqlParameter("@DocumentNumber", model.DocumentNumber),
                new SqlParameter("@DocumentDate", model.DocumentDate),

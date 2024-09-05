@@ -1,55 +1,107 @@
-﻿using ArmsModels.BaseModels;
+﻿using ARMS.JwtHelpers;
+using ArmsModels.BaseModels;
+using ArmsServices.DataServices;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MobileAPI.Controllers
 {
-    [Route("api/[controller]/[action]")]
+    [Route("api/[controller]")]
     [ApiController]
-    public class LoginController : Controller
+    public class LoginController : ControllerBase
     {
-
         private readonly UserManager<UserModel> _userManager;
         private readonly SignInManager<UserModel> _signInManager;
         private readonly ILogger<LoginController> _logger;
         private readonly JwtSettings jwtSettings;
+        private readonly IUserService _userService;
 
         public LoginController(JwtSettings jwtSettings,
-            
+
             ILogger<LoginController> logger,
             UserManager<UserModel> userManager,
-            SignInManager<UserModel> signInManager
+            SignInManager<UserModel> signInManager,
+            IUserService userService
             )
         {
             this.jwtSettings = jwtSettings;
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
+            _userService = userService;
         }
 
         [HttpPost]
-        public async Task<UserModel> Login_Approval(string UserName, string Password, string DeviceID)
+        public async Task<ActionResult> Login_Approval(string UserName, string Password, string DeviceID)
         {
-            UserModel user = new UserModel() { UserID = UserName, PasswordHash = Password, DeviceID = DeviceID};
+            
+            UserModel user = new UserModel() { UserID = UserName, PasswordHash = Password, DeviceID = DeviceID };
             var result = await _signInManager.PasswordSignInAsync(user.UserID, user.PasswordHash, true, lockoutOnFailure: false);
             if (result.Succeeded)
             {
-                _logger.LogInformation("User logged in.");
-                //return LocalRedirect(returnUrl);
+                string Operation = "APPROVE";
+                int? recordStatus = _userService.SelectDeviceExists(UserName, DeviceID, Operation);
+                if (recordStatus.HasValue)
+                {
+                    if (recordStatus.Value == -1 || recordStatus.Value == 0)
+                    {
+                        _userService.UpdateDeviceDetails(UserName, DeviceID);
+                        return StatusCode(401, "Not allowed");
+                    }
+                    else if (recordStatus.Value == 1)
+                    {
+                        return StatusCode(401, "Not allowed");
+                    }
+                    else if (recordStatus.Value == 3)
+                    {
+                        _logger.LogInformation("User logged in.");
+                        var Token = new UserTokens();
+                        Token = JwtHelpers.GenTokenkey(new UserTokens()
+                        {
+                            EmailId = user.Email,
+                            GuidId = Guid.NewGuid(),
+                            UserName = UserName,
+                            Id = Guid.NewGuid()//user.Id,
+
+                        }, jwtSettings);
+                        user.Token = Token.Token.ToString();
+
+                        var response = new
+                        {
+                            Status = "Success",
+                            Token = user.Token
+                        };
+
+                        return StatusCode(201, response);
+                        
+                    }
+                }
+                else
+                {
+                    _userService.UpdateDeviceDetails(UserName, DeviceID);
+                }
+
+                //return StatusCode(201, "Success"), user.Token;
+                //return Task.FromResult(StatusCode(201, "Success"));
+
+                ////return LocalRedirect(returnUrl);
             }
             if (result.IsNotAllowed)
             {
                 ModelState.AddModelError("NotConfirmed", "Contact admin for approval");
+                return StatusCode(401, "Not allowed");
                 //return Page();
             }
-            
+
             else
             {
-
                 ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                 //return Page();
+                return StatusCode(501, "Invalid");
             }
-            return (user);
+            //return (user);
+            //return StatusCode(201, "Success");
         }
     }
 }

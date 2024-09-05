@@ -18,14 +18,15 @@
         <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ToggleData(value))" Checked="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
     </ToolBarContent>
     <HeaderContent>
-        <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.DocumentDate)" >Document Date</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.ReverseEntryID)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.DocumentTypeName)" >Document Type Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<CancellationReasonCodesByDocumentType, object>(x=> x.DocumentTypeName)">Document Type Name</MudTableSortLabel></MudTh>
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-        <MudTd DataLabel="DocumentNumber">@context.DocumentNumber
+        <MudTd DataLabel="DocumentNumber">
+            @context.DocumentNumber
             @if (context.AuthLevelId == 100)
             {
                 <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
@@ -37,6 +38,7 @@
             @* <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context.DocumentID))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" /> *@
             @if ((@context.AuthLevelId != 99) && (@context.AuthLevelId != 100))
             {
+                <MudIconButton OnClick="@(()=> OpenForm(context,false))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
                 <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
             }
         </MudTd>
@@ -73,18 +75,29 @@
             return;
         }
         _busy = true;
-        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-        DialogParameters parms = new DialogParameters();
-        parms.Add("model", model.Clone());
-        parms.Add("ReadOnly", ReadOnly);
-        var dialog = dialogService.Show<ReverseTransactionDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
-        var result = await dialog.Result;
-        LoadData(ShowApproved, NumberOfRecords);
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
+        try
         {
-            var ReturnData = (CancellationReasonCodesByDocumentType)result.Data;
+            DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", model.Clone());
+            parms.Add("ReadOnly", ReadOnly);
+            var dialog = dialogService.Show<ReverseTransactionDialog>(model == null ? "ADD" : "EDIT", parms, mediumWidth);
+            var result = await dialog.Result;
             LoadData(ShowApproved, NumberOfRecords);
+            var isCancelled = result.Canceled;
+            if (!isCancelled)
+            {
+                var ReturnData = (CancellationReasonCodesByDocumentType)result.Data;
+                if (ReturnData.ReverseEntryID != null)
+                {
+                    Iservice.Update(ReturnData);
+                }
+                LoadData(ShowApproved, NumberOfRecords);
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
         }
         await Task.Delay(200);
         _busy = false;

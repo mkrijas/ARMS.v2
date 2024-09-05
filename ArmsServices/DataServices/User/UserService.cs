@@ -13,14 +13,24 @@ using Microsoft.Extensions.Configuration;
 
 namespace ArmsServices.DataServices
 {
-    public class UserStore : IUserStore<UserModel>, IUserEmailStore<UserModel>, IUserPhoneNumberStore<UserModel>,
-    IUserTwoFactorStore<UserModel>, IUserPasswordStore<UserModel>, IUserRoleStore<UserModel>, IUserClaimStore<UserModel>, IUserService
+    public class UserStore : IUserStore<UserModel>, 
+                             IUserEmailStore<UserModel>, 
+                             IUserPhoneNumberStore<UserModel>,
+                             IUserTwoFactorStore<UserModel>, 
+                             IUserPasswordStore<UserModel>, 
+                             IUserRoleStore<UserModel>, 
+                             IUserClaimStore<UserModel>, 
+                             IUserService
     {
 
         IDbService Iservice;
         public UserStore(IDbService iservice)
         {
             Iservice = iservice;
+        }
+
+        public UserStore()
+        {
         }
 
         public async Task<IdentityResult> CreateAsync(UserModel model, CancellationToken cancellationToken)
@@ -485,6 +495,42 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RoleID", model.Role.RoleID ),
             };
             return Iservice.ExecuteNonQuery("[usp.user.BranchRole.Current.Update]", parameters);
+        }
+
+        public int SelectDeviceExists(string UserID, string DeviceID, string Operation)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@DeviceID", DeviceID),
+               new SqlParameter("@Operation", "APPROVE")
+            };
+
+            object result = Iservice.ExecuteScalar("[usp.User.DeviceDetails.Select]", parameters);
+
+            if (result != null && result != DBNull.Value)
+            {
+                return Convert.ToInt32(result);
+            }
+            else
+            {
+                return -1; // or a default value like 0
+            }
+
+        }
+        public UserModel UpdateDeviceDetails(string UserID, string DeviceID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@DeviceID", DeviceID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.DeviceDetails.Update]", parameters))
+            {
+                return GetModel(dr);
+            }
+            return null;
         }
     }
 }

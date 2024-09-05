@@ -7,35 +7,35 @@ namespace ARMS.JwtHelpers
 {
     internal static class JwtHelpers
     {
-        public static IEnumerable<Claim> GetClaims(this UserModel userAccounts, Guid Id)
+        public static IEnumerable<Claim> GetClaims(this UserTokens userAccounts, Guid Id)
         {
             IEnumerable<Claim> claims = new Claim[]
                     {
-                new Claim("UserID",userAccounts.UserID.ToString()),
+                new Claim("Id",userAccounts.Id.ToString()),
                 new Claim(ClaimTypes.Name, userAccounts.UserName),
-                new Claim(ClaimTypes.Email, userAccounts.Email),
+                //new Claim(ClaimTypes.Email, userAccounts.EmailId),
                 new Claim(ClaimTypes.NameIdentifier,Id.ToString()),
                 new Claim(ClaimTypes.Expiration,DateTime.UtcNow.AddDays(1).ToString("MMM ddd dd yyyy HH:mm:ss tt") )
                     };
             return claims;
         }
-        public static IEnumerable<Claim> GetClaims(this UserModel userAccounts, out Guid Id)
+        public static IEnumerable<Claim> GetClaims(this UserTokens userAccounts, out Guid Id)
         {
             Id = Guid.NewGuid();
             return GetClaims(userAccounts, Id);
         }
-        public static UserModel GenTokenkey(UserModel model, JwtSettings jwtSettings)
+        public static UserTokens GenTokenkey(UserTokens model, JwtSettings jwtSettings)
         {
             try
             {
-                var UserToken = new UserModel();
+                var UserToken = new UserTokens();
                 if (model == null) throw new ArgumentException(nameof(model));
 
                 // Get secret key
                 var key = System.Text.Encoding.ASCII.GetBytes(jwtSettings.IssuerSigningKey);
                 Guid Id = Guid.Empty;
                 DateTime expireTime = DateTime.UtcNow.AddDays(1);
-                UserToken.Validity = expireTime.TimeOfDay;
+                UserToken.Validaty = expireTime.TimeOfDay;
                 var JWToken = new JwtSecurityToken(
                     issuer: jwtSettings.ValidIssuer,
                     audience: jwtSettings.ValidAudience,
@@ -51,14 +51,14 @@ namespace ARMS.JwtHelpers
 
 
                 UserToken.UserName = model.UserName;
-                UserToken.UserID = model.UserID;
-                //UserToken.GuidId = Id;
-                var refreshToken = new UserModel
+                UserToken.Id = model.Id;
+                UserToken.GuidId = Id;
+                var refreshToken = new UserTokens
                 {
                     Token = Guid.NewGuid().ToString(),
                     UserName = UserToken.UserName,
-                    Email = UserToken.Email,
-                    UserID = UserToken.UserID,
+                    EmailId = UserToken.EmailId,
+                    Id = UserToken.Id,
                     ExpiredTime = DateTime.UtcNow.AddMonths(6)
                 };
 

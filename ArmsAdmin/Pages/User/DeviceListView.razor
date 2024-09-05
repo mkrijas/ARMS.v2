@@ -1,0 +1,118 @@
+﻿@page "/Devices"
+@attribute [Authorize(Policy = "Admin")]
+@layout AdminMainLayout
+@inject AuthenticationStateProvider auth
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IDeviceService IDeviceService
+@using System.Globalization
+@using Core.BaseModels.User
+@using Core.IDataServices.User
+@using Microsoft.AspNetCore.Identity
+
+<div style="padding-top:16px;">
+    <div style="background-color:#1469c0; padding:1%; padding-top:1%; color:#fff; border-top-left-radius:4px; border-top-right-radius:4px">
+        <div style="float:left;padding-top:1%">
+            <h6>@SelectedDevice Device List</h6>
+        </div>
+        <div style="float:right;">
+            <MudSelect Style="background:white; border-radius: 4px; width: 130px;" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" Variant="Variant.Outlined" Value="@SelectedDeviceList" T="int" ValueChanged="(Value) => SelectedValueChanged(Value)">
+                <MudSelectItem Value="1">Approval</MudSelectItem>
+                <MudSelectItem Value="2">Active</MudSelectItem>
+            </MudSelect>
+        </div>
+        <br />
+        <br />
+    </div>
+
+    <MudTable Items="@collection" Dense="true" Filter="new Func<DeviceModel, bool>(search)" @bind-Truck="model">
+        <ToolBarContent>
+            <MudTextField @bind-Value="searchUser" Placeholder="Search User..." Adornment="Adornment.Start" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<DeviceModel, object>(x=> x.UserID)" InitialDirection="SortDirection.Ascending">UserID</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<DeviceModel, object>(x=> x.DeviceID)" InitialDirection="SortDirection.Ascending">DeviceID</MudTableSortLabel></MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="UserID">@context.UserID</MudTd>
+            <MudTd DataLabel="DeviceID">@context.DeviceID</MudTd>
+            <MudTd DataLabel="">
+                @if (context.RecordStatus == 1)
+                {
+                    <MudButton OnClick="@(e => Approve(context))" Style="width: 106px; margin-right: 10px; " Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Approve</MudButton>
+                }
+                <MudButton OnClick="@(e => Deny(context))" Style="width: 106px;" Variant="Variant.Filled" Color="Color.Error" ButtonType="ButtonType.Button">@(context.RecordStatus == 3 ? "Remove" : "Deny")</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+        </PagerContent>
+    </MudTable>
+</div>
+
+@code {
+
+    private DeviceModel model = new DeviceModel();
+    private List<DeviceModel> collection = new List<DeviceModel>();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+    DialogOptions maxWidthMedium = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private string SelectedDevice = "Approval";
+    public string searchUser = "";
+    int SelectedDeviceList = 1;
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetAll(SelectedDeviceList);
+    }
+
+    private async Task GetAll(int a)
+    {
+        if (a == 1)
+        {
+            SelectedDeviceList = 1;
+            SelectedDevice = "Approval";
+            collection = IDeviceService.Select("PENDING").ToList();
+        }
+        if (a == 2)
+        {
+            SelectedDeviceList = 2;
+            SelectedDevice = "Active";
+            collection = IDeviceService.Select("APPROVED").ToList();
+        }
+    }
+
+    public async Task SelectedValueChanged(int val)
+    {
+        await GetAll(val);
+        StateHasChanged();
+    }
+
+    private async Task Approve(DeviceModel model)
+    {
+        int a = await IDeviceService.Approve(model);
+        await GetAll(SelectedDeviceList);
+    }
+
+    private async Task Deny(DeviceModel model)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+        "Warning !",
+        "Are you sure, you want to Remove/Deny - " + model.UserID + " (" + model.DeviceID + ") ?");
+        if (result == true)
+        {
+            int a = await IDeviceService.Deny(model);
+        }
+        await GetAll(SelectedDeviceList);
+    }
+
+    private bool search(DeviceModel model)
+    {
+        if (model.UserID != null && model.UserID.Contains(searchUser, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if (model.UserID == null) return true;
+        return false;
+    }
+}

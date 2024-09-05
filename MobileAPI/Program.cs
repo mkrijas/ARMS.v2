@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using MobileAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,10 +16,12 @@ builder.Services.AddJWTTokenServices(builder.Configuration);
 
 #region--------Identity configure--------------
 builder.Services.AddScoped<IUserService, UserStore>();
-//builder.Services.AddScoped<IRoleService<RoleModel>, RoleStore>();
+//builder.Services.AddScoped<IRoleService<RoleModel>, RoleService>();
 builder.Services.AddTransient<IUserStore<UserModel>, UserStore>();
-//builder.Services.AddTransient<IRoleStore<RoleModel>, RoleStore>();
-builder.Services.AddIdentityCore<UserModel>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddTransient<IRoleStore<RoleModel>, RoleService>();
+builder.Services.AddScoped<ITruckService, TruckService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();
 builder.Services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation>();
 #endregion

@@ -49,7 +49,6 @@ namespace ArmsModels.BaseModels
             {
                 yield return new ValidationResult("Document date cannot be a future date!");
             }
-
         }
     }
 
@@ -61,7 +60,6 @@ namespace ArmsModels.BaseModels
         public List<AccountInfoViewSubModel> Entries { get; set; } = new List<AccountInfoViewSubModel>();
     }
 
-
     public class AccountInfoViewSubModel
     {
         public string AccountName { get; set; }
@@ -72,6 +70,7 @@ namespace ArmsModels.BaseModels
         public string CostCenter { get; set; }
         public string Dimension { get; set; }
     }
+
     public class GstModel : IValidatableObject, ICloneable
     {
         public object Clone()
@@ -94,7 +93,6 @@ namespace ArmsModels.BaseModels
             {
                 yield return new ValidationResult("You can enter either IGST or CGST AND SGST Values");
             }
-
             else if ((CGST > 0 || SGST > 0) && IGST > 0)
             {
                 yield return new ValidationResult("You can enter either IGST or CGST AND SGST Values");
@@ -105,6 +103,7 @@ namespace ArmsModels.BaseModels
             }
         }
     }
+
     public class ChequeModel
     {
         public int? ID { get; set; }
