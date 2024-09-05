@@ -21,6 +21,7 @@ builder.Services.AddTransient<IUserStore<UserModel>, UserStore>();
 builder.Services.AddTransient<IRoleStore<RoleModel>, RoleService>();
 builder.Services.AddScoped<ITruckService, TruckService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IPlaceService, PlaceService>();
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();
 builder.Services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation>();
