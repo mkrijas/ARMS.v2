@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MobileAPI.Services;
 using System;
-using System.Diagnostics;
 using System.Threading;
 
 namespace MobileAPI.Controllers
@@ -35,11 +34,6 @@ namespace MobileAPI.Controllers
         private EventTypeModel SelectedEvent = new();
         CancellationTokenSource ctc = new CancellationTokenSource();
         public DriverModel AssignedDriver { get; set; }
-        private IEnumerable<GcSetModel> SelectedGCs = new HashSet<GcSetModel>();
-        public TripModel CurrentTrip { get; set; }
-        private EventModel PreEvent { get; set; }
-        EventTypeModel PreEventType;
-
 
         //[HttpPost]
         //[Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
@@ -124,27 +118,27 @@ namespace MobileAPI.Controllers
                             //    }
                             //}
                         }
-                        if (!ValidateEvent(model))
-                        {
-                            return result;
-                        }
-                        if (SelectedEvent.EventTypeID == 4 && model.TruckEventID == null)
-                        {
-                            if (!SelectedGCs.Any())
-                            {
-                                return result = "No GCs selected to Unload!";
-                            }
-                        }
+                        //if (!ValidateEvent(model))
+                        //{
+                        //    return result;
+                        //}
+                        //if (SelectedEvent.EventTypeID == 4 && model.TruckEventID == null)
+                        //{
+                        //    if (!SelectedGCs.Any())
+                        //    {
+                        //        return result = "No GCs selected to Unload!", Severity.Warning);
+                        //    }
+                        //}
 
-                        model = Ievent.Update(model);
+                        //model = Ievent.Update(model);
 
-                        if (SelectedEvent.EventTypeID == 4)
-                        {
-                            foreach (GcSetModel item in SelectedGCs)
-                            {
-                                _Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
-                            }
-                        }
+                        //if (SelectedEvent.EventTypeID == 4)
+                        //{
+                        //    foreach (GcSetModel item in SelectedGCs)
+                        //    {
+                        //        _Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                        //    }
+                        //}
                         //MudDialog.Close(DialogResult.Ok(model));
                     }
                     catch (Exception ex)
@@ -170,44 +164,40 @@ namespace MobileAPI.Controllers
             return result;
         }
 
-        private bool ValidateEvent(EventModel model)
-        {
-            PreEvent = model.TruckEventID == null ? Ievent.GetCurrentEvent(model.TruckID) : Ievent.GetPreviousEvent(model.TruckEventID);
-            PreEventType = Ievent.GetEventType(PreEvent.EventTypeID);
-            EventModel NextEvent = new();
-            NextEvent = Ievent.GetNextEvent(model.TruckEventID);
-
-            string res = "";
-            if (PreEvent != null && model.EventTime <= PreEvent.EventTime)
-            {
-                res = "Event Time cannot be before preivious event";
-                return false;
-            }
-            else if (NextEvent != null && model.EventTime >= NextEvent.EventTime)
-            {
-                res = "Event Time cannot be after next event";
-                return false;
-            }
-            else if ((PreEvent != null && PreEvent.EventTypeID == SelectedEvent.EventTypeID) || (NextEvent != null && NextEvent.EventTypeID == SelectedEvent.EventTypeID))
-            {
-                res = "Cannot enter an event twice in a row";
-                return false;
-            }
-            else if (model.EventTypeID == 3 && model.TruckEventID == null)
-            {
-                var gcs = _Igc.SelectToDispatch(CurrentTrip.TripID);
-                if (!gcs.Any())
-                {
-                    res = "No Gcs to Dispatch";
-                    return false;
-                }
-            }
-            else if (PreEventType?.LimitPostEvent is not null & CurrentTrip.UserInfo.RecordStatus == 3 & PreEventType.LimitPostEvent != model.EventTypeID)
-            {
-                res = "Due to previous event this Event is restricted!";
-                return false;
-            }
-            return true;
-        }
+        //private bool ValidateEvent(EventModel ev)
+        //{
+        //    EventModel NextEvent = new();
+        //    NextEvent = Ievent.GetNextEvent(ev.TruckEventID);
+        //    if (PreEvent != null && model.EventTime <= PreEvent.EventTime)
+        //    {
+        //        snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
+        //        return false;
+        //    }
+        //    else if (NextEvent != null && model.EventTime >= NextEvent.EventTime)
+        //    {
+        //        snackbar.Add("Event Time cannot be after next event", Severity.Error);
+        //        return false;
+        //    }
+        //    else if ((PreEvent != null && PreEvent.EventTypeID == SelectedEvent.EventTypeID) || (NextEvent != null && NextEvent.EventTypeID == SelectedEvent.EventTypeID))
+        //    {
+        //        snackbar.Add("Cannot enter an event twice in a row", Severity.Warning);
+        //        return false;
+        //    }
+        //    else if (model.EventTypeID == 3 && model.TruckEventID == null)
+        //    {
+        //        var gcs = Igc.SelectToDispatch(CurrentTrip.TripID);
+        //        if (!gcs.Any())
+        //        {
+        //            snackbar.Add("No Gcs to Dispatch", Severity.Warning);
+        //            return false;
+        //        }
+        //    }
+        //    else if (PreEventType?.LimitPostEvent is not null & CurrentTrip.UserInfo.RecordStatus == 3 & PreEventType.LimitPostEvent != model.EventTypeID)
+        //    {
+        //        snackbar.Add("Due to previous event this Event is restricted!", Severity.Warning);
+        //        return false;
+        //    }
+        //    return true;
+        //}
     }
 }
