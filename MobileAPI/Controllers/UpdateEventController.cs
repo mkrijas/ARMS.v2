@@ -26,8 +26,8 @@ namespace MobileAPI.Controllers
         private EventTypeModel SelectedEvent = new();
         CancellationTokenSource ctc = new CancellationTokenSource();
 
-        [HttpPost]
-        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        //[HttpPost]
+        //[Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
 
         //public async Task<string> CheckPermission(EventModel model)
         //{
