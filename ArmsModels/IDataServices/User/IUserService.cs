@@ -24,5 +24,8 @@ namespace ArmsServices.DataServices
         int SetCurrentBranchRole(UserBranchRoleModel model);
         IEnumerable<UserModel> Select(string UserID);
         IEnumerable<UserModel> SelectDeleted(string UserID);
+        int SelectDeviceExists(string UserID, string DeviceID, string Operation);
+
+        UserModel UpdateDeviceDetails(string UserID, string DeviceID);
     }
 }

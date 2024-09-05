@@ -39,7 +39,7 @@ namespace ARMS.JwtHelpers
                 var JWToken = new JwtSecurityToken(
                     issuer: jwtSettings.ValidIssuer,
                     audience: jwtSettings.ValidAudience,
-                    claims: GetClaims(model, out Id),
+                    //claims: GetClaims(model, out Id),
                     notBefore: new DateTimeOffset(DateTime.Now).DateTime,
                     expires: new DateTimeOffset(expireTime).DateTime,
                     signingCredentials: new SigningCredentials
@@ -51,13 +51,13 @@ namespace ARMS.JwtHelpers
 
 
                 UserToken.UserName = model.UserName;
-                UserToken.UserID = model.UserID;
+                UserToken.UserID = model.UserName;
                 //UserToken.GuidId = Id;
                 var refreshToken = new UserModel
                 {
                     Token = Guid.NewGuid().ToString(),
                     UserName = UserToken.UserName,
-                    Email = UserToken.Email,
+                    DeviceID = UserToken.DeviceID,
                     UserID = UserToken.UserID,
                     ExpiredTime = DateTime.UtcNow.AddMonths(6)
                 };

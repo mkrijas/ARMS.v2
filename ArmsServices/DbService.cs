@@ -17,6 +17,7 @@ namespace ArmsServices
         IEnumerable<IDataRecord> GetDataReader(string procedureName, List<SqlParameter> parameters);
         int ExecuteNonQuery(string procedureName, List<SqlParameter> parameters);
         IEnumerable<IDataRecord> QuerySql(string Query, List<SqlParameter> parameters);
+        object ExecuteScalar(string procedureName, List<SqlParameter> parameters);
     }
 
     public class DbService : IDbService
@@ -137,6 +138,23 @@ namespace ArmsServices
                     }
                     dr.Close();
                 }
+            }
+        }
+
+        public object ExecuteScalar(string procedureName, List<SqlParameter> parameters)
+        {
+            using (SqlConnection connection = new SqlConnection(this.ConnectionString))
+            {
+                SqlCommand cmd = connection.CreateCommand();
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = procedureName;
+
+                if (parameters != null && parameters.Count > 0)
+                {
+                    cmd.Parameters.AddRange(parameters.ToArray());
+                }
+                connection.Open();
+                return cmd.ExecuteScalar();
             }
         }
     }
