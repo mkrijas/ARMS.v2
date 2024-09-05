@@ -41,8 +41,8 @@ namespace MobileAPI.Controllers
         EventTypeModel PreEventType;
 
 
-        [HttpPost]
-        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        //[HttpPost]
+        //[Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
 
         public async Task<string> CheckPermission(EventModel model)
         {

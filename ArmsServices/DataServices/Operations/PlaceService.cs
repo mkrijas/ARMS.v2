@@ -46,11 +46,12 @@ namespace ArmsServices.DataServices
             };
             return await Iservice.ExecuteNonQueryAsync("[usp.Place.Places.Delete]", parameters);
         }
-        public IEnumerable<PlaceModel> Select(int? PlaceID)
+        public IEnumerable<PlaceModel> Select(int? PlaceID, string PlaceLike)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PlaceID", PlaceID)
+               new SqlParameter("@PlaceID", PlaceID),
+               new SqlParameter("@PlaceLike", PlaceLike)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.Places.Select]", parameters))
@@ -62,7 +63,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PlaceID", ID)
+               new SqlParameter("@PlaceID", ID),
             };
             PlaceModel model = new PlaceModel();
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Place.Places.Select]", parameters))
