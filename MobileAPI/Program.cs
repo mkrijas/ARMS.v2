@@ -16,7 +16,7 @@ builder.Services.AddJWTTokenServices(builder.Configuration);
 
 #region--------Identity configure--------------
 builder.Services.AddScoped<IUserService, UserStore>();
-//builder.Services.AddScoped<IRoleService<RoleModel>, RoleService>();
+builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddTransient<IUserStore<UserModel>, UserStore>();
 builder.Services.AddTransient<IRoleStore<RoleModel>, RoleService>();
 builder.Services.AddScoped<ITruckService, TruckService>();

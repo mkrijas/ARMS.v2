@@ -7,22 +7,35 @@ using System.Numerics;
 
 namespace MobileAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/")]
     [ApiController]
     public class OperationsController : ControllerBase
     {
         private readonly IPlaceService _placeService;
-        public OperationsController(IPlaceService Iplace)
+        private readonly IEventService _eventService;
+        public OperationsController(IPlaceService placeService, 
+                                    IEventService eventService)
         {
-            _placeService = Iplace;
+            _placeService = placeService;
+            _eventService = eventService;
         }
 
         //Place Select
-        [HttpGet]
+        [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IEnumerable<PlaceModel> Select(string PlaceLike)
+        public IEnumerable<PlaceModel> PlaceSelect(string PlaceLike)
         {
             return _placeService.Select(0, PlaceLike);
+        }
+
+        //EventType Select
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<EventTypeModel> EventTypesSelect()
+        {
+            IEnumerable<EventTypeModel> EventTypes;
+            EventTypes = _eventService.GetEventTypes().Where(x => x.EventTypeID != 1 && x.IsTripRelated).ToList();
+            return EventTypes;
         }
     }
 }
