@@ -21,7 +21,7 @@ namespace MobileAPI.Controllers
         private readonly IEventService Ievent;
         private readonly IDriverService Idriver;
         private readonly IBranchSettingsService branchSettingsService;
-        public UpdateEventController(IRoleService roleService, IGcService igc, IEventService events, 
+        public UpdateEventController(IRoleService roleService, IGcService igc, IEventService events,
             IDriverService driverService, IBranchSettingsService branchSettings)
         {
             _roleService = roleService;
@@ -41,8 +41,8 @@ namespace MobileAPI.Controllers
         EventTypeModel PreEventType;
 
 
-        //[HttpPost]
-        //[Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
 
         public async Task<string> CheckPermission(EventModel model)
         {
