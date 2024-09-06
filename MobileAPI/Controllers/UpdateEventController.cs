@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 //using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using MobileAPI.Services;
+//using MobileAPI.Services;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -16,12 +16,12 @@ namespace MobileAPI.Controllers
     [ApiController]
     public class UpdateEventController : ControllerBase
     {
-        private readonly IRoleService _roleService;
+        private readonly IRoleService<RoleModel> _roleService;
         private readonly IGcService _Igc;
         private readonly IEventService Ievent;
         private readonly IDriverService Idriver;
         private readonly IBranchSettingsService branchSettingsService;
-        public UpdateEventController(IRoleService roleService, IGcService igc, IEventService events,
+        public UpdateEventController(IRoleService<RoleModel> roleService, IGcService igc, IEventService events,
             IDriverService driverService, IBranchSettingsService branchSettings)
         {
             _roleService = roleService;
@@ -47,8 +47,8 @@ namespace MobileAPI.Controllers
         public async Task<string> CheckPermission(EventModel model)
         {
             string result = "";
-            HasPermissionEventServiceEdit = await _roleService.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-            if (HasPermissionEventServiceEdit)
+            //HasPermissionEventServiceEdit = await _roleService.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+            //if (HasPermissionEventServiceEdit)
             {
                 if (model.EventTime <= DateTime.Now)
                 {
@@ -124,25 +124,58 @@ namespace MobileAPI.Controllers
                             //    }
                             //}
                         }
-                        if (!ValidateEvent(model))
+                        //if (!ValidateEvent(model))
+                        //{
+                        //    return result;
+                        //}
+                        PreEvent = model.TruckEventID == null ? Ievent.GetCurrentEvent(model.TruckID) : Ievent.GetPreviousEvent(model.TruckEventID);
+                        PreEventType = Ievent.GetEventType(PreEvent.EventTypeID);
+                        EventModel NextEvent = new();
+                        NextEvent = Ievent.GetNextEvent(model.TruckEventID);
+
+                        string res = "";
+                        if (PreEvent != null && model.EventTime <= PreEvent.EventTime)
                         {
-                            return result;
+                            return result = "Event Time cannot be before previous event";
                         }
-                        if (SelectedEvent.EventTypeID == 4 && model.TruckEventID == null)
+                        else if (NextEvent != null && model.EventTime >= NextEvent.EventTime)
                         {
-                            if (!SelectedGCs.Any())
+                            return result = "Event Time cannot be after next event";
+                        }
+                        else if ((PreEvent != null && PreEvent.EventTypeID == SelectedEvent.EventTypeID) || (NextEvent != null && NextEvent.EventTypeID == SelectedEvent.EventTypeID))
+                        {
+                            return result = "Cannot enter an event twice in a row";
+                        }
+                        else if (model.EventTypeID == 3 && model.TruckEventID == null)
+                        {
+                            var gcs = _Igc.SelectToDispatch(CurrentTrip.TripID);
+                            if (!gcs.Any())
                             {
-                                return result = "No GCs selected to Unload!";
+                                return result = "No Gcs to Dispatch";
                             }
                         }
-
-                        model = Ievent.Update(model);
-
-                        if (SelectedEvent.EventTypeID == 4)
+                        else if (PreEventType?.LimitPostEvent is not null & PreEventType.LimitPostEvent != model.EventTypeID /*& CurrentTrip.UserInfo.RecordStatus == 3*/)
                         {
-                            foreach (GcSetModel item in SelectedGCs)
+                            return result = "Due to previous event this Event is restricted!";
+                        }
+                        else
+                        {
+                            if (SelectedEvent.EventTypeID == 4 && model.TruckEventID == null)
                             {
-                                _Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                                if (!SelectedGCs.Any())
+                                {
+                                    return result = "No GCs selected to Unload!";
+                                }
+                            }
+
+                            model = Ievent.Update(model);
+
+                            if (SelectedEvent.EventTypeID == 4)
+                            {
+                                foreach (GcSetModel item in SelectedGCs)
+                                {
+                                    _Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                                }
                             }
                         }
                         //MudDialog.Close(DialogResult.Ok(model));
@@ -163,10 +196,10 @@ namespace MobileAPI.Controllers
                     result = "EventDate cannot be a greater than today's date.";
                 }
             }
-            else
-            {
-                result = "Permission denied! You dont have any permission to Add or Edit Event.";
-            }
+            //else
+            //{
+            //    result = "Permission denied! You dont have any permission to Add or Edit Event.";
+            //}
             return result;
         }
 
