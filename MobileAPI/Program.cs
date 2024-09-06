@@ -4,9 +4,6 @@ using ArmsServices;
 using ArmsServices.DataServices;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.Extensions.DependencyInjection;
 using MobileAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,14 +11,27 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IDbService, DbService>();
 builder.Services.AddJWTTokenServices(builder.Configuration);
 
+//builder.Services.AddAuthorizationCore();
+//builder.Services.AddScoped<IDataAuthorizationSettingsService, DataAuthorizationSettingsService>();
+//builder.Services.AddScoped<IDataAuthorizationService, DataAuthorizationService>();
+
 #region--------Identity configure--------------
 builder.Services.AddScoped<IUserService, UserStore>();
+builder.Services.AddTransient<IRoleService<RoleModel>, RoleService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddTransient<IUserStore<UserModel>, UserStore>();
 builder.Services.AddTransient<IRoleStore<RoleModel>, RoleService>();
 builder.Services.AddScoped<ITruckService, TruckService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IPlaceService, PlaceService>();
+builder.Services.AddScoped<IGcService, GcService>();
+builder.Services.AddScoped<IDriverService, DriverService>();
+builder.Services.AddScoped<IBranchSettingsService, BranchSettingsService>();
+builder.Services.AddScoped<ITariffService, TariffService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<IRouteService, RouteService>();
+builder.Services.AddScoped<ITripService, TripService>();
+builder.Services.AddScoped<IBankAccountService, BankAccountService>();
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();
 builder.Services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation>();

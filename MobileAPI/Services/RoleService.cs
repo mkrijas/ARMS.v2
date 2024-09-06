@@ -10,7 +10,7 @@ namespace MobileAPI.Services
     public class RoleService : IRoleStore<RoleModel>, IRoleClaimStore<RoleModel>, IRoleService<RoleModel>
     {
         IDbService Iservice;
-        //AuthenticationStateProvider auth;
+        AuthenticationStateProvider auth;
         public RoleService(IDbService iservice)//, AuthenticationStateProvider _auth
         {
             Iservice = iservice;
@@ -86,10 +86,10 @@ namespace MobileAPI.Services
 
         public async Task<bool> HasClaim(string DocTypeID, string ClaimValue, CancellationToken cancellationToken = default)
         {
-            //cancellationToken.ThrowIfCancellationRequested();
-            //var authprov = await auth.GetAuthenticationStateAsync();
-            //return authprov.User.Claims.Any(s => s.Type == DocTypeID && s.Value == ClaimValue);
-            throw new NotImplementedException();
+            cancellationToken.ThrowIfCancellationRequested();
+            var authprov = await auth.GetAuthenticationStateAsync();
+            return authprov.User.Claims.Any(s => s.Type == DocTypeID && s.Value == ClaimValue);
+            //throw new NotImplementedException();
         }
 
         public Task RemoveClaimAsync(RoleModel role, Claim claim, CancellationToken cancellationToken = default)
