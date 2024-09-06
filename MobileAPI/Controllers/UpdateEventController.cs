@@ -47,8 +47,8 @@ namespace MobileAPI.Controllers
         public async Task<string> CheckPermission(EventModel model)
         {
             string result = "";
-            HasPermissionEventServiceEdit = await _roleService.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-            if (HasPermissionEventServiceEdit)
+            //HasPermissionEventServiceEdit = await _roleService.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
+            //if (HasPermissionEventServiceEdit)
             {
                 if (model.EventTime <= DateTime.Now)
                 {
@@ -154,7 +154,7 @@ namespace MobileAPI.Controllers
                                 return result = "No Gcs to Dispatch";
                             }
                         }
-                        else if (PreEventType?.LimitPostEvent is not null & CurrentTrip.UserInfo.RecordStatus == 3 & PreEventType.LimitPostEvent != model.EventTypeID)
+                        else if (PreEventType?.LimitPostEvent is not null & PreEventType.LimitPostEvent != model.EventTypeID /*& CurrentTrip.UserInfo.RecordStatus == 3*/)
                         {
                             return result = "Due to previous event this Event is restricted!";
                         }
@@ -196,10 +196,10 @@ namespace MobileAPI.Controllers
                     result = "EventDate cannot be a greater than today's date.";
                 }
             }
-            else
-            {
-                result = "Permission denied! You dont have any permission to Add or Edit Event.";
-            }
+            //else
+            //{
+            //    result = "Permission denied! You dont have any permission to Add or Edit Event.";
+            //}
             return result;
         }
 
