@@ -21,12 +21,59 @@
 </MudPaper>
 <MudPaper Style="margin-bottom: 26px;">
     <MudToolBar>
-        <MudText Typo="Typo.h6">Active Documents</MudText>
+        <MudText Typo="Typo.h6">@Title Documents</MudText>
         <MudSpacer />
+        <MudSwitch Color="Color.Primary" Value="@AllDocs" ValueChanged="@((bool a) => GetAll(a))" Label="All Docs" />
         <MudSwitch Color="Color.Primary" @bind-Value=@(ViewChange) Label="Change View" />
     </MudToolBar>
     <MudDivider></MudDivider>
     @if (!ViewChange)
+    {
+        <MudSimpleTable Dense="true" Hover="true" Style="overflow-x: auto; margin-bottom: 26px;">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th><b>DocumentTypeName</b></th>
+                    <th><b>Document Date</b></th>
+                    <th><b>Document Period</b></th>
+                    <th><b>Update By</b></th>
+                    <th colspan="3"><b>Action</b></th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var serialNumber = 1;
+                }
+                @foreach (var item in collection)
+                {
+                    <tr style="@GetRowStyle(item)">
+                        <td>@serialNumber</td>
+                        <td>@item.DocumentType.DocumentTypeName</td>
+                        <td>@item.InvoiceDate?.ToShortDateString()</td>
+                        <td>@string.Format("{0} - {1}", item.StartDate?.ToShortDateString(), item.EndDate?.ToShortDateString())</td>
+                        <td>@item.UserInfo.UserID</td>
+                        <td>
+                            @if (item.AttachedDocument == null)
+                            {
+                                <MyFileUpload FileName="@Guid.NewGuid().ToString()" FolderName="AssetDocuments" Label="Upload" FilePath="@item.AttachedDocument" FilePathChanged="((e)=> SaveImagePath(e,item.DocumentID))" AcceptOnlyPdf="true"></MyFileUpload>
+                            }
+                            else
+                            {
+                                <MudIconButton Icon="@Icons.Material.Outlined.GridView" Title="View" Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item, true))">View</MudIconButton>
+                                <MudIconButton Icon="@Icons.Material.Outlined.Edit" Title="Edit" Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item, false))">Edit</MudIconButton>
+                                <MudIconButton Icon="@Icons.Material.Outlined.Remove" Title="Remove" Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> Remove(item))">Remove</MudIconButton>
+                                <a href="@item.AttachedDocument" download="Document">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Title="Download" />
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                    serialNumber++;
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+    else
     {
         <MudGrid Spacing="2" Style="padding: 14px;">
             @foreach (var item in collection)
@@ -82,52 +129,6 @@
             }
         </MudGrid>
     }
-    else
-    {
-        <MudSimpleTable Dense="true" Hover="true" Style="overflow-x: auto; margin-bottom: 26px;">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th><b>DocumentTypeName</b></th>
-                    <th><b>Document Date</b></th>
-                    <th><b>Document Period</b></th>
-                    <th><b>Update By</b></th>
-                    <th colspan="3"><b>Action</b></th>
-                </tr>
-            </thead>
-            <tbody>
-                @{
-                    var serialNumber = 1;
-                }
-                @foreach (var item in collection)
-                {
-                    <tr style="@GetRowStyle(item)">
-                        <td>@serialNumber</td>
-                        <td>@item.DocumentType.DocumentTypeName</td>
-                        <td>@item.InvoiceDate?.ToShortDateString()</td>
-                        <td>@string.Format("{0} - {1}", item.StartDate?.ToShortDateString(), item.EndDate?.ToShortDateString())</td>
-                        <td>@item.UserInfo.UserID</td>
-                        <td>
-                            @if (item.AttachedDocument == null)
-                            {
-                                <MyFileUpload FileName="@Guid.NewGuid().ToString()" FolderName="AssetDocuments" Label="Upload" FilePath="@item.AttachedDocument" FilePathChanged="((e)=> SaveImagePath(e,item.DocumentID))" AcceptOnlyPdf="true"></MyFileUpload>
-                            }
-                            else
-                            {
-                                <MudIconButton Icon="@Icons.Material.Outlined.GridView" Title="View" Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item, true))">View</MudIconButton>
-                                <MudIconButton Icon="@Icons.Material.Outlined.Edit" Title="Edit" Variant="Variant.Text" Color="Color.Primary" OnClick="(()=>OpenDialogEdit(item, false))">Edit</MudIconButton>
-                                <MudIconButton Icon="@Icons.Material.Outlined.Remove" Title="Remove" Variant="Variant.Text" Color="Color.Primary" OnClick="(()=> Remove(item))">Remove</MudIconButton>
-                                <a href="@item.AttachedDocument" download="Document">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Title="Download" />
-                                </a>
-                            }
-                        </td>
-                    </tr>
-                    serialNumber++;
-                }
-            </tbody>
-        </MudSimpleTable>
-    }
 </MudPaper>
 
 @code {
@@ -141,6 +142,8 @@
     private bool visible;
     private bool _busy;
     private bool ViewChange = false;
+    private string Title { get; set; } = "Active";
+    private bool AllDocs = false;
 
     public int TaxPurchaseDocTypeID = 9;
     #region SignaIR Notification
@@ -167,12 +170,21 @@
         BranchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
         Dtypes = Iservice.GetDocumentTypes().ToList();
         await signalRService.StartAsync();
-        GetAll();
+        GetAll(AllDocs);
     }
 
-    private void GetAll()
+    private void GetAll(bool a)
     {
-        collection = Iservice.SelectByAsset(Asset?.AssetID).ToList();
+        AllDocs = a;
+        if(a)
+        {
+            Title = "All";
+        }
+        else
+        {
+            Title = "Active";
+        }
+        collection = Iservice.SelectByAsset(Asset?.AssetID, a).ToList();
     }
 
     private string GetRowStyle(AssetDocumentModel item)  // Replace ItemType with your actual type
@@ -192,7 +204,7 @@
     {
         Asset = selectedAsset;
         model = new() { Asset = selectedAsset };
-        GetAll();
+        GetAll(AllDocs);
     }
 
     private async Task SaveImagePath(string filePath, int? docID)
@@ -200,7 +212,7 @@
         if (HasPermissionAssetDocumentServiceEdit)
         {
             int e = Iservice.SaveFilePath(filePath, docID);
-            GetAll();
+            GetAll(AllDocs);
         }
         else
         {
@@ -234,7 +246,7 @@
         if (!isCancelled)
         {
         }
-        GetAll();
+        GetAll(AllDocs);
     }
     private async Task OpenDialogTaxPurchase(AssetDocumentModel doc)
     {
@@ -274,7 +286,7 @@
                 model.UserInfo.UserID = UserID;
                 Iservice.Remove(model);
                 snackbar.Add("Removed " + model.DocumentType.DocumentTypeName + " From " + Asset.Description, Severity.Success);
-                GetAll();
+                GetAll(AllDocs);
             }
         }
         else
