@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
     {
         Task<PlaceModel> Update(PlaceModel model);  //Edit
         Task<int> Delete(int? PlaceID, string UserID);  //Edit
-        IEnumerable<PlaceModel> Select(int? PlaceID);
+        IEnumerable<PlaceModel> Select(int? PlaceID, string PlaceLike);
         Task<PlaceModel> SelectByID(int? ID);
         IEnumerable<PlaceModel> checkPinCode(string PinCode);
     }
