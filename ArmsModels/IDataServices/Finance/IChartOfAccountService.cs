@@ -30,5 +30,6 @@ namespace ArmsServices.DataServices
         IEnumerable<CoaBranchAvailabilityModel> GetSubledgersInBranch(int? BranchID, string filterText);
         IEnumerable<PaymentCodeModel> GetPaymentCodes(int? BranchID, string PaymentMode);
         decimal? GetBalance(int? BranchID, int? CoaID,string ArdCode,string SubARdCode,DateTime _date);
+        IEnumerable<SubArdCodeModel> GetSubArdCodes();
     }
 }
