@@ -33,6 +33,23 @@ namespace ArmsModels.BaseModels
         public string Detail { get; set; }
         [RegularExpression(@"^([0-9]{10})$", ErrorMessage = "ContactNumber must be 10 digits long")]
         public string ContactNumber { get; set; }
+        public List<EstimateListModel> EstimateList { get; set; } = new List<EstimateListModel>();
         public UserInfoModel UserInfo { get; set; }
+    }
+
+    public class EstimateListModel : ICloneable
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<EstimateListModel>(Json);
+        }
+        public int? ID { get; set; }
+        public int? BreakdownID { get; set; }
+        public string Description { get; set; }
+        public decimal? Amount { get; set; }
+        public string ImagePath { get; set; }
+        public string ApprovedUserID { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
     }
 }
