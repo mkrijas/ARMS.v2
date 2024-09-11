@@ -77,4 +77,12 @@ namespace ArmsModels.BaseModels
         public virtual decimal? BankCharges { get; set; }
         public virtual string BankTools { get; set; }
     }
+
+    public class SubArdCodeModel
+    {
+        public int? ID { get; set; }
+        public string ArdGroup { get; set; }
+        public string SubArdCode { get; set; }
+        public string TranType { get; set; }
+    }
 }

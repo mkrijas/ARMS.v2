@@ -146,8 +146,7 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "WithPast"),
-                new SqlParameter("@AssetID", AssetID) ,
-
+               new SqlParameter("@AssetID", AssetID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
             {
@@ -155,11 +154,12 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<AssetDocumentModel> SelectByAsset(int? AssetID)
+        public IEnumerable<AssetDocumentModel> SelectByAsset(int? AssetID, bool AllDocs)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@AssetID", AssetID) ,
+               new SqlParameter("@AllDocs", AllDocs) ,
                new SqlParameter("@Operation", "ByAsset"),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
@@ -278,7 +278,6 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentType.CostCentor.Manadatory]", parameters))
             {
                 result = dr.GetBoolean("Result");
-
             }
             return result;
         }
@@ -293,7 +292,6 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentType.Dimension.Manadatory]", parameters))
             {
                 result = dr.GetBoolean("Result");
-
             }
             return result;
         }
@@ -314,7 +312,7 @@ namespace ArmsServices.DataServices
                 yield return new AssetDocumentModel()
                 {
                     AttachedDocument = dr.GetString("attachment"),
-                    
+
                 };
             }
         }
