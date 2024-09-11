@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 using System.Reflection;
+using System.Collections;
 
 namespace ArmsServices.DataServices
 {
@@ -390,6 +391,24 @@ namespace ArmsServices.DataServices
             }
             return null;
 
+        }
+
+        public IEnumerable<SubArdCodeModel> GetSubArdCodes()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "SubArdCodes"),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Coa.Select]", parameters))
+            {
+                yield return new SubArdCodeModel()
+                {
+                    SubArdCode = dr.GetString("SubArdCode"),
+                    ArdGroup = dr.GetString("ArdGroup"),
+                    TranType = dr.GetString("TranType"),
+                };
+            }
         }
     }
 }
