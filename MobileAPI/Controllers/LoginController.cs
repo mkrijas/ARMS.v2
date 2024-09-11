@@ -73,7 +73,7 @@ namespace MobileAPI.Controllers
                             Token = user.Token
                         };
 
-                        return StatusCode(201, response);
+                        return StatusCode(200, response);
                         
                     }
                 }
