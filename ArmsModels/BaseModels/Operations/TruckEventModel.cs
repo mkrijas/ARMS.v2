@@ -65,7 +65,7 @@ namespace ArmsModels.BaseModels
         public string EventStatusText { get; set; }
         public byte? LimitPostEvent { get; set; }
     }
-      
+
     public class EventReadingValidator : AbstractValidator<EventModel>
     {
         public EventReadingValidator(IEventService _eventservice)
@@ -90,5 +90,11 @@ namespace ArmsModels.BaseModels
             }
             return false;
         }
+    }
+
+    public class EventUpdateModel
+    {
+        public EventModel Event { get; set; }
+        public GcSetModel GcSet { get; set; }
     }
 }

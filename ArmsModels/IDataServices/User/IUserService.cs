@@ -27,5 +27,6 @@ namespace ArmsServices.DataServices
         int SelectDeviceExists(string UserID, string DeviceID, string Operation);
 
         UserModel UpdateDeviceDetails(string UserID, string DeviceID);
+        bool GetClaimsAsync(string UserID, string DocTypeID, string ClaimValue, int? BranchID, CancellationToken cancellationToken);
     }
 }

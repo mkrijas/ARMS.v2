@@ -1,0 +1,353 @@
+﻿@using Views.Pages.FMS.InsuranceClaim
+@using Views.Pages.FMS.Jobcard
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IBreakdownService IBreakdown
+@inject IAssetService Iasset
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@inject NavigationManager nav
+
+<MudPaper Style="padding:20px;font-size:15px;">
+    <div style="float:left;width:50%;left:0px">
+        <MudText Class="txthead"> Truck: <b>@MainModel.RegNo</b></MudText>
+    </div>
+    <div style="float:right;width:50%;font-size:13px;text-align:right">
+        <MudIconButton Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small"></MudIconButton>
+        <a Style="font-family:'Segoe UI';color:#595959;margin-right:2%">@MainModel.BreakdownTime</a>
+        <MudIconButton Icon="@Icons.Material.Filled.Call" Size="Size.Small"></MudIconButton>
+        <a Style="font-family:'Segoe UI';color:#595959;">@MainModel.ContactNumber</a>
+    </div>
+    <br>
+    <hr style="width:100%">
+    <MudText Class=txti> Breakdown Type:  <a style="background-color:#fff000">@MainModel.BreakdownType</a> </MudText>
+    <br>
+    <MudText Class=txti> Additional Info: @MainModel.Detail</MudText>
+    <hr>
+    @if (!HideControls)
+    {
+        <MudButton Disabled="@_busy" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.AddTask" OnClick="@(()=>CreateJobcard(MainModel))">Issue Jobcard</MudButton>
+        <MudButton Style="text-transform:capitalize;padding-right:1%" StartIcon="@Icons.Material.Filled.AppRegistration" OnClick="@(()=>BeginInsuranceClaim(MainModel))" IconColor="Color.Primary" Disabled="MainModel.IsClaimInitiated">Initiate Insurance Claim</MudButton>
+    }
+    <MudIconButton OnClick="@(()=> PrintJobRequest(MainModel.BreakdownID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
+    <MudExpansionPanels Style="margin-top: 18px;">
+        <MudExpansionPanel HideIcon="true">
+            <TitleContent>
+                <div class="row m-0">
+                    <MudText Typo="Typo.h6">Estimate List</MudText>
+                </div>
+            </TitleContent>
+            <ChildContent>
+                <div Class="fullborder" style="padding: 0px; margin-bottom: 8px; overflow-y: auto;">
+                    <MudPaper Class="d-flex" Style="padding: 8px 8px 8px 20px;" Elevation="0">
+                        <MudItem xs="3" md="3" Style="padding-top: 0px; margin-right: 20px;">
+                            <b>Description</b>
+                        </MudItem>
+                        <MudItem xs="3" md="3" Style="padding-top: 0px; margin-right: 20px;">
+                            <b>Estimate Amount</b>
+                        </MudItem>
+                        <MudItem xs="3" md="3" Style="padding-top: 0px; margin-right: 20px;">
+                            <b>Document</b>
+                        </MudItem>
+                        <MudItem xs="3" md="3" Style="padding-top: 0px; margin-right: 20px;">
+                            <b>Action</b>
+                        </MudItem>
+                    </MudPaper>
+                    @foreach (EstimateListModel a in MainModel.EstimateList)
+                    {
+                        <MudPaper Class="d-flex" Style="padding: 8px 8px 8px 20px; align-items: center;" Elevation="0">
+                            <MudItem xs="3" md="3" Style="margin-right: 20px;">
+                                <MudTextField ReadOnly T="string" @bind-Text="a.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="3" md="3" Style="margin-right: 20px;">
+                                <MudNumericField ReadOnly HideSpinButtons @bind-Value="a.Amount" Label="Estimate Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => a.Amount)"></MudNumericField>
+                            </MudItem>
+                            <MudItem xs="3" md="3" Style="margin-right: 20px;">
+                                @if (a.ImagePath == null)
+                                {
+                                    <MyFileUpload FileName="@Guid.NewGuid().ToString()" FolderName="BreakdownEst" Label="Upload" FilePath="@a.ImagePath" FilePathChanged="((e)=> SaveImagePath(a, e))" AcceptOnlyPdf="true"></MyFileUpload>
+                                }
+                                else
+                                {
+                                    <a href="@a.ImagePath" download="Document">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Title="Download" />
+                                    </a>
+                                    @if (!ReadOnly)
+                                    {
+                                        <MudButton OnClick="@(e => Remove(a))" Style="margin-left: 20px;" IconClass="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" ButtonType="ButtonType.Button">Remove</MudButton>
+                                    }
+                                }
+                            </MudItem>
+                            <MudItem xs="3" md="3" Style="margin-right: 20px;">
+                                @if (a.UserInfo.RecordStatus != 3)
+                                {
+                                    <MudButton OnClick="@(e => Approve(a))" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Approve</MudButton>
+                                    <MudButton OnClick="@(e => Delete(a))" Style="margin-left: 20px;" IconClass="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" ButtonType="ButtonType.Button">Delete</MudButton>
+                                }
+                                else
+                                {
+                                    <div class="d-flex">
+                                        <MudText Style="align-content: center; color:green; font: bold;">APPROVED</MudText><MudText>&nbsp;- @a.ApprovedUserID</MudText>
+                                    </div>
+                                }
+                            </MudItem>
+                        </MudPaper>
+                        <MudDivider />
+                    }
+                    @if (!ReadOnly)
+                    {
+                        <MudPaper Class="d-flex" Style="padding: 8px 8px 8px 20px; align-items: center;" Elevation="0">
+                            <MudItem xs="3" md="3" Style="margin-right: 20px;">
+                                <MudTextField T="string" @bind-Text="model.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                            </MudItem>
+                            <MudItem xs="3" md="3" Style="margin-right: 20px;">
+                                <MudNumericField HideSpinButtons @bind-Value="model.Amount" Label="Est Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Amount)"></MudNumericField>
+                            </MudItem>
+                            <MudItem xs="3" md="3" Style="margin-right: 20px;">
+                                @if (model.ImagePath == null)
+                                {
+                                    <MyFileUpload FileName="@Guid.NewGuid().ToString()" FolderName="BreakdownEst" Label="Upload" FilePath="@model.ImagePath" FilePathChanged="((e)=> SaveImagePath(model, e))" AcceptOnlyPdf="true"></MyFileUpload>
+                                }
+                                else
+                                {
+                                    <a href="@model.ImagePath" download="Document">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Title="Download" />
+                                    </a>
+                                    <MudButton OnClick="@(e => Remove(model))" Style="margin-left: 20px;" IconClass="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" ButtonType="ButtonType.Button">Remove</MudButton>
+                                }
+                            </MudItem>
+                            <MudItem xs="3" md="3" Style="margin-right: 20px;">
+                                <MudButton OnClick="@(e => SaveEst(MainModel, model))" Style="margin-left: 20px;" Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Button">Save</MudButton>
+                            </MudItem>
+                        </MudPaper>
+                    }
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public BreakdownModel MainModel { get; set; }
+    [Parameter]
+    public bool HideControls { get; set; } = false;
+    [Parameter]
+    public bool ReadOnly { get; set; }
+    private EstimateListModel model = new();
+    private List<EstimateListModel> EstListModel = new();
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        EstListModel = IBreakdown.SelectEstimate(MainModel.BreakdownID).ToList();
+        MainModel.EstimateList = EstListModel;
+    }
+
+    public async Task Approve(EstimateListModel a)
+    {
+        if (a.Description == null || a.Description == "")
+        {
+            snackbar.Add("Description is mandatory !", Severity.Error);
+            return;
+        }
+        if (a.Amount == null)
+        {
+            snackbar.Add("Estimate Amount is mandatory !", Severity.Error);
+            return;
+        }
+        if (a.ImagePath == null)
+        {
+            snackbar.Add("File is mandatory !", Severity.Error);
+            return;
+        }
+        try
+        {
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            string UserID = authProvider.User.Identity.Name;
+            var result = IBreakdown.ApproveEstimate(a.ID, UserID);
+            if (result == 1)
+            {
+                var estimatelistItem = MainModel.EstimateList.FirstOrDefault(e => e.ID == a.ID);
+                estimatelistItem.ApprovedUserID = UserID;
+                estimatelistItem.UserInfo.RecordStatus = 3;
+                snackbar.Add("Approved Successfully.", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    public async Task Delete(EstimateListModel a)
+    {
+        try
+        {
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            string UserID = authProvider.User.Identity.Name;
+            var result = IBreakdown.DeleteEstimate(a.ID, UserID);
+            if (result == 1)
+            {
+                var estimatelistItem = MainModel.EstimateList.FirstOrDefault(e => e.ID == a.ID);
+                MainModel.EstimateList.Remove(estimatelistItem);
+                snackbar.Add("Deleted Successfully.", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    public async Task Remove(EstimateListModel a)
+    {
+        try
+        {
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            string UserID = authProvider.User.Identity.Name;
+            a.ImagePath = null;
+            if (a.ID != null)
+            {
+                var result = IBreakdown.RemoveEstimate(a.ID, UserID);
+            }
+            snackbar.Add("Image Removed Successfully.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    public async Task SaveEst(BreakdownModel a, EstimateListModel b)
+    {
+        if (b.Description == null || b.Description == "")
+        {
+            snackbar.Add("Description is mandatory !", Severity.Error);
+            return;
+        }
+        if (b.Amount == null)
+        {
+            snackbar.Add("Estimate Amount is mandatory !", Severity.Error);
+            return;
+        }
+        if (b.ImagePath == null)
+        {
+            snackbar.Add("File is mandatory !", Severity.Error);
+            return;
+        }
+        try
+        {
+            var authProvider = await auth.GetAuthenticationStateAsync();
+            string UserID = authProvider.User.Identity.Name;
+            b.UserInfo.UserID = UserID;
+            b.BreakdownID = a.BreakdownID;
+            model = IBreakdown.UpdateEstimate(b);
+            a.EstimateList.Add(model);
+            model = new();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task SaveImagePath(EstimateListModel a, string filePath)
+    {
+        try
+        {
+            @if (filePath != null)
+            {
+                @if (a.ID != null)
+                {
+                    var authProvider = await auth.GetAuthenticationStateAsync();
+                    string UserID = authProvider.User.Identity.Name;
+                    a.ImagePath = filePath;
+                    var result = IBreakdown.AddImgEstimate(a.ID, filePath, UserID);
+                    snackbar.Add("Image Saved Successfully.", Severity.Success);
+                }
+                else
+                {
+                    model.ImagePath = filePath;
+                }
+            }
+            else
+            {
+                snackbar.Add("File Error", Severity.Error);
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task CreateJobcard(BreakdownModel Breakdown)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        var parameters = new DialogParameters();
+        parameters.Add("Breakdown", Breakdown.Clone());
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = DialogService.Show<CreateJobcardDialog>("Initiate Jobcard", parameters, maxWidth);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            JobcardModel jobcard = (JobcardModel)result.Data;
+            nav.NavigateTo("jobcard/" + jobcard.TruckID);
+        }
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    private async Task BeginInsuranceClaim(BreakdownModel Breakdown)
+    {
+        if (_busy)
+        {
+            snackbar.Add("Please wait while form is closing!", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        InsuranceClaimModel model = new() { IsOpen = true };
+        var asset = Iasset.SelectByTruckID(Breakdown.TruckID);
+        model.TruckRegNo = Breakdown.RegNo;
+        model.BreakdownID = Breakdown.BreakdownID;
+        model.Asset = asset;
+        InsuranceClaimModel Model = model;
+        var parameters = new DialogParameters();
+        parameters.Add("Model", Model.Clone());
+        parameters.Add("ReadOnly", false);
+        parameters.Add("Jobcard", true);
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = DialogService.Show<ClaimDialog>("Initiate Claim", parameters, maxWidth);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            model = (InsuranceClaimModel)result.Data;
+            Breakdown.IsClaimInitiated = true;
+        }
+        model = new();
+        await Task.Delay(200);
+        _busy = false;
+    }
+
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
+
+    private async Task PrintJobRequest(int? BreakdownID)
+    {
+        ReportParameters.Clear();
+        ReportParameters.Add("BreakDownID", BreakdownID.ToString());
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintJobRequestForm");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+    }
+}
