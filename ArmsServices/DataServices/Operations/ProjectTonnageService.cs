@@ -6,7 +6,6 @@ using System.Data;
 using Core.BaseModels.Operations;
 using ArmsModels.SharedModels;
 using Core.IDataServices.Operations;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using System;
 
 namespace DAL.DataServices.Operations
