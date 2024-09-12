@@ -23,8 +23,12 @@ namespace MobileAPI.Controllers
         private readonly IBranchSettingsService branchSettingsService;
         private readonly IUserService _userService;
 
-        public UpdateEventController(IRoleService<RoleModel> roleService, IGcService igc, IEventService events,
-            IDriverService driverService, IBranchSettingsService branchSettings, IUserService userService)
+        public UpdateEventController(IRoleService<RoleModel> roleService, 
+                                     IGcService igc, 
+                                     IEventService events,
+                                     IDriverService driverService, 
+                                     IBranchSettingsService branchSettings, 
+                                     IUserService userService)
         {
             _roleService = roleService;
             _Igc = igc;
