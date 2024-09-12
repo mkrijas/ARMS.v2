@@ -1,46 +1,68 @@
 ﻿@inherits DialogFormComponentBase<CreditTransferModel>
 @inject ICreditTransferService Iservice
+@inject IChartOfAccountService coaService
 
 
-<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Receipt" formID="receiptForm" DocumentDetails="DocInfo" model="@model" _busy="_busy">
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Credit Transfer" formID="ctForm" DocumentDetails="DocInfo" model="@model" _busy="_busy">
     <FormContent>
         <MudPaper Class="p-3">
-            <EditForm id="receiptForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+            <EditForm id="ctForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
                 <MudGrid>
                     <MudItem xs="12" md="2">
                         <MudSelect Label="Nature Of Transfer" ReadOnly="ReadOnly" @bind-Value="model.TransactionMode" T="Int32?" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
-                            
-                                <MudSelectItem Value="@(-1)"> Credit </MudSelectItem>
-                                <MudSelectItem Value="@(1)"> Debit </MudSelectItem>
-                            
+
+                            <MudSelectItem Value="@(-1)"> Credit </MudSelectItem>
+                            <MudSelectItem Value="@(1)"> Debit </MudSelectItem>
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudDatePicker ReadOnly="ReadOnly" Label="DocumentDate" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
                     </MudItem>
-
                     <MudItem xs="6">
+                        From
                         <MudGrid>
                             <MudItem>
-                                <BranchSelector Value="@OtherBranch" ValueChanged="BranchChanged" LabelName="Target Branch receipt collected for"></BranchSelector>
+                                @BranchName
                             </MudItem>
                             <MudItem>
                                 <PartySelector Value="model.OriginParty" ValueChanged="OriginPartyChanged" BranchID="BranchID" For="(() => model.OriginParty)" />
                             </MudItem>
                             <MudItem>
-                               @model.OriginPartyType
+                                @model.OriginPartyType
                             </MudItem>
                             <MudItem>
-                                <MudSelect Label="Nature Of Account" ReadOnly="ReadOnly" Value="model.OriginSubArdCode" ValueChanged="nTransactionChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
-                                    @if (model.OriginParty is not null)
+                                <MudSelect Label="Nature Of Account" ReadOnly="ReadOnly" Value="model.OriginSubArdCode" ValueChanged="OriginSubArdChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+                                    @foreach (var item in subards.Where(x => x.ArdGroup == model.OriginParty.NatureOfBusiness && model.OriginParty is not null))
                                     {
-                                        foreach (var item in natureOfBusinessGroup)
-                                        {
-                                            <MudSelectItem Value="@(item)" />
-                                        }
+                                        <MudSelectItem Value="@(item.TranType)" />
                                     }
+
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem xs="6">
+                        To
+                        <MudGrid>
+                            <MudItem>
+                                <BranchSelector Value="@OtherBranch" ValueChanged="BranchChanged" LabelName="Target Branch receipt collected for"></BranchSelector>
+                            </MudItem>
+                            <MudItem>
+                                <PartySelector Value="model.TargetParty" ValueChanged="TargetPartyChanged" BranchID="OtherBranch.BranchID" For="(() => model.TargetParty)" />
+                            </MudItem>
+                            <MudItem>
+                                @model.TargetPartyType
+                            </MudItem>
+                            <MudItem>
+                                <MudSelect Label="Nature Of Account" ReadOnly="ReadOnly" Value="model.TargetSubArdCode" ValueChanged="TargetSubArdChanged" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary">
+
+                                    @foreach (var item in subards.Where(x => x.ArdGroup == model.TargetParty.NatureOfBusiness && model.TargetParty is not null))
+                                    {
+                                        <MudSelectItem Value="@(item.TranType)" />
+                                    }
+
                                 </MudSelect>
                             </MudItem>
                         </MudGrid>
@@ -61,16 +83,22 @@
 
 
     [Parameter]
-    public override CreditTransferModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.ReceiptID; } }
+    public override CreditTransferModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.ID; } }
     private CreditTransferModel _model;
-
-
-
-    string[] natureOfBusinessGroup = new string[] { };
-    string[] RentGroup = { "Rent", "Deposit", "Other" };
-    string[] SupplierGroup = { "Deposit", "Payable", "Prepayment" };
-    string[] CustomerGroup = { "Deposit", "Receivable", "Prepayment" };
-    string[] SisterGroup = { "Deposit", "Trade", "Prepayment" };
+    // string[] natureOfBusinessGroup = new string[] { };
+    // string[] RentGroup = { "Rent", "Deposit", "Other" };
+    // string[] SupplierGroup = { "Deposit", "Payable", "Prepayment" };
+    // string[] CustomerGroup = { "Deposit", "Receivable", "Prepayment" };
+    // string[] SisterGroup = { "Deposit", "Trade", "Prepayment" };
+    // Dictionary<string, string> np = new Dictionary<string, string>()
+    // {
+    //     { "Renter","Rent" }, {"Renter","Deposit" }, {"Renter","Other"},
+    //     { "Supplier","Payable" }, {"Supplier","Deposit" }, {"Supplier","Prepayment"},
+    //     { "Customer","Receivable" }, {"Customer","Deposit" }, {"Customer","Prepayment"},
+    //     { "SisterConcern","Trade" }, {"SisterConcern","Deposit" }, {"SisterConcern","Prepayment"}
+    // };
+    List<SubArdCodeModel> subards = new();
+    string BranchName;
 
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
@@ -80,10 +108,13 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        if (model.ID is null)      
+        if (model.ID is null)
         {
-            model.BranchID = BranchID;            
+            model.BranchID = BranchID;
         }
+        var authprov = await base.auth.GetAuthenticationStateAsync();
+        BranchName = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
+        subards = coaService.GetSubArdCodes().ToList();
         //SetNTransaction(model.BusinessNature);
     }
 
@@ -105,53 +136,79 @@
         model.OtherBranchID = br?.BranchID;
     }
 
-    void SetOriginNTransaction(string nBusiness)
-    {        
-        if (nBusiness == "Renter")
-        {
-            natureOfBusinessGroup = RentGroup;
-        }
-        else if (nBusiness == "Customer")
-        {
-            natureOfBusinessGroup = CustomerGroup;
-        }
-        else if (nBusiness == "Supplier")
-        {
-            natureOfBusinessGroup = SupplierGroup;
-        }
-        else if (nBusiness == "SisterConcern")
-        {
-            natureOfBusinessGroup = SisterGroup;
-        }
-        else
-        {
-            natureOfBusinessGroup = new string[] { };
-        }
-    }    
+    // void SetOriginNTransaction(string nBusiness)
+    // {
+    //     if (nBusiness == "Renter")
+    //     {
+    //         natureOfBusinessGroup = RentGroup;
+    //     }
+    //     else if (nBusiness == "Customer")
+    //     {
+    //         natureOfBusinessGroup = CustomerGroup;
+    //     }
+    //     else if (nBusiness == "Supplier")
+    //     {
+    //         natureOfBusinessGroup = SupplierGroup;
+    //     }
+    //     else if (nBusiness == "SisterConcern")
+    //     {
+    //         natureOfBusinessGroup = SisterGroup;
+    //     }
+    //     else
+    //     {
+    //         natureOfBusinessGroup = new string[] { };
+    //     }
+    // }
 
-    async Task OriginPartyChanged(PartyModel party)
+    void OriginPartyChanged(PartyModel party)
     {
         model.OriginParty = party;
         model.OriginPartyType = party?.NatureOfBusiness;
-        SetOriginNTransaction(model.OriginPartyType);
-        await nTransactionChanged(null);
+        //SetOriginNTransaction(model.OriginPartyType);
     }
 
-    private async Task nTransactionChanged(string nt)
+    void TargetPartyChanged(PartyModel party)
     {
-        model.NatureOfTransaction = nt;
+        model.TargetParty = party;
+        model.TargetPartyType = party?.NatureOfBusiness;
+        //SetOriginNTransaction(model.OriginPartyType);
+    }
+
+    private async Task TargetSubArdChanged(string subard)
+    {
+        var trantype = subards.First(x => x.SubArdCode == subard).TranType;
         if (model.NatureOfTransaction is not null)
         {
-            model.OriginCoaID = partyService.GetPartyCoaID(model.OriginParty.PartyID, model.OriginPartyType, model.NatureOfTransaction);
+            model.TargetCoaID = partyService.GetPartyCoaID(model.TargetParty.PartyID, model.TargetPartyType, trantype);
+            if (model.TargetCoaID == null)
+            {
+                bool? result = await dialogService.ShowMessageBox(
+                    "Account Not Mapped!",
+                    "Party Account is not mapped for " + trantype + "!");
+                model.NatureOfTransaction = null;
+            }
+            else
+                model.TargetSubArdCode = subard;
+        }
+    }
+
+
+    private async Task OriginSubArdChanged(string subard)
+    {
+        var trantype = subards.First(x => x.SubArdCode == subard).TranType;
+        if (model.NatureOfTransaction is not null)
+        {
+            model.OriginCoaID = partyService.GetPartyCoaID(model.OriginParty.PartyID, model.OriginPartyType, trantype);
             if (model.OriginCoaID == null)
             {
                 bool? result = await dialogService.ShowMessageBox(
                     "Account Not Mapped!",
-                    "Party Account is not mapped for " + model.NatureOfTransaction + "!");
+                    "Party Account is not mapped for " + trantype + "!");
                 model.NatureOfTransaction = null;
             }
-        }      
+            else
+                model.OriginSubArdCode = subard;
+        }
     }
 
-   
 }
