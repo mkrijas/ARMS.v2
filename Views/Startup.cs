@@ -176,6 +176,7 @@ namespace Views
             services.AddScoped<ITripAdvanceService, TripAdvanceService>();
             services.AddScoped<IGeneralSettingsService, GeneralSettingsService>();
             services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>();
+            services.AddScoped<IProjectTonnageService, ProjectTonnageService>();
             #endregion
 
         #region ------------Dashboard---------------
