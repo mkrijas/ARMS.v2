@@ -6,7 +6,8 @@ namespace Core.BaseModels.Operations
     public class ProjectTonnageModel
     {
         public int? ID { get; set; }
-        public BranchModel Branch { get; set; }
+        public int? BranchID { get; set; }
+        public string BranchName { get; set; }
         public string BodyType { get; set; }
         public int? Wheels { get; set; }
         public decimal? Tonnage { get; set; }

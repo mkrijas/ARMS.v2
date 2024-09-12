@@ -48,11 +48,8 @@ namespace DAL.DataServices.Operations
             return new ProjectTonnageModel
             {
                 ID = dr.GetInt32("ID"),
-                Branch = new BranchModel
-                {
-                    BranchID = dr.GetInt32("BranchID"),
-                    BranchName = dr.GetString("BranchName"),
-                },
+                BranchID = dr.GetInt32("BranchID"),
+                BranchName = dr.GetString("BranchName"),
                 BodyType = dr.GetString("BodyType"),
                 Wheels = dr.GetInt32("Wheels"),
                 Tonnage = dr.GetDecimal("Tonnage"),
