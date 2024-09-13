@@ -4,7 +4,9 @@
 @using Core.BaseModels.Operations
 @using Core.IDataServices.Operations
 @inject IProjectTonnageService IProjectTonnage
+@inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
+@using System.Data.SqlClient;
 
 <MudTable Items="@MainModel" Hover="true" CanCancelEdit="true" Filter="new Func<ProjectTonnageModel,bool>(FilterFunc)" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="Update">
     <ToolBarContent>
@@ -104,9 +106,20 @@
         }
         catch (Exception ex)
         {
-            snackbar.Add(ex.Message, Severity.Error);
+            if (ex.Message.Contains("Violation of UNIQUE KEY constraint", StringComparison.OrdinalIgnoreCase))
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Oops !",
+                    (MarkupString)$"<b>{item.BodyType}</b> bodytype with <b>{item.Wheels}</b> wheels already exists !"
+                );
+            }
+            else
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
         }
         InsertElement = new();
+        StateHasChanged();
     }
 
     private bool FilterFunc(ProjectTonnageModel element)
