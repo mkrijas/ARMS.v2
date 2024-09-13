@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 //using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MobileAPI.Services;
+
 //using MobileAPI.Services;
 using System;
 using System.Diagnostics;
@@ -12,7 +14,7 @@ using System.Threading;
 
 namespace MobileAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/")]
     [ApiController]
     public class UpdateEventController : ControllerBase
     {
@@ -22,13 +24,14 @@ namespace MobileAPI.Controllers
         private readonly IDriverService Idriver;
         private readonly IBranchSettingsService branchSettingsService;
         private readonly IUserService _userService;
+        private readonly ITripService Itrip;
+        private readonly ITruckService Itruck;
+        private readonly IBranchService Ibranch;
+        private readonly ITruckStatusUpdateService _truckStatusUpdateService;
 
-        public UpdateEventController(IRoleService<RoleModel> roleService, 
-                                     IGcService igc, 
-                                     IEventService events,
-                                     IDriverService driverService, 
-                                     IBranchSettingsService branchSettings, 
-                                     IUserService userService)
+        public UpdateEventController(IRoleService<RoleModel> roleService, IGcService igc, IEventService events,
+            IDriverService driverService, IBranchSettingsService branchSettings, IUserService userService, ITripService itrip,
+            ITruckService itruck, IBranchService ibranch, ITruckStatusUpdateService truckStatusUpdateService)
         {
             _roleService = roleService;
             _Igc = igc;
@@ -36,6 +39,10 @@ namespace MobileAPI.Controllers
             Idriver = driverService;
             branchSettingsService = branchSettings;
             _userService = userService;
+            Itrip = itrip;
+            Itruck = itruck;
+            Ibranch = ibranch;
+            _truckStatusUpdateService = truckStatusUpdateService;
         }
 
         public bool HasPermissionEventServiceEdit { get; set; } = false;
@@ -47,9 +54,14 @@ namespace MobileAPI.Controllers
         public TripModel CurrentTrip { get; set; }
         private EventModel PreEvent { get; set; }
         EventTypeModel PreEventType;
+        public TruckModel SelectedTruck { get; set; }
+        private EventTypeModel EventType { get; set; }
+        private EventModel CurrentEvent { get; set; }
+        string AssignDriverLabel;
+        string TruckStatus;
 
 
-        [HttpPost]
+        [HttpPost("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
 
         public async Task<string> UpdateEvents(EventUpdateModel updateModel)
@@ -59,7 +71,7 @@ namespace MobileAPI.Controllers
             //, [FromQuery] GcSetModel gcSet
             string result = "";
             //HasPermissionEventServiceEdit = await _roleService.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-            HasPermissionEventServiceEdit =  _userService.GetClaimsAsync(model.UserInfo.UserID, DocTypeID.ToString(), "Edit", model.BranchID, ctc.Token);
+            HasPermissionEventServiceEdit = _userService.GetClaimsAsync(model.UserInfo.UserID, DocTypeID.ToString(), "Edit", model.BranchID, ctc.Token);
             if (HasPermissionEventServiceEdit)
             {
                 if (model.EventTime <= DateTime.Now)
@@ -226,5 +238,32 @@ namespace MobileAPI.Controllers
             }
             return result;
         }
+
+
+        [HttpPost("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+
+        public async Task<EventModel> OnTruckSelected(TruckModel model)
+        {
+            SelectedTruck = model;
+            if (model != null)
+            {
+                CurrentTrip = Itrip.Select(Itruck.GetCurrentTrip(model.TruckID));
+                if (CurrentTrip != null)
+                {
+                    CurrentTrip.Closed = Itrip.IsClosed(CurrentTrip.TripID);
+                }
+                _truckStatusUpdateService.truckStatusUpdated(Ievent.GetCurrentEvent(model.TruckID), SelectedTruck);
+                //ShowReportBreakdownButton = BranchID == (model.CurrentBranchID ?? BranchID);
+            }
+            else
+            {
+                CurrentTrip = null;
+                _truckStatusUpdateService.truckStatusUpdated(null, null);
+            }
+            return Ievent.GetCurrentEvent(model.TruckID);
+        }
+
+        
     }
 }
