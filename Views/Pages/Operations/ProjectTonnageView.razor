@@ -1,0 +1,124 @@
+﻿@page "/ProjectTonnage"
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@using Core.BaseModels.Operations
+@using Core.IDataServices.Operations
+@inject IProjectTonnageService IProjectTonnage
+@inject MudBlazor.ISnackbar snackbar
+
+<MudTable Items="@MainModel" Hover="true" CanCancelEdit="true" Filter="new Func<ProjectTonnageModel,bool>(FilterFunc)" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="Update">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Project Tonnage</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search BodyType, Wheels Or Tonnage... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <ColGroup>
+        <col style="width:40%;" />
+        <col style="width:30%;" />
+        <col style="width:30px;" />
+    </ColGroup>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<ProjectTonnageModel, object>(x=>x.BodyType)">BodyType</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<ProjectTonnageModel, object>(x=>x.Wheels)">Wheels</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<ProjectTonnageModel, object>(x=>x.Tonnage)">Tonnage</MudTableSortLabel></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="BodyType">@context.BodyType</MudTd>
+        <MudTd DataLabel="Wheels">@context.Wheels</MudTd>
+        <MudTd DataLabel="Tonnage">@context.Tonnage</MudTd>
+    </RowTemplate>
+    <RowEditingTemplate>
+        <MudTd DataLabel="BodyType">
+            <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="@context.BodyType" Required />
+        </MudTd>
+        <MudTd DataLabel="Wheels">
+            <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="@context.Wheels" />
+        </MudTd>
+        <MudTd DataLabel="Tonnage">
+            <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="@context.Tonnage" Required />
+        </MudTd>
+    </RowEditingTemplate>
+    <FooterContent>
+        <MudTd DataLabel="BodyType">
+            <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="@InsertElement.BodyType" Required />
+        </MudTd>
+        <MudTd DataLabel="Wheels">
+            <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="@InsertElement.Wheels" />
+        </MudTd>
+        <MudTd Style="width: 30%;" DataLabel="Tonnage">
+            <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="@InsertElement.Tonnage" Required />
+        </MudTd>
+        <MudTd DataLabel="Create">
+            <MudButton OnClick="(()=>Update(InsertElement))">Create</MudButton>
+        </MudTd>
+    </FooterContent>
+</MudTable>
+
+@code {
+
+    private List<ProjectTonnageModel> MainModel = new();
+    private ProjectTonnageModel InsertElement = new();
+    private ProjectTonnageModel elementBeforeEdit;
+    private int? BranchID;
+    private string searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        BranchID = int.Parse(user.Claims.FirstOrDefault(x => x.Type == "BranchID").Value);
+
+        MainModel = IProjectTonnage.Select(BranchID).ToList();
+    }
+
+    private void BackupItem(object element)
+    {
+        ProjectTonnageModel item = (ProjectTonnageModel)element;
+        elementBeforeEdit = new()
+            {
+                BodyType = item.BodyType,
+                Wheels = item.Wheels,
+                Tonnage = item.Tonnage,
+            };
+    }
+
+    private void ResetItemToOriginalValues(object element)
+    {
+        ProjectTonnageModel item = (ProjectTonnageModel)element;
+        item.BodyType = elementBeforeEdit.BodyType;
+        item.Wheels = elementBeforeEdit.Wheels;
+        item.Tonnage = elementBeforeEdit.Tonnage;
+    }
+
+    private async void Update(object element)
+    {
+        ProjectTonnageModel item = (ProjectTonnageModel)element;
+        var authState = auth.GetAuthenticationStateAsync().Result;
+        item.UserInfo.UserID = authState.User.Identity.Name;
+        item.BranchID = BranchID;
+        try
+        {
+            var a = IProjectTonnage.Update(item);
+            MainModel = IProjectTonnage.Select(BranchID).ToList();
+            snackbar.Add("Successfully Submitted", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+        InsertElement = new();
+    }
+
+    private bool FilterFunc(ProjectTonnageModel element)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.BodyType.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Wheels.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Tonnage.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+}

@@ -15,6 +15,6 @@ namespace Core.BaseModels.Operations
         public decimal? Freight { get; set; }
         public int? ProjectedTrips { get; set; }
         public decimal? ProjectedTonnage { get; set; }
-        public UserInfoModel UserInfo { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
     }
 }

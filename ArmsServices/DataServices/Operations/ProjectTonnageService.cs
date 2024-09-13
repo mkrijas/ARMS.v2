@@ -7,6 +7,7 @@ using Core.BaseModels.Operations;
 using ArmsModels.SharedModels;
 using Core.IDataServices.Operations;
 using System;
+using System.Threading.Tasks;
 
 namespace DAL.DataServices.Operations
 {
@@ -41,6 +42,24 @@ namespace DAL.DataServices.Operations
             {
                 yield return GetModel(dr);
             }
+        }
+
+        public ProjectTonnageModel Update(ProjectTonnageModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", model.ID),
+               new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@BodyType", model.BodyType),
+               new SqlParameter("@Wheels", model.Wheels),
+               new SqlParameter("@Tonnage", model.Tonnage),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.ProjectTonnage.Update]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
         }
 
         private ProjectTonnageModel GetModel(IDataRecord dr)
