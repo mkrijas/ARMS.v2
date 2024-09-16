@@ -146,7 +146,7 @@
                         <MudItem xs="12" Class="d-flex">
                             <MudText Typo="Typo.h6">Asset Images</MudText>
                             <MudSpacer />
-                            <MyFileUpload @ref="Mfu" Resize="true" DeleteExistingFile="false" FolderName="@("AssetImages/Asset-"+model.AssetID.ToString())" Label="Upload Photos" FilePathChanged="FileUploaded"></MyFileUpload>
+                            <MyFileUpload @ref="Mfu" Resize="true" DeleteExistingFile="false" FileName="@Guid.NewGuid().ToString()" FolderName="@("AssetImages/Asset-"+model.AssetID.ToString())" Label="Upload Photos" FilePathChanged="FileUploaded"></MyFileUpload>
                         </MudItem>
                         <MudGrid Style="padding: 24px;" Spacing="2" Justify="Justify.Center">
                             @foreach (var imagePath in model?.ImagePath)
@@ -247,32 +247,41 @@
 
     private async Task DeleteImage(string imagePath)
     {
-        try
+        if (HasPermissionAssetServiceEdit)
         {
-            var authState = await auth.GetAuthenticationStateAsync();
-            AssetModel Model = new();
-            Model.AssetID = model.AssetID;
-            Model.Images = imagePath.Normalize();
-            Model.UserInfo.UserID = authState.User.Identity.Name;
-            int a = IAsset.RemovePhoto(Model);
-            if (a == 1)
+            try
             {
-                if (Mfu.DeleteFile(imagePath))
+                var authState = await auth.GetAuthenticationStateAsync();
+                AssetModel Model = new();
+                Model.AssetID = model.AssetID;
+                Model.Images = imagePath.Normalize();
+                Model.UserInfo.UserID = authState.User.Identity.Name;
+                int a = IAsset.RemovePhoto(Model);
+                if (a == 1)
                 {
-                    model.ImagePath.Remove(imagePath);
+                    if (Mfu.DeleteFile(imagePath))
+                    {
+                        model.ImagePath.Remove(imagePath);
+                    }
+                    snackbar.Add("Photo removed Successfully", Severity.Success);
+                    return;
                 }
-                snackbar.Add("Photo removed Successfully", Severity.Success);
-                return;
+                else
+                {
+                    snackbar.Add("Photo not removed !", Severity.Error);
+                    return;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                snackbar.Add("Photo not removed !", Severity.Error);
-                return;
+                snackbar.Add(ex.Message, Severity.Warning);
             }
         }
-        catch (Exception ex)
+        else
         {
-            snackbar.Add(ex.Message, Severity.Warning);
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit Asset.");
         }
     }
 
