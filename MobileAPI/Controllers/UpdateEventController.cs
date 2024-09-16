@@ -68,6 +68,7 @@ namespace MobileAPI.Controllers
         {
             EventModel model = updateModel.Event;
             GcSetModel gcSet = updateModel.GcSet;
+            ((HashSet<GcSetModel>)SelectedGCs).Add(gcSet);
             //, [FromQuery] GcSetModel gcSet
             string result = "";
             //HasPermissionEventServiceEdit = await _roleService.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
