@@ -29,9 +29,20 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
-        }   
+        }
 
-       
+        public int RemovePhoto(AssetModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetID", model.AssetID),
+               new SqlParameter("@Images", model.Images),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+
+            return Iservice.ExecuteNonQuery("[usp.Asset.RemovePhoto]", parameters);
+        }
+
         private AssetModel GetModel(IDataRecord dr)
         {
             return new AssetModel
@@ -72,6 +83,8 @@ namespace ArmsServices.DataServices
                 SerialNumber = dr.GetString("SerialNumber"),
                 SpanOfYear = dr.GetDecimal("SpanOfYear"),
                 Status = dr.GetString("Status"),
+                Images = dr.GetString("ImagePath"),//.Split(";").ToList(),
+                //ImagePath = dr.GetString("ImagePath").Split(";").ToList(),
                 VendorInfo = new()
                 {
                     PartyID = dr.GetInt32("PartyID"),
@@ -138,6 +151,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Status", model.Status),
                new SqlParameter("@PartyID", model.VendorInfo?.PartyID),
                new SqlParameter("@WarrentyDate", model.WarrentyDate),
+               new SqlParameter("@ImagePath", string.Join(";",model.ImagePath)),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@AccountDef", model.GetAccountRuleDefinition),
                new SqlParameter("AssetStatus", model.AssetStatus)

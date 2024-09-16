@@ -26,6 +26,8 @@ namespace ArmsModels.BaseModels
         public bool IsComplex { get; set; } = false;
         [StringLength(8)]
         public virtual string AssetCode { get; set; }
+        public virtual string Images { get; set; } = "";
+        public virtual List<string> ImagePath { get; set; }
         public string SerialNumber { get; set; }
         [Required]
         public string NatureOfAsset { get; set; }//Tangible, Intangible
