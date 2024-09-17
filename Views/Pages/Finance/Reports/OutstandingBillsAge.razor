@@ -13,12 +13,20 @@
                  <MudItem xs="2" Style="display: flex; align-items: center;">
                     <MudRadioGroup @bind-Value="@drcr">
                         <MudRadio Value="@("Credit")" Color="Color.Primary">Credit </MudRadio>
-                        <MudRadio Value="@("Debit")" Color="Color.Primary">Debit</MudRadio>
-                       
-                    </MudRadioGroup>
-                    
+                        <MudRadio Value="@("Debit")" Color="Color.Primary">Debit</MudRadio>                       
+                    </MudRadioGroup>                    
                </MudItem>
+                <MudItem xs="2" Style="display: flex; align-items: center;"> 
+                        <MudNumericField HideSpinButtons @bind-Value="Interval" Label="Interval(Days)" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="2" Style="display: flex; align-items: center;"> 
+                    <PartySelector @bind-Value="party"></PartySelector>
+                    </MudItem>
                 <MudItem xs="2" Style="display: flex; align-items: center;">
+                    <MudDatePicker Label="As On" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="DateVar" DateFormat="dd/MM/yyyy" />
+                </MudItem>
+                <MudItem xs="2" Style="display: flex; align-items: center;">
+                    <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
                     <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
                 </MudItem>
             </MudGrid>
@@ -38,7 +46,10 @@
     public string ReportName { get; set; }
     int branch;
     string drcr = "Credit";
-   
+    int Interval = 30;
+    PartyModel party = new PartyModel();
+    DateTime? DateVar = DateTime.Today;
+
     private List<CashAccountModel> collection = new List<CashAccountModel>();
 
     protected override async Task OnInitializedAsync()
@@ -56,6 +67,12 @@
             snackbar.Add("Please select branch.", Severity.Error);
             return false;
         }      
+
+        if(Interval == 0 )
+        {
+            snackbar.Add("Please Type a valid integer for Interval!.", Severity.Error);
+            return false;
+        }
         return true;
     }
 
@@ -65,11 +82,24 @@
         {
             if (Validate())
             {
-                ReportName = "OutstandingBillsAge";
-                ShowReport = true;                
-                ReportParameters.Clear();               
+                ReportParameters.Clear();
+
+                if(party?.PartyID is null)
+                {
+                    ReportName = "OutstandingBillsAgeSummary";
+                }
+                else
+                {
+                    ReportName = "OutstandingBillsAge";
+                    ReportParameters.Add("PartyID", party.PartyID.ToString());
+                }
                 ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
-                ReportParameters.Add("DrCr", drcr );
+                ReportParameters.Add("DrCr", drcr);
+                ReportParameters.Add("Interval", Interval.ToString());
+                ReportParameters.Add("Date", DateVar.Value.ToString());
+
+                ShowReport = true; 
+              
                 await report.RenderReport();
             }
         }
