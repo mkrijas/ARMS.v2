@@ -30,7 +30,7 @@ namespace MobileAPI.Controllers
         //Place Select
         [HttpGet("[action]/")]
         [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
-        public IEnumerable<PlaceModel> PlaceSelect(string PlaceLike)
+        public IEnumerable<PlaceModel> PlaceSelect(string? PlaceLike)
         {
             return _placeService.Select(0, PlaceLike);
         }
