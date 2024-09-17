@@ -453,6 +453,7 @@ namespace ArmsServices.DataServices
             {
                 yield return new TruckStatusModel()
                 {
+                    TruckID = dr.GetInt32("TruckID"),
                     RegNo = dr.GetString("RegNo"),
                     EventTime = dr.GetDateTime("EventTime"),
                     EventDateTimeDiff = dr.GetString("EventDateTimeDiff")

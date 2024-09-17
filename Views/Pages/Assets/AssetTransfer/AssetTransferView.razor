@@ -1,12 +1,10 @@
 ﻿@page "/AssetTransferView"
-
 @using ArmsModels.BaseModels.General
 @using ArmsServices.DataServices.General
 @using Microsoft.AspNetCore.SignalR.Client;
 @using Views.Data
 @using Core.BaseModels.Finance.Transactions;
 @using Pages.Operations.Expenses
-
 @inject IAssetService Iassetservice
 @inject IAssetTransferService Iservice
 @inject ITripFuelService tripFuelIservice
@@ -70,10 +68,10 @@
                                                     <b>@item.TransferInitiatedDate</b>
                                                 </MudListItem>
                                                 <MudListItem Avatar="@Icons.Material.Filled.Approval" IconColor="Color.Primary">
-                                                    Status :<b>@item.AssetTransferEndModel.StatusText</b>
+                                                    Status : <b>@item.AssetTransferEndModel.StatusText</b>
                                                 </MudListItem>
                                                 <MudListItem Avatar="@Icons.Material.Filled.MenuBook" IconColor="Color.Primary">
-                                                    Total Expense :<b>@item?.Expenses</b>
+                                                    Total Expense : <b>@item?.Expenses</b>
                                                 </MudListItem>
                                             </MudItem>
 
@@ -82,10 +80,10 @@
                                                     Destination Branch : <b>@item.DestinationBranch.BranchName</b>
                                                 </MudListItem>
                                                 <MudListItem Avatar="@Icons.Material.Filled.EditNote" IconColor="Color.Primary">
-                                                    Remarks :<b>@item?.Remarks</b>
+                                                    Remarks : <b>@item?.Remarks</b>
                                                 </MudListItem>
                                                 <MudListItem Avatar="@Icons.Material.Filled.LocalGasStation" IconColor="Color.Primary">
-                                                    Total Fuel :<b>@item?.Fuel</b>
+                                                    Total Fuel : <b>@item?.Fuel</b>
                                                 </MudListItem>
                                             </MudItem>
                                         </MudGrid>
@@ -139,10 +137,10 @@
                                                         <b>@item.TransferInitiatedDate</b>
                                                     </MudListItem>
                                                     <MudListItem Avatar="@Icons.Material.Filled.Approval" IconColor="Color.Primary">
-                                                        Status :<b>@item.AssetTransferEndModel.StatusText</b>
+                                                        Status : <b>@item.AssetTransferEndModel.StatusText</b>
                                                     </MudListItem>
                                                     <MudListItem Avatar="@Icons.Material.Filled.MenuBook" IconColor="Color.Primary">
-                                                        Total Expense :<b>@item?.Expenses</b>
+                                                        Total Expense : <b>@item?.Expenses</b>
                                                     </MudListItem>
                                                 </MudItem>
                                                 <MudItem md="5">
@@ -150,14 +148,13 @@
                                                         Initiation Branch : <b>@item.InitiatedBranch.BranchName</b>
                                                     </MudListItem>
                                                     <MudListItem Avatar="@Icons.Material.Filled.EditNote" IconColor="Color.Primary">
-                                                        Remarks :<b>@item?.Remarks</b>
+                                                        Remarks : <b>@item?.Remarks</b>
                                                     </MudListItem>
                                                     <MudListItem Avatar="@Icons.Material.Filled.LocalGasStation" IconColor="Color.Primary">
-                                                        Total Fuel :<b>@item?.Fuel</b>
+                                                        Total Fuel : <b>@item?.Fuel</b>
                                                     </MudListItem>
                                                 </MudItem>
                                             </MudGrid>
-
                                         </MudList>
                                     </div>
                                 </MudCardContent>
@@ -203,14 +200,11 @@
         CurrentBranchId = int.Parse(brancIDString);
         await signalRService.StartAsync();
 
-
-        await GetAllOutGoing();
-        await GetAllIncoming();
+        await GetAll();
     }
 
     private async Task GetAll()
     {
-
         await GetAllOutGoing();
         await GetAllIncoming();
     }
@@ -218,10 +212,25 @@
     #region Outgoing
 
     private AssetTransferInitiationModel modelOutGoing = new();
-
     private List<AssetTransferInitiationModel> collectionOutGoing = new();
-
     string state = "Message box hasn't been opened yet";
+
+    private async Task GetAllOutGoing()
+    {
+        collectionOutGoing = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        if (modelOutGoing.InitiatedBranch == null)
+        {
+            modelOutGoing.InitiatedBranch = new();
+        }
+        modelOutGoing.InitiatedBranch.BranchID = int.Parse(brancIDString);
+        foreach (var item in Iservice.SelectOutgoingAssets(modelOutGoing.InitiatedBranch.BranchID))
+        {
+            collectionOutGoing.Add(item);
+        }
+    }
 
     private async Task OpenDialogEditOutGoing(AssetTransferInitiationModel AssetTransferInitiation)
     {
@@ -332,29 +341,34 @@
         }
     }
 
-    private async Task GetAllOutGoing()
-    {
-        collectionOutGoing = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        if (modelOutGoing.InitiatedBranch == null)
-        {
-            modelOutGoing.InitiatedBranch = new();
-        }
-        modelOutGoing.InitiatedBranch.BranchID = int.Parse(brancIDString);
-        foreach (var item in Iservice.SelectOutgoingAssets(modelOutGoing.InitiatedBranch.BranchID))
-        {
-            collectionOutGoing.Add(item);
-        }
-    }
-
     #endregion
 
     #region Incoming
 
     private AssetTransferInitiationModel modelIncoming = new();
     private List<AssetTransferInitiationModel> collectionIncoming = new();
+
+    private async Task GetAllIncoming()
+    {
+        collectionIncoming = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+
+        if (modelIncoming.AssetTransferEndModel == null)
+        {
+            modelIncoming.AssetTransferEndModel = new();
+        }
+        if (modelIncoming.DestinationBranch == null)
+        {
+            modelIncoming.DestinationBranch = new();
+        }
+        modelIncoming.DestinationBranch.BranchID = int.Parse(brancIDString);
+        foreach (var item in Iservice.SelectIncomingAssets(modelIncoming.DestinationBranch?.BranchID ?? 0))
+        {
+            collectionIncoming.Add(item);
+        }
+    }
 
     private async Task OpenDialogEditIncoming(AssetTransferInitiationModel AssetTransferEnd)
     {
@@ -418,28 +432,6 @@
         _busy = false;
     }
 
-    private async Task GetAllIncoming()
-    {
-        collectionIncoming = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-
-        if (modelIncoming.AssetTransferEndModel == null)
-        {
-            modelIncoming.AssetTransferEndModel = new();
-        }
-        if (modelIncoming.DestinationBranch == null)
-        {
-            modelIncoming.DestinationBranch = new();
-        }
-        modelIncoming.DestinationBranch.BranchID = int.Parse(brancIDString);
-        foreach (var item in Iservice.SelectIncomingAssets(modelIncoming.DestinationBranch?.BranchID ?? 0))
-        {
-            collectionIncoming.Add(item);
-        }
-    }
-
     private async Task OpenFuelForm(TripFuelModel fuelModel)
     {
         DialogParameters parms = new DialogParameters();
@@ -464,7 +456,6 @@
         parms.Add("model", new MileageShortageReceiptModel()
             {
                 AssetTransferID = morModel.AssetTransferID
-
             });
         var dialog = DialogService.Show<Finance.Transactions.MileageShortageReceiptDialog>("ADD", parms, maxWidth);
         var result = await dialog.Result;

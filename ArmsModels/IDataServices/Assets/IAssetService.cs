@@ -36,5 +36,6 @@ namespace ArmsServices.DataServices
         IEnumerable<AssetPOModel> GetAssetListNonInvoiced(int BranchID, int? parentID, int? NumberOfRecords, string searchTerm);
         IEnumerable<AccountRuleDefModel> GetAccountRuleDefinition();
         AssetModel UpdateAssetStatus(AssetModel model);  //Edit
+        int RemovePhoto(AssetModel model);  //Edit
     }
 }

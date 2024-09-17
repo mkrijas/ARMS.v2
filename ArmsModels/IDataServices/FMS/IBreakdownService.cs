@@ -19,7 +19,7 @@ namespace ArmsServices.DataServices
         EstimateListModel UpdateEstimate(EstimateListModel model);  //Edit
         int DeleteEstimate(int? EstimateID, string UserID);  //Delete
         int ApproveEstimate(int? EstimateID, string UserID);  //Approve
-        int RemoveEstimate(int? EstimateID, string UserID);  //Approve
+        int RemoveEstimate(int? EstimateID, string UserID);  //Remove
         int AddImgEstimate(int? EstimateID, string ImgPath, string UserID);  //Approve
     }
 }
