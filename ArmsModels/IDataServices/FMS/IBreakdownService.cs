@@ -15,5 +15,11 @@ namespace ArmsServices.DataServices
         int Delete(int? BreakdownID, string UserID);  //Delete
         IEnumerable<BreakdownModel> Select();
         IEnumerable<BreakdownModel> SelectPending(int BranchID);
+        IEnumerable<EstimateListModel> SelectEstimate(int? BreakdownID);
+        EstimateListModel UpdateEstimate(EstimateListModel model);  //Edit
+        int DeleteEstimate(int? EstimateID, string UserID);  //Delete
+        int ApproveEstimate(int? EstimateID, string UserID);  //Approve
+        int RemoveEstimate(int? EstimateID, string UserID);  //Remove
+        int AddImgEstimate(int? EstimateID, string ImgPath, string UserID);  //Approve
     }
 }

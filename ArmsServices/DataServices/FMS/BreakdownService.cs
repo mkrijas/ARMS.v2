@@ -33,13 +33,11 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@Operation", "All")
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Breakdown.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
-
 
         public IEnumerable<BreakdownModel> SelectPending(int BranchID)
         {
@@ -48,7 +46,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "Pending"),
                new SqlParameter("@BranchID", BranchID)
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Breakdown.Select]", parameters))
             {
                 yield return GetModel(dr);
@@ -83,12 +80,85 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TruckID", model.TruckID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Breakdown.Update]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
+        }
+
+        public IEnumerable<EstimateListModel> SelectEstimate(int? BreakdownID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BreakdownID", BreakdownID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Breakdown.Estimate.Select]", parameters))
+            {
+                yield return GetEstModel(dr);
+            }
+        }
+
+        public EstimateListModel UpdateEstimate(EstimateListModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BreakdownID", model.BreakdownID),
+               new SqlParameter("@Description", model.Description),
+               new SqlParameter("@ImagePath", model.ImagePath),
+               new SqlParameter("@Amount", model.Amount),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Breakdown.Estimate.Update]", parameters))
+            {
+                model = GetEstModel(dr);
+            }
+            return model;
+        }
+
+        public int DeleteEstimate(int? EstimateID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "DELETE"),
+               new SqlParameter("@ID", EstimateID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Estimate.ApproveOrDelete]", parameters);
+        }
+
+        public int ApproveEstimate(int? EstimateID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "APPROVE"),
+               new SqlParameter("@ID", EstimateID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Estimate.ApproveOrDelete]", parameters);
+        }
+
+        public int AddImgEstimate(int? EstimateID, string ImgPath, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ADD"),
+               new SqlParameter("@ID", EstimateID),
+               new SqlParameter("@ImagePath", ImgPath),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Estimate.ApproveOrDelete]", parameters);
+        }
+
+        public int RemoveEstimate(int? EstimateID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "REMOVE"),
+               new SqlParameter("@ID", EstimateID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Estimate.ApproveOrDelete]", parameters);
         }
 
         private BreakdownModel GetModel(IDataRecord dr)
@@ -112,7 +182,24 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+        private EstimateListModel GetEstModel(IDataRecord dr)
+        {
+            return new EstimateListModel
+            {
+                ID = dr.GetInt32("ID"),
+                BreakdownID = dr.GetInt32("BreakdownID"),
+                Description = dr.GetString("Description"),
+                Amount = dr.GetDecimal("Amount"),
+                ImagePath = dr.GetString("ImagePath"),
+                ApprovedUserID = dr.GetString("ApprovedUserID"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    UserID = dr.GetString("UserID"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                },
+            };
+        }
     }
 }
-
-

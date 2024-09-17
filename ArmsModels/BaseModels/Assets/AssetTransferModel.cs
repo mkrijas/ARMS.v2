@@ -17,14 +17,16 @@ namespace ArmsModels.BaseModels
         public DateTime? TransferInitiatedDate { get; set; } = DateTime.Today;
         public string Remarks { get; set; }
         public AssetTransferEndModel AssetTransferEndModel { get; set; } = new();
-        public UserInfoModel UserInfo { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
         public int IsAssetReject { get; set; } = 0;
         [ValidateComplexType]
         public List<AssetSettingsModel> CheckList { get; set; }
         public decimal? Fuel { get; set; }
         public decimal? Expenses { get; set; }
-
+        public virtual string Images { get; set; } = "";
+        public virtual List<string> ImagePath { get; set; } = new List<string>();
     }
+
     public class AssetTransferEndModel
     {
         public int? AssetTransferEndID { get; set; }

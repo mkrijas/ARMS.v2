@@ -1,128 +1,29 @@
 ﻿@page "/Breakdowns"
 @attribute [Authorize]
-@inject IBreakdownService iservice
-@inject IAssetService Iasset
-@inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
-@inject NavigationManager nav
-@inject IDialogService DialogService
-@using FMS.Jobcard
-@using FMS.InsuranceClaim
+@inject IBreakdownService IBreakdown
 
-<h6> Reported Breakdowns/Accidents</h6>
-@foreach (BreakdownModel item in BreakdownList)
-{
-    <MudPaper Style="padding:20px;font-size:15px;">
-        <div style="float:left;width:50%;left:0px"><MudText Class="txthead"> Truck: <b>@item.RegNo</b></MudText></div><div style="float:right;width:50%;font-size:13px;text-align:right"><MudIconButton Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small"></MudIconButton><a Style="font-family:'Segoe UI';color:#595959;margin-right:2%">@item.BreakdownTime</a><MudIconButton Icon="@Icons.Material.Filled.Call" Size="Size.Small"></MudIconButton><a Style="font-family:'Segoe UI';color:#595959;">@item.ContactNumber</a></div>
-        <br>
-        <hr style="width:100%">
-        <MudText Class=txti> Breakdown Type:  <a style="background-color:#fff000">@item.BreakdownType</a> </MudText>
-        <br>
-        <MudText Class=txti> Additional Info: @item.Detail</MudText>
-        <hr>
-        <MudButton Disabled="@_busy" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.AddTask" OnClick="@(()=>CreateJobcard(item))">Issue Jobcard</MudButton>
-        <MudButton Style="text-transform:capitalize;padding-right:1%" StartIcon="@Icons.Material.Filled.AppRegistration" OnClick="@(()=>BeginInsuranceClaim(item))" IconColor="Color.Primary" Disabled="item.IsClaimInitiated">Initiate Insurance Claim</MudButton>
-        <MudIconButton OnClick="@(()=> PrintJobRequest(item.BreakdownID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
-    </MudPaper>
-    <hr />
-}
+<MudPaper Style="padding-bottom: 1px;">
+    <MudToolBar>
+        <MudText Typo="Typo.h6">Reported Breakdowns/Accidents</MudText>
+    </MudToolBar>
+    <MudDivider />
+    @foreach (BreakdownModel item in BreakdownList)
+    {
+        <div style="margin: 24px;">
+            <BreakdownComponent MainModel="@item" HideControls=false ReadOnly=false></BreakdownComponent>
+        </div>
+    }
+</MudPaper>
 
 @code {
 
     private List<BreakdownModel> BreakdownList = new();
-    private bool _busy;
 
     protected override async Task OnInitializedAsync()
     {
         var e = await auth.GetAuthenticationStateAsync();
         int BranchID = int.Parse(e.User.Claims.First(x => x.Type == "BranchID").Value);
-        BreakdownList = iservice.SelectPending(BranchID).ToList();
+        BreakdownList = IBreakdown.SelectPending(BranchID).ToList();
     }
-
-    private async Task CreateJobcard(BreakdownModel Breakdown)
-    {
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-        var parameters = new DialogParameters();
-        parameters.Add("Breakdown", Breakdown.Clone());
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<CreateJobcardDialog>("Initiate Jobcard", parameters, maxWidth);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            JobcardModel jobcard = (JobcardModel)result.Data;
-            nav.NavigateTo("jobcard/" + jobcard.TruckID);
-        }
-        await Task.Delay(200);
-        _busy = false;
-    }
-
-    private async Task BeginInsuranceClaim(BreakdownModel Breakdown)
-    {
-        // if (_busy)
-        // {
-        //     snackbar.Add("Please wait while form is closing!", Severity.Warning);
-        //     return;
-        // }
-        // _busy = true;
-        // var asset = Iasset.SelectByTruckID(Breakdown.TruckID);
-        // var parameters = new DialogParameters();
-        // parameters.Add("BreakdownID", Breakdown.BreakdownID);
-        // parameters.Add("Asset", asset.Clone());
-        // DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        // var dialog = DialogService.Show<InitiateClaimDialog>("Initiate Claim", parameters, maxWidth);
-        // var result = await dialog.Result;
-        // if (!result.Canceled)
-        // {
-        //     InsuranceClaimModel InsModel = (InsuranceClaimModel)result.Data;
-        // }
-        // await Task.Delay(200);
-        // _busy = false;
-        if (_busy)
-        {
-            snackbar.Add("Please wait while form is closing!", Severity.Warning);
-            return;
-        }
-        _busy = true;
-        InsuranceClaimModel model = new() { IsOpen = true };
-        var asset = Iasset.SelectByTruckID(Breakdown.TruckID);
-        model.TruckRegNo = Breakdown.RegNo;
-        model.BreakdownID = Breakdown.BreakdownID;
-        model.Asset = asset;
-        InsuranceClaimModel Model = model;
-        var parameters = new DialogParameters();
-        parameters.Add("Model", Model.Clone());
-        parameters.Add("ReadOnly", false);
-        parameters.Add("Jobcard", true);
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<ClaimDialog>("Initiate Claim", parameters, maxWidth);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            model = (InsuranceClaimModel)result.Data;
-            Breakdown.IsClaimInitiated = true;
-        }
-        model = new();
-        await Task.Delay(200);
-        _busy = false;
-    }
-
-    public Dictionary<string, string> ReportParameters { get; set; } = new();
-
-    private async Task PrintJobRequest(int? BreakdownID)
-    {
-        ReportParameters.Clear();
-        ReportParameters.Add("BreakDownID", BreakdownID.ToString());
-        var parameters = new DialogParameters();
-        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
-        parameters.Add("ReportName", "PrintJobRequestForm");
-
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
-    }
-
 }

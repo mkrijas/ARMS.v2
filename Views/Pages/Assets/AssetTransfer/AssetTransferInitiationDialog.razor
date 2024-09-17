@@ -25,7 +25,7 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+        <MudContainer Style="max-height: 400px; overflow-y: scroll;">
             <EditForm id="AssetTransferForm" Model="@model" OnValidSubmit="Submit">
                 <ObjectGraphDataAnnotationsValidator />
                 <ValidationSummary />
@@ -80,6 +80,25 @@
                             </MudContainer>
                         }
                     </MudItem>
+                    <MudItem xs="12" Class="d-flex">
+                        <MudText Typo="Typo.h6">Transfer Images</MudText>
+                        <MudSpacer />
+                        <MyFileUpload @ref="Mfu" Resize="true" DeleteExistingFile="false" FileName="@Guid.NewGuid().ToString()" FolderName="AssetTransfer" Label="Upload Photos" FilePathChanged="FileUploaded"></MyFileUpload>
+                    </MudItem>
+                    <MudGrid Style="padding: 24px;" Spacing="2" Justify="Justify.Center">
+                        @foreach (var imagePath in model?.ImagePath)
+                        {
+                            @if (imagePath != "")
+                            {
+                                <MudItem xs="12" md="6" Class="d-flex">
+                                    <MudPaper Class="p-2 position-relative" Elevation="3">
+                                        <img src="@imagePath" alt="@imagePath" class="w-100" />
+                                        <MudFab Style="width: 36px; height: 16px; margin-top: -20px; margin-left: -18px;" Icon="@Icons.Material.Rounded.Close" Color="Color.Error" Class="position-absolute top-0 end-0" OnClick="() => DeleteImage(imagePath)" />
+                                    </MudPaper>
+                                </MudItem>
+                            }
+                        }
+                    </MudGrid>
                 </MudGrid>
                 <br />
             </EditForm>
@@ -104,6 +123,7 @@
     public List<AssetModel> ChildAssets { get; set; } = new();
     private int BranchID { get; set; } = 0;
     private bool _busy;
+    MyFileUpload Mfu;
 
     public bool HasPermissionAssetTransferServiceEdit { get; set; } = false;
     public int AssetTransferDocTypeID = 110;
@@ -134,12 +154,56 @@
             model.Asset = new();
         }
         BranchID = model?.InitiatedBranch?.BranchID ?? 0;
-
         if (model != null)
         {
             model.CheckList = Iservice.GetCheckList(model.AssetTransferID).ToList();
         }
         DestinationBranchList = Ibranchservice.Select().Where(d => d.BranchID != BranchID).ToList();
+    }
+
+    private void FileUploaded(string filePath)
+    {
+        model.ImagePath.Add(filePath);
+    }
+
+    private async Task DeleteImage(string imagePath)
+    {
+        if (HasPermissionAssetTransferServiceEdit)
+        {
+            try
+            {
+                var authState = await auth.GetAuthenticationStateAsync();
+                AssetTransferInitiationModel Model = new();
+                Model.AssetTransferID = model.AssetTransferID;
+                Model.Images = imagePath.Normalize();
+                Model.UserInfo.UserID = authState.User.Identity.Name;
+                int a = Iservice.RemovePhoto(Model);
+                if (a == 1)
+                {
+                    if (Mfu.DeleteFile(imagePath))
+                    {
+                        model.ImagePath.Remove(imagePath);
+                    }
+                    Snackbar.Add("Photo removed Successfully", Severity.Success);
+                    return;
+                }
+                else
+                {
+                    Snackbar.Add("Photo not removed !", Severity.Error);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You dont have any permission to Edit AssetTransfer.");
+        }
     }
 
     void Cancel()
@@ -224,6 +288,5 @@
             SubClassID = Iassetservice.SelectByID(obj?.AssetID).SubClass.AssetSubClassID;
             model.CheckList = Iassetsettingsservice.GetSettings(SubClassID).ToList();
         }
-
     }
 }

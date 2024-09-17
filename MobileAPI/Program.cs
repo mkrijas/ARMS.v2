@@ -2,6 +2,8 @@ using ARMS.Extensions;
 using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
+using Core.IDataServices.Operations;
+using DAL.DataServices.Operations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using MobileAPI.Services;
@@ -32,6 +34,13 @@ builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<ITripService, TripService>();
 builder.Services.AddScoped<IBankAccountService, BankAccountService>();
+builder.Services.AddScoped<IProjectTonnageService, ProjectTonnageService>();
+builder.Services.AddScoped<ITripService, TripService>();
+builder.Services.AddScoped<ITruckService, TruckService>();
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<IContactService, ContactService>();
+builder.Services.AddScoped<ITruckStatusUpdateService, TruckStatusUpdateService>();
+
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();
 builder.Services.AddTransient<IClaimsTransformation, AddUserClaimsTransformation>();

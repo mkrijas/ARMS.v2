@@ -13,13 +13,13 @@ using Microsoft.Extensions.Configuration;
 
 namespace ArmsServices.DataServices
 {
-    public class UserStore : IUserStore<UserModel>, 
-                             IUserEmailStore<UserModel>, 
+    public class UserStore : IUserStore<UserModel>,
+                             IUserEmailStore<UserModel>,
                              IUserPhoneNumberStore<UserModel>,
-                             IUserTwoFactorStore<UserModel>, 
-                             IUserPasswordStore<UserModel>, 
-                             IUserRoleStore<UserModel>, 
-                             IUserClaimStore<UserModel>, 
+                             IUserTwoFactorStore<UserModel>,
+                             IUserPasswordStore<UserModel>,
+                             IUserRoleStore<UserModel>,
+                             IUserClaimStore<UserModel>,
                              IUserService
     {
 
@@ -531,6 +531,34 @@ namespace ArmsServices.DataServices
                 return GetModel(dr);
             }
             return null;
+        }
+
+        public bool GetClaimsAsync(string UserID, string DocTypeID, string ClaimValue, int? BranchID, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@DocTypeID", DocTypeID ?? (object)DBNull.Value),
+               new SqlParameter("@ClaimValue", ClaimValue ?? (object)DBNull.Value),
+               new SqlParameter("@branchID", BranchID ?? (object)DBNull.Value),
+               new SqlParameter
+               {
+                   ParameterName = "@result",
+                   SqlDbType = SqlDbType.Bit,
+                   Direction = ParameterDirection.Output
+               }
+            };
+
+            Iservice.ExecuteScalar("[usp.user.UserClaims.Select]", parameters);
+
+            var resultParam = parameters.Find(p => p.ParameterName == "@result");
+            if (resultParam.Value == DBNull.Value)
+            {
+                return false; // or handle the default value as needed
+            }
+            return (bool)resultParam.Value;
         }
     }
 }

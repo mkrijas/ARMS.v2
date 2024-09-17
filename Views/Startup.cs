@@ -176,6 +176,7 @@ namespace Views
             services.AddScoped<ITripAdvanceService, TripAdvanceService>();
             services.AddScoped<IGeneralSettingsService, GeneralSettingsService>();
             services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>();
+            services.AddScoped<IProjectTonnageService, ProjectTonnageService>();
             #endregion
 
         #region ------------Dashboard---------------
@@ -266,6 +267,7 @@ namespace Views
             services.AddScoped<ItdsEntryService, TdsEntryService>();
             services.AddScoped<IGeneralLedgerTransferService, GeneralLedgerTransferService>();
             services.AddScoped<IDayOpenService, DayOpenService>();
+            services.AddScoped<ICreditTransferService, CreditTransferService>();
 
 
             //----IBASE GROUP
@@ -282,7 +284,7 @@ namespace Views
             services.AddScoped<IbaseInterface<InterBranchReimbursementModel>, ReimbursementService>();
             services.AddScoped<IbaseInterface<TdsTransactionModel>, TdsEntryService>();
             services.AddScoped<IbaseInterface<GeneralLedgerTransferModel>, GeneralLedgerTransferService>();
-
+            services.AddScoped<IbaseInterface<CreditTransferModel>, CreditTransferService>();
 
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();
