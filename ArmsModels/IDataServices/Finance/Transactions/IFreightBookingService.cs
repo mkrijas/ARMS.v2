@@ -29,5 +29,6 @@ namespace ArmsServices.DataServices
         IEnumerable<GcTariffModel> GenerateTariffs(int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end);
         IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID);
         GstModel GetGstRate(int? DraftBillID);
+        int DeleteApproved(ProformaInvoiceModel model);  //Cancel Bill
     }
 }
