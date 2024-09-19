@@ -21,7 +21,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string OriginSubArdCode { get; set; }
         [Required]
-        public PartyModel OriginParty { get; set; }
+        public PartyModel OriginParty { get; set; } = new();
         [Required]
         public int? OriginCoaID { get; set; }
         [Required]
@@ -29,7 +29,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string TargetSubArdCode { get; set; }
         [Required]
-        public PartyModel TargetParty { get; set; }
+        public PartyModel TargetParty { get; set; } = new();
         [Required]
         public int? TargetCoaID { get; set; }
         
