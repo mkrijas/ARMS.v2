@@ -231,6 +231,7 @@ namespace ArmsModels.BaseModels
         public decimal? BookValue { get; set; }
         [Required]
         public int? BranchID { get; set; }
+        [Required]
         public int? CoaID { get; set; }
         public decimal? CurrentValue { get; set; }
         public virtual decimal? DepreciableValue
