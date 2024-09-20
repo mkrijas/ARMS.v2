@@ -34,6 +34,7 @@ namespace ArmsModels.BaseModels
         public decimal? Fuel { get; set; }
         public bool Closed { get; set; }
         public bool IsLocked { get; set; }
+        public bool IsMileageOverride { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
         [ValidateComplexType]
         public EventModel StartEvent { get; set; }
@@ -52,6 +53,7 @@ namespace ArmsModels.BaseModels
         public decimal? Freight { get; set; }
         public decimal? Expenses { get; set; }
         public string Gcs { get; set; }
+        public bool IsMileageOverride { get; set; }
     }
 
     public class TripFuelModel

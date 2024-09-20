@@ -35,6 +35,7 @@
             <MudText Typo="Typo.h6" GutterBottom="true">
                 <b>@(Trip != null ? Trip.TripNumberDisplay : "")</b>
                 <MudSwitch Value="@IsLocked" ValueChanged="((bool value)=>TripLocked(value))" Color="Color.Error" Label="Trip Locked" />
+                <MudSwitch Value="@IsMileageOverride" ValueChanged="((bool value)=>OverrideMileageShortage(value))" Color="Color.Error" Label="Override Mileage Shortage" />
             </MudText>
         </CardHeaderContent>
         <CardHeaderActions>
@@ -268,6 +269,8 @@
     public TripModel Trip { get; set; }
     [Parameter]
     public bool IsLocked { get; set; } = false;
+    [Parameter]
+    public bool IsMileageOverride { get; set; } = false;
     string UserID;
     private int? EventCount = 0;
     private bool _busy;
@@ -291,6 +294,7 @@
 
     public bool HasPermissionTripServiceEnableLock { get; set; } = false;
     public bool HasPermissionTripServiceDisableLock { get; set; } = false;
+    public bool HasPermissionTripServiceOverrideMileageShortage { get; set; } = false;
     public int DocTypeIDTrip = 39;
 
     protected override async Task OnInitializedAsync()
@@ -299,6 +303,7 @@
         HasPermissionTripFuelServiceEdit = await Irole.HasClaim(DocTypeIDTripFuel.ToString(), "Edit", ctc.Token);
         HasPermissionTripServiceEnableLock = await Irole.HasClaim(DocTypeIDTrip.ToString(), "EnableLock", ctc.Token);
         HasPermissionTripServiceDisableLock = await Irole.HasClaim(DocTypeIDTrip.ToString(), "DisableLock", ctc.Token);
+        HasPermissionTripServiceOverrideMileageShortage = await Irole.HasClaim(DocTypeIDTrip.ToString(), "OverrideMileageShortage", ctc.Token);
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
         if (Trip.TripID != null)
@@ -530,6 +535,42 @@
         }
     }
 
+    private async Task OverrideMileageShortage(bool value)
+    {
+        if (!value)
+        {
+            if (HasPermissionTripServiceOverrideMileageShortage)
+            {
+                IsMileageOverride = value;
+                tripIservice.OverrideMileageShortage(Trip.TripID, false, UserID);
+            }
+            else
+            {
+                bool? ResultModel = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Override Mileage Shortage.");
+            }
+        }
+        if (value)
+        {
+            if (HasPermissionTripServiceOverrideMileageShortage)
+            {
+                bool? confirm = await DialogService.ShowMessageBox("Confirmation !",
+                    "Are you sure, you want to Override Mileage Shortage ?", "Yes", "No");
+                if (confirm == true)
+                {
+                    IsMileageOverride = value;
+                    tripIservice.OverrideMileageShortage(Trip.TripID, true, UserID);
+                }
+            }
+            else
+            {
+                bool? ResultModel = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You dont have any permission to Enable Override Mileage Shortage.");
+            }
+        }
+    }
     // public Dictionary<string, string> ReportParameters { get; set; } = new();
 
     // private async Task Print(long? TripID)
