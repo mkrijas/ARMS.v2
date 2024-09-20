@@ -1,11 +1,14 @@
 ﻿@using System.Threading;
 @using System.ComponentModel.DataAnnotations
-
+@using ArmsModels.BaseModels.Finance.Transactions
+@using Core.BaseModels.Finance.Transactions;
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject ITripService Iservice
 @inject IPlaceService Iplace
 @inject IEventService Ievent
+@inject ITruckService Itruck
+@inject IMileageShortageReceiptService Imileage
 @inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
@@ -97,11 +100,12 @@
     private bool HasPermissionTripServiceEdit { get; set; } = false;
     private bool HasPermissionTripServiceDelete { get; set; } = false;
     private int DocTypeID = 39;
+    private long? lastTripID;
 
     int BranchID;
     string UserID;
     bool _canEditTime;
-
+    public IEnumerable<MileageShortageReceiptModel> mileages;
 
     private void Cancel()
     {
@@ -221,6 +225,22 @@
             isSubmitting = true;
             try
             {
+                lastTripID = Itruck.GetCurrentTrip(Truck.TruckID);
+                var tripInfo = Iservice.GetTripInfo(lastTripID);
+                bool IsBranchMileage = IbranchSettings.IsEnabled(BranchID, 4);
+                if(IsBranchMileage)
+                {
+                    if (!tripInfo.IsMileageOverride)
+                    {
+                        mileages = Imileage.SelectByTripID(model.TripID);
+                        if (mileages == null || !mileages.Any())
+                        {
+                            snackbar.Add("Create mileage shortage in previous trip", Severity.Warning);
+                            return;
+                        }
+                    }
+                }
+
                 if (AssignedDriver == null)
                 {
                     snackbar.Add("Driver is not assigned", Severity.Warning);

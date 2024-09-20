@@ -1,18 +1,16 @@
 ﻿@page "/ProformaInvoiceView"
 @page "/ProformaInvoiceView/{id:int}"
 @using System.Threading;
-@inject IFreightBillingService Iservice
-@inject IDimensionService dimensionIservice
-@inject ICostCenterService costIservice
-@inject MudBlazor.ISnackbar snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject NavigationManager uriHelper;
 @inject SignalRService signalRService
+@layout BillsLayout
+@inject IFreightBillingService IFreightBilling
+@inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
-@inject IPushNotificationService IpushNotificationService
-@layout BillsLayout    
+@inject IPushNotificationService IPushNotification
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -43,15 +41,19 @@
                 <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.Party.TradeName</MudTd>
-                <MudTd DataLabel="TotalAmount">@string.Concat(context.PeriodFrom?.ToString("dd/MM/yyyy"),"|",context.PeriodTo?.ToString("dd/MM/yyyy"))</MudTd>
+                <MudTd DataLabel="TotalAmount">@string.Concat(context.PeriodFrom?.ToString("dd/MM/yyyy"), "|", context.PeriodTo?.ToString("dd/MM/yyyy"))</MudTd>
                 <MudTd DataLabel="">
                     <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
                     <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
-                    <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Reverse(context))" Color="Color.Error" Title="Reverse" Class="ml-2" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Filled" />
-
+                    @if (context.AuthLevelId == null)
+                    {
+                        @* Disabled = "@(context.AuthLevelId != null)" *@
+                        <MudIconButton OnClick="@(()=> Reverse(context))" Color="Color.Error" Title="Reverse Draft" Class="ml-2" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Filled" />
+                    }
                     @if (@context.AuthLevelId == 99)
                     {
                         <EntryReversedComponent DocTypeID="FreightBillingDocTypeID" DocumentID="context.ProformaInvoiceID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
+                        <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Cancel Bill" Class="ml-2" Icon="@Icons.Material.Filled.DoNotDisturb" Size="Size.Small" Variant="Variant.Filled" />
                         <MudIconButton OnClick="@(()=> PrintAnnexure(context.ProformaInvoiceID))" Color="Color.Tertiary" Title="Annexure Invoice" Class="ml-2" Icon="@Icons.Material.Filled.Assignment" Size="Size.Small" Variant="Variant.Filled" />
                     }
                     else if (@context.AuthLevelId != 100)
@@ -86,6 +88,7 @@
     public bool HasPermissionFreightBillingServiceEditProformaInvoice { get; set; } = false;
     public bool HasPermissionFreightBillingServiceViewProformaInvoice { get; set; } = false;
     public bool HasPermissionFreightBillingServiceReverseProformaInvoice { get; set; } = false;
+    public bool HasPermissionFreightBillingServiceCancelBillProformaInvoice { get; set; } = false;
     public int FreightBillingDocTypeID = 116;
 
     #region SignaIR Notification
@@ -155,6 +158,7 @@
         HasPermissionFreightBillingServiceEditProformaInvoice = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "Edit", ctc.Token);
         HasPermissionFreightBillingServiceViewProformaInvoice = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "View", ctc.Token);
         HasPermissionFreightBillingServiceReverseProformaInvoice = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "Reverse", ctc.Token);
+        HasPermissionFreightBillingServiceCancelBillProformaInvoice = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "Cancel Bill", ctc.Token);
 
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
@@ -182,9 +186,9 @@
         if (HasPermissionFreightBillingServiceViewProformaInvoice)
         {
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            pfm.Gst = Iservice.GetGstRate(pfm.DraftBillID);
+            pfm.Gst = IFreightBilling.GetGstRate(pfm.DraftBillID);
             pfm.UserInfo.UserID = UserID;
-            pfm.BookedGCs = Iservice.GetBilled(pfm.DraftBillID).ToList();
+            pfm.BookedGCs = IFreightBilling.GetBilled(pfm.DraftBillID).ToList();
             DialogParameters parms = new DialogParameters();
             parms.Add("model", pfm.Clone());
             parms.Add("ReadOnly", ReadOnly);
@@ -196,15 +200,15 @@
                 if (HasPermissionFreightBillingServiceEditProformaInvoice)
                 {
                     ProformaInvoiceModel UpatedModel = (ProformaInvoiceModel)result.Data;
-                    var SaveResult = Iservice.UpdateProformaInvoice(UpatedModel);
+                    var SaveResult = IFreightBilling.UpdateProformaInvoice(UpatedModel);
 
                     var ReturnData = UpatedModel;
                     if (SaveResult != -1)
                     {
                         notificationMessage.InitiateBranch = new BranchModel() { BranchID = ReturnData.BranchID };
                         notificationMessage.ReceivedBranch = new BranchModel() { BranchID = ReturnData.BranchID };
-                        notificationMessage.MessageTitle = IpushNotificationService.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
-                        notificationMessage.MessageBody = IpushNotificationService.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
+                        notificationMessage.MessageTitle = IPushNotification.GetMessageTitle(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification");
+                        notificationMessage.MessageBody = IPushNotification.GetMessageBody(ReturnData.NatureOfTransaction, ReturnData.DocumentNumber, "Level 1 Verification", ReturnData.DocumentDate);
                         notificationMessage.RedirectedTo = 0;
                         notificationMessage.ExpiredBy = 7;
                         notificationMessage.DocumentID = SaveResult;
@@ -222,7 +226,7 @@
                 {
                     bool? resultmsg = await DialogService.ShowMessageBox(
                         "Permission denied!",
-                        "You dont have any permission to EditProformaInvoice FreightBilling.");
+                        "You don't have any permission to EditProformaInvoice FreightBilling.");
                 }
             }
             GetPerfomaInvoice(IsApproved, NumberOfRecords);
@@ -231,7 +235,7 @@
         {
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
-                "You dont have any permission to ViewProformaInvoice FreightBilling.");
+                "You don't have any permission to ViewProformaInvoice FreightBilling.");
         }
     }
 
@@ -241,33 +245,76 @@
 
         if (val)
         {
-            collection = Iservice.SelectProformaInvoiceList(BranchID, 0, NumberOfRecords, searchTerm).ToList();
+            collection = IFreightBilling.SelectProformaInvoiceList(BranchID, 0, NumberOfRecords, searchTerm).ToList();
         }
         else
         {
-            collection = Iservice.SelectPendingProformaInvoiceList(BranchID, NumberOfRecords, searchTerm).ToList();
+            collection = IFreightBilling.SelectPendingProformaInvoiceList(BranchID, NumberOfRecords, searchTerm).ToList();
         }
     }
 
-    public async Task Reverse(ProformaInvoiceModel pim)
+    public async Task Delete(ProformaInvoiceModel model)
     {
-        if (HasPermissionFreightBillingServiceReverseProformaInvoice)
+        try
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning !",
-                "Are you sure, you want to reverse document - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
-            if (result == true)
+            if (HasPermissionFreightBillingServiceCancelBillProformaInvoice)
             {
-                Iservice.ReverseProformaInvoice(pim.ProformaInvoiceID, UserID);
-                snackbar.Add("Updated Successfully", Severity.Success);
-                GetPerfomaInvoice(IsApproved, NumberOfRecords);
+                bool? result = await DialogService.ShowMessageBox(
+                    "Warning !",
+                    "Are you sure, you want to Cancel the Bill - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
+                if (result == true)
+                {
+                    int a = IFreightBilling.DeleteApproved(model);
+                    if (a != 0)
+                    {
+                        snackbar.Add("Bill Cancelled Successfully", Severity.Success);
+                    }
+                    else
+                    {
+                        snackbar.Add("Cancelation Failed !", Severity.Success);
+                    }
+                }
+            }
+            else
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You don't have any permission to CancelBill FreightBilling.");
             }
         }
-        else
+        catch (Exception ex)
         {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You dont have any permission to ReverseProformaInvoice FreightBilling.");
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+        GetPerfomaInvoice(IsApproved, NumberOfRecords);
+    }
+
+    public async Task Reverse(ProformaInvoiceModel model)
+    {
+        try
+        {
+            if (HasPermissionFreightBillingServiceReverseProformaInvoice)
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Warning !",
+                    "Are you sure, you want to reverse document - " + model.DocumentNumber + " (" + model.DocumentDate + ") ?");
+                if (result == true)
+                {
+                    IFreightBilling.ReverseProformaInvoice(model.ProformaInvoiceID, UserID);
+                    snackbar.Add("Updated Successfully", Severity.Success);
+                    GetPerfomaInvoice(IsApproved, NumberOfRecords);
+                }
+            }
+            else
+            {
+                bool? result = await DialogService.ShowMessageBox(
+                    "Permission denied!",
+                    "You don't have any permission to ReverseProformaInvoice FreightBilling.");
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
         }
     }
 }

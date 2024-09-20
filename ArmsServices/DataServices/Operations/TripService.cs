@@ -90,6 +90,7 @@ namespace ArmsServices.DataServices
                 TripNumber = reader.GetInt64("TripNumber"),
                 TruckID = reader.GetInt32("TruckID"),
                 IsLocked = reader.GetBoolean("LockedStatus"),
+                IsMileageOverride = reader.GetBoolean("OverrideMileageShortage"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = reader.GetByte("RecordStatus"),
@@ -147,6 +148,17 @@ namespace ArmsServices.DataServices
                new SqlParameter("@UserID", UserID),
             };
             return Iservice.ExecuteNonQuery("[usp.Operation.Trips.Locked.Update]", parameters);
+        }
+
+        public int OverrideMileageShortage(long? TripID, bool Override, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TripID", TripID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Override", Override),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Operation.Trip.OverrideMileageShortage]", parameters);
         }
 
         public bool IsSettled(long? TripID)
@@ -241,6 +253,7 @@ namespace ArmsServices.DataServices
                     Mileage = reader.GetDecimal("Mileage"),   //.HasValue ? Math.Round(reader.GetDecimal("Mileage") ?? 0) : null,
                     Expenses = reader.GetDecimal("Expenses"),
                     Freight = reader.GetDecimal("Freight"),
+                    IsMileageOverride = reader.GetBoolean("OverrideMileageShortage"),
                 };
             }
             return null;
