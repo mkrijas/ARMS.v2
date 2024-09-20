@@ -30,7 +30,6 @@ namespace ArmsModels.BaseModels
         [Required]
         public string OriginPartyType { get; set; } // Supplier/Customer/Renter/SisterConcern
         [Required]
-        //public string OriginSubArdCode { get; set; }
         public SubArdCodeModel OriginSubArdCode { get; set; } = new();
         [Required]
         public PartyModel OriginParty { get; set; } = new();
@@ -39,7 +38,6 @@ namespace ArmsModels.BaseModels
         [Required]
         public string TargetPartyType { get; set; } // Supplier/Customer/Renter/SisterConcern
         [Required]
-        //public string TargetSubArdCode { get; set; }
         public SubArdCodeModel TargetSubArdCode { get; set; } = new();
         [Required]
         public PartyModel TargetParty { get; set; } = new();

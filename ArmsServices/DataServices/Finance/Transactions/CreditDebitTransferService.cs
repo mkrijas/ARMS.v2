@@ -176,7 +176,6 @@ namespace ArmsServices.DataServices
                       PartyCode = dr.GetString("OriginPartyCode"),
                       TradeName = dr.GetString("OriginPartyName") 
                     },
-                //OriginSubArdCode = dr.GetString("OriginSubArdCode"),
                 OriginSubArdCode = new SubArdCodeModel()
                 {
                     SubArdCode = dr.GetString("OriginSubArdCode"),
@@ -190,7 +189,6 @@ namespace ArmsServices.DataServices
                       PartyCode = dr.GetString("TargetPartyCode"),
                       TradeName = dr.GetString("TargetPartyName") 
                     },
-                //TargetSubArdCode = dr.GetString("TargetSubArdCode"),
                 TargetSubArdCode = new SubArdCodeModel()
                 {
                     SubArdCode = dr.GetString("TargetSubArdCode"),
