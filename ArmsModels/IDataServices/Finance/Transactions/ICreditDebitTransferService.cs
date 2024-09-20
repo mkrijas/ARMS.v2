@@ -8,8 +8,8 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public interface ICreditTransferService : IbaseInterface<CreditTransferModel>
+    public interface ICreditDebitTransferService : IbaseInterface<CreditDebitTransferModel>
     {          
-        IEnumerable<CreditTransferModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);             
+        IEnumerable<CreditDebitTransferModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);             
     }
 }

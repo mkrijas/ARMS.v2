@@ -267,7 +267,7 @@ namespace Views
             services.AddScoped<ItdsEntryService, TdsEntryService>();
             services.AddScoped<IGeneralLedgerTransferService, GeneralLedgerTransferService>();
             services.AddScoped<IDayOpenService, DayOpenService>();
-            services.AddScoped<ICreditTransferService, CreditTransferService>();
+            services.AddScoped<ICreditDebitTransferService, CreditDebitTransferService>();
 
 
             //----IBASE GROUP
@@ -284,7 +284,7 @@ namespace Views
             services.AddScoped<IbaseInterface<InterBranchReimbursementModel>, ReimbursementService>();
             services.AddScoped<IbaseInterface<TdsTransactionModel>, TdsEntryService>();
             services.AddScoped<IbaseInterface<GeneralLedgerTransferModel>, GeneralLedgerTransferService>();
-            services.AddScoped<IbaseInterface<CreditTransferModel>, CreditTransferService>();
+            services.AddScoped<IbaseInterface<CreditDebitTransferModel>, CreditDebitTransferService>();
 
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();
