@@ -1,15 +1,15 @@
-﻿@page "/CreditTransfer"
-@page "/CreditTransfer/{id:int}"
-@inherits ViewComponentBase<CreditTransferModel>
+﻿@page "/CreditDebitTransfer"
+@page "/CreditDebitTransfer/{id:int}"
+@inherits ViewComponentBase<CreditDebitTransferModel>
 @* @inject ICreditTransferService Iservice *@
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
             <ToolBarContent>
-                <MudText Typo="Typo.h6">Credit Transfer</MudText>
+                <MudText Typo="Typo.h6">Credit/Debit Transfer</MudText>
                 <MudTooltip Text="Add New">
-                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new CreditTransferModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                    <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new CreditDebitTransferModel(),false))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="searchTerm" Placeholder="Search ..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
@@ -23,17 +23,17 @@
                 <MudCheckBox Label="Approved Entries" ValueChanged="((bool value)=>ToggleData(value))" Value="@ShowApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<CreditTransferModel, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<CreditTransferModel, object>(x=> x.ID)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<CreditDebitTransferModel, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<CreditDebitTransferModel, object>(x=> x.ID)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
                 @* <MudTh><MudTableSortLabel SortBy="new Func<CreditTransferModel, object>(x=> x.TransactionMode)">Transfer Type</MudTableSortLabel></MudTh> *@
-                <MudTh><MudTableSortLabel SortBy="new Func<CreditTransferModel, object>(x=> x.TransactionMode)">Transfer Type</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<CreditTransferModel, object>(x=> x.OriginParty.TradeName)">From</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<CreditTransferModel, object>(x=> x.TargetParty.TradeName)">To</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<CreditTransferModel, object>(x=> x.TotalAmount)">Total Amount</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<CreditDebitTransferModel, object>(x=> x.TransactionMode)">Transfer Type</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<CreditDebitTransferModel, object>(x=> x.OriginParty.TradeName)">From</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<CreditDebitTransferModel, object>(x=> x.TargetParty.TradeName)">To</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<CreditDebitTransferModel, object>(x=> x.TotalAmount)">Total Amount</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate</MudTd>
+                <MudTd DataLabel="DocumentDate">@context.DocumentDate.Value.ToString("dd/MM/yyyy")</MudTd>
                 <MudTd DataLabel="DocumentNumber">
                     @context.DocumentNumber
                     @if (context.AuthLevelId == 100)
@@ -41,9 +41,9 @@
                         <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
                     }
                 </MudTd>
-                <MudTd DataLabel="mode">@context.TransactionMode </MudTd>
-                <MudTd DataLabel="Party">@context.OriginParty.TradeName </MudTd>
-                <MudTd DataLabel="Party">@context.TargetParty.TradeName </MudTd>
+                <MudTd DataLabel="mode">@context.TransactionModeDisplay</MudTd>
+                <MudTd DataLabel="Party">@context.BranchName | @context.OriginPartyType | @context.OriginParty.TradeName</MudTd>
+                <MudTd DataLabel="Party">@context.OtherBranchName | @context.TargetPartyType | @context.TargetParty.TradeName</MudTd>
                 <MudTd DataLabel="TotalAmount">@context.TotalAmount</MudTd>
                 <MudTd DataLabel="">
                     <MudIconButton OnClick="@(()=> OpenForm(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
@@ -71,7 +71,7 @@
 
 @code {
 
-    protected override List<CreditTransferModel> collection { get; set; } = new List<CreditTransferModel>();
+    protected override List<CreditDebitTransferModel> collection { get; set; } = new List<CreditDebitTransferModel>();
     protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
         {
             DocumentTypeID = 140,
@@ -89,7 +89,7 @@
         }
     }
 
-    protected override async Task OpenForm(CreditTransferModel rModel, bool ReadOnly, bool DisableAddition = false)
+    protected override async Task OpenForm(CreditDebitTransferModel rModel, bool ReadOnly, bool DisableAddition = false)
     {
         if (_busy)
         {
@@ -105,7 +105,7 @@
         var result = await dialog.Result;
         if (!result.Canceled)
         {
-            var ReturnData = (CreditTransferModel)result.Data;
+            var ReturnData = (CreditDebitTransferModel)result.Data;
         }
         LoadData(ShowApproved, NumberOfRecords);
         await Task.Delay(200);

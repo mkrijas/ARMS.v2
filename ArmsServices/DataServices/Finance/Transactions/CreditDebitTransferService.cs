@@ -8,10 +8,10 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public class CreditTransferService : ICreditTransferService
+    public class CreditDebitTransferService : ICreditDebitTransferService
     {
         IDbService Iservice;
-        public CreditTransferService(IDbService iservice)
+        public CreditDebitTransferService(IDbService iservice)
         {
             Iservice = iservice;
         }
@@ -36,7 +36,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.CreditTransfer.Delete]", parameters);
         }
 
-        public IEnumerable<CreditTransferModel> Select(int? BranchID)
+        public IEnumerable<CreditDebitTransferModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -50,7 +50,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<CreditTransferModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
+        public IEnumerable<CreditDebitTransferModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -68,7 +68,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public IEnumerable<CreditTransferModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
+        public IEnumerable<CreditDebitTransferModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -86,14 +86,14 @@ namespace ArmsServices.DataServices
             }
         }       
 
-        public CreditTransferModel SelectByID(int? ID)
+        public CreditDebitTransferModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ReceiptID", ID),
                new SqlParameter("@Operation", "ByID")
             };
-            CreditTransferModel model = new();
+            CreditDebitTransferModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.CreditTransfer.Select]", parameters))
             {
                 model = GetModel(dr);
@@ -102,7 +102,7 @@ namespace ArmsServices.DataServices
         }
   
 
-        public IEnumerable<CreditTransferModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID)
+        public IEnumerable<CreditDebitTransferModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -118,7 +118,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public CreditTransferModel Update(CreditTransferModel model)
+        public CreditDebitTransferModel Update(CreditDebitTransferModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -126,8 +126,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TransactionMode", model.TransactionMode),
                new SqlParameter("@OriginPartyType", model.OriginPartyType),
                new SqlParameter("@TargetPartyType", model.TargetPartyType),
-               new SqlParameter("@OriginSubArdCode", model.OriginSubArdCode),
-               new SqlParameter("@TargetSubArdCode", model.TargetSubArdCode),
+               new SqlParameter("@OriginSubArdCode", model.OriginSubArdCode.SubArdCode),
+               new SqlParameter("@TargetSubArdCode", model.TargetSubArdCode.SubArdCode),
                new SqlParameter("@OriginPartyID", model.OriginParty.PartyID),
                new SqlParameter("@TargetPartyID", model.TargetParty.PartyID),
                new SqlParameter("@OriginCoaID", model.OriginCoaID),
@@ -152,33 +152,55 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-        private CreditTransferModel GetModel(IDataRecord dr)
+        private CreditDebitTransferModel GetModel(IDataRecord dr)
         {
-            return new CreditTransferModel
+            return new CreditDebitTransferModel
             {
                 ID = dr.GetInt32("ID"),
-                TransactionMode = dr.GetInt32("TransactionMode"),
-                OriginParty = new PartyModel() { PartyID = dr.GetInt32("OriginPartyID"), TradeName = dr.GetString("OriginPartyName") },
-                TargetParty = new PartyModel() { PartyID = dr.GetInt32("TargetPartyID"), TradeName = dr.GetString("TargetPartyName") },
-                OriginPartyType = dr.GetString("OriginPartyType"),
-                OriginSubArdCode = dr.GetString("OriginSubArdCode"),
-                OriginCoaID = dr.GetInt32("OriginCoaID"),
-                TargetSubArdCode = dr.GetString("TargetSubArdCode"),
-                TargetPartyType= dr.GetString("TargetPartyType"),
-                TargetCoaID = dr.GetInt32("TargetCoaID"),                
-                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
-                BranchID = dr.GetInt32("BranchID"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
                 MID = dr.GetInt32("MID"),
-                AuthLevelId = dr.GetInt32("AuthLevelId"),
-                AuthStatus = dr.GetString("AuthStatus"),                
-                FileName = dr.GetString("FilePath"),                
-                TotalAmount = dr.GetDecimal("TotalAmount"),
-                Narration = dr.GetString("Narration"),
+                BranchID = dr.GetInt32("BranchID"),
+                BranchName = dr.GetString("BranchName"),
+                OtherBranchID = dr.GetInt32("OtherBranch"),
+                OtherBranchName = dr.GetString("OtherBranchName"),
                 InterBranchTranID = dr.GetInt32("InterBranchTranID"),
                 IsInterBranch = dr.GetBoolean("IsInterBranch"),
-                OtherBranchID = dr.GetInt32("OtherBranch"),               
+                TransactionMode = dr.GetInt32("TransactionMode"),
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
+                OriginPartyType = dr.GetString("OriginPartyType"),
+                OriginCoaID = dr.GetInt32("OriginPartyCoa"),
+                OriginParty = new PartyModel() 
+                    { 
+                      PartyID = dr.GetInt32("OriginPartyID"),
+                      PartyCode = dr.GetString("OriginPartyCode"),
+                      TradeName = dr.GetString("OriginPartyName") 
+                    },
+                //OriginSubArdCode = dr.GetString("OriginSubArdCode"),
+                OriginSubArdCode = new SubArdCodeModel()
+                {
+                    SubArdCode = dr.GetString("OriginSubArdCode"),
+                    TranType = dr.GetString("OriginTranType"),
+                },
+                TargetPartyType= dr.GetString("TargetPartyType"),
+                TargetCoaID = dr.GetInt32("TargetPartyCoa"),                
+                TargetParty = new PartyModel()  
+                    { 
+                      PartyID = dr.GetInt32("TargetPartyID"),
+                      PartyCode = dr.GetString("TargetPartyCode"),
+                      TradeName = dr.GetString("TargetPartyName") 
+                    },
+                //TargetSubArdCode = dr.GetString("TargetSubArdCode"),
+                TargetSubArdCode = new SubArdCodeModel()
+                {
+                    SubArdCode = dr.GetString("TargetSubArdCode"),
+                    TranType = dr.GetString("TargetTranType"),
+                },
+                Narration = dr.GetString("Narration"),
+                TotalAmount = dr.GetDecimal("TotalAmount"),
+                FileName = dr.GetString("FilePath"),                
+                AuthLevelId = dr.GetInt32("AuthLevelId"),
+                AuthStatus = dr.GetString("AuthStatus"),                
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
