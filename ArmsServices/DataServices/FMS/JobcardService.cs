@@ -17,12 +17,13 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-        public int AddPurchase(int? JobCardID, int? PID)
+        public int AddPurchase(int? JobCardID, int? PID, int? DocTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@JobcardID", JobCardID),
                new SqlParameter("@PID", PID),
+               new SqlParameter("@DocTypeID", DocTypeID)
             };
             return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.AddPurchase]", parameters);
         }
