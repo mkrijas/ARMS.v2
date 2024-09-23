@@ -75,7 +75,18 @@ namespace MobileAPI.Controllers
             HasPermissionEventServiceEdit = _userService.GetClaimsAsync(model.UserInfo.UserID, DocTypeID.ToString(), "Edit", model.BranchID, ctc.Token);
             if (HasPermissionEventServiceEdit)
             {
-                if (model.EventTime <= DateTime.Now)
+
+                DateTime originalDateTime = DateTime.Now;
+                DateTime dateTimeWithoutSeconds = new DateTime(
+                    originalDateTime.Year,
+                    originalDateTime.Month,
+                    originalDateTime.Day,
+                    originalDateTime.Hour,
+                    originalDateTime.Minute,
+                    0
+                );
+
+                if (model.EventTime <= dateTimeWithoutSeconds)
                 {
                     List<GcSetModel> gcSetList = _Igc.SelectToUnload(model.TripID);
                     if (gcSetList != null && gcSetList.Count() != 0)
