@@ -9,11 +9,15 @@
 @inject AuthenticationStateProvider auth
 
 <MudGrid Spacing="4">
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
+        <MudAutocomplete T="RepairJobModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Job Group" Value="SelectedGroup" ValueChanged="GroupChanged" ResetValueOnEmptyText="true"
+                         SearchFunc="SearchGroup" ToStringFunc="@(e => (e.JobGroup == null || e.JobSubGroup == null) ? null : string.Format("{0} | {1}",e?.JobGroup.Title,e?.JobSubGroup.Title))"></MudAutocomplete>
+    </MudItem>
+    <MudItem xs="12" md="6">
         <MudAutocomplete T="RepairJobModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Job" Value="SelectedJob" ValueChanged="JobChanged" ResetValueOnEmptyText="true"
                          SearchFunc="SearchJob" ToStringFunc="@(e => e == null ? null : $"{e.Title}")"></MudAutocomplete>
     </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
         <MudSelect T="MechanicModel" MultiSelection="true" Label="Assign Mechanic/s" ToStringFunc="@(p=> p.MechanicName)"
                    SelectedValuesChanged="mechanicChanged" SelectedValues="SelectedMechanics" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Secondary">
             @foreach (var item in Mechanics)
@@ -22,10 +26,10 @@
             }
         </MudSelect>
     </MudItem>
-    <MudItem xs="3" md="2">
+    <MudItem xs="12" md="3">
         <MudCheckBox @bind-Checked="UnderWarranty" T="bool" ValueChanged="@(UnderWarranty => WarrantyCheck(UnderWarranty))">Under Warranty</MudCheckBox>
     </MudItem>
-    <MudItem xs="9" md="2">
+    <MudItem xs="12" md="3">
         @if (UnderWarranty)
         {
             <MudDatePicker @bind-Date="model.WarrantyExpiryDate" Label="Warranty Expiry Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" Required />
@@ -43,29 +47,47 @@
     [Parameter] public EventCallback<bool> SetJobs { get; set; }
     [Parameter] public bool ClearOnSelect { get; set; } = false;
     private MudAutocomplete<RepairJobModel> _autoComplete { get; set; } = new();
+    public RepairJobModel SelectedGroup = new();
     public RepairJobModel SelectedJob = new();
     private WorkshopModel SelectedWorkshop = new();
-    private List<RepairJobModel> jobslist = new();
+    private List<RepairJobModel> Grouplist = new();
+    private List<RepairJobModel> Joblist = new();
     private List<MechanicModel> Mechanics = new();
     public HashSet<MechanicModel> SelectedMechanics;
     public bool UnderWarranty = false;
 
     protected override void OnInitialized()
     {
-        jobslist = Ijob.Select(null).ToList();
+        Grouplist = Ijob.SelectJobGroupAndSub().ToList();
         model.WorkshopID = workshop?.WorkshopID;
         Mechanics = Imechanic.SelectByWorkshop(model?.WorkshopID).ToList();
     }
 
+    private async Task<IEnumerable<RepairJobModel>> SearchGroup(string searchString)
+    {
+        return await Task.FromResult(Grouplist.Where(x => x.JobSubGroup.Title.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)
+                                                        || x.JobGroup.Title.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
     private async Task<IEnumerable<RepairJobModel>> SearchJob(string searchString)
     {
-        return await Task.FromResult(jobslist.Where(x => x.Title.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+        return await Task.FromResult(Joblist.Where(x => x.JobSubGroup.Title.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
     }
 
     private async Task WarrantyCheck(bool a)
     {
         UnderWarranty = a;
         model.WarrantyCheck = UnderWarranty;
+    }
+
+    private async Task GroupChanged(RepairJobModel obj)
+    {
+        @if (obj != null && obj.JobSubGroup.ID != null)
+        {
+            Joblist = Ijob.SelectJob(null, null, null).ToList();
+            Joblist = Joblist.Where(x => (x.JobSubGroup.ID == obj.JobSubGroup.ID)).ToList();
+        }
+        SelectedGroup = obj;
     }
 
     private async Task JobChanged(RepairJobModel obj)

@@ -27,11 +27,27 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.RepairJob.Delete]", parameters);
         }
 
-        public IEnumerable<RepairJobModel> Select(int? RepairJobID)
+        public IEnumerable<RepairJobModel> SelectJob(int? RepairJobID, int? RepairJobGroupID, int? RepairJobSubGroupID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@RepairJobID", RepairJobID)
+               new SqlParameter("@Operation", "JOBS"),
+               new SqlParameter("@RepairJobID", RepairJobID),
+               new SqlParameter("@RepairJobGroupID", RepairJobGroupID),
+               new SqlParameter("@RepairJobSubGroupID", RepairJobSubGroupID)
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RepairJob.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
+        public IEnumerable<RepairJobModel> SelectJobGroupAndSub()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {               
+               new SqlParameter("@Operation", "GROUPANDSUB"),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RepairJob.Select]", parameters))
@@ -46,7 +62,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@RepairJobID", ID),
             };
-            
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RepairJob.Select]", parameters))
             {
                 return GetModel(dr);
@@ -56,8 +72,6 @@ namespace ArmsServices.DataServices
 
         public IEnumerable<RepairJobGroup> SelectGroup()
         {
-            
-
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RepairJobGroup.Select]", null))
             {
                 yield return new RepairJobGroup()
@@ -66,7 +80,7 @@ namespace ArmsServices.DataServices
                     Title = dr.GetString("Title"),
                 };
             }
-           
+
         }
 
         public IEnumerable<RepairJobGroup> SelectSubGroup(int? GroupID)
@@ -75,7 +89,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@RepairJobGroupID", GroupID),
             };
-        
+
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RepairJobSubGroup.Select]", parameters))
             {
                 yield return new RepairJobGroup()
