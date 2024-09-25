@@ -196,7 +196,7 @@ namespace MobileAPI.Controllers
                         }
                         else if (model.EventTypeID == 3 && model.TruckEventID == null)
                         {
-                            var gcs = _Igc.SelectToDispatch(CurrentTrip.TripID);
+                            var gcs = _Igc.SelectToDispatch(model.TripID);
                             if (!gcs.Any())
                             {
                                 return result = "No Gcs to Dispatch";
@@ -222,7 +222,7 @@ namespace MobileAPI.Controllers
                             {
                                 foreach (GcSetModel item in SelectedGCs)
                                 {
-                                    _Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                                    _Igc.BeginUnload(model.TripID, item.GcSetID);
                                 }
                             }
                         }
