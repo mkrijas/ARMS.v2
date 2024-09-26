@@ -195,7 +195,10 @@ namespace MobileAPI.Controllers
                         {
                             return result = "Cannot enter an event twice in a row";
                         }
-                       
+                       else if (PreEvent.EventReading > model.EventReading)
+                        {
+                            return result = "Previous Odometer reading cannot be greater than current reading";
+                        }
                         else if (PreEventType?.LimitPostEvent is not null & PreEventType.LimitPostEvent != model.EventTypeID /*& CurrentTrip.UserInfo.RecordStatus == 3*/)
                         {
                             return result = "Due to previous event this Event is restricted!";

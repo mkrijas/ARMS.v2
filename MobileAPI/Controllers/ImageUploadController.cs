@@ -7,11 +7,11 @@ namespace MobileAPI.Controllers
     [ApiController]
     public class ImageUploadController : ControllerBase
     {
-        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly string _mainProjectWwwRoot;
 
-        public ImageUploadController(IWebHostEnvironment webHostEnvironment)
+        public ImageUploadController(IConfiguration configuration)
         {
-            _webHostEnvironment = webHostEnvironment;
+            _mainProjectWwwRoot = configuration["MainProjectSettings:WwwRootPath"];
         }
         [HttpPost("upload")]
         public async Task<IActionResult> Upload(IFormFile file)
@@ -23,7 +23,7 @@ namespace MobileAPI.Controllers
             var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
 
             // Construct the full path
-            var path = Path.Combine(_webHostEnvironment.WebRootPath, "ArmsStaticFiles", "Gc", "Acknowledgement", uniqueFileName);
+            var path = Path.Combine(_mainProjectWwwRoot, "ArmsStaticFiles", "Gc", "Acknowledgement", uniqueFileName);
 
             // Ensure the directory exists
             Directory.CreateDirectory(Path.GetDirectoryName(path));
