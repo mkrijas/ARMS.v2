@@ -391,51 +391,51 @@ namespace ArmsServices.DataServices
         {
             if (BusinessNature == "Supplier")
             {
-                switch (NatureOfTransaction)
+                switch (NatureOfTransaction.ToLower())
                 {
-                    case "Deposit":
+                    case "deposit":
                         return GetVendorDepositCoaID(PartyID);
-                    case "Payable":
+                    case "payable":
                         return GetVendorPayableCoaID(PartyID);
-                    case "Prepayment":
+                    case "prepayment":
                         return GetVendorPrepaymentCoaID(PartyID);
                 }
             }
 
             if (BusinessNature == "Customer")
             {
-                switch (NatureOfTransaction)
+                switch (NatureOfTransaction.ToLower())
                 {
-                    case "Deposit":
+                    case "deposit":
                         return GetCustomerDepositCoaID(PartyID);
-                    case "Receivable":
+                    case "receivable":
                         return GetCustomerReceivableCoaID(PartyID);
-                    case "Prepayment":
+                    case "prepayment":
                         return GetCustomerPrepaymentCoaID(PartyID);
                 }
             }
 
             if (BusinessNature == "Renter")
             {
-                switch (NatureOfTransaction)
+                switch (NatureOfTransaction.ToLower())
                 {
-                    case "Deposit":
+                    case "deposit":
                         return GetRenterRentCoaID(PartyID);
-                    case "Rent":
+                    case "rent":
                         return GetRenterDepositCoaID(PartyID);
-                    case "Other":
+                    case "other":
                         return GetRenterOtherCoaID(PartyID);
                 }
             }
             if (BusinessNature == "SisterConcern")
             {
-                switch (NatureOfTransaction)
+                switch (NatureOfTransaction.ToLower())
                 {
-                    case "Deposit":
+                    case "deposit":
                         return GetSisterDepositCoaID(PartyID);
-                    case "Trade":
+                    case "trade":
                         return GetSisterTradeCoaID(PartyID);
-                    case "Prepayment":
+                    case "prepayment":
                         return GetSisterPrepaymentCoaID(PartyID);
                 }
             }
