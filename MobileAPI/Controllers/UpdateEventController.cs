@@ -67,9 +67,10 @@ namespace MobileAPI.Controllers
         public async Task<string> UpdateEvents(EventUpdateModel updateModel)
         {
             EventModel model = updateModel.Event;
-            GcSetModel gcSet = updateModel.GcSet;
-            ((HashSet<GcSetModel>)SelectedGCs).Add(gcSet);
+            List<GcSetModel> gcSet = updateModel.GcSet;
+            //((HashSet<GcSetModel>)SelectedGCs).Add(gcSet);
             //, [FromQuery] GcSetModel gcSet
+            SelectedGCs = gcSet;
             string result = "";
             //HasPermissionEventServiceEdit = await _roleService.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
             HasPermissionEventServiceEdit = _userService.GetClaimsAsync(model.UserInfo.UserID, DocTypeID.ToString(), "Edit", model.BranchID, ctc.Token);
@@ -194,13 +195,9 @@ namespace MobileAPI.Controllers
                         {
                             return result = "Cannot enter an event twice in a row";
                         }
-                        else if (model.EventTypeID == 3 && model.TruckEventID == null)
+                       else if (PreEvent.EventReading > model.EventReading)
                         {
-                            var gcs = _Igc.SelectToDispatch(CurrentTrip.TripID);
-                            if (!gcs.Any())
-                            {
-                                return result = "No Gcs to Dispatch";
-                            }
+                            return result = "Previous Odometer reading cannot be greater than current reading";
                         }
                         else if (PreEventType?.LimitPostEvent is not null & PreEventType.LimitPostEvent != model.EventTypeID /*& CurrentTrip.UserInfo.RecordStatus == 3*/)
                         {
@@ -215,6 +212,14 @@ namespace MobileAPI.Controllers
                                     return result = "No GCs selected to Unload!";
                                 }
                             }
+                            else if (model.EventTypeID == 3 && model.TruckEventID == null)
+                            {
+                                var gcs = _Igc.SelectToDispatch(model.TripID);
+                                if (!gcs.Any())
+                                {
+                                    return result = "No Gcs to Dispatch";
+                                }
+                            }
 
                             model = Ievent.Update(model);
 
@@ -222,7 +227,7 @@ namespace MobileAPI.Controllers
                             {
                                 foreach (GcSetModel item in SelectedGCs)
                                 {
-                                    _Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                                    _Igc.BeginUnload(model.TripID, item.GcSetID);
                                 }
                             }
                         }

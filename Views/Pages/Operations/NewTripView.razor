@@ -18,7 +18,7 @@
     <DialogContent>
         <EditForm id="formStartTrip" Model="@model" OnValidSubmit="OnValidSubmit">
             <ObjectGraphDataAnnotationsValidator />
-            <ValidationSummary/>            
+            <ValidationSummary />
             <MudGrid Spacing="4">
                 @if (IsLoading)
                 {
@@ -43,7 +43,7 @@
                     <MudItem xs="12" md="12">
                         <MudCheckBox Checked="@startWithLoading" Label="Start with Loading" T="bool" CheckedChanged="EventSelected"></MudCheckBox>
                     </MudItem>
-                }              
+                }
                 @if (_canEditTime)
                 {
                     <MudItem xs="12" md="6">
@@ -52,11 +52,11 @@
                 }
                 <MudItem xs="12" md="6">
                     <MudNumericField HideSpinButtons @bind-Value="currentEvent.EventReading" Label="Audometer Reading" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudAutocomplete T="PlaceModel" Variant="Variant.Outlined" Label="Origin" Value="Origin" ValueChanged="OriginChanged" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Margin="Margin.Dense"></MudAutocomplete>
-                 </MudItem>
-                 @if (!startWithLoading)
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudAutocomplete T="PlaceModel" Variant="Variant.Outlined" Label="Origin" Value="Origin" ValueChanged="OriginChanged" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Margin="Margin.Dense"></MudAutocomplete>
+                </MudItem>
+                @if (!startWithLoading)
                 {
                     <MudItem xs="12" md="6">
                         <MudAutocomplete T="PlaceModel" Variant="Variant.Outlined" Label="Destination" Value="Destination" ValueChanged="DestinationChanged" ResetValueOnEmptyText="true" SearchFunc="SearchPlaces" ToStringFunc="@(e => e == null ? null : $"{e.PlaceName}")" Margin="Margin.Dense"></MudAutocomplete>
@@ -122,12 +122,12 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        _canEditTime = IbranchSettings.IsEnabled(BranchID,2);
+        _canEditTime = IbranchSettings.IsEnabled(BranchID, 2);
 
         places = new();
         places = Iplace.Select(0, null).ToList();
         EventTypes = Ievent.GetEventTypes().Where(x => x.IsTripRelated).ToList();
-        DestinationEventTypes = EventTypes.Where(s => s.EventTypeID != 1 &&( startWithLoading == false && s.EventTypeID > 1 || startWithLoading == true && s.EventTypeID > 2)).ToList();
+        DestinationEventTypes = EventTypes.Where(s => s.EventTypeID != 1 && (startWithLoading == false && s.EventTypeID > 1 || startWithLoading == true && s.EventTypeID > 2)).ToList();
         lastEvent = Ievent.GetCurrentEvent(Truck.TruckID);
         if (EventTypes != null && EventTypes.Count() != 0 && EventTypes.Any(x => x.EventTypeID == 1))
         {
@@ -141,10 +141,10 @@
 
         #region Add Start event
 
-        currentEvent.BranchID = BranchID;       
+        currentEvent.BranchID = BranchID;
         currentEvent.DriverID = AssignedDriver?.DriverID;
-        currentEvent.EventTime = DateTime.Now;        
-        currentEvent.EventTypeID = 1;        
+        currentEvent.EventTime = DateTime.Now;
+        currentEvent.EventTypeID = 1;
         currentEvent.TruckID = Truck.TruckID;
         currentEvent.UserInfo.UserID = UserID;
 
@@ -154,6 +154,10 @@
         model.BranchID = BranchID;
         model.TruckID = Truck.TruckID;
         model.TripDate = currentEvent.EventTime.Value.Date;
+        model.EventTime = currentEvent.EventTime;
+        model.EventReading = currentEvent.EventReading;
+        model.OriginID = currentEvent.OriginID;
+        model.DestinationID = currentEvent.DestinationID;
     }
 
     private async Task<IEnumerable<PlaceModel>> SearchPlaces(string searchString)
@@ -167,10 +171,11 @@
         Origin = _origin;
         currentEvent.OriginID = _origin?.PlaceID;
         currentEvent.OriginName = _origin?.PlaceName;
-        if(startWithLoading)
+        if (startWithLoading)
         {
             currentEvent.DestinationID = _origin?.PlaceID;
-        }       
+        }
+        model.OriginID = currentEvent.OriginID;
     }
 
     private void DestinationChanged(PlaceModel _destination)
@@ -178,7 +183,8 @@
         Destination = _destination;
         currentEvent.DestinationID = _destination?.PlaceID;
         currentEvent.DestinationName = _destination?.PlaceName;
-    }    
+        model.DestinationID = currentEvent.DestinationID;
+    }
 
     private void EventSelected(bool startLoading)
     {
@@ -201,6 +207,7 @@
                     currentEvent.NextEventTypeID = EventTypes.FirstOrDefault(x => x.EventTypeID == 2).DefaultNextEventTypeID;
                 }
                 currentEvent.DestinationID = currentEvent.OriginID;
+                model.DestinationID = currentEvent.DestinationID;
             }
         }
         startWithLoading = startLoading;
@@ -225,17 +232,17 @@
             isSubmitting = true;
             try
             {
-                lastTripID = Itruck.GetCurrentTrip(Truck.TruckID);
+                lastTripID = Itruck.GetLastTrip(Truck.TruckID);
                 TripInfoModel tripInfo = Iservice.GetTripInfo(lastTripID);
                 bool IsBranchMileage = IbranchSettings.IsEnabled(BranchID, 4);
-                if(IsBranchMileage && lastTripID != null)
+                if (IsBranchMileage && lastTripID != null)
                 {
                     if (!tripInfo.IsMileageOverride)
                     {
                         mileages = Imileage.SelectByTripID(lastTripID);
                         if (mileages == null || !mileages.Any())
                         {
-                            snackbar.Add(string.Format("Complete mileage shortage for trip {0}",tripInfo.TripNumber), Severity.Warning);
+                            snackbar.Add(string.Format("Complete mileage shortage for trip {0}", tripInfo.TripNumber), Severity.Warning);
                             return;
                         }
                     }
@@ -250,26 +257,30 @@
                 model.DriverID = AssignedDriver?.DriverID;
                 model.TripDate = currentEvent.EventTime.Value.Date;
                 model.UserInfo.UserID = UserID;
+                model.EventTime = currentEvent.EventTime;
+                model.EventReading = currentEvent.EventReading;
+                model.OriginID = currentEvent.OriginID;
+                model.DestinationID = currentEvent.DestinationID;
 
                 if (ValidateEvent())
                 {
                     model = Iservice.Update(model);
-                    #region Add Start event
-                    if (model.TripID != null)
-                    {
-                        currentEvent.TripID = model.TripID;
-                        currentEvent = Ievent.Update(currentEvent);
+                    // #region Add Start event
+                    // if (model.TripID != null)
+                    // {
+                    //     currentEvent.TripID = model.TripID;
+                    //     currentEvent = Ievent.Update(currentEvent);
 
-                        #endregion
+                    //     #endregion
 
-                        if (startWithLoading)
-                        {
-                            currentEvent.TruckEventID = null;
-                            currentEvent.EventTypeID = 2;
-                            currentEvent = Ievent.Update(currentEvent);
-                        }
-                        MudDialog.Close(DialogResult.Ok(model));
-                    }
+                    //     if (startWithLoading)
+                    //     {
+                    //         currentEvent.TruckEventID = null;
+                    //         currentEvent.EventTypeID = 2;
+                    //         currentEvent = Ievent.Update(currentEvent);
+                    //     }
+                    MudDialog.Close(DialogResult.Ok(model));
+                    // }
                 }
                 else
                 {
@@ -305,14 +316,14 @@
         {
             snackbar.Add("Event Time cannot be before preivious event", Severity.Error);
             return false;
-        }       
+        }
         if ((PreEvent != null && PreEvent.EventTypeID == currentEvent.EventTypeID))
         {
             snackbar.Add("Cannot enter an event twice in a row", Severity.Warning);
             return false;
-        }      
+        }
 
-        if(DateTime.Compare(currentEvent.EventTime.Value , DateTime.Now.AddHours(-6)) < 0)
+        if (DateTime.Compare(currentEvent.EventTime.Value, DateTime.Now.AddHours(-6)) < 0)
         {
             snackbar.Add("Cannot Start Trip 6 hours earlier!!", Severity.Warning);
             return false;

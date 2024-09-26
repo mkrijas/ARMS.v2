@@ -277,6 +277,19 @@ namespace ArmsServices.DataServices
             }
             return TripID;
         }
+        public long? GetLastTrip(int? TruckID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", TruckID),
+            };
+            long? TripID = null;
+            foreach (var dr in Iservice.GetDataReader("[usp.Operation.Truck.LastTrip.Select]", parameters))
+            {
+                TripID = dr.GetInt64("TripID");
+            }
+            return TripID;
+        }
 
         public IEnumerable<TruckModel> SelectByBranch(int? BranchID, string Filer, string HomeOrOperation = "Operation")
         {
