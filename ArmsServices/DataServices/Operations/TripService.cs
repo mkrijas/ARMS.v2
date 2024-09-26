@@ -26,6 +26,11 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DriverID", model.DriverID),
                new SqlParameter("@TripDate", model.TripDate),
                new SqlParameter("@TruckID", model.TruckID),
+               new SqlParameter("@StartWithLoading", model.StartWithLoading),
+               new SqlParameter("@EventTime", model.EventTime),
+               new SqlParameter("@EventReading", model.EventReading),
+               new SqlParameter("@OriginID", model.OriginID),
+               new SqlParameter("@DestinationID", model.DestinationID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -246,7 +251,7 @@ namespace ArmsServices.DataServices
                     Fuel = reader.GetDecimal("Fuel"),
                     RunKM = reader.GetInt32("RunKm"),
                     RunDuration = reader.GetString("TimeDifference"),
-                    TripID = reader.GetInt64("TripID"),                    
+                    TripID = reader.GetInt64("TripID"),
                     TripNumber = reader.GetString("TripNumber"),
                     Truck = reader.GetString("Truck"),
                     Gcs = reader.GetString("Gcs"),
