@@ -194,14 +194,7 @@ namespace MobileAPI.Controllers
                         {
                             return result = "Cannot enter an event twice in a row";
                         }
-                        else if (model.EventTypeID == 3 && model.TruckEventID == null)
-                        {
-                            var gcs = _Igc.SelectToDispatch(CurrentTrip.TripID);
-                            if (!gcs.Any())
-                            {
-                                return result = "No Gcs to Dispatch";
-                            }
-                        }
+                       
                         else if (PreEventType?.LimitPostEvent is not null & PreEventType.LimitPostEvent != model.EventTypeID /*& CurrentTrip.UserInfo.RecordStatus == 3*/)
                         {
                             return result = "Due to previous event this Event is restricted!";
@@ -215,6 +208,14 @@ namespace MobileAPI.Controllers
                                     return result = "No GCs selected to Unload!";
                                 }
                             }
+                            else if (model.EventTypeID == 3 && model.TruckEventID == null)
+                            {
+                                var gcs = _Igc.SelectToDispatch(model.TripID);
+                                if (!gcs.Any())
+                                {
+                                    return result = "No Gcs to Dispatch";
+                                }
+                            }
 
                             model = Ievent.Update(model);
 
@@ -222,7 +223,7 @@ namespace MobileAPI.Controllers
                             {
                                 foreach (GcSetModel item in SelectedGCs)
                                 {
-                                    _Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                                    _Igc.BeginUnload(model.TripID, item.GcSetID);
                                 }
                             }
                         }
