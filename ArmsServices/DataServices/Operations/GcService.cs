@@ -98,6 +98,16 @@ namespace ArmsServices.DataServices
             return GetList(parameters);
         }
 
+        public List<GcSetModel> SelectUnloadedMobile(long? TripID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "Unload"),
+               new SqlParameter("@TripID", TripID)
+            };
+            return GetList(parameters);
+        }
+
         public List<GcSetModel> SelectPending(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

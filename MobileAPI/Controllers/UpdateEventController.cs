@@ -67,8 +67,8 @@ namespace MobileAPI.Controllers
         public async Task<string> UpdateEvents(EventUpdateModel updateModel)
         {
             EventModel model = updateModel.Event;
-            GcSetModel gcSet = updateModel.GcSet;
-            ((HashSet<GcSetModel>)SelectedGCs).Add(gcSet);
+            List<GcSetModel> gcSet = updateModel.GcSet;
+            //((HashSet<GcSetModel>)SelectedGCs).Add(gcSet);
             //, [FromQuery] GcSetModel gcSet
             string result = "";
             //HasPermissionEventServiceEdit = await _roleService.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);

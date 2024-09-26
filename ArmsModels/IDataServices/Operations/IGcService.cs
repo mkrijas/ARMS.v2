@@ -20,6 +20,7 @@ namespace ArmsServices.DataServices
         List<GcSetModel> SelectUnAssigned(int? BranchID);
         List<GcSetModel> SelectedUnloadEvent(long? TripID);
         List<GcSetModel> SelectToUnload(long? TripID);
+        List<GcSetModel> SelectUnloadedMobile(long? TripID);
         List<GcSetModel> SelectToDispatch(long? TripID);
         List<GcSetModel> SelectPending(long? TripID);
         GcSetModel SelectByID(long? GcSetID);
