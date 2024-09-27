@@ -182,7 +182,7 @@ namespace MobileAPI.Controllers
                                 }
                                 else
                                 {
-                                    List<GcSetModel> gcs = (List<GcSetModel>)GcsToUnload;
+                                    List<GcSetModel> gcs = (List<GcSetModel>)gcSet;
                                     foreach (var item in gcs)
                                     {
                                         _Igc.UpdateUnloadingQuantity(item);
