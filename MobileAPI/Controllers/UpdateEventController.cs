@@ -67,9 +67,10 @@ namespace MobileAPI.Controllers
         public async Task<string> UpdateEvents(EventUpdateModel updateModel)
         {
             EventModel model = updateModel.Event;
-            GcSetModel gcSet = updateModel.GcSet;
-            ((HashSet<GcSetModel>)SelectedGCs).Add(gcSet);
+            List<GcSetModel> gcSet = updateModel.GcSet;
+            //((HashSet<GcSetModel>)SelectedGCs).Add(gcSet);
             //, [FromQuery] GcSetModel gcSet
+            SelectedGCs = gcSet;
             string result = "";
             //HasPermissionEventServiceEdit = await _roleService.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
             HasPermissionEventServiceEdit = _userService.GetClaimsAsync(model.UserInfo.UserID, DocTypeID.ToString(), "Edit", model.BranchID, ctc.Token);
@@ -194,7 +195,10 @@ namespace MobileAPI.Controllers
                         {
                             return result = "Cannot enter an event twice in a row";
                         }
-                       
+                       else if (PreEvent.EventReading > model.EventReading)
+                        {
+                            return result = "Previous Odometer reading cannot be greater than current reading";
+                        }
                         else if (PreEventType?.LimitPostEvent is not null & PreEventType.LimitPostEvent != model.EventTypeID /*& CurrentTrip.UserInfo.RecordStatus == 3*/)
                         {
                             return result = "Due to previous event this Event is restricted!";
