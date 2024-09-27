@@ -107,53 +107,7 @@ namespace MobileAPI.Controllers
                             return "Cannot start this event without Driver";
                         }
                         model.EventTypeID = SelectedEvent.EventTypeID;
-                        if (model.EventTypeID == 5 && model.TruckEventID == null)
-                        {
-                            List<GcSetModel> GcsToUnload = new();
-                            GcsToUnload = _Igc.SelectedUnloadEvent(model.TripID);
-                            if (GcsToUnload.Count == 0)
-                            {
-                                return "No Consignment being Unloaded";
-                            }
-
-                            foreach (var item in GcsToUnload)
-                            {
-                                if (item.SetUnloadQuantity == null)
-                                {
-                                    item.SetUnloadQuantity = item.TotalBillQuantity;
-                                }
-                            }
-
-                            if (GcsToUnload.Any(x => x.TotalUnloadingQuantity == null) && model.EventTypeID == 5)
-                            {
-                                return result = "Unload Quantity not entered";
-                            }
-                            else
-                            {
-                                List<GcSetModel> gcs = (List<GcSetModel>)GcsToUnload;
-                                foreach (var item in gcs)
-                                {
-                                    _Igc.UpdateUnloadingQuantity(item);
-                                }
-                            }
-
-                            //DialogParameters parms = new DialogParameters();
-                            //parms.Add("GcsToUnload", GcsToUnload);
-                            //var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Consignment", parms);
-                            //var result = await dialog.Result;
-                            //if (!result.Canceled)
-                            //{
-                            //    List<GcSetModel> gcs = (List<GcSetModel>)result.Data;
-                            //    foreach (var item in gcs)
-                            //    {
-                            //        Igc.UpdateUnloadingQuantity(item);
-                            //    }
-                            //}
-                            //else
-                            //{
-                            //    return result;
-                            //}
-                        }
+                        
                         if (model.EventTypeID == 6)
                         {
                             bool IsbranchSetting = branchSettingsService.IsEnabled(model.BranchID, 109);
@@ -205,6 +159,53 @@ namespace MobileAPI.Controllers
                         }
                         else
                         {
+                            if (model.EventTypeID == 5 && model.TruckEventID == null)
+                            {
+                                List<GcSetModel> GcsToUnload = new();
+                                GcsToUnload = _Igc.SelectedUnloadEvent(model.TripID);
+                                if (GcsToUnload.Count == 0)
+                                {
+                                    return "No Consignment being Unloaded";
+                                }
+
+                                foreach (var item in gcSet)
+                                {
+                                    if (item.SetUnloadQuantity == null)
+                                    {
+                                        item.SetUnloadQuantity = item.TotalBillQuantity;
+                                    }
+                                }
+
+                                if (gcSet.Any(x => x.TotalUnloadingQuantity == null) && model.EventTypeID == 5)
+                                {
+                                    return result = "Unload Quantity not entered";
+                                }
+                                else
+                                {
+                                    List<GcSetModel> gcs = (List<GcSetModel>)GcsToUnload;
+                                    foreach (var item in gcs)
+                                    {
+                                        _Igc.UpdateUnloadingQuantity(item);
+                                    }
+                                }
+
+                                //DialogParameters parms = new DialogParameters();
+                                //parms.Add("GcsToUnload", GcsToUnload);
+                                //var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Consignment", parms);
+                                //var result = await dialog.Result;
+                                //if (!result.Canceled)
+                                //{
+                                //    List<GcSetModel> gcs = (List<GcSetModel>)result.Data;
+                                //    foreach (var item in gcs)
+                                //    {
+                                //        Igc.UpdateUnloadingQuantity(item);
+                                //    }
+                                //}
+                                //else
+                                //{
+                                //    return result;
+                                //}
+                            }
                             if (SelectedEvent.EventTypeID == 4 && model.TruckEventID == null)
                             {
                                 if (!SelectedGCs.Any())
@@ -220,6 +221,7 @@ namespace MobileAPI.Controllers
                                     return result = "No Gcs to Dispatch";
                                 }
                             }
+
 
                             model = Ievent.Update(model);
 
