@@ -54,5 +54,14 @@ namespace MobileAPI.Controllers
             GCsToUnload = _gcService.SelectToUnload(TripID).ToList();
             return GCsToUnload;
         }
+
+        [HttpGet("[action]/")]
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        public IEnumerable<GcSetModel> GCSelectUnloaded(int? TripID)
+        {
+            IEnumerable<GcSetModel> GCsToUnload;
+            GCsToUnload = _gcService.SelectUnloadedMobile(TripID).ToList();
+            return GCsToUnload;
+        }
     }
 }

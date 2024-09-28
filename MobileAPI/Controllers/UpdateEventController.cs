@@ -67,9 +67,10 @@ namespace MobileAPI.Controllers
         public async Task<string> UpdateEvents(EventUpdateModel updateModel)
         {
             EventModel model = updateModel.Event;
-            GcSetModel gcSet = updateModel.GcSet;
-            ((HashSet<GcSetModel>)SelectedGCs).Add(gcSet);
+            List<GcSetModel> gcSet = updateModel.GcSet;
+            //((HashSet<GcSetModel>)SelectedGCs).Add(gcSet);
             //, [FromQuery] GcSetModel gcSet
+            SelectedGCs = gcSet;
             string result = "";
             //HasPermissionEventServiceEdit = await _roleService.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
             HasPermissionEventServiceEdit = _userService.GetClaimsAsync(model.UserInfo.UserID, DocTypeID.ToString(), "Edit", model.BranchID, ctc.Token);
@@ -106,53 +107,7 @@ namespace MobileAPI.Controllers
                             return "Cannot start this event without Driver";
                         }
                         model.EventTypeID = SelectedEvent.EventTypeID;
-                        if (model.EventTypeID == 5 && model.TruckEventID == null)
-                        {
-                            List<GcSetModel> GcsToUnload = new();
-                            GcsToUnload = _Igc.SelectedUnloadEvent(model.TripID);
-                            if (GcsToUnload.Count == 0)
-                            {
-                                return "No Consignment being Unloaded";
-                            }
-
-                            foreach (var item in GcsToUnload)
-                            {
-                                if (item.SetUnloadQuantity == null)
-                                {
-                                    item.SetUnloadQuantity = item.TotalBillQuantity;
-                                }
-                            }
-
-                            if (GcsToUnload.Any(x => x.TotalUnloadingQuantity == null) && model.EventTypeID == 5)
-                            {
-                                return result = "Unload Quantity not entered";
-                            }
-                            else
-                            {
-                                List<GcSetModel> gcs = (List<GcSetModel>)GcsToUnload;
-                                foreach (var item in gcs)
-                                {
-                                    _Igc.UpdateUnloadingQuantity(item);
-                                }
-                            }
-
-                            //DialogParameters parms = new DialogParameters();
-                            //parms.Add("GcsToUnload", GcsToUnload);
-                            //var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Consignment", parms);
-                            //var result = await dialog.Result;
-                            //if (!result.Canceled)
-                            //{
-                            //    List<GcSetModel> gcs = (List<GcSetModel>)result.Data;
-                            //    foreach (var item in gcs)
-                            //    {
-                            //        Igc.UpdateUnloadingQuantity(item);
-                            //    }
-                            //}
-                            //else
-                            //{
-                            //    return result;
-                            //}
-                        }
+                        
                         if (model.EventTypeID == 6)
                         {
                             bool IsbranchSetting = branchSettingsService.IsEnabled(model.BranchID, 109);
@@ -194,13 +149,9 @@ namespace MobileAPI.Controllers
                         {
                             return result = "Cannot enter an event twice in a row";
                         }
-                        else if (model.EventTypeID == 3 && model.TruckEventID == null)
+                       else if (PreEvent.EventReading > model.EventReading)
                         {
-                            var gcs = _Igc.SelectToDispatch(CurrentTrip.TripID);
-                            if (!gcs.Any())
-                            {
-                                return result = "No Gcs to Dispatch";
-                            }
+                            return result = "Previous Odometer reading cannot be greater than current reading";
                         }
                         else if (PreEventType?.LimitPostEvent is not null & PreEventType.LimitPostEvent != model.EventTypeID /*& CurrentTrip.UserInfo.RecordStatus == 3*/)
                         {
@@ -208,6 +159,53 @@ namespace MobileAPI.Controllers
                         }
                         else
                         {
+                            if (model.EventTypeID == 5 && model.TruckEventID == null)
+                            {
+                                List<GcSetModel> GcsToUnload = new();
+                                GcsToUnload = _Igc.SelectedUnloadEvent(model.TripID);
+                                if (GcsToUnload.Count == 0)
+                                {
+                                    return "No Consignment being Unloaded";
+                                }
+
+                                foreach (var item in gcSet)
+                                {
+                                    if (item.SetUnloadQuantity == null)
+                                    {
+                                        item.SetUnloadQuantity = item.TotalBillQuantity;
+                                    }
+                                }
+
+                                if (gcSet.Any(x => x.TotalUnloadingQuantity == null) && model.EventTypeID == 5)
+                                {
+                                    return result = "Unload Quantity not entered";
+                                }
+                                else
+                                {
+                                    List<GcSetModel> gcs = (List<GcSetModel>)gcSet;
+                                    foreach (var item in gcs)
+                                    {
+                                        _Igc.UpdateUnloadingQuantity(item);
+                                    }
+                                }
+
+                                //DialogParameters parms = new DialogParameters();
+                                //parms.Add("GcsToUnload", GcsToUnload);
+                                //var dialog = DialogService.Show<UnloadQuantityDialog>("Unloading Consignment", parms);
+                                //var result = await dialog.Result;
+                                //if (!result.Canceled)
+                                //{
+                                //    List<GcSetModel> gcs = (List<GcSetModel>)result.Data;
+                                //    foreach (var item in gcs)
+                                //    {
+                                //        Igc.UpdateUnloadingQuantity(item);
+                                //    }
+                                //}
+                                //else
+                                //{
+                                //    return result;
+                                //}
+                            }
                             if (SelectedEvent.EventTypeID == 4 && model.TruckEventID == null)
                             {
                                 if (!SelectedGCs.Any())
@@ -215,6 +213,15 @@ namespace MobileAPI.Controllers
                                     return result = "No GCs selected to Unload!";
                                 }
                             }
+                            else if (model.EventTypeID == 3 && model.TruckEventID == null)
+                            {
+                                var gcs = _Igc.SelectToDispatch(model.TripID);
+                                if (!gcs.Any())
+                                {
+                                    return result = "No Gcs to Dispatch";
+                                }
+                            }
+
 
                             model = Ievent.Update(model);
 
@@ -222,7 +229,7 @@ namespace MobileAPI.Controllers
                             {
                                 foreach (GcSetModel item in SelectedGCs)
                                 {
-                                    _Igc.BeginUnload(CurrentTrip.TripID, item.GcSetID);
+                                    _Igc.BeginUnload(model.TripID, item.GcSetID);
                                 }
                             }
                         }

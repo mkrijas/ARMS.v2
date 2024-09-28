@@ -32,15 +32,16 @@
                 <MudCheckBox Label="Approved Entries" CheckedChanged="((bool value)=>ApprovedChanged(value))" Checked="@IsApproved" Size="Size.Medium" Color="Color.Primary" Class="tablefont margin0"></MudCheckBox>
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.DocumentDate)" >Document Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.DocumentDate)">Document Date</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.DocumentNumber)" InitialDirection="SortDirection.Descending">Document Number</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.ReceiptMode)">Receipt Mode</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.TotalAmount)" >Amount</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<MileageShortageReceiptModel, object>(x=> x.TotalAmount)">Amount</MudTableSortLabel></MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber
+                <MudTd DataLabel="DocumentNumber">
+                    @context.DocumentNumber
                     @if (context.AuthLevelId == 100)
                     {
                         <MudText Color="Color.Error" GutterBottom> Rejected </MudText>
@@ -52,17 +53,17 @@
                     <MudIconButton OnClick="@(()=> OpenDialog(context,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
                     <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> OpenDialog(context,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
                     <MudIconButton Disabled="@(context.AuthLevelId != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
-
                     @if (@context.AuthLevelId == 99)
                     {
-                       @if (@context.MID != null)
-                       {
+                        @if (@context.MID != null)
+                        {
                             <EntryReversedComponent DocTypeID="MileageShortageReceiptDocTypeID" DocumentID="context.MileageShortageReceiptID" MID="context.MID" DocumentNumber="context.DocumentNumber"></EntryReversedComponent>
-                       }
-                       else
-                       {
+                        }
+                        else
+                        {
                             <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Filled" />
-                       }
+                        }
+                        <MudIconButton OnClick="@(()=> Print(context.MileageShortageReceiptID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
                     }
                     else if (@context.AuthLevelId != 100)
                     {
@@ -84,6 +85,8 @@
     private int numberOfRecords = 100;
     private string searchTerm = "";
     private bool _busy;
+    public string BranchName = "";
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
 
     [Parameter]
     public int? id { get; set; } = null;
@@ -130,6 +133,7 @@
 
         var authprov = await auth.GetAuthenticationStateAsync();
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        BranchName = authprov.User.Claims.First(x => x.Type == "BranchName").Value;
         GetAll(IsApproved, NumberOfRecords);
 
         await Task.Delay(200);
@@ -166,7 +170,7 @@
             snackbar.Add("Please wait while form is closing!", Severity.Warning);
             return;
         }
-        if(RModel.AllowanceAmount != 0 && RModel.AllowanceAmount != null)
+        if (RModel.AllowanceAmount != 0 && RModel.AllowanceAmount != null)
         {
             MileageShortageReceiptDocTypeID = 129;
         }
@@ -228,5 +232,18 @@
                 "Permission denied!",
                 "You dont have any permission to Delete MileageShortageReceipt.");
         }
+    }
+
+    private async Task Print(int? MileageShortageReceiptID)
+    {
+        ReportParameters.Clear();
+        ReportParameters.Add("MileageShortageReceiptID", MileageShortageReceiptID.ToString());
+        ReportParameters.Add("BranchName", BranchName);
+        var parameters = new DialogParameters();
+        parameters.Add("Parameters", ReportParameters); // Add the dictionary as a parameter
+        parameters.Add("ReportName", "PrintMileageShortageReceipt");
+
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
     }
 }

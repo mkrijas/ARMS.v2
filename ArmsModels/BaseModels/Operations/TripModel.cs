@@ -20,7 +20,7 @@ namespace ArmsModels.BaseModels
         public int? DriverID { get; set; }
         public string TripPrefix { get; set; }
         public long? TripNumber { get; set; }
-        public string TripNumberDisplay { get { return TripPrefix + TripNumber.ToString().PadLeft(4,'0'); } }
+        public string TripNumberDisplay { get { return TripPrefix + TripNumber.ToString().PadLeft(4, '0'); } }
         public bool? StartWithLoading { get; set; } = false;
         [Required]
         public int? BranchID { get; set; }
@@ -29,6 +29,15 @@ namespace ArmsModels.BaseModels
         public DateTime? TripDate { get; set; }
         //[ExpressiveAnnotations.Attributes.RequiredIf("StartWithLoading == false", ErrorMessage ="Please select destination.")]
         //public int? DestinationID { get; set; }
+        [Required]
+        public DateTime? EventTime { get; set; } = DateTime.Now;
+        [Required]
+        [Notless("TruckID", "EventTime")]
+        public long? EventReading { get; set; }
+        [Required]
+        public int? OriginID { get; set; }
+        [Required]
+        public int? DestinationID { get; set; }
         public decimal? Mileage { get; set; }
         public int? RunKM { get; set; }
         public decimal? Fuel { get; set; }
@@ -74,7 +83,7 @@ namespace ArmsModels.BaseModels
         public int? TruckID { get; set; }
         [Required]
         public int? FuelItemID { get; set; }
-        public string FuelItemDescription { get; set; } 
+        public string FuelItemDescription { get; set; }
         public decimal? RatePerLitre { get; set; }
         public decimal? Amount
         {

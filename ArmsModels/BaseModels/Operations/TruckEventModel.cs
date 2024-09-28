@@ -94,7 +94,7 @@ namespace ArmsModels.BaseModels
 
     public class EventUpdateModel
     {
-        public EventModel Event { get; set; }
-        public GcSetModel GcSet { get; set; }
+        public EventModel Event { get; set; } = new();
+        public List<GcSetModel> GcSet { get; set; } = new();
     }
 }
