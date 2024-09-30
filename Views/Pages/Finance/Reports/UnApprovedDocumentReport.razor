@@ -1,0 +1,77 @@
+﻿@page "/UnApproedDocumentsReport"
+@inject ISnackbar Snackbar
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inherits ReportComponentBase
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Class="mb-5 p-4">
+            <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
+                <MudText Typo="Typo.h5" Style="font-weight:500;">UnApproved Documents Report</MudText>
+            </MudToolBar>
+            <MudDivider />
+            <MudGrid Style="padding-top: 22px;">
+                <MudItem xs="4">
+                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="4" Style="display: flex; align-items: center;">
+                    <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
+                    <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+    ReportViewer report;
+    public Dictionary<string, string> ReportParameters { get; set; } = new();
+    public DateTime? FromDate { get; set; } = DateTime.Now;
+    public DateTime? ToDate { get; set; } = DateTime.Now;
+    public bool AllOfficeVehicle { get; set; } = false;
+    public bool ShowReport { get; set; } = false;
+    public string ReportName { get; set; }
+    public BranchModel CurrentBranch { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
+        CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+        CurrentBranch.BranchID = int.Parse(BranchIDString);
+    }
+
+    public async Task RenderReportViewer()
+    {
+        if (FromDate == null)
+        {
+            Snackbar.Add("Please select From Date.", Severity.Error);
+            return;
+        }
+        if (ToDate == null)
+        {
+            Snackbar.Add("Please select To Date.", Severity.Error);
+            return;
+        }
+
+        ShowReport = true;
+        ReportName = "UnApprovedDocumentsReport";
+        ReportParameters.Clear();
+        ReportParameters.Add("BranchName", CurrentBranch.BranchName);
+        ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+        ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
+        ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
+        await report.RenderReport();
+    }
+}
