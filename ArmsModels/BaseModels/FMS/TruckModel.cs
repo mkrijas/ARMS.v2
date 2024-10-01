@@ -105,5 +105,6 @@ namespace ArmsModels.BaseModels
         public virtual string RegNo { get; set; }
         public virtual DateTime? EventTime { get; set; }
         public virtual string? EventDateTimeDiff { get; set; }
+        public string DriverSince { get; set; }
     }
 }
