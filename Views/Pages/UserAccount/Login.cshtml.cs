@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using ArmsModels.BaseModels;
 
+
 namespace Views.Pages.UserAccount
 {
     [AllowAnonymous]
@@ -21,14 +22,17 @@ namespace Views.Pages.UserAccount
         private readonly UserManager<UserModel> _userManager;
         private readonly SignInManager<UserModel> _signInManager;
         private readonly ILogger<LoginModel> _logger;
+        private IDbService dbService;
 
         public LoginModel(SignInManager<UserModel> signInManager, 
             ILogger<LoginModel> logger,
-            UserManager<UserModel> userManager)
+            UserManager<UserModel> userManager,
+            IDbService _dbService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
+            dbService = _dbService;
         }
 
         [BindProperty]
@@ -67,6 +71,7 @@ namespace Views.Pages.UserAccount
             var IsSignedIn =  _signInManager.IsSignedIn(HttpContext.User);
             if (IsSignedIn)
             {
+                
                 returnUrl = Url.Content("/");
                 return LocalRedirect(returnUrl);
             };
@@ -92,7 +97,7 @@ namespace Views.Pages.UserAccount
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
                 var result = await _signInManager.PasswordSignInAsync(Input.UserID, Input.Password, Input.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
-                {
+                {                    
                     _logger.LogInformation("User logged in.");                               
                     return LocalRedirect(returnUrl);
                 }
