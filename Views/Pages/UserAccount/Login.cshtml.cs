@@ -22,17 +22,14 @@ namespace Views.Pages.UserAccount
         private readonly UserManager<UserModel> _userManager;
         private readonly SignInManager<UserModel> _signInManager;
         private readonly ILogger<LoginModel> _logger;
-        private IDbService dbService;
 
         public LoginModel(SignInManager<UserModel> signInManager, 
             ILogger<LoginModel> logger,
-            UserManager<UserModel> userManager,
-            IDbService _dbService)
+            UserManager<UserModel> userManager)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
-            dbService = _dbService;
         }
 
         [BindProperty]
