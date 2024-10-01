@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using ArmsModels.BaseModels;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -7,6 +10,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace ArmsServices
 {
@@ -18,6 +22,8 @@ namespace ArmsServices
         int ExecuteNonQuery(string procedureName, List<SqlParameter> parameters);
         IEnumerable<IDataRecord> QuerySql(string Query, List<SqlParameter> parameters);
         object ExecuteScalar(string procedureName, List<SqlParameter> parameters);
+        void ChangeConnectionString(string _ConnectionString);
+        string GetCurrentConnectionString();
     }
 
     public class DbService : IDbService
@@ -25,11 +31,23 @@ namespace ArmsServices
         private string ConnectionString { get; set; }
 
         ILogger<DbService> _logger;
+        IConfiguration _config;
+        
 
         public DbService(IConfiguration configuration, ILogger<DbService> logger)
         {
             this._logger = logger;
+            _config = configuration;
+
+            //var userID =   usrmgr.GetUserId;
+           
+
             this.ConnectionString = configuration.GetConnectionString("ArmsDB");
+        }
+
+        public void ChangeConnectionString(string _ConnectionString)
+        {
+            this.ConnectionString = _config.GetConnectionString(_ConnectionString) ;
         }
 
         public async IAsyncEnumerable<IDataRecord> GetDataReaderAsync(string procedureName, List<SqlParameter> parameters)
@@ -156,6 +174,11 @@ namespace ArmsServices
                 connection.Open();
                 return cmd.ExecuteScalar();
             }
+        }
+
+        public string GetCurrentConnectionString()
+        {
+            return ConnectionString;
         }
     }
 }

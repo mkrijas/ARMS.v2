@@ -83,7 +83,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@WarrantyExpiryDate",model.WarrantyExpiryDate),
                new SqlParameter("@Remarks", model.Remarks),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-               new SqlParameter("@Odometer", model.Odometer)
+               new SqlParameter("@Odometer", model.Odometer),
+               new SqlParameter("@TotalAmount", model.TotalAmount)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.Jobcard.JobInProgress.Update]", parameters))
@@ -109,6 +110,7 @@ namespace ArmsServices.DataServices
                 WarrantyCheck = dr.GetBoolean("IsUnderWarranty"),
                 WarrantyExpiryDate = dr.GetDateTime("WarrantyExpiryDate"),
                 Remarks = dr.GetString("Remarks"),
+                TotalAmount = dr.GetDecimal("Amount"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

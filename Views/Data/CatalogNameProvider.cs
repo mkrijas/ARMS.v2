@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.Data.SqlClient;
+using ArmsServices; 
 
 namespace Views.Data
 {
@@ -11,15 +12,16 @@ namespace Views.Data
     public class CatalogNameProvider : ICatalogNameProvider
     {
         private readonly IConfiguration _configuration;
-
-        public CatalogNameProvider(IConfiguration configuration)
+        private IDbService _db;
+        public CatalogNameProvider(IConfiguration configuration,IDbService _service)
         {
             _configuration = configuration;
+            _db = _service;
         }
 
         public string GetCatalogName()
         {
-            var connectionString = _configuration.GetConnectionString("ArmsDB");
+            var connectionString =  _db.GetCurrentConnectionString();           
             var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
             return connectionStringBuilder.InitialCatalog;
         }
