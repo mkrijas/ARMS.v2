@@ -1,5 +1,6 @@
 ﻿using ARMS.JwtHelpers;
 using ArmsModels.BaseModels;
+using ArmsServices;
 using ArmsServices.DataServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -16,13 +17,15 @@ namespace MobileAPI.Controllers
         private readonly ILogger<LoginController> _logger;
         private readonly JwtSettings jwtSettings;
         private readonly IUserService _userService;
+        private readonly IDbService _dbService;
 
         public LoginController(JwtSettings jwtSettings,
 
             ILogger<LoginController> logger,
             UserManager<UserModel> userManager,
             SignInManager<UserModel> signInManager,
-            IUserService userService
+            IUserService userService,
+            IDbService dbService
             )
         {
             this.jwtSettings = jwtSettings;
@@ -30,6 +33,7 @@ namespace MobileAPI.Controllers
             _signInManager = signInManager;
             _logger = logger;
             _userService = userService;
+            _dbService = dbService;
         }
 
         [HttpPost]
@@ -40,6 +44,10 @@ namespace MobileAPI.Controllers
             var result = await _signInManager.PasswordSignInAsync(user.UserID, user.PasswordHash, true, lockoutOnFailure: false);
             if (result.Succeeded)
             {
+                if(UserName == "ADMIN")
+                {
+                    _dbService.ChangeConnectionString("ArmsDBTest");
+                }
                 string Operation = "APPROVE";
                 int? recordStatus = _userService.SelectDeviceExists(UserName, DeviceID, Operation);
                 if (recordStatus.HasValue)
