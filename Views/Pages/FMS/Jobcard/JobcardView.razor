@@ -222,6 +222,10 @@
                                             </MudItem>
                                             <MudItem xs="3" md="3">
                                                 <MudNumericField HideSpinButtons @bind-Value="item.TotalAmount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.TotalAmount)"></MudNumericField>
+                                                @if (item.JobStatus == 2)
+                                                {
+                                                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Success" OnClick="@(() => UpdateJob(item, 2))">Update</MudButton>
+                                                }
                                             </MudItem>
                                             <MudItem xs="9" md="9"></MudItem>
                                             <MudItem xs="12" Class="d-flex">
@@ -599,6 +603,7 @@
                 await RemoveMechanic(item);
             }
             Ijp.Update(Ujip);
+            snackbar.Add("Jobs Updated.", Severity.Success);
             setJipList(SelectedJobcard);
         }
         else
@@ -785,6 +790,15 @@
 
     private async Task OpenExpenses()
     {
+        foreach (var item in JipList)
+        {
+            if(item.WarrantyCheck == false && item.TotalAmount == null)
+            {
+                snackbar.Add("Please enter job amount", Severity.Warning);
+                return;
+            }
+        }
+
         if (_busy)
         {
             snackbar.Add("Please wait while form is closing!", Severity.Warning);
@@ -792,39 +806,23 @@
         }
         _busy = true;
         if (HasPermissionJobcardServiceEdit)
-        {
-            bool checkAmt = false;
-            foreach (var item in JipList)
+        {         
+            var parameters = new DialogParameters();
+            parameters.Add("model", new TaxPurchaseModel() { NonStoreInventory = true, TaxPurchaseType = "Maintenance" });
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+            var dialog = DialogService.Show<TaxPurchaseDialog>("Maintenance Expenses", parameters, maxWidth);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                if (item.WarrantyCheck == false && item.TotalAmount == null)
+                var purchaseModel = (TaxPurchaseModel)result.Data;
+                int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, purchaseModel.PID, 134);
+                if (queryStatus == 0)
                 {
-                    checkAmt = false;
-                    snackbar.Add("Please enter job amount", Severity.Warning);
+                    snackbar.Add("Something went wrong !  Please check Taxpurchase collect number then contact Admin", Severity.Error);
                 }
                 else
                 {
-                    checkAmt = true;
-                }
-            }
-            if (checkAmt == true)
-            {
-                var parameters = new DialogParameters();
-                parameters.Add("model", new TaxPurchaseModel() { NonStoreInventory = true, TaxPurchaseType = "Maintenance" });
-                DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-                var dialog = DialogService.Show<TaxPurchaseDialog>("Maintenance Expenses", parameters, maxWidth);
-                var result = await dialog.Result;
-                if (!result.Canceled)
-                {
-                    var purchaseModel = (TaxPurchaseModel)result.Data;
-                    int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, purchaseModel.PID, 134);
-                    if (queryStatus == 0)
-                    {
-                        snackbar.Add("Something went wrong !  Please check Taxpurchase collect number then contact Admin", Severity.Error);
-                    }
-                    else
-                    {
-                        snackbar.Add("Created Successfully", Severity.Success);
-                    }
+                    snackbar.Add("Created Successfully", Severity.Success);
                 }
             }
         }
@@ -840,6 +838,14 @@
 
     private async Task OpenSundrypayment()
     {
+        foreach (var item in JipList)
+        {
+            if (item.WarrantyCheck == false && item.TotalAmount == null)
+            {
+                snackbar.Add("Please enter job amount", Severity.Warning);
+                return;
+            }
+        }
         if (_busy)
         {
             snackbar.Add("Please wait while form is closing!", Severity.Warning);
@@ -848,32 +854,16 @@
         _busy = true;
         if (HasPermissionJobcardServiceEdit)
         {
-            bool checkAmt = false;
-            foreach (var item in JipList)
+            var parameters = new DialogParameters();
+            parameters.Add("model", new SundryPaymentModel());
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+            var dialog = DialogService.Show<SundryPaymentDialog>("Maintenance Expenses", parameters, maxWidth);
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
-                if (item.WarrantyCheck == false && item.TotalAmount == null)
-                {
-                    checkAmt = false;
-                    snackbar.Add("Please enter job amount", Severity.Warning);
-                }
-                else
-                {
-                    checkAmt = true;
-                }
-            }
-            if (checkAmt == true)
-            {
-                var parameters = new DialogParameters();
-                parameters.Add("model", new SundryPaymentModel());
-                DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
-                var dialog = DialogService.Show<SundryPaymentDialog>("Maintenance Expenses", parameters, maxWidth);
-                var result = await dialog.Result;
-                if (!result.Canceled)
-                {
-                    var sundryModel = (SundryPaymentModel)result.Data;
-                    int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, sundryModel.SundryPaymentID, 11);
-                    snackbar.Add("Created Successfully", Severity.Success);
-                }
+                var sundryModel = (SundryPaymentModel)result.Data;
+                int queryStatus = Iservice.AddPurchase(SelectedJobcard.JobcardID, sundryModel.SundryPaymentID, 11);
+                snackbar.Add("Created Successfully", Severity.Success);
             }
         }
         else

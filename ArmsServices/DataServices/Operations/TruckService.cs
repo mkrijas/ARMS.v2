@@ -469,7 +469,8 @@ namespace ArmsServices.DataServices
                     TruckID = dr.GetInt32("TruckID"),
                     RegNo = dr.GetString("RegNo"),
                     EventTime = dr.GetDateTime("EventTime"),
-                    EventDateTimeDiff = dr.GetString("EventDateTimeDiff")
+                    EventDateTimeDiff = dr.GetString("EventDateTimeDiff"),
+                    DriverSince = string.Format("{0} since {1}", dr.GetString("DriverSince"), dr.GetString("DriverName"));
                 };
             }
         }
