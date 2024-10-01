@@ -54,6 +54,7 @@ namespace ArmsModels.BaseModels
         public decimal Odometer { get; set; }
         public int? TimeTaken {  get; set; }
         public string Mechanic { get; set; }
+        public decimal? TotalAmount { get; set; } 
         public string JobStatusText
         {
             get
