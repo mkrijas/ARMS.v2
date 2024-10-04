@@ -470,7 +470,7 @@ namespace ArmsServices.DataServices
                     RegNo = dr.GetString("RegNo"),
                     EventTime = dr.GetDateTime("EventTime"),
                     EventDateTimeDiff = dr.GetString("EventDateTimeDiff"),
-                    DriverSince = string.Format("{0} since {1}", dr.GetString("DriverSince"), dr.GetString("DriverName"))
+                    DriverSince = string.Format("{0} since {1}", dr.GetDateTime("DriverSince"), dr.GetString("DriverName"))
                 };
             }
         }
