@@ -48,6 +48,7 @@ namespace MobileAPI.Controllers
                 {
                     _dbService.ChangeConnectionString("ArmsDBTest");
                 }
+                var currentConnection = _dbService.GetCurrentConnectionString();
                 string Operation = "APPROVE";
                 int? recordStatus = _userService.SelectDeviceExists(UserName, DeviceID, Operation);
                 if (recordStatus.HasValue)
