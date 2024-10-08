@@ -37,6 +37,7 @@
     @if (!HideControls)
     {
         <MudButton Disabled="@_busy" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.AddTask" OnClick="@(()=>CreateJobcard(MainModel))">Issue Jobcard</MudButton>
+        <MudButton Disabled="@_busy" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Close" OnClick="@(()=>RejectBreakdown(MainModel))">Reject</MudButton>
         <MudButton Style="text-transform:capitalize;padding-right:1%" StartIcon="@Icons.Material.Filled.AppRegistration" OnClick="@(()=>BeginInsuranceClaim(MainModel))" IconColor="Color.Primary" Disabled="MainModel.IsClaimInitiated">Initiate Insurance Claim</MudButton>
     }
     <MudIconButton OnClick="@(()=> PrintJobRequest(MainModel.BreakdownID))" Color="Color.Tertiary" Title="Print" Class="ml-2" Icon="@Icons.Material.Filled.Print" Size="Size.Small" Variant="Variant.Filled" />
@@ -145,6 +146,8 @@
     public bool HideControls { get; set; } = false;
     [Parameter]
     public bool ReadOnly { get; set; }
+    [Parameter]
+    public EventCallback OnBreakdownRejected { get; set; }
     private EstimateListModel model = new();
     private List<EstimateListModel> EstListModel = new();
     private bool _busy;
@@ -317,6 +320,24 @@
         }
         await Task.Delay(200);
         _busy = false;
+    }
+    
+    private async Task RejectBreakdown(BreakdownModel Breakdown)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning !",
+            "Are you sure, you want to reject breakdown - " + Breakdown.RegNo + " ?");
+
+        if (result == true)
+        {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            IBreakdown.RejectBreakdown(Breakdown.BreakdownID, user.Identity.Name);
+            snackbar.Add("Rejected Successfully", Severity.Success);
+
+            // Notify parent that the breakdown was rejected
+            await OnBreakdownRejected.InvokeAsync(null);
+        }
     }
 
     private async Task BeginInsuranceClaim(BreakdownModel Breakdown)

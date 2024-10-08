@@ -35,6 +35,23 @@ namespace ArmsModels.BaseModels
         public string ContactNumber { get; set; }
         public List<EstimateListModel> EstimateList { get; set; } = new List<EstimateListModel>();
         public UserInfoModel UserInfo { get; set; }
+        public string Status
+        {
+            get
+            {
+                switch (UserInfo.RecordStatus)
+                {                   
+                    case 3:
+                        return "Breakdown";
+                    case 4:
+                        return "Estimated";
+                    case 9:
+                        return "Rejected";
+                    default:
+                        return null;
+                }
+            }
+        }
     }
 
     public class EstimateListModel : ICloneable

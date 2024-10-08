@@ -87,6 +87,16 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public int RejectBreakdown(int? BreakdownID, string UserID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@BreakdownID", BreakdownID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Reject]", parameters);
+        }
+
         public IEnumerable<EstimateListModel> SelectEstimate(int? BreakdownID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

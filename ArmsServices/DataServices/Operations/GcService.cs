@@ -33,6 +33,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@RouteID", model.RouteID),
                new SqlParameter("@OrderTime", model.OrderTime),
                new SqlParameter("@PaidBy", model.PaidBy),
+               new SqlParameter("@LRDate", model.LRDate),
                new SqlParameter("@Gcs", model.Gcs.ToDataTable()),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
@@ -217,6 +218,7 @@ namespace ArmsServices.DataServices
                 ConsignorID = dr.GetInt32("ConsignorID"),
                 ConsignorName = dr.GetString("ConsignorName"),
                 PaidBy = dr.GetByte("PaidBy"),
+                LRDate = dr.GetDateTime("LRDate"),
                 LoadEndEventID = dr.GetInt64("LoadEndEventID"),
                 LoadStartEventID = dr.GetInt64("LoadStartEventID"),
                 UnloadEndEventID = dr.GetInt64("UnloadEndEventID"),
