@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
         IEnumerable<BreakdownModel> SelectPending(int BranchID);
         IEnumerable<EstimateListModel> SelectEstimate(int? BreakdownID);
         EstimateListModel UpdateEstimate(EstimateListModel model);  //Edit
+        int RejectBreakdown(int? BreakdownID, string UserID);  //Delete
         int DeleteEstimate(int? EstimateID, string UserID);  //Delete
         int ApproveEstimate(int? EstimateID, string UserID);  //Approve
         int RemoveEstimate(int? EstimateID, string UserID);  //Remove

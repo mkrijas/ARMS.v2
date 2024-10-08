@@ -33,6 +33,7 @@ namespace ArmsModels.BaseModels
         public int? ConsigneeID { get; set; }
         [Required]
         public byte? PaidBy { get; set; } // 
+        public DateTime? LRDate { get; set; } = null;
         public virtual string Content { get; set; }
         public virtual string UoM { get; set; }
         public virtual string ConsigneeName { get; set; }
