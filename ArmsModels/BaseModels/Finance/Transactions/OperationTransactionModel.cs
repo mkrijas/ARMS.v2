@@ -32,6 +32,7 @@ namespace ArmsModels.BaseModels
         public int? AssetTransferID { get; set; }
         public int? RequestApprovalHistoryID { get; set; }
         public int? TruckID { get; set; }
+        public string OpTranType { get; set; }
         public int? JobCardID { get; set; }
         [ValidateComplexType]
         [MustContain(ErrorMessage = "No Expenses Added!")]
