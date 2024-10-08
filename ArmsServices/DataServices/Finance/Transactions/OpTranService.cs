@@ -222,6 +222,7 @@ namespace ArmsServices.DataServices
                 TripID = dr.GetInt64("TripID"),
                 AssetTransferID = dr.GetInt32("AssetTransferID"),
                 RequestApprovalHistoryID = dr.GetInt32("RequestApprovalHistoryID"),
+                OpTranType = dr.GetString("OpTranType"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
