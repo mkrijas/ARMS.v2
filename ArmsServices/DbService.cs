@@ -99,7 +99,6 @@ namespace ArmsServices
                 connection.Open();
                 using (SqlCommand cmd = new SqlCommand(procedureName, connection))
                 {
-                    cmd.CommandTimeout = 600;
                     cmd.CommandType = CommandType.StoredProcedure;
                     if (parameters != null && parameters.Count > 0)
                     {
