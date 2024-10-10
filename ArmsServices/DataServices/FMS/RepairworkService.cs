@@ -76,7 +76,7 @@ namespace ArmsServices.DataServices
             {
                 yield return new RepairJobGroup()
                 {
-                    ID = dr.GetInt32("RepaiJobGroupID"),
+                    ID = dr.GetInt32("RepairJobGroupID"),
                     Title = dr.GetString("Title"),
                 };
             }
@@ -94,9 +94,9 @@ namespace ArmsServices.DataServices
             {
                 yield return new RepairJobGroup()
                 {
-                    ID = dr.GetInt32("RepaiJobSubGroupID"),
+                    ID = dr.GetInt32("RepairJobSubgroupID"),
                     Title = dr.GetString("Title"),
-                    ParentID = dr.GetInt32("RepaiJobGroupID")
+                    ParentID = dr.GetInt32("RepairJobGroupID")
                 };
             }
         }
