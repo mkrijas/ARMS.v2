@@ -90,7 +90,7 @@ namespace ArmsModels.BaseModels
         public virtual decimal? EFreight { get; set; } = 0;
         public virtual decimal? UnloadedQuantity { get; set; }
         public virtual DateTime? OrderTime { get; set; } = DateTime.Today;
-
+        public virtual bool IsAcknowledged { get; set; }
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
 
         public object Clone()

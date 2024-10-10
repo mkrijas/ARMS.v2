@@ -23,12 +23,14 @@ namespace ArmsServices.DataServices
         List<GcSetModel> SelectUnloadedMobile(long? TripID);
         List<GcSetModel> SelectToDispatch(long? TripID);
         List<GcSetModel> SelectPending(long? TripID);
+        IEnumerable<GcModel> GetGcs(long? GcSetID);
         GcSetModel SelectByID(long? GcSetID);
         IEnumerable<GcTypeModel> SelectGcTypes();
         int AppendToTrip(long? TripID, long? GcSetID, string UserID);  //AppentToTrip
         int BeginUnload(long? TripID, long? GcSetID);
-        int RemoveFromTrip(long? GcSetID, long? TripID, string UserID); 
-        
+        int RemoveFromTrip(long? GcSetID, long? TripID, string UserID);
+        int ConfirmAcknowledgement(long? GcID, bool IsAcknowledged);
+
         //AppentToTrip
         EwayBillModel UpdateEwayBill(EwayBillModel model);  //Edit
         //decimal? GetPrimaryFreight(int? OrderID, int? RouteID, int? Axles, decimal? Qty, decimal? freight);

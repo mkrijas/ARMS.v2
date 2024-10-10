@@ -1,0 +1,87 @@
+﻿@using ArmsModels.BaseModels.General;
+@using System.Threading;
+@inject IGcService Iservice
+@inject AuthenticationStateProvider auth
+@inject MudBlazor.ISnackbar snackbar
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+<MudDialog Class="my-dialogue pb-3">
+    <DialogContent>
+            <MudGrid style="padding:0px;">
+                @foreach (var i in GcList)
+                {
+                    <MudItem sm="12" style="border:1px solid lightgray; border-bottom-left-radius:7px; border-bottom-right-radius:7px; ">
+                        <MudGrid>
+                            <MudItem sm="4" Class="d-flex align-content-lg-between">
+                                <MudCheckBox Value="@i.IsAcknowledged" ValueChanged="((bool value)=>ConfirmAcknowledgement(i,value))" Color="Color.Primary" Label="@i.GcPrefix" />
+                            </MudItem>                     
+                        </MudGrid>
+                    </MudItem>
+                }
+            </MudGrid>
+    </DialogContent>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public long? GcSetID { get; set; }
+    private List<GcModel> GcList;
+    private GcModel Gc;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        // CancellationTokenSource ctc = new CancellationTokenSource();
+        // HasPermissionBranchSettingsServiceEdit = await Irole.HasClaim(BranchSettingsDocTypeID.ToString(), "Edit", ctc.Token);
+
+        GcList = Iservice.GetGcs(GcSetID).ToList();
+    }
+
+    private async Task ConfirmAcknowledgement(GcModel gc,bool value)
+    {
+        if (!value)
+        {
+            gc.IsAcknowledged = value;
+            Iservice.ConfirmAcknowledgement(gc.GcID, false);
+        }
+        if (value)
+        {
+            bool? confirm = await DialogService.ShowMessageBox("Confirmation !",
+                "Are you sure, you want to Acknowledge?", "Yes", "No");
+            if (confirm == true)
+            {
+                gc.IsAcknowledged = value;
+                Iservice.ConfirmAcknowledgement(gc.GcID, true);
+            }           
+        }
+    }
+    // private async Task OnValidSubmit(List<SettingsModel> context)
+    // {
+    //     if (HasPermissionBranchSettingsServiceEdit)
+    //     {
+    //         if (_busy)
+    //         {
+    //             snackbar.Add("Please wait while form is being submitted!", Severity.Warning);
+    //             return;
+    //         }
+    //         _busy = true;
+
+    //         var authprov = await auth.GetAuthenticationStateAsync();
+    //         var user = authprov.User;
+
+    //         List<int?> RecordStatusList = context.Where(s => s.RecordStatus ?? false).Select(d => d.SettingsID).ToList();
+    //         IBranchSettings.Update(branchID, RecordStatusList, UserID);
+    //         snackbar.Add("Updated Successfully", Severity.Success);
+    //         await Task.Delay(200);
+    //         _busy = false;
+    //     }
+    //     else
+    //     {
+    //         bool? result = await DialogService.ShowMessageBox(
+    //             "Permission denied!",
+    //             "You dont have any permission to Edit BranchSettings.");
+    //     }
+    // }
+}
