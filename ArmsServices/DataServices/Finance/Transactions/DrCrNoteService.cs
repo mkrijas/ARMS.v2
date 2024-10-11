@@ -156,6 +156,7 @@ namespace ArmsServices.DataServices
                     SGST = dr.GetDecimal("SGST"),
                     ItemID = dr.GetInt32("ItemID"),
                     ItemDescription = dr.GetString("ItemDescription"),
+                    ItemGroupDescription = dr.GetString("ItemGroupDescription"),
                     CoaID = dr.GetInt32("CoaID"),
                     ItemQty = dr.GetDecimal("ItemQty"),
                     ItemRate = dr.GetDecimal("ItemRate"),
