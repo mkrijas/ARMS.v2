@@ -30,11 +30,12 @@ namespace ArmsServices.DataServices
 
 
 
-        public IEnumerable<InsuranceClaimModel> Select(int? InsuranceClaimID)
+        public IEnumerable<InsuranceClaimModel> Select(int? InsuranceClaimID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@InsuranceClaimID", InsuranceClaimID)
+               new SqlParameter("@InsuranceClaimID", InsuranceClaimID),
+               new SqlParameter("@BranchID", BranchID)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.InsuranceClaim.Select]", parameters))
