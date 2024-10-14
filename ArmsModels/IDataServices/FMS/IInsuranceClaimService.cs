@@ -15,7 +15,7 @@ namespace ArmsServices.DataServices
         InsuranceClaimModel SelectByID(int? ID);
         InsuranceClaimModel SelectByBreakdownID(int? ID);
         int Delete(int? InsuranceClaimID, string UserID);  //Delete
-        IEnumerable<InsuranceClaimModel> Select(int? InsuranceClaimID);
+        IEnumerable<InsuranceClaimModel> Select(int? InsuranceClaimID, int? BranchID);
         IEnumerable<InsuranceClaimEventMasterModel> GetEventList(int? limiter);
         InsuranceClaimEventMasterModel UpdateEventList(InsuranceClaimEventMasterModel model);  //UpdateList
         InsuranceClaimEventStatusModel UpdateClaimEvent(InsuranceClaimEventStatusModel model);  //UpdateList
