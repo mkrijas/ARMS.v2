@@ -252,7 +252,7 @@ namespace ArmsServices.DataServices
                 Freight = dr.GetDecimal("Freight"),
                 EFreight = dr.GetDecimal("Freight"),
                 UnloadedQuantity = dr.GetDecimal("UnloadedQuantity"),
-
+                IsAcknowledged = dr.GetBoolean("IsAcknowledged"),
                 EwayBill = new EwayBillModel
                 {
                     EwayBillDate = dr.GetDateTime("EwayBillDate"),
@@ -331,8 +331,27 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
-        
 
-
+        public int ConfirmAcknowledgement(long? GcID, bool IsAcknowledged)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@GcID", GcID),
+               new SqlParameter("@IsAcknowledged", IsAcknowledged),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Gc.Gcs.Acknowledged]", parameters);
+        }
+        public IEnumerable<GcModel> GetGcs(long? GcSetID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@GcSetID", GcSetID),
+               new SqlParameter("@Operation", "ByID"),
+            };
+            foreach (var reader in Iservice.GetDataReader("[usp.GcSet.Select]", parameters))
+            {
+                yield return GetGcModel(reader);
+            }
+        }
     }
 }
