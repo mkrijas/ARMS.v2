@@ -17,6 +17,7 @@ namespace ArmsModels.BaseModels
             Contacts = new();
         }
         public int? DriverID { get; set; }
+        public string DriverCode { get; set; }
         public int? DriverAgentID { get; set; }
         public PartyModel DriverAgent { get; set; }
         [Required]
