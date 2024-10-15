@@ -72,7 +72,7 @@ namespace ArmsServices.DataServices
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Select]", parameters))
             {
                 yield return new BillsPaidModel()
-                {                    
+                {
                     MID = dr.GetInt32("MID"),
                     BpID = dr.GetInt32("BpID"),
                     BranchID = dr.GetInt32("BranchID"),
@@ -127,7 +127,13 @@ namespace ArmsServices.DataServices
                     Narration = dr.GetString("Narration"),
                     TotalAmount = dr.GetDecimal("TotalAmount"),
                     AuthLevelId = dr.GetInt32("AuthLevelId"),
-                    AuthStatus = dr.GetString("AuthStatus")
+                    AuthStatus = dr.GetString("AuthStatus"),
+                    UserInfo =
+                    {
+                        UserID = dr.GetString("UserID"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        RecordStatus = dr?.GetByte("RecordStatus"),
+                    }
                 };
             }
         }
@@ -159,7 +165,13 @@ namespace ArmsServices.DataServices
                     Narration = dr.GetString("Narration"),
                     TotalAmount = dr.GetDecimal("TotalAmount"),
                     AuthLevelId = dr.GetInt32("AuthLevelId"),
-                    AuthStatus = dr.GetString("AuthStatus")
+                    AuthStatus = dr.GetString("AuthStatus"),
+                    UserInfo =
+                    {
+                        UserID = dr.GetString("UserID"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        RecordStatus = dr?.GetByte("RecordStatus"),
+                    }
                 };
             }
         }
@@ -268,36 +280,36 @@ namespace ArmsServices.DataServices
         //       new SqlParameter("@OPID", OPID),
         //    };
         //    return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingPayments.SettleBills]", parameters);
-            
+
         //}
 
-        private OutstandingBillsModel  GetModel(IDataRecord dr)
+        private OutstandingBillsModel GetModel(IDataRecord dr)
         {
             return new OutstandingBillsModel
-            {                
+            {
                 BoID = dr.GetInt32("BoID"),
                 MID = dr.GetInt32("MID"),
                 OutstandingAmount = dr.GetDecimal("OutstandingAmount"),
-                NatureOfTransaction= dr.GetString("NatureOfTransaction"),                
+                NatureOfTransaction = dr.GetString("NatureOfTransaction"),
                 BranchName = dr.GetString("BranchName"),
                 BranchID = dr.GetInt32("BranchID"),
-                DocumentNumber= dr.GetString("DocNumber"),
-                DocumentDate = dr.GetDateTime("DocDate"),                
+                DocumentNumber = dr.GetString("DocNumber"),
+                DocumentDate = dr.GetDateTime("DocDate"),
                 ReferenceDocDate = dr.GetDateTime("ReferenceDocDate"),
                 ReferenceDocNo = dr.GetString("ReferenceDocNo"),
-                isMemo=dr.GetBoolean("IsMemo"),
-                CoaID = dr.GetInt32("CoaID"),  
+                isMemo = dr.GetBoolean("IsMemo"),
+                CoaID = dr.GetInt32("CoaID"),
                 SubArdCode = dr.GetString("SubArdCode"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
                     GstNo = dr.GetString("GstNo"),
-                    TradeName= dr.GetString("TradeName")
-                    
-                  
+                    TradeName = dr.GetString("TradeName")
+
+
                 }
-                
+
             };
-        }        
+        }
     }
 }
