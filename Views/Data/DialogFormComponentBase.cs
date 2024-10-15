@@ -133,7 +133,7 @@ namespace Views.Data
             {
                 if (!EditPermission)
                 {
-                    bool? result = await dialogService.ShowMessageBox("Permission denied!", "You dont have permission to Edit !");
+                    bool? result = await dialogService.ShowMessageBox("Permission denied!", "You don't have permission to Edit !");
                 }
                 else
                 {
@@ -182,7 +182,7 @@ namespace Views.Data
             {
                 bool? result = await dialogService.ShowMessageBox(
                     "Permission denied!",
-                    string.Format("You dont have permission to Approve {0} !.", DocInfo.DocumentName));
+                    string.Format("You don't have permission to Approve {0} !.", DocInfo.DocumentName));
             }
         }
 
