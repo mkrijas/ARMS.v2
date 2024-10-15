@@ -144,6 +144,7 @@ namespace ArmsServices.DataServices
                 HomeBranchID = reader.GetInt32("HomeBranchID"),
                 HomeBranchName = reader.GetString("HomeBranchName"),
                 JoiningDate = reader.GetDateTime("JoiningDate"),
+                DriverCode = reader.GetString("DriverCode"),
                 DriverName = reader.GetString("DriverName"),
                 DriverImage = reader.GetString("DriverImage"),
                 //DriverAgentID = reader.GetInt32("DriverAgentID"),
