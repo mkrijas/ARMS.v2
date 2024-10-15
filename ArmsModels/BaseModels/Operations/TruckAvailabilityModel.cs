@@ -2,6 +2,7 @@
 using ArmsModels.SharedModels;
 using Newtonsoft.Json;
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Core.BaseModels.Operations
 {
@@ -23,7 +24,9 @@ namespace Core.BaseModels.Operations
         public DateTime? RequestedDate { get; set; }
         public UserInfoModel RequestedUserInfo { get; set; } = new();
         public int? RespondedBranchID { get; set; }
+        [Required]
         public int? OpeningKM { get; set; }
+        [Required]
         public int? ClosingKM { get; set; }
         public BranchModel RespondedBranch { get; set; }
         public DateTime? RespondedDate { get; set; }
