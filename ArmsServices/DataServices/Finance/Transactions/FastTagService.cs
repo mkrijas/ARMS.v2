@@ -302,8 +302,9 @@ namespace DAL.DataServices.Finance.Transactions
                 AuthStatus = dr.GetString("AuthStatus"),
                 UserInfo =
                 {
+                    UserID = dr.GetString("UserID"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
                     RecordStatus = dr?.GetByte("RecordStatus"),
-                    UserID = dr.GetString("UserID")
                 }
             };
         }
