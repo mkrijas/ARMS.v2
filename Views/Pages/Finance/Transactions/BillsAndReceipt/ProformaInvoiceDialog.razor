@@ -23,7 +23,7 @@
                         <MudTextField ReadOnly="true" Value="@tradeName" Label="Client" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                     </MudItem>
                     <MudItem xs="12" md="2">
-                    <MudNumericField HideSpinButtons Value="model.FreightAmount" ReadOnly="true" Label="Freight" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                        <MudNumericField HideSpinButtons Value="model.FreightAmount" ReadOnly="true" Label="Freight" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
                     </MudItem>
                     <MudItem xs="12" md="2">
                         <MudTextField ReadOnly="true" Value="model.Gst?.TotalGst" Label="Gst" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
@@ -41,12 +41,12 @@
                         <MudTable Items="@model.BookedGCs" Dense Hover Striped Outlined Elevation="0">
                             <HeaderContent>
                                 <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillNumber)" InitialDirection="SortDirection.Ascending">BillNumber</MudTableSortLabel></MudTh>
-                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillDate)" >BillDate</MudTableSortLabel></MudTh>
-                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.InvoiceDate)" >InvoiceDate</MudTableSortLabel></MudTh>
-                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.ConsigneeName)" >ConsigneeName</MudTableSortLabel></MudTh>
-                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillQuantity)" >BillQuantity</MudTableSortLabel></MudTh>
-                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.Amount)" >Freight</MudTableSortLabel></MudTh>
-                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.Deduction)" >Deduction</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillDate)">BillDate</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.InvoiceDate)">InvoiceDate</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.ConsigneeName)">ConsigneeName</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.BillQuantity)">BillQuantity</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.Amount)">Freight</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<GcTariffModel, object>(x=> x.Deduction)">Deduction</MudTableSortLabel></MudTh>
                             </HeaderContent>
                             <RowTemplate Context="cntxt">
                                 <MudTd DataLabel="BillNumber">@cntxt.BillNumber</MudTd>
@@ -96,6 +96,7 @@
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionFreightBillingServiceApprove = await Irole.HasClaim(FreightBillingDocTypeID.ToString(), "Approve", ctc.Token);
 
+
         model.NatureOfTransaction = "Proforma Invoice";
         if (model.ProformaInvoiceID != null)
         {
@@ -103,6 +104,9 @@
         }
         else
         {
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            model.UserInfo.UserID = user.Identity.Name; ;
             var Order = await Iorder.SelectByID(model.OrderID);
             if (model.Party?.PartyID is null)
             {
@@ -131,7 +135,7 @@
                 var dialog = DialogService.Show<InvoiceNumberDialog>();
 
                 var res = await dialog.Result;
-                if(!res.Canceled)
+                if (!res.Canceled)
                 {
                     var Ref = (RefModel)res.Data;
                     var authprov = await auth.GetAuthenticationStateAsync();
@@ -167,13 +171,16 @@
         }
         _busy = true;
 
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        model.UserInfo.UserID = user.Identity.Name;
         model.PartyCoa = partyIservice.GetCustomerReceivableCoaID(model.Party.PartyID.Value);
-        if(model.PartyCoa is null)
+        if (model.PartyCoa is null)
         {
             model.PartyCoa = partyIservice.GetPartyCoaID(model.Party.PartyID, "SisterConcern", "Trade");
         }
 
-        if(model.PartyCoa is null)
+        if (model.PartyCoa is null)
         {
             snackbar.Add("Party Account not mapped!!", Severity.Error);
             return;
