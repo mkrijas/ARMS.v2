@@ -7,6 +7,7 @@
 @inject IRoleService<RoleModel> Irole
 @attribute [Authorize]
 @using System.Threading;
+@using ArmsModels.SharedModels
 
 @if (collection.Any())
 {
@@ -113,8 +114,8 @@
     public DateTime? DocDate { get; set; }
     [Parameter]
     public string DocType { get; set; }
-
-
+    [Parameter]
+    public UserInfoModel CreatedBy { get; set; }
 
     public int BranchID { get; set; }
     public string UserID { get; set; }
@@ -123,6 +124,7 @@
     public bool Authorized = false;
     bool Rejected = false;
     private List<DataAuthorizationModel> collection = new List<DataAuthorizationModel>();
+    private List<DataAuthorizationModel> collectionTemp = new List<DataAuthorizationModel>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -136,7 +138,15 @@
 
     private void GetAll()
     {
-        collection = Iservice.GetAuthStatus(DocTypeID, DocumentID).OrderBy(x => x.AuthLevelID).ToList();
+        collection = new();
+        collection.Add(new DataAuthorizationModel
+            {
+                AuthType = "Created By",
+                UserInfo = CreatedBy,
+                IsCompleted = true
+            });
+        collectionTemp = Iservice.GetAuthStatus(DocTypeID, DocumentID).OrderBy(x => x.AuthLevelID).ToList();
+        collection.AddRange(collectionTemp);
         authlevelID = collection.Where(x => x.IsCompleted == false).Min(y => y.AuthLevelID);
         Authorized = collection.Any(x => x.AuthLevelID == 99 && x.IsCompleted);
         Rejected = collection.Any(x => x.AuthLevelID == 100 && x.IsCompleted);
