@@ -93,7 +93,7 @@ namespace Views
             // 3rd party 
             services.AddMudServices(config =>
             {
-                config.SnackbarConfiguration.PositionClass = Classes.Position.BottomRight;
+                config.SnackbarConfiguration.PositionClass = Classes.Position.BottomLeft;
 
             });
             services.AddBlazorContextMenu();
