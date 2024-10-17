@@ -90,7 +90,7 @@ namespace Views.Data
             {
                 bool? result = await dialogService.ShowMessageBox(
                     "Permission denied!",
-                    "You dont have any permission to Delete Payment.");
+                    "You don't have any permission to Delete Payment.");
             }
         }
 

@@ -253,7 +253,7 @@ namespace MobileAPI.Controllers
             }
             else
             {
-                result = "Permission denied! You dont have any permission to Add or Edit Event.";
+                result = "Permission denied! You don't have any permission to Add or Edit Event.";
             }
             return result;
         }

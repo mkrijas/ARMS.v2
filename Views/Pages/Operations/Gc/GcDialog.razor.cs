@@ -148,7 +148,7 @@ namespace Views.Pages.Operations.Gc
             {
                 bool? ResultModel = await DialogService.ShowMessageBox(
                     "Permission denied!",
-                    "You dont have any permission to Add or Edit GC.");
+                    "You don't have any permission to Add or Edit GC.");
             }   
         }
 
