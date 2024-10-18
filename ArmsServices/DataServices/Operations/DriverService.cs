@@ -412,6 +412,5 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.Driver.Rejoin]", parameters);
         }
-
     }
 }
