@@ -70,7 +70,8 @@
                         @if (PI.SelectedAssets.Any(asset => asset.AssetStatus == "WIP"))
                         {
                             <!-- Editable text box -->
-                            <MudTextField @bind-Value="@context.BookValue" />
+                            @* <MudTextField @bind-Value="@context.BookValue" /> *@
+                            <MudTextField T="decimal?" Value="@context.BookValue" Immediate="true" ValueChanged="((e)=> CalcBookValue(e,context))" />
                         }
                         else
                         {
@@ -341,10 +342,12 @@
             if (!Local)
             {
                 item.IGSTValue = Math.Round(item.BookValue.Value * taxRate / 100, 2);
+                item.GSTValue = item.IGSTValue;
             }
             else
             {
                 item.SGSTValue = item.CGSTValue = Math.Round(item.BookValue.Value * taxRate / 200, 2);
+                item.GSTValue = item.SGSTValue * 2;
             }
             decimal tdsRate = tdsService.GetTdsRate(model.PartyInfo.PartyID, item.CoaID);
             item.TDS = Math.Round((item.BookValue.Value * tdsRate) / 100, 2);
@@ -370,6 +373,27 @@
         decimal tdsRate = tdsService.GetTdsRate(model.PartyInfo.PartyID, item.CoaID);
         item.TDS = Math.Round((item.BookValue.Value * tdsRate) / 100, 2);
         //asset.Add(item);
+        SetTotal();
+    }
 
+    private void CalcBookValue(decimal? BookValue, AssetPOModel item)
+    {
+        //AssetPOModel item = new AssetPOModel();
+        decimal Val = BookValue ?? 0;
+        item.BookValue = Val;
+        if (!Local)
+        {
+            item.IGSTValue = Math.Round(item.BookValue.Value * item.TaxRate.Value / 100, 2);
+            item.GSTValue = item.IGSTValue;
+        }
+        else
+        {
+            item.SGSTValue = item.CGSTValue = Math.Round(item.BookValue.Value * item.TaxRate.Value / 200, 2);
+            item.GSTValue = item.SGSTValue * 2;
+        }
+        decimal tdsRate = tdsService.GetTdsRate(model.PartyInfo.PartyID, item.CoaID);
+        item.TDS = Math.Round((item.BookValue.Value * tdsRate) / 100, 2);
+        //asset.Add(item);
+        SetTotal();
     }
 }
