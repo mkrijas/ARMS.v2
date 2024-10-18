@@ -123,6 +123,7 @@ namespace ArmsModels.BaseModels
         public int? LicenceID { get; set; }
         public int? DriverID { get; set; }
         public int? BranchID { get; set; }
+        [StringLength(16, MinimumLength = 15, ErrorMessage = "Licence number must be between 15 and 16 characters.")]
         public string LicenceNo { get; set; }
         public DateTime? DLExpiryDate { get; set; }
         public string BadgeNo { get; set; }
