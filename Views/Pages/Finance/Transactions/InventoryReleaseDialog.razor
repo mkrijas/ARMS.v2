@@ -162,6 +162,7 @@
     public string DocNumber { get; set; }
     public DateTime? DocDate { get; set; }
     public string DocType { get; set; }
+    string UserIDTemp;
 
     public DocumentInfoModel DocumentDetails { get; set; } = new();
 
@@ -179,22 +180,32 @@
         branchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         var user = authprov.User;
         UserID = user.Identity.Name;
-        if (model == null)
+        // if (model == null)
+        // {
+        //     model = new()
+        //         {
+        //             BranchID = branchID,
+        //             UserInfo = new() { UserID = UserID, },
+        //             TotalAmount = 0,
+        //             NatureOfTransaction = "Inventory Release"
+        //         };
+        // }
+        if (model == null || model.RID == null)
         {
-            model = new()
-                {
-                    BranchID = branchID,
-                    UserInfo = new() { UserID = UserID, },
-                    TotalAmount = 0,
-                    NatureOfTransaction = "Inventory Release"
-                };
-        }
-        else
-        {
+            model.UserInfo = new();
+            model.UserInfo.UserID = UserID;
             model.BranchID = branchID;
             model.TotalAmount = 0;
             model.NatureOfTransaction = "Inventory Release";
-            model.UserInfo = new() { UserID = UserID, };
+
+        }
+        else
+        {
+            UserIDTemp = model.UserInfo.UserID;
+            model.BranchID = branchID;
+            model.TotalAmount = 0;
+            model.NatureOfTransaction = "Inventory Release";
+            //model.UserInfo = new() { UserID = UserID, };
         }
         ItemList = itemIservice.SearchByDescription(string.Empty).ToList();
         JobcardList = IJobcardService.SelectByBranch(branchID, true).ToList();
@@ -440,6 +451,7 @@
                     model.UserInfo.UserID = UserID;
                     Iservice.Approve(model.RID, model.UserInfo.UserID, aprvd.Remarks);
                     notiService.AcknowledgeAuthNotification(99, 97, model.RID.Value, UserID);
+                    model.UserInfo.UserID = UserIDTemp;
                     snackbar.Add("Approved Successfully", Severity.Success);
                 }
                 catch (Exception ex)
