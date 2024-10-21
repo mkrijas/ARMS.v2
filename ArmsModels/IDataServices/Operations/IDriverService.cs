@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
         int Delete(int? DriverID, string UserID);  //Delete
         //int Resign(int? DriverID, string Narration);  
         IEnumerable<DriverModel> Select();
+        IEnumerable<DriverModel> SelectRejoin();
         IEnumerable<DriverModel> SelectByBranch(int BranchID);
         DriverModel SelectByID(int? DriverID);
         IEnumerable<DriverModel> ExcelDataCollection(int? BranchID);

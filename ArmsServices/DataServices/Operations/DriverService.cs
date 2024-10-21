@@ -96,6 +96,19 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<DriverModel> SelectRejoin()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DriverID", 0),
+               new SqlParameter("@Operation", "Rejoin"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         public IEnumerable<DriverModel> SelectByBranch(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -412,6 +425,5 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Driver.Driver.Rejoin]", parameters);
         }
-
     }
 }
