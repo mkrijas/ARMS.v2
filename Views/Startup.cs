@@ -268,6 +268,7 @@ namespace Views
             services.AddScoped<IGeneralLedgerTransferService, GeneralLedgerTransferService>();
             services.AddScoped<IDayOpenService, DayOpenService>();
             services.AddScoped<ICreditDebitTransferService, CreditDebitTransferService>();
+            services.AddScoped<IDriverSalaryPayableService, DriverSalaryPayableService>();
 
 
             //----IBASE GROUP
@@ -285,6 +286,7 @@ namespace Views
             services.AddScoped<IbaseInterface<TdsTransactionModel>, TdsEntryService>();
             services.AddScoped<IbaseInterface<GeneralLedgerTransferModel>, GeneralLedgerTransferService>();
             services.AddScoped<IbaseInterface<CreditDebitTransferModel>, CreditDebitTransferService>();
+            services.AddScoped<IbaseInterface<DriverSalaryPayableModel>, DriverSalaryPayableService>();
 
             //------------FINANCE POSTING GROUP-------------------
             services.AddScoped<IBankPostingGroupService, BankPostingGroupService>();

@@ -1,0 +1,248 @@
+﻿@inherits DialogFormComponentBase<DriverSalaryPayableModel>
+@inject IDriverSalaryPayableService Iservice
+@inject IJSRuntime JsRuntime
+
+
+<DialogForm @ref="@dialogForm" ReadOnly="@ReadOnly" Title="Driver Salary Payable" formID="DriverSalaryPayableForm" DocumentDetails="DocInfo" model="@model" _busy="_busy">
+    <FormContent>
+        <MudPaper Class="p-3">
+            <EditForm id="DriverSalaryPayableForm" OnValidSubmit="OnValidSubmit" EditContext="editContext">
+                <ObjectGraphDataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid>
+                    <MudItem xs="4">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="Document Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.DocumentDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="3">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="From Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.FromDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="3">
+                        <MudDatePicker ReadOnly="ReadOnly" Label="To Date" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.ToDate" DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                    <MudItem xs="2">
+                        <MudButton Disabled="DisableSearch" Variant="Variant.Filled" Color="Color.Secondary" OnClick="GetDrivers">Search</MudButton>
+                    </MudItem>
+                    <MudItem xs="12" md="12">
+                        <MudTextField ReadOnly="ReadOnly" @bind-Value="model.Narration" Lines="2" Label="Narration" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Narration)"></MudTextField>
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="SearchTerm"
+                                      Placeholder="Search Driver... "
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      IconSize="Size.Medium"
+                                      @onkeydown="HandleKeyDown" />
+                    </MudItem>
+                    <MudItem xs="2">
+                        <MudButton Variant="Variant.Filled">Filter</MudButton>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <br />
+                        <MudItem xs="12" Style="overflow-x:auto; overflow-y:hidden;">
+                            <div style="width: 1600px;" class="pb-3">
+                                <MudGrid Justify="Justify.Center">
+                                    <MudItem xs="3"><span class="HeadText"><b>Driver</b></span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText"><b>Work Days</b></span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText"><b>No of Trips</b></span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText"><b>Run KM</b></span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText"><b>Gross Salary</b></span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText"><b>Deduction</b></span></MudItem>
+                                    <MudItem xs="1"><span class="HeadText"><b>Net Salary</b></span></MudItem>
+                                    <MudItem xs="2"><span class="HeadText"><b>Reference</b></span></MudItem>
+                                    <MudItem xs="1"></MudItem>
+
+                                    @foreach (var item in FilteredDrivers)
+                                    {
+                                        var rowindex = model.DriversLists.IndexOf(item);
+
+                                        @if (editrow == rowindex)
+                                        {
+                                            <MudItem xs="3">
+                                                @string.Format("{0} {1}", item.DriverCode, item.DriverName)
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                <MudNumericField HideSpinButtons="true" @bind-Value="@List.WorkDays" Label="WorkDays" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => List.WorkDays)"></MudNumericField>
+                                            </MudItem>
+                                            <MudItem xs="1">@item.NoOfTrips</MudItem>
+                                            <MudItem xs="1">@item.RunKM</MudItem>
+                                            <MudItem xs="1">
+                                                <MudNumericField HideSpinButtons="true" @bind-Value="@List.GrossSalary" TextChanged="(()=> List.NetSalary = List.GrossSalary - List.Deduction)" Label="Gross Salary" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => List.GrossSalary)"></MudNumericField>
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                <MudNumericField HideSpinButtons="true" @bind-Value="@List.Deduction" TextChanged="(()=> List.NetSalary = List.GrossSalary - List.Deduction)" Label="Deduction" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => List.Deduction)"></MudNumericField>
+                                            </MudItem>
+                                            <MudItem xs="1">@List.NetSalary</MudItem>
+                                            <MudItem xs="2">
+                                                <MudTextField @bind-Value="@List.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => List.Reference)"></MudTextField>
+                                            </MudItem>
+                                            <MudItem xs="1">
+                                                <MudFab Disabled="ReadOnly" OnClick="AddParticulars" Color="Color.Tertiary" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                                            </MudItem>
+                                        }
+                                        else
+                                        {
+                                            <MudItem xs="3">@string.Format("{0} {1}", item.DriverCode, item.DriverName)</MudItem>
+                                            <MudItem xs="1">@item.WorkDays</MudItem>
+                                            <MudItem xs="1">@item.NoOfTrips</MudItem>
+                                            <MudItem xs="1">@item.RunKM</MudItem>
+                                            <MudItem xs="1">@item.GrossSalary</MudItem>
+                                            <MudItem xs="1">@item.Deduction</MudItem>
+                                            <MudItem xs="1">@item.NetSalary</MudItem>
+                                            <MudItem xs="2">@item.Reference</MudItem>
+                                            <MudItem xs="1"><MudFab Disabled="ReadOnly" OnClick="@(() => EditEntry(rowindex))" Color="Color.Error" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" /></MudItem>
+                                        }
+                                    }
+
+                                    @if (!ReadOnly && editrow < 0)
+                                    {
+                                        <MudItem xs="3">
+                                            @string.Format("{0} {1}", List.DriverCode, List.DriverName)
+                                        </MudItem>
+                                        <MudItem xs="1">
+                                            <MudNumericField HideSpinButtons="true" @bind-Value="@List.WorkDays" Label="WorkDays" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => List.WorkDays)"></MudNumericField>
+                                        </MudItem>
+                                        <MudItem xs="1">@List.NoOfTrips</MudItem>
+                                        <MudItem xs="1">@List.RunKM</MudItem>
+                                        <MudItem xs="1">
+                                            <MudNumericField HideSpinButtons="true" @bind-Value="@List.GrossSalary" TextChanged="(()=> List.NetSalary = List.GrossSalary - List.Deduction)" Label="Gross Salary" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => List.GrossSalary)"></MudNumericField>
+                                        </MudItem>
+                                        <MudItem xs="1">
+                                            <MudNumericField HideSpinButtons="true" @bind-Value="@List.Deduction" TextChanged="(()=> List.NetSalary = List.GrossSalary - List.Deduction)" Label="Deduction" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => List.Deduction)"></MudNumericField>
+                                        </MudItem>
+                                        <MudItem xs="1">@List.NetSalary</MudItem>
+                                        <MudItem xs="2">
+                                            <MudTextField @bind-Value="@List.Reference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => List.Reference)"></MudTextField>
+                                        </MudItem>
+                                        <MudItem xs="1">
+                                            <MudFab Disabled="DisableSearch" OnClick="AddParticulars" Color="Color.Tertiary" Icon="@Icons.Material.Filled.Check" Size="Size.Small" IconSize="Size.Small" />
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+                            </div>
+                        </MudItem>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudPaper>
+    </FormContent>
+    <VerificationStatus>
+        <AutherizationStatusComponent CreatedBy="@model.UserInfo" DocTypeID="@DocInfo.DocumentTypeID" DocDate="@DocDate" DocumentID="model.ID" OnApprove="Approve"></AutherizationStatusComponent>
+    </VerificationStatus>
+</DialogForm>
+
+<script>
+    window.preventFormSubmitOnEnter = function () {
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent default form submission
+            }
+        });
+    }
+</script>
+
+@code {
+
+    [Parameter]
+    public override DriverSalaryPayableModel model { get { return _model; } set { _model = value; DocInfo.DocumentID = value.ID; } }
+    private DriverSalaryPayableModel _model;
+    public bool entryedit = true;
+
+    // [Parameter]
+    // public bool DisableAddition { get; set; } = false;
+
+    public bool DisableSearch { get; set; } = false;
+
+    private DriverSalaryPayableListModel List = new DriverSalaryPayableListModel();
+
+    public string SearchTerm { get; set; } = "";
+
+    protected override DocumentInfoModel DocInfo { get; set; } = new DocumentInfoModel()
+        {
+            DocumentTypeID = 141,
+            DocumentName = "Driver Salary Payable"
+        };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (model.NatureOfTransaction == null)
+        {
+            model.NatureOfTransaction = "Driver Salary Payable";
+            model.TotalAmount = 0;
+        }
+        else if (model.ID != null && model.DriversLists.Count == 0)
+        {
+            DisableSearch = true;
+            model.DriversLists = Iservice.GetDetails(model.ID).ToList();
+        }
+        model.TotalAmount = model.DriversLists.Sum(x => x.NetSalary);
+    }
+
+    public IEnumerable<DriverSalaryPayableListModel> FilteredDrivers => string.IsNullOrWhiteSpace(SearchTerm)
+    ? model.DriversLists
+    : model.DriversLists.Where(x =>
+        (x.DriverName?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        (x.DriverCode?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+
+
+    private async Task HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await JsRuntime.InvokeVoidAsync("preventFormSubmitOnEnter");
+        }
+    }
+
+    private int editrow = -1;
+
+    public void EditEntry(int a)
+    {
+        editrow = a;
+        List = (DriverSalaryPayableListModel)model.DriversLists[editrow].Clone();
+    }
+
+    protected override int UpdateApproval(DataApprovedStatus aprvd)
+    {
+        int result = Iservice.Approve(model.ID, model.UserInfo.UserID, aprvd.Remarks);
+        return result;
+    }
+
+    public void AddParticulars()
+    {
+        if (dialogForm.validate(List, editContext))
+        {
+            if (editrow > -1)
+            {
+                model.DriversLists[editrow] = (DriverSalaryPayableListModel)List.Clone();
+                editrow = -1;
+            }
+            else
+            {
+                model.DriversLists.Add(List);
+            }
+            List = new();
+        }
+        model.TotalAmount = model.DriversLists.Sum(x => x.NetSalary);
+    }
+
+    public void CalculateTotalAmount()
+    {
+        model.TotalAmount = model.DriversLists.Sum(x => x.NetSalary);
+    }
+
+    protected override async Task<int> Update(DriverSalaryPayableModel editModel)
+    {
+        var UpdatedModel = Iservice.Update(model);
+        model.ID = UpdatedModel.ID;
+        return model.ID.Value;
+    }
+
+    private async Task GetDrivers()
+    {
+        model.DriversLists = Iservice.GetLists(model.BranchID, model.FromDate, model.ToDate).ToList();
+    }
+
+}
