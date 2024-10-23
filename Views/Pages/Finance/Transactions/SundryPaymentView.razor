@@ -5,6 +5,8 @@
 @inherits ViewComponentBase<SundryPaymentModel>
 @inject ISundryPaymentService Iservice
 @inject IDialogService DialogService
+@inject IGstUsageIDService Iusage
+@inject IConfigTable Iconfig
 
 <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="5">
     <ToolBarContent>
@@ -13,9 +15,8 @@
         {
             <MudText Typo="Typo.h6" Class="pl-2"> Interbranch </MudText>
         }
-        <MudTooltip Text="New Sundry Payment">
-            <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenForm(new SundryPaymentModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
-        </MudTooltip>
+        <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="New" @onclick="@(()=> OpenForm(new SundryPaymentModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+        <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.AirlineSeatReclineNormal" Title="Driver Salary Payable" OnClick="DriverPendingSalary" Color="Color.Secondary" Size="Size.Small"></MudIconButton>
         <MudSpacer></MudSpacer>
         <MudTextField @bind-Value="searchTerm" Placeholder="Search Sundry..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" @onkeyup="HandleSearchKeyUp">
         </MudTextField>
@@ -129,5 +130,55 @@
 
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
         var result = DialogService.Show<PrintDialog>("PRINT", parameters, maxWidth);
+    }
+
+    private async Task DriverPendingSalary()
+    {
+        DialogOptions mediumWidth = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+        DialogParameters parms = new DialogParameters();
+        parms.Add("BranchID", BranchID);
+        var dialog = dialogService.Show<DriverPendingSalary>("Stockists Freight", parms, mediumWidth);
+
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            var data = (List<DriverPendingSalaryModel>)result.Data;
+
+            try
+            {
+                SundryPaymentModel DriverPayableModel = new SundryPaymentModel()
+                    {
+                        BranchID = BranchID,
+                        NatureOfTransaction = "Driver Salary",
+                        PayeeContactNo = data.First().Driver.Mobile,
+                        PayeeName = data.First().Driver.DriverName,
+                        TotalAmount = data.Sum(x => x.Amount)
+
+                    };
+
+                GstUsageCodeModel UsageCode = Iusage.SelectByCode(Iconfig.GetByID("DriverSalaryPayable").ValueString);
+
+                foreach (var item in data)
+                {
+                    DriverPayableModel.Entries.Add(new SundryPaymentEntryModel()
+                        {
+                            Amount = item.Amount,
+                            BranchID = BranchID,
+                            CoaID = UsageCode.CoaID,
+                            Reference = item.EntryRef,
+                            UsageCode = UsageCode.UsageCode,
+                            UsageCodeDescription = UsageCode.Description,
+                            SubArdCode = item.Driver.DriverCode
+                        });
+                }
+
+                await OpenForm(DriverPayableModel, false, true);
+
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
     }
 }
