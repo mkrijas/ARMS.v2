@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
         IEnumerable<DriverSalaryPayableListModel> GetLists(int? BranchID, DateTime? FromDate, DateTime? ToDate);
         IEnumerable<DriverSalaryPayableModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm);
         IEnumerable<DriverSalaryPayableModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm);
-        //TaxPurchaseModel UpdateAssetPO(TaxPurchaseModel model);
+        IEnumerable<DriverPendingSalaryModel> GetDriverPendingSalary(int? DriverID, int? BranchID, string UsageCode);
+
     }
 }

@@ -20,6 +20,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
         }
         public int? BreakdownID { get; set; }
+        public string BreakdownNumber { get; set; }
         public int? BranchID { get; set; }
         [Required]
         public string BreakdownType { get; set; }
