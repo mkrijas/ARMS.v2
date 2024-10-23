@@ -167,6 +167,7 @@ namespace DAL.DataServices.Operations
                 DriverID = dr.GetInt32("DriverID"),
                 Truck = new TruckModel()
                 {
+                    AssetID = dr.GetInt32("AssetID"),
                     TruckID = dr.GetInt32("TruckID"),
                     RegNo = dr.GetString("RegNo"),
                 },

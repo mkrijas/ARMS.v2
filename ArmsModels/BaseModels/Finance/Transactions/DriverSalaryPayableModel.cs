@@ -28,23 +28,42 @@ namespace ArmsModels.BaseModels
 
     public class DriverSalaryPayableListModel
     {
-        public int ID { get; set; }
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<DriverSalaryPayableListModel>(Json);
+        }
+        public int? ID { get; set; }
         public int? HeaderID { get; set; }
         [Required]
-        public int DriverID { get; set; }
+        public int? DriverID { get; set; }
         [Required]
         public decimal? WorkDays { get; set; }
         [Required]
-        public int NoOfTrips { get; set; }
+        public int? NoOfTrips { get; set; }
         [Required]
-        public int RunKM { get; set; }
+        public int? RunKM { get; set; }
         [Required]
-        public decimal? GrossSalary { get; set; } = 0;
+        public decimal? GrossSalary { get; set; }
         [Required]
-        public decimal? Deduction { get; set; } = 0;
+        public decimal? Deduction { get; set; }
         [Required]
-        public decimal? NetSalary { get; set; } = 0;
+        public decimal? NetSalary { get; set; }
         public string Reference { get; set; }
+        public virtual string DriverCode { get; set; }
+        public virtual string DriverName { get; set; }
+    }
+
+    public class DriverPendingSalaryModel
+    {
+        public DriverModel Driver { get; set; }
+        public string EntryRef { get; set; }
+        public decimal? Amount { get; set; }
+        [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
+        public DateTime? DocumentDate { get; set; }
+        public string ArdCode { get; set; }
+        public virtual bool IsChecked { get; set; }
+
     }
 
 }

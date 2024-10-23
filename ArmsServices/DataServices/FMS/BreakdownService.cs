@@ -176,6 +176,7 @@ namespace ArmsServices.DataServices
             return new BreakdownModel
             {
                 BreakdownID = dr.GetInt32("BreakdownID"),
+                BreakdownNumber = dr.GetString("BreakdownNumber"),
                 BranchID = dr.GetInt32("BranchID"),
                 BreakdownTime = dr.GetDateTime("BreakdownTime"),
                 BreakdownType = dr.GetString("BreakdownType"),

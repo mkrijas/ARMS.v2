@@ -17,6 +17,7 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IBranchService IbranchService
+@inject IAssetDocumentService IAssetDocument
 @inject NavigationManager NavigationManager
 @inject SignalRService signalRService
 @inject IPushNotificationService IpushNotificationService
@@ -227,7 +228,7 @@
 
     private async Task GetAll(bool val)
     {
-        if(val)
+        if (val)
         {
             await GetAllOutGoingCompleted();
         }
@@ -368,72 +369,102 @@
     private RequestApprovalHistoryModel modelIncoming = new();
     private List<RequestApprovalHistoryModel> collectionIncoming = new();
 
+    private bool IsFit(RequestApprovalHistoryModel ResponseRequest)
+    {
+        var doc = IAssetDocument.SelectByAsset(ResponseRequest.Truck.AssetID, false);
+        foreach (var item in doc.Where(x => x.IsFitParameter is true))
+        {
+            if (item.ExtendedEndDate == null)
+            {
+                if (item.EndDate < DateTime.Today)
+                {
+                    string[] doctTyps = doc.Where(x => x.EndDate < DateTime.Today).Select(y => y.DocumentType.DocumentTypeName).ToArray();
+                    snackbar.Add(String.Join(",", doctTyps) + " Expired", Severity.Error);
+                    return false;
+                }
+            }
+            else
+            {
+                if (item.ExtendedEndDate < DateTime.Today)
+                {
+                    string[] doctTyps = doc.Where(x => x.ExtendedEndDate < DateTime.Today).Select(y => y.DocumentType.DocumentTypeName).ToArray();
+                    snackbar.Add(String.Join(",", doctTyps) + " Expired", Severity.Error);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private async Task OpenDialogEditIncoming(RequestApprovalHistoryModel ResponseRequest)
     {
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
-        ResponseRequest.RespondedUserInfo = new();
-        if (ResponseRequest.RespondedUserInfo != null)
+        if (IsFit(ResponseRequest))
         {
-            ResponseRequest.RespondedUserInfo.UserID = user.Identity.Name;
-        }
-        if (ResponseRequest.RespondedBranch == null || ResponseRequest.RespondedBranch.BranchID == null || ResponseRequest.RespondedBranchID == null)
-        {
-            ResponseRequest.RespondedBranch = new();
-            ResponseRequest.RespondedBranch.BranchID = int.Parse(brancIDString);
-            ResponseRequest.RespondedBranchID = int.Parse(brancIDString);
-        }
-
-        var modelIncoming = new DialogParameters { ["model"] = ResponseRequest.Clone() };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
-        var dialog = DialogService.Show<TruckAvailabilityResponseDialog>("Simple Dialog", modelIncoming, options);
-        var result = await dialog.Result;
-        var isCancelled = result.Canceled;
-        if (!isCancelled)
-        {
-            var ReturnData = (RequestApprovalHistoryModel)result.Data;            
-            currentNotificationMessages = IpushNotificationService.SelectActiveNotifications(ResponseRequest.RespondedBranch.BranchID).ToList(); 
-            if (currentNotificationMessages != null && currentNotificationMessages.Any(g => g.DocumentID == ReturnData.RequestApprovalHistoryID && g.DocumentTypeID == DocTypeID && g.MessageID != null))
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+            var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+            ResponseRequest.RespondedUserInfo = new();
+            if (ResponseRequest.RespondedUserInfo != null)
             {
-                string MessageIDs = String.Join(",", currentNotificationMessages.Where(g => g.DocumentID == ReturnData.RequestApprovalHistoryID && g.DocumentTypeID == DocTypeID && g.MessageID != null).Select(d => d.MessageID).ToList());
-                try
+                ResponseRequest.RespondedUserInfo.UserID = user.Identity.Name;
+            }
+            if (ResponseRequest.RespondedBranch == null || ResponseRequest.RespondedBranch.BranchID == null || ResponseRequest.RespondedBranchID == null)
+            {
+                ResponseRequest.RespondedBranch = new();
+                ResponseRequest.RespondedBranch.BranchID = int.Parse(brancIDString);
+                ResponseRequest.RespondedBranchID = int.Parse(brancIDString);
+            }
+
+            var modelIncoming = new DialogParameters { ["model"] = ResponseRequest.Clone() };
+            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+            var dialog = DialogService.Show<TruckAvailabilityResponseDialog>("Simple Dialog", modelIncoming, options);
+            var result = await dialog.Result;
+            var isCancelled = result.Canceled;
+            if (!isCancelled)
+            {
+                var ReturnData = (RequestApprovalHistoryModel)result.Data;
+                currentNotificationMessages = IpushNotificationService.SelectActiveNotifications(ResponseRequest.RespondedBranch.BranchID).ToList();
+                if (currentNotificationMessages != null && currentNotificationMessages.Any(g => g.DocumentID == ReturnData.RequestApprovalHistoryID && g.DocumentTypeID == DocTypeID && g.MessageID != null))
                 {
-                    if (!string.IsNullOrEmpty(MessageIDs))
+                    string MessageIDs = String.Join(",", currentNotificationMessages.Where(g => g.DocumentID == ReturnData.RequestApprovalHistoryID && g.DocumentTypeID == DocTypeID && g.MessageID != null).Select(d => d.MessageID).ToList());
+                    try
                     {
-                        IpushNotificationService.AknowledgedSelectedItems(MessageIDs, user.Identity.Name);
+                        if (!string.IsNullOrEmpty(MessageIDs))
+                        {
+                            IpushNotificationService.AknowledgedSelectedItems(MessageIDs, user.Identity.Name);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        snackbar.Add("Error while sending message!", Severity.Error);
                     }
                 }
-                catch (Exception ex)
+                string messageTitle = string.Empty;
+                string messageBody = string.Empty;
+                if (ReturnData.RequestStatus == 1)
                 {
-                    snackbar.Add("Error while sending message!", Severity.Error);
+                    messageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Approved.";
+                    messageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Approved" + ((ReturnData.RequestedBranch != null && ReturnData.RequestedBranch.BranchName != null) ? (" from branch " + ReturnData.RequestedBranch.BranchName + ((ReturnData.RespondedUserInfo != null && ReturnData.RespondedUserInfo.UserID != null) ? (" by user " + ReturnData.RespondedUserInfo.UserID + ".") : ".")) : ".") + " on " + (DateTime.Now).ToString() + ".";
                 }
+                else if (ReturnData.RequestStatus == 99)
+                {
+                    messageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Rejected.";
+                    messageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Rejected" + ((ReturnData.RequestedBranch != null && ReturnData.RequestedBranch.BranchName != null) ? (" from branch " + ReturnData.RequestedBranch.BranchName + ((ReturnData.RespondedUserInfo != null && ReturnData.RespondedUserInfo.UserID != null) ? (" by user " + ReturnData.RespondedUserInfo.UserID + ".") : ".")) : ".") + " on " + (DateTime.Now).ToString() + ".";
+                }
+                notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData.RespondedBranchID ?? 0)) ?? null;
+                notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData.RequestedBranchID ?? 0)) ?? null;
+                notificationMessage.MessageTitle = messageTitle;
+                notificationMessage.MessageBody = messageBody;
+                notificationMessage.RedirectedTo = 0;
+                notificationMessage.MsgDate = DateTime.Now;
+                notificationMessage.ExpiredBy = 7;
+                notificationMessage.DocumentID = ReturnData.RequestApprovalHistoryID;
+                notificationMessage.MessageGroupID = "TruckRequestApproval";
+                notificationMessage.PageToRedirectLink = "/TruckAvailabilityView";
+                notificationMessage.ClaimValue = "Edit";
+                notificationMessage.DocumentTypeID = DocTypeID;
+                await signalRService.Send(notificationMessage);
             }
-            string messageTitle = string.Empty;
-            string messageBody = string.Empty;
-            if (ReturnData.RequestStatus == 1)
-            {
-                messageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Approved.";
-                messageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Approved" + ((ReturnData.RequestedBranch != null && ReturnData.RequestedBranch.BranchName != null) ? (" from branch " + ReturnData.RequestedBranch.BranchName + ((ReturnData.RespondedUserInfo != null && ReturnData.RespondedUserInfo.UserID != null) ? (" by user " + ReturnData.RespondedUserInfo.UserID + ".") : ".")) : ".") + " on " + (DateTime.Now).ToString() + ".";
-            }
-            else if (ReturnData.RequestStatus == 99)
-            {
-                messageTitle = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Rejected.";
-                messageBody = "Truck name " + (ReturnData?.Truck?.RegNo ?? "") + " is Rejected" + ((ReturnData.RequestedBranch != null && ReturnData.RequestedBranch.BranchName != null) ? (" from branch " + ReturnData.RequestedBranch.BranchName + ((ReturnData.RespondedUserInfo != null && ReturnData.RespondedUserInfo.UserID != null) ? (" by user " + ReturnData.RespondedUserInfo.UserID + ".") : ".")) : ".") + " on " + (DateTime.Now).ToString() + ".";
-            }
-            notificationMessage.InitiateBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData.RespondedBranchID ?? 0)) ?? null;
-            notificationMessage.ReceivedBranch = BranchList?.FirstOrDefault(s => s.BranchID == Convert.ToInt32(ReturnData.RequestedBranchID ?? 0)) ?? null;
-            notificationMessage.MessageTitle = messageTitle;
-            notificationMessage.MessageBody = messageBody;
-            notificationMessage.RedirectedTo = 0;
-            notificationMessage.MsgDate = DateTime.Now;
-            notificationMessage.ExpiredBy = 7;
-            notificationMessage.DocumentID = ReturnData.RequestApprovalHistoryID;
-            notificationMessage.MessageGroupID = "TruckRequestApproval";
-            notificationMessage.PageToRedirectLink = "/TruckAvailabilityView";
-            notificationMessage.ClaimValue = "Edit";
-            notificationMessage.DocumentTypeID = DocTypeID;
-            await signalRService.Send(notificationMessage);
         }
         await GetAll(IsCompleted);
     }
@@ -461,7 +492,7 @@
     {
         DialogParameters parms = new DialogParameters();
         //parms.Add("TruckNumber", modelOutGoing.Truck.RegNo);
-        parms.Add("Tmodel", new TripFuelModel() { RequestApprovalHistoryID = fuelModel.RequestApprovalHistoryID , TruckID = fuelModel.TruckID});
+        parms.Add("Tmodel", new TripFuelModel() { RequestApprovalHistoryID = fuelModel.RequestApprovalHistoryID, TruckID = fuelModel.TruckID });
         var dialog = DialogService.Show<TripsFuelDialog>("ADD FUEL", parms, maxWidth);
         var result = await dialog.Result;
     }

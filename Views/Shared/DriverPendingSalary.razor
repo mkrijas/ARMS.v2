@@ -1,0 +1,88 @@
+﻿@inject IDriverSalaryPayableService Iservice
+@inject IDialogService Idialog
+@* @inherits ViewComponentBase<SundryReceiptModel> *@
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h5">Select Payable Drivers</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTable T="DriverPendingSalaryModel" Items="@_payables" Filter="new Func<DriverPendingSalaryModel, bool>(search)">
+            <ToolBarContent>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="searchDrivers" Placeholder="Search Drivers... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverPendingSalaryModel, object>(x => x.Driver.DriverCode)" InitialDirection="SortDirection.Ascending">Driver</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverPendingSalaryModel, object>(x => x.Driver.Mobile)" InitialDirection="SortDirection.Ascending">Contact</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverPendingSalaryModel, object>(x => x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverPendingSalaryModel, object>(x => x.DocumentDate)" InitialDirection="SortDirection.Ascending">Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverPendingSalaryModel, object>(x => x.EntryRef)" InitialDirection="SortDirection.Ascending">Doc Reference</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<DriverPendingSalaryModel, object>(x => x.ArdCode)" InitialDirection="SortDirection.Ascending">Ard Code</MudTableSortLabel></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd><MudCheckBox @bind-Value="@context.IsChecked"></MudCheckBox></MudTd>
+                <MudTd DataLabel="name">@context.Driver.DriverCode - @context.Driver.DriverName</MudTd>
+                <MudTd DataLabel="Mobile">@context.Driver.Mobile</MudTd>
+                <MudTd DataLabel="Amount">@context.Amount</MudTd>
+                <MudTd DataLabel="date">@context.DocumentDate</MudTd>
+                <MudTd DataLabel="Ref">@context.EntryRef</MudTd>
+                <MudTd DataLabel="ArdCode">@context.ArdCode</MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+            </PagerContent>
+            <FooterContent>
+                <MudTd colspan="5">Select All</MudTd>
+            </FooterContent>
+        </MudTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton ButtonType="ButtonType.Button" OnClick="Submit" Color="Color.Primary"> Proceed </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public int? DriverID { get; set; } = null;
+    [Parameter]
+    public int? BranchID { get; set; }
+
+    private List<DriverPendingSalaryModel> _payables = new List<DriverPendingSalaryModel>();
+    private HashSet<DriverPendingSalaryModel> _Selected = new HashSet<DriverPendingSalaryModel>();
+    private List<DriverPendingSalaryModel> drivers = new List<DriverPendingSalaryModel>();
+    private string searchDrivers = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _payables = Iservice.GetDriverPendingSalary((DriverID ?? 0), BranchID, null).ToList();
+    }
+
+    private void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(_payables.Where(x => x.IsChecked).ToList()));
+    }
+
+    private bool search(DriverPendingSalaryModel Driver)
+    {
+        if ((Driver.Driver.DriverName != null && Driver.Driver.DriverName.Contains(searchDrivers, StringComparison.OrdinalIgnoreCase)) ||
+        (Driver.Driver.DriverCode != null && Driver.Driver.DriverCode.Contains(searchDrivers, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void GetSelectedItems(HashSet<DriverPendingSalaryModel> driverPendingSalaries)
+    {
+        foreach (var item in driverPendingSalaries)
+        {
+            _Selected.Add(item);
+            drivers.Add(item);
+        }
+    }
+}
