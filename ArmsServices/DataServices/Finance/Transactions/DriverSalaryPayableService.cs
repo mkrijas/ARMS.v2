@@ -227,5 +227,34 @@ namespace ArmsServices.DataServices
         {
             throw new NotImplementedException();
         }
+
+        public IEnumerable<DriverPendingSalaryModel> GetDriverPendingSalary(int? DriverID, int? BranchID, string UsageCode)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DriverID", DriverID),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@UsageCode", UsageCode),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.PendingSalary.Select]", parameters))
+            {
+                yield return new DriverPendingSalaryModel()
+                {
+                    Amount = dr.GetDecimal("Amount"),
+                    EntryRef = dr.GetString("EntryRef"),
+                    DocumentDate = dr.GetDateTime("DocumentDate"),
+                    ArdCode = dr.GetString("ArdCode"),
+                    Driver = new DriverModel()
+                    {
+                        DriverID = dr.GetInt32("DriverID"),
+                        DriverCode = dr.GetString("DriverCode"),
+                        Mobile = dr.GetString("Mobile"),
+                        DriverName = dr.GetString("DriverName"),
+                    }
+                };
+            }
+        }
+        
     }
 }

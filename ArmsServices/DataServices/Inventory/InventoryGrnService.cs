@@ -39,6 +39,16 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Delete]", parameters);
         }
 
+        public int ToInvoiceCancel(int? ID)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@GrnID", ID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.ToInvoice.Cancel]", parameters);
+        }
+
         public IEnumerable<InventoryItemEntryModel> GetItemEntries(int GrnID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

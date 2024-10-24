@@ -13,6 +13,7 @@ namespace ArmsServices.DataServices
         InventoryGrnModel Update(InventoryGrnModel model);  //Edit
         InventoryGrnModel SelectByID(int? ID);
         int Delete(int? ID, string UserID);  //Delete
+        int ToInvoiceCancel(int? ID);  //Delete
         IEnumerable<InventoryGrnModel> SelectPending(int BranchID);
         IEnumerable<InventoryGrnModel> PendingToInvoice(int BranchID);
         IEnumerable<InventoryGrnModel> SelectByStore(int StoreID);
