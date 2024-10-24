@@ -237,20 +237,20 @@ namespace ArmsServices.DataServices
             }
         }
 
-        //public DriverModel FindDriver(DriverModel model = null, DriverLicenceModel licence = null)
-        //{
-        //    List<SqlParameter> parameters = new List<SqlParameter>
-        //    {
-        //       new SqlParameter("@Operation", "GetTracked"),
-        //       new SqlParameter("@AdhaarNo", model?.AdhaarNo),
-        //       new SqlParameter("@LicenceNo", licence?.LicenceNo),
-        //    };
-        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
-        //    {
-        //        model = GetModel(dr);
-        //    }
-        //    return model;
-        //}
+        public DriverModel FindDriver(DriverModel model = null, DriverLicenceModel licence = null)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "GetTracked"),
+               new SqlParameter("@AdhaarNo", model?.AdhaarNo),
+               new SqlParameter("@LicenceNo", licence?.LicenceNo),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
 
         public DriverModel FindDriver(string Operation, DriverModel Value)
         {
