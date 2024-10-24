@@ -1,0 +1,80 @@
+﻿@page "/ProfitnLoss"
+@inherits ReportComponentBase
+@using ArmsModels.BaseModels.Finance.Report;
+@inject IDialogService DialogService
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Class="mb-5 p-4">
+            <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
+                <MudText Typo="Typo.h5" Style="font-weight:500;">Account Ledger Report</MudText>
+            </MudToolBar>
+            <MudDivider />
+            <MudGrid Style="padding-top: 22px;">                
+                <MudItem xs="4">
+                    <MudDatePicker Label="Start Date" @bind-Date="@(StartDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudDatePicker Label="End Date" @bind-Date="@(EndDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="4">
+                    <div class="d-flex gap-3">  
+                        <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
+                        <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    ReportViewer report;
+    DateTime? StartDate { get; set; } = DateTime.Now;
+    DateTime? EndDate { get; set; } = DateTime.Now;    
+    bool ShowReport { get; set; } = false;
+    string ReportName { get; set; }
+    
+   8
+    protected bool Validate()
+    {
+        if (!SelectedBranches.Any())
+        {
+            snackbar.Add("Please select branch.", Severity.Error);
+            return false;
+        }
+        if (StartDate == null)
+        {
+            snackbar.Add("Please select Start-Date.", Severity.Error);
+            return false;
+        }
+        if (EndDate == null)
+        {
+            snackbar.Add("Please select End-Date.", Severity.Error);
+            return false;
+        }
+        
+        return true;
+    }
+
+    public async Task RenderReportViewer()
+    {
+        ShowReport = false;
+        if (Validate())
+        {            
+            ReportName =  "ProfitnLoss";
+            ReportParameters.Clear();
+            ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));           
+            ReportParameters.Add("FromDate", StartDate.Value.ToString("yyyy/MM/dd"));
+            ReportParameters.Add("ToDate", EndDate.Value.ToString("yyyy/MM/dd"));            
+            ShowReport = true;
+            await report.RenderReport();
+        }
+    }
+}
