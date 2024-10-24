@@ -237,14 +237,45 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public DriverModel FindDriver(DriverModel model = null, DriverLicenceModel licence = null)
+        //public DriverModel FindDriver(DriverModel model = null, DriverLicenceModel licence = null)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@Operation", "GetTracked"),
+        //       new SqlParameter("@AdhaarNo", model?.AdhaarNo),
+        //       new SqlParameter("@LicenceNo", licence?.LicenceNo),
+        //    };
+        //    foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
+        //    {
+        //        model = GetModel(dr);
+        //    }
+        //    return model;
+        //}
+
+        public DriverModel FindDriver(string Operation, DriverModel Value)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@Operation", "GetTracked"),
-               new SqlParameter("@AdhaarNo", model?.AdhaarNo),
-               new SqlParameter("@LicenceNo", licence?.LicenceNo),
+               new SqlParameter("@Operation", Operation),
+               new SqlParameter("@DriverID", Value.DriverID),
             };
+            DriverModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
+        public DriverModel FindDriver(string Operation, string Value)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", Operation),
+               new SqlParameter("@AdhaarNo", Value),
+               new SqlParameter("@LicenceNo", Value),
+            };
+            DriverModel model = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
             {
                 model = GetModel(dr);

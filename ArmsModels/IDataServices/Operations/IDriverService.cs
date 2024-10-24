@@ -20,6 +20,8 @@ namespace ArmsServices.DataServices
         IEnumerable<DriverModel> ExcelDataCollection(int? BranchID);
         int UpdateBranch(int? DriverID, int? BranchID, bool availStatus, string UserID);
         IEnumerable<int> GetAssignedBranches(int? DriverID);
+        DriverModel FindDriver(string Operation, string Value);
+        DriverModel FindDriver(string Operation, DriverModel Value);
         DriverModel FindDriver(DriverModel model = null, DriverLicenceModel licence = null);
         int AvailabilityStatus(int? DriverID);
         int Join(int? DriverID, int? BranchID, DateTime? StartDate, string UserID);  //Edit
