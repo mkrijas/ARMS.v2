@@ -252,6 +252,37 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public DriverModel FindDriver(string Operation, DriverModel Value)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", Operation),
+               new SqlParameter("@DriverID", Value.DriverID),
+            };
+            DriverModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
+        public DriverModel FindDriver(string Operation, string Value)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", Operation),
+               new SqlParameter("@AdhaarNo", Value),
+               new SqlParameter("@LicenceNo", Value),
+            };
+            DriverModel model = new();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Driver.Driver.Select]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
         public int AvailabilityStatus(int? DriverID)
         {
             throw new NotImplementedException();

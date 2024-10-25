@@ -11,6 +11,21 @@
 @inject MudBlazor.ISnackbar snackbar
 @inject IRoleService<RoleModel> Irole
 
+<style>
+    .or-divider {
+        text-align: center;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.32);
+        line-height: 0;
+        margin: 22px 0px 30px 0px;
+    }
+
+    .or-divider span {
+        background-color: white;
+        padding: 0 10px;
+        color: rgba(0, 0, 0, 0.54);
+    }
+</style>
+
 <MudDialog Style="overflow-y: hidden;">
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -21,32 +36,51 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="6">
-                @* <MudItem xs="12">
-                    <MudAutocomplete Style="padding-bottom: 10px;" T="DriverModel" Label="Select Driver" @bind-Value="driver" ResetValueOnEmptyText="true" SearchFunc="SearchDrivers" ToStringFunc="@(e => (e == null || e.DriverID == null) ? null : $"{e.DriverCode} | {e.DriverName}")" Variant="Variant.Outlined" Margin="Margin.Dense"></MudAutocomplete>
-                </MudItem> *@
-                 <MudItem xs="12">
-                    <MudNumericField HideSpinButtons MaxLength="12" @bind-Value="AdhaarNo" Label="ADHAAR No" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
-                 </MudItem>
-                 <MudItem xs="12">
-                     <MudTextField @bind-Value="LicenceNo" Label="DL No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => licencemodel.LicenceNo)" Mask="@(new PatternMask("aa0000000000000"))" HelperText="Licence Format : KL1120230001111" Class="mt-3"></MudTextField>
-                 </MudItem>
-             </MudItem>
-             <MudItem xs="6" Style="padding-top:0px;">
-                 <MudItem xs="12">
-                     <MudList Style="padding:0px;">
+                <MudItem xs="12">
+                    <MudAutocomplete Style="padding-bottom: 10px;" T="DriverModel" Label="Select Driver" Value="driver" ValueChanged="InputValue" Disabled="@DisableDriver" ResetValueOnEmptyText="true" SearchFunc="SearchDrivers" ToStringFunc="@(e => (e == null || e.DriverID == null) ? null : $"{e.DriverCode} | {e.DriverName}")" Variant="Variant.Outlined" Margin="Margin.Dense"></MudAutocomplete>
+                </MudItem>
+                <MudItem xs="12">
+                    <div class="or-divider">
+                        <span>OR</span>
+                    </div>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudNumericField HideSpinButtons MaxLength="12" Value="AdhaarNo" ValueChanged="@((string x) => InputValue(x,"AdhaarNo"))" Disabled="@DisableAdhaarNo" Label="ADHAAR No" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                </MudItem>
+                <MudItem xs="12">
+                    <div style="margin: 30px 0px;" class="or-divider">
+                        <span>OR</span>
+                    </div>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField Value="LicenceNo" ValueChanged="@((string x) => InputValue(x,"LicenceNo"))" Disabled="@DisableLicenceNo" Label="DL No" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => licencemodel.LicenceNo)" Mask="@(new PatternMask("aa0000000000000"))" HelperText="Licence Format : KL1120230001111" Class="mt-3"></MudTextField>
+                </MudItem>
+            </MudItem>
+            <MudItem xs="6" Style="padding-top:0px;">
+                <MudItem xs="12">
+                    <MudList Style="padding:0px;">
                         @if (model != null && model.DriverID != null)
                         {
                             <MudListItem>
-                                <b>Driver Name : @model.DriverName</b>
+                                <b>Driver Code :</b> @model.DriverCode
                             </MudListItem>
                             <MudListItem>
-                                <b>Branch : @Branch</b>
+                                <b>Driver Name :</b> @model.DriverName
                             </MudListItem>
                             <MudListItem>
-                                <b>Work Period : @WorkPeriod</b>
+                                <b>AdhaarNo :</b> @model.AdhaarNo
                             </MudListItem>
                             <MudListItem>
-                                <b>Status : @model.Status</b>
+                                <b>LicenceNo :</b> @model.DriverLicence.LicenceNo
+                            </MudListItem>
+                            <MudListItem>
+                                <b>Branch :</b> @Branch
+                            </MudListItem>
+                            <MudListItem>
+                                <b>Work Period :</b> @WorkPeriod
+                            </MudListItem>
+                            <MudListItem>
+                                <b>Status :</b> @model.Status
                             </MudListItem>
                         }
                     </MudList>
@@ -71,6 +105,11 @@
     private string AdhaarNo;
     private string LicenceNo;
     private string Branch;
+
+    private bool DisableDriver = false;
+    private bool DisableAdhaarNo = false;
+    private bool DisableLicenceNo = false;
+
     string WorkPeriod;
 
     private void Cancel()
@@ -83,18 +122,69 @@
         drivers = Iservice.Select().ToList();
     }
 
+    public async Task InputValue(string Value, string operation)
+    {
+        if (operation == "AdhaarNo" && (Value != null || Value != ""))
+        {
+            AdhaarNo = Value;
+            DisableDriver = true;
+            DisableLicenceNo = true;
+        }
+        if (operation == "LicenceNo" && (Value != null || Value != ""))
+        {
+            LicenceNo = Value;
+            DisableDriver = true;
+            DisableAdhaarNo = true;
+        }
+        if (Value == null || Value == "")
+        {
+            DisableDriver = false;
+            DisableAdhaarNo = false;
+            DisableLicenceNo = false;
+        }
+        StateHasChanged();
+    }
+
+    public async Task InputValue(DriverModel model)
+    {
+        driver = model;
+        if (model != null)
+        {
+            DisableAdhaarNo = true;
+            DisableLicenceNo = true;
+        }
+        else
+        {
+            DisableDriver = false;
+            DisableAdhaarNo = false;
+            DisableLicenceNo = false;
+        }
+    }
+
     public void ReloadCollection()
     {
-        model.AdhaarNo = AdhaarNo;
-        licencemodel.LicenceNo = LicenceNo;
-        if (model.AdhaarNo != null || licencemodel.LicenceNo != null)
+        DriverModel result = new();
+        if (driver != null && driver.DriverID != null)
         {
-            var result = Iservice.FindDriver(model, licencemodel);
+            result = Iservice.FindDriver("GetByDriverID", driver);
+        }
+        if (AdhaarNo != null && AdhaarNo != "")
+        {
+            result = Iservice.FindDriver("GetByAdhaar", AdhaarNo);
+        }
+        if (LicenceNo != null && LicenceNo != "")
+        {
+            result = Iservice.FindDriver("GetBylicence", LicenceNo);
+        }
+        if (driver != null || AdhaarNo != null || LicenceNo != null)
+        {
             if (result.DriverID != null)
             {
+                model = new();
                 model = result;
                 Branch = Ibranchservice.SelectByID(model.HomeBranchID).BranchName;
                 WorkPeriod = Iservice.GetWorkPeriod(model.DriverID);
+                StateHasChanged();
             }
             else
             {
@@ -104,9 +194,32 @@
         }
         else
         {
-            snackbar.Add("Adhar No or Licence No required", Severity.Error);
+            snackbar.Add("No input given !", Severity.Error);
             return;
         }
+
+        // model.AdhaarNo = AdhaarNo;
+        // licencemodel.LicenceNo = LicenceNo;
+        // if (model.AdhaarNo != null || licencemodel.LicenceNo != null)
+        // {
+        //     var result = Iservice.FindDriver(model, licencemodel);
+        //     if (result.DriverID != null)
+        //     {
+        //         model = result;
+        //         Branch = Ibranchservice.SelectByID(model.HomeBranchID).BranchName;
+        //         WorkPeriod = Iservice.GetWorkPeriod(model.DriverID);
+        //     }
+        //     else
+        //     {
+        //         snackbar.Add("No data found", Severity.Error);
+        //         return;
+        //     }
+        // }
+        // else
+        // {
+        //     snackbar.Add("Adhar No or Licence No required", Severity.Error);
+        //     return;
+        // }
     }
 
     private async Task<IEnumerable<DriverModel>> SearchDrivers(string searchString)
