@@ -70,7 +70,7 @@ namespace ArmsServices.DataServices
                     CostCenterVal = dr.GetString("CostCenter"),
                     Dimension = dr.GetInt32("DimensionID"),
                     DimensionVal = dr.GetString("Dimension"),
-                    //UsageCodeDescription = dr.GetString("UsageCodeDescription"),
+                    UsageCodeDescription = dr.GetString("UsageCodeDescription"),
                 };
             }
         }
