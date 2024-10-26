@@ -53,6 +53,8 @@ using Core.BaseModels.Finance.Transactions;
 using Core.IDataServices.User;
 using Core.BaseModels.User;
 using DAL.DataServices.User;
+using DAL.DataServices.Operations.ROI;
+using Core.IDataServices.Operations.ROI;
 
 namespace Views
 {
@@ -177,6 +179,7 @@ namespace Views
             services.AddScoped<IGeneralSettingsService, GeneralSettingsService>();
             services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>();
             services.AddScoped<IProjectTonnageService, ProjectTonnageService>();
+            services.AddScoped<IROITonnageService, ROITonnageService>();
             #endregion
 
         #region ------------Dashboard---------------

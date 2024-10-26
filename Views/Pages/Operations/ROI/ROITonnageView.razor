@@ -1,0 +1,119 @@
+﻿@page "/ROITonnage"
+@using System.Threading;
+@using Core.BaseModels.Operations.ROI
+@using Core.IDataServices.Operations.ROI
+@layout ROILayout
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject NavigationManager NavigationManager;
+@inject IROITonnageService IROITonnageService
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@inject IJSRuntime JSRuntime
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="1" Filter="new Func<ROITonnageModel, bool>(search)">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">ROI Tonnages</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(new ROITonnageModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="SearchItem" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.Order.OrderName)" InitialDirection="SortDirection.Ascending">OrderName</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.Route.RouteName)" InitialDirection="SortDirection.Ascending">RouteName</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.BSType)" InitialDirection="SortDirection.Ascending">BSType</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.Wheels)" InitialDirection="SortDirection.Ascending">Wheels</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.Tonnage)" InitialDirection="SortDirection.Ascending">Tonnage</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROITonnageModel, object>(x=> x.Tonnage)" InitialDirection="SortDirection.Ascending">Action</MudTableSortLabel></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="OrderName">@context.Order.OrderName</MudTd>
+                <MudTd DataLabel="RouteName">@context.Route.RouteName</MudTd>
+                <MudTd DataLabel="BSType">@context.BSType</MudTd>
+                <MudTd DataLabel="Wheels">@context.Wheels</MudTd>
+                <MudTd DataLabel="Tonnage">@context.Tonnage</MudTd>
+                <MudTd>
+                    <MudFab @onclick="@(() => Edit(context))" Title="Edit" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(() => Delete(context))" Title="Edit" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    private List<ROITonnageModel> collection = new List<ROITonnageModel>();
+    private string SearchItem = "";
+    string UserID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+        collection = IROITonnageService.Select(null).ToList();
+    }
+
+    private async Task Edit(ROITonnageModel model)
+    {
+        try
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("model", model.Clone());
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<ROITonnageDialog>("Add/Edit", parameters, maxWidth);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
+            {
+                snackbar.Add("Saved Successfully", Severity.Success);
+            }
+        }
+        catch (Exception a)
+        {
+            snackbar.Add(a.Message, Severity.Error);
+        }
+        GetAll();
+    }
+
+    private async Task Delete(ROITonnageModel model)
+    {
+        try
+        {
+            bool? value = await DialogService.ShowMessageBox(
+               "Warning !",
+               "Are you sure, you want to delete ?");
+            if (value == true)
+            {
+                int result = IROITonnageService.Delete(model.ID, UserID);
+                if (result != -1)
+                {
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
+            }
+        }
+        catch (Exception a)
+        {
+            snackbar.Add(a.Message, Severity.Error);
+        }
+    }
+
+    private bool search(ROITonnageModel model)
+    {
+        if ((model.ID != null && model.Order.OrderName.Contains(SearchItem, StringComparison.OrdinalIgnoreCase)) ||
+            (model.ID != null && model.Route.RouteName.Contains(SearchItem, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+        return false;
+    }
+}

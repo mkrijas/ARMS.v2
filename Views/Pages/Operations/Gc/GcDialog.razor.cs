@@ -44,7 +44,8 @@ namespace Views.Pages.Operations.Gc
         private int _tabIndex = 0;
         private bool _tabAdded = false;
         private bool _busy;
-        string UserID;int BranchID;
+        string UserID;
+        int BranchID;
         public bool HasPermissionGcServiceEdit { get; set; } = false;
         public int DocTypeID = 46;
 
@@ -55,7 +56,7 @@ namespace Views.Pages.Operations.Gc
 
             var e = await auth.GetAuthenticationStateAsync();
             string BranchIDString = e.User.Claims.First(x => x.Type == "BranchID").Value;
-             BranchID = int.Parse(BranchIDString);
+            BranchID = int.Parse(BranchIDString);
             UserID =   e.User.Identity.Name;
 
             GcTypes = Iservice.SelectGcTypes().ToList();
