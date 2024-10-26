@@ -180,9 +180,10 @@ namespace Views
             services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>();
             services.AddScoped<IProjectTonnageService, ProjectTonnageService>();
             services.AddScoped<IROITonnageService, ROITonnageService>();
+            services.AddScoped<IROIMileageService, ROIMileageService>();
             #endregion
 
-        #region ------------Dashboard---------------
+            #region ------------Dashboard---------------
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IFinanceDashboardService, FinanceDashboardService>();
             #endregion

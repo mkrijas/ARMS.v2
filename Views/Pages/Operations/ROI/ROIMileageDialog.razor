@@ -1,0 +1,107 @@
+﻿@using System.Threading;
+@using Core.BaseModels.Operations.ROI
+@using Core.IDataServices.Operations.ROI
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IROIMileageService Iservice
+@inject IROITonnageService ITservice
+@inject IOrderService Iorder
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog Style="overflow-y: hidden;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Add/Edit Mileage
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudNumericField HideSpinButtons @bind-Value="model.Wheels" Label="Wheels" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="2" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="ROITonnageModel" Label="BS-Type" ResetValueOnEmptyText="true" ValueChanged="BSTypeChanged" Value="model.BSType"
+                                     SearchFunc="SearchBSType" ToStringFunc="@(e=> e == null ? null : $"{e.BSType}")"></MudAutocomplete>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                <MudSelect Margin="Margin.Dense" Variant="Variant.Outlined" Label="Select Type" @bind-Value="model.BodyType" AdornmentColor="Color.Secondary">
+                        <MudSelectItem Value="@("Bulk")">Bulk</MudSelectItem>
+                        <MudSelectItem Value="@("Open")">Open</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="OrderModel" Label="Order" ResetValueOnEmptyText="true" ValueChanged="OrderChanged" Value="model.Order"
+                                     SearchFunc="SearchOrders" ToStringFunc="@(e=> e==null?null : $"{e.OrderName}")"></MudAutocomplete>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="model.LoadingMTFrom" Label="Loading MT From" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LoadingMTFrom)"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="model.LoadingMTTo" Label="Loading MT To" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LoadingMTTo)"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="model.Mileage" Label="Mileage" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Mileage)"></MudTextField>
+                </MudItem>
+            </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <div style="padding-right:12px; padding-bottom:12px;">
+            <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" Class="ml-auto">Sumbit</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public ROIMileageModel model { get; set; }
+    [CascadingParameter] 
+    MudDialogInstance MudDialog { get; set; }
+    public ROITonnageModel tmodel { get; set; }
+    public List<ROIMileageModel> Collection = new();
+    public List<OrderModel> OrderList { get; set; }
+    public List<ROITonnageModel> BSTypeList = new();
+    string UserID;
+    int BranchID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        BSTypeList = ITservice.SelectBSType().ToList();
+        Collection = Iservice.Select().ToList();
+        OrderList = await Iorder.SelectByBranch(BranchID).ToListAsync();
+    }
+
+    public async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    {
+        return await Task.FromResult(OrderList.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    public async Task<IEnumerable<ROITonnageModel>> SearchBSType(string searchString)
+    {
+        return await Task.FromResult(BSTypeList.Where(x => x.BSType.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    public void OrderChanged(OrderModel obj)
+    {
+        model.Order = obj;
+    }
+
+    public void BSTypeChanged(ROITonnageModel obj)
+    {
+        model.BSType = obj;
+    }
+
+    protected async Task Submit()
+    {
+        model.UserInfo.UserID = UserID;
+        model = Iservice.Update(model);
+        MudDialog.Close(model);
+    }
+
+}
