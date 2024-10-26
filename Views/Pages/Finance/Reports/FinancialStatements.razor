@@ -1,4 +1,4 @@
-﻿@page "/ProfitnLoss"
+﻿@page "/financialstatements"
 @inherits ReportComponentBase
 @using ArmsModels.BaseModels.Finance.Report;
 @inject IDialogService DialogService
@@ -7,12 +7,16 @@
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
             <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
-                <MudText Typo="Typo.h5" Style="font-weight:500;">Account Ledger Report</MudText>
+                <MudRadioGroup T="string" Value="ReportName" ValueChanged="ReportNameChanged">
+                    <MudRadio Value="@("ProfitnLoss")" Color="Color.Primary" Size="Size.Medium">Profit & Loss</MudRadio>
+                    <MudRadio Value="@("BalanceSheet")" Color="Color.Secondary" Size="Size.Medium">Balance Sheet</MudRadio>
+                    <MudRadio Value="@("FundFlow")" Color="Color.Tertiary" Size="Size.Medium">Large</MudRadio>
+                </MudRadioGroup>
             </MudToolBar>
             <MudDivider />
             <MudGrid Style="padding-top: 22px;">                
                 <MudItem xs="4">
-                    <MudDatePicker Label="Start Date" @bind-Date="@(StartDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudDatePicker Disabled="@StartDateDisabled" Label="Start Date" @bind-Date="@(StartDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
                 <MudItem xs="4">
                     <MudDatePicker Label="End Date" @bind-Date="@(EndDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
@@ -40,7 +44,10 @@
     DateTime? EndDate { get; set; } = DateTime.Now;    
     bool ShowReport { get; set; } = false;
     string ReportName { get; set; }
-    
+
+    bool StartDateDisabled = false;
+
+
     protected bool Validate()
     {
         if (!SelectedBranches.Any())
@@ -58,19 +65,27 @@
             snackbar.Add("Please select End-Date.", Severity.Error);
             return false;
         }
-        
+
         return true;
     }
 
+    void ReportNameChanged(string name)
+    {
+        ReportName = name;
+        StartDateDisabled = name == "BalanceSheet";
+        ShowReport = false;
+    }
     public async Task RenderReportViewer()
     {
         ShowReport = false;
         if (Validate())
-        {            
-            ReportName =  "ProfitnLoss";
+        {   
             ReportParameters.Clear();
-            ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));           
-            ReportParameters.Add("FromDate", StartDate.Value.ToString("yyyy/MM/dd"));
+            ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+            if (ReportName != "BalanceSheet")
+            {
+                ReportParameters.Add("FromDate", StartDate.Value.ToString("yyyy/MM/dd"));
+            }
             ReportParameters.Add("ToDate", EndDate.Value.ToString("yyyy/MM/dd"));            
             ShowReport = true;
             await report.RenderReport();
