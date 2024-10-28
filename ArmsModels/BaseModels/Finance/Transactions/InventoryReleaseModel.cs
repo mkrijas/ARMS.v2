@@ -94,6 +94,7 @@ namespace ArmsModels.BaseModels
         public decimal? PendingQty { get; set; }
         public decimal? ReleaseQty { get; set; }
         public decimal? UsedQty { get; set; }
+        public virtual decimal? Amount { get; set; }
     }
 
     public class ExpenseModel : ICloneable

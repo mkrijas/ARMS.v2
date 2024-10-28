@@ -126,6 +126,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
                         RequestQty = dr.GetDecimal("RequestQty"),
                         ReleaseQty = dr.GetDecimal("ReleaseQty"),
                         ItemQty =  dr.GetDecimal("ReleaseQty"),
+                        Amount = dr.GetDecimal("Amount")
                     };
                 }
             }
