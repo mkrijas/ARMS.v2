@@ -183,9 +183,10 @@ namespace Views
             services.AddScoped<IROITonnageService, ROITonnageService>();
             services.AddScoped<IROIMileageService, ROIMileageService>();
             services.AddScoped<IROIDriverBattaService, ROIDriverBattaService>();
+            services.AddScoped<IROIDriverIncentiveService, ROIDriverIncentiveService>();
             #endregion
 
-        #region ------------Dashboard---------------
+            #region ------------Dashboard---------------
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IFinanceDashboardService, FinanceDashboardService>();
             #endregion

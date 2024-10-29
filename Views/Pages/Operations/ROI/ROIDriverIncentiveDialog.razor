@@ -1,0 +1,118 @@
+﻿@using System.Threading;
+@using Core.BaseModels.Operations.ROI
+@using Core.IDataServices.Operations.ROI
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IROIDriverIncentiveService Iservice
+@inject IROICommonService Icservice
+@inject IOrderService Iorder
+@inject IDistrictService Idistservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog Style="overflow-y: hidden;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Add/Edit Driver Incentive
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudNumericField HideSpinButtons @bind-Value="model.Wheels" Label="Wheels" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="2" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="ROITonnageModel" Label="BS-Type" ResetValueOnEmptyText="true" ValueChanged="BSTypeChanged" Value="model.BSType"
+                                 SearchFunc="SearchBSType" ToStringFunc="@(e=> e == null ? null : $"{e.BSType}")"></MudAutocomplete>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="OrderModel" Label="Order" ResetValueOnEmptyText="true" ValueChanged="OrderChanged" Value="model.Order"
+                                 SearchFunc="SearchOrders" ToStringFunc="@(e=> e==null?null : $"{e.OrderName}")"></MudAutocomplete>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="StateModel" Label="State" ResetValueOnEmptyText="true" ValueChanged="StateChanged" Value="model.State"
+                                 SearchFunc="SearchState" ToStringFunc="@(e=> e==null?null : $"{e.StateName}")"></MudAutocomplete>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="model.LoadingMTFrom" Label="Loading MT From" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LoadingMTFrom)"></MudTextField>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="model.LoadingMTTo" Label="Loading MT To" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LoadingMTTo)"></MudTextField>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="model.DriverIncentive" Label="Driver Incentive" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.DriverIncentive)"></MudTextField>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <div style="padding-right:12px; padding-bottom:12px;">
+            <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" Class="ml-auto">Sumbit</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public ROIDriverIncentiveModel model { get; set; }
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+    public ROITonnageModel tmodel { get; set; }
+    public List<ROIDriverIncentiveModel> Collection = new();
+    public List<OrderModel> OrderList { get; set; }
+    public List<ROITonnageModel> BSTypeList = new();
+    private List<StateModel> states = new();
+    string UserID;
+    int BranchID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        BSTypeList = Icservice.SelectBSType().ToList();
+        Collection = Iservice.Select().ToList();
+        OrderList = await Iorder.SelectByBranch(BranchID).ToListAsync();
+        states = Idistservice.GetStates().ToList();
+    }
+
+    public async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    {
+        return await Task.FromResult(OrderList.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    public async Task<IEnumerable<ROITonnageModel>> SearchBSType(string searchString)
+    {
+        return await Task.FromResult(BSTypeList.Where(x => x.BSType.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    public async Task<IEnumerable<StateModel>> SearchState(string searchString)
+    {
+        return await Task.FromResult(states.Where(x => x.StateName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    public void OrderChanged(OrderModel obj)
+    {
+        model.Order = obj;
+    }
+
+    public void BSTypeChanged(ROITonnageModel obj)
+    {
+        model.BSType = obj;
+    }
+
+    public void StateChanged(StateModel obj)
+    {
+        model.State = obj;
+    }
+
+    protected async Task Submit()
+    {
+        model.UserInfo.UserID = UserID;
+        model = Iservice.Update(model);
+        MudDialog.Close(model);
+    }
+
+}

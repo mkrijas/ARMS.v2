@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 
 
@@ -57,7 +54,7 @@ namespace ArmsServices.DataServices
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@PlaceID", ID),
+               new SqlParameter("@ID", ID),
             };
             ROIDriverBattaModel model = new ROIDriverBattaModel();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.DriverBatta.Select]", parameters))
