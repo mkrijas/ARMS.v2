@@ -179,12 +179,13 @@ namespace Views
             services.AddScoped<IGeneralSettingsService, GeneralSettingsService>();
             services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>();
             services.AddScoped<IProjectTonnageService, ProjectTonnageService>();
+            services.AddScoped<IROICommonService, ROICommonService>();
             services.AddScoped<IROITonnageService, ROITonnageService>();
             services.AddScoped<IROIMileageService, ROIMileageService>();
             services.AddScoped<IROIDriverBattaService, ROIDriverBattaService>();
             #endregion
 
-            #region ------------Dashboard---------------
+        #region ------------Dashboard---------------
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IFinanceDashboardService, FinanceDashboardService>();
             #endregion
