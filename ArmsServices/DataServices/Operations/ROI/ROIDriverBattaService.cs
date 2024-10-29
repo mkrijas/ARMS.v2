@@ -9,83 +9,76 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public class ROIMileageService : IROIMileageService
+    public class ROIDriverBattaService : IROIDriverBattaService
     {
         IDbService Iservice;
 
-        public ROIMileageService(IDbService iservice)
+        public ROIDriverBattaService(IDbService iservice)
         {
             Iservice = iservice;
         }
 
-        public ROIMileageModel Update(ROIMileageModel model)
+        public ROIDriverBattaModel Update(ROIDriverBattaModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@Wheels", model.Wheels),
-               new SqlParameter("@BSType", model.BSType.BSType),
                new SqlParameter("@BodyType", model.BodyType),
-               new SqlParameter("@OrderID", model.Order.OrderID),
+               new SqlParameter("@FromStdKM", model.FromStdKM),
+               new SqlParameter("@ToStdKM", model.ToStdKM),
                new SqlParameter("@LoadingMTFrom", model.LoadingMTFrom),
                new SqlParameter("@LoadingMTTo", model.LoadingMTTo),
-               new SqlParameter("@Mileage", model.Mileage),
+               new SqlParameter("@DriverBatta", model.DriverBatta),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Mileage.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.DriverBatta.Update]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
         }
 
-        public IEnumerable<ROIMileageModel> Select()
+        public IEnumerable<ROIDriverBattaModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", 0),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Mileage.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.DriverBatta.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        public ROIMileageModel SelectByID(int? ID)
+        public ROIDriverBattaModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@PlaceID", ID),
             };
-            ROIMileageModel model = new ROIMileageModel();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Mileage.Select]", parameters))
+            ROIDriverBattaModel model = new ROIDriverBattaModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.DriverBatta.Select]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
         }
 
-        private ROIMileageModel GetModel(IDataRecord dr)
+        private ROIDriverBattaModel GetModel(IDataRecord dr)
         {
-            return new ROIMileageModel
+            return new ROIDriverBattaModel
             {
                 ID = dr.GetInt32("ID"),
                 Wheels = dr.GetInt32("Wheels"),
                 BodyType = dr.GetString("BodyType"),
-                BSType = new Core.BaseModels.Operations.ROI.ROITonnageModel
-                {
-                    BSType = dr.GetString("BSType"),
-                },
-                Order = new OrderModel
-                {
-                    OrderID = dr.GetInt32("OrderID"),
-                    OrderName = dr.GetString("OrderName")
-                },
+                FromStdKM = dr.GetDecimal("FromStdKM"),
+                ToStdKM = dr.GetDecimal("ToStdKM"),
                 LoadingMTFrom = dr.GetDecimal("LoadingMTFrom"),
                 LoadingMTTo = dr.GetDecimal("LoadingMTTo"),
-                Mileage = dr.GetDecimal("Mileage"),
+                DriverBatta = dr.GetDecimal("DriverBatta"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

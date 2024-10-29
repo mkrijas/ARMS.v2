@@ -181,6 +181,7 @@ namespace Views
             services.AddScoped<IProjectTonnageService, ProjectTonnageService>();
             services.AddScoped<IROITonnageService, ROITonnageService>();
             services.AddScoped<IROIMileageService, ROIMileageService>();
+            services.AddScoped<IROIDriverBattaService, ROIDriverBattaService>();
             #endregion
 
             #region ------------Dashboard---------------
