@@ -1,0 +1,18 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
+using ArmsModels.BaseModels;
+
+
+namespace ArmsServices.DataServices
+{
+    public interface IROIDriverBattaService
+    {
+        ROIDriverBattaModel Update(ROIDriverBattaModel model);
+        IEnumerable<ROIDriverBattaModel> Select();
+        ROIDriverBattaModel SelectByID(int? ID);
+    }
+}
