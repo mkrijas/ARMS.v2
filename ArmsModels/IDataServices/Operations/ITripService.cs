@@ -16,7 +16,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TripModel> SelectAll(int? BranchID, int? NumberOfRecords, string searchTerm);
         TripModel SelectByTripNumber(string TripNumber);
         int Cancel(long? TripID, string UserID);  //Edit
-        int CloseTrip(long? TripID, int? BranchID, string UserID);  //Edit
+        int CloseTrip(long? TripID, int? BranchID, DateTime? EventTime, string UserID);  //Edit
         bool IsClosed(long? TripID);
         int LockedTrip(long? TripID, bool LockedStatus, string UserID); //EnableLock  //DisableLock
         int OverrideMileageShortage(long? TripID, bool Override, string UserID);

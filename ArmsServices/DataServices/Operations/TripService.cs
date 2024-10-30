@@ -116,12 +116,13 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Operation.Trip.Cancel]", parameters);
         }
 
-        int ITripService.CloseTrip(long? TripID, int? BranchID, string UserID)
+        int ITripService.CloseTrip(long? TripID, int? BranchID, DateTime? EventTime, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@TripID", TripID),
                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@EventTime", EventTime),
                new SqlParameter("@UserID", UserID),
 
             };
