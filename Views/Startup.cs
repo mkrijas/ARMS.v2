@@ -184,6 +184,7 @@ namespace Views
             services.AddScoped<IROIMileageService, ROIMileageService>();
             services.AddScoped<IROIDriverBattaService, ROIDriverBattaService>();
             services.AddScoped<IROIDriverIncentiveService, ROIDriverIncentiveService>();
+            services.AddScoped<IROITaggingService, ROITaggingService>();
             #endregion
 
             #region ------------Dashboard---------------
