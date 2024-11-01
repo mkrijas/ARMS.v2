@@ -12,7 +12,7 @@ namespace Core.BaseModels.Operations.ROI
             return JsonConvert.DeserializeObject<ROIWheelSpeedModel>(Json);
         }
         public int? ID { get; set; }
-        public int? Wheels { get; set; }
+        public byte? Wheels { get; set; }
         public decimal? Speed { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
