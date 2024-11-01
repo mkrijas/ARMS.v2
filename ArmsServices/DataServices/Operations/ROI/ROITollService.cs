@@ -23,6 +23,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Wheels", model.Wheels),
                new SqlParameter("@RouteID", model.Route.RouteID),
                new SqlParameter("@Toll", model.Toll),
+               new SqlParameter("@FromDate", model.FromDate),
+               new SqlParameter("@ToDate", model.ToDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -65,7 +67,7 @@ namespace ArmsServices.DataServices
             return new ROITollModel
             {
                 ID = dr.GetInt32("ID"),
-                Wheels = dr.GetInt32("Wheels"),
+                Wheels = dr.GetByte("Wheels"),
                 Route = new RouteModel
                 {
                     RouteID = dr.GetInt32("RouteID"),

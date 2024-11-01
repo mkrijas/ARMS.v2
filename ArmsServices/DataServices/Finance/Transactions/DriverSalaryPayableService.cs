@@ -244,6 +244,8 @@ namespace ArmsServices.DataServices
                     Amount = dr.GetDecimal("Amount"),
                     EntryRef = dr.GetString("EntryRef"),
                     DocumentDate = dr.GetDateTime("DocumentDate"),
+                    DocNum = dr.GetString("DocNumber"),
+                    BranchName = dr.GetString("BranchName"),
                     ArdCode = dr.GetString("ArdCode"),
                     Driver = new DriverModel()
                     {

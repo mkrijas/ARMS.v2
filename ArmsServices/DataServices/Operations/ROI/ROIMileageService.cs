@@ -69,7 +69,7 @@ namespace ArmsServices.DataServices
             return new ROIMileageModel
             {
                 ID = dr.GetInt32("ID"),
-                Wheels = dr.GetInt32("Wheels"),
+                Wheels = dr.GetByte("Wheels"),
                 BodyType = dr.GetString("BodyType"),
                 BSType = new Core.BaseModels.Operations.ROI.ROITonnageModel
                 {
