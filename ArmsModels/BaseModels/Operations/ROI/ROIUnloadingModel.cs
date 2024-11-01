@@ -1,25 +1,23 @@
-﻿using Core.BaseModels.Operations.ROI;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
-    public class ROITaggingModel : ICloneable
+    public class ROIUnloadingModel : ICloneable
     {
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<ROITaggingModel>(Json);
+            return JsonConvert.DeserializeObject<ROIUnloadingModel>(Json);
         }
         public int? ID { get; set; }
         [Required]
-        public byte? Wheels { get; set; }
+        public RouteModel Route { get; set; } = new();
         [Required]
-        public string BodyType { get; set; }
-        public OrderModel Order { get; set; } = new();
+        public string RateBasis { get; set; }
         [Required]
-        public decimal? Tagging { get; set; }
+        public decimal? Unloading { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }

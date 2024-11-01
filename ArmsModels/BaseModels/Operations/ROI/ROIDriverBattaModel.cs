@@ -17,7 +17,7 @@ namespace ArmsModels.BaseModels
         }
         public int? ID { get; set; }
         [Required]
-        public int? Wheels { get; set; }
+        public byte? Wheels { get; set; }
         [Required]
         public string BodyType { get; set; }
         [Required]

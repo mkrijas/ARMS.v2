@@ -69,7 +69,7 @@ namespace ArmsServices.DataServices
             return new ROIDriverIncentiveModel
             {
                 ID = dr.GetInt32("ID"),
-                Wheels = dr.GetInt32("Wheels"),
+                Wheels = dr.GetByte("Wheels"),
                 BSType = new Core.BaseModels.Operations.ROI.ROITonnageModel
                 {
                     BSType = dr.GetString("BSType"),

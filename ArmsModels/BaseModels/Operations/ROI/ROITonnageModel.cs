@@ -15,7 +15,7 @@ namespace Core.BaseModels.Operations.ROI
         public int? ID { get; set; }
         public OrderModel Order { get; set; } = new();
         public RouteModel Route { get; set; } = new();
-        public int? Wheels { get; set; }
+        public byte? Wheels { get; set; }
         public string BSType { get; set; }
         public decimal? Tonnage { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();

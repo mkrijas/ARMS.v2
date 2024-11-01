@@ -6,74 +6,72 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public class ROITaggingService : IROITaggingService
+    public class ROIUnloadingService : IROIUnloadingService
     {
         IDbService Iservice;
 
-        public ROITaggingService(IDbService iservice)
+        public ROIUnloadingService(IDbService iservice)
         {
             Iservice = iservice;
         }
 
-        public ROITaggingModel Update(ROITaggingModel model)
+        public ROIUnloadingModel Update(ROIUnloadingModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@Wheels", model.Wheels),
-               new SqlParameter("@BodyType", model.BodyType),
-               new SqlParameter("@OrderID", model.Order.OrderID),
-               new SqlParameter("@Tagging", model.Tagging),
+               new SqlParameter("@RouteID", model.Route.RouteID),
+               new SqlParameter("@RateBasis", model.RateBasis),
+               new SqlParameter("@Unloading", model.Unloading),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Tagging.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Unloading.Update]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
         }
 
-        public IEnumerable<ROITaggingModel> Select()
+        public IEnumerable<ROIUnloadingModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", 0),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Tagging.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Unloading.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        public ROITaggingModel SelectByID(int? ID)
+        public ROIUnloadingModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
             };
-            ROITaggingModel model = new ROITaggingModel();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Tagging.Select]", parameters))
+            ROIUnloadingModel model = new ROIUnloadingModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Unloading.Select]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
         }
 
-        private ROITaggingModel GetModel(IDataRecord dr)
+        private ROIUnloadingModel GetModel(IDataRecord dr)
         {
-            return new ROITaggingModel
+            return new ROIUnloadingModel
             {
                 ID = dr.GetInt32("ID"),
-                Wheels = dr.GetByte("Wheels"),
-                BodyType = dr.GetString("BodyType"),
-                Order = new OrderModel
+                Route = new RouteModel
                 {
-                    OrderID = dr.GetInt32("OrderID"),
-                    OrderName = dr.GetString("OrderName")
+                    RouteID = dr.GetInt32("RouteID"),
+                    RouteName = dr.GetString("RouteName")
                 },
-                Tagging = dr.GetDecimal("Tagging"),
+                RateBasis = dr.GetString("RateBasis"),
+                Unloading = dr.GetDecimal("Unloading"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

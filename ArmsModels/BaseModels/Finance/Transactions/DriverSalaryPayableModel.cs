@@ -63,6 +63,8 @@ namespace ArmsModels.BaseModels
         public DateTime? DocumentDate { get; set; }
         public string ArdCode { get; set; }
         public virtual bool IsChecked { get; set; }
+        public virtual string DocNum { get; set; }
+        public virtual string BranchName { get; set; }
 
     }
 
