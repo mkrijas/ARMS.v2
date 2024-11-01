@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 using System.Reflection;
+using Core.IDataServices.Operations.ROI;
+using Core.BaseModels.Operations.ROI;
 
 
 namespace ArmsServices.DataServices
@@ -13,10 +15,20 @@ namespace ArmsServices.DataServices
     public class TruckService : ITruckService
     {
         IDbService Iservice;
-        public TruckService(IDbService iservice)
+        IROITonnageService IROITonnage;
+
+        public TruckService(IDbService iservice, IROITonnageService iROITonnage)
         {
             Iservice = iservice;
+            IROITonnage = iROITonnage;
         }
+
+        public IEnumerable<ROITonnageModel> SelectBSType()
+        {
+            List<ROITonnageModel> Model = new();
+            return Model = IROITonnage.SelectBSType().ToList();
+        }
+
         public TruckModel Update(TruckModel model)
         {
             bool create = model.TruckID == null;

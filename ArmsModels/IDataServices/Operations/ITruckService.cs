@@ -5,12 +5,14 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using Core.BaseModels.Operations.ROI;
 
 
 namespace ArmsServices.DataServices
 {
     public interface ITruckService
     {
+        IEnumerable<ROITonnageModel> SelectBSType();
         TruckModel Update(TruckModel model); //edit
         int UpdateRegistration(TruckRegistrationModel model);  //edit
         int? ValidateRegistrationDate(TruckRegistrationModel model);
