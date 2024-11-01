@@ -24,7 +24,7 @@ namespace DAL.DataServices.Operations.ROI
             {
                 new SqlParameter("@Operation", "BSTYPE"),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.ROI.Tonnage.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Common.Select]", parameters))
             {
                 yield return Model(dr);
             }
@@ -34,10 +34,9 @@ namespace DAL.DataServices.Operations.ROI
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@Operation", "TONNAGE"),
                 new SqlParameter("@RowNo", RowNo),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.ROI.Tonnage.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Tonnage.Select]", parameters))
             {
                 yield return Model(dr);
             }
@@ -50,7 +49,7 @@ namespace DAL.DataServices.Operations.ROI
                new SqlParameter("@ID", ID),
                new SqlParameter("@UserID", UserID),
             };
-            return Iservice.ExecuteNonQuery("[usp.Operation.ROI.Tonnage.Delete]", parameters);
+            return Iservice.ExecuteNonQuery("[usp.ROI.Tonnage.Delete]", parameters);
         }
 
         public ROITonnageModel Update(ROITonnageModel model)
@@ -65,7 +64,7 @@ namespace DAL.DataServices.Operations.ROI
                new SqlParameter("@Tonnage", model.Tonnage),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Operation.ROI.Tonnage.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Tonnage.Update]", parameters))
             {
                 return null;
             }

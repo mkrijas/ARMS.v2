@@ -387,7 +387,7 @@ namespace ArmsServices.DataServices
 
         public AssetModel SelectByTruckID(int? TruckID)
         {
-            ITruckService truckService = new TruckService(Iservice);
+            ITruckService truckService = new TruckService(Iservice, null);
             var truck = truckService.SelectByID(TruckID);
             return SelectByID(truck.AssetID);
         }
