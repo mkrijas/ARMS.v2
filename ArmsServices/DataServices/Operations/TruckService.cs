@@ -29,6 +29,12 @@ namespace ArmsServices.DataServices
             return Model = IROITonnage.SelectBSType().ToList();
         }
 
+        public IEnumerable<ROITonnageModel> SelectWheels()
+        {
+            List<ROITonnageModel> Model = new();
+            return Model = IROITonnage.SelectWheels().ToList();
+        }
+
         public TruckModel Update(TruckModel model)
         {
             bool create = model.TruckID == null;

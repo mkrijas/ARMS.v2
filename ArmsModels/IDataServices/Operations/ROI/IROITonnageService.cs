@@ -6,6 +6,7 @@ namespace Core.IDataServices.Operations.ROI
     public interface IROITonnageService
     {
         IEnumerable<ROITonnageModel> SelectBSType();
+        IEnumerable<ROITonnageModel> SelectWheels();
         IEnumerable<ROITonnageModel> Select(int? RowNo);
         ROITonnageModel Update(ROITonnageModel model);
         int Delete(int? ID, string UserID);

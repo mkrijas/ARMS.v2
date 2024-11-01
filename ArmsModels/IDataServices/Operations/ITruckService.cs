@@ -13,6 +13,7 @@ namespace ArmsServices.DataServices
     public interface ITruckService
     {
         IEnumerable<ROITonnageModel> SelectBSType();
+        IEnumerable<ROITonnageModel> SelectWheels();
         TruckModel Update(TruckModel model); //edit
         int UpdateRegistration(TruckRegistrationModel model);  //edit
         int? ValidateRegistrationDate(TruckRegistrationModel model);

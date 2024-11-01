@@ -30,6 +30,18 @@ namespace DAL.DataServices.Operations.ROI
             }
         }
 
+        public IEnumerable<ROITonnageModel> SelectWheels()
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "WHEELS"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Common.Select]", parameters))
+            {
+                yield return Model(dr);
+            }
+        }
+
         public IEnumerable<ROITonnageModel> Select(int? RowNo)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -76,7 +88,7 @@ namespace DAL.DataServices.Operations.ROI
             return new ROITonnageModel
             {
                 ID = dr?.GetInt32("ID"),
-                Wheels = dr?.GetInt32("Wheels"),
+                Wheels = dr?.GetByte("Wheels"),
                 BSType = dr.GetString("BSType"),
                 Tonnage = dr?.GetDecimal("Tonnage"),
                 Order = new OrderModel

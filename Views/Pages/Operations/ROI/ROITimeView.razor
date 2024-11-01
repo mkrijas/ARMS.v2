@@ -1,0 +1,216 @@
+﻿@page "/ROITime"
+@using System.Threading;
+@using Core.BaseModels.Operations.ROI
+@using Core.IDataServices.Operations.ROI
+@layout ROILayout
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject NavigationManager NavigationManager;
+@inject IROITonnageService IROITonnageService
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@inject IJSRuntime JSRuntime
+
+<MudPaper Style="margin-bottom: 26px;">
+    <MudToolBar>
+        <MudText Typo="Typo.h6">ROI @(!ViewChange ? "Wheels & Speed" : "Loading and Unloading Duration")</MudText>
+        @if (!ViewChange)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add WheelSpeed" @onclick="@(()=> EditWheelSpeed(new ROIWheelSpeedModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+        }
+        else
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add LoadUnloadDuration" @onclick="@(()=> EditLoadUnloadDuration(new ROILoadAndUnloadModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+        }
+        <MudSpacer />
+        <MudTextField @bind-Value="SearchItem" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudSpacer />
+        <MudSwitch Color="Color.Primary" Value=@(ViewChange) ValueChanged=@((bool x) => TableViewChange(x)) Label="Change" />
+    </MudToolBar>
+    @if (!ViewChange)
+    {
+        <MudTable Items="@WheelSpeedcollection" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<ROIWheelSpeedModel, bool>(SearchWheelSpeed)">
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROIWheelSpeedModel, object>(x=> x.Speed)" InitialDirection="SortDirection.Ascending">Speed</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROIWheelSpeedModel, object>(x=> x.Wheels)" InitialDirection="SortDirection.Ascending">Wheels</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROIWheelSpeedModel, object>(x=> x.ID)" InitialDirection="SortDirection.Ascending">Action</MudTableSortLabel></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Speed">@context.Speed</MudTd>
+                <MudTd DataLabel="Wheels">@context.Wheels</MudTd>
+                <MudTd>
+                    <MudFab @onclick="@(() => EditWheelSpeed(context))" Title="Edit" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(() => DeleteWheelSpeed(context))" Title="Edit" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    }
+    else
+    {
+        <MudTable Items="@LoadUnloadcollection" Dense="true" Hover="true" Striped="true" Elevation="0" Filter="new Func<ROILoadAndUnloadModel, bool>(SearchLoadUnloadDuration)">
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadAndUnloadModel, object>(x=> x.Order.OrderName)" InitialDirection="SortDirection.Ascending">OrderName</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadAndUnloadModel, object>(x=> x.LoadingDuration)" InitialDirection="SortDirection.Ascending">LoadingDuration</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadAndUnloadModel, object>(x=> x.UnLoadingDuration)" InitialDirection="SortDirection.Ascending">UnLoadingDuration</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadAndUnloadModel, object>(x=> x.ID)" InitialDirection="SortDirection.Ascending">Action</MudTableSortLabel></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="OrderName">@context.Order.OrderName</MudTd>
+                <MudTd DataLabel="LoadingDuration">@context.LoadingDuration</MudTd>
+                <MudTd DataLabel="UnLoadingDuration">@context.UnLoadingDuration</MudTd>
+                <MudTd>
+                    <MudFab @onclick="@(() => EditLoadUnloadDuration(context))" Title="Edit" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                    <MudFab @onclick="@(() => DeleteLoadUnloadDuration(context))" Title="Edit" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    }
+</MudPaper>
+
+
+
+@code {
+
+    private List<ROIWheelSpeedModel> WheelSpeedcollection = new List<ROIWheelSpeedModel>();
+    private List<ROILoadAndUnloadModel> LoadUnloadcollection = new List<ROILoadAndUnloadModel>();
+    private string SearchItem = "";
+    private string Title = "";
+    string UserID;
+    private bool ViewChange = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+        await GetAll(ViewChange);
+    }
+
+    private async Task GetAll(bool a)
+    {
+        @if (!a)
+        {
+            //WheelSpeedcollection = IROITonnageService.Select(null).ToList();
+        }
+        else
+        {
+
+        }
+        ViewChange = a;
+    }
+
+    private async Task TableViewChange(bool a)
+    {
+        await GetAll(a);
+    }
+
+    private async Task EditWheelSpeed(ROIWheelSpeedModel model)
+    {
+        try
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("model", model.Clone());
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<ROIWheelSpeedDialog>("Add/Edit", parameters, maxWidth);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
+            {
+                snackbar.Add("Saved Successfully", Severity.Success);
+            }
+        }
+        catch (Exception a)
+        {
+            snackbar.Add(a.Message, Severity.Error);
+        }
+        await GetAll(ViewChange);
+    }
+
+    private async Task EditLoadUnloadDuration(ROILoadAndUnloadModel model)
+    {
+        try
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("model", model.Clone());
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<ROITonnageDialog>("Add/Edit", parameters, maxWidth);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
+            {
+                snackbar.Add("Saved Successfully", Severity.Success);
+            }
+        }
+        catch (Exception a)
+        {
+            snackbar.Add(a.Message, Severity.Error);
+        }
+        await GetAll(ViewChange);
+    }
+
+    private async Task DeleteWheelSpeed(ROIWheelSpeedModel model)
+    {
+        try
+        {
+            bool? value = await DialogService.ShowMessageBox(
+               "Warning !",
+               "Are you sure, you want to delete ?");
+            if (value == true)
+            {
+                int result = IROITonnageService.Delete(model.ID, UserID);
+                if (result != -1)
+                {
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
+            }
+        }
+        catch (Exception a)
+        {
+            snackbar.Add(a.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteLoadUnloadDuration(ROILoadAndUnloadModel model)
+    {
+        try
+        {
+            bool? value = await DialogService.ShowMessageBox(
+               "Warning !",
+               "Are you sure, you want to delete ?");
+            if (value == true)
+            {
+                int result = IROITonnageService.Delete(model.ID, UserID);
+                if (result != -1)
+                {
+                    snackbar.Add("Deleted Successfully", Severity.Success);
+                }
+            }
+        }
+        catch (Exception a)
+        {
+            snackbar.Add(a.Message, Severity.Error);
+        }
+    }
+
+    private bool SearchWheelSpeed(ROIWheelSpeedModel model)
+    {
+        if ((model.ID != null && model.Wheels.ToString().Contains(SearchItem, StringComparison.OrdinalIgnoreCase)) ||
+            (model.ID != null && model.Speed.ToString().Contains(SearchItem, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private bool SearchLoadUnloadDuration(ROILoadAndUnloadModel model)
+    {
+        if (model.ID != null && model.Order.OrderName.Contains(SearchItem, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+}
