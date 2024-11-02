@@ -188,9 +188,10 @@ namespace Views
             services.AddScoped<IROILoadingAndUnloadingService, ROILoadingAndUnloadingService>();
             services.AddScoped<IROITollService, ROITollService>();
             services.AddScoped<IROIUnloadingService, ROIUnloadingService>();
+            services.AddScoped<IROIFixedExpenseService, ROIFixedExpenseService>();
             #endregion
 
-        #region ------------Dashboard---------------
+            #region ------------Dashboard---------------
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IFinanceDashboardService, FinanceDashboardService>();
             #endregion

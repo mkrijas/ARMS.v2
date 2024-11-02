@@ -1,0 +1,88 @@
+﻿@using System.Threading;
+@using Core.BaseModels.Operations.ROI
+@using Core.IDataServices.Operations.ROI
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IROIFixedExpenseService Iservice
+@inject MudBlazor.ISnackbar snackbar
+@inject IDialogService DialogService
+@inject IRoleService<RoleModel> Irole
+
+<MudDialog Style="overflow-y: hidden;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Add/Edit Expense
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm id="formexp" Model="@model" OnValidSubmit="OnValidSubmit">
+            <ObjectGraphDataAnnotationsValidator />
+            <ValidationSummary />
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudSelect Margin="Margin.Dense" Variant="Variant.Outlined" Label="Expense Name" @bind-Value="model.ExpenseName" AdornmentColor="Color.Secondary">
+                        <MudSelectItem Value="@("Branch Admin")">Branch Admin</MudSelectItem>
+                        <MudSelectItem Value="@("HO Admin")">HO Admin</MudSelectItem>
+                        <MudSelectItem Value="@("Tax")">Tax</MudSelectItem>
+                        <MudSelectItem Value="@("Maintenance")">Maintenance</MudSelectItem>
+                        <MudSelectItem Value="@("Tyre")">Tyre</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="model.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Amount)"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudDatePicker Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.FromDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudDatePicker Label="Period To" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.ToDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <div style="padding-right:12px; padding-bottom:12px;">
+            <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Success" form="formexp" ButtonType="ButtonType.Submit" Class="ml-auto">Sumbit</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [Parameter]
+    public ROIFixedExpenseModel model { get; set; }
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+    public List<ROIFixedExpenseModel> Collection = new();
+    string UserID;
+    int BranchID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        Collection = Iservice.Select().ToList();
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        model.UserInfo.UserID = UserID;
+        try
+        {
+            model = Iservice.Update(model);
+            MudDialog.Close(model);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+}
