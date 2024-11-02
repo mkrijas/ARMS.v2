@@ -22,7 +22,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@RouteID", model.Route.RouteID),
                new SqlParameter("@RateBasis", model.RateBasis),
-               new SqlParameter("@Unloading", model.Unloading),
+               new SqlParameter("@Amount", model.Amount),
+               new SqlParameter("@FromDate", model.FromDate),
+               new SqlParameter("@ToDate", model.ToDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -71,7 +73,9 @@ namespace ArmsServices.DataServices
                     RouteName = dr.GetString("RouteName")
                 },
                 RateBasis = dr.GetString("RateBasis"),
-                Unloading = dr.GetDecimal("Unloading"),
+                Amount = dr.GetDecimal("Amount"),
+                FromDate = dr.GetDateTime("FromDate"),
+                ToDate = dr.GetDateTime("ToDate"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

@@ -17,7 +17,11 @@ namespace ArmsModels.BaseModels
         [Required]
         public string RateBasis { get; set; }
         [Required]
-        public decimal? Unloading { get; set; }
+        public decimal? Amount { get; set; }
+        [Required]
+        public DateTime? FromDate { get; set; }
+        [Required]
+        public DateTime? ToDate { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }

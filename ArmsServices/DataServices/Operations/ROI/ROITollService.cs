@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@Wheels", model.Wheels),
                new SqlParameter("@RouteID", model.Route.RouteID),
-               new SqlParameter("@Toll", model.Toll),
+               new SqlParameter("@Amount", model.Amount),
                new SqlParameter("@FromDate", model.FromDate),
                new SqlParameter("@ToDate", model.ToDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -73,7 +73,9 @@ namespace ArmsServices.DataServices
                     RouteID = dr.GetInt32("RouteID"),
                     RouteName = dr.GetString("RouteName")
                 },
-                Toll = dr.GetDecimal("Toll"),
+                Amount = dr.GetDecimal("Amount"),
+                FromDate = dr.GetDateTime("FromDate"),
+                ToDate = dr.GetDateTime("ToDate"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

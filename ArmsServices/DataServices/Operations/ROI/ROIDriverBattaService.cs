@@ -26,7 +26,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ToStdKM", model.ToStdKM),
                new SqlParameter("@LoadingMTFrom", model.LoadingMTFrom),
                new SqlParameter("@LoadingMTTo", model.LoadingMTTo),
-               new SqlParameter("@DriverBatta", model.DriverBatta),
+               new SqlParameter("@Amount", model.Amount),
+               new SqlParameter("@FromDate", model.FromDate),
+               new SqlParameter("@ToDate", model.ToDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -75,7 +77,9 @@ namespace ArmsServices.DataServices
                 ToStdKM = dr.GetDecimal("ToStdKM"),
                 LoadingMTFrom = dr.GetDecimal("LoadingMTFrom"),
                 LoadingMTTo = dr.GetDecimal("LoadingMTTo"),
-                DriverBatta = dr.GetDecimal("DriverBatta"),
+                Amount = dr.GetDecimal("Amount"),
+                FromDate = dr.GetDateTime("FromDate"),
+                ToDate = dr.GetDateTime("ToDate"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
