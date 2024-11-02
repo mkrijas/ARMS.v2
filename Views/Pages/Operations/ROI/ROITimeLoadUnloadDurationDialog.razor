@@ -1,0 +1,81 @@
+﻿@using Core.BaseModels.Operations.ROI
+@using Core.IDataServices.Operations.ROI
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject IOrderService IOrderService
+@inject IROITimeService IROITimeService
+@inject MudBlazor.ISnackbar snackbar
+
+<MudDialog Style="overflow-y: hidden;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Add/Edit Wheels & Speed
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" id="ROITimeForm" OnValidSubmit="Submit">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudAutocomplete ReadOnly Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="OrderModel" Label="Order" ResetValueOnEmptyText="true" ValueChanged="OrderChanged" Value="model.Order"
+                                     SearchFunc="SearchOrders" ToStringFunc="@(e=> e == null ? null : $"{e.OrderName}")"></MudAutocomplete>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField HideSpinButtons @bind-Value="model.LoadingDuration" Label="LoadingDuration" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="10" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField HideSpinButtons @bind-Value="model.UnLoadingDuration" Label="UnLoadingDuration" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="10" />
+                </MudItem>
+            </MudGrid>
+            <ObjectGraphDataAnnotationsValidator />
+            <ValidationSummary />
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <div style="padding-right:12px; padding-bottom:12px;">
+            <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Success" form="ROITimeForm" ButtonType="ButtonType.Submit" Class="ml-auto">Sumbit</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public ROILoadAndUnloadModel model { get; set; } = new();
+    public List<OrderModel> OrderList { get; set; }
+    string UserID;
+    int BranchID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        OrderList = await IOrderService.SelectByBranch(BranchID).ToListAsync();
+    }
+
+    public void OrderChanged(OrderModel obj)
+    {
+        model.Order = obj;
+    }
+
+    protected async Task Submit()
+    {
+        try
+        {
+            model.UserInfo.UserID = UserID;
+            model = IROITimeService.UpdateLoadUnload(model);
+            MudDialog.Close(model);
+        }
+        catch (Exception a)
+        {
+            snackbar.Add(a.Message, Severity.Error);
+        }
+    }
+
+    public async Task<IEnumerable<OrderModel>> SearchOrders(string searchString)
+    {
+        return await Task.FromResult(OrderList.Where(x => x.OrderName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+}

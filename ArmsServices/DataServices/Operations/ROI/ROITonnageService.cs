@@ -7,6 +7,7 @@ using System.Data;
 using Core.BaseModels.Operations.ROI;
 using System;
 using ArmsModels.BaseModels;
+using ArmsModels.SharedModels;
 
 namespace DAL.DataServices.Operations.ROI
 {
@@ -101,7 +102,7 @@ namespace DAL.DataServices.Operations.ROI
                     RouteID = dr.GetInt32("RouteID"),
                     RouteName = dr.GetString("RouteName")
                 },
-                UserInfo =
+                UserInfo = new UserInfoModel
                 {
                     UserID = dr.GetString("UserID"),
                     TimeStampField = dr.GetDateTime("TimeStamp"),

@@ -1,0 +1,13 @@
+﻿using Core.BaseModels.Operations.ROI;
+using System.Collections.Generic;
+
+namespace Core.IDataServices.Operations.ROI
+{
+    public interface IROITimeService
+    {
+        IEnumerable<ROIWheelSpeedModel> SelectWheelSpeed(int? RowNo);
+        ROIWheelSpeedModel UpdateWheelSpeed(ROIWheelSpeedModel model);
+        IEnumerable<ROILoadAndUnloadModel> SelectLoadUnload(int? RowNo);
+        ROILoadAndUnloadModel UpdateLoadUnload(ROILoadAndUnloadModel model);
+    }
+}

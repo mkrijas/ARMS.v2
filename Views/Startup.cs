@@ -180,6 +180,7 @@ namespace Views
             services.AddScoped<ITruckAvailabilityService, TruckAvailabilityService>();
             services.AddScoped<IProjectTonnageService, ProjectTonnageService>();
             services.AddScoped<IROITonnageService, ROITonnageService>();
+            services.AddScoped<IROITimeService, ROITimeService>();
             services.AddScoped<IROIMileageService, ROIMileageService>();
             services.AddScoped<IROIDriverBattaService, ROIDriverBattaService>();
             services.AddScoped<IROIDriverIncentiveService, ROIDriverIncentiveService>();
