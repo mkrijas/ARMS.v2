@@ -23,7 +23,9 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Wheels", model.Wheels),
                new SqlParameter("@BodyType", model.BodyType),
                new SqlParameter("@OrderID", model.Order.OrderID),
-               new SqlParameter("@Tagging", model.Tagging),
+               new SqlParameter("@Amount", model.Amount),
+               new SqlParameter("@FromDate", model.FromDate),
+               new SqlParameter("@ToDate", model.ToDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
@@ -73,7 +75,9 @@ namespace ArmsServices.DataServices
                     OrderID = dr.GetInt32("OrderID"),
                     OrderName = dr.GetString("OrderName")
                 },
-                Tagging = dr.GetDecimal("Tagging"),
+                Amount = dr.GetDecimal("Amount"),
+                FromDate = dr.GetDateTime("FromDate"),
+                ToDate = dr.GetDateTime("ToDate"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

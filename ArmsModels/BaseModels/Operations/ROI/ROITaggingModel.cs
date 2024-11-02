@@ -19,7 +19,11 @@ namespace ArmsModels.BaseModels
         public string BodyType { get; set; }
         public OrderModel Order { get; set; } = new();
         [Required]
-        public decimal? Tagging { get; set; }
+        public decimal? Amount { get; set; }
+        [Required]
+        public DateTime? FromDate { get; set; }
+        [Required]
+        public DateTime? ToDate { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }

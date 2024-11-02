@@ -17,7 +17,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public RouteModel Route { get; set; } = new();
         [Required]
-        public decimal? Toll { get; set; }
+        public decimal? Amount { get; set; }
         [Required]
         public DateTime? FromDate { get; set; }
         [Required]
