@@ -74,7 +74,8 @@ namespace DAL.DataServices.Operations.ROI
                new SqlParameter("@RouteID", model.Route.RouteID),
                new SqlParameter("@Wheels", model.Wheels),
                new SqlParameter("@BSType", model.BSType),
-               new SqlParameter("@Tonnage", model.Tonnage),
+               new SqlParameter("@FromTonnage", model.FromTonnage),
+               new SqlParameter("@ToTonnage", model.ToTonnage),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Tonnage.Update]", parameters))
@@ -91,7 +92,8 @@ namespace DAL.DataServices.Operations.ROI
                 ID = dr?.GetInt32("ID"),
                 Wheels = dr?.GetByte("Wheels"),
                 BSType = dr.GetString("BSType"),
-                Tonnage = dr?.GetDecimal("Tonnage"),
+                FromTonnage = dr?.GetDecimal("FromTonnage"),
+                ToTonnage = dr?.GetDecimal("ToTonnage"),
                 Order = new OrderModel
                 {
                     OrderID = dr.GetInt32("OrderID"),

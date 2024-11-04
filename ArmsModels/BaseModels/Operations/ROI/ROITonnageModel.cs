@@ -23,7 +23,9 @@ namespace Core.BaseModels.Operations.ROI
         [Required]
         public string BSType { get; set; }
         [Required]
-        public decimal? Tonnage { get; set; }
+        public decimal? FromTonnage { get; set; }
+        [Required]
+        public decimal? ToTonnage { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
 }
