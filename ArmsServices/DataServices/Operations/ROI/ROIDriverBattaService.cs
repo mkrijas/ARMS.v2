@@ -26,6 +26,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ToStdKM", model.ToStdKM),
                new SqlParameter("@LoadingMTFrom", model.LoadingMTFrom),
                new SqlParameter("@LoadingMTTo", model.LoadingMTTo),
+               new SqlParameter("@BranchID", model.Branch.BranchID),
                new SqlParameter("@Amount", model.Amount),
                new SqlParameter("@FromDate", model.FromDate),
                new SqlParameter("@ToDate", model.ToDate),
@@ -77,6 +78,11 @@ namespace ArmsServices.DataServices
                 ToStdKM = dr.GetDecimal("ToStdKM"),
                 LoadingMTFrom = dr.GetDecimal("LoadingMTFrom"),
                 LoadingMTTo = dr.GetDecimal("LoadingMTTo"),
+                Branch = new BranchModel
+                {
+                    BranchID = dr.GetInt32("BranchID"),
+                    BranchName = dr.GetString("BranchName")
+                },
                 Amount = dr.GetDecimal("Amount"),
                 FromDate = dr.GetDateTime("FromDate"),
                 ToDate = dr.GetDateTime("ToDate"),
