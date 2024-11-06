@@ -29,6 +29,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public decimal? LoadingMTTo { get; set; }
         [Required]
+        public BranchModel Branch { get; set; } = new();
+        [Required]
         public decimal? Amount { get; set; }
         [Required]
         public DateTime? FromDate { get; set; }

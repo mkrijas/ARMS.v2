@@ -4,6 +4,7 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IROIDriverBattaService Iservice
+@inject IBranchService Ibranchservice
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
@@ -34,13 +35,17 @@
                         <MudSelectItem Value="@("Open")">Open</MudSelectItem>
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="6">
                     <MudTextField @bind-Value="model.LoadingMTFrom" Label="Loading MT From" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LoadingMTFrom)"></MudTextField>
                 </MudItem>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="6">
                     <MudTextField @bind-Value="model.LoadingMTTo" Label="Loading MT To" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.LoadingMTTo)"></MudTextField>
                 </MudItem>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="6">
+                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="BranchModel" Label="State" ResetValueOnEmptyText="true" ValueChanged="BranchChanged" Value="model.Branch"
+                                     SearchFunc="SearchBranch" ToStringFunc="@(e=> e==null?null : $"{e.BranchName}")"></MudAutocomplete>
+                </MudItem>
+                <MudItem xs="12" md="6">
                     <MudTextField @bind-Value="model.Amount" Label="Amount" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Amount)"></MudTextField>
                 </MudItem>
                 <MudItem xs="12" md="6">
@@ -66,6 +71,7 @@
     [CascadingParameter]
     MudDialogInstance MudDialog { get; set; }
     public List<ROIDriverBattaModel> Collection = new();
+    public List<BranchModel> branches = new();
     string UserID;
     int BranchID;
 
@@ -74,6 +80,18 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+
+        branches = Ibranchservice.Select().ToList();
+    }
+
+    public async Task<IEnumerable<BranchModel>> SearchBranch(string searchString)
+    {
+        return await Task.FromResult(branches.Where(x => x.BranchName.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    public void BranchChanged(BranchModel obj)
+    {
+        model.Branch = obj;
     }
 
     private async void OnValidSubmit(EditContext context)
