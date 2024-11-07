@@ -1,4 +1,4 @@
-﻿@page "/FasTagExpenseReport"
+﻿@page "/ROIReport"
 @inject ISnackbar Snackbar
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
@@ -8,19 +8,23 @@
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
             <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
-                <MudText Typo="Typo.h5" Style="font-weight:500;">FasTag Expense Report</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight:500;">ROI Reports</MudText>
             </MudToolBar>
             <MudDivider />
             <MudGrid Style="padding-top: 22px;">
                 <MudItem xs="3">
-                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudSelect Value="ReportName" ValueChanged="OnChangeReport" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" T="string" Label="Select Report">
+                        @foreach (var i in ROIReportList)
+                        {
+                            <MudSelectItem Value="@i.Value">@i.Key</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
                 <MudItem xs="3">
-                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
                 <MudItem xs="3">
-                    @*  Style="display: flex; align-items: center;"> *@
-                    <MudCheckBox @bind-Value="@AllOfficeVehicle" Color="Color.Primary">Office Vehicles / No-ActivityType Entry</MudCheckBox>
+                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
                 <MudItem xs="3" Style="display: flex; align-items: center;">
                     <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
@@ -42,10 +46,19 @@
     public Dictionary<string, string> ReportParameters { get; set; } = new();
     public DateTime? FromDate { get; set; } = DateTime.Now;
     public DateTime? ToDate { get; set; } = DateTime.Now;
-    public bool AllOfficeVehicle { get; set; } = false;
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
     public BranchModel CurrentBranch { get; set; } = new();
+    private Dictionary<string, string> ROIReportList = new Dictionary<string, string>
+    {
+        {"Truck Utilisation Report", "ROI_TruckUtilisationReport"},
+        {"Title 2","Report Name 2"},
+        {"Title 3","Report Name 3"},
+        {"Title 4","Report Name 4"},
+        {"Title 5","Report Name 5"},
+        {"Title 6","Report Name 6"},
+        {"Title 7","Report Name 7"}
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -57,8 +70,18 @@
         CurrentBranch.BranchID = int.Parse(BranchIDString);
     }
 
+    public void OnChangeReport(string a)
+    {
+        ReportName = a;
+    }
+
     public async Task RenderReportViewer()
     {
+        if (ReportName == null)
+        {
+            Snackbar.Add("Please select Report.", Severity.Error);
+            return;
+        }
         if (FromDate == null)
         {
             Snackbar.Add("Please select From Date.", Severity.Error);
@@ -71,11 +94,10 @@
         }
 
         ShowReport = true;
-        ReportName = "FasTagExpenseReport";
+        ReportName = ReportName;
         ReportParameters.Clear();
         ReportParameters.Add("BranchName", CurrentBranch.BranchName);
         ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
-        ReportParameters.Add("OfficeVehicle", AllOfficeVehicle.ToString());
         ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
         ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
         await report.RenderReport();
