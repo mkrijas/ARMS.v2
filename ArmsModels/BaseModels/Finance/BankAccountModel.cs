@@ -61,7 +61,7 @@ namespace ArmsModels.BaseModels
         public string BankCode { get; set; }
         public bool IsGstRegistered { get; set; } = false;
         [RequiredIfTrue("IsGstRegistered")]
-        [StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
+        //[StringLength(15, MinimumLength = 15, ErrorMessage = "Gst number must have 15 characters")]
         public string GstNo { get; set; }
         public string TANNo { get; set; }
         public SharedModels.UserInfoModel UserInfo
