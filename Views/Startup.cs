@@ -188,7 +188,9 @@ namespace Views
             services.AddScoped<IROILoadingAndUnloadingService, ROILoadingAndUnloadingService>();
             services.AddScoped<IROITollService, ROITollService>();
             services.AddScoped<IROIUnloadingService, ROIUnloadingService>();
-            services.AddScoped<IROIFixedExpenseService, ROIFixedExpenseService>();
+            services.AddScoped<IROIAdminExpenseService, ROIAdminExpenseService>();
+            services.AddScoped<IROITyreAndMaintenanceExpenseService, ROITyreAndMaintenanceExpenseService>();
+            services.AddScoped<IROITaxAndFCExpenseService, ROITaxAndFCExpenseService>();
             #endregion
 
             #region ------------Dashboard---------------
