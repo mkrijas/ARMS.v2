@@ -50,8 +50,10 @@ namespace ArmsModels.BaseModels
     {
         decimal? _PayAmount;
         public int? BpID { get; set; }
-        public int? MID { get; set; }
+        public int? MID { get; set; }      
         public bool IsMemo { get; set; } = false;
+        public int? PartyID { get; set; }
+        public int? BranchID { get; set; }
         public int? CoaID { get; set; }
         public string SubArdCode { get; set; }
         public virtual decimal? OutstandingAmount { get; set; }
@@ -64,8 +66,7 @@ namespace ArmsModels.BaseModels
                 _PayAmount = value;
             }
         }
-        public virtual string BranchName { get; set; }
-        public virtual int? BranchID { get; set; }
+        public virtual string BranchName { get; set; }       
         public virtual string InvoiceNumber { get; set; }
         public virtual DateTime? InvoiceDate { get; set; }
     }
