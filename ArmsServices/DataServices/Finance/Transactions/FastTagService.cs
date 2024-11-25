@@ -326,6 +326,7 @@ namespace DAL.DataServices.Finance.Transactions
                 //TripPrefix = dr.GetString("TripPrefix"),
                 //TripNumber = dr.GetInt64("TripNumber"),
                 TripNumberDisplay = dr.GetString("TripNumberDisplay"),
+                ActivityType = dr.GetString("ActivityType"),
                 Destination = dr.GetString("Destination"),
                 PlazaCode = dr.GetString("PlazaCode"),
                 Description = dr.GetString("Description"),
