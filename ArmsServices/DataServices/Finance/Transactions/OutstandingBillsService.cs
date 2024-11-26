@@ -83,6 +83,7 @@ namespace ArmsServices.DataServices
                     CoaID = dr.GetInt32("CoaID"),
                     IsMemo = dr.GetBoolean("IsMemo"),
                     OutstandingAmount = dr.GetDecimal("Amount"),
+                    PartyID = dr.GetInt32("PartyID"),
                 };
             }
         }

@@ -6,87 +6,68 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public class ROIFixedExpenseService : IROIFixedExpenseService
+    public class ROIAdminExpenseService : IROIAdminExpenseService
     {
         IDbService Iservice;
 
-        public ROIFixedExpenseService(IDbService iservice)
+        public ROIAdminExpenseService(IDbService iservice)
         {
             Iservice = iservice;
         }
 
-        public ROIFixedExpenseModel Update(ROIFixedExpenseModel model)
+        public ROIAdminExpenseModel Update(ROIAdminExpenseModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@Wheels", model.Wheels),
-               new SqlParameter("@BSType", model.BSType.BSType),
-               new SqlParameter("@BodyType", model.BodyType),
                new SqlParameter("@BranchAdmin", model.BranchAdmin),
                new SqlParameter("@HOAdmin", model.HOAdmin),
-               new SqlParameter("@Tax", model.Tax),
-               new SqlParameter("@Maintenance", model.Maintenance),
-               new SqlParameter("@Tyre", model.Tyre),
-               new SqlParameter("@TaxAndInsurance", model.TaxAndInsurance),
-               new SqlParameter("@FC", model.FC),
                new SqlParameter("@FromDate", model.FromDate),
                new SqlParameter("@ToDate", model.ToDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.FixedExpense.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.AdminExpense.Update]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
         }
 
-        public IEnumerable<ROIFixedExpenseModel> Select()
+        public IEnumerable<ROIAdminExpenseModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", 0),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.FixedExpense.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.AdminExpense.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        public ROIFixedExpenseModel SelectByID(int? ID)
+        public ROIAdminExpenseModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
             };
-            ROIFixedExpenseModel model = new ROIFixedExpenseModel();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.FixedExpense.Select]", parameters))
+            ROIAdminExpenseModel model = new ROIAdminExpenseModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.AdminExpense.Select]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
         }
 
-        private ROIFixedExpenseModel GetModel(IDataRecord dr)
+        private ROIAdminExpenseModel GetModel(IDataRecord dr)
         {
-            return new ROIFixedExpenseModel
+            return new ROIAdminExpenseModel
             {
                 ID = dr.GetInt32("ID"),
-                Wheels = dr.GetByte("Wheels"),
-                BSType = new Core.BaseModels.Operations.ROI.ROITonnageModel
-                {
-                    BSType = dr.GetString("BSType"),
-                },
-                BodyType = dr.GetString("BodyType"),
                 BranchAdmin = dr.GetDecimal("BranchAdmin"),
                 HOAdmin = dr.GetDecimal("HOAdmin"),
-                Tax = dr.GetDecimal("Tax"),
-                Maintenance = dr.GetDecimal("Maintenance"),
-                Tyre = dr.GetDecimal("Tyre"),
-                TaxAndInsurance = dr.GetDecimal("TaxAndInsurance"),
-                FC = dr.GetDecimal("FC"),
                 FromDate = dr.GetDateTime("FromDate"),
                 ToDate = dr.GetDateTime("ToDate"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

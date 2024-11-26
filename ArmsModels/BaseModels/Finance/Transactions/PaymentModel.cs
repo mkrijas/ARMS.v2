@@ -50,7 +50,7 @@ namespace ArmsModels.BaseModels
     {
         decimal? _PayAmount;
         public int? BpID { get; set; }
-        public int? MID { get; set; }
+        public int? MID { get; set; }      
         public bool IsMemo { get; set; } = false;
         public int? PartyID { get; set; }
         public int? BranchID { get; set; }
