@@ -65,6 +65,7 @@ namespace ArmsServices.DataServices
                 {
                     MID = dr.GetInt32("MID"),
                     BpID = dr.GetInt32("BpID"),
+                    PartyID = dr.GetInt32("PartyID"),
                     BranchID = dr.GetInt32("BranchID"),
                     BranchName = dr.GetString("BranchName"),
                     InvoiceDate = dr.GetDateTime("ReferenceDocDate"),

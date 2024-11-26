@@ -44,6 +44,8 @@ namespace ArmsModels.BaseModels
         public int? BrID { get; set; }
         public int? MID { get; set; }
         public bool? IsMemo { get; set; } = false;
+        public int? PartyID { get; set; }
+        public int? BranchID { get; set; }
         public int? CoaID { get; set; }
         public string SubArdCode { get; set; }
         public decimal? ReceiptAmount
@@ -55,8 +57,7 @@ namespace ArmsModels.BaseModels
                 _ReceiptAmount = value;
             }
         }
-        public virtual string BranchName { get; set; }
-        public virtual int? BranchID { get; set; }
+        public virtual string BranchName { get; set; }        
         public virtual string InvoiceNumber { get; set; }
         public virtual DateTime? InvoiceDate { get; set; }
     }

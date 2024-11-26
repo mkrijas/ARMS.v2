@@ -51,11 +51,12 @@ namespace ArmsServices.DataServices
                     MID = dr.GetInt32("MID"),
                     BrID = dr.GetInt32("BpID"),
                     BranchID = dr.GetInt32("BranchID"),
+                    PartyID = dr.GetInt32("PartyID"),
                     BranchName = dr.GetString("BranchName"),
                     InvoiceDate = dr.GetDateTime("ReferenceDocDate"),
                     InvoiceNumber = dr.GetString("ReferenceDocNo"),
                     ReceiptAmount = dr.GetDecimal("ReceiptAmount"),
-                    CoaID = dr.GetInt32("CoaID"),
+                    CoaID = dr.GetInt32("CoaID"),                    
                 };
             }
         }
