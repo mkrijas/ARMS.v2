@@ -19,7 +19,9 @@ namespace ArmsModels.BaseModels
         public string BodyType { get; set; }
         public OrderModel Order { get; set; } = new();
         [Required]
-        public decimal? Amount { get; set; }
+        public decimal? TaggingAmount { get; set; }
+        [Required]
+        public decimal? LoadingAmount { get; set; }
         [Required]
         public DateTime? FromDate { get; set; }
         [Required]

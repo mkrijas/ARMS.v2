@@ -3,7 +3,9 @@ using ArmsModels.BaseModels;
 using ArmsServices;
 using ArmsServices.DataServices;
 using Core.IDataServices.Operations;
+using Core.IDataServices.Operations.ROI;
 using DAL.DataServices.Operations;
+using DAL.DataServices.Operations.ROI;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using MobileAPI.Services;
@@ -40,6 +42,7 @@ builder.Services.AddScoped<ITruckService, TruckService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<ITruckStatusUpdateService, TruckStatusUpdateService>();
+builder.Services.AddScoped<IROITonnageService, ROITonnageService>();
 
 builder.Services.AddIdentity<UserModel, RoleModel>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddDefaultTokenProviders();

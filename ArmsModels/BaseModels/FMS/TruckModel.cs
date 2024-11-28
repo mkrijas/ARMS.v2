@@ -68,6 +68,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? AssetID { get; set; }
         SharedModels.UserInfoModel _userInfo;
+
+        public string DriverName { get; set; }
+        public string Mobile { get; set; }
         public SharedModels.UserInfoModel UserInfo
         {
             get { return _userInfo; }
