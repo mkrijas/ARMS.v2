@@ -342,6 +342,8 @@ namespace ArmsServices.DataServices
                     GrossWeight = dr.GetDecimal("GrossWeight"),
                     UnladenWeight = dr.GetDecimal("UnladenWeight"),
                     PurchaseDate = dr.GetDateTime("PurchaseDate"),
+                    DriverName = dr.GetString("DriverName"),
+                    Mobile = dr.GetString("Mobile"),
                     CurrentRegistration = new()
                     {
                         RegID = dr.GetInt32("RegID"),
