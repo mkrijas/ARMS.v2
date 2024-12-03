@@ -240,7 +240,8 @@ namespace ArmsServices.DataServices.Inventory
                 Truck = new()
                 {
                     TruckID = dr.GetInt32("TruckID"),
-                    RegNo = dr.GetString("RegNo")
+                    RegNo = dr.GetString("RegNo"),
+                    TruckTypeID = dr.GetInt16("TruckTypeID")
                 },
                 Remarks = dr.GetString("Remarks"),
                 IsCompletelyReleased = dr.GetBoolean("IsCompletelyReleased"),
