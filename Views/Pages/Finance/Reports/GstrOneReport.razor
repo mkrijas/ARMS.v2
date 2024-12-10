@@ -5,14 +5,19 @@
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
             <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
-                <MudText Typo="Typo.h5" Style="font-weight:500;">GSTR Reports</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight:500;">GSTR Reports</MudText>                
             </MudToolBar>
+            <MudRadioGroup Value="@ReportGroup" T="string" ValueChanged="@ReportGroupChanged" Style="text-align: center;">
+                <MudRadio Value="@("GstrOne")" Color="Color.Primary" Dense="true">Gstr1</MudRadio>
+                <MudRadio Value="@("GstrTwo")" Color="Color.Secondary" Dense="true">Gstr2</MudRadio>
+            </MudRadioGroup>
             <MudDivider />
             <MudGrid Style="padding-top: 22px;">
                 <MudItem xs="4">
-                    <MudRadioGroup @bind-Value="@ReportName" Style="text-align: center;">
-                        <MudRadio Value="@("GstrOne")" Color="Color.Primary" Dense="true">Gstr1</MudRadio>
-                        <MudRadio Value="@("GstrTwo")" Color="Color.Secondary" Dense="true">Gstr2</MudRadio>
+                    <MudRadioGroup Value="@ReportType" T="string" ValueChanged="@ReportTypeChanged" Style="text-align: center;">
+                        <MudRadio Value="@("Nature")" Color="Color.Primary" Dense="true">Nature</MudRadio>
+                        <MudRadio Value="@("Rate")" Color="Color.Secondary" Dense="true">Rate</MudRadio>
+                        <MudRadio Value="@("Invoice")" Color="Color.Tertiary" Dense="true">Invoice</MudRadio>
                     </MudRadioGroup>
                 </MudItem>
                 <MudItem xs="3">
@@ -39,7 +44,9 @@
 
     ReportViewer report;
     public bool ShowReport { get; set; } = false;
-    public string ReportName { get; set; } = "GstrOne";
+    public string ReportName { get; set; } = "GstrOne_Nature";
+    private string ReportGroup = "GstrOne";
+    private string ReportType  = "Nature";
     public BranchModel CurrentBranch { get; set; } = new();
     public DateTime? FromDate { get; set; } = DateTime.Now;
     public DateTime? ToDate { get; set; } = DateTime.Now;
@@ -50,6 +57,18 @@
         var authState = await auth.GetAuthenticationStateAsync();
         var User = authState.User;
         CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+    }
+
+    protected void ReportGroupChanged(string val)
+    {
+        ReportGroup = val;
+        ReportName = ReportGroup + "_" + ReportType;
+    }
+
+     protected void ReportTypeChanged(string val)
+    {
+        ReportType = val;
+        ReportName = ReportGroup + "_" + ReportType;
     }
 
     protected bool Validate()
@@ -78,14 +97,17 @@
         try
         {
             if (Validate())
-            {
-                ShowReport = true;
+            {                
+                      
                 ReportParameters.Clear();
                 ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
                 ReportParameters.Add("BranchName", CurrentBranch.BranchName);
                 ReportParameters.Add("From", FromDate.Value.ToString("yyyy/MM/dd"));
-                ReportParameters.Add("To", ToDate.Value.ToString("yyyy/MM/dd"));
+                ReportParameters.Add("To", ToDate.Value.ToString("yyyy/MM/dd"));      
+                StateHasChanged();
                 await report.RenderReport();
+                ShowReport = true;
+                
             }
         }
         catch (Exception ex)
