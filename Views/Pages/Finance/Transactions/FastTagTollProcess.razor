@@ -81,10 +81,10 @@
                                 @if (collection.Count != 0)
                                 {
                                     <MudButton OnClick="ExcelDownload" Style="width: 24%;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Secondary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
-                                    @if (!Readonly)
+                                    @* @if (!Readonly)
                                     {
-                                        <MudButton Style="width: 24%; margin-left:6px;" Variant="Variant.Filled" Color="Color.Dark" OnClick="EditTripNumber">Edit TripNumber</MudButton>
-                                    }
+                                    <MudButton Style="width: 24%; margin-left:6px;" Variant="Variant.Filled" Color="Color.Dark" OnClick="EditTripNumber">Edit TripNumber</MudButton>
+                                    } *@
                                 }
                                 @if (!Readonly)
                                 {
@@ -142,6 +142,10 @@
                             <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.PlazaCode)" InitialDirection="SortDirection.Ascending">Plaza Code</MudTableSortLabel></MudTh>
                             <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.Description)" InitialDirection="SortDirection.Ascending">Transaction Description</MudTableSortLabel></MudTh>
                             <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.TransactionID)" InitialDirection="SortDirection.Ascending">Unique Transaction ID</MudTableSortLabel></MudTh>
+                            @if (!Readonly)
+                            {
+                                <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.FastTagTollID)" InitialDirection="SortDirection.Ascending">Action</MudTableSortLabel></MudTh>
+                            }
                         </HeaderContent>
                         <RowTemplate>
                             @if (!Readonly)
@@ -149,7 +153,7 @@
                                 @* <MudTd><MudCheckBox @bind-Value="@item.IsChecked"></MudCheckBox></MudTd> *@
                                 <MudTd><MudCheckBox Checked="@item.IsChecked" CheckedChanged="(bool itemcheck) => checkitem(item, itemcheck)"></MudCheckBox></MudTd>
                             }
-                            <MudTd DataLabel="Transaction DateTime">@item.TransactionDateTime.Value.ToString("dd/MM/yyyy hh:mm tt")</MudTd>
+                            <MudTd DataLabel="Transaction DateTime">@item.TransactionDateTime.Value.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
                             <MudTd DataLabel="NumberPlate">@item.NumberPlate</MudTd>
                             <MudTd DataLabel="Branch Name">@item.BranchName</MudTd>
                             <MudTd DataLabel="Trip No">@item.TripNumberDisplay</MudTd>
@@ -160,6 +164,12 @@
                             <MudTd DataLabel="PlazaCode">@item.PlazaCode</MudTd>
                             <MudTd DataLabel="TransactionDescription">@item.Description</MudTd>
                             <MudTd DataLabel="Unique Transaction ID">@item.TransactionID</MudTd>
+                            @if (!Readonly)
+                            {
+                                <MudTd title="Edit Branch" DataLabel="Edit Branch">
+                                    <MudIconButton OnClick="@(() => EditTripNumber(item))" Color="Color.Secondary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                                </MudTd>
+                            }
                         </RowTemplate>
                         <PagerContent>
                             <MudTablePager PageSizeOptions="new int[] {5 ,10 ,50 , 100 , 150, 200}" />
@@ -396,49 +406,51 @@
         return model.NumberPlate?.Contains(searchplatenumber, StringComparison.OrdinalIgnoreCase) == true;
     }
 
-    public async Task EditTripNumber()
+    public async Task EditTripNumber(FastTagModel model)
     {
         if (HasPermissionIFastTagServiceEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
 
+            FastTagBranchEditModel editmodel = new();
+            editmodel.FastTagTollID = model.FastTagTollID;
+            editmodel.NumberPlate = model.NumberPlate;
+            editmodel.TransactionDateTime = model.TransactionDateTime;
+            editmodel.TripNumberDisplay = model.TripNumberDisplay;
+            editmodel.ActivityType = model.ActivityType;
+            editmodel.Branch = new BranchModel
+                {
+                    BranchID = model?.BranchID,
+                    BranchAbbrev = model.BranchAbbrev,
+                    BranchName = model.BranchName
+                };
+
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", editmodel.Clone());
             DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Small };
-            var dialog = DialogService.Show<FastTagBranchTripNumberDialog>("Edit TripNumber", options);
+            var dialog = DialogService.Show<FastTagBranchTripNumberDialog>("Edit TripNumber", parms, options);
             var result = await dialog.Result;
             if (!result.Cancelled)
             {
-                var data = (FastTagBranchEditModel)result.Data;
                 try
                 {
-                    FastTagModel itemToUpdate = collection.Find(x =>
-                    {
-                        string cleanedTransactionID1 = data.TransactionID?.Trim();
-                        string cleanedTransactionID2 = x.TransactionID?.Trim();
-
-                        return string.Equals(cleanedTransactionID1, cleanedTransactionID2, StringComparison.OrdinalIgnoreCase);
-                    });
+                    var data = (FastTagBranchEditModel)result.Data;
+                    data.UserInfo.UserID = user.Identity.Name;
+                    FastTagModel itemToUpdate = collection.Find(x => x.FastTagTollID == data.FastTagTollID);
                     if (itemToUpdate != null)
                     {
-                        data.FastTagTollID = itemToUpdate.FastTagTollID;
-                        data.UserInfo.UserID = user.Identity.Name;
-
+                        itemToUpdate.TripNumberDisplay = data.TripNumberDisplay;
+                        itemToUpdate.ActivityType = data.ActivityType;
                         bool a = IFTService.UpdateTripNumber(data);
-                        if (a)
-                        {
-                            // itemToUpdate.TripPrefix = data.TripPrefix;
-                            // itemToUpdate.TripNumber = data.TripNumber;
-                            itemToUpdate.TripNumberDisplay = data.TripNumberDisplay;
-                            itemToUpdate.ActivityType = data.ActivityType;
-                            StateHasChanged();
-                            snackbar.Add("Updated Successfully", Severity.Success);
-                        }
+
+                        snackbar.Add("Updated Successfully", Severity.Success);
                     }
                     else
                     {
                         bool? message = await DialogService.ShowMessageBox(
                             "Oops !",
-                            (MarkupString)$"TransactionID : <b>{data.TransactionID}</b> do not exist in the collection !");
+                            (MarkupString)$"Transaction for <b>{data.NumberPlate} - {data.TransactionDateTime}</b> do not exist in the collection !");
                     }
                 }
                 catch (Exception ex)
@@ -454,6 +466,65 @@
                 "You don't have any permission to Edit FasTag.");
         }
     }
+
+    // public async Task EditTripNumber()
+    // {
+    //     if (HasPermissionIFastTagServiceEdit)
+    //     {
+    //         var authprov = await auth.GetAuthenticationStateAsync();
+    //         var user = authprov.User;
+
+    //         DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Small };
+    //         var dialog = DialogService.Show<FastTagBranchTripNumberDialog>("Edit TripNumber", options);
+    //         var result = await dialog.Result;
+    //         if (!result.Cancelled)
+    //         {
+    //             var data = (FastTagBranchEditModel)result.Data;
+    //             try
+    //             {
+    //                 FastTagModel itemToUpdate = collection.Find(x =>
+    //                 {
+    //                     string cleanedTransactionID1 = data.TransactionID?.Trim();
+    //                     string cleanedTransactionID2 = x.TransactionID?.Trim();
+
+    //                     return string.Equals(cleanedTransactionID1, cleanedTransactionID2, StringComparison.OrdinalIgnoreCase);
+    //                 });
+    //                 if (itemToUpdate != null)
+    //                 {
+    //                     data.FastTagTollID = itemToUpdate.FastTagTollID;
+    //                     data.UserInfo.UserID = user.Identity.Name;
+
+    //                     bool a = IFTService.UpdateTripNumber(data);
+    //                     if (a)
+    //                     {
+    //                         // itemToUpdate.TripPrefix = data.TripPrefix;
+    //                         // itemToUpdate.TripNumber = data.TripNumber;
+    //                         itemToUpdate.TripNumberDisplay = data.TripNumberDisplay;
+    //                         itemToUpdate.ActivityType = data.ActivityType;
+    //                         StateHasChanged();
+    //                         snackbar.Add("Updated Successfully", Severity.Success);
+    //                     }
+    //                 }
+    //                 else
+    //                 {
+    //                     bool? message = await DialogService.ShowMessageBox(
+    //                         "Oops !",
+    //                         (MarkupString)$"TransactionID : <b>{data.TransactionID}</b> do not exist in the collection !");
+    //                 }
+    //             }
+    //             catch (Exception ex)
+    //             {
+    //                 snackbar.Add(ex.Message, Severity.Error);
+    //             }
+    //         }
+    //     }
+    //     else
+    //     {
+    //         bool? result = await DialogService.ShowMessageBox(
+    //             "Permission denied!",
+    //             "You don't have any permission to Edit FasTag.");
+    //     }
+    // }
 
     // void UpdateFilteredCollection(string searchString)
     // {
