@@ -75,11 +75,11 @@
                                         {
                                             <MudItem xs="8"><b>Total Reimbursable Amount &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: @ExcelModelCollection.Where(e => e.Reimbursable).Sum(e => e.DebitAmount).ToString("c")</b></MudItem>
                                             <MudItem xs="4" Style="display: flex; justify-content: flex-end;">
-                                                @if (Edit)
-                                                {
-                                                    <MudButton Style="width: 36%; height: 100%;" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@(()=> EditBranch())">Edit Branch</MudButton>
-                                                }
-                                                else
+                                                @* @if (Edit)
+                                            {
+                                            <MudButton Style="width: 36%; height: 100%;" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@(()=> EditBranch())">Edit Branch</MudButton>
+                                            } *@
+                                                @if (!Edit)
                                                 {
                                                     <MudButton OnClick="ExcelDownload" Style="width: 36%; height: 100%;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Secondary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
                                                 }
@@ -129,7 +129,10 @@
                             <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.PlazaCode)" InitialDirection="SortDirection.Ascending">Plaza Code</MudTableSortLabel></MudTh>
                             <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.Description)" InitialDirection="SortDirection.Ascending">Transaction Description</MudTableSortLabel></MudTh>
                             <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.TransactionID)" InitialDirection="SortDirection.Ascending">Unique Transaction ID</MudTableSortLabel></MudTh>
-                            @* <MudTd></MudTd> *@
+                            @if (Edit)
+                            {
+                                <MudTh><MudTableSortLabel SortBy="new Func<FastTagModel, object>(x=> x.FastTagTollID)" InitialDirection="SortDirection.Ascending">Action</MudTableSortLabel></MudTh>
+                            }
                         </HeaderContent>
 
                         <RowTemplate>
@@ -139,7 +142,7 @@
                                     <MudCheckBox T="bool" @bind-Checked="@item.IsProcessed" ReadOnly></MudCheckBox>
                                 </MudTd>
                             }
-                            <MudTd DataLabel="Transaction DateTime">@item.TransactionDateTime.Value.ToString("dd/MM/yyyy hh:mm tt")</MudTd>
+                            <MudTd DataLabel="Transaction DateTime">@item.TransactionDateTime.Value.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
                             <MudTd DataLabel="NumberPlate">@item.NumberPlate</MudTd>
                             @if (item.BranchID.HasValue)
                             {
@@ -157,6 +160,12 @@
                             <MudTd DataLabel="PlazaCode">@item.PlazaCode</MudTd>
                             <MudTd DataLabel="TransactionDescription">@item.Description</MudTd>
                             <MudTd DataLabel="Unique Transaction ID">@item.TransactionID</MudTd>
+                            @if (Edit)
+                            {
+                                <MudTd title="Edit Branch" DataLabel="Edit Branch">
+                                    <MudIconButton OnClick="@(()=> EditBranch(item))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                                </MudTd>
+                            }
                             @* <MudTd><MudIconButton Icon="@Icons.Material.Filled.Remove" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" @onclick="@(() => Delete(item))" /></MudTd> *@
                         </RowTemplate>
 
@@ -299,43 +308,51 @@
         }
     }
 
-    public async Task EditBranch()
+    public async Task EditBranch(FastTagModel model)
     {
         if (HasPermissionIFastTagServiceEdit)
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
 
+            FastTagBranchEditModel editmodel = new();
+            editmodel.FastTagTollID = model.FastTagTollID;
+            editmodel.NumberPlate = model.NumberPlate;
+            editmodel.TransactionDateTime = model.TransactionDateTime;
+            editmodel.TripNumberDisplay = model.TripNumberDisplay;
+            editmodel.ActivityType = model.ActivityType;
+            editmodel.Branch = new BranchModel
+                {
+                    BranchID = model?.BranchID,
+                    BranchAbbrev = model.BranchAbbrev,
+                    BranchName = model.BranchName
+                };
+
+            DialogParameters parms = new DialogParameters();
+            parms.Add("model", editmodel.Clone());
             DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Small };
-            var dialog = DialogService.Show<FastTagBranchEditDialog>("Edit Branch", options);
+            var dialog = DialogService.Show<FastTagBranchEditDialog>("Edit Branch", parms, options);
             var result = await dialog.Result;
             if (!result.Cancelled)
             {
-                var data = (FastTagBranchEditModel)result.Data;
                 try
                 {
-                    FastTagModel itemToUpdate = ExcelModelCollection.Find(x =>
-                    {
-                        string cleanedTransactionID1 = data.TransactionID?.Trim();
-                        string cleanedTransactionID2 = x.TransactionID?.Trim();
-
-                        return string.Equals(cleanedTransactionID1, cleanedTransactionID2, StringComparison.OrdinalIgnoreCase);
-                    });
+                    var data = (FastTagBranchEditModel)result.Data;
+                    data.UserInfo.UserID = user.Identity.Name;
+                    FastTagModel itemToUpdate = ExcelModelCollection.Find(x => x.FastTagTollID == data.FastTagTollID);
                     if (itemToUpdate != null)
                     {
                         itemToUpdate.BranchID = data.Branch.BranchID;
                         itemToUpdate.BranchName = data.Branch.BranchName;
-                        data.FastTagTollID = itemToUpdate.FastTagTollID;
-                        data.UserInfo.UserID = user.Identity.Name;
+                        bool a = IFTService.UpdateBranch(data);
 
-                        IFTService.UpdateBranch(data);
                         snackbar.Add("Updated Successfully", Severity.Success);
                     }
                     else
                     {
                         bool? message = await DialogService.ShowMessageBox(
                             "Oops !",
-                            (MarkupString)$"TransactionID : <b>{data.TransactionID}</b> do not exist in the collection !");
+                            (MarkupString)$"Transaction for <b>{data.NumberPlate} - {data.TransactionDateTime}</b> do not exist in the collection !");
                     }
                 }
                 catch (Exception ex)
@@ -351,6 +368,59 @@
                 "You don't have any permission to Edit FasTag.");
         }
     }
+
+    // public async Task EditBranch()
+    // {
+    //     if (HasPermissionIFastTagServiceEdit)
+    //     {
+    //         var authprov = await auth.GetAuthenticationStateAsync();
+    //         var user = authprov.User;
+
+    //         DialogOptions options = new DialogOptions() { MaxWidth = MaxWidth.Small };
+    //         var dialog = DialogService.Show<FastTagBranchEditDialog>("Edit Branch", options);
+    //         var result = await dialog.Result;
+    //         if (!result.Cancelled)
+    //         {
+    //             var data = (FastTagBranchEditModel)result.Data;
+    //             try
+    //             {
+    //                 FastTagModel itemToUpdate = ExcelModelCollection.Find(x =>
+    //                 {
+    //                     string cleanedTransactionID1 = data.TransactionID?.Trim();
+    //                     string cleanedTransactionID2 = x.TransactionID?.Trim();
+
+    //                     return string.Equals(cleanedTransactionID1, cleanedTransactionID2, StringComparison.OrdinalIgnoreCase);
+    //                 });
+    //                 if (itemToUpdate != null)
+    //                 {
+    //                     itemToUpdate.BranchID = data.Branch.BranchID;
+    //                     itemToUpdate.BranchName = data.Branch.BranchName;
+    //                     data.FastTagTollID = itemToUpdate.FastTagTollID;
+    //                     data.UserInfo.UserID = user.Identity.Name;
+
+    //                     IFTService.UpdateBranch(data);
+    //                     snackbar.Add("Updated Successfully", Severity.Success);
+    //                 }
+    //                 else
+    //                 {
+    //                     bool? message = await DialogService.ShowMessageBox(
+    //                         "Oops !",
+    //                         (MarkupString)$"TransactionID : <b>{data.TransactionID}</b> do not exist in the collection !");
+    //                 }
+    //             }
+    //             catch (Exception ex)
+    //             {
+    //                 snackbar.Add(ex.Message, Severity.Error);
+    //             }
+    //         }
+    //     }
+    //     else
+    //     {
+    //         bool? result = await DialogService.ShowMessageBox(
+    //             "Permission denied!",
+    //             "You don't have any permission to Edit FasTag.");
+    //     }
+    // }
 
     public async Task Cancel()
     {
