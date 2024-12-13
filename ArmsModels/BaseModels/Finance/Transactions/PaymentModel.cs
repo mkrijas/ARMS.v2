@@ -66,7 +66,7 @@ namespace ArmsModels.BaseModels
                 _PayAmount = value;
             }
         }
-        public virtual string BranchName { get; set; }       
+        public virtual string BranchName { get; set; }        
         public virtual string InvoiceNumber { get; set; }
         public virtual DateTime? InvoiceDate { get; set; }
     }

@@ -18,7 +18,7 @@ namespace Core.IDataServices.Finance.Transactions
         IEnumerable<FastTagModel> GetProcessViewCollection(int? FastTagProcessID);
         IEnumerable<FastTagModel> SelectByBranch(int? FastTagUploadID, int BranchID);
         FastTagTollModel UpdateNew(FastTagTollModel model);
-        FastTagBranchEditModel UpdateBranch(FastTagBranchEditModel model);
+        bool UpdateBranch(FastTagBranchEditModel model);
         bool UpdateTripNumber(FastTagBranchEditModel model);
         FastTagProcessModel UpdateProcess(FastTagProcessModel model);
         int Approve(int? FastTagProcessID, string UserID, string Remarks);  //Approve

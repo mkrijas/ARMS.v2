@@ -1,18 +1,24 @@
-﻿@page "/InsuranceStatusReport"
-@inject ISnackbar Snackbar
+﻿@page "/DamageCompensationReport"
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@inject IBranchService IBranchService
+@inject ISnackbar Snackbar
+@inject IBranchService Ibranchservice
 @inherits ReportComponentBase
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
             <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
-                <MudText Typo="Typo.h5" Style="font-weight:500;">Insurance Status Report</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight:500;">Damage Compensation Report</MudText>
             </MudToolBar>
             <MudDivider />
             <MudGrid Style="padding-top: 22px;">
+                <MudItem xs="5">
+                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="5">
+                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
                 <MudItem xs="2" Style="display: flex; align-items: center;">
                     <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
                     <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
@@ -30,9 +36,10 @@
 @code {
     ReportViewer report;
     public Dictionary<string, string> ReportParameters { get; set; } = new();
+    public DateTime? FromDate { get; set; } = DateTime.Now;
+    public DateTime? ToDate { get; set; } = DateTime.Now;
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
-    public BranchModel SelectedBranch { get; set; } = new();
     public BranchModel CurrentBranch { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
@@ -44,11 +51,6 @@
         CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
     }
 
-    // private async Task BranchChanged(BranchModel branch)
-    // {
-    //     SelectedBranch = branch;
-    // }
-
     public async Task RenderReportViewer()
     {
         if (!SelectedBranches.Any())
@@ -56,11 +58,24 @@
             snackbar.Add("Please select branch.", Severity.Error);
             return;
         }
+        if (FromDate == null)
+        {
+            Snackbar.Add("Please select From Date.", Severity.Error);
+            return;
+        }
+        if (ToDate == null)
+        {
+            Snackbar.Add("Please select To Date.", Severity.Error);
+            return;
+        }
+
         ShowReport = true;
-        ReportName = "InsuranceStatusReport";
+        ReportName = "DamageCompensationReport";
         ReportParameters.Clear();
         ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
         ReportParameters.Add("BranchName", CurrentBranch.BranchName);
+        ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
+        ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
         await report.RenderReport();
     }
 }
