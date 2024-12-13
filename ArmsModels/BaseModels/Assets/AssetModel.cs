@@ -285,6 +285,37 @@ namespace ArmsModels.BaseModels
         public virtual PartyModel VendorInfo { get; set; }
         public string AssetStatus { get; set; }
     }
+    
+    public class AssetSaleModel : ICloneable
+    {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<AssetSaleModel>(Json);
+        }
+
+        public int? ID { get; set; }
+        public int? PID { get; set; }
+        public int? AssetID { get; set; }
+        public string AssetCode { get; set; }
+        public virtual string SerialNumber { get; set; }
+        public virtual string AssetName { get; set; }
+        [Required]
+        public decimal? CurrentValue { get; set; }
+        [Required]
+        public decimal? SaleValue { get; set; }
+        [Required]
+        public string GstMechanism { get; set; } // FCM/RCM/INELIGIBLE
+        [Required]
+        public decimal? TaxRate { get; set; }
+        public decimal? GSTValue { get; set; } = 0;
+        public decimal? CGSTValue { get; set; }
+        public decimal? SGSTValue { get; set; }
+        public decimal? IGSTValue { get; set; }
+        public decimal? TDS { get; set; }
+
+    }
+    
 
     public class RequiredIfComplexAndAssetStatusAttribute : ValidationAttribute
     {
