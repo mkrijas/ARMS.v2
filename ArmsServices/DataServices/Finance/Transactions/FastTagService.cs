@@ -212,7 +212,7 @@ namespace DAL.DataServices.Finance.Transactions
             return model;
         }
 
-        public FastTagBranchEditModel UpdateBranch(FastTagBranchEditModel model)
+        public bool UpdateBranch(FastTagBranchEditModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
@@ -223,9 +223,9 @@ namespace DAL.DataServices.Finance.Transactions
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[Finance.Transactions.FastTag.BranchOrTripNoUpdate]", parameters))
             {
-                return null;
+                return true;
             }
-            return null;
+            return true;
         }
 
         public bool UpdateTripNumber(FastTagBranchEditModel model)
@@ -321,6 +321,7 @@ namespace DAL.DataServices.Finance.Transactions
                 NumberPlate = dr.GetString("RegNo"),
                 BranchID = dr.GetInt32("BranchID"),
                 BranchName = dr.GetString("BranchName"),
+                BranchAbbrev = dr.GetString("BranchAbbrev"),
                 TripID = dr.GetInt64("TripID"),
                 TruckID = dr.GetInt32("TruckID"),
                 //TripPrefix = dr.GetString("TripPrefix"),

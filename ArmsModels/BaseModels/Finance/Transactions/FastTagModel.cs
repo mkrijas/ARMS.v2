@@ -80,6 +80,7 @@ namespace Core.BaseModels.Finance.Transactions
         public virtual Boolean IsChecked { get; set; }
         public virtual string Activity { get; set; }
         public virtual string BranchName { get; set; }
+        public virtual string BranchAbbrev { get; set; }
         //public virtual string TripPrefix { get; set; }
         //public virtual string TripNumberDisplay
         //{
@@ -105,11 +106,20 @@ namespace Core.BaseModels.Finance.Transactions
         public string NumberPlate { get; set; }
     }
 
-    public class FastTagBranchEditModel
+    public class FastTagBranchEditModel : ICloneable
     {
+        public object Clone()
+        {
+            string Json = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<FastTagBranchEditModel>(Json);
+        }
         public int? FastTagTollID { get; set; }
+        //[Required]
+        //public string TransactionID { get; set; }
         [Required]
-        public string TransactionID { get; set; }
+        public DateTime? TransactionDateTime { get; set; }
+        [Required]
+        public string NumberPlate { get; set; }
         [Required]
         public string ActivityType { get; set; }
         [Required]
