@@ -22,7 +22,7 @@ namespace ArmsServices.DataServices
         IEnumerable<SaleModel> SelectByPeriod(DateTime? begin, DateTime? end);
         IEnumerable<TaxPurchaseExpenseModel> GetParticulars(int? SID);
         IEnumerable<TaxPurchaseItemModel> GetItems(int? PID);
-        IEnumerable<AssetPOModel> GetAssets(int? PID);
+        IEnumerable<AssetSaleModel> GetAssets(int? PID);
         int Approve(int? SID, string UserID, string Remarks);  //Approve
         int Reverse(int? SID, string UserID);  //Reverse
     }

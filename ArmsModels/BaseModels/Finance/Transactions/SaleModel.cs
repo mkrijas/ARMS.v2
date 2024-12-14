@@ -25,6 +25,6 @@ namespace ArmsModels.BaseModels
         public List<TaxPurchaseExpenseModel> Particulars { get; set; } = new();
         [ValidateComplexType]
         public List<TaxPurchaseItemModel> Items { get; set; } = new();
-        public List<AssetPOModel> Assets { get; set; } = new();
+        public List<AssetSaleModel> Assets { get; set; } = new();
     }
 }
