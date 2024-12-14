@@ -305,6 +305,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public decimal? SaleValue { get; set; }
         [Required]
+        public decimal? TaxableValue { get; set; }
+        [Required]
         public string GstMechanism { get; set; } // FCM/RCM/INELIGIBLE
         [Required]
         public decimal? TaxRate { get; set; }
