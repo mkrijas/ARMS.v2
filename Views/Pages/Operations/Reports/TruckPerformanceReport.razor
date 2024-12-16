@@ -3,6 +3,7 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject IBranchService Ibranchservice
+@inherits ReportComponentBase
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -12,24 +13,15 @@
             </MudToolBar>
             <MudDivider />
             <MudGrid Style="padding-top: 22px;">
-                <MudItem xs="4">
-                    <MudSelect T="string" Label="Select Branch" MultiSelection="true" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="BranchID" @bind-SelectedValues="BranchIDS" AnchorOrigin="Origin.BottomCenter"
-                               AdornmentColor="Color.Secondary" Required>
-                        @foreach (BranchModel ditem in BranchList)
-                        {
-                            <MudSelectItem T="string" Value="@(ditem.BranchID.Value.ToString())">@ditem.BranchName</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="3">
+                <MudItem xs="5">
                     <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="3">
+                <MudItem xs="5">
                     <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="2">
-                    <MudButton Style="margin-top: 4px; width:-webkit-fill-available" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                <MudItem xs="2" Style="display: flex; align-items: center;">
+                    <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
+                    <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
                 </MudItem>
             </MudGrid>
         </MudPaper>
@@ -44,45 +36,21 @@
 @code {
     ReportViewer report;
     public Dictionary<string, string> ReportParameters { get; set; } = new();
-    public BranchModel SelectedBranch { get; set; } = new();
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
-    private List<BranchModel> BranchList = new();
     public string BranchID { get; set; } = "";
     public DateTime? FromDate { get; set; } = DateTime.Now;
     public DateTime? ToDate { get; set; } = DateTime.Now;
-    private IEnumerable<string> BranchIDS { get; set; } = new HashSet<string>() { };
     public BranchModel CurrentBranch { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         var authprov = await auth.GetAuthenticationStateAsync();
         var User = authprov.User;
         string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
         CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
         CurrentBranch.BranchID = int.Parse(BranchIDString);
-
-        BranchList = Ibranchservice.Select().ToList();
-    }
-
-    private string GetMultiSelectionText(List<string> selectedValues)
-    {
-        string Result = "";
-        foreach (var item in selectedValues)
-        {
-            if (BranchList.Any(s => s.BranchID.Value.ToString() == item))
-            {
-                if (Result == "")
-                {
-                    Result = BranchList.FirstOrDefault(s => s.BranchID.Value.ToString() == item).BranchName;
-                }
-                else
-                {
-                    Result = Result + ", " + BranchList.FirstOrDefault(s => s.BranchID.Value.ToString() == item).BranchName;
-                }
-            }
-        }
-        return Result;
     }
 
     public async Task RenderReportViewer()
@@ -90,8 +58,7 @@
         ShowReport = true;
         ReportName = "TruckPerformanceReport";
         ReportParameters.Clear();
-        string branches = String.Join(',', BranchIDS);
-        ReportParameters.Add("BranchIDS", branches);
+        ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
         ReportParameters.Add("BranchName", CurrentBranch.BranchName);
         ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
         ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
