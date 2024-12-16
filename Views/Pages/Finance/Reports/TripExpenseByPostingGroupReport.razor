@@ -12,7 +12,7 @@
             </MudToolBar>
             <MudDivider />
             <MudGrid Style="padding-top: 22px;">
-                <MudItem xs="3">
+                <MudItem xs="4">
                     <MudAutocomplete T="OperationPostingGroupModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Select Posting Group" Value="Selected" ValueChanged="SetPostingGroup" Clearable="true" SearchFunc="SearchPostingGroup" ToStringFunc="@(e => (e == null || string.IsNullOrEmpty(e.Title)) ? null : string.Format("{0}",e.Title))"></MudAutocomplete>
                     @* <MudSelect Label="Select Posting Group" @bind-Value="@(SelectedpostingGroup)" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" OffsetY="true" Direction="Direction.Top" AdornmentColor="Color.Secondary">
                         @foreach (var ditem in postingGroups)
@@ -21,17 +21,15 @@
                         }
                     </MudSelect> *@
                 </MudItem>
-                <MudItem xs="2">
+                <MudItem xs="3">
                     <MudDatePicker Label="Start Date" @bind-Date="@(StartDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="2">
+                <MudItem xs="3">
                     <MudDatePicker Label="End Date" @bind-Date="@(EndDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="5">
-                    <div class="d-flex gap-3">
-                        <MudIconButton Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
-                        <MudIconButton Title="Render Report" Icon="@Icons.Material.Filled.DocumentScanner" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer"></MudIconButton>
-                    </div>
+                <MudItem xs="2" Style="display: flex; align-items: center;">
+                    <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
+                    <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
                 </MudItem>
             </MudGrid>
         </MudPaper>
@@ -51,6 +49,7 @@
     private List<OperationPostingGroupModel> postingGroups = new();
     string SelectedpostingGroup { get; set; }
     private OperationPostingGroupModel Selected = new();
+    public BranchModel CurrentBranch { get; set; } = new();
 
     bool ShowReport { get; set; } = false;
     string ReportName { get; set; }
@@ -59,8 +58,14 @@
 
     bool detailed = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        CurrentBranch.BranchID = int.Parse(User.Claims.First(x => x.Type == "BranchID").Value);
+        CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+
         postingGroups = Iservice.Select().ToList();
         postingGroups.Add(new OperationPostingGroupModel { Title = "Toll Expense Fastag" });
         postingGroups.Add(new OperationPostingGroupModel { Title = "Fuel Expense" });
@@ -115,6 +120,7 @@
             ReportName = "TripExpenseByPostingGroupReport";
             ReportParameters.Clear();
             ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+            ReportParameters.Add("BranchName", CurrentBranch.BranchName);
             ReportParameters.Add("PostingGroup", SelectedpostingGroup);
             ReportParameters.Add("FromDate", StartDate.Value.ToString("yyyy/MM/dd"));
             ReportParameters.Add("ToDate", EndDate.Value.ToString("yyyy/MM/dd"));
