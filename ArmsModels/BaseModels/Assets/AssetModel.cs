@@ -294,7 +294,7 @@ namespace ArmsModels.BaseModels
             return JsonConvert.DeserializeObject<AssetSaleModel>(Json);
         }
 
-        public int? ID { get; set; }
+        public long? ID { get; set; }
         public int? PID { get; set; }
         public int? AssetID { get; set; }
         public string AssetCode { get; set; }

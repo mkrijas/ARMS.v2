@@ -126,7 +126,7 @@ namespace ArmsServices.DataServices
                     AssetName = dr.GetString("Description"),                    
                     SaleValue  = dr.GetDecimal("SaleValue"),
                     CurrentValue = dr.GetDecimal("CurrentValue"),    
-                    ID = dr.GetInt32("ID"),
+                    ID = dr.GetInt64("ID"),
                     TaxableValue = dr.GetDecimal("TaxableValue"),
                     GstMechanism = dr.GetString("GstMechanism"),                   
                     SerialNumber = dr.GetString("SerialNumber"),                   
