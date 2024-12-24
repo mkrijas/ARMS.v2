@@ -168,6 +168,20 @@ namespace ArmsServices.DataServices
             }
         }
 
+        public IEnumerable<AssetDocumentModel> SelectByAccidentDate(int? AssetID, bool AllDocs)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@AssetID", AssetID) ,
+               new SqlParameter("@AllDocs", AllDocs) ,
+               new SqlParameter("@Operation", "ByAccidentDate"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+
         private AssetDocumentModel GetModel(IDataRecord dr)
         {
             return new AssetDocumentModel
