@@ -131,6 +131,7 @@ namespace ArmsServices.DataServices
                 FuelItemID = reader.GetInt32("FuelItemID"),
                 FuelItemDescription = reader.GetString("FuelItemDescription"),
                 RefInvoiceNo = reader.GetString("RefInvoiceNo"),
+                DocNumber = reader.GetString("DocNumber"),
                 PurchaseModel = new()
                 {
                     PID = reader.GetInt32("PID"),

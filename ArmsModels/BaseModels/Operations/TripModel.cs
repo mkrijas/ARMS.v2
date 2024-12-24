@@ -102,6 +102,7 @@ namespace ArmsModels.BaseModels
         public string Narration { get; set; }
         public string RefInvoiceNo { get; set; }
         public bool IsUsedItem { get; set; }
+        public string DocNumber { get; set; }
     }
 
     public class TripAdvanceModel
