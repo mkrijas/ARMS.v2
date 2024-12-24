@@ -20,6 +20,7 @@ namespace ArmsServices.DataServices
         IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate, DateTime? endDate);
         IEnumerable<AssetDocumentModel> SelectWithPast(int? AssetID);
         IEnumerable<AssetDocumentModel> SelectByAsset(int? AssetID, bool AllDocs);
+        IEnumerable<AssetDocumentModel> SelectByAccidentDate(int? AssetID, bool AllDocs);
         IEnumerable<AssetDocumentTypeModel> GetDocumentTypes();
         AssetDocumentTypeModel UpdateDocumentType(AssetDocumentTypeModel model);  //EditType
         IEnumerable<AssetDocumentModel> ValidatePeriod(AssetDocumentModel model);
