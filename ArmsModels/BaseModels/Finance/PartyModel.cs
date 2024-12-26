@@ -42,6 +42,7 @@ namespace ArmsModels.BaseModels
         public string PAN { get; set; }
         [Required]
         public bool TdsApplicable { get; set; }
+        [Required]
         public string GstType { get; set; }// Registered,UnRegistered,Export,Deemed Export,Exempted,SEZ
         [RequiredIf("GstType", "Registered")]
         public string GstRegType { get; set; }  // GSTIN,UID,GID
