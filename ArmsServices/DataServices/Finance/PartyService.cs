@@ -365,9 +365,12 @@ namespace ArmsServices.DataServices
             {
                 return false;
             }
+
             string branchState = branchModel.GstNo?.Substring(0, 2);
             string partyState = partyModel.GstNo?.Substring(0, 2);
-            return (branchState != null && partyState != null && branchState == partyState); // branchState.Equals(partyState);
+            return (branchState != null && partyState != null && branchState == partyState);
+            // branchState.Equals(partyState);
+
         }
 
         public int? GetPartyDefaultCoaID(int? PartyID)
@@ -427,6 +430,7 @@ namespace ArmsServices.DataServices
                         return GetRenterOtherCoaID(PartyID);
                 }
             }
+
             if (BusinessNature == "SisterConcern")
             {
                 switch (NatureOfTransaction.ToLower())
