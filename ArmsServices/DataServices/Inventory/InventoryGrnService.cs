@@ -62,6 +62,8 @@ namespace ArmsServices.DataServices
                 {
                     ItemEntryID = dr.GetInt64("ItemEntryID"),
                     ItemID = dr.GetInt32("ItemID"),
+                    ItemCode = dr.GetString("InventoryItemCode"),
+                    ItemGroupDescription = dr.GetString("ItemGroupDescription"),
                     ItemDescription = dr.GetString("ItemDescription"),
                     ItemRate = dr.GetDecimal("ItemRate"),
                     ItemQty = (decimal)dr.GetDecimal("ItemQty"),
