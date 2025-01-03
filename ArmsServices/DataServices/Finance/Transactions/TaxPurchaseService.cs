@@ -112,6 +112,7 @@ namespace ArmsServices.DataServices
                     PID = dr.GetInt32("PID"),
                     TDS = dr.GetDecimal("TDS"),
                     TpiID = dr.GetInt64("TpiID"),
+                    ItemCode = dr.GetString("InventoryItemCode"),
                     ItemDescription = dr.GetString("ItemDescription"),
                     ItemGroupDescription = dr.GetString("ItemGroupDescription"),
                     CostCenter = dr.GetInt32("CostCenterID"),

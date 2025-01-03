@@ -122,6 +122,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? ItemID { get; set; }
         public virtual int? CoaID { get; set; }
+        public virtual string ItemCode { get; set; }
         public virtual string ItemDescription { get; set; }
         public virtual string ItemGroupDescription { get; set; }
         [Required]

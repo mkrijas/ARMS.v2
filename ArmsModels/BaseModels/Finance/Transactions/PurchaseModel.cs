@@ -107,6 +107,7 @@ namespace ArmsModels.BaseModels
         public decimal? CGST { get; set; } = 0;
         public decimal? IGST { get; set; } = 0;
         public decimal? TDS { get; set; } = 0;
+        public virtual string ItemCode { get; set; }
         public virtual string ItemDescription { get; set; }
         public virtual string ItemGroupDescription { get; set; }
         public int? CostCenter { get; set; }
