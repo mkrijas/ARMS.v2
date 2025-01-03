@@ -412,6 +412,7 @@ namespace ArmsServices.DataServices
                 TyreType = dr.GetString("TyreType"),
                 TyreStatus = dr.GetByte("TyreStatus"),
                 TyrePosition = dr.GetString("TyrePosition"),
+                IsMounted = dr.GetBoolean("IsMounted"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
