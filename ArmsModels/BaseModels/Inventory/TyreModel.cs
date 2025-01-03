@@ -26,6 +26,7 @@ namespace ArmsModels.BaseModels
         public byte? TyreStatus { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public bool IsChecked { get; set; } = false;
+        public bool IsMounted { get; set; } = false;
         public string Status
         {
             get
