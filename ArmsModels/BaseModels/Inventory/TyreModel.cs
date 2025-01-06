@@ -125,6 +125,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? RequestedDate { get; set; }
         public DateTime? DeliveredDate { get; set; }
+        public virtual int? NoOfTyres { get; set; }
         public int? BranchID { get; set; }
         public int? DeliveryID { get; set; }
         [Required(ErrorMessage = "The tyre is required.")]

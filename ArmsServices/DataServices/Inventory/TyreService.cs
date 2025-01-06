@@ -433,6 +433,7 @@ namespace ArmsServices.DataServices
                 Party = new PartyModel() { PartyID = dr.GetInt32("Party") },
                 DeliveryID = dr.GetInt32("DeliveryID"),
                 BranchID = dr.GetInt32("BranchID"),
+                NoOfTyres = dr.GetInt32("NoOfTyres"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
