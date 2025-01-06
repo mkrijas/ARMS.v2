@@ -21,8 +21,10 @@ namespace ArmsModels.BaseModels
         public string TyreType { get; set; } // Front/ Back/ All-Position
         [Required]
         public string TyreSize { get; set; } // 1000 x 25 etc
-        public bool Tubeless { get; set; } = false;
         public virtual string TyrePosition { get; set; }
+        [Required]
+        public virtual int? TotalExpectedLife { get; set; }
+        public bool Tubeless { get; set; } = false;
         public byte? TyreStatus { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public bool IsChecked { get; set; } = false;
