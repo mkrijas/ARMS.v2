@@ -167,6 +167,8 @@ namespace ArmsServices.DataServices
                 Reference = dr.GetString("Reference"),
                 Remarks = dr.GetString("Remarks"),
                 StoreID = dr.GetInt32("StoreID"),
+                IssuedQty = dr.GetDecimal("IssuedQty"),
+                NoOfGR = dr.GetInt32("NoOfGR"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -202,13 +204,13 @@ namespace ArmsServices.DataServices
             }
         }
 
-        public int Reverse(int GrnID, string UserID)
+        public int Reverse(DateTime DocDate, int GrnID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
+               new SqlParameter("@DocDate", DocDate),
                new SqlParameter("@GrnID", GrnID),
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Operation","Reverse")
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Reverse]", parameters);
         }
