@@ -25,6 +25,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public virtual int? TotalExpectedLife { get; set; }
         public bool Tubeless { get; set; } = false;
+        [Required]
         public int? TyreStatus { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public bool IsChecked { get; set; } = false;
