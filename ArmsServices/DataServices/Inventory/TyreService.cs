@@ -471,7 +471,7 @@ namespace ArmsServices.DataServices
                 ID = dr.GetInt32("ID"),
                 TyreID = dr.GetInt32("TyreID"),
                 DeliveryID = dr.GetInt32("DeliveryID"),
-                Status = dr.GetBoolean("Status"),
+                Status = dr.GetByte("Status"),
                 Amount = dr.GetDecimal("Amount"),
                 Tax = dr.GetDecimal("Tax"),
 

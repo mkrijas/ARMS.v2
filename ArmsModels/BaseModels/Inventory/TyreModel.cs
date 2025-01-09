@@ -141,8 +141,8 @@ namespace ArmsModels.BaseModels
         public int? TyreID { get; set; }
         public bool TaxIncluded { get; set; }
         public TyreModel Tyre { get; set; }
-        public bool Status { get; set; } = true;
-        [RequiredIf("Status", " true")]
+        public byte? Status { get; set; } 
+        [RequiredIf("Status", " 1")]
         public decimal? Amount { get; set; }
         [RequiredIf("TaxIncluded", " true")]
 
