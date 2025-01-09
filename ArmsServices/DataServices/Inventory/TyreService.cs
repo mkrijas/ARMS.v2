@@ -353,6 +353,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@TyreSize",model.TyreSize),
                new SqlParameter("@TyreType",model.TyreType),
                new SqlParameter("@TyreStatus",model.TyreStatus),
+               new SqlParameter("@TotalExpectedLife",model.TotalExpectedLife),
                new SqlParameter("@Tubeless",model.Tubeless),
                new SqlParameter("@InventoryItemID",model.InventoryItemID),
                new SqlParameter("@Make",model.Make),
@@ -410,9 +411,10 @@ namespace ArmsServices.DataServices
                 Tubeless = dr.GetBoolean("Tubeless"),
                 TyreSize = dr.GetString("TyreSize"),
                 TyreType = dr.GetString("TyreType"),
-                TyreStatus = dr.GetByte("TyreStatus"),
+                TyreStatus = dr.GetInt32("TyreStatus"),
                 TyrePosition = dr.GetString("TyrePosition"),
                 IsMounted = dr.GetBoolean("IsMounted"),
+                TotalExpectedLife = dr.GetInt32("TotalExpectedLife"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -431,6 +433,7 @@ namespace ArmsServices.DataServices
                 Party = new PartyModel() { PartyID = dr.GetInt32("Party") },
                 DeliveryID = dr.GetInt32("DeliveryID"),
                 BranchID = dr.GetInt32("BranchID"),
+                NoOfTyres = dr.GetInt32("NoOfTyres"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),
@@ -468,7 +471,7 @@ namespace ArmsServices.DataServices
                 ID = dr.GetInt32("ID"),
                 TyreID = dr.GetInt32("TyreID"),
                 DeliveryID = dr.GetInt32("DeliveryID"),
-                Status = dr.GetBoolean("Status"),
+                Status = dr.GetInt32("Status"),
                 Amount = dr.GetDecimal("Amount"),
                 Tax = dr.GetDecimal("Tax"),
 

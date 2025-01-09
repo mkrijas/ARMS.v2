@@ -30,6 +30,8 @@ namespace ArmsModels.BaseModels
         [RequiredIf("UsedInventory",1)]
         public int? TruckID { get; set; }        
         public bool Invoiced { get; }
+        public decimal? IssuedQty { get; set; }
+        public int? NoOfGR { get; set; }
         [Required]
         [ValidateComplexType]
         public StoreModel Store { get; set; }
