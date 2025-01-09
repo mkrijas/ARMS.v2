@@ -25,7 +25,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public virtual int? TotalExpectedLife { get; set; }
         public bool Tubeless { get; set; } = false;
-        public byte? TyreStatus { get; set; }
+        public int? TyreStatus { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public bool IsChecked { get; set; } = false;
         public bool IsMounted { get; set; } = false;
@@ -44,6 +44,8 @@ namespace ArmsModels.BaseModels
                     case 3:
                         return "3rd Resole";
                     case 99:
+                        return "Scrap";
+                    case < 0:
                         return "Scrap";
                     default:
                         return null;
@@ -141,7 +143,7 @@ namespace ArmsModels.BaseModels
         public int? TyreID { get; set; }
         public bool TaxIncluded { get; set; }
         public TyreModel Tyre { get; set; }
-        public byte? Status { get; set; } 
+        public int? Status { get; set; } 
         [RequiredIf("Status", " 1")]
         public decimal? Amount { get; set; }
         [RequiredIf("TaxIncluded", " true")]

@@ -411,7 +411,7 @@ namespace ArmsServices.DataServices
                 Tubeless = dr.GetBoolean("Tubeless"),
                 TyreSize = dr.GetString("TyreSize"),
                 TyreType = dr.GetString("TyreType"),
-                TyreStatus = dr.GetByte("TyreStatus"),
+                TyreStatus = dr.GetInt32("TyreStatus"),
                 TyrePosition = dr.GetString("TyrePosition"),
                 IsMounted = dr.GetBoolean("IsMounted"),
                 TotalExpectedLife = dr.GetInt32("TotalExpectedLife"),
@@ -471,7 +471,7 @@ namespace ArmsServices.DataServices
                 ID = dr.GetInt32("ID"),
                 TyreID = dr.GetInt32("TyreID"),
                 DeliveryID = dr.GetInt32("DeliveryID"),
-                Status = dr.GetByte("Status"),
+                Status = dr.GetInt32("Status"),
                 Amount = dr.GetDecimal("Amount"),
                 Tax = dr.GetDecimal("Tax"),
 
