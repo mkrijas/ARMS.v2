@@ -38,5 +38,8 @@ namespace ArmsServices.DataServices
         int ResoleDeliveryUpdate(ResoleDeliveryModel model);  //Edit
         int UndoResoleDelivery(int? DeliveryId, string UserID);  //Cancel
         IEnumerable<LinkableBatchModel> GetNonLinkedTyreBatches(int BranchID, int ItemID);
+        TyreKmReadingModel UpdateKmReading(TyreKmReadingModel model);  //Edit
+        IEnumerable<TyreKmReadingModel> SelectKmReadingByTyreID(int? TyreID);
+        int DeleteKmReading(int? ID, string UserID);  //Delete
     }
 }

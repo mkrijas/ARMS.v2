@@ -534,6 +534,67 @@ namespace ArmsServices.DataServices
             };
         }
 
+        public TyreKmReadingModel UpdateKmReading(TyreKmReadingModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", model.ID),
+               new SqlParameter("@TyreID", model.Tyre.TyreID),
+               new SqlParameter("@Title",model.Title),
+               new SqlParameter("@KmReading",model.KmReading),
+               new SqlParameter("@UserID",model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.KmReadingAlerts.Update]", parameters))
+            {
+                model = GetKmReadingModel(dr);
+            }
+            return model;
+        }
+
+        public IEnumerable<TyreKmReadingModel> SelectKmReadingByTyreID(int? TyreID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TyreID", TyreID)
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.KmReadingAlerts.Select]", parameters))
+            {
+                yield return GetKmReadingModel(dr);
+            }
+        }
+
+        public int DeleteKmReading(int? ID, string UserID)
+        {
+
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.KmReadingAlerts.Delete]", parameters);
+        }
+
+        private TyreKmReadingModel GetKmReadingModel(IDataRecord dr)
+        {
+            return new TyreKmReadingModel()
+            {
+                ID = dr.GetInt32("ID"),
+                Tyre = new TyreModel()
+                {
+                    TyreID = dr.GetInt32("TyreID")
+                },
+                Title = dr.GetString("Title"),
+                KmReading = dr.GetInt32("KmReading"),
+                NotificationID = dr.GetInt64("NotificationID"),
+                UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                {
+                    RecordStatus = dr.GetByte("RecordStatus"),
+                    TimeStampField = dr.GetDateTime("TimeStamp"),
+                    UserID = dr.GetString("UserID"),
+                },
+            };
+        }
+
     }
 }
 
