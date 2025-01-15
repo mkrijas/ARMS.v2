@@ -14,5 +14,7 @@ namespace ArmsServices.DataServices
         IEnumerable<TyrePositionModel> Select();
         TyrePositionModel Update(TyrePositionModel model, int? TruckTypeID);  //Edit
         int Delete(int? ID, string UserID);  //Delete
+        TyreSwapModel Swap(TyreSwapModel model);  //Edit
+
     }
 }
