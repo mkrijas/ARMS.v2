@@ -595,6 +595,39 @@ namespace ArmsServices.DataServices
             };
         }
 
+        public TyreSwapModel Swap(TyreSwapModel model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@TruckID", model.TruckID),
+               new SqlParameter("@TyreA", model.TyreA),
+               new SqlParameter("@TyreB", model.TyreB),
+               new SqlParameter("@TyreATargetPosition", model.TyreATargetPosition),
+               new SqlParameter("@TyreBTargetPosition", model.TyreBTargetPosition),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Inventory.Tyre.Swap.Update]", parameters))
+            {
+                return new TyreSwapModel()
+                {
+                    ID = dr.GetInt32("ID"),
+                    TruckID = dr.GetInt32("TruckID"),
+                    TyreA = dr.GetInt32("TyreA"),
+                    TyreB = dr.GetInt32("TyreB"),
+                    TyreATargetPosition = dr.GetInt32("TyreATargetPosition"),
+                    TyreBTargetPosition = dr.GetInt32("TyreBTargetPosition"),
+                    TyreACurrentKM = dr.GetInt32("TyreACurrentKM"),
+                    TyreBCurrentKM = dr.GetInt32("TyreBCurrentKM"),
+                    UserInfo = new ArmsModels.SharedModels.UserInfoModel
+                    {
+                        RecordStatus = dr.GetByte("RecordStatus"),
+                        TimeStampField = dr.GetDateTime("TimeStamp"),
+                        UserID = dr.GetString("UserID"),
+                    },
+                };
+            }
+            return null;
+        }
     }
 }
 
