@@ -25,6 +25,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DueOn", model.DueOn),
                new SqlParameter("@TotalAmount", model.TotalAmount),
                new SqlParameter("@BranchID", model.BranchID),
+               new SqlParameter("@IsInterBranch", model.IsInterBranch),
+               new SqlParameter("@InterBranchTranID", model.InterBranchTranID),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Initiate]", parameters))
@@ -89,6 +91,8 @@ namespace ArmsServices.DataServices
                 DocumentNumber = dr.GetString("InitiatedDocumentNumber"),
                 InitiatedDocumentDate = dr.GetDateTime("InitiatedDocumentDate"),
                 TotalAmount = dr.GetDecimal("TotalAmount"),
+                IsInterBranch = dr.GetBoolean("IsInterBranch"),
+                InterBranchTranID = dr.GetInt32("InterBranchTranID"),
                 AuthLevelId = dr.GetInt32("AuthLevelID"),
                 AuthStatus = dr.GetString("AuthStatus"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

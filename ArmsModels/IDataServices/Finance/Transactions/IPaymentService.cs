@@ -13,7 +13,7 @@ namespace ArmsServices.DataServices
         IEnumerable<PaymentMemoModel> SelectByParty(int? PartyID, int? BranchID);
         IEnumerable<PaymentMemoModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID);
         IEnumerable<PaymentMemoModel> SelectInitiated(int? PaymentInitiatedID);
-        IEnumerable<PaymentMemoModel> SelectPending(int? BranchID);
+        IEnumerable<PaymentMemoModel> SelectPending(int? BranchID, int? PartyID = null);
         IEnumerable<BillsPaidModel> GetBills(int? PID);        
     }
 }
