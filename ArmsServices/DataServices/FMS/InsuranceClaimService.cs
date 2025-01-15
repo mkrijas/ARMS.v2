@@ -172,6 +172,7 @@ namespace ArmsServices.DataServices
                 InvoiceAmount = dr.GetDecimal("InvoiceAmount"),
                 ApprovedAmount = dr.GetDecimal("ApprovedAmount"),
                 Notes = dr.GetString("Notes"),
+                BranchName = dr.GetString("BranchName"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

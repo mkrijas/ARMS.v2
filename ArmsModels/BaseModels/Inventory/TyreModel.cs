@@ -177,4 +177,32 @@ namespace ArmsModels.BaseModels
         public List<ResoleDeliveryTyreModel> ResoleDeliveryTyreList = new();
         public UserInfoModel UserInfo { get; set; } = new();
     }
+
+    public class TyreKmReadingModel
+    {
+        public int? ID { get; set; }
+        public TyreModel Tyre { get; set; } = new();
+        public string Title { get; set; }
+        public int? KmReading { get; set; }
+        public long? NotificationID { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
+    }
+
+    public class TyreSwapModel
+    {
+        public int? ID { get; set; }
+        [Required]
+        public int? TruckID { get; set; }
+        [Required]
+        public int? TyreA { get; set; }
+        [Required]
+        public int? TyreB { get; set; }
+        [Required]
+        public int? TyreATargetPosition { get; set; }
+        [Required]
+        public int? TyreBTargetPosition { get; set; }
+        public int? TyreACurrentKM { get; set; }
+        public int? TyreBCurrentKM { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
+    }
 }

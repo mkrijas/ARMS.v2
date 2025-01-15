@@ -162,6 +162,7 @@ namespace ArmsServices.DataServices
                 DocumentTypeName = dr.GetString("DocumentTypeName"),
                 DocumentDate = dr.GetDateTime("DocumentDate"),
                 DocumentNumber = dr.GetString("DocumentNumber"),
+                OrginalDocumentNumber = dr.GetString("DocNumber"),
                 DocumentID = dr.GetInt32("DocumentID"),
                 MID = dr.GetInt32("MID"),
                 Remarks = dr.GetString("Remarks"),

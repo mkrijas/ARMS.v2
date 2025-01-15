@@ -1,13 +1,14 @@
 ﻿@using ArmsModels.BaseModels.General
 @using System.ComponentModel.DataAnnotations
 @inject AuthenticationStateProvider auth
+@inject IDialogService DialogService
 @inject ITyreService IServices
 
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Mount Truck Details.
-        </MudText>
+        </MudText>        
     </TitleContent>
     <DialogContent>
         <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
@@ -17,6 +18,7 @@
                 <MudItem xs="11" md="11" Class="mb-6">
                     <MudItem Style="text-align:center;"> <h2> @((SelectedTruck == null || SelectedTruck != null && String.IsNullOrWhiteSpace(SelectedTruck.RegNo)) ? "Registration number expired." : (TruckMountedTyreList != null && TruckMountedTyreList.Count() != 0 ? SelectedTruck.RegNo : "No tyre is mounted for the truck " + SelectedTruck.RegNo + ".")) </h2></MudItem>
                 </MudItem>
+                
                 <MudItem xs="11" md="11" Class="mb-6">
                     <MudGrid>
                         <MudItem xs="3" md="3"><strong> Tyre No</strong></MudItem>
@@ -31,7 +33,7 @@
                         {
                             <MudItem xs="3" md="3">@TyreMount.TyreNo</MudItem>
                             <MudItem xs="3" md="3">@TyreMount.PositionName</MudItem>
-                            <MudItem xs="3" md="3">@TyreMount.MountedOn</MudItem>
+                            <MudItem xs="3" md="3">@TyreMount.MountedOn?.ToShortDateString()</MudItem>
                             <MudItem xs="3" md="3">@TyreMount.MountedKM</MudItem>
                         }
                     </MudGrid>
@@ -40,6 +42,7 @@
         </MudContainer>
     </DialogContent>
     <DialogActions>
+        <MudIconButton OnClick="@(()=> OpenSwap(SelectedTruck.TruckID))" Color="Color.Primary" Icon="@Icons.Material.Filled.SwapHoriz" Title="Swap Tyre" Class="ml-2" Size="Size.Large" Variant="Variant.Filled" />
     </DialogActions>
 </MudDialog>
 
@@ -83,6 +86,24 @@
             {
                 model.TruckID = SelectedTruck.TruckID;
             }
+        }
+    }
+
+    private async void OpenSwap(int? id)
+    {
+        model = new();
+        DialogOptions options = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Medium,
+            };
+        DialogParameters parms = new();
+        parms.Add("SelectedTruck", SelectedTruck.Clone());
+         var dialog = DialogService.Show<TyreSwapDialog>("Tyre Swap", parms, options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            TruckMountedTyreList = IServices.SelectMountedTyresByID(SelectedTruck?.TruckID ?? 0).ToList();
+            StateHasChanged();
         }
     }
 

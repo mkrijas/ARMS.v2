@@ -12,7 +12,8 @@ namespace ArmsModels.BaseModels
         public int? ReasonCodeID { get; set; }
         public int? DocumentID { get; set; }
         public int? DocumentTypeID { get; set; }
-        public string DocumentNumber { get; set; }
+        public string OrginalDocumentNumber { get; set; }
+        public string DocumentNumber { get; set; } = "New";
         public DateTime? DocumentDate { get; set; }
         public int? MID { get; set; }
         public string DocumentTypeName { get; set; }

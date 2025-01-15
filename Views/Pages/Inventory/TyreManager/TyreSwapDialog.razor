@@ -1,0 +1,125 @@
+﻿@using ArmsModels.BaseModels.General
+@using System.ComponentModel.DataAnnotations
+@inject AuthenticationStateProvider auth
+@inject MudBlazor.ISnackbar snackbar
+@inject ITyreService IServices
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" Class="mr-3" />Swap Tyre
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px">
+            <EditForm id="formSwap" Model="@model" OnValidSubmit="Swap">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="TyreMountedModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Tyre A" ToStringFunc="@(e => e == null ? null : $"{e.TyreNo}")" Value="@SelectedTyreA" ValueChanged="OnTyreAChanged">
+                            @foreach (TyreMountedModel TyreMount in TruckMountedTyreList)
+                            {
+                                <MudSelectItem Value="@TyreMount">@TyreMount.TyreNo</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField ReadOnly @bind-Value="SelectedTyreA.PositionName" Label="Postion" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="TyreMountedModel" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Tyre B" ToStringFunc="@(e => e == null ? null : $"{e.TyreNo}")" Value="@SelectedTyreB" ValueChanged="OnTyreBChanged">
+                            @foreach (TyreMountedModel TyreMount in TruckMountedTyreList)
+                            {
+                                <MudSelectItem Value="@TyreMount">@TyreMount.TyreNo</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField ReadOnly @bind-Value="SelectedTyreB.PositionName" Label="Position" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton form="formSwap" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-12">Swap</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public TyreSwapModel model { get; set; } = new();
+    [Parameter]
+    public TruckModel SelectedTruck { get; set; } = new();
+    [Required]
+    public TyrePositionModel SelectedTyreAPosition { get; set; } = new();
+    [Required]
+    private TyreMountedModel SelectedTyreA { get; set; } = new();
+    [Required]
+    public TyrePositionModel SelectedTyreBPosition { get; set; } = new();
+    [Required]
+    private TyreMountedModel SelectedTyreB { get; set; } = new();
+    List<TyreMountedModel> TruckMountedTyreList = new();
+    List<TyrePositionModel> TyrePositionListForMountAndUnMount = new();
+
+    protected override void OnInitialized()
+    {
+        if (SelectedTruck != null && SelectedTruck.TruckID != null && SelectedTruck.TruckID != 0)
+        {
+            TruckMountedTyreList = IServices.SelectMountedTyresByID(SelectedTruck?.TruckID ?? 0).ToList();
+            TyrePositionListForMountAndUnMount = IServices.GetTyrePositionList().ToList();
+            model.TruckID = SelectedTruck.TruckID;
+        }
+    }
+
+    private void OnTyreAChanged(TyreMountedModel obj)
+    {
+        SelectedTyreA = obj;
+        model.TyreA = obj?.TyreID ?? null;
+        model.TyreBTargetPosition = obj?.PositionID ?? null;
+        SelectedTyreA.PositionName = obj?.PositionName ?? null;
+    }
+
+    private void OnTyreBChanged(TyreMountedModel obj)
+    {
+        SelectedTyreB = obj;
+        model.TyreB = obj?.TyreID ?? null;
+        model.TyreATargetPosition = obj?.PositionID ?? null;
+        SelectedTyreB.PositionName = obj?.PositionName ?? null;
+    }
+
+    public async Task Swap()
+    {
+        if(model.TyreA == model.TyreB)
+        {
+            snackbar.Add("Select diffrent tyres", Severity.Warning);
+            return;
+        }
+        
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        if (model != null)
+        {
+            model.UserInfo.UserID = user.Identity.Name;
+            try
+            {
+                IServices.Swap(model);
+                snackbar.Add("Tyre Swaped Successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

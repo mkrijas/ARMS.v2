@@ -1,0 +1,133 @@
+﻿@using ArmsModels.BaseModels.General
+@using ArmsServices.DataServices.General
+@inject AuthenticationStateProvider auth
+@inject ITyreService Iservice
+@inject IConfigTable IconfigTable
+@inject MudBlazor.ISnackbar snackbar
+@using System.Threading;
+@inject IRoleService<RoleModel> Irole
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> KM Readings
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudItem xs="12">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudGrid Justify="Justify.Center">
+                        <MudItem xs="4"><b>Title</b></MudItem>
+                        <MudItem xs="4"><b>Km Reading</b></MudItem>
+                        <MudItem xs="4"><b>Action</b></MudItem>
+                    </MudGrid>
+                </MudItem>
+                @foreach (var item in KmReadings)
+                {
+                    <MudItem xs="4" Class="ali-C">@item.Title</MudItem>
+                    <MudItem xs="4" Class="ali-C">@item.KmReading</MudItem>
+                    <MudItem xs="4">
+                        <MudIconButton Disabled="@(item.NotificationID != null)" Class="ml-2" Color="Color.Error" Title="Delete" @onclick="@(()=> Delete(@item))" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
+                    </MudItem>
+                }
+                <MudItem xs="4">
+                    <MudSelect T="string" @bind-Value="@model.Title" Label="Select Title" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Please Select">
+                        <MudSelectItem Value="@("1st Resole")">1st Resole</MudSelectItem>
+                        <MudSelectItem Value="@("2nd Resole")">2nd Resole</MudSelectItem>
+                        <MudSelectItem Value="@("3rd Resole")">3rd Resole</MudSelectItem>
+                        <MudSelectItem Value="@("Scrap")">Scrap</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="model.KmReading" Label="Km Reading" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.KmReading)"></MudTextField>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudIconButton OnClick="Update" Class="ml-2" Color="Color.Primary" Title="Add" Icon="@Icons.Material.Filled.Add" Size="Size.Small" Variant="Variant.Filled" />
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+    </DialogContent>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public TyreKmReadingModel model { get; set; } = new();
+    [Parameter]
+    public TyreModel SelectedTyre { get; set; } = new();
+    private List<TyreKmReadingModel> KmReadings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        KmReadings = Iservice.SelectKmReadingByTyreID(SelectedTyre.TyreID).ToList();
+        model.Tyre.TyreID = SelectedTyre.TyreID;
+    }
+
+    private async Task Delete(TyreKmReadingModel item)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+                "Warning",
+                "Are you sure you want to delete this entry?",
+                yesText: "Delete!", cancelText: "Cancel");
+        if (result != null)
+        {
+            try
+            {
+                var authprov = await auth.GetAuthenticationStateAsync();
+                var user = authprov.User;
+                item.UserInfo = new();
+                if (item.UserInfo != null)
+                {
+                    item.UserInfo.UserID = user.Identity.Name;
+                    int resultDelete = Iservice.DeleteKmReading(item.ID, item.UserInfo.UserID);
+                    if (resultDelete != -1)
+                    {
+                        if (KmReadings != null && KmReadings.Any(s => s.ID == item.ID))
+                        {
+                            KmReadings.Remove(KmReadings.FirstOrDefault(s => s.ID == item.ID));
+                            snackbar.Add("Deleted Successfully", Severity.Success);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+
+    private async Task Update()
+    {
+        if (model.Title == null || model.KmReading == null)
+        {
+            snackbar.Add("Please fill in all Fields", Severity.Error);
+            return;
+        }
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        var brancIDString = authprov.User.Claims.First(x => x.Type == "BranchID").Value;
+        model.Tyre.TyreID = SelectedTyre.TyreID;
+        model.UserInfo.UserID = user.Identity.Name;
+        try
+        {
+            Iservice.UpdateKmReading(model);
+            snackbar.Add("Mounted Successfully", Severity.Success);
+            KmReadings.Add(model);
+            model = new();
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+}
