@@ -41,5 +41,6 @@ namespace ArmsServices.DataServices
         TyreKmReadingModel UpdateKmReading(TyreKmReadingModel model);  //Edit
         IEnumerable<TyreKmReadingModel> SelectKmReadingByTyreID(int? TyreID);
         int DeleteKmReading(int? ID, string UserID);  //Delete
+        TyreSwapModel Swap(TyreSwapModel model);
     }
 }

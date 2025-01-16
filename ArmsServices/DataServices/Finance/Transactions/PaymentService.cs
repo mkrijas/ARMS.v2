@@ -319,12 +319,13 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public IEnumerable<PaymentMemoModel> SelectPending(int? BranchID)
+        public IEnumerable<PaymentMemoModel> SelectPending(int? BranchID,int? PartyID = null)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@Operation", "ByPending"),
                new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@PartyID", PartyID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transactions.PaymentMemo.Select]", parameters))
