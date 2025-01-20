@@ -1,4 +1,4 @@
-﻿@page "/StockistFreightCollected"
+﻿@page "/StockistFreightCollectedReport"
 @using ArmsModels.BaseModels.Finance.Report;
 @using Microsoft.JSInterop
 @using Microsoft.AspNetCore.Components
@@ -6,6 +6,7 @@
 @using System.Text;
 @using System.Net;
 @inject AuthenticationStateProvider auth
+@inherits ReportComponentBase
 @inject IBranchService Ibranchservice
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -18,16 +19,14 @@
             </MudToolBar>
             <MudDivider />
             <MudGrid Style="padding-top: 22px;">
-                <MudItem xs="4">
-                    <BranchSelector LabelName="Select Branch" Value="SelectedBranch" ValueChanged="@OtherBranchChanged"></BranchSelector>
-                </MudItem>
-                <MudItem xs="3">
+                <MudItem xs="5">
                     <MudDatePicker Label="From" @bind-Date="@(StartDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="3">
+                <MudItem xs="5">
                     <MudDatePicker Label="To" @bind-Date="@(EndDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
                 <MudItem xs="2" Style="display: flex; align-items: center;">
+                    <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
                     <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
                 </MudItem>
             </MudGrid>
@@ -46,18 +45,28 @@
     public DateTime? StartDate { get; set; } = DateTime.Now;
     public DateTime? EndDate { get; set; } = DateTime.Now;
     public int? BranchID { get; set; } = 0;
-    public BranchModel SelectedBranch { get; set; } = new();
+    public BranchModel CurrentBranch { get; set; } = new();
     public string ReportName { get; set; }
     bool ShowReport;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var User = authprov.User;
+        string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
+        CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+        CurrentBranch.BranchID = int.Parse(BranchIDString);
+    }
+
     private async Task OtherBranchChanged(BranchModel branch)
     {
-        SelectedBranch = branch;
+        CurrentBranch = branch;
     }
 
     public async Task RenderReportViewer()
     {
-        if (SelectedBranch?.BranchID == null)
+        if (CurrentBranch?.BranchID == null)
         {
             Snackbar.Add("Please select Branch", Severity.Error);
             return;
@@ -66,8 +75,8 @@
         ShowReport = true;
         ReportName = "StocklistFreightCollectedReport";
         ReportParameters.Clear();
-        ReportParameters.Add("BranchID", SelectedBranch?.BranchID.ToString());
-        ReportParameters.Add("BranchName", SelectedBranch?.BranchName.ToString());
+        ReportParameters.Add("BranchIDs", String.Join(',', SelectedBranches));
+        ReportParameters.Add("BranchName", CurrentBranch?.BranchName.ToString());
         ReportParameters.Add("PeriodFrom", StartDate.Value.ToString("yyyy/MM/dd"));
         ReportParameters.Add("PeriodTo", EndDate.Value.ToString("yyyy/MM/dd"));   
         if(report is null)
