@@ -49,7 +49,7 @@
             <h6> <u>Assets</u></h6>
             <MudTable Class="mb-3" T="AssetPOModel" Items="@PI.SelectedAssets" Hover="true" SelectOnRowClick>
                 <HeaderContent>
-                    <MudTh>Description</MudTh>
+                    <MudTh>Asset Name</MudTh>
                     <MudTh>Account Head</MudTh>
                     <MudTh>Value</MudTh>
                     <MudTh>GST Rate</MudTh>
@@ -61,7 +61,7 @@
                     @* <MudTh>Actions</MudTh> *@
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="Description">@context.Description</MudTd>
+                    <MudTd DataLabel="Asset Name">@context.Description</MudTd>
                     <MudTd DataLabel="NatureOfAsset">@context.AccountName</MudTd>
 
                     <MudTd DataLabel="BookValue">
@@ -82,29 +82,29 @@
                     </MudTd>
                     <MudTd DataLabel="CurrentValue">
                         @* @context.TaxRate *@
-                        @if (PI.SelectedAssets.Any(asset => asset.AssetStatus == "WIP"))
+@*                         @if (PI.SelectedAssets.Any(asset => asset.AssetStatus == "WIP"))
                         {
-                            <!-- Editable text box -->
+ *@                            <!-- Editable text box -->
                             <MudTextField T="decimal?" Value="@context.TaxRate" Immediate="true" ValueChanged="((e)=> CalcTax(e,context))" />
                             @* <MudTextField Value="@context.TaxRate" Immediate="true" ValueChanged="@(newValue => CalcTax(newValue))" /> *@
-                        }
+@*                         }
                         else
                         {
                             <!-- Non-editable value -->
                             @context.TaxRate
                         }
-                    </MudTd>
+ *@                    </MudTd>
                     <MudTd>
-                        @if (PI.SelectedAssets.Any(asset => asset.AssetStatus == "WIP"))
+@*                         @if (PI.SelectedAssets.Any(asset => asset.AssetStatus == "WIP"))
                         {
-                            <GstMechanismSelector page="Asset" @bind-Value="@context.GstMechanism"></GstMechanismSelector>
-                        }
+ *@                            <GstMechanismSelector page="Asset" @bind-Value="@context.GstMechanism"></GstMechanismSelector>
+@*                         }
                         else
                         {
                             <!-- Non-editable value -->
                             @context.GstMechanism
                         }
-                    </MudTd>
+ *@                    </MudTd>
                     <MudTd DataLabel="CGSTValue">
                         @string.Format("{0:F3}", context.CGSTValue)
                     </MudTd>
@@ -183,17 +183,17 @@
         UserID = user.Identity.Name;
         branchID = int.Parse(user.Claims.First(x => x.Type == "BranchID").Value);
         model.Assets = PI.SelectedAssets;
-        model.PartyInfo = PI.SelectedAssets[0].VendorInfo;
-        model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
-        if (model.PartyInfo != null)
-        {
-            Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
-        }
-        else { Local = false; }
-        if (model.PID == null && model.PartyInfo != null)
-        {
-            PartyChanged(model.PartyInfo);
-        }
+        // model.PartyInfo = PI.SelectedAssets[0].VendorInfo;
+        // model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
+        // if (model.PartyInfo != null)
+        // {
+        //     Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
+        // }
+        // else { Local = false; }
+        // if (model.PID == null && model.PartyInfo != null)
+        // {
+        //     PartyChanged(model.PartyInfo);
+        // }
 
         if (model.PID != null)
         {
@@ -210,7 +210,7 @@
         DocNumber = model.DocumentNumber;
         DocDate = model.DocumentDate;
         DocType = model.NatureOfTransaction;
-        AddTax(model.Assets);
+        //AddTax(model.Assets);
 
     }
 
@@ -231,8 +231,11 @@
         if (party != null)
         {
             Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
+            AddTax(model.Assets);
+            SetTotal();
         }
         else { Local = false; }
+
     }
 
     private async Task OnValidSubmit(EditContext context)
@@ -256,7 +259,14 @@
                     decimal? amt = 0;
                     foreach (var asset in model.Assets)
                     {
-                        asset.CoaID = iservice.GetCapitalizationCoaID(asset.AssetID);
+                        // if (asset.AssetStatus == "WIP")
+                        // {
+                        //     asset.CoaID = iservice.GetCWIPCoaID(asset.AssetID);
+                        // }
+                        // else
+                        // {
+                        //     asset.CoaID = iservice.GetCapitalizationCoaID(asset.AssetID);
+                        // }
                         if (asset.CoaID is null)
                         {
                             snackbar.Add(string.Format("Capitalization Account is not mapped for {0}", asset.AssetCode), Severity.Error);
@@ -336,8 +346,10 @@
             return false;
         }
         //Model.GstRateID = usageIservice.GetGstRate(Model.UsageCode, DateTime.Now);
+
         foreach (var item in asset)
         {
+            item.IGSTValue = item.CGSTValue = item.SGSTValue = 0;
             decimal taxRate = item.TaxRate ?? 0;
             if (!Local)
             {
@@ -361,6 +373,7 @@
     {
         //AssetPOModel item = new AssetPOModel();
         decimal taxRate = tax ?? 0;
+        item.IGSTValue = item.CGSTValue = item.SGSTValue = 0;
         item.TaxRate = taxRate;
         if (!Local)
         {
@@ -372,6 +385,7 @@
         }
         decimal tdsRate = tdsService.GetTdsRate(model.PartyInfo.PartyID, item.CoaID);
         item.TDS = Math.Round((item.BookValue.Value * tdsRate) / 100, 2);
+        item.GSTValue = item.IGSTValue + item.CGSTValue + item.SGSTValue;
         //asset.Add(item);
         SetTotal();
     }
