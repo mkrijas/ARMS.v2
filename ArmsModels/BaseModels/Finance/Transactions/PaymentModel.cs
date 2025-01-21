@@ -82,6 +82,8 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         public decimal? TotalAmount { get; set; }
         public List<PaymentMemoModel> SelectedMemos { get; set; } = new();
+        public bool IsInterBranch { get; set; }
+        public int? InterBranchTranID { get; set; }
         public int? AuthLevelId { get; set; }
         public string AuthStatus { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
