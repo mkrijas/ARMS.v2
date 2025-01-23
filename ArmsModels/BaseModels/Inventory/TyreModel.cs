@@ -22,7 +22,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string TyreSize { get; set; } // 1000 x 25 etc
         public virtual string TyrePosition { get; set; }
-        [Required]
+        //[Required]
         public virtual int? TotalExpectedLife { get; set; }
         public bool Tubeless { get; set; } = false;
         [Required]
