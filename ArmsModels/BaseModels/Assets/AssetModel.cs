@@ -65,12 +65,11 @@ namespace ArmsModels.BaseModels
         [Required]
         public string AssetStatus { get; set; }
         //[RequiredIf("IsComplex", " false")]
-        [RequiredIfComplexAndAssetStatus("IsComplex", " false", "AssetStatus", "Ready to use")]
+        [RequiredIfComplexAndAssetStatus("IsComplex", " false", "AssetStatus", "Ready To Use")]
         public DateTime? DepreciationStartingDate { get; set; }
         //[RequiredIf("IsComplex", " false")]
-        [RequiredIfComplexAndAssetStatus("IsComplex", " false", "AssetStatus", "Ready to use")]
+        [RequiredIfComplexAndAssetStatus("IsComplex", " false", "AssetStatus", "Ready To Use")]
         public DateTime? DepreciationEndingDate { get; set; }
-
         public decimal? CurrentValue { get; set; }
         public decimal? TotalValue { get; set; }
         //[ExpressiveAnnotations.Attributes.RequiredIf("IsComplex == false")]
@@ -196,7 +195,7 @@ namespace ArmsModels.BaseModels
         public List<AssetPOModel> SelectedAssets { get; set; } = new();
         public int? AuthLevelId { get; set; }
         public string AuthStatus { get; set; }
-        public SharedModels.UserInfoModel UserInfo { get; set; }
+        public UserInfoModel UserInfo { get; set; }
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
@@ -229,7 +228,7 @@ namespace ArmsModels.BaseModels
         [StringLength(8)]
         [Required]
         public string AssetCode { get; set; }
-        
+
         [Required]
         public int? BranchID { get; set; }
         [Required]
@@ -244,10 +243,10 @@ namespace ArmsModels.BaseModels
         public decimal? CGSTValue { get; set; }
         public decimal? SGSTValue { get; set; }
         public decimal? IGSTValue { get; set; }
-        public decimal? TDS { get; set; }      
-        public int RecordStatus { get; set; }       
+        public decimal? TDS { get; set; }
+        public int RecordStatus { get; set; }
     }
-    
+
     public class AssetSaleModel : ICloneable
     {
         public object Clone()
@@ -279,7 +278,7 @@ namespace ArmsModels.BaseModels
         public decimal? TDS { get; set; }
 
     }
-    
+
 
     public class RequiredIfComplexAndAssetStatusAttribute : ValidationAttribute
     {
