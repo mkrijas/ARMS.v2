@@ -36,7 +36,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", BranchID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Select]", parameters))
+            //foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.FCRenewalDoc.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -116,7 +117,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "GetAssets")
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Select]", parameters))
+            //foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.FCRenewalDoc.Select]", parameters))
             {
                 yield return new AssetModel()
                 {
