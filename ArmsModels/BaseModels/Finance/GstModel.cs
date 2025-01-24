@@ -66,13 +66,13 @@ namespace ArmsModels.BaseModels
         [Required]
         public int? ItemID { get; set; }
         public string GstMechanism { get; set; } = "FCM"; // Operation,Maintenance,All
-        public virtual string ItemCode { get; }
+        public virtual string ItemCode { get; set; }
         public string ItemDescription { get; set; }
         public string HsnCode { get; set; }
         [Required]
         public int? RID { get; set; }
         public virtual string ItemGroupDescription { get; set; }
-        public virtual decimal? TaxRate { get; }
+        public virtual decimal? TaxRate { get; set; }
         [Required]
         public DateTime? PeriodFrom { get; set; }
         [Required]
