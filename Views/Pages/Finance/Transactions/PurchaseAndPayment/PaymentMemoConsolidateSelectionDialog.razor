@@ -5,36 +5,49 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
-            Select Memos to Initiate Payment  
+            Select Memos to Initiate Payment
             <MudText> (@selectedItems?.Count) Memos Selected</MudText>
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudTable T="PaymentMemoModel" Items="@Memos" 
-                  Hover="true" SelectOnRowClick Filter="new Func<PaymentMemoModel, bool>(search)">
-            <ToolBarContent>
-                <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchMemo" Placeholder="Search.... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh><MudCheckBox ValueChanged="(bool isChecked) => SelectAll(isChecked)"></MudCheckBox></MudTh>
-                <MudTh>Memo Number</MudTh>
-                <MudTh>Branch Name</MudTh>
-                <MudTh>Memo Date</MudTh>
-                <MudTh>Party</MudTh>
-                <MudTh>Amount</MudTh>
-                <MudTh>Reference</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd><MudCheckBox @bind-Value="@context.IsChecked"></MudCheckBox></MudTd>
-                <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
-                <MudTd DataLabel="BranchName">@context.OtherBranch</MudTd>
-                <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="Party">@context.PartyInfo.TradeName</MudTd>
-                <MudTd DataLabel="Amount">@context.TotalAmount</MudTd>
-                <MudTd DataLabel="Reference">@context.Reference</MudTd>
-            </RowTemplate>
-        </MudTable>
+        <MudGrid>
+            <MudItem xs="5">
+                <BranchSelector @bind-Value="@SelectedBranch" LabelName="Select Branch"></BranchSelector>
+            </MudItem>
+            <MudItem xs="5">
+                <PartySelector BranchID="@(SelectedBranch?.BranchID)" @bind-Value="@SelectedParty" label="Select Party" />
+            </MudItem>
+            <MudItem xs="2">
+                <MudButton OnClick="@FetchMemos">Show</MudButton>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTable T="PaymentMemoModel" Items="@Memos"
+                          Hover="true" SelectOnRowClick Filter="new Func<PaymentMemoModel, bool>(search)">
+                    <ToolBarContent>
+                        <MudSpacer></MudSpacer>
+                        <MudTextField @bind-Value="searchMemo" Placeholder="Search.... " Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh><MudCheckBox ValueChanged="(bool isChecked) => SelectAll(isChecked)"></MudCheckBox></MudTh>
+                        <MudTh>Memo Number</MudTh>
+                        <MudTh>Branch Name</MudTh>
+                        <MudTh>Memo Date</MudTh>
+                        <MudTh>Party</MudTh>
+                        <MudTh>Amount</MudTh>
+                        <MudTh>Reference</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd><MudCheckBox @bind-Value="@context.IsChecked"></MudCheckBox></MudTd>
+                        <MudTd DataLabel="DocumentNumber">@context.DocumentNumber</MudTd>
+                        <MudTd DataLabel="BranchName">@context.OtherBranch</MudTd>
+                        <MudTd DataLabel="DocumentDate">@context.DocumentDate?.ToShortDateString()</MudTd>
+                        <MudTd DataLabel="Party">@context.PartyInfo.TradeName</MudTd>
+                        <MudTd DataLabel="Amount">@context.TotalAmount</MudTd>
+                        <MudTd DataLabel="Reference">@context.Reference</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(()=> MudDialog.Cancel())">Cancel</MudButton>
@@ -47,8 +60,10 @@
 
     [Parameter]
     public int? BranchID { get; set; }
-
     private bool _busy;
+
+    private BranchModel SelectedBranch;
+    private PartyModel SelectedParty;
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private HashSet<PaymentMemoModel> selectedItems = new();
@@ -68,7 +83,17 @@
 
     protected override void OnInitialized()
     {
-        Memos = iservice.SelectPending(BranchID).ToList();
+
+    }
+
+    void FetchMemos()
+    {
+        if(SelectedBranch is null)
+        {
+            snackbar.Add("Branch not selected!", Severity.Warning);
+            return;
+        }
+        Memos = iservice.SelectPending(SelectedBranch.BranchID).ToList();
     }
 
     private async Task Submit()

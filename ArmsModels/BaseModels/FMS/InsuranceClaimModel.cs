@@ -41,6 +41,7 @@ namespace ArmsModels.BaseModels
         public virtual AssetModel Asset { get; set; }
         public virtual List<InsuranceClaimEventStatusModel> Events { get; set; }
         public UserInfoModel UserInfo { get; set; }
+        public virtual string BranchName { get; set; }
     }
 
 

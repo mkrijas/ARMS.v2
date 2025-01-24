@@ -48,16 +48,23 @@
                     <MudIconButton OnClick="@(()=> OpenDialog(context,true,true))" Color="Color.Primary" Icon="@Icons.Material.Filled.GridView" Title="View" Class="ml-2" Size="Size.Small" Variant="Variant.Filled" />
                     <MudIconButton Disabled="@(context.AuthLevelID != null)" OnClick="@(()=> OpenDialog(context,false,false))" Color="Color.Primary" Title="Edit" Class="ml-2" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Variant="Variant.Filled" />
                     <MudIconButton Disabled="@(context.AuthLevelID != null)" OnClick="@(()=> Delete(context))" Color="Color.Error" Title="Delete" Class="ml-2" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Filled" />
-
-                    @if (@context.AuthLevelID != 99 && @context.AuthLevelID != 100)
+                    @if (@context.AuthLevelID == 99 )
+                    {
+                        <MudIconButton Disabled="@(context.IssuedQty > 0 || context.Invoiced)" @onclick="@(()=> Reverse(context))" Color="Color.Error" Class="ml-2" Icon="@Icons.Material.Filled.ArrowBack" Title="Reverse" Size="Size.Small" Variant="Variant.Filled" />
+                    }
+                    else if (@context.AuthLevelID != 100)
                     {
                         <MudIconButton OnClick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
                     }
+                </MudTd>
+                    @* @if (@context.AuthLevelID != 99 && @context.AuthLevelID != 100)
+                    {
+                        <MudIconButton OnClick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
+                    } *@
                     @* @if (@context.AuthLevelID != 100)
                     {
                         <MudIconButton OnClick="@(()=> OpenDialog(context,true,false))" Color="Color.Warning" Class="ml-2" Icon="@Icons.Material.Filled.Verified" Title="Verify" Size="Size.Small" Variant="Variant.Filled" />
                     } *@
-                </MudTd>
                 @* <MudTd DataLabel="">
                     @if (@context.AuthLevelID == null)
                     {
@@ -86,13 +93,14 @@
     private string searchGrn = "";
     public bool IsApproved { get; set; } = false;
     private bool _busy;
-    
+
     [Parameter]
     public int? id { get; set; } = null;
 
     public bool HasPermissionInventoryGrnServiceDelete { get; set; } = false;
+    public bool HasPermissionInventoryGrnServiceReverse { get; set; } = false;
     public int InventoryGrnDocTypeID = 16;
-    
+
     #region SignaIR Notification
 
     private PushNotificationModel notificationMessage = new PushNotificationModel();
@@ -102,6 +110,7 @@
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
         HasPermissionInventoryGrnServiceDelete = await Irole.HasClaim(InventoryGrnDocTypeID.ToString(), "Delete", ctc.Token);
+        HasPermissionInventoryGrnServiceReverse = await Irole.HasClaim(InventoryGrnDocTypeID.ToString(), "Reverse", ctc.Token);
 
         model = new();
         await GetAll(IsApproved);
@@ -264,5 +273,34 @@
             return "background-color:#CCCCFF";
         }
         return string.Empty;
+    }
+
+    private async Task Reverse(InventoryGrnModel model)
+    {
+        if (HasPermissionInventoryGrnServiceReverse)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+               "Warning !",
+               "Are you sure, you want to Reverse - " + model.GrnNo + " ?");
+            if (result == true)
+            {
+                try{
+                    var authprov = await auth.GetAuthenticationStateAsync();
+                    var user = authprov.User;
+                    Iservice.Reverse(DateTime.Now, model.GrnID.Value, user.Identity.Name);
+                    snackbar.Add("Reversed Successfully", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Reverse InventoryGrn.");
+        }
     }
 }

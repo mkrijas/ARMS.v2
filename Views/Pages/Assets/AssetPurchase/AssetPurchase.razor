@@ -15,6 +15,7 @@
 @inject SignalRService signalRService
 @inject IPushNotificationService IpushNotificationService
 @inject IRoleService<RoleModel> Irole
+@inject IChartOfAccountService accountService
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -203,13 +204,34 @@
             var result = await dialog.Result;
             if (!result.Canceled)
             {
-                var data = (List<AssetPOModel>)result.Data;
+                var data = (List<AssetModel>)result.Data;
                 AssetPurchaseModel PI = new AssetPurchaseModel()
                     {
                         BranchID = BranchID,
                         UserInfo = new ArmsModels.SharedModels.UserInfoModel() { UserID = UserID },
-                        SelectedAssets = data,
+                        SelectedAssets = new(),
                     };
+                foreach(var item in data)
+                {
+                    var AssetPO = new AssetPOModel();
+                    AssetPO.CoaID = item.AssetStatus == "WIP" ? Iservice.GetCWIPCoaID(item.AssetID) : Iservice.GetCapitalizationCoaID(item.AssetID);
+                    AssetPO.SubARDCode = item.AssetStatus == "WIP" ? "ASTCWIP" : "ASTCAP";
+                    AssetPO.AccountName = accountService.SelectByID(AssetPO.CoaID).AccountName;
+                    AssetPO.AssetID = item.AssetID;
+                    AssetPO.AssetCode = item.AssetCode;
+                    AssetPO.AssetStatus = item.AssetStatus;
+                    AssetPO.TaxRate = item.TaxRate;
+                    AssetPO.BookValue = item.BookValue;
+                    AssetPO.BranchID = item.BranchID;
+                    AssetPO.GstMechanism = item.GstMechanism;
+                    AssetPO.Description = item.Description;
+                    AssetPO.GSTValue = item.GSTValue;
+                    AssetPO.PID = item.PID;
+                    PI.SelectedAssets.Add(AssetPO);
+                }
+
+                
+                
                 parms = new DialogParameters();
                 parms.Add("model", model.Clone());
                 parms.Add("PI", PI);

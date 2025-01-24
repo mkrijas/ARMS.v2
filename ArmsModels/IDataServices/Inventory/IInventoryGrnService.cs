@@ -18,7 +18,7 @@ namespace ArmsServices.DataServices
         IEnumerable<InventoryGrnModel> PendingToInvoice(int BranchID);
         IEnumerable<InventoryGrnModel> SelectByStore(int StoreID);
         int Approve(int GrnID, string UserID, string Remarks);  //Approve
-        int Reverse(int GrnID, string UserID);  //Reverse
+        int Reverse(DateTime DocDate, int GrnIDD, string UserID);  //Reverse
         IEnumerable<InventoryItemEntryModel> GetItemEntries(int GrnID);
     }
 }

@@ -36,7 +36,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", BranchID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Select]", parameters))
+            //foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.FCRenewalDoc.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
@@ -65,18 +66,19 @@ namespace ArmsServices.DataServices
             {
                 
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@BranchID", model.BranchID),
-               new SqlParameter("@DocumentType", model.DocumentType.DocumentTypeID),
+               //new SqlParameter("@BranchID", model.BranchID),
+               //new SqlParameter("@DocumentType", model.DocumentType.DocumentTypeID),
                new SqlParameter("@StartDate", model.StartDate),
                new SqlParameter("@EndDate", model.EndDate),
-               new SqlParameter("@Remarks", model.Remarks),
-               new SqlParameter("@PaymentMemoID", model.PaymentMemoID),
-               new SqlParameter("@Assets", model.Assets.Select(x=> x.AssetID.Value).ToList().ToDataTable() ),
+               //new SqlParameter("@Remarks", model.Remarks),
+               //new SqlParameter("@PaymentMemoID", model.PaymentMemoID),
+               //new SqlParameter("@Assets", model.Assets.Select(x=> x.AssetID.Value).ToList().ToDataTable() ),
                new SqlParameter("@UserID", model.UserInfo.UserID),
                new SqlParameter("@RecordStatus", 3),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Update]", parameters))
+            //foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.FCRenewalDoc.Update]", parameters))
             {
                 return GetModel(dr);
             }
@@ -116,7 +118,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Operation", "GetAssets")
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Select]", parameters))
+            //foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentRequest.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.FCRenewalDoc.Select]", parameters))
             {
                 yield return new AssetModel()
                 {

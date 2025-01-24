@@ -21,9 +21,12 @@ namespace ArmsModels.BaseModels
         public string TyreType { get; set; } // Front/ Back/ All-Position
         [Required]
         public string TyreSize { get; set; } // 1000 x 25 etc
-        public bool Tubeless { get; set; } = false;
         public virtual string TyrePosition { get; set; }
-        public byte? TyreStatus { get; set; }
+        //[Required]
+        public virtual int? TotalExpectedLife { get; set; }
+        public bool Tubeless { get; set; } = false;
+        [Required]
+        public int? TyreStatus { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public bool IsChecked { get; set; } = false;
         public bool IsMounted { get; set; } = false;
@@ -42,6 +45,8 @@ namespace ArmsModels.BaseModels
                     case 3:
                         return "3rd Resole";
                     case 99:
+                        return "Scrap";
+                    case < 0:
                         return "Scrap";
                     default:
                         return null;
@@ -123,6 +128,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? RequestedDate { get; set; }
         public DateTime? DeliveredDate { get; set; }
+        public virtual int? NoOfTyres { get; set; }
         public int? BranchID { get; set; }
         public int? DeliveryID { get; set; }
         [Required(ErrorMessage = "The tyre is required.")]
@@ -138,8 +144,8 @@ namespace ArmsModels.BaseModels
         public int? TyreID { get; set; }
         public bool TaxIncluded { get; set; }
         public TyreModel Tyre { get; set; }
-        public bool Status { get; set; } = true;
-        [RequiredIf("Status", " true")]
+        public int? Status { get; set; } 
+        [RequiredIf("Status", " 1")]
         public decimal? Amount { get; set; }
         [RequiredIf("TaxIncluded", " true")]
 
@@ -169,6 +175,34 @@ namespace ArmsModels.BaseModels
         public List<int?> Tyres { get; set; }
         [Required]
         public List<ResoleDeliveryTyreModel> ResoleDeliveryTyreList = new();
+        public UserInfoModel UserInfo { get; set; } = new();
+    }
+
+    public class TyreKmReadingModel
+    {
+        public int? ID { get; set; }
+        public TyreModel Tyre { get; set; } = new();
+        public string Title { get; set; }
+        public int? KmReading { get; set; }
+        public long? NotificationID { get; set; }
+        public UserInfoModel UserInfo { get; set; } = new();
+    }
+
+    public class TyreSwapModel
+    {
+        public int? ID { get; set; }
+        [Required]
+        public int? TruckID { get; set; }
+        [Required]
+        public int? TyreA { get; set; }
+        [Required]
+        public int? TyreB { get; set; }
+        [Required]
+        public int? TyreATargetPosition { get; set; }
+        [Required]
+        public int? TyreBTargetPosition { get; set; }
+        public int? TyreACurrentKM { get; set; }
+        public int? TyreBCurrentKM { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
 }

@@ -32,8 +32,8 @@ namespace ArmsServices.DataServices
         int? GetRevaluationCoaID(int? AssetID);
         int? GetRevaluationReserveCoaID(int? AssetID);
         AssetPOModel SelectPOByID(int? ID);
-        IEnumerable<AssetPOModel> GetAssetList(int BranchID, int? parentID, int? NumberOfRecords, string searchTerm);
-        IEnumerable<AssetPOModel> GetAssetListNonInvoiced(int BranchID, int? parentID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<AssetModel> GetAssetList(int BranchID, int? parentID, int? NumberOfRecords, string searchTerm);
+        IEnumerable<AssetModel> GetAssetListNonInvoiced(int BranchID, int? parentID, int? NumberOfRecords, string searchTerm);
         IEnumerable<AccountRuleDefModel> GetAccountRuleDefinition();
         AssetModel UpdateAssetStatus(AssetModel model);  //Edit
         int RemovePhoto(AssetModel model);  //Edit
