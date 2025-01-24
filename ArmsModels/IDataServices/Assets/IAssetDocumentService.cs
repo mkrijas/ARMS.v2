@@ -28,5 +28,6 @@ namespace ArmsServices.DataServices
         bool? IsCostCenterIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID);
         bool? IsDimensionIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID);
         IEnumerable<AssetDocumentModel> GetNewFileName();
+        IEnumerable<AssetDocumentModel> SelectPendingByBranch(int? BranchID);
     }
 }

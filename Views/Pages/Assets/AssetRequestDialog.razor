@@ -1,5 +1,4 @@
-﻿@inject IAssetDocumentRequestService Iservice
-@inject IAssetDocumentService IDocumentService
+﻿@inject IAssetDocumentService IDocumentService
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
 @attribute [Authorize]
@@ -9,18 +8,9 @@
 
 <MudDialog>
     <TitleContent>
-        @if (model.ID == null || model.ID == 0)
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Asset Request
-            </MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Asset Request
-            </MudText>
-        }
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Document
+        </MudText>
     </TitleContent>
     <DialogContent>
         @* <MudContainer Style="max-height: 400px; overflow-y: scroll; margin-left:20px"> *@
@@ -29,12 +19,7 @@
             <ValidationSummary />
             <MudGrid>
                 <MudItem xs="12" md="12">
-                    <MudSelect ReadOnly T="int?" @bind-Value="@(model.DocumentType.DocumentTypeID)" Label="Select Document Type" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary" AnchorOrigin="Origin.BottomCenter">
-                        @foreach (AssetDocumentTypeModel item in DocumentTypes)
-                        {
-                            <MudSelectItem Value="@(item.DocumentTypeID)">@item.DocumentTypeName</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudTextField ReadOnly @bind-Value="model.DocumentType.DocumentTypeName" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
                 </MudItem>
                 <MudItem xs="6" md="6">
                     <MudDatePicker @bind-Date="@(model.StartDate)" Label="Start Date" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" />
@@ -43,16 +28,11 @@
                     <MudDatePicker @bind-Date="@(model.EndDate)" Label="End Date" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" />
                 </MudItem>
                 <MudItem xs="12" md="12">
-                    <MudTextField ReadOnly @bind-Value="model.Remarks" Label="Remarks" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Remarks)"></MudTextField>
+                    <MudTextField @bind-Value="model.Refference" Label="Reference" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Refference)"></MudTextField>
                 </MudItem>
-                <MudGrid Class="m-0">
-                    @foreach (var item in PassedListAssets)
-                    {
-                        <MudItem xs="12" md="12">
-                            <MudTextField ReadOnly @bind-Value="item.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => item.Description)"></MudTextField>
-                        </MudItem>
-                    }
-                </MudGrid>
+                <MudItem xs="12" md="12">
+                    <MudTextField ReadOnly @bind-Value="model.Asset.Description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+                </MudItem>
             </MudGrid>
         </EditForm>
         @* </MudContainer> *@
@@ -66,52 +46,12 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter]
-    public AssetDocumentRequestModel model { get; set; } = new();
-    public AssetModel SelectedAsset { get; set; }
-    public List<AssetModel> PassedListAssets { get; set; }
-    List<AssetDocumentTypeModel> DocumentTypes = new();
+    public AssetDocumentModel model { get; set; } = new();
     public int BranchID { get; set; } = 0;
     private bool _busy;
 
     public bool HasPermissionAssetDocumentRequestServiceEdit { get; set; } = false;
     public int AssetDocumentRequestDocTypeID = 114;
-
-    public void SetAssets()
-    {
-        if (PassedListAssets == null)
-        {
-            PassedListAssets = new List<AssetModel>();
-        }
-        if (SelectedAsset != null && SelectedAsset.AssetID != 0 && (!PassedListAssets.Any(s => s.AssetID == SelectedAsset.AssetID)))
-        {
-            PassedListAssets.Add(SelectedAsset);
-            SelectedAsset = null;
-        }
-    }
-
-    public void RemoveAssets()
-    {
-        SelectedAsset = null;
-    }
-
-    public void DeleteAssets(int AssetId = 0)
-    {
-        if (AssetId != 0)
-        {
-            if (PassedListAssets != null && PassedListAssets.Where(s => s.AssetID == AssetId).Count() != 0)
-            {
-                if (PassedListAssets.Any(s => s.AssetID != AssetId))
-                {
-                    var itemToRemove = PassedListAssets.First(r => r.AssetID == AssetId);
-                    PassedListAssets.Remove(itemToRemove);
-                }
-                else
-                {
-                    PassedListAssets.Clear();
-                }
-            }
-        }
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -127,19 +67,6 @@
         {
             model.DocumentType = new();
         }
-        if (PassedListAssets == null)
-        {
-            PassedListAssets = new List<AssetModel>();
-            if (model != null && model.Assets != null && model.Assets.Count() != 0)
-            {
-                PassedListAssets.AddRange(model.Assets);
-            }
-        }
-    }
-
-    protected override void OnParametersSet()
-    {
-        DocumentTypes = IDocumentService.GetDocumentTypes().ToList();
     }
 
     void Cancel()
@@ -160,19 +87,20 @@
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User;
+
             if (model != null)
             {
-                if (model.Assets != null)
+                var validationOls = IDocumentService.ValidatePeriod(model).ToList();
+
+                if (validationOls.Any(x => x.DocumentID != model.DocumentID))
                 {
-                    model.Assets.Clear();
+                    snackbar.Add("Document Period cannot overlap! Please check the period ", Severity.Warning);
+                    _busy = false;
+                    return;
                 }
-                else
-                {
-                    model.Assets = new();
-                }
-                model.Assets.AddRange(PassedListAssets);
                 model.UserInfo.UserID = user.Identity.Name;
-                Iservice.Update(model);
+                model.UserInfo.RecordStatus = 3;
+                IDocumentService.Update(model);
             }
         }
         else

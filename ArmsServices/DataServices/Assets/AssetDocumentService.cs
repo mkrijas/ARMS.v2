@@ -33,14 +33,29 @@ namespace ArmsServices.DataServices
                new SqlParameter("@NCBPercentage", model.NCBPercentage),
                new SqlParameter("@IDVAmount", model.IDVAmount),
                new SqlParameter("@Amount", model.Amount),
+               new SqlParameter("@ExtendedEndDate", model.ExtendedEndDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
-               new SqlParameter("@ExtendedEndDate", model.ExtendedEndDate)
+               new SqlParameter("@RecordStatus", model.UserInfo.RecordStatus),
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Update]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
+        }
+
+        public IEnumerable<AssetDocumentModel> SelectPendingByBranch(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@Operation", "ByBranch"),
+               new SqlParameter("@ID", BranchID),
+            };
+
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.FCRenewalDoc.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
         }
 
         public IEnumerable<AssetDocumentModel> ValidatePeriod(AssetDocumentModel model)
@@ -199,6 +214,7 @@ namespace ArmsServices.DataServices
                 Asset = new AssetModel()
                 {
                     AssetID = dr.GetInt32("AssetID"),
+                    Description = dr.GetString("Description"),
                 },
                 NotificationID = dr.GetInt32("NotificationID"),
                 ReceiptNo = dr.GetString("ReceiptNo"),

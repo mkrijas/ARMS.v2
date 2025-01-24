@@ -235,7 +235,6 @@ namespace Views
 
         #region ------------ASSETS-------------------
             services.AddScoped<IAssetClassService, AssetClassService>();
-            services.AddScoped<IAssetDocumentRequestService, AssetDocumentRequestService>();
             services.AddScoped<IAssetSettingsService, AssetSettingsService>();
             #endregion
 
