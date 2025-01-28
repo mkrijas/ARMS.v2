@@ -40,6 +40,7 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
         public InventoryGroup2Model SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -71,8 +72,6 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
-
         private InventoryGroup2Model GetModel(IDataRecord dr)
         {
             return new InventoryGroup2Model
@@ -83,7 +82,10 @@ namespace ArmsServices.DataServices
                 Group = new InventoryGroupModel()
                 {
                     InventoryGroupID = dr.GetInt32("Group1ID"),
-                    InventoryGroupName = dr.GetString("InventoryGroupName")
+                    InventoryGroupName = dr.GetString("InventoryGroupName"),
+                    MappedPurchaseHead = dr.GetInt32("MappedPurchaseHead"),
+                    MappedConsumptionHead = dr.GetInt32("MappedConsumptionHead"),
+                    MappedNonInventoryPurchaseHead = dr.GetInt32("MappedNonInventoryPurchaseHead"),
                 },
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
@@ -93,6 +95,5 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-
     }
 }

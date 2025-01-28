@@ -158,6 +158,8 @@ namespace ArmsServices.DataServices
         {
             return new GstItemModel(dr.GetString("ItemCode"), dr.GetDecimal("Taxrate"))
             {
+                ItemCode = dr.GetString("ItemCode"),
+                TaxRate = dr.GetDecimal("Taxrate"),
                 HsnID = dr.GetInt32("HsnID"),
                 ItemID = dr.GetInt32("ItemID"),
                 GstMechanism = dr.GetString("GstMechanism"),

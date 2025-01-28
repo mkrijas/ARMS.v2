@@ -20,18 +20,14 @@
                 <ValidationSummary />
                 <MudGrid Spacing="2">
                     <MudItem xs="12">
-                        <MudSelect Label="Select Item" @bind-Value="model.ItemID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
-                            @foreach (var ditem in items)
-                            {
-                                <MudSelectItem Value="@ditem.InventoryItemID">@(ditem.InventoryItemCode) | @(ditem.ItemGroup.ItemGroupDescription) | @(ditem.ItemDescription)</MudSelectItem>
-                            }
-                        </MudSelect>
+                        <MudAutocomplete Label="Select Item" Value="SelectedInventoryItem" ValueChanged=@((e) => OnchangeInventoryItem(e)) SearchFunc="SearchBanks" T="InventoryItemModel" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary"
+                                         ToStringFunc="@(e => (e == null) ? null : (e.InventoryItemID == null ? "" : string.Format("{0} | {1} | {2}",e.InventoryItemCode, e.ItemGroup.ItemGroupDescription, e.ItemDescription)))"></MudAutocomplete>
                     </MudItem>
                     <MudItem xs="12">
                         <GstMechanismSelector @bind-Value="model.GstMechanism"></GstMechanismSelector>
                     </MudItem>
                     <MudItem xs="12">
-                        <MudSelect Label="Select GST Rate" @bind-Value="model.RID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense"   AdornmentColor="Color.Secondary">
+                        <MudSelect Label="Select GST Rate" @bind-Value="model.RID" T="int?" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary" AnchorOrigin="Origin.BottomCenter">
                             @foreach (var ditem in gstRate)
                             {
                                 <MudSelectItem Value="@ditem.RID">@ditem.TaxRate</MudSelectItem>
@@ -39,10 +35,10 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudDatePicker Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodFrom" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                        <MudDatePicker @bind-Date="model.PeriodFrom" Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomLeft" DisableToolbar="true" Editable="true" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudDatePicker Label="Period To" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.PeriodTo" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                        <MudDatePicker @bind-Date="model.PeriodTo" Label="Period To" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomLeft" DisableToolbar="true" Editable="true" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
                     </MudItem>
                 </MudGrid>
             </EditForm>
@@ -58,12 +54,12 @@
 
     [Parameter]
     public GstItemModel model { get; set; }
-    private List<GstItemModel> collection = new List<GstItemModel>();
     private List<GstRateModel> gstRate = new();
     private List<InventoryItemModel> items = new();
     private GstItemModel tds = new();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     private ChartOfAccountModel SelectedAccount = null;
+    public InventoryItemModel SelectedInventoryItem = new();
 
     private bool _busy;
 
@@ -71,6 +67,17 @@
     {
         items = itemService.SearchByDescription(string.Empty).ToList();
         gstRate = gstusageIservice.GetGstRates().ToList();
+
+        SelectedInventoryItem.InventoryItemID = model.ItemID;
+        SelectedInventoryItem.InventoryItemCode = model.ItemCode;
+        SelectedInventoryItem.ItemGroup.ItemGroupDescription = model.ItemGroupDescription;
+        SelectedInventoryItem.ItemDescription = model.ItemDescription;
+    }
+
+    void OnchangeInventoryItem(InventoryItemModel item)
+    {
+        SelectedInventoryItem = item;
+        model.ItemID = SelectedInventoryItem.InventoryItemID;
     }
 
     private async void OnValidSubmit(EditContext context)
@@ -88,7 +95,7 @@
         tdsList.ForEach(item => drList.Add(new DateRange(item.PeriodFrom, item.PeriodTo)));
         if (CommonMethods.CheckPeriodOverlap(dr, drList))
         {
-            snackbar.Add("Periods cannot be overlapped", Severity.Success);
+            snackbar.Add("Periods cannot be overlapped", Severity.Warning);
         }
         else
         {
@@ -96,6 +103,17 @@
         }
         await Task.Delay(200);
         _busy = false;
+    }
+
+    private async Task<IEnumerable<InventoryItemModel>> SearchBanks(string searchString)
+    {
+        if (string.IsNullOrEmpty(searchString))
+            return items;
+
+        return await Task.FromResult(items.Where(x => x.InventoryItemCode.Contains(searchString, StringComparison.InvariantCultureIgnoreCase) 
+                                                   || x.ItemGroup.ItemGroupDescription.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)
+                                                   || x.ItemDescription.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)));
+
     }
 
     private void Cancel()
