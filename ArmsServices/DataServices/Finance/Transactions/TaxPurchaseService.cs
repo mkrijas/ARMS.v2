@@ -288,6 +288,7 @@ namespace ArmsServices.DataServices
                 TotalAmount = dr.GetDecimal("TotalAmount"),
                 Narration = dr.GetString("Narration"),
                 TaxPurchaseType = dr.GetString("TaxPurchaseType"),
+                TDS = dr.GetDecimal("TDS"),
                 PartyInfo = new PartyModel()
                 {
                     PartyID = dr.GetInt32("PartyID"),
@@ -408,6 +409,11 @@ namespace ArmsServices.DataServices
         }
 
         public IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
+        {
+            throw new NotImplementedException();
+        }
+
+        public TaxPurchaseModel TDSReverseUpdate(TaxPurchaseModel model)
         {
             throw new NotImplementedException();
         }

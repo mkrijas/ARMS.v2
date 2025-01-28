@@ -44,6 +44,7 @@ namespace ArmsModels.BaseModels
         public List<TaxPurchaseItemModel> Items { get; set; } = new();
         [ValidateComplexType]
         public List<AssetPOModel> Assets { get; set; } = new();
+        public decimal? TDS { get; set; }
         public override IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             var baseErrors = base.Validate(validationContext);
