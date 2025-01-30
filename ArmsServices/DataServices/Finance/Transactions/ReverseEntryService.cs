@@ -122,6 +122,23 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        public CancellationReasonCodesByDocumentType TDSReverseUpdate(CancellationReasonCodesByDocumentType model)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@DocumentID", model.DocumentID),
+               new SqlParameter("@DocumentNumber", model.DocumentNumber),
+               new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
+               new SqlParameter("@MID", model.MID),
+               new SqlParameter("@UserID", model.UserInfo.UserID),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Transaction.TDSReverse]", parameters))
+            {
+                model = GetModel(dr);
+            }
+            return model;
+        }
+
         public CancellationReasonCodesByDocumentType GetReverseEntryDetailsByDocumentTypeAndDocumentID(int? DocumentID, int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
