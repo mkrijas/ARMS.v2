@@ -27,6 +27,7 @@ namespace ArmsModels.BaseModels
         public bool Tubeless { get; set; } = false;
         [Required]
         public int? TyreStatus { get; set; }
+        public string LockText { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public bool IsChecked { get; set; } = false;
         public bool IsMounted { get; set; } = false;
@@ -53,6 +54,7 @@ namespace ArmsModels.BaseModels
                 }
             }
         }
+
     }
 
     public class TyrePositionModel
