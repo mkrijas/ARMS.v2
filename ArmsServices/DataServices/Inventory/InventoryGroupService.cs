@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
@@ -40,6 +39,7 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
         public InventoryGroupModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -73,8 +73,6 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
-
         private InventoryGroupModel GetModel(IDataRecord dr)
         {
             return new InventoryGroupModel
@@ -92,6 +90,5 @@ namespace ArmsServices.DataServices
                 },
             };
         }
-
     }
 }

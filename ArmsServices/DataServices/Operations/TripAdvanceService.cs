@@ -88,6 +88,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DocumentTypeID", model.DocumentTypeID),
                new SqlParameter("@DocumentID", model.DocumentID),
                new SqlParameter("@DocType", model.DocType),
+               new SqlParameter("@RecordStatus", model.RecordStatus)
             };
 
             foreach (var reader in Iservice.GetDataReader("[usp.Operation.Trips.Advance.Update]", parameters))

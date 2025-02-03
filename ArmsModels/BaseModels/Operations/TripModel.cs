@@ -130,6 +130,7 @@ namespace ArmsModels.BaseModels
         public string DriverMobile { get; set; }
         public string AccountCode { get; set; }
         public string AccountName { get; set; }
+        public int RecordStatus { get; set; }
     }
 
     public class EventCardModel

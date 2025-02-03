@@ -173,6 +173,8 @@ namespace ArmsServices.DataServices
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@ResoleID", model.ResoleID),
                new SqlParameter("@PartyID", model.Party.PartyID),
+               new SqlParameter("@InvoiceDate", model.InvoiceDate),
+               new SqlParameter("@InvoiceNo", model.InvoiceNo),
                new SqlParameter("@DeliveryDate", model.DeliveryDate),
                new SqlParameter("@UsageCode", model.UsageCode),
                new SqlParameter("@TaxIncluded", model.TaxIncluded),
@@ -450,6 +452,8 @@ namespace ArmsServices.DataServices
             {
                 ID = dr.GetInt32("ID"),
                 ResoleID = dr.GetInt32("ResoleID"),
+                InvoiceNo = dr.GetString("InvoiceNo"),
+                InvoiceDate = dr.GetDateTime("InvoiceDate"),
                 Party = new PartyModel() { PartyID = dr.GetInt32("Party") },
                 RequestedDate = dr.GetDateTime("RequestedDate"),
                 DeliveryDate = dr.GetDateTime("DeliveryDate"),
@@ -475,7 +479,6 @@ namespace ArmsServices.DataServices
                 Status = dr.GetInt32("Status"),
                 Amount = dr.GetDecimal("Amount"),
                 Tax = dr.GetDecimal("Tax"),
-
             };
         }
 

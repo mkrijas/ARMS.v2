@@ -126,7 +126,6 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Dimension",model.Dimension),
                new SqlParameter("@NatureOfTransaction",model.NatureOfTransaction),
                new SqlParameter("@Items",model.ItemsList.ToDataTable()),
-
                new SqlParameter("@UserID",model.UserInfo.UserID),
                new SqlParameter("@Operation", "Initiation"),
             };

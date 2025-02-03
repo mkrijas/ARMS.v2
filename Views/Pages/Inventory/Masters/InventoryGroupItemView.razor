@@ -14,11 +14,14 @@
 <MudGrid>
     <MudItem xs="4" lg="4">
         <MudPaper Width="100%" Class="p-2">
-            <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
+            <MudItem xs="12" md="12" Class="m-3">
                 <MudText Typo="Typo.h6">
                     Inventory Group 2
                     <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogGroup(model))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudText>
+            </MudItem>
+            <MudDivider />
+            <MudList Clickable="true" SelectedItem="SelectedItem" SelectedItemChanged="SelectedItemChanged">
                 @if (listOfItems?.Any() == true)
                 {
                     @foreach (var item in listOfItems)
@@ -58,8 +61,8 @@
                             <MudFab @onclick="@(()=> Delete(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
                         </MudTooltip>
                         @* <MudTooltip Text="ReOrder Level">
-                            <MudFab @onclick="@(()=> ReOrderLevel(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.ProductionQuantityLimits" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip> *@
+                    <MudFab @onclick="@(()=> ReOrderLevel(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.ProductionQuantityLimits" Size="Size.Small" IconSize="Size.Small" />
+                    </MudTooltip> *@
                     </MudTd>
                 </RowTemplate>
                 <PagerContent>
@@ -70,8 +73,9 @@
     </MudItem>
 </MudGrid>
 <ContextMenu Id="myMenu" OnAppearing="OnAppearing">
-    <Item OnClick="@ContextMenuOnClickadd" Id="addItem">Add Items</Item>
-    <Item OnClick="@ContextMenuOnClickedit" Id="editGroup">Edit Group</Item>
+    <Item OnClick="@ContextMenuOnClickAdd" Id="addItem">Add Items</Item>
+    <Item OnClick="@ContextMenuOnClickEdit" Id="editGroup">Edit Group</Item>
+    <Item OnClick="@ContextMenuOnClickMappingEdit" Id="MappingEditGroup">Edit Account Mapping</Item>
 </ContextMenu>
 
 @code {
@@ -106,14 +110,6 @@
         GetAll();
     }
 
-    protected void SelectedItemChanged(object obj)
-    {
-        InventoryGroup2Model SelectedModel = new();
-        SelectedItem = (MudListItem)obj;
-        SelectedModel = (InventoryGroup2Model)SelectedItem.Value;
-        GetInventoryItem(SelectedModel);
-    }
-
     private void GetAll()
     {
         if (listOfItems != null)
@@ -122,6 +118,14 @@
         }
         listOfItems = G2Iservice.SearchByName(string.Empty).ToList();
         StateHasChanged();
+    }
+
+    protected void SelectedItemChanged(object obj)
+    {
+        InventoryGroup2Model SelectedModel = new();
+        SelectedItem = (MudListItem)obj;
+        SelectedModel = (InventoryGroup2Model)SelectedItem.Value;
+        GetInventoryItem(SelectedModel);
     }
 
     private void GetInventoryItem(InventoryGroup2Model ig)
@@ -135,6 +139,26 @@
             // }
         }
         StateHasChanged();
+    }
+
+    protected async Task ContextMenuOnClickAdd(ItemClickEventArgs e)
+    {
+        InventoryGroup2Model ig = (InventoryGroup2Model)((InventoryGroup2Model)e.Data).Clone();
+        InventoryItemGroupModel ii = new InventoryItemGroupModel();
+        ii.Group2ID = ig.Group2ID;
+        await OpenDialog(ii);
+    }
+
+    protected async Task ContextMenuOnClickEdit(ItemClickEventArgs e)
+    {
+        InventoryGroup2Model ig = (InventoryGroup2Model)((InventoryGroup2Model)e.Data).Clone();
+        await OpenDialogGroup(ig);
+    }
+
+    protected async Task ContextMenuOnClickMappingEdit(ItemClickEventArgs e)
+    {
+        InventoryGroup2Model ig = (InventoryGroup2Model)((InventoryGroup2Model)e.Data).Clone();
+        await OpenDialogMappingEditGroup(ig);
     }
 
     private async Task OpenDialog(InventoryItemGroupModel ii)
@@ -156,14 +180,22 @@
             var result = await dialog.Result;
             if (!result.Canceled)
             {
-                InventoryItemGroupModel UpatedModel = (InventoryItemGroupModel)result.Data;
-                UpatedModel.UserInfo.UserID = user.Identity.Name;
+                InventoryItemGroupModel UpdatedModel = (InventoryItemGroupModel)result.Data;
+                if (UpdatedModel.ItemMake.Count == 0)
+                {
+                    bool? Message = await DialogService.ShowMessageBox(
+                        "Oops",
+                        "There should be atleast 1 ItemMake selected.");
+                    _busy = false;
+                    return;
+                }
+                UpdatedModel.UserInfo.UserID = user.Identity.Name;
                 try
                 {
-                    IGIservice.Update(UpatedModel);
+                    IGIservice.Update(UpdatedModel);
                     snackbar.Add("Saved Successfully", Severity.Success);
                     InventoryGroup2Model igm = new InventoryGroup2Model();
-                    igm.Group2ID = UpatedModel.Group2ID;
+                    igm.Group2ID = UpdatedModel.Group2ID;
                     GetInventoryItem(igm);
                 }
                 catch (Exception ex)
@@ -179,28 +211,6 @@
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
                 "You don't have any permission to Edit InventoryItem.");
-        }
-    }
-
-    private async Task Delete(InventoryItemGroupModel model)
-    {
-        if (HasPermissionInventoryItemServiceDelete)
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Warning !",
-                "Are you sure, you want to delete - " + model.UoM + " (" + model.ItemGroupDescription + ") ?");
-            if (result == true)
-            {
-                IGIservice.Delete(model.ItemGroupID, UserID);
-                snackbar.Add("Deleted Successfully", Severity.Error);
-                SelectedItemChanged(SelectedItem);
-            }
-        }
-        else
-        {
-            bool? result = await DialogService.ShowMessageBox(
-                "Permission denied!",
-                "You don't have any permission to Delete InventoryItem.");
         }
     }
 
@@ -247,23 +257,74 @@
         }
     }
 
+    private async Task OpenDialogMappingEditGroup(InventoryGroup2Model model)
+    {
+        if (HasPermissionInventoryGroupServiceEdit)
+        {
+            if (_busy)
+            {
+                snackbar.Add("Please wait while form is closing!", Severity.Warning);
+                return;
+            }
+            _busy = true;
+            var authprov = await auth.GetAuthenticationStateAsync();
+            var user = authprov.User;
+
+            DialogParameters parms = new DialogParameters();
+            parms.Add("Model", model.Clone());
+            var dialog = DialogService.Show<InventoryGroupDialog>(model.Group2ID == null ? "ADD" : "EDIT", parms);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                InventoryGroup2Model UpdatedModel = (InventoryGroup2Model)result.Data;
+                UpdatedModel.Group.UserInfo.UserID = user.Identity.Name;
+                try
+                {
+                    GIservice.Update(UpdatedModel.Group);
+                    snackbar.Add("Saved Successfully", Severity.Success);
+                    GetAll();
+                }
+                catch (Exception ex)
+                {
+                    snackbar.Add(ex.Message, Severity.Warning);
+                }
+            }
+            await Task.Delay(200);
+            _busy = false;
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Edit InventoryGroup.");
+        }
+    }
+
+    private async Task Delete(InventoryItemGroupModel model)
+    {
+        if (HasPermissionInventoryItemServiceDelete)
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Warning !",
+                "Are you sure, you want to delete - " + model.UoM + " (" + model.ItemGroupDescription + ") ?");
+            if (result == true)
+            {
+                IGIservice.Delete(model.ItemGroupID, UserID);
+                snackbar.Add("Deleted Successfully", Severity.Error);
+                SelectedItemChanged(SelectedItem);
+            }
+        }
+        else
+        {
+            bool? result = await DialogService.ShowMessageBox(
+                "Permission denied!",
+                "You don't have any permission to Delete InventoryItem.");
+        }
+    }
+
     void OnAppearing(MenuAppearingEventArgs e)
     {
 
-    }
-
-    protected async Task ContextMenuOnClickedit(ItemClickEventArgs e)
-    {
-        InventoryGroup2Model ig = (InventoryGroup2Model)((InventoryGroup2Model)e.Data).Clone();
-        await OpenDialogGroup(ig);
-    }
-
-    protected async Task ContextMenuOnClickadd(ItemClickEventArgs e)
-    {
-        InventoryGroup2Model ig = (InventoryGroup2Model)((InventoryGroup2Model)e.Data).Clone();
-        InventoryItemGroupModel ii = new InventoryItemGroupModel();
-        ii.Group2ID = ig.Group2ID;
-        await OpenDialog(ii);
     }
 
     // // private async void ReOrderLevel(InventoryItemModel ii)

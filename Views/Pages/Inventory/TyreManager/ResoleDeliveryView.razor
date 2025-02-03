@@ -10,50 +10,48 @@
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
 
-<h3>Resole Delivery View</h3>
-<MudGrid Spacing="4">
-    <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="10">
-            <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<ResoleDeliveryModel, object>(x=> x.Party.TradeName)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ResoleDeliveryModel, object>(x=> x.RequestedDate)" InitialDirection="SortDirection.Ascending">Requested Date</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ResoleDeliveryModel, object>(x=> x.Tyres.Count())" InitialDirection="SortDirection.Ascending">Tyres No</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ResoleDeliveryModel, object>(x=> x.ID)" InitialDirection="SortDirection.Ascending">Is Delivered</MudTableSortLabel></MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Tyre">@context.Party.TradeName</MudTd>
-                <MudTd DataLabel="Make">@context.RequestedDate?.ToShortDateString()</MudTd>
-                <MudTd DataLabel="Make">@(context?.Tyres?.Count() ?? 0)</MudTd>
-                    @if (context.ID == null || context.ID == 0)
-                {
-                    <MudTd DataLabel="Make">Not Delivered</MudTd>
-                }
-                else
-                {
-                    <MudTd DataLabel="Make">Delivered</MudTd>
-                }
-                <MudTd DataLabel="Actions">
-                    @if (context.ID != null && context.ID != 0)
-                    {
-                        <MudTooltip Text="Undo Delivered">
-                            <MudFab @onclick="@(()=> OpenDialogCancel(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Undo" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip>
-                    }
-                    else
-                    {
-                        <MudTooltip Text="Add Resole Delivery">
-                            <MudFab @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.PendingActions" Size="Size.Small" IconSize="Size.Small" />
-                        </MudTooltip>
-                    }
-                </MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-            </PagerContent>
-        </MudTable>
-    </MudItem>
-</MudGrid>
+<MudTable Items="@collection" RowsPerPage="15" Dense="true" Hover="true" Striped="true" Elevation="10">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Resole Delivery View</MudText>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<ResoleDeliveryModel, object>(x=> x.Party.TradeName)" InitialDirection="SortDirection.Ascending">Party</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<ResoleDeliveryModel, object>(x=> x.RequestedDate)" InitialDirection="SortDirection.Ascending">Requested Date</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<ResoleDeliveryModel, object>(x=> x.Tyres.Count())" InitialDirection="SortDirection.Ascending">Tyres No</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<ResoleDeliveryModel, object>(x=> x.ID)" InitialDirection="SortDirection.Ascending">Is Delivered</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Tyre">@context.Party.TradeName</MudTd>
+        <MudTd DataLabel="Make">@context.RequestedDate?.ToShortDateString()</MudTd>
+        <MudTd DataLabel="Make">@(context?.Tyres?.Count() ?? 0)</MudTd>
+        @if (context.ID == null || context.ID == 0)
+        {
+            <MudTd DataLabel="Make" Style="color: red;"><b>Not Delivered</b></MudTd>
+        }
+        else
+        {
+            <MudTd DataLabel="Make" Style="color: green;"><b>Delivered</b></MudTd>
+        }
+        <MudTd DataLabel="Actions">
+            @if (context.ID != null && context.ID != 0)
+            {
+                <MudTooltip Text="Undo Delivered">
+                    <MudFab @onclick="@(()=> OpenDialogCancel(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Undo" Size="Size.Small" IconSize="Size.Small" />
+                </MudTooltip>
+            }
+            else
+            {
+                <MudTooltip Text="Add Resole Delivery">
+                    <MudFab @onclick="@(()=> OpenDialogEdit(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.PendingActions" Size="Size.Small" IconSize="Size.Small" />
+                </MudTooltip>
+            }
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+    </PagerContent>
+</MudTable>
 
 @code {
 
@@ -64,6 +62,44 @@
 
     public bool HasPermissionTyreServiceCancel { get; set; } = false;
     public int DocTypeID = 63;
+
+    protected async override Task OnInitializedAsync()
+    {
+        CancellationTokenSource ctc = new CancellationTokenSource();
+        HasPermissionTyreServiceCancel = await Irole.HasClaim(DocTypeID.ToString(), "Cancel", ctc.Token);
+
+        partyList = partyIservice.Select(0).ToList();
+        await GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        collection = new();
+        var authprov = await auth.GetAuthenticationStateAsync();
+        var user = authprov.User;
+        UserID = user.Identity.Name;
+        var BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        collection = ITyreservice.SelectResoleDeliveryListByBranch(BranchID).ToList();
+        if (partyList != null && partyList.Count() != 0)
+        {
+            foreach (var item in collection)
+            {
+                if (item.Party != null && item.Party.PartyID != null && partyList.Any(s => s.PartyID == item.Party.PartyID))
+                {
+                    item.Party = partyList.First(s => s.PartyID == item.Party.PartyID);
+                    var TyresList = ITyreservice.ResoleTyresByResoleId(item.ResoleID);
+                    if (TyresList != null && TyresList.Count() != 0)
+                    {
+                        item.Tyres = TyresList.ToList();
+                    }
+                    else
+                    {
+                        item.Tyres = new();
+                    }
+                }
+            }
+        }
+    }
 
     private async Task OpenDialogEdit(ResoleDeliveryModel ResoleDelivery)
     {
@@ -129,44 +165,6 @@
             bool? result = await DialogService.ShowMessageBox(
                 "Permission denied!",
                 "You don't have any permission to Cancel Tyre.");
-        }
-    }
-
-    protected async override Task OnInitializedAsync()
-    {
-        CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionTyreServiceCancel = await Irole.HasClaim(DocTypeID.ToString(), "Cancel", ctc.Token);
-
-        partyList = partyIservice.Select(0).ToList();
-        await GetAll();
-    }
-
-    private async Task GetAll()
-    {
-        collection = new();
-        var authprov = await auth.GetAuthenticationStateAsync();
-        var user = authprov.User;
-        UserID = user.Identity.Name;
-        var BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-        collection = ITyreservice.SelectResoleDeliveryListByBranch(BranchID).ToList();
-        if (partyList != null && partyList.Count() != 0)
-        {
-            foreach (var item in collection)
-            {
-                if (item.Party != null && item.Party.PartyID != null && partyList.Any(s => s.PartyID == item.Party.PartyID))
-                {
-                    item.Party = partyList.First(s => s.PartyID == item.Party.PartyID);
-                    var TyresList = ITyreservice.ResoleTyresByResoleId(item.ResoleID);
-                    if (TyresList != null && TyresList.Count() != 0)
-                    {
-                        item.Tyres = TyresList.ToList();
-                    }
-                    else
-                    {
-                        item.Tyres = new();
-                    }
-                }
-            }
         }
     }
 }

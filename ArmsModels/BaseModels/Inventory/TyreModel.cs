@@ -167,6 +167,8 @@ namespace ArmsModels.BaseModels
         public int? BranchID { get; set; }
         public TyreResoleModel Resole { get; set; }
         public PartyModel Party { get; set; }
+        public string InvoiceNo { get; set; }
+        public DateTime? InvoiceDate { get; set; }
         public DateTime? RequestedDate { get; set; }
         [Required]
         public DateTime? DeliveryDate { get; set; }

@@ -12,6 +12,7 @@ namespace ArmsServices.DataServices
         IEnumerable<T> Select(int? BranchID);
         IEnumerable<T> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm);
         IEnumerable<T> SelectByUnapproved(int? BranchID, int? NumberOfRecords,bool InterBranch, string searchTerm);
+        //T TDSReverseUpdate(T model);
         T Update(T model);
         int RemoveFile(int? ID, string UserID);
     }
