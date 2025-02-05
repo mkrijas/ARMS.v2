@@ -19,6 +19,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public string DrCrType { get; set; }  // Debit Note , Credit Note 
         [Required]
+        public bool IsRoundOff { get; set; }  // DrCr Note, RoundOff
+        [Required]
         public string BusinessNature { get; set; } = "Select";// "Suppier,Customer,Renter"
         [Required]
         public PartyModel Party { get; set; }

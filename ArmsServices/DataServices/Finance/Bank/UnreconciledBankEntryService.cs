@@ -182,17 +182,19 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
-        public ReconciledBankEntryModel UpdateUnReconciledBankEntry(ReconciledBankEntryModel reconciledBankEntry)
+        public ReconciledBankEntryModel UpdateUnReconciledBankEntry(List<ReconcileUpdateModel> lst,string userID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID",reconciledBankEntry.ID),
-               new SqlParameter("@BankID",reconciledBankEntry.BankID),
-               new SqlParameter("@IsExisting",reconciledBankEntry.IsExisting),
-               new SqlParameter("@ReconciledDate",reconciledBankEntry.ReconciledDate),
-               new SqlParameter("@AccountEntryID",reconciledBankEntry.AccountEntryID),
-               new SqlParameter("@Remarks",reconciledBankEntry.Remarks),
-               new SqlParameter("@UserID",reconciledBankEntry.UserInfo.UserID),
+                new SqlParameter("@lst",lst.ToDataTable()),
+                new SqlParameter("@userID",userID),
+               //new SqlParameter("@ID",reconciledBankEntry.ID),
+               //new SqlParameter("@BankID",reconciledBankEntry.BankID),
+               //new SqlParameter("@IsExisting",reconciledBankEntry.IsExisting),
+               //new SqlParameter("@ReconciledDate",reconciledBankEntry.ReconciledDate),
+               //new SqlParameter("@AccountEntryID",reconciledBankEntry.AccountEntryID),
+               //new SqlParameter("@Remarks",reconciledBankEntry.Remarks),
+               //new SqlParameter("@UserID",reconciledBankEntry.UserInfo.UserID),
             };
             ReconciledBankEntryModel reconciledBankModel = new();
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.BankAccount.ReconciledEntry.Update]", parameters))

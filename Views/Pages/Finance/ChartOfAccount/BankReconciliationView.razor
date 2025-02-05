@@ -14,19 +14,15 @@
 @inject IDialogService DialogService
 @inject IInventoryReleaseService Iservice
 
-<MudPaper Class="p-2" Elevation="0">
+<MudPaper Class="p-2 mb-3" Elevation="0">
     <div class="d-flex">
         <MudGrid Spacing="4">
             <MudItem xs="4" lg="4" md="4">
-                <MudSelect Label="Select Bank" @bind-Value="SelectedBank" T="OwnBankModel" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense"AdornmentColor="Color.Secondary" ToStringFunc="@(e => e == null ? null : $"{e.BankCode}")">
-                    @foreach (var item in BankList)
-                    {
-                        <MudSelectItem Value="@item">@item.BankCode | @item.BankAccountInfo.BankTitle</MudSelectItem>
-                    }
-                </MudSelect>
+                <MudAutocomplete Label="Select Bank" @bind-Value="SelectedBank" SearchFunc="SearchBanks" T="OwnBankModel" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary" ToStringFunc="@(e => (e == null) ? null :( string.IsNullOrEmpty(e.BankAccountInfo.BankTitle) ? "" : string.Format("{0} | {1}",e.BankCode,e.BankAccountInfo.BankTitle)))">
+                </MudAutocomplete>
             </MudItem>
-            <MudItem xs="2" lg="2" md="2">
-                <MudCheckBox T="bool" CheckedChanged="@SetIsViewReconciledEntry" Class="mr-2" Checked="@IsViewReconciledEntry" Label="Show Reconciled Entry" Color="Color.Primary"></MudCheckBox>
+            <MudItem xs="4" lg="4" md="4">
+                <MudCheckBox T="bool" ValueChanged="@SetIsViewReconciledEntry" Class="mr-2" Value="@IsViewReconciledEntry" Label="Show Reconciled Entry" Color="Color.Primary"></MudCheckBox>
             </MudItem>
             @if (IsViewReconciledEntry)
             {
@@ -66,25 +62,29 @@
                         <MudTd DataLabel="Amount">@context.Amount</MudTd>
                         <MudTd DataLabel="Reconciled Date">
                             <MudDatePicker Label="Reconciled Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @context.ReconciledDate)" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="@context.ReconciledDate" Disabled />
-                         </MudTd>
-                     </RowTemplate>
-                     <PagerContent>
-                         <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
-                     </PagerContent>
-                 </MudTable>
-             </MudItem>
-         </MudGrid>
-     </MudPaper>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+                    </PagerContent>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
 }
 else
 {
-    <MudPaper Class="p-2" Elevation="0">
+    <MudPaper Class="p-2" Elevation="0">       
         <MudGrid Spacing="4">
             <MudItem xs="12">
-                <MudTable Items="@UnReconciledEntries"  Dense="true" Hover="true" Striped="true" Elevation="0">
+                <MudTable Items="@UnReconciledEntries" Dense="true" Hover="true" Striped="true" Elevation="0">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">Bank Reconciliation</MudText>
                         <MudSpacer></MudSpacer>
+                        @if (UnReconciledEntries.Any(x => x.ReconciledDate is not null))
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" ButtonType="ButtonType.Button" OnClick="SaveRecounsileEntry">Reconcile All</MudButton>
+                        }
                     </ToolBarContent>
                     <HeaderContent>
                         <MudTh><MudTableSortLabel SortBy="new Func<ReconciledBankEntryModel, object>(x=> x.DocDate)" InitialDirection="SortDirection.Ascending">Document Date</MudTableSortLabel></MudTh>
@@ -93,7 +93,7 @@ else
                         <MudTh><MudTableSortLabel SortBy="new Func<ReconciledBankEntryModel, object>(x=> x.Narration)" InitialDirection="SortDirection.Ascending">Narration</MudTableSortLabel></MudTh>
                         <MudTh><MudTableSortLabel SortBy="new Func<ReconciledBankEntryModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
                         <MudTh><MudTableSortLabel SortBy="new Func<ReconciledBankEntryModel, object>(x=> x.ReconciledDate)" InitialDirection="SortDirection.Ascending">Reconciled Date</MudTableSortLabel></MudTh>
-                        <MudTh>Action</MudTh>
+
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="Date">@context.DocDate?.ToString("dd/MM/yyyy")</MudTd>
@@ -103,9 +103,6 @@ else
                         <MudTd DataLabel="Amount">@context.Amount</MudTd>
                         <MudTd DataLabel="Reconciled Date">
                             <MudDatePicker Label="Reconciled Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => @context.ReconciledDate)" DisableToolbar="true" Editable="true" DateFormat="dd/MM/yyyy" @bind-Date="@context.ReconciledDate" />
-                        </MudTd>
-                        <MudTd DataLabel="Save">
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" ButtonType="ButtonType.Button" OnClick="(()=>SaveRecounsileEntry(context))">Save</MudButton>
                         </MudTd>
                     </RowTemplate>
                     <PagerContent>
@@ -121,7 +118,7 @@ else
     <MudPaper Class="p-2" Elevation="0">
         <MudGrid Spacing="4">
             <MudItem xs="12">
-                <MudTable Items="@UnReconciledEntriesSummary"  Dense="true" Hover="true" Striped="true" Elevation="0">
+                <MudTable Items="@UnReconciledEntriesSummary" Dense="true" Hover="true" Striped="true" Elevation="0">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">Bank Reconciliation Summary in @UnReconciledEntriesSummaryLabel</MudText>
                         <MudSpacer></MudSpacer>
@@ -187,6 +184,14 @@ else
         }
     }
 
+    private async Task<IEnumerable<OwnBankModel>> SearchBanks(string searchString)
+    {
+        if (string.IsNullOrEmpty(searchString))
+            return BankList;
+
+        return await Task.FromResult(BankList.Where(x => x.BankAccountInfo.BankTitle.Contains(searchString, StringComparison.InvariantCultureIgnoreCase) || x.BankCode.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
     private void FetchDetails()
     {
         if (IsViewReconciledEntry)
@@ -223,22 +228,25 @@ else
         }
     }
 
-    private async Task SaveRecounsileEntry(ReconciledBankEntryModel reconciledBankEntryModel)
+    private void SaveRecounsileEntry()
     {
-        if (reconciledBankEntryModel != null && reconciledBankEntryModel.ReconciledDate == null)
+        if (!UnReconciledEntries.Any(x => x.ReconciledDate is not null))
         {
-            snackbar.Add("Please Select date before save.", Severity.Error);
+            snackbar.Add("No Entries Reconciled!.", Severity.Error);
             return;
         }
-        if (reconciledBankEntryModel != null && reconciledBankEntryModel.ReconciledDate > DateTime.Now)
+        else
+        if (UnReconciledEntries.Any(x => x.ReconciledDate > DateTime.Now))
         {
             snackbar.Add("Future date can not be selected.", Severity.Error);
             return;
         }
-        var authprov = await auth.GetAuthenticationStateAsync();
-        reconciledBankEntryModel.UserInfo = new();
-        reconciledBankEntryModel.UserInfo.UserID = userID;
-        var result = IunreconciledBankEntryService.UpdateUnReconciledBankEntry(reconciledBankEntryModel);
+
+        List<ReconcileUpdateModel> recList = new();
+        recList = UnReconciledEntries.Where(x => x.ReconciledDate is not null).Select(y => new ReconcileUpdateModel() { ID = y.ID, BankID = y.BankID, AccountEntryID = y.AccountEntryID,ReconciledDate = y.ReconciledDate }).ToList();
+
+        //var authprov = await auth.GetAuthenticationStateAsync();
+        var result = IunreconciledBankEntryService.UpdateUnReconciledBankEntry(recList, userID);
         getSelectedBankUnRecoincilEntries();
         FetchRecounsileSummary(branchID, SelectedBank.BankCode, DateTime.Now, DateTime.Now);
     }

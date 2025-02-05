@@ -155,6 +155,18 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
+    public class ReconcileUpdateModel
+    {
+        [Required]
+        public int? ID { get; set; }
+        [Required]
+        public int? BankID { get; set; }
+        public long? AccountEntryID { get; set; }
+        [Required]
+        public DateTime? ReconciledDate { get; set; }
+
+    }
+
     public class ReconciledBankSummaryModel
     {
         public string BankOrCompany { get; set; }

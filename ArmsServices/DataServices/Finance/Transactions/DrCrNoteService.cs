@@ -284,6 +284,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DrCrNoteID", model.DrCrNoteID),
                new SqlParameter("@NatureOfTransaction", model.NatureOfTransaction),
                new SqlParameter("@DrCrType", model.DrCrType),
+               new SqlParameter("@IsRoundOff", model.IsRoundOff),
                new SqlParameter("@ReasonCodeID", model.Reason.ReasonCodeID),
                new SqlParameter("@Reference", model.Reference),
                new SqlParameter("@OriginalTransactionID", model.OriginalTransactionID),
@@ -316,6 +317,7 @@ namespace ArmsServices.DataServices
             {
                 DrCrNoteID = dr.GetInt32("DrCrNoteID"),
                 DrCrType = dr.GetString("DrCrType"),
+                IsRoundOff = dr.GetBoolean("IsRoundOff"),
                 Reason = new CancellationReasonCode()
                 {
                     ReasonCodeID = dr.GetInt32("ReasonCodeID"),
