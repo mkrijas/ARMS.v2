@@ -21,6 +21,17 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        public int Approve(int? ID, string UserID, int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@StockTransferID", ID),
+               new SqlParameter("@BranchID", BranchID),
+               new SqlParameter("@UserID", UserID),
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Transfer.Initiate.Approve]", parameters);
+        }
+
         public IEnumerable<StockTransferInitiationModel> SelectOutGoing(int? BranchId)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -159,12 +170,12 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public int TransferCancel(int? InvTranID, string UserID)
+        public int TransferCancel(int? StockTransferID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@UserID", UserID),
-               new SqlParameter("@InvTranID",InvTranID),
+               new SqlParameter("@StockTransferID",StockTransferID),
                new SqlParameter("@Operation", "Cancel")
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Transfer.Initiation.Cancel]", parameters);
@@ -258,15 +269,15 @@ namespace ArmsServices.DataServices
             };
         }
 
-        public int Approve(int? ID, string UserID, string Remarks)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-               new SqlParameter("@ID", ID),
-               new SqlParameter("@UserID", UserID),
-               new SqlParameter("@Remarks", Remarks)
-            };
-            return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Transfer.Approve]", parameters);
-        }
+        //public int Approve(int? ID, string UserID, string Remarks)
+        //{
+        //    List<SqlParameter> parameters = new List<SqlParameter>
+        //    {
+        //       new SqlParameter("@ID", ID),
+        //       new SqlParameter("@UserID", UserID),
+        //       new SqlParameter("@Remarks", Remarks)
+        //    };
+        //    return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Transfer.Approve]", parameters);
+        //}
     }
 }
