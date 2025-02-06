@@ -40,7 +40,7 @@ namespace ArmsModels.BaseModels
         [Required]
         [StringLength(maximumLength: 200)]
         public string StateName { get; set; }
-        public string GstString { get; set; }
+        public int? GstCode { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 

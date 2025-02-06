@@ -6,7 +6,7 @@
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-3 mb-n1" />
             Select Memos to Initiate Payment
-            <MudText> (@selectedItems?.Count) Memos Selected</MudText>
+            <MudText> (@Memos.Select(x => x.IsChecked).Count()) Memos Selected</MudText>
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -66,7 +66,7 @@
     private PartyModel SelectedParty;
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    private HashSet<PaymentMemoModel> selectedItems = new();
+    // private HashSet<PaymentMemoModel> selectedItems = new();
     private List<PaymentMemoModel> Memos = new List<PaymentMemoModel>();
     private string searchMemo = "";
 
@@ -93,7 +93,13 @@
             snackbar.Add("Branch not selected!", Severity.Warning);
             return;
         }
-        Memos = iservice.SelectPending(SelectedBranch.BranchID).ToList();
+        Memos.RemoveAll(x => x.IsChecked == false);       
+        var freshMemos = iservice.SelectPending(SelectedBranch?.BranchID, SelectedParty?.PartyID).ToList();
+
+        var filteredMemos = from NewMemo in freshMemos
+                            where !Memos.Select(x => x.PaymentMemoID).Contains(NewMemo.PaymentMemoID)
+                            select NewMemo;
+        Memos.AddRange(filteredMemos);
     }
 
     private async Task Submit()

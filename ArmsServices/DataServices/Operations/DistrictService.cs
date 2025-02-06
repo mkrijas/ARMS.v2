@@ -92,7 +92,7 @@ namespace ArmsServices.DataServices
                 yield return new StateModel()
                 {
                     StateName = dr.GetString("StateName"),
-                    GstString = dr.GetString("GstString"),
+                    GstCode = dr.GetInt32("GstCode"),
                     StateID = dr.GetInt32("StateID"),
                     UserInfo = new ArmsModels.SharedModels.UserInfoModel
                     {

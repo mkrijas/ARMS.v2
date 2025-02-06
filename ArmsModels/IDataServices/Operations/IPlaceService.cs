@@ -15,6 +15,6 @@ namespace ArmsServices.DataServices
         Task<int> Delete(int? PlaceID, string UserID);  //Edit
         IEnumerable<PlaceModel> Select(int? PlaceID, string PlaceLike);
         Task<PlaceModel> SelectByID(int? ID);
-        IEnumerable<PlaceModel> checkPinCode(string PinCode);
+        IEnumerable<PlaceModel> checkPinCode(string PinCode);      
     }
 }
