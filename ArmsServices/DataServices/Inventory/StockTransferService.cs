@@ -269,15 +269,15 @@ namespace ArmsServices.DataServices
             };
         }
 
-        //public int Approve(int? ID, string UserID, string Remarks)
-        //{
-        //    List<SqlParameter> parameters = new List<SqlParameter>
-        //    {
-        //       new SqlParameter("@ID", ID),
-        //       new SqlParameter("@UserID", UserID),
-        //       new SqlParameter("@Remarks", Remarks)
-        //    };
-        //    return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Transfer.Approve]", parameters);
-        //}
+        public int Approve(int? ID, string UserID, string Remarks)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", ID),
+               new SqlParameter("@UserID", UserID),
+               new SqlParameter("@Remarks", Remarks)
+            };
+            return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Transfer.Approve]", parameters);
+        }
     }
 }
