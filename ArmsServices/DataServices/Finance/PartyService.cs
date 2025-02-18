@@ -503,6 +503,21 @@ namespace ArmsServices.DataServices
             {
                 yield return reader.GetString("Title");
             }
-        }        
+        }
+
+        public IEnumerable<SubArdCodeModel> getSubArdCodes()
+        {
+            foreach (IDataRecord rd in Iservice.GetDataReader("[usp.Finance.PostingGroup.SubArdCodes.Select]", null))
+            {
+                yield return new SubArdCodeModel()
+                {
+                    ArdGroup = rd.GetString ("ArdGroup"),
+                    ID = rd.GetInt32 ("ID"),
+                    SubArdCode = rd.GetString("SubArdCode"),
+                    TranType = rd.GetString("TranType")
+                };
+            }
+        }
+
     }
 }

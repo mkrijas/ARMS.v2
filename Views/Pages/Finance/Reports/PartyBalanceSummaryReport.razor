@@ -2,6 +2,12 @@
 @inherits ReportComponentBase
 @inject IPartyService partyService
 
+
+<MudRadioGroup T="string" Value ="@ReportName" ValueChanged ="@((e)=> OnSelectionChanged(e))">               
+    <MudRadio Value="@("FinancePartyBalanceSummary")" Color="Color.Primary">Summary</MudRadio>
+    <MudRadio Value="@("FinancePartyBalanceClosingSummary")" Color="Color.Primary">Summary (Closing Only)</MudRadio>
+    <MudRadio Value="@("FinancePartyBalanceSummarySubArdCode")" Color="Color.Secondary">Filter by Nature</MudRadio>
+</MudRadioGroup>
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
@@ -11,9 +17,20 @@
             <MudDivider />
             <MudGrid Style="padding-top: 22px;">
                 <MudItem xs="4">
-                    <MudAutocomplete SelectValueOnTab T="string" @bind-Value="@SelectedPG" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                     Label="Account Rule Defenition" ResetValueOnEmptyText="true" SearchFunc="@SearchPGs">
-                    </MudAutocomplete>
+                    @if (ReportName == "FinancePartyBalanceSummarySubArdCode")
+                    {
+                        <MudAutocomplete SelectValueOnTab T="SubArdCodeModel" 
+                        @bind-Value="@SelectedSubArdCode" Variant="Variant.Outlined" Margin="Margin.Dense"
+                        Label="Transaction Type" ResetValueOnEmptyText="true" SearchFunc="@SearchSubArds"
+                        ToStringFunc="@(e=> e==null?null : $"{e.ArdGroup} ({e.TranType})")">
+                        </MudAutocomplete>
+                    }
+                    else
+                    {
+                        <MudAutocomplete SelectValueOnTab T="string" @bind-Value="@SelectedPG" Variant="Variant.Outlined" Margin="Margin.Dense"
+                        Label="Account Rule Defenition" ResetValueOnEmptyText="true" SearchFunc="@SearchPGs">
+                        </MudAutocomplete>
+                    }
                 </MudItem>
                 <MudItem xs="2">
                     <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
@@ -22,7 +39,10 @@
                     <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
                 <MudItem xs="2">
-                    <MudCheckBox @bind-Value="@ClosingOnly" Label="Closing Only"></MudCheckBox>
+                    @if (ReportName != "FinancePartyBalanceSummarySubArdCode")
+                    {
+                        <MudCheckBox @bind-Value="@ClosingOnly" Label="Closing Only"></MudCheckBox>
+                    }
                 </MudItem>
                 <MudItem xs="2" Style="display: flex; align-items: center;">
                     <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
@@ -52,6 +72,8 @@
     public string ReportName { get; set; }
     public BranchModel CurrentBranch { get; set; } = new();
 
+    SubArdCodeModel SelectedSubArdCode;
+    List<SubArdCodeModel> SubArds = new();
     string SelectedPG;
     List<string> PGs = new();
 
@@ -78,6 +100,7 @@
     protected override void OnInitialized()
     {
         PGs = partyService.GetPostingGroupNames().ToList();
+        SubArds = partyService.getSubArdCodes().ToList();
     }
 
     private async Task<IEnumerable<string>> SearchPGs(string searchString)
@@ -88,22 +111,42 @@
         return await Task.FromResult(PGs.Where(x => (x.Contains(searchString, StringComparison.InvariantCultureIgnoreCase))));
     }
 
+    private async Task<IEnumerable<SubArdCodeModel>> SearchSubArds(string searchString)
+    {
+        await Task.Delay(5);
+        if (searchString is null)
+            return SubArds;
+        return await Task.FromResult(SubArds.Where(x => (x.TranType.Contains(searchString, StringComparison.InvariantCultureIgnoreCase))));
+    }
+
+
+    void OnSelectionChanged(string val)
+    {
+
+        ReportName = val;       
+    }
+
     public async Task RenderReportViewer()
     {
 
         try
         {
             if (Validate())
-            {
-                ReportName = ClosingOnly ? "FinancePartyBalanceClosingSummary" : "FinancePartyBalanceSummary";
+            {                
                 ReportParameters.Clear();
-                ReportParameters.Add("PostingGroupName", SelectedPG);
+                if (ReportName == "FinancePartyBalanceSummarySubArdCode")
+                {
+                    ReportParameters.Add("SubArdCode", SelectedSubArdCode.SubArdCode);
+                }
+                else
+                {
+                    ReportParameters.Add("PostingGroupName", SelectedPG);
+                }
                 ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
                 ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
                 ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
                 ShowReport = true;
-                await report.RenderReport();
-                ReportName = null;
+                await report.RenderReport();               
             }
         }
         catch (Exception ex)

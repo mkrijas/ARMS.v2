@@ -20,6 +20,7 @@ namespace ArmsServices.DataServices
                              IUserPasswordStore<UserModel>,
                              IUserRoleStore<UserModel>,
                              IUserClaimStore<UserModel>,
+                             IUserAuthenticatorKeyStore<UserModel>,
                              IUserService
     {
 
@@ -559,6 +560,17 @@ namespace ArmsServices.DataServices
                 return false; // or handle the default value as needed
             }
             return (bool)resultParam.Value;
+        }
+
+        public Task SetAuthenticatorKeyAsync(UserModel user, string key, CancellationToken cancellationToken)
+        {
+            user.UserID = key;
+            return Task.CompletedTask;
+        }
+
+        public Task<string> GetAuthenticatorKeyAsync(UserModel user, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(user.UserID);
         }
     }
 }
