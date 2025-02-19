@@ -1,0 +1,109 @@
+﻿@page "/AssetLedgerReport"
+@inherits ReportComponentBase
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Class="mb-5 p-4">
+            <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
+                <MudText Typo="Typo.h5" Style="font-weight:500;">Asset Ledger Report</MudText>
+            </MudToolBar>
+            <MudDivider />
+            <MudGrid Style="padding-top: 22px;">
+                <MudItem xs="5">
+                    <AssetSelector Value="SelectedAsset" ValueChanged="@AssetChanged" BranchID="@(BranchID??0)"></AssetSelector>
+                </MudItem>
+                <MudItem xs="2">
+                    <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="2">
+                    <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="1">
+                   @*  <MudCheckBox @bind-Value="@detailed" Dense> Detailed</MudCheckBox> *@
+                </MudItem>
+                <MudItem xs="2" Style="display: flex; align-items: center;">
+                    <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
+                    <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+<MudGrid Style="@(ShowReport?"":"Display:none")">
+    <MudItem xs="12">
+        <ReportViewer ReportName="@ReportName" Parameters=@ReportParameters @ref="@report"></ReportViewer>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    ReportViewer report;
+    public DateTime? FromDate { get; set; } = DateTime.Now;
+    public DateTime? ToDate { get; set; } = DateTime.Now;
+
+    public AssetModel SelectedAsset { get; set; } = new();
+    public string AssetCode { get; set; }
+    public bool ShowReport { get; set; } = false;
+    public string ReportName { get; set; }
+    public BranchModel CurrentBranch { get; set; } = new();
+    bool detailed = false;
+
+
+    private void AssetChanged(AssetModel Asset)
+    {
+        SelectedAsset = Asset;
+        AssetCode = Asset?.AssetCode;
+    }
+
+    protected bool Validate()
+    {
+        if (!SelectedBranches.Any())
+        {
+            snackbar.Add("Please select branch.", Severity.Error);
+            return false;
+        }
+        if (AssetCode == null)
+        {
+            snackbar.Add("Please select Asset.", Severity.Error);
+            return false;
+        }
+        if (FromDate == null)
+        {
+            snackbar.Add("Please select From Date.", Severity.Error);
+            return false;
+        }
+        if (ToDate == null)
+        {
+            snackbar.Add("Please select To Date.", Severity.Error);
+            return false;
+        }
+        return true;
+    }
+
+
+   
+
+    public async Task RenderReportViewer()
+    {
+        ShowReport = true;
+        try
+        {
+            if (Validate())
+            {
+                ReportName = detailed ? "AssetLedgerReportDetailed" : "AssetLedgerReport";
+                ReportParameters.Clear();
+                ReportParameters.Add("ArdCode", AssetCode);
+                ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
+                ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
+                ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
+                ShowReport = true;
+                await report.RenderReport();
+                ReportName = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}
