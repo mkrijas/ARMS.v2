@@ -39,5 +39,6 @@ namespace ArmsServices.DataServices
         int AddToBranch(int? PartyID, int? BranchID, string UserID);
         int RemoveFromBranch(int? PartyID, int? BranchID, string UserID);   
         IEnumerable<string> GetPostingGroupNames();
+        IEnumerable<SubArdCodeModel> getSubArdCodes();
     }
 }
