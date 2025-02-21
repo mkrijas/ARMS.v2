@@ -178,7 +178,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@DeliveryDate", model.DeliveryDate),
                new SqlParameter("@UsageCode", model.UsageCode),
                new SqlParameter("@TaxIncluded", model.TaxIncluded),
-               new SqlParameter("@PID", model.PID),
+               //new SqlParameter("@PID", model.PID),
                new SqlParameter("@BranchID", model.BranchID),
                new SqlParameter("@ResoleDeliveryTyres", model.ResoleDeliveryTyreList.Select(s=>new {
                    ID =s.ID,
