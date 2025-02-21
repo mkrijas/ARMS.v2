@@ -2,6 +2,7 @@
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a dashboard item
     public class DashboardModel
     {
         public string Label { get; set; }

@@ -2,6 +2,7 @@
 
 namespace Core.BaseModels.Finance.LedgerViews
 {
+    // Model representing a ledger view entry
     public class LedgerViewsModel
     {
         public string AccountName { get; set; }
@@ -9,6 +10,8 @@ namespace Core.BaseModels.Finance.LedgerViews
         public string Narration { get; set; }
         public decimal? Amount { get; set; }
         public string Refference { get; set; }
+
+        // Property to determine if the entry is a debit (Dr) or credit (Cr)
         public virtual string DrCrText
         {
             get
