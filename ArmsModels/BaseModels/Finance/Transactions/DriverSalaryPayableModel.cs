@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing the payable salary for drivers
     public class DriverSalaryPayableModel : TransactionBaseModel, IValidatableObject, ICloneable
     {
         public object Clone()
@@ -18,14 +19,15 @@ namespace ArmsModels.BaseModels
         {
             NatureOfTransaction = "DriverSalaryPayable";
         }
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the salary payable record
         [Required]
         public DateTime? FromDate { get; set; } = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
         [Required]
         public DateTime? ToDate { get; set; } = DateTime.Today;
-        public List<DriverSalaryPayableListModel> DriversLists { get; set; } = new();
+        public List<DriverSalaryPayableListModel> DriversLists { get; set; } = new(); // List of drivers and their salary details
     }
 
+    // Model representing the details of each driver's salary payable
     public class DriverSalaryPayableListModel
     {
         public object Clone()
@@ -33,7 +35,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<DriverSalaryPayableListModel>(Json);
         }
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the salary record
         public int? HeaderID { get; set; }
         [Required]
         public int? DriverID { get; set; }
@@ -54,6 +56,7 @@ namespace ArmsModels.BaseModels
         public virtual string DriverName { get; set; }
     }
 
+    // Model representing pending salary information for drivers
     public class DriverPendingSalaryModel
     {
         public DriverModel Driver { get; set; }

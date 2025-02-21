@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing an inter-branch reimbursement transaction
     public class InterBranchReimbursementModel : TransactionBaseModel, ICloneable, IValidatableObject
     {
         public object Clone()
@@ -12,16 +13,18 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<InterBranchReimbursementModel>(Json);
         }
+        // Constructor to initialize default values
         public InterBranchReimbursementModel()
         {
-            IsInterBranch = true;
-            InterBranchTranID = 0;
+            IsInterBranch = true; // Set IsInterBranch to true by default
+            InterBranchTranID = 0; // Initialize InterBranchTranID to 0
         }
 
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the reimbursement transaction
         [ValidateComplexType]
-        public List<ReimbursementSubModel> Particulars { get; set; } = new();
+        public List<ReimbursementSubModel> Particulars { get; set; } = new(); // List of reimbursement details
 
+        // Method to validate the model
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (Particulars.Count == 0)
@@ -29,10 +32,10 @@ namespace ArmsModels.BaseModels
         }
     }
 
-
+    // Model representing a sub-entry for reimbursement
     public class ReimbursementSubModel
     {
-        public int? SubID { get; set; }
+        public int? SubID { get; set; }  // Unique identifier for the sub-entry
         //[Required]
         public int? ReimbursementID { get; set; }
         [Required]
