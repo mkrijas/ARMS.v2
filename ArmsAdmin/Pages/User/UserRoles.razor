@@ -64,6 +64,7 @@
 
     void Cancel() => MudDialog.Cancel();
 
+    // Class to represent a view of role claims
     class roleClaimView
     {
         public string ClaimType { get; set; }
@@ -78,49 +79,53 @@
         await GetClaim();
     }
 
+    // Method to fetch all roles
     private async Task GetAll()
     {
         if (collection != null)
         {
             collection.Clear();
         }
-        collection = Irole.Select(null).ToList();
+        collection = Irole.Select(null).ToList(); // Fetch roles from the role service
     }
 
+    // Method to fetch all claims associated with roles 
     private async Task GetClaim()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        clamelist = Irole.GetAllClaims(ctc.Token).Result.ToList();
-        foreach (var claimName in clamelist.DistinctBy(x => x.Type).Select(y => y.Type))
+        clamelist = Irole.GetAllClaims(ctc.Token).Result.ToList(); // Fetch all claims
+        foreach (var claimName in clamelist.DistinctBy(x => x.Type).Select(y => y.Type)) // Group claims by type
         {
             Claims.Add(new roleClaimView()
                 {
-                    ClaimType = claimName,
-                    ClaimValues = new(clamelist.Where(x => x.Type == claimName).Select(y => y.Value).ToList())
+                    ClaimType = claimName, // Set the claim type
+                    ClaimValues = new(clamelist.Where(x => x.Type == claimName).Select(y => y.Value).ToList()) // Set the claim values
                 });
         }
     }
 
+    // Method to open the dialog for adding a new role
     private async Task OpenDialog()
     {
         DialogParameters parms = new DialogParameters();
-        parms.Add("EditModel", new RoleModel());
-        var dialog = DialogService.Show<UserAddDilog>("Add Roles", parms);
-        var result = await dialog.Result;
+        parms.Add("EditModel", new RoleModel()); // Add a new role model to the parameters
+        var dialog = DialogService.Show<UserAddDilog>("Add Roles", parms); // Show the add role dialog
+        var result = await dialog.Result; // Wait for the dialog result
 
-        // you can check if the modal was cancelled
+        // Check if the modal was cancelled
         var isCancelled = result.Canceled;
 
         await GetAll();
         await GetClaim();
     }
 
+    // Method to edit an existing role
     private async Task Edit(RoleModel editModel)
     {
         DialogParameters parms = new DialogParameters();
-        parms.Add("EditModel", editModel.Clone());
-        var dialog = DialogService.Show<UserAddDilog>("Add Roles", parms);
-        var result = await dialog.Result;
+        parms.Add("EditModel", editModel.Clone()); // Add the cloned role model to the parameters
+        var dialog = DialogService.Show<UserAddDilog>("Add Roles", parms); // Show the edit role dialog
+        var result = await dialog.Result; // Wait for the dialog result
 
         // you can check if the modal was cancelled
         var isCancelled = result.Cancelled;
@@ -131,6 +136,7 @@
         }
     }
 
+    // Method to delete a role
     private async Task Delete(RoleModel editModel)
     {
         bool? result = await DialogService.ShowMessageBox(
@@ -140,13 +146,14 @@
         var state = result == null ? "Cancelled" : "Deleted!";
         if (state == "Deleted!")
         {
-            await rolemngr.DeleteAsync(editModel);
+            await rolemngr.DeleteAsync(editModel); // Delete the role
             snackbar.Add("Deleted Successfully", Severity.Success);
             await GetAll();
             await GetClaim();
         }
     }
 
+    // Method to filter roles based on the search input
     private bool search(RoleModel roles)
     {
         if (roles.RoleNo != null && roles.RoleID.Contains(searchRole, StringComparison.OrdinalIgnoreCase) || roles.RoleDesc.Contains(searchRole, StringComparison.OrdinalIgnoreCase))
@@ -157,32 +164,35 @@
         return false;
     }
 
+    // Method to open the dialog for managing permissions
     private void PermissionsDilogue(RoleModel editModel)
     {
         DialogParameters parms = new DialogParameters();
-        parms.Add("RoleModel", editModel.Clone());
+        parms.Add("RoleModel", editModel.Clone()); // Add the cloned role model to the parameters
         DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium };
-        DialogService.Show<ClaimDilogue>("Manage Permissions", parms, maxWidth);
-    }
+        DialogService.Show<ClaimDilogue>("Manage Permissions", parms, maxWidth); // Show the permissions dialog
+    } 
 
+    // Method to set the current role ID
     private void croleid(String rid)
     {
         csroleid = rid;
     }
 
+    // Method to update role claims
     private async Task Roleupdate(bool val, String Claimtype, String claimvalue)
     {
         Claim claim = new Claim(Claimtype, claimvalue);
         model.RoleID = csroleid;
         if (val == true)
         {
-            rolemngr.AddClaimAsync(model, claim);
+            rolemngr.AddClaimAsync(model, claim); // Add the claim to the role
             snackbar.Add("Claim Added", Severity.Success);
             await GetAll();
         }
         else
         {
-            rolemngr.RemoveClaimAsync(model, claim);
+            rolemngr.RemoveClaimAsync(model, claim); // Remove the claim from the role
             snackbar.Add("Claim Removed", Severity.Success);
             await GetAll();
         }
