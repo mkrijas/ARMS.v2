@@ -2,14 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Xml;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing asset settings
     public class AssetSettingsModel
     {
-        public int? CheckListID { get; set; }
-        public int? AssetTransferID { get; set; }
-        public int? SettingsID { get; set; }
+        public int? CheckListID { get; set; } // Unique identifier for the checklist associated with the asset settings
+        public int? AssetTransferID { get; set; } // Unique identifier for the asset transfer
+        public int? SettingsID { get; set; } // Unique identifier for the settings
         public virtual int? SubClassID { get; set; }
         public virtual string SettingsName { get; set; }
         [Required]

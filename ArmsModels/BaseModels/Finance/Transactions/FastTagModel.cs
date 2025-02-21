@@ -15,6 +15,7 @@ using TableDependency.SqlClient.Base;
 
 namespace Core.BaseModels.Finance.Transactions
 {
+    // Model representing a FastTag toll transaction
     public class FastTagTollModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -22,7 +23,7 @@ namespace Core.BaseModels.Finance.Transactions
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<FastTagTollModel>(Json);
         }
-        public int? FastTagUploadID { get; set; }
+        public int? FastTagUploadID { get; set; } // Unique identifier for the FastTag upload
         public string ProcessDocumentNumber { get; set; } = "New";
         public string ReverseDocumentNumber { get; set; }
         [Required]
@@ -39,6 +40,7 @@ namespace Core.BaseModels.Finance.Transactions
         public List<FastTagModel> FastTagModelList { get; set; } = new();
     }
 
+    // Model representing the processing of FastTag transactions
     public class FastTagProcessModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -46,7 +48,7 @@ namespace Core.BaseModels.Finance.Transactions
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<FastTagProcessModel>(Json);
         }
-        public int? FastTagProcessID { get; set; }
+        public int? FastTagProcessID { get; set; } // Unique identifier for the FastTag process
         public int? FastTagProcessUploadID { get; set; }
         public string ProcessDocumentNumber { get; set; } = "New";
         [Required]
@@ -54,12 +56,13 @@ namespace Core.BaseModels.Finance.Transactions
         [Required]
         public string Narration { get; set; }
         public decimal? TotalAmount { get; set; }
-        public List<FastTagModel> FastTagModelList { get; set; } = new();
+        public List<FastTagModel> FastTagModelList { get; set; } = new(); // List of FastTag models associated with the process
     }
 
+    // Model representing individual FastTag transaction details
     public class FastTagModel
     {
-        public int? FastTagTollID { get; set; }
+        public int? FastTagTollID { get; set; } // Unique identifier for the FastTag toll transaction
         public int? FastTagProcessID { get; set; }
         public DateTime? TransactionDateTime { get; set; }
         public DateTime? ProcessedDateTime { get; set; }
@@ -100,12 +103,14 @@ namespace Core.BaseModels.Finance.Transactions
         public virtual byte? RecordStatus { get; set; }
     }
 
+    // Model representing a list of FastTag transactions
     public class FastTagList
     {
         public DateTime? TransactionDateTime { get; set; }
         public string NumberPlate { get; set; }
     }
 
+    // Model representing editable FastTag branch information
     public class FastTagBranchEditModel : ICloneable
     {
         public object Clone()
@@ -113,7 +118,7 @@ namespace Core.BaseModels.Finance.Transactions
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<FastTagBranchEditModel>(Json);
         }
-        public int? FastTagTollID { get; set; }
+        public int? FastTagTollID { get; set; } // Unique identifier for the FastTag toll transaction
         //[Required]
         //public string TransactionID { get; set; }
         [Required]
@@ -129,6 +134,7 @@ namespace Core.BaseModels.Finance.Transactions
         public UserInfoModel UserInfo { get; set; } = new UserInfoModel();
     }
 
+    // Static class for encryption and decryption functionalities
     public static class EncryptionHelper
     {
         private static byte[] Key;
@@ -139,7 +145,7 @@ namespace Core.BaseModels.Finance.Transactions
             // Generate a random key and IV
             GenerateRandomKeyAndIV();
         }
-
+        // Method to generate a random key and IV
         private static (byte[] key, byte[] iv) GenerateRandomKeyAndIV()
         {
             using (var rng = new RNGCryptoServiceProvider())
@@ -164,6 +170,7 @@ namespace Core.BaseModels.Finance.Transactions
             }
         }
 
+        // Method to encrypt a string
         public static string Encrypt(string text)
         {
             try
@@ -173,11 +180,11 @@ namespace Core.BaseModels.Finance.Transactions
                 IV = aes.IV;
 
                 //var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-                var encryptor = aes.CreateEncryptor(Key, IV);
-                var encryptedBytes = encryptor.TransformFinalBlock(Encoding.UTF8.GetBytes(text), 0, text.Length);
+                var encryptor = aes.CreateEncryptor(Key, IV); // Create an encryptor
+                var encryptedBytes = encryptor.TransformFinalBlock(Encoding.UTF8.GetBytes(text), 0, text.Length); // Encrypt the text
                 //return Convert.ToBase64String(encryptedBytes);
-                var base64 = Convert.ToBase64String(encryptedBytes);
-                return base64.Replace('+', '-').Replace('/', '_');
+                var base64 = Convert.ToBase64String(encryptedBytes); // Convert encrypted bytes to base64 string
+                return base64.Replace('+', '-').Replace('/', '_'); // Replace characters for URL safety
             }
             catch (Exception ex)
             {
@@ -185,18 +192,19 @@ namespace Core.BaseModels.Finance.Transactions
             }
         }
 
+        // Method to decrypt a string
         public static string Decrypt(string cipherText)
         {
             try
             {
-                using var aes = Aes.Create();
+                using var aes = Aes.Create(); // Create a new AES instance
 
                 //var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-                var decryptor = aes.CreateDecryptor(Key, IV);
-                cipherText = cipherText.Replace('-', '+').Replace('_', '/');
-                var cipherBytes = Convert.FromBase64String(cipherText);
-                var decryptedBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
-                return Encoding.UTF8.GetString(decryptedBytes);
+                var decryptor = aes.CreateDecryptor(Key, IV); // Create a decryptor
+                cipherText = cipherText.Replace('-', '+').Replace('_', '/'); // Replace characters for decryption
+                var cipherBytes = Convert.FromBase64String(cipherText); // Convert base64 string
+                var decryptedBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length); // Decrypt the bytes
+                return Encoding.UTF8.GetString(decryptedBytes); // Convert decrypted bytes back to a string
             }
             catch (Exception ex)
             {

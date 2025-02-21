@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a general ledger transfer
     public class GeneralLedgerTransferModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -14,7 +15,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<GeneralLedgerTransferModel>(Json);
         }
-        public int? LedgerTransferID { get; set; }
+        public int? LedgerTransferID { get; set; } // Unique identifier for the ledger transfer
         [Required]
         public GstUsageCodeModel UsageCode { get; set; }
         [Required]

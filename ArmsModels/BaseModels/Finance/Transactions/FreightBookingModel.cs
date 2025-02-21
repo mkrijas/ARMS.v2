@@ -4,9 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
+using Microsoft.VisualBasic;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a consolidated draft bill
     public class ConsolidatedDraftBillModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -14,21 +16,22 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<ConsolidatedDraftBillModel>(Json);
         }
-        public int? DraftBillID { get; set; }
+        public int? DraftBillID { get; set; } // Unique identifier for the draft bill
         [Required]
         public DateTime? DocFromDate { get; set; }
         [Required]
         public DateTime? DocToDate { get; set; }
-        public TruckModel Truck { get; set; } = new();
-        public PartyModel Party { get; set; } = new();     
+        public TruckModel Truck { get; set; } = new(); // Information about the truck associated with the draft bill
+        public PartyModel Party { get; set; } = new(); // Information about the party associated with the draft bill
         [Required]
-        public OrderModel Order { get; set; }
+        public OrderModel Order { get; set; } // Information about the order associated with the draft bill
         [Required]
-        public TariffTypeModel TariffType { get; set; }
+        public TariffTypeModel TariffType { get; set; } // Information about the tariff type associated with the draft bill
         [ValidateComplexType]
-        public List<GcTariffModel> BookedGCs { get; set; }
+        public List<GcTariffModel> BookedGCs { get; set; } // List of booked GC tariffs associated with the draft bill
     }
 
+    // Model representing a proforma invoice
     public class ProformaInvoiceModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -36,31 +39,33 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<ProformaInvoiceModel>(Json);
         }
-        public int? ProformaInvoiceID { get; set; }
+        public int? ProformaInvoiceID { get; set; } // Unique identifier for the proforma invoice
         public int? DraftBillID { get; set; }
         public int? OrderID { get; set; }
         public decimal? FreightAmount { get; set; }
-        public PartyModel Party { get; set; }
+        public PartyModel Party { get; set; } // Information about the party associated with the proforma invoice
         public int? PartyCoa { get; set; }
-        public TariffTypeModel TariffType { get; set; }
+        public TariffTypeModel TariffType { get; set; } // Information about the tariff type associated with the proforma invoice
         public DateTime? PeriodFrom { get; set; }
         public DateTime? PeriodTo { get; set; }
         public string Reference { get; set; }
-        public GstModel Gst { get; set; } = new();
+        public GstModel Gst { get; set; } = new(); // Information about the GST associated with the proforma invoiced
         public int? CostCenter { get; set; }
         public int? Dimension { get; set; }
-        public List<GcTariffModel> BookedGCs { get; set; }
+        public List<GcTariffModel> BookedGCs { get; set; } // List of booked GC tariffs associated with the proforma invoice
     }
 
+    // Model representing a billing transaction
     public class BillingModel : ProformaInvoiceModel
     {
-        public int? BillingID { get; set; }
+        public int? BillingID { get; set; } // Unique identifier for the billing transaction
     }
 
+    // Model representing a GC tariff
     public class GcTariffModel
     {
         [Required]
-        public long? GcTariffID { get; set; }
+        public long? GcTariffID { get; set; } // Unique identifier for the GC tariff
         public long? GcID { get; set; }
         public int? TariffID { get; set; }
         [Required]
@@ -84,6 +89,7 @@ namespace ArmsModels.BaseModels
         public virtual string StateName { get; set; }
     }
 
+    // Model representing a reference
     public class RefModel
     {
         public string InvoiceNumber { get; set; }
