@@ -12,6 +12,7 @@
 @using System.Threading
 @using System.Linq
 
+/* Styles for the dialog and table layout */
 <style>
     .mud-table-container {
         overflow: revert;
@@ -121,6 +122,7 @@
 
     private bool Progressing;
 
+    // Class to represent the view model for role claims
     class roleClaimView
     {
         public string DocType { get; set; }
@@ -134,27 +136,30 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await auth.GetAuthenticationStateAsync();
-        UserID = authState.User.Identity.Name;
+        var authState = await auth.GetAuthenticationStateAsync(); // Get authentication state
+        UserID = authState.User.Identity.Name; // Get the user ID
 
-        doctypes = dataAuthSetting.GetDocTypes();
-        UserClaimList = await rolemngr.GetClaimsAsync(RoleModel);
+        doctypes = dataAuthSetting.GetDocTypes(); // Fetch document types
+        UserClaimList = await rolemngr.GetClaimsAsync(RoleModel); // Get claims for the role
         await Task.Run(() => GetAll());
         GetClaim();
         SetValue();
     }
 
+    // Method to fetch all roles
     private void GetAll()
     {
         collection.Clear();
-        collection = Irole.Select(null).ToList();
-    }
+        collection = Irole.Select(null).ToList(); // Fetch roles from the role service
+    } 
 
+    // Method to fetch claims
     private void GetClaim()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        clamelist = Irole.GetAllClaims(ctc.Token).Result.ToList();
-
+        clamelist = Irole.GetAllClaims(ctc.Token).Result.ToList(); // Fetch all claims
+        
+        // Populate the Claims list with distinct claim types and their values
         foreach (var claimType in clamelist.DistinctBy(x => x.Type).Select(y => y.Type))
         {
             Claims.Add(new roleClaimView()
@@ -167,6 +172,7 @@
         }
     }
 
+    // Method to set the initial state of permissions
     public void SetValue()
     {
         int UserClaimListCount = UserClaimList.Count;
@@ -186,8 +192,10 @@
 
     }
 
+    // Method to delete a role
     private async Task Delete(int? id)
     {
+        // Show confirmation dialog before deletion
         bool? result = await DialogService.ShowMessageBox(
            "Warning !",
            "Are you sure, you want to delete ?");
@@ -198,6 +206,7 @@
         GetAll();
     }
 
+    // Method to search roles based on criteria
     private bool search(RoleModel roles)
     {
         if (roles.RoleNo != null && roles.RoleID.Contains(searchTruck, StringComparison.OrdinalIgnoreCase))
@@ -208,6 +217,7 @@
         return false;
     }
 
+    // Method to update role claims
     private async Task Roleupdate(bool val, String Claimtype, String claimvalue)
     {
         Claim claim = new Claim(Claimtype, claimvalue);
@@ -231,6 +241,7 @@
         }
     }
 
+    // Method to set all permissions for the role
     private async Task SetAllPermissions(bool val)
     {
         string valText = val ? "enable" : "disable";
@@ -241,8 +252,10 @@
             Progressing = true;
             if (val)
             {
-                Irole.SelectAllPermissions(RoleModel, UserID);
+                Irole.SelectAllPermissions(RoleModel, UserID); // Select all permissions for the role
                 UserClaimList.Clear();
+
+                // Add all claims to the user claim list
                 foreach (var i in clamelist)
                 {
                     UserClaimList.Add(i);
@@ -250,7 +263,7 @@
             }
             else
             {
-                Irole.DeSelectAllPermissions(RoleModel, UserID);
+                Irole.DeSelectAllPermissions(RoleModel, UserID); // Deselect all permissions for the role
                 UserClaimList.Clear();
             }
 
@@ -259,6 +272,7 @@
         }
     }
 
+    // Method to search role claims based on document type
     private bool search(roleClaimView roleClaim)
     {
         if (roleClaim.DocType != null && roleClaim.DocType.Contains(searchClaim, StringComparison.OrdinalIgnoreCase))

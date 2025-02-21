@@ -61,11 +61,13 @@
     private List<UserBranchRoleModel> collection = new List<UserBranchRoleModel>();
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
+    // Method to cancel the dialog
     void Cancel()
     {
         MudDialog.Cancel();
     }
 
+    // Method to set the role ID for a specific branch or all branches
     public void OnRoleIdSet(string RoleId, UserBranchRoleModel SelectedModel)
     {
         if (selectAllBranches)
@@ -80,7 +82,7 @@
         else if ((!String.IsNullOrWhiteSpace(RoleId)) && SelectedModel != null)
         {
             SelectedModel.Role.RoleID = RoleId;
-            OnValidSubmit(SelectedModel);
+            OnValidSubmit(SelectedModel); // Call the submission method with the selected model
         }
     }
 
@@ -89,14 +91,15 @@
         await GetAll();
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
-        rolecollection = Irole.Select(null).ToList();
-        bcollection = bsr.Select().ToList();
+        rolecollection = Irole.Select(null).ToList(); // Fetch all roles
+        bcollection = bsr.Select().ToList(); // Fetch all branches
     }
 
+    // Method to fetch all user-branch-role assignments
     private async Task GetAll()
     {
         collection.Clear();
-        collection = Iservice.GetAllBranchesNRoles(UserRmodel?.UserID ?? null).ToList();
+        collection = Iservice.GetAllBranchesNRoles(UserRmodel?.UserID ?? null).ToList(); // Fetch assignments for the specified user
         foreach (var item in collection)
         {
             if (item.Role == null)
@@ -107,6 +110,7 @@
         }
     }
 
+    // Method to delete a user-branch-role assignment
     public async Task Delete(UserBranchRoleModel Context)
     {
         bool? result = await DialogService.ShowMessageBox(
@@ -116,12 +120,13 @@
         {
             var authprov = await auth.GetAuthenticationStateAsync();
             var user = authprov.User.Identity.Name;
-            Iservice.DeleteBranchesNRoles(Context, user);
+            Iservice.DeleteBranchesNRoles(Context, user); // Call the service to delete the assignment
             snackbar.Add("Deleted Successfully", Severity.Success);
             GetAll();
         }
     }
 
+    // Method to handle the submission of role assignmentso
     private async void OnValidSubmit(UserBranchRoleModel context)
     {
         var authprov = await auth.GetAuthenticationStateAsync();
@@ -130,13 +135,14 @@
         {
             if (selectAllBranches)
             {
-                // Set roles for all branches
-                Iservice.SetBranchesNRoles(collection.Where(s => s.Role != null).ToList(), user.Identity.Name);
+                // If "Set All Branches" is checked, set roles for all branches
+                Iservice.SetBranchesNRoles(collection.Where(s => s.Role != null).ToList(), user.Identity.Name); // Call the service to set roles
                 snackbar.Add("Saved Successfully", Severity.Success);
             }
             else if (collection != null && collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty && context != null && context.Role != null && s.Role.RoleID == context.Role.RoleID) != null && collection.Where(s => s.Role != null).Count() != 0)
             {
-                Iservice.SetBranchesNRoles(collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty).ToList(), user.Identity.Name);
+                // If specific roles are assigned, set roles for those branches
+                Iservice.SetBranchesNRoles(collection.Where(s => s.Role != null && s.Role.RoleID != null && s.Role.RoleID != string.Empty).ToList(), user.Identity.Name); // Call the service to set roles
                 snackbar.Add("Saved Successfully", Severity.Success);
             }
         }
