@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a TDS (Tax Deducted at Source) transaction
     public class TdsTransactionModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -14,20 +15,20 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<TdsTransactionModel>(Json);
         }
-        public int? ID { get; set; }
-      
+        public int? ID { get; set; } // Unique identifier for the TDS transaction
+
         [Required]
-        public PartyModel Party { get; set; }
+        public PartyModel Party { get; set; } // Information about the party associated with the TDS transaction
         [Required]
         public int? PartyCoaID { get; set; }
         public string TdsType { get; set; } = "TDS";
         [Required]
         public bool IsTdsPayable { get; set; }
 
-        public List<TdsTransactionEntryModel> Tds { get; set; } = new List<TdsTransactionEntryModel>();
+        public List<TdsTransactionEntryModel> Tds { get; set; } = new List<TdsTransactionEntryModel>(); // List of TDS transaction entries
     }
 
-
+    // Model representing an entry in a TDS transaction
     public class TdsTransactionEntryModel
     {
         public int? ID { get; set; }

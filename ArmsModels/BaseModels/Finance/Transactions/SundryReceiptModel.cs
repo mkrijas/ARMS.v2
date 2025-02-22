@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a sundry receipt transaction
     public class SundryReceiptModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -14,7 +15,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<SundryReceiptModel>(Json);
         }
-        public int? SundryReceiptID { get; set; }
+        public int? SundryReceiptID { get; set; } // Unique identifier for the sundry receipt
         [Required]
         public string ReceiptMode { get; set; }
         [Required]
@@ -29,9 +30,10 @@ namespace ArmsModels.BaseModels
         [Required]
         [ValidateComplexType]
         [MustContain(ErrorMessage = "No particulars selected for Receipt!")]
-        public List<SundryReceiptEntryModel> Entries { get; set; } = new();
+        public List<SundryReceiptEntryModel> Entries { get; set; } = new(); // List of entries associated with the sundry receipt
     }
 
+    // Model representing an entry in a sundry receipt transaction
     public class SundryReceiptEntryModel
     {
         public long? ID { get; set; }

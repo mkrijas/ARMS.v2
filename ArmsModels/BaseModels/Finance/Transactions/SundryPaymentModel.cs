@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a sundry payment transaction
     public class SundryPaymentModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -14,7 +15,8 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<SundryPaymentModel>(Json);
         }
-        public int? SundryPaymentID { get; set; }
+        public int? SundryPaymentID { get; set; } // Unique identifier for the sundry payment
+
         public bool deferredExpenditure { get; set; } = false;
         [RequiredIfTrue(nameof(deferredExpenditure))]
         public DateTime? beginDate { get; set; }
@@ -23,7 +25,7 @@ namespace ArmsModels.BaseModels
         public string Reference { get; set; }
         [ValidateComplexType]
         [MustContain(ErrorMessage = "No particulars added for payment!")]
-        public List<SundryPaymentEntryModel> Entries { get; set; } = new();
+        public List<SundryPaymentEntryModel> Entries { get; set; } = new(); // List of entries associated with the sundry payment
         [Required]
         public string PaymentMode { get; set; }
         [Required]
@@ -41,6 +43,7 @@ namespace ArmsModels.BaseModels
         public string PayeeContactNo { get; set; }
     }
 
+    // Model representing an entry in a sundry payment transaction
     public class SundryPaymentEntryModel : ICloneable
     {
         public object Clone()
@@ -48,7 +51,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<SundryPaymentEntryModel>(Json);
         }
-        public long? ID { get; set; }
+        public long? ID { get; set; } // Unique identifier for the sundry payment entry
         public int? ParentID { get; set; }
         [Required]
         public int? BranchID { get; set; }

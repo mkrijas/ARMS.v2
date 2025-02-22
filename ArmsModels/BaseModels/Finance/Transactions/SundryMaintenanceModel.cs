@@ -5,16 +5,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing sundry maintenance transactions
     public class SundryMaintenanceModel : TransactionBaseModel, ICloneable
     {
-        public int? ID { get; set; }
+        public int? ID { get; set; }  // Unique identifier for the sundry maintenance record
         [Required]
         public string BreakDownType { get; set; }
         [Required]
-        public PartyModel PartyInfo { get; set; }
+        public PartyModel PartyInfo { get; set; } // Information about the party associated with the maintenance
         [ValidateComplexType]
         [Required]
-        public List<SundryMaintenanceEntryModel> Entries { get; set; }
+        public List<SundryMaintenanceEntryModel> Entries { get; set; } // List of entries associated with the maintenance
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
@@ -22,6 +23,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing an entry in a sundry maintenance transaction
     public class SundryMaintenanceEntryModel: ICloneable
     {
         public object Clone()
@@ -29,7 +31,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<SundryMaintenanceEntryModel>(Json);
         }
-        public long? ID { get; set; }        
+        public long? ID { get; set; } // Unique identifier for the maintenance entry
         public int? ParentID { get; set; }
         [Required]
         public int? BranchID { get; set; }

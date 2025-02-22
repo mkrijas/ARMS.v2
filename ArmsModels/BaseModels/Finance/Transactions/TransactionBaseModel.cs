@@ -7,13 +7,14 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Base model representing a transaction
     public class TransactionBaseModel : IValidatableObject
     {
         public TransactionBaseModel()
         {
             UserInfo = new();
         }
-        public int? MID { get; set; }
+        public int? MID { get; set; } // Unique identifier for the transaction
         public int? ReverseMID { get; set; }
         [Required]
         [DataType(DataType.Date)]
@@ -52,14 +53,16 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing account information for a transaction
     public class AccountInfoViewModel
     {
         public DateTime? DocumentDate { get; set; } = new();
         public string DocumentNumber { get; set; }
         public string Narration { get; set; }
-        public List<AccountInfoViewSubModel> Entries { get; set; } = new List<AccountInfoViewSubModel>();
+        public List<AccountInfoViewSubModel> Entries { get; set; } = new List<AccountInfoViewSubModel>(); // List of entries associated with the account information
     }
 
+    // Model representing a sub-entry in account information
     public class AccountInfoViewSubModel
     {
         public string AccountName { get; set; }
@@ -71,6 +74,7 @@ namespace ArmsModels.BaseModels
         public string Dimension { get; set; }
     }
 
+    // Model representing GST (Goods and Services Tax) information
     public class GstModel : IValidatableObject, ICloneable
     {
         public object Clone()
@@ -87,6 +91,8 @@ namespace ArmsModels.BaseModels
         public decimal? IGST { get; set; } = 0;
         public decimal? TDS { get; set; } = 0;
         public virtual decimal? TotalGst { get { return (CGST ?? 0) + (SGST ?? 0) + (IGST ?? 0); } }
+
+        // Method to validate the GST model
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (IGST > 0 && (CGST > 0 || SGST > 0))
@@ -104,6 +110,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing a cheque
     public class ChequeModel
     {
         public int? ID { get; set; }

@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a payment memo
     public class PaymentMemoModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -17,21 +18,22 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<PaymentMemoModel>(Json);
         }
-        public int? PaymentMemoID { get; set; }
+        public int? PaymentMemoID { get; set; } // Unique identifier for the payment memo
         [Required]
         public string BusinessNature { get; set; } // "Suppier,Customer,Renter"
         [Required]
-        public PartyModel PartyInfo { get; set; }
+        public PartyModel PartyInfo { get; set; } // Information about the party associated with the payment memo
         public int? PartyCoaID { get; set; }
         [Required]
         public string Reference { get; set; }
         public decimal? BankCharges { get; set; }      
         [Required]
         public byte? PaymentStatus { get; set; } = 0; // 0 - generated; 1 - initiated; 2 - completed;
-        public List<BillsPaidModel> Bills { get; set; } = new();
+        public List<BillsPaidModel> Bills { get; set; } = new(); // List of bills associated with the payment memo
         public virtual bool IsChecked { get; set; }
     }
 
+    // Model representing details for printing a payment memo
     public class PaymentMemoPrintDetailModel
     {
         public int? PaymentMemoID { get; set; }
@@ -46,6 +48,7 @@ namespace ArmsModels.BaseModels
         public DateTime? DueOn { get; set; }
     }
 
+    // Model representing a bill that has been paid
     public class BillsPaidModel
     {
         decimal? _PayAmount;
@@ -71,9 +74,10 @@ namespace ArmsModels.BaseModels
         public virtual DateTime? InvoiceDate { get; set; }
     }
 
+    // Model representing a payment initiation
     public class PaymentInitiatedModel : ICloneable
     {
-        public int? PaymentInitiatedID { get; set; }
+        public int? PaymentInitiatedID { get; set; } // Unique identifier for the payment initiation
         [Required]
         public DateTime? DueOn { get; set; }
         [Required]
@@ -81,7 +85,7 @@ namespace ArmsModels.BaseModels
         public string DocumentNumber { get; set; }
         public int? BranchID { get; set; }
         public decimal? TotalAmount { get; set; }
-        public List<PaymentMemoModel> SelectedMemos { get; set; } = new();
+        public List<PaymentMemoModel> SelectedMemos { get; set; } = new(); // List of selected payment memos
         public bool IsInterBranch { get; set; }
         public int? InterBranchTranID { get; set; }
         public int? AuthLevelId { get; set; }
@@ -94,6 +98,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing the finalization of a payment
     public class PaymentFinishModel : TransactionBaseModel, ICloneable
     {
         public int? PaymentFinalizeID { get; set; }

@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.BaseModels.Finance.Transactions
 {
+    // Model representing a sundry payment associated with an asset
     public class SundryPaymentAssetModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -12,9 +13,9 @@ namespace Core.BaseModels.Finance.Transactions
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<SundryPaymentAssetModel>(Json);
         }
-        public int? SundryPaymentAssetID { get; set; }
+        public int? SundryPaymentAssetID { get; set; } // Unique identifier for the sundry payment asset
         [Required]
-        public AssetModel Asset { get; set; }
+        public AssetModel Asset { get; set; } // Information about the asset associated with the payment
         public string PaymentMode { get; set; }
         [Required]
         public string PaymentArdCode { get; set; }

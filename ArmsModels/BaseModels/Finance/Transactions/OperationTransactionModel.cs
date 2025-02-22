@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing an operational transaction
     public class OpTranModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -20,7 +21,7 @@ namespace ArmsModels.BaseModels
         {
             Transactions = new();
         }
-        public int? OpTranID { get; set; }
+        public int? OpTranID { get; set; } // Unique identifier for the operational transaction
         [Required]
         public string PaymentMode { get; set; } // Cash,Bank req
         [Required]
@@ -36,13 +37,14 @@ namespace ArmsModels.BaseModels
         public int? JobCardID { get; set; }
         [ValidateComplexType]
         [MustContain(ErrorMessage = "No Expenses Added!")]
-        public List<OpTranSubModel> Transactions { get; set; } = new();
-        public virtual TripInfoModel TripInfo { get; set; }  // select   
+        public List<OpTranSubModel> Transactions { get; set; } = new(); // List of operational transaction sub-entries
+        public virtual TripInfoModel TripInfo { get; set; }  // Information about the trip associated with the transaction
     }
 
+    // Model representing a sub-entry for an operational transaction
     public class OpTranSubModel
     {
-        public long? OpTranSubID { get; set; }
+        public long? OpTranSubID { get; set; } // Unique identifier for the operational transaction sub-entry
         public long? OpTranID { get; set; }
         [Required]
         public string ExpenseUsageCode { get; set; }
@@ -59,7 +61,8 @@ namespace ArmsModels.BaseModels
         public int? Dimension { get; set; }
         public bool IsReimbursed { get; set; }
         public virtual string DimensionVal { get; set; }
-        public virtual OperationPostingGroupModel OperationPostingGroupModel { get; set; }
+        public virtual OperationPostingGroupModel OperationPostingGroupModel { get; set; } // Model for the operation posting group
+        // Property to get the reimbursement status as a string
         public virtual string Reimbursement
         {
             get

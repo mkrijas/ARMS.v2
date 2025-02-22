@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a sale transaction
     public class SaleModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -14,17 +15,17 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<SaleModel>(Json);
         }
-        public int? SID { get; set; }
-        public PartyModel PartyInfo { get; set; }
-        [Required]
+        public int? SID { get; set; } // Unique identifier for the sale
+        public PartyModel PartyInfo { get; set; } // Information about the party associated with the sale
+        [Required] 
         public bool IsCredit { get; set; } = true;
         public decimal? AdditionalTCS { get; set; }
         public string SalesType { get; set; }
         public string InvoiceNo { get; set; }
         [ValidateComplexType]
-        public List<TaxPurchaseExpenseModel> Particulars { get; set; } = new();
+        public List<TaxPurchaseExpenseModel> Particulars { get; set; } = new(); // List of expenses associated with the sale
         [ValidateComplexType]
-        public List<TaxPurchaseItemModel> Items { get; set; } = new();
-        public List<AssetSaleModel> Assets { get; set; } = new();
+        public List<TaxPurchaseItemModel> Items { get; set; } = new(); // List of items associated with the sale
+        public List<AssetSaleModel> Assets { get; set; } = new(); // List of assets associated with the sale
     }
 }

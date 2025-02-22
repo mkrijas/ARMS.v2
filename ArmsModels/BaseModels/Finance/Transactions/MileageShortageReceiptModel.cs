@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.BaseModels.Finance.Transactions
 {
+    // Model representing a mileage shortage receipt
     public class MileageShortageReceiptModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -16,7 +17,7 @@ namespace Core.BaseModels.Finance.Transactions
         {
             NatureOfTransaction = "Mileage Shortage";
         }
-        public int? MileageShortageReceiptID { get; set; }
+        public int? MileageShortageReceiptID { get; set; } // Unique identifier for the mileage shortage receipt
         public string ReceiptMode { get; set; }
         public string Reference { get; set; }
         public string TripNo { get; set; }

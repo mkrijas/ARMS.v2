@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a journal entry
     public class JournalModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -18,18 +19,20 @@ namespace ArmsModels.BaseModels
         }
         public JournalModel() { }
         public int? JournalID { get; set; }
-        [MustContain(ErrorMessage = "No account added for journal!")]
+        [MustContain(ErrorMessage = "No account added for journal!")] // Custom validation attribute to ensure at least one account is added
         [ValidateComplexType]
-        public List<JournalSubModel> JournalSubList { get; set; } = new();
+        public List<JournalSubModel> JournalSubList { get; set; } = new(); // List of journal sub-entries
     }
 
+    // Model representing a sub-entry in a journal
     public class JournalSubModel
     {
-        private ChartOfAccountModel _coaModel;
-        public int? JournalSubID { get; set; }
+        private ChartOfAccountModel _coaModel; // Backing field for the Chart of Account model
+        public int? JournalSubID { get; set; } // Unique identifier for the journal sub-entry
         public int? JournalID { get; set; }
         [Required]
         public int? CoaID { get; set; }
+        // Property to get or set the Chart of Account model
         public virtual ChartOfAccountModel Coa { get { return _coaModel; } set { _coaModel = value; CoaID = value?.CoaID; } }
         [Required]
         public int? DrCrType { get; set; }

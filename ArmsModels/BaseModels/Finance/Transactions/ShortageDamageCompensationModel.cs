@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.BaseModels.Finance.Transactions
 {
+    // Model representing a shortage or damage compensation transaction
     public class ShortageDamageCompensationModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -16,7 +17,7 @@ namespace Core.BaseModels.Finance.Transactions
         {
             NatureOfTransaction = "Damage Compensation";
         }
-        public int? DamageID { get; set; }
+        public int? DamageID { get; set; } // Unique identifier for the damage record
         [Required]
         public long? GcSetID { get; set; }
         [Required]

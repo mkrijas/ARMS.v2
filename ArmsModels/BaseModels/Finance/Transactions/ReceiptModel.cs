@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a receipt transaction
     public class ReceiptModel : TransactionBaseModel, ICloneable
     {
         public object Clone()
@@ -14,11 +15,11 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<ReceiptModel>(Json);
         }
-        public int? ReceiptID { get; set; }
+        public int? ReceiptID { get; set; } // Unique identifier for the receipt
         [Required]
         public string BusinessNature { get; set; }
         [Required]
-        public PartyModel PartyInfo { get; set; }
+        public PartyModel PartyInfo { get; set; } // Information about the party associated with the receipt
         public int? PartyCoaID { get; set; }
         [Required]
         public string ReceiptMode { get; set; }  // Cash/Bank        
@@ -34,9 +35,10 @@ namespace ArmsModels.BaseModels
         public bool IsRealized { get; set; }
         //public int? CostCenter { get; set; }
         //public int? Dimension { get; set; }
-        public List<BillsReceiptModel> Bills { get; set; } = new();
+        public List<BillsReceiptModel> Bills { get; set; } = new(); // List of bills associated with the receipt
     }
 
+    // Model representing a bill associated with a receipt
     public class BillsReceiptModel
     {
         //outstading bills tick 
@@ -62,6 +64,7 @@ namespace ArmsModels.BaseModels
         public virtual DateTime? InvoiceDate { get; set; }
     }
 
+    // Model representing an outstanding payment
     public class OutstandingPaymentModel
     {
         public int? OpID { get; set; }

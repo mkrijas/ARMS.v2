@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a tax purchase transaction
     public class TaxPurchaseModel : TransactionBaseModel, IValidatableObject, ICloneable
     {
         public object Clone()
@@ -18,7 +19,7 @@ namespace ArmsModels.BaseModels
         {
             NatureOfTransaction = "TaxPurchase";
         }
-        public int? PID { get; set; }
+        public int? PID { get; set; } // Unique identifier for the tax purchase
         //public int? SundryPaymentID { get; set; }
         public bool deferredExpenditure { get; set; } = false;
         [RequiredIfTrue(nameof(deferredExpenditure))]
@@ -39,12 +40,14 @@ namespace ArmsModels.BaseModels
         public bool NonStoreInventory { get; set; }
         public string TaxPurchaseType { get; set; }
         [ValidateComplexType]
-        public List<TaxPurchaseExpenseModel> Expenses { get; set; } = new();
+        public List<TaxPurchaseExpenseModel> Expenses { get; set; } = new(); // List of expenses associated with the purchase
         [ValidateComplexType]
-        public List<TaxPurchaseItemModel> Items { get; set; } = new();
+        public List<TaxPurchaseItemModel> Items { get; set; } = new(); // List of items associated with the purchase
         [ValidateComplexType]
-        public List<AssetPOModel> Assets { get; set; } = new();
+        public List<AssetPOModel> Assets { get; set; } = new(); // List of assets associated with the purchase
         public decimal? TDS { get; set; }
+
+        // Method to validate the model
         public override IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             var baseErrors = base.Validate(validationContext);
@@ -62,9 +65,10 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing an expense associated with a tax purchase
     public class TaxPurchaseExpenseModel
     {
-        public long? TpeID { get; set; }
+        public long? TpeID { get; set; } // Unique identifier for the tax purchase expense
         public int? PID { get; set; }
         [Required]
         public decimal? GstRate { get; set; }
@@ -91,8 +95,8 @@ namespace ArmsModels.BaseModels
 
     public class TaxPurchaseItemModel
     {
-        decimal? _qty, _rate;
-        public long? TpiID { get; set; }
+        decimal? _qty, _rate; // Backing fields for quantity and rate
+        public long? TpiID { get; set; } // Unique identifier for the tax purchase item
         public int? PID { get; set; }
         public decimal? GstRate { get; set; }
         [Required]
