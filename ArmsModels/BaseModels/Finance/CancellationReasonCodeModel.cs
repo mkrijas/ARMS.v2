@@ -6,9 +6,10 @@ using System.Collections.Generic;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing cancellation reason codes associated with a document type
     public class CancellationReasonCodesByDocumentType : TransactionBaseModel, ICloneable
     {
-        public int? ReverseEntryID { get; set; }
+        public int? ReverseEntryID { get; set; } // Unique identifier for the reverse entry
         public int? ReasonCodeID { get; set; }
         public int? DocumentID { get; set; }
         public int? DocumentTypeID { get; set; }
@@ -17,7 +18,7 @@ namespace ArmsModels.BaseModels
         public DateTime? DocumentDate { get; set; }
         public int? MID { get; set; }
         public string DocumentTypeName { get; set; }
-        public List<CancellationReasonCode> CancellationReasonCodeList { get; set; }
+        public List<CancellationReasonCode> CancellationReasonCodeList { get; set; } // List of cancellation reason codes
         public UserInfoModel UserInfo { get; set; }
         public string Remarks { get; set; }
 
@@ -28,6 +29,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing a cancellation reason code
     public class CancellationReasonCode
     {
         public int? ReasonCodeID { get; set; }

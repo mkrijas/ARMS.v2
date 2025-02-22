@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a cash account
     public class CashAccountModel : ICloneable
     {
         public object Clone()
@@ -14,12 +15,12 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<CashAccountModel>(Json);
         }
-        public int? CashAccountID { get; set; }
+        public int? CashAccountID { get; set; } // Unique identifier for the cash account
         [Required]
         public string Title { get; set; }
         public string CashCode { get; set; }
         [Required]
-        public ChartOfAccountModel Coa { get; set; } = new();
+        public ChartOfAccountModel Coa { get; set; } = new(); // Chart of Accounts associated with the cash account
         public int? BranchID { get; set; }
         public decimal? MinBalance { get; set; }
         public decimal? MaxBalance { get; set; }

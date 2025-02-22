@@ -8,6 +8,7 @@ using Core.BaseModels.Finance;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing an opening balance
     public class OpeningBalanceModel : ICloneable
     {
         public object Clone()
@@ -15,7 +16,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<OpeningBalanceModel>(Json);
         }
-        public int? OpeniongBalanceID { get; set; }        
+        public int? OpeniongBalanceID { get; set; } // Unique identifier for the opening balance  
         public int? PeriodID { get; set; }          
         public string PeriodDescription { get; set; }       
         public int? BranchID { get; set; }        
@@ -30,9 +31,10 @@ namespace ArmsModels.BaseModels
 
     }
 
+    // Model representing a period
     public class PeriodModel
     {
-        public int? PeriodID { get; set; }
+        public int? PeriodID { get; set; } // Unique identifier for the period
         public string PeriodDescription { get; set; }
 
     }

@@ -7,13 +7,14 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a bank account
     public class BankAccountModel
     {
         public BankAccountModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? BankAccountID { get; set; }
+        public int? BankAccountID { get; set; } // Unique identifier for the bank account
         [Required]
         [StringLength(maximumLength: 200)]
         public string BeneficiaryName { get; set; }
@@ -33,6 +34,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; } 
     }
 
+    // Model representing an own bank account
     public class OwnBankModel : ICloneable
     {
         public object Clone()
@@ -46,16 +48,16 @@ namespace ArmsModels.BaseModels
             _userInfo = new SharedModels.UserInfoModel();
         }
         SharedModels.UserInfoModel _userInfo;
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the own bank account
         [Required]
-        public BankPostingGroupModel PostingGroup { get; set; }
+        public BankPostingGroupModel PostingGroup { get; set; } // Posting group associated with the bank account
         [Required]
         [ValidateComplexType]
-        public BankAccountModel BankAccountInfo { get; set; } = new BankAccountModel();
+        public BankAccountModel BankAccountInfo { get; set; } = new BankAccountModel(); // Information about the bank account
         [ValidateComplexType]
-        public AddressModel AddressInfo { get; set; } = new AddressModel();
+        public AddressModel AddressInfo { get; set; } = new AddressModel(); // Address information associated with the bank account
         [ValidateComplexType]
-        public ContactModel ContactInfo { get; set; } = new ContactModel();
+        public ContactModel ContactInfo { get; set; } = new ContactModel(); // Contact information associated with the bank account
         [Required]
         public int? BranchID { get; set; }
         public string BankCode { get; set; }
@@ -78,6 +80,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing a bank posting group
     public class BankPostingGroupModel : ICloneable
     {
         public object Clone()
@@ -89,21 +92,22 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the bank posting group
         [Required]
         public string Title { get; set; }
         [ValidateComplexType]
         [Required]
-        public ChartOfAccountModel BankAccount { get; set; }
+        public ChartOfAccountModel BankAccount { get; set; } // Chart of Accounts for the bank account
         [ValidateComplexType]
         [Required]
-        public ChartOfAccountModel BankCharges { get; set; }
+        public ChartOfAccountModel BankCharges { get; set; } // Chart of Accounts for bank charges
         [ValidateComplexType]
         [Required]
-        public ChartOfAccountModel ProcessingFee { get; set; }
+        public ChartOfAccountModel ProcessingFee { get; set; } // Chart of Accounts for processing fees
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Model representing an unreconciled bank entry
     public class UnReconciledBankEntryModel : ICloneable
     {
         public object Clone()
@@ -111,7 +115,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<UnReconciledBankEntryModel>(Json);
         }
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the unreconciled bank entry
         [Required]
         public int? Nature { get; set; } //SELECT  -1 as Payment,1 as Receipt
         [Required]
@@ -132,12 +136,13 @@ namespace ArmsModels.BaseModels
         public string PaymentRemarks { get; set; }
         public bool IsReconciled { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
-        public virtual ReconciledBankEntryModel ReconciledInfo { get; set; } = new();
+        public virtual ReconciledBankEntryModel ReconciledInfo { get; set; } = new(); // Information about the reconciled bank entry
     }
 
+    // Model representing a reconciled bank entry
     public class ReconciledBankEntryModel
     {
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the reconciled bank entry
         [Required]
         public DateTime? ReconciledDate { get; set; }
         [Required]
@@ -155,6 +160,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
+    // Model representing the update information for reconciliation
     public class ReconcileUpdateModel
     {
         [Required]
@@ -167,6 +173,7 @@ namespace ArmsModels.BaseModels
 
     }
 
+    // Model representing a summary of reconciled bank entries
     public class ReconciledBankSummaryModel
     {
         public string BankOrCompany { get; set; }

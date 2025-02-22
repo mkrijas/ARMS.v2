@@ -8,6 +8,7 @@ using System.Reflection;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a party (e.g., supplier, customer, renter)
     public class PartyModel : ICloneable
     {
         public object Clone()
@@ -20,7 +21,7 @@ namespace ArmsModels.BaseModels
         {
 
         }
-        public int? PartyID { get; set; } = 0;
+        public int? PartyID { get; set; } = 0; // Unique identifier for the party
         public string PartyCode { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
@@ -58,28 +59,29 @@ namespace ArmsModels.BaseModels
         public decimal? CreditLimit { get; set; }
         public string PaymentMode { get; set; } // Bank/Cash
         [RequiredIf("NatureOfBusiness", "Supplier")]
-        public VendorPostingGroupModel VendorPostingGroup { get; set; }
+        public VendorPostingGroupModel VendorPostingGroup { get; set; } // Vendor posting group
         [RequiredIf("NatureOfBusiness", "Customer")]
-        public CustomerPostingGroupModel CustomerPostingGroup { get; set; }
+        public CustomerPostingGroupModel CustomerPostingGroup { get; set; } // Customer posting group
         [RequiredIf("NatureOfBusiness", "Renter")]
-        public RenterPostingGroupModel RenterPostingGroup { get; set; }
+        public RenterPostingGroupModel RenterPostingGroup { get; set; } // Renter posting grou 
         [RequiredIf("NatureOfBusiness", "SisterConcern")]
-        public SisterPostingGroupModel SisterPostingGroup { get; set; }
+        public SisterPostingGroupModel SisterPostingGroup { get; set; } // Sister concern posting group
         [Required]
         public bool InterCompany { get; set; }
         public string IcPartnerCode { get; set; }
 
         [ValidateComplexType]
-        public AddressModel Address { get; set; } = new();
+        public AddressModel Address { get; set; } = new(); // Address associated with the party
         [ValidateComplexType]
         [RequiredIf("PaymentMode", "Bank")]
-        public BankAccountModel BankAccount { get; set; }
+        public BankAccountModel BankAccount { get; set; } // Bank account associated with the party
 
         [ValidateComplexType]
-        public List<ContactModel> Contacts { get; set; } = new();
-        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+        public List<ContactModel> Contacts { get; set; } = new(); // List of contacts associated with the party
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new(); // Information about the user associated with the party
     }
 
+    // Model representing a vendor posting group
     public class VendorPostingGroupModel : ICloneable
     {
         public object Clone()
@@ -87,22 +89,22 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<VendorPostingGroupModel>(Json);
         }
-        public int? VendorPostingGroupID { get; set; }
+        public int? VendorPostingGroupID { get; set; } // Unique identifier for the vendor posting group
         [Required]
         public string Title { get; set; }        
         [ValidateComplexType]
         [Required]
-        public ChartOfAccountModel Payable { get; set; }
+        public ChartOfAccountModel Payable { get; set; } // Payable account for the vendor
         [ValidateComplexType]
         [Required]
-        public ChartOfAccountModel PrePayment { get; set; }
+        public ChartOfAccountModel PrePayment { get; set; } // Prepayment account for the vendor
         [ValidateComplexType]
         [Required]
-        public ChartOfAccountModel Deposit { get; set; }
+        public ChartOfAccountModel Deposit { get; set; } // Deposit account for the vendor
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
-
+    // Model representing a sister posting group
     public class SisterPostingGroupModel : ICloneable
     {
         public object Clone()
@@ -110,21 +112,22 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<SisterPostingGroupModel>(Json);
         }
-        public int? SisterPostingGroupID { get; set; }
+        public int? SisterPostingGroupID { get; set; } // Unique identifier for the sister posting group
         [Required]
         public string Title { get; set; }
         [ValidateComplexType]
         [Required]
-        public ChartOfAccountModel Trade { get; set; }
+        public ChartOfAccountModel Trade { get; set; } // Trade account for the sister posting group
         [ValidateComplexType]
         [Required]
-        public ChartOfAccountModel PrePayment { get; set; }
+        public ChartOfAccountModel PrePayment { get; set; } // Prepayment account for the sister posting group
         [ValidateComplexType]
         [Required]
-        public ChartOfAccountModel Deposit { get; set; }
+        public ChartOfAccountModel Deposit { get; set; } // Deposit account for the sister posting group
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
+    // Model representing a customer posting group
     public class CustomerPostingGroupModel : ICloneable
     {
         public object Clone()
@@ -132,7 +135,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<CustomerPostingGroupModel>(Json);
         }
-        public int? CustomerPostingGroupID { get; set; }
+        public int? CustomerPostingGroupID { get; set; } // Unique identifier for the customer posting group
         [Required]
         public string Title { get; set; }
         [ValidateComplexType]
@@ -147,6 +150,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
+    // Model representing a renter posting group
     public class RenterPostingGroupModel : ICloneable
     {
         public object Clone()

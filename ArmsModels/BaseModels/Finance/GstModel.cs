@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a GST usage code
     public class GstUsageCodeModel : ICloneable
     {
         public object Clone()
@@ -15,7 +16,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? Id { get; set; }
+        public int? Id { get; set; } // Unique identifier for the GST usage code
         public virtual string UsageCode { get; set; }
         [Required]
         [StringLength(maximumLength: 50)]
@@ -38,6 +39,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Model representing a GST rate
     public class GstRateModel
     {
         public int? RID { get; set; }
@@ -45,6 +47,7 @@ namespace ArmsModels.BaseModels
         public string Description { get; set; }
     }
 
+    // Model representing a GST item
     public class GstItemModel : ICloneable
     {
         public object Clone()
@@ -62,7 +65,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? HsnID { get; set; }
+        public int? HsnID { get; set; } // Unique identifier for the HSN code
         [Required]
         public int? ItemID { get; set; }
         public string GstMechanism { get; set; } = "FCM"; // Operation,Maintenance,All
@@ -80,6 +83,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Model representing GST input and output accounts
     public class GstInOutModel
     {
         public int? GstTypeID { get; set; }
