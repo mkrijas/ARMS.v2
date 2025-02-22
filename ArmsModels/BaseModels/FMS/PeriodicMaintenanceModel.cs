@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing the initiation of periodic maintenance
     public class PeriodicMaintenanceInitiateModel
     {
         public object Clone()
@@ -19,7 +20,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
         }
-        public int? PMIID { get; set; }
+        public int? PMIID { get; set; } // Unique identifier for the periodic maintenance initiation
         [Required]
         public string Title { get; set; }
         public string Remarks { get; set; }
@@ -36,6 +37,7 @@ namespace ArmsModels.BaseModels
         public int? JobCardID { get; set; } = null;
     }
 
+    // Model representing the conclusion of periodic maintenance
     public class PeriodicMaintenanceConcludeModel
     {
         public PeriodicMaintenanceConcludeModel()
@@ -51,6 +53,6 @@ namespace ArmsModels.BaseModels
         [Required]
         public long? Audometer { get; set; }
         public UserInfoModel UserInfo { get; set; }
-        public virtual PeriodicMaintenanceInitiateModel Initiator { get; set; }
+        public virtual PeriodicMaintenanceInitiateModel Initiator { get; set; } // Associated periodic maintenance initiation
     }
 }

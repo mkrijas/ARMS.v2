@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing an insurance claim
     public class InsuranceClaimModel : ICloneable
     {
         public object Clone()
@@ -20,7 +21,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
             Images = new();
         }
-        public int? InsuranceClaimID { get; set; }
+        public int? InsuranceClaimID { get; set; } // Unique identifier for the insurance claim
         public int? InsuranceID { get; set; }
         public int? BreakdownID { get; set; }
         public bool IsOpen { get; set; }
@@ -38,20 +39,20 @@ namespace ArmsModels.BaseModels
         public string RemoveImage { get; set; }
         [Required]
         public string Notes { get; set; }
-        public virtual AssetModel Asset { get; set; }
-        public virtual List<InsuranceClaimEventStatusModel> Events { get; set; }
+        public virtual AssetModel Asset { get; set; } // Associated asset for the claim
+        public virtual List<InsuranceClaimEventStatusModel> Events { get; set; } // List of events related to the claim
         public UserInfoModel UserInfo { get; set; }
         public virtual string BranchName { get; set; }
     }
 
-
+    // Model representing the master data for insurance claim events
     public class InsuranceClaimEventMasterModel
     {
         public InsuranceClaimEventMasterModel()
         {
             UserInfo = new();
         }
-        public int? IcemID { get; set; }
+        public int? IcemID { get; set; } // Unique identifier for the event master
         public string Title { get; set; }
         public string Description { get; set; }
         public int? Order { get; set; }
@@ -59,13 +60,14 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; }
     }
 
+    // Model representing the status of an insurance claim event
     public class InsuranceClaimEventStatusModel
     {
         public InsuranceClaimEventStatusModel()
         {
             UserInfo = new();
         }
-        public int? IcesID { get; set; }
+        public int? IcesID { get; set; } // Unique identifier for the event status
         [Required]
         public int? IcemID { get; set; }
         public virtual string Title { get; set; }

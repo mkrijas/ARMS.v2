@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing the registration details of a truck
     public class TruckRegistrationModel : ICloneable
     {
         public object Clone()
@@ -14,7 +15,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<TruckRegistrationModel>(Json);
         }
-        public int? RegID { get; set; }
+        public int? RegID { get; set; } // Unique identifier for the registration
         [Required]
         [StringLength(maximumLength: 50)]
         public string RegNo { get; set; }

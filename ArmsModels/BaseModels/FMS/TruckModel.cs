@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a truck
     public class TruckModel : ICloneable
     {
         public object Clone()
@@ -23,7 +24,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
             CurrentEvent = new();
         }
-        public int? TruckID { get; set; }
+        public int? TruckID { get; set; } // Unique identifier for the truck
         public string RegNo { get; set; }
         public int? HomeBranchID { get; set; }
         public string HomeBranchName { get; set; }
@@ -61,10 +62,10 @@ namespace ArmsModels.BaseModels
         [Required]
         public DateTime? PurchaseDate { get; set; }
         public DateTime? SoldDate { get; set; }
-        public EventModel CurrentEvent { get; set; }
+        public EventModel CurrentEvent { get; set; } // Current event associated with the truck
         [Required]
         [ValidateComplexType]
-        public TruckRegistrationModel CurrentRegistration { get; set; }
+        public TruckRegistrationModel CurrentRegistration { get; set; } // Current registration details of the truck
         [Required]
         public int? AssetID { get; set; }
         SharedModels.UserInfoModel _userInfo;
@@ -82,6 +83,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing truck data arrays for configuratio
     public class TruckDataArrayModel
     {
         private readonly IConfiguration Configuration;
@@ -96,6 +98,7 @@ namespace ArmsModels.BaseModels
         public string[] BankTools { get { return Configuration.GetSection(Data).GetSection("BankTools").Get<string[]>(); } }
         public string[] NatureOfTransaction { get { return Configuration.GetSection(Data).GetSection("NatureOfTransaction").Get<string[]>(); } }
     }
+    // Model representing the status of a truck
 
     public class TruckStatusModel
     {
