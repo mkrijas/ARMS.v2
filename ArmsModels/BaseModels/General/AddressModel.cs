@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing an address
     public class AddressModel
     {
         public AddressModel()
