@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing information about a document
     public class DocumentInfoModel
     {
         public int? DocumentTypeID { get; set; }

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a branch
     public class BranchModel : ICloneable
     {
         public object Clone()
@@ -28,7 +29,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public string BranchAbbrev { get; set; }        
         private PlaceModel _place;
-        public int? BranchID { get; set; }
+        public int? BranchID { get; set; } // Unique identifier for the branch
         [Required]
         [StringLength(256, MinimumLength = 3)]
         public string BranchName
@@ -51,16 +52,16 @@ namespace ArmsModels.BaseModels
         }
         public bool Active { get; set; } = true;
         [ValidateComplexType]
-        public virtual AddressModel Address { get; set; }
+        public virtual AddressModel Address { get; set; } // Address associated with the branch
         public PlaceModel Place
         {
             get { return _place; }
             set { _place = value; Address.Place = value?.PlaceName; PlaceID = value?.PlaceID; }
         }
-        public StateModel State { get; set; }
-        public DistrictModel District { get; set; }
+        public StateModel State { get; set; }  // State associated with the branch
+        public DistrictModel District { get; set; }  // State associated with the branch
         public virtual SharedModels.UserInfoModel UserInfo { get; set; }
-        public List<ContactModel> Contacts { get; set; }
+        public List<ContactModel> Contacts { get; set; } // List of contacts associated with the branch
         public virtual string GstCertificate { get; set; }
     }
 }

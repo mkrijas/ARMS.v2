@@ -15,7 +15,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new UserInfoModel();
         }
 
-        public int? AddressID { get; set; }
+        public int? AddressID { get; set; } // Unique identifier for the address
         [Required]
         [StringLength(maximumLength: 200,MinimumLength =3)]
         public string AddresseeName { get; set; }
