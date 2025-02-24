@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a breakdown incident
     public class BreakdownModel : ICloneable
     {
         public object Clone()
@@ -19,7 +20,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
         }
-        public int? BreakdownID { get; set; }
+        public int? BreakdownID { get; set; } // Unique identifier for the breakdown
         public string BreakdownNumber { get; set; }
         public int? BranchID { get; set; }
         [Required]
@@ -34,8 +35,10 @@ namespace ArmsModels.BaseModels
         public string Detail { get; set; }
         [RegularExpression(@"^([0-9]{10})$", ErrorMessage = "ContactNumber must be 10 digits long")]
         public string ContactNumber { get; set; }
-        public List<EstimateListModel> EstimateList { get; set; } = new List<EstimateListModel>();
+        public List<EstimateListModel> EstimateList { get; set; } = new List<EstimateListModel>(); // List of estimates related to the breakdown
         public UserInfoModel UserInfo { get; set; }
+
+        // Property to get the status of the breakdown based on the record status
         public string Status
         {
             get
@@ -55,6 +58,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing an estimate related to a breakdown
     public class EstimateListModel : ICloneable
     {
         public object Clone()

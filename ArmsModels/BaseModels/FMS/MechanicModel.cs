@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a mechanic
     public class MechanicModel : ICloneable
     {
         public object Clone()
@@ -19,7 +20,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
         }
-        public int? MechanicID { get; set; }
+        public int? MechanicID { get; set; } // Unique identifier for the mechanic
         [Required]
         public string MechanicName { get; set; }
         [Required]

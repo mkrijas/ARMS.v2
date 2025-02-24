@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a repair job
     public class RepairJobModel : ICloneable
     {
         public object Clone()
@@ -16,25 +17,27 @@ namespace ArmsModels.BaseModels
             return JsonConvert.DeserializeObject<RepairJobModel>(Json);
         }
        
-        public int? RepairJobID { get; set; }
+        public int? RepairJobID { get; set; } // Unique identifier for the repair job
         [Required]
         public string Title { get; set; }
         public string JobCode { get; set; }
         [Required]
         public decimal? MechanicalHours { get; set; }
-        public RepairJobGroup JobGroup { get; set; }
-        public RepairJobGroup JobSubGroup { get; set; }
-        public UserInfoModel UserInfo { get; set; } = new();
+        public RepairJobGroup JobGroup { get; set; } // Group associated with the repair job
+        public RepairJobGroup JobSubGroup { get; set; } // Subgroup associated with the repair job
+        public UserInfoModel UserInfo { get; set; } = new(); // Information about the user associated with the repair job
     }
 
+    // Model representing a group of repair jobs
     public class RepairJobGroup
     {        
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the repair job group
         [Required]
         public string Title { get; set; }
         public int? ParentID { get; set; }
     }
 
+    // Model representing a job that is currently in progress
     public class JobInProgressModel
     {
         public JobInProgressModel()
@@ -42,7 +45,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
             Mechanics = new();
         }
-        public int? JipID { get; set; }
+        public int? JipID { get; set; } // Unique identifier for the job in progress
         public int? DriverFaultID { get; set; }
         public string RepairJobTitle { get; set; }
         public int? RepairJobID { get; set; }
@@ -54,7 +57,9 @@ namespace ArmsModels.BaseModels
         public decimal Odometer { get; set; }
         public int? TimeTaken {  get; set; }
         public string Mechanic { get; set; }
-        public decimal? TotalAmount { get; set; } 
+        public decimal? TotalAmount { get; set; }
+
+        // Property to get the status text based on JobStatus
         public string JobStatusText
         {
             get
@@ -69,6 +74,7 @@ namespace ArmsModels.BaseModels
             }
         }
 
+        // Property to get the color associated with the job status
         public string JobStatusTextColor
         {
             get
@@ -87,17 +93,18 @@ namespace ArmsModels.BaseModels
         public DateTime? WarrantyExpiryDate { get; set; }
         public string Remarks { get; set; }
         public UserInfoModel UserInfo { get; set; }
-        public List<MechanicJobModel> Mechanics { get; set; }
+        public List<MechanicJobModel> Mechanics { get; set; } // List of mechanics assigned to the job
     }
 
+    // Model representing a mechanic's job
     public class MechanicJobModel
     {
         public MechanicJobModel()
         {
             UserInfo = new();
         }
-        public int? MjID { get; set; }
-        public int? JipID { get; set; }
+        public int? MjID { get; set; } // Unique identifier for the mechanic job
+        public int? JipID { get; set; } // Identifier for the associated job in progress
         public int? MechanicID { get; set; }
         public virtual string MechanicName { get; set; }
         public DateTime? AssignedOn { get; set; }

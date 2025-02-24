@@ -4,13 +4,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.BaseModels.Finance
 {
+    // Model representing a request to open a financial day
     public class DayOpenRequestModel
     {
-        public int? ID { get; set; }
-        public BranchModel Branch { get; set; } = new();
+        public int? ID { get; set; } // Unique identifier for the day open request
+        public BranchModel Branch { get; set; } = new(); // Information about the branch associated with the request
         [Required]
-        public DocTypeModel DocType { get; set; }
-        [Required]
+        public DocTypeModel DocType { get; set; } // Document type associated with the request
+        [Required] 
         public DateTime? FromDate { get; set; }
         [Required]
         public DateTime? ToDate { get; set; }

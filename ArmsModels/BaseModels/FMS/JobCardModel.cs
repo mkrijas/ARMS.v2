@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a job card
     public class JobcardModel
     {
         public object Clone()
@@ -21,7 +22,7 @@ namespace ArmsModels.BaseModels
             Jobs = new();
             Workshops = new();
         }
-        public int? JobcardID { get; set; }
+        public int? JobcardID { get; set; } // Unique identifier for the job card
         public string JobcardNumber { get; set; }
         public DateTime? CreatedOn { get; set; }
         public int? TruckID { get; set; }
@@ -34,8 +35,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public string job { get; set; }       
         public string mechanic { get; set; }
-        public List<JobcardWorkshopModel> Workshops { get; set; }
-        public List<JobInProgressModel> Jobs { get; set; }
+        public List<JobcardWorkshopModel> Workshops { get; set; } // List of workshops associated with the job card
+        public List<JobInProgressModel> Jobs { get; set; } // List of jobs in progress associated with the job card
         public UserInfoModel UserInfo { get; set; }
 
         public int? PMIID { get; set; } = null;
@@ -59,6 +60,7 @@ namespace ArmsModels.BaseModels
     //    public UserInfoModel UserInfo { get; set; }// Status 1 for created ,2 for sent and pending, 3 for fullfilled
     //}
 
+    // Model representing a workshop associated with a job card
     public class JobcardWorkshopModel
     {
         public JobcardWorkshopModel()

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a workshop
     public class WorkshopModel : ICloneable
     {
         public object Clone()
@@ -19,7 +20,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
         }
-        public int? WorkshopID { get; set; }
+        public int? WorkshopID { get; set; } // Unique identifier for the workshop
         [Required]
         public string WorkshopName { get; set; }
         [Required]

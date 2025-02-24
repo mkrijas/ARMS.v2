@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing the type of a truck
     public class TruckTypeModel : ICloneable
     {
         public object Clone()
@@ -19,8 +20,8 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public short? TruckTypeID { get; set; }
-        [Required]
+        public short? TruckTypeID { get; set; } // Unique identifier for the truck type
+        [Required] 
         [StringLength(maximumLength: 50)]
         public string TruckType { get; set; }
         [Required]

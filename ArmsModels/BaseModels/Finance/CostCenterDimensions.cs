@@ -8,13 +8,14 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a category
     public class CategoryModel : ICloneable
     {
         public CategoryModel()
         {
 
         }
-        public int? CategoryID { get; set; }
+        public int? CategoryID { get; set; } // Unique identifier for the category
         public string CategoryName { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
         public object Clone()
@@ -24,15 +25,16 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing a cost center
     public class CostCenterModel : ICloneable
     {
         public CostCenterModel()
         {
 
         }
-        public int? CostCenterID { get; set; }
+        public int? CostCenterID { get; set; } // Unique identifier for the cost center
         public string CostCenter { get; set; }
-        public CategoryModel Category { get; set; } = new();
+        public CategoryModel Category { get; set; } = new(); // Associated category for the cost center
         public UserInfoModel UserInfo { get; set; } = new();
         public object Clone()
         {
@@ -41,11 +43,12 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing a dimension
     public class DimensionModel : ICloneable
     {
-        public int? DimensionID { get; set; }
+        public int? DimensionID { get; set; } // Unique identifier for the dimension
         public string Dimension { get; set; }
-        public CategoryModel Category { get; set; } = new();
+        public CategoryModel Category { get; set; } = new(); // Associated category for the dimension
         public UserInfoModel UserInfo { get; set; } = new();
         public object Clone()
         {

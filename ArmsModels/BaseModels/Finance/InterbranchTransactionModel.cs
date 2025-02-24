@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing the mapping of inter-branch transactions
     public class InterBranchMappingModel : ICloneable
     {
         public object Clone()
@@ -19,7 +20,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the inter-branch mapping
         [Required]
         public int? TransactionTypeID { get; set; }
         public virtual string TransactionTypeName { get; set; }
@@ -32,6 +33,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Model representing the transaction type for inter-branch transactions
     public class InterBranchTransactionTypeModel
     {
         public int? ID { get; set; }

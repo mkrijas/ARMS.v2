@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a director associated with a party
     public class PartyDirectorModel
     {
         public PartyDirectorModel()
@@ -13,7 +14,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
         }
 
-        public int? PartyDirectorID { get; set; }
+        public int? PartyDirectorID { get; set; } // Unique identifier for the party director
         [Required]
         public int? PartyID { get; set; }
         [Required]

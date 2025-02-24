@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a Chart of Accounts
     public class ChartOfAccountModel : ICloneable
     {
         public object Clone()
@@ -19,8 +20,8 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
         }
-        public int? CoaID { get; set; }
-        [Required]
+        public int? CoaID { get; set; } // Unique identifier for the Chart of Accounts
+        [Required] 
         public int? ParentID { get; set; }
         public string AccountCode { get; set; }
         [Required]
@@ -39,6 +40,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Model representing the availability of a Chart of Accounts in a branch
     public class CoaBranchAvailabilityModel
     {
         public CoaBranchAvailabilityModel()
@@ -66,7 +68,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
-    // For selecting ARD codes in  transaction pages
+    // Model for selecting ARD codes in transaction pages
     public class PaymentCodeModel
     {
         public int? ID { get; set; }
@@ -78,6 +80,7 @@ namespace ArmsModels.BaseModels
         public virtual string BankTools { get; set; }
     }
 
+    // Model representing a sub-ARD code
     public class SubArdCodeModel
     {
         public int? ID { get; set; }

@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing a TDS (Tax Deducted at Source) rate
     public class TdsRateModel : ICloneable
     {
         public object Clone()
@@ -20,12 +21,12 @@ namespace ArmsModels.BaseModels
             this.AssesseeType = new();
             this.TdsNP = new();
         }
-        public int? TdsRateID { get; set; }
+        public int? TdsRateID { get; set; } // Unique identifier for the TDS rate
         [ValidateComplexType]
-        public NatureOfPaymentModel TdsNP { get; set; }
+        public NatureOfPaymentModel TdsNP { get; set; } 
         [ValidateComplexType]
         [Required]
-        public AssesseeTypeModel AssesseeType { get; set; }
+        public AssesseeTypeModel AssesseeType { get; set; } // Assessee type associated with the TDS rate
         [Required]
         public DateTime? PeriodFrom { get; set; }
         [Required]
@@ -35,21 +36,24 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Model representing the nature of payment for TD
     public class NatureOfPaymentModel
     {
-        public int? TdsNPID { get; set; }
+        public int? TdsNPID { get; set; } // Model representing the nature of payment for TD
         [Required]
         public string NatureOfPayment { get; set; }
         public string SectionCode { get; set; }
     }
 
+    // Model representing the assessee type for TDS 
     public class AssesseeTypeModel
     {
         [Required]
-        public int? AssesseeTypeID { get; set; }
+        public int? AssesseeTypeID { get; set; } // Unique identifier for the assessee type
         public string AssesseeTypeName { get; set; }
     }
 
+    // Model representing TDS account mapping
     public class TdsAccountMappingModel : ICloneable
     {
         public object Clone()
@@ -61,7 +65,7 @@ namespace ArmsModels.BaseModels
         {
             this.UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? TdsAccountMappedID { get; set; }
+        public int? TdsAccountMappedID { get; set; } // Unique identifier for the TDS account mapping
         [Required]
         public int? CoaID { get; set; }
         public virtual string AccountName { get; set; }
@@ -71,6 +75,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Model representing TDS threshold limits
     public class TdsThresholdLimitModel : ICloneable
     {
         public object Clone()
@@ -82,7 +87,7 @@ namespace ArmsModels.BaseModels
         {
             this.UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? TdsTLID { get; set; }
+        public int? TdsTLID { get; set; } // Unique identifier for the TDS threshold limit
         [ValidateComplexType]
         [Required]
         public NatureOfPaymentModel NatureOfPayment { get; set; }
