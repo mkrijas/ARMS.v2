@@ -18,7 +18,7 @@ namespace Core.BaseModels.Inventory
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<StockTransferInitiationModel>(Json);
         }
-        public int? StockTransferID { get; set; // Unique identifier for the stock transfer
+        public int? StockTransferID { get; set; } // Unique identifier for the stock transfer
         public int? InvTranID { get; set; }
         [Required]
         public StoreModel Store { get; set; }
