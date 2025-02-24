@@ -1,15 +1,18 @@
 ﻿using ArmsModels.SharedModels;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents a tyre with various properties related to its identification and status
     public class TyreModel
     {
-        public int? TyreID { get; set; }
-        [Required]
+        public int? TyreID { get; set; } // Unique identifier for the tyre (nullable)
+        [Required] 
         public string TyreSerialNumber { get; set; }
         public int? BranchID { get; set; }
         public string Make { get; set; } // Hint: MRF , CEAT
@@ -31,6 +34,7 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; } = new();
         public bool IsChecked { get; set; } = false;
         public bool IsMounted { get; set; } = false;
+        // Property to get the status description based on TyreStatus
         public string Status
         {
             get
@@ -57,9 +61,10 @@ namespace ArmsModels.BaseModels
 
     }
 
+    // Represents the position of a tyre on a vehicle
     public class TyrePositionModel
     {
-        public int? PositionID { get; set; }
+        public int? PositionID { get; set; } // Unique identifier for the position (nullable)
         public string Side { get; set; } // LEFT , RIGHT
         public string Description { get; set; }
         public bool IsChecked { get; set; } = false;
@@ -69,6 +74,7 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
+    // Maps tyre types to their positions
     public class TyreTypeAndPositionMappingModel
     {
         public int? ID { get; set; }
@@ -77,9 +83,10 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
+    // Represents a mounted tyre with details about its installation
     public class TyreMountedModel
     {
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the mounted tyre (nullable)
         [Required]
         public int? TyreID { get; set; }
         public string TyreNo { get; set; }
@@ -105,17 +112,19 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
+    // Represents a tyre that has been unmounted
     public class TyreUnMountedModel
     {
         [Required]
         [ValidateComplexType]
-        public TyreModel Tyre { get; set; } = new();
+        public TyreModel Tyre { get; set; } = new(); // Tyre information (required)
         [Required]
         public int? UnmountedKM { get; set; }
-        public StoreModel Store { get; set; }
+        public StoreModel Store { get; set; } // Store information associated with the unmounting(optional)
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
+    // Represents a request for tyre resole
     public class TyreResoleModel : ICloneable
     {
         public object Clone()
@@ -123,8 +132,8 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<TyreResoleModel>(Json);
         }
-        public int? ID { get; set; }
-        public PartyModel Party { get; set; }
+        public int? ID { get; set; } // Unique identifier for the resole request (nullable)
+        public PartyModel Party { get; set; } // Information about the party requesting the resole (optional)
         [Required]
         public int? PartyID { get; set; }
         [Required]
@@ -139,13 +148,14 @@ namespace ArmsModels.BaseModels
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
+    // Represents a tyre in a resole delivery
     public class ResoleDeliveryTyreModel
     {
         public int? ID { get; set; }
         public int? DeliveryID { get; set; }
         public int? TyreID { get; set; }
         public bool TaxIncluded { get; set; }
-        public TyreModel Tyre { get; set; }
+        public TyreModel Tyre { get; set; } // Tyre information associated with the delivery (optional
         public int? Status { get; set; } 
         [RequiredIf("Status", " 1")]
         public decimal? Amount { get; set; }
@@ -155,6 +165,7 @@ namespace ArmsModels.BaseModels
         public decimal? TotalAmount { get; set; }
     }
 
+    // Represents a delivery associated with a tyre resole request
     public class ResoleDeliveryModel : ICloneable
     {
         public object Clone()
@@ -162,11 +173,11 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<ResoleDeliveryModel>(Json);
         }
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the delivery (nullable)
         public int? ResoleID { get; set; }
         public int? BranchID { get; set; }
-        public TyreResoleModel Resole { get; set; }
-        public PartyModel Party { get; set; }
+        public TyreResoleModel Resole { get; set; } // Resole information associated with the delivery (optional)
+        public PartyModel Party { get; set; } // Information about the party receiving the delivery (optional)
         public string InvoiceNo { get; set; }
         public DateTime? InvoiceDate { get; set; }
         public DateTime? RequestedDate { get; set; }
@@ -178,23 +189,25 @@ namespace ArmsModels.BaseModels
         public int? PID { get; set; } = 0;
         public List<int?> Tyres { get; set; }
         [Required]
-        public List<ResoleDeliveryTyreModel> ResoleDeliveryTyreList = new();
+        public List<ResoleDeliveryTyreModel> ResoleDeliveryTyreList = new(); // List of tyres in the delivery (required)
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
+    // Represents a tyre's kilometer reading
     public class TyreKmReadingModel
     {
-        public int? ID { get; set; }
-        public TyreModel Tyre { get; set; } = new();
+        public int? ID { get; set; } // Unique identifier for the km reading (nullable)
+        public TyreModel Tyre { get; set; } = new(); // Tyre information associated with the reading
         public string Title { get; set; }
         public int? KmReading { get; set; }
         public long? NotificationID { get; set; }
         public UserInfoModel UserInfo { get; set; } = new();
     }
 
+    // Represents a swap operation between two tyres
     public class TyreSwapModel
     {
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the swap operation (nullable)
         [Required]
         public int? TruckID { get; set; }
         [Required]

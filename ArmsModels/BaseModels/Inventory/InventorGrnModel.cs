@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Model representing an inventory Goods Receipt Note (GRN)
     public class InventoryGrnModel : InventoryOrderBaseModel, ICloneable
     {
         public object Clone()
@@ -24,7 +25,7 @@ namespace ArmsModels.BaseModels
         {
 
         }
-        public int? GrnID { get; set; }
+        public int? GrnID { get; set; } // Unique identifier for the GRN
         public string GrnNo { get; }
         public int? POID { get; set; }
         [RequiredIf("UsedInventory",1)]
@@ -34,9 +35,10 @@ namespace ArmsModels.BaseModels
         public int? NoOfGR { get; set; }
         [Required]
         [ValidateComplexType]
-        public StoreModel Store { get; set; }
+        public StoreModel Store { get; set; } // Store associated with the GRN
     }
 
+    // Model representing a purchase order
     public class PurchaseOrderModel : InventoryOrderBaseModel, ICloneable
     {
         public object Clone()
@@ -53,7 +55,7 @@ namespace ArmsModels.BaseModels
             GrnCreated = _grnCreated;
             PONo = _poNo;
         }
-        public int? POID { get; set; }
+        public int? POID { get; set; } // Unique identifier for the purchase order
         public string PONo { get; }
         public int? PRID { get; set; }
         public int? QuoteID { get; set; }
@@ -78,6 +80,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Model representing a purchase request
     public class PurchaseRequestModel : InventoryBaseModel
     {
         public PurchaseRequestModel() { }
@@ -85,6 +88,7 @@ namespace ArmsModels.BaseModels
         public string PrNo { get; set; }
     }
 
+    // Base model for inventory transactions
     public class InventoryBaseModel
     {
         public InventoryBaseModel() { }
@@ -101,9 +105,10 @@ namespace ArmsModels.BaseModels
         public string Remarks { get; set; }
         public UserInfoModel UserInfo { get; set; }
         [ValidateComplexType]
-        public List<InventoryItemEntryModel> Entries { get; set; } = new();
+        public List<InventoryItemEntryModel> Entries { get; set; } = new(); // List of inventory item entries
     }
 
+    // Base model for inventory orders
     public class InventoryOrderBaseModel : InventoryBaseModel
     {
         public InventoryOrderBaseModel()
@@ -117,9 +122,10 @@ namespace ArmsModels.BaseModels
         public int? UsedInventory { get; set; }
     }
 
+    // Model representing an entry for an inventory item
     public class InventoryItemEntryModel
     {
-        public long? ItemEntryID { get; set; }
+        public long? ItemEntryID { get; set; } // Unique identifier for the item entry
         public long? RefID { get; set; }
         [Required]
         public int? ItemID { get; set; }

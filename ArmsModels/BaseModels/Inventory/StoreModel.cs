@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents a store model with properties related to the store's information
     public class StoreModel : ICloneable
     {
         public StoreModel(string branchName)
@@ -23,7 +24,7 @@ namespace ArmsModels.BaseModels
 
         }
 
-        public int? StoreID { get; set; }
+        public int? StoreID { get; set; } // Unique identifier for the store (nullable)
         [Required]
         [StringLength(100)]
         public string StoreName { get; set; }
@@ -38,11 +39,10 @@ namespace ArmsModels.BaseModels
         }
     }
 
-
-
+    // Represents a batch of inventory items
     public class InventoryBatchModel
     {
-        public long? BatchID { get; set; }
+        public long? BatchID { get; set; } // Unique identifier for the batch (nullable)
         public int? StoreID { get; set; }
         public int? ItemID { get; set; }
         public decimal? ItemRate { get; set; }
@@ -50,6 +50,7 @@ namespace ArmsModels.BaseModels
         public decimal? InhandQty { get; set; }
     }
 
+    // Represents a batch that can be linked
     public class LinkableBatchModel
     {
         public long? BatchID { get; set; }

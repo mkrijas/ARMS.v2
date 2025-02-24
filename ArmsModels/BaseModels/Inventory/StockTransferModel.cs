@@ -2,20 +2,23 @@
 using ArmsModels.SharedModels;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection;
 
 namespace Core.BaseModels.Inventory
-{
+{ 
     public class StockTransferInitiationModel : TransactionBaseModel, ICloneable
-    {
+    { 
+        // Model representing the initiation of a stock transfer
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<StockTransferInitiationModel>(Json);
         }
-        public int? StockTransferID { get; set; }
+        public int? StockTransferID { get; set; // Unique identifier for the stock transfer
         public int? InvTranID { get; set; }
         [Required]
         public StoreModel Store { get; set; }
@@ -61,9 +64,10 @@ namespace Core.BaseModels.Inventory
         public StockTransferEndModel EndModel { get; set; }
     }
 
+    // Model representing the end of a stock transfer
     public class StockTransferEndModel : TransactionBaseModel, ICloneable
     {
-        public int? StockTransferEndID { get; set; }
+        public int? StockTransferEndID { get; set; } // Unique identifier for the stock transfer end
         [Required]
         public int? StockTransferID { get; set; }
         [Required]

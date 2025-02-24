@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 
 
 namespace ArmsModels.BaseModels
-{  
+// Model representing the flow of inventory transactions
+{
     public class InventoryflowModel : InventoryOrderBaseModel
     {
         public InventoryflowModel(string _invtranNo)
