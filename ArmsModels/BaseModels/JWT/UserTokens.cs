@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents the tokens associated with a user for authentication
     public class UserTokens
     {
         public string Token { get; set; }

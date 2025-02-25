@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents a consignee in the system
     public class ConsigneeModel : ICloneable
     {
         public object Clone()
@@ -20,7 +21,7 @@ namespace ArmsModels.BaseModels
             Address = new AddressModel();
         }
         string _name;
-        public int? ConsigneeID { get; set; }
+        public int? ConsigneeID { get; set; } // Unique identifier for the consignee (nullable)
         [Required]
         public string ConsigneeName { get { return _name; } set { _name = value; this.Address.AddresseeName = value; } }
         public virtual string ArdCode { get; set; }
@@ -33,13 +34,14 @@ namespace ArmsModels.BaseModels
         public int? AddressID { get; set; }
         public string OrderName { get; set; }
         [ValidateComplexType]
-        public AddressModel Address { get; set; }
+        public AddressModel Address { get; set; } // Address information for the consignee
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Represents a freight receivable associated with a stockist and consignee
     public class StockistFreightReceivableModel
     {
-        public ConsigneeModel Consignee { get; set; }
+        public ConsigneeModel Consignee { get; set; }  // Consignee information associated with the freight receivable
         public string EntryRef { get; set; }
         public decimal? Amount { get; set; }
         [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]

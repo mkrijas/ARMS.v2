@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents a content item in the system
     public class ContentModel : ICloneable
     {
         public object Clone()
@@ -18,7 +19,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public short? ContentID { get; set; }
+        public short? ContentID { get; set; } // Unique identifier for the content item (nullable)
         [Required]
         [StringLength(maximumLength: 100)]
         public string ContentName { get; set; }
