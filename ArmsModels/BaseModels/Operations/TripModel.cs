@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents a trip in the transportation system
     public class TripModel
     {
         public TripModel()
@@ -14,7 +15,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new();
         }
 
-        public long? TripID { get; set; }
+        public long? TripID { get; set; } // Unique identifier for the trip (nullable)
         [Required]
         public int? TruckID { get; set; }
         public int? DriverID { get; set; }
@@ -49,6 +50,7 @@ namespace ArmsModels.BaseModels
         public EventModel StartEvent { get; set; }
     }
 
+    // Represents summarized information about a trip
     public class TripInfoModel
     {
         public long? TripID { get; set; }
@@ -65,6 +67,7 @@ namespace ArmsModels.BaseModels
         public bool IsMileageOverride { get; set; }
     }
 
+    // Represents fuel-related information for a trip
     public class TripFuelModel
     {
         DateTime? docdate = DateTime.Today;
@@ -94,7 +97,7 @@ namespace ArmsModels.BaseModels
         public decimal? Quantity { get; set; }
         [Required]
         public bool IsPurchase { get; set; } = false;
-        public TaxPurchaseModel PurchaseModel { get; set; } = new();
+        public TaxPurchaseModel PurchaseModel { get; set; } = new(); // Purchase model associated with the fuel record
         public string UsageID { get; set; }
         public int? MID { get; set; }
         public int? CostCenter { get; set; }
@@ -105,9 +108,10 @@ namespace ArmsModels.BaseModels
         public string DocNumber { get; set; }
     }
 
+    // Represents an advance payment associated with a trip
     public class TripAdvanceModel
     {
-        public long? TripAdvanceID { get; set; }
+        public long? TripAdvanceID { get; set; } // Unique identifier for the trip advance record (nullable)
         [Required]
         public int? BranchID { get; set; }
         [Required]
@@ -133,9 +137,10 @@ namespace ArmsModels.BaseModels
         public int RecordStatus { get; set; }
     }
 
+    // Represents an event card associated with a trip
     public class EventCardModel
     {
-        public long? EventID { get; set; }
+        public long? EventID { get; set; } // Unique identifier for the event (nullable)
         public string EventName { get; set; }
         public string NextEventName { get; set; }
         public string PlaceName { get; set; }

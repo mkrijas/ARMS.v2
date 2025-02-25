@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents a place in the system
     public class PlaceModel : ICloneable
     {
         public object Clone()
@@ -19,7 +20,7 @@ namespace ArmsModels.BaseModels
             this.District = new DistrictModel();
             this.UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? PlaceID { get; set; }
+        public int? PlaceID { get; set; } // Unique identifier for the place (nullable)
         public int? GstCode { get; set; }
         [Required]
         [StringLength(maximumLength: 200)]
@@ -34,9 +35,10 @@ namespace ArmsModels.BaseModels
         public virtual DistrictModel District { get; set; }
     }
 
+    // Represents a state in the system
     public class StateModel
     {
-        public int? StateID { get; set; }
+        public int? StateID { get; set; } // Unique identifier for the state (nullable)
         [Required]
         [StringLength(maximumLength: 200)]
         public string StateName { get; set; }
@@ -44,6 +46,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Represents a district in the system
     public class DistrictModel
     {
         public object Clone()
@@ -51,7 +54,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<DistrictModel>(Json);
         }
-        public int? DistrictID { get; set; }
+        public int? DistrictID { get; set; } // Unique identifier for the district (nullable)
         [Required]
         [StringLength(maximumLength: 200)]
         public string DistrictName { get; set; }

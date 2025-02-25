@@ -147,7 +147,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<DriverTransferInitiationModel>(Json);
         }
-        public int? DriverTransferID { get; set; }
+        public int? DriverTransferID { get; set; } // Unique identifier for the driver transfer initiation (nullable)   
         public DriverModel Driver { get; set; }
         public BranchModel InitiatedBranch { get; set; }
         public BranchModel DestinationBranch { get; set; }
@@ -157,13 +157,15 @@ namespace ArmsModels.BaseModels
         public int IsdriverReject { get; set; } = 0;
     }
 
+    // Represents the end of a driver transfer
     public class DriverTransferEndModel
     {
-        public int? DriverTransferEndID { get; set; }
+        public int? DriverTransferEndID { get; set; } // Unique identifier for the driver transfer end record (nullable)
         public int? BranchID { get; set; }
         public bool? TransferStatus { get; set; }
         public DateTime? TransferEndDate { get; set; } = DateTime.Now;
         public string Remarks { get; set; }
+        // Property to get the status text based on TransferStatus
         public string StatusText
         {
             get
@@ -178,6 +180,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Represents a resignation request for a driver
     public class DriverResignModel
     {
         public DriverModel Driver { get; set; }
@@ -185,6 +188,7 @@ namespace ArmsModels.BaseModels
         public string Remarks { get; set; }
     }
 
+    // Represents the work period of a driver
     public class DriverWorkPeriodModel
     {
         public DriverModel Driver { get; set; }

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents a transportation route in the system
     public class RouteModel:ICloneable
     {
         public RouteModel()

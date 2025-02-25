@@ -3,6 +3,7 @@ using ArmsModels.SharedModels;
 
 namespace Core.BaseModels.Operations
 {
+    // Represents projected tonnage data for a project
     public class ProjectTonnageModel
     {
         public int? ID { get; set; }
