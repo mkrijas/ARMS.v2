@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents a role in the system
     public class RoleModel
     {
         public int? RoleNo { get; set; }
         [Required]
-        public string RoleID { get; set; }
+        public string RoleID { get; set; } // Required property for the unique identifier of the role
         [Required]
         public string RoleDesc { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; }
@@ -26,6 +27,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Represents the association of a user with a branch and a role
     public class UserBranchRoleModel
     {
         public UserBranchRoleModel()

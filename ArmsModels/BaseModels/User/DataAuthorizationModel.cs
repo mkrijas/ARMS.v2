@@ -8,9 +8,10 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents the authorization details for a specific document
     public class DataAuthorizationModel
     {
-        public long? ID { get; set; }
+        public long? ID { get; set; } // Unique identifier for the authorization record (nullable)
         [Required]
         public int? DocumentID { get; set; }
         [Required]
@@ -25,20 +26,22 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 
+    // Represents the type of document in the system
     public class DocTypeModel
     {
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the document type (nullable)
         public string Description { get; set; }
         public bool AuthImplemented { get; set; }
     }
 
+    // Represents the settings for data authorization
     public class DataAuthorizationSettingsModel : ICloneable
     {
         public DataAuthorizationSettingsModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? ID { get; set; }
+        public int? ID { get; set; } // Unique identifier for the authorization settings (nullable)
         [Required]
         public int? AuthLevelID { get; set; }
         [Required]
@@ -56,13 +59,15 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
-
+    // Represents the type of data authorization in the system
     public class DataAuthorizationTypeModel
     {
-        public int? AuthLevelID { get; set; }
+        public int? AuthLevelID { get; set; } // Unique identifier for the authorization level (nullable)
         public string Description { get; set; }
         public bool IsApproval { get; set; }
     }
+
+    // Represents the approval status of a data
     public class DataApprovedStatus
     {
         public int AuthLevelID { get; set; }
