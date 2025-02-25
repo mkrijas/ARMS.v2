@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
+    // Service class for managing asset settings
     public class AssetSettingsService : IAssetSettingsService
     {
         IDbService Iservice;
@@ -18,6 +19,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Retrieves a list of asset settings by subclass ID
         public IEnumerable<AssetSettingsModel> SelectByID(int? SubClassID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -33,6 +35,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves asset settings based on subclass ID
         public IEnumerable<AssetSettingsModel> GetSettings(int? SubClassID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -48,6 +51,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data from the database to an AssetSettingsModel
         private AssetSettingsModel GetModel(IDataRecord dr)
         {
             return new AssetSettingsModel
@@ -85,6 +89,7 @@ namespace ArmsServices.DataServices
         //    return model;
         //}
 
+        // Updates an existing asset setting and returns the number of affected rows
         public int Update(AssetSettingsModel obj, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

@@ -8,6 +8,7 @@ using System.Linq;
 
 namespace ArmsServices.DataServices
 {
+    // Service class for managing asset transfers
     public class AssetTransferService : IAssetTransferService
     {
         IDbService Iservice;
@@ -17,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Deletes an asset transfer initiation record and returns the number of affected rows
         public int DeleteInitiation(int? ID, int? BranchID, int? AssetID,int? TruckID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -30,7 +32,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Transfer.Delete]", parameters);
         }
 
-
+        // Retrieves a list of outgoing asset transfers for a specific branch
         public IEnumerable<AssetTransferInitiationModel> SelectOutgoingAssets(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +46,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a checklist of asset settings based on subclass ID
         public IEnumerable<AssetSettingsModel> GetCheckList(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -63,6 +66,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Removes a photo associated with an asset transfer and returns the number of affected rows
         public int RemovePhoto(AssetTransferInitiationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -74,6 +78,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Transfer.RemovePhoto]", parameters);
         }
 
+        // Updates an outgoing asset transfer and returns the updated model
         public AssetTransferInitiationModel UpdateOutgoing(AssetTransferInitiationModel model, int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -97,6 +102,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Retrieves a list of incoming asset transfers for a specific branch
         public IEnumerable<AssetTransferInitiationModel> SelectIncomingAssets(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -110,6 +116,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Updates the status of an asset transfer and returns the updated model
         public AssetTransferInitiationModel UpdateStatus(AssetTransferInitiationModel model, int? TruckID, List<int?> RecievedList)
         {
             DataTable dataTable = new DataTable();
@@ -147,6 +154,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Helper method to map data from the database to an AssetTransferInitiationModel
         private AssetTransferInitiationModel GetModel(IDataRecord dr)
         {
             return new AssetTransferInitiationModel()
