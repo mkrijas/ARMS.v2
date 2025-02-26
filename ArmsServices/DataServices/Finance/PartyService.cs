@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
 using System.Reflection;
+using System.Numerics;
 
 
 namespace ArmsServices.DataServices
@@ -43,7 +44,7 @@ namespace ArmsServices.DataServices
             _branch = branch;
         }
 
-
+        // Method to update a party's information
         public PartyModel Update(PartyModel model)
         {
             AddressModel addressModel = _addressService.Update(model.Address);
@@ -124,11 +125,13 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper class to hold integer values
         private class IntList
         {
             public int? IntField { get; set; }
         }
 
+        // Method to select a party by its ID
         public PartyModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -144,7 +147,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
+        // Method to delete a party by its ID
         public int Delete(int? PartyID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -155,7 +158,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Entity.Party.Delete]", parameters);
         }
 
-
+        // Method to select a party by its code
         public IEnumerable<PartyModel> Select(int? PartyID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -171,6 +174,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data record to PartyModel
         private PartyModel GetModel(IDataRecord reader)
         {
             return new PartyModel()
@@ -209,6 +213,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to select parties by code and nature of business
         public IEnumerable<PartyModel> SelectByCode(String PartyCode, string NatureOfBusiness)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -223,6 +228,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get contacts for a specific party
         public IEnumerable<ContactModel> GetContacts(int? PartyID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -237,6 +243,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get customers by party code
         public IEnumerable<PartyModel> GetCustomers(string Code)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -252,6 +259,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get vendors by party code
         public IEnumerable<PartyModel> GetVendors(string Code)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -267,6 +275,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get renters by party code
         public IEnumerable<PartyModel> GetRenters(string Code)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -282,6 +291,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to add a contact to a party
         public int AddContact(int? PartyID, ContactModel contact, string UserId)
         {
             contact.UserInfo.UserID = UserId;
@@ -295,66 +305,79 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Entity.Party.Contacts.Update]", parameters);
         }
 
+        // Method to get the vendor payable COA ID for a specific party
         public int? GetVendorPayableCoaID(int? VendorID)
         {
             return _vendor.GetPostingGroup(VendorID).Payable.CoaID;
         }
 
+        // Method to get the vendor deposit COA ID for a specific party
         public int? GetVendorDepositCoaID(int? VendorID)
         {
             return _vendor.GetPostingGroup(VendorID).Deposit.CoaID;
         }
 
+        // Method to get the vendor prepayment COA ID for a specific party
         public int? GetVendorPrepaymentCoaID(int? VendorID)
         {
             return _vendor.GetPostingGroup(VendorID).PrePayment.CoaID;
         }
 
+        // Method to get the sister trade COA ID for a specific party
         public int? GetSisterTradeCoaID(int? ID)
         {
             return _sister.GetPostingGroup(ID).Trade.CoaID;
         }
 
+        // Method to get the sister deposit COA ID for a specific party
         public int? GetSisterDepositCoaID(int? ID)
         {
             return _sister.GetPostingGroup(ID).Deposit.CoaID;
         }
 
+        // Method to get the sister prepayment COA ID for a specific party
         public int? GetSisterPrepaymentCoaID(int? ID)
         {           
             return _sister.GetPostingGroup(ID).PrePayment.CoaID;
         }
 
+        // Method to get the customer receivable COA ID for a specific party
         public int? GetCustomerReceivableCoaID(int? CustomerID)
         {
             return _customer.GetPostingGroup(CustomerID)?.Receivable?.CoaID ?? null;
         }
 
+        // Method to get the customer deposit COA ID for a specific party 
         public int? GetCustomerDepositCoaID(int? CustomerID)
         {
             return _customer.GetPostingGroup(CustomerID).Deposit.CoaID;
         }
 
+        // Method to get the customer prepayment COA ID for a specific party
         public int? GetCustomerPrepaymentCoaID(int? CustomerID)
         {
             return _customer.GetPostingGroup(CustomerID).PrePayment.CoaID;
         }
 
+        // Method to get the renter rent COA ID for a specific party
         public int? GetRenterRentCoaID(int? RenterID)
         {
             return _renter.GetPostingGroup(RenterID).Rent.CoaID;
         }
 
+        // Method to get the renter deposit COA ID for a specific party
         public int? GetRenterDepositCoaID(int? RenterID)
         {
             return _renter.GetPostingGroup(RenterID).Deposit.CoaID;
         }
 
+        // Method to get the renter other COA ID for a specific party
         public int? GetRenterOtherCoaID(int? RenterID)
         {
             return _renter.GetPostingGroup(RenterID).Other.CoaID;
         }
 
+        // Method to check if a party is local based on its GST information
         public bool IsLocal(int? PartyID, int? BranchID)
         {
             var branchModel = _branch.SelectByID(BranchID);
@@ -375,6 +398,7 @@ namespace ArmsServices.DataServices
 
         }
 
+        // Method to get the default COA ID for a party based on its nature of business
         public int? GetPartyDefaultCoaID(int? PartyID)
         {
             var BusinessNature = SelectByID(PartyID).NatureOfBusiness;
@@ -392,6 +416,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to get the COA ID for a party based on its nature of business and transaction typec
         public int? GetPartyCoaID(int? PartyID, string BusinessNature, string NatureOfTransaction)
         {
             if (BusinessNature == "Supplier")
@@ -449,6 +474,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to select parties by branch ID
         public IEnumerable<PartyModel> SelectByBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -462,6 +488,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get allocated branches for a specific party
         public IEnumerable<int> GetAllocatedBranches(int PartyID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -475,6 +502,7 @@ namespace ArmsServices.DataServices
             }            
         }
 
+        // Method to allocate a branch to a party
         int AllocateBranch(int? PartyID,int? BranchID, string UserID,string Operation)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -487,16 +515,19 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Entity.Party.LinkTableToBranch.Update]", parameters);           
         }
 
+        // Method to add a branch to a party
         public int AddToBranch(int? PartyID, int? BranchID, string UserID)
         {
             return AllocateBranch(PartyID, BranchID, UserID, "ADD");
         }
 
+        // Method to remove a branch from a party
         public int RemoveFromBranch(int? PartyID, int? BranchID, string UserID)
         {
             return AllocateBranch(PartyID, BranchID, UserID, "REMOVE");
         }
 
+        // Method to get posting group names
         public IEnumerable<string> GetPostingGroupNames()
         {
             foreach (IDataRecord reader in Iservice.GetDataReader("[usp.Entity.Party.PostingGroups.Select]", null))
@@ -505,6 +536,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get sub-ard codes
         public IEnumerable<SubArdCodeModel> getSubArdCodes()
         {
             foreach (IDataRecord rd in Iservice.GetDataReader("[usp.Finance.PostingGroup.SubArdCodes.Select]", null))

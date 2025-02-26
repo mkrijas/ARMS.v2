@@ -18,6 +18,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to update an opening balance
         public OpeningBalanceModel Update(OpeningBalanceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -34,6 +36,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select all opening balances
         public IEnumerable<OpeningBalanceModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -47,6 +50,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get opening balances for a specific period and branch
         public IEnumerable<OpeningBalanceModel> GetBalance(int? PeriodID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -63,6 +67,7 @@ namespace ArmsServices.DataServices
 
         }
 
+        // Helper method to map data record to OpeningBalanceModel
         private OpeningBalanceModel GetModel(IDataRecord dr)
         {
             return new OpeningBalanceModel()
@@ -84,6 +89,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to get all periods
         public IEnumerable<PeriodModel> GetPeriods()
         {            
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Period.Select]", null))
@@ -92,6 +98,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data record to PeriodModel
         private PeriodModel GetPeriodModel(IDataRecord dr)
         {
             return new PeriodModel()
