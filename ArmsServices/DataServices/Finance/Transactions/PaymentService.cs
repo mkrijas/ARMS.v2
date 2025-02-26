@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to approve a payment memo
         public int Approve(int? PID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,7 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Approve]", parameters);
         }
 
-
+        // Method to delete a payment memo
         public int Delete(int? PaymentMemoID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -40,6 +41,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Delete]", parameters);
         }
 
+        // Method to remove a file associated with a payment memo
         public int RemoveFile(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -51,6 +53,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Delete]", parameters);
         }
 
+        // Method to get bills associated with a payment memo
         public IEnumerable<BillsPaidModel> GetBills(int? PID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -76,6 +79,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to reverse a payment memo
         public int Reverse(int? PID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -87,6 +91,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Approve]", parameters);
         }
 
+        // Method to select payment memos by branch ID
         public IEnumerable<PaymentMemoModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -101,6 +106,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved payment memos
         public IEnumerable<PaymentMemoModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -119,6 +125,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved payment memos
         public IEnumerable<PaymentMemoModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -188,6 +195,7 @@ namespace ArmsServices.DataServices
         //    }
         //}
 
+        // Method to select payment memos initiated by a specific ID
         public IEnumerable<PaymentMemoModel> SelectInitiated(int? PaymentInitiatedID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -202,6 +210,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a payment memo by its ID
         public PaymentMemoModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -217,6 +226,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select payment memos by party ID
         public IEnumerable<PaymentMemoModel> SelectByParty(int? PartyID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -232,6 +242,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select payment memos by date period
         public IEnumerable<PaymentMemoModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -248,6 +259,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a payment memo
         public PaymentMemoModel Update(PaymentMemoModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -279,6 +291,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to convert IDataRecord to PaymentMemoModel
         private PaymentMemoModel GetModel(IDataRecord dr)
         {
             return new PaymentMemoModel
@@ -319,6 +332,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to select pending payment memos 
         public IEnumerable<PaymentMemoModel> SelectPending(int? BranchID,int? PartyID = null)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

@@ -20,6 +20,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to approve a tax purchase entry
         public int Approve(int? PID, string UserID, string Remark)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -31,6 +32,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Approve]", parameters);
         }
 
+        // Method to approve a tax purchase entry
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,6 +44,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Delete]", parameters);
         }
 
+        // Method to remove a file associated with a tax purchase entry
         public int RemoveFile(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -53,6 +56,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxPurchase.Delete]", parameters);
         }
 
+        // Method to get expenses associated with a specific tax purchase
         public IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? PID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -88,6 +92,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get items associated with a specific tax purchase
         public IEnumerable<TaxPurchaseItemModel> GetItems(int? PID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -123,6 +128,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to reverse a tax purchase entry
         public int Reverse(int? PID, string UserID, String Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -139,6 +145,7 @@ namespace ArmsServices.DataServices
         //    throw new NotImplementedException();
         //}
 
+        // Method to select all tax purchase entries
         public IEnumerable<TaxPurchaseModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -152,6 +159,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved tax purchase entries
         public IEnumerable<TaxPurchaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type, string TaxPurchaseType)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -170,6 +178,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved tax purchase entries
         public IEnumerable<TaxPurchaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type, string TaxPurchaseType)
 
         {
@@ -189,6 +198,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a tax purchase entry by its ID
         public TaxPurchaseModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -204,6 +214,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select tax purchases by party
         public IEnumerable<TaxPurchaseModel> SelectByParty(int? PartyID, int? PartyBranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -219,6 +230,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select tax purchases by period
         public IEnumerable<TaxPurchaseModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -234,6 +246,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a tax purchase entry
         public TaxPurchaseModel Update(TaxPurchaseModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -267,6 +280,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to TaxPurchaseModel
         private TaxPurchaseModel GetModel(IDataRecord dr)
         {
             return new TaxPurchaseModel
@@ -304,6 +318,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to check for invoice duplication
         public TaxPurchaseModel CheckInvoiceDuplication(TaxPurchaseModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -357,6 +372,8 @@ namespace ArmsServices.DataServices
         //    }
         //    return model;
         //}
+
+        // Method to get assets associated with a specific tax purchase
         public IEnumerable<AssetPOModel> GetAssets(int? PID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

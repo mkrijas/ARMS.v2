@@ -17,6 +17,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to approve a TDS entry
         public int Approve(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +30,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TdsReceivable.Approve]", parameters);
         }
 
+        // Method to delete a TDS entryc
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -39,6 +42,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TdsReceivable.Delete]", parameters);
         }
 
+        // Method to get entries associated with a specific TDS transaction
         public IEnumerable<TdsTransactionEntryModel> GetEntries(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -63,6 +67,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to remove a file associated with a TDS entry
         public int RemoveFile(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -79,6 +84,7 @@ namespace ArmsServices.DataServices
             throw new NotImplementedException();
         }
 
+        // Method to select all TDS transactions
         public IEnumerable<TdsTransactionModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -96,6 +102,7 @@ namespace ArmsServices.DataServices
             throw new NotImplementedException();
         }
 
+        // Method to select approved TDS transactions
         public IEnumerable<TdsTransactionModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -112,6 +119,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a TDS transaction by its ID
         public TdsTransactionModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -126,6 +134,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to select TDS transactions by party
         public IEnumerable<TdsTransactionModel> SelectByParty(int? PartyID, int? PartyBranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -141,6 +150,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select TDS transactions by period
         public IEnumerable<TdsTransactionModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -155,6 +165,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved TDS transactions
         public IEnumerable<TdsTransactionModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -171,6 +182,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a TDS transaction
         public TdsTransactionModel Update(TdsTransactionModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -196,6 +208,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to TdsTransactionModel
         private TdsTransactionModel GetModel(IDataRecord dr)
         {
             return new TdsTransactionModel

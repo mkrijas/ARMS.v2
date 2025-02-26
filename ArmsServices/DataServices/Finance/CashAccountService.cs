@@ -17,6 +17,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to update a cash account
         public CashAccountModel Update(CashAccountModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -38,6 +40,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to delete a cash account
         public int Delete(int? CashAccountID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -47,6 +51,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.CashAccount.Delete]", parameters);
         }
+
+        // Method to disable a cash account
         public int DisableAccount(bool? IsDisable ,int? CashAccountID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -57,6 +63,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.CashAccount.Disable]", parameters);
         }
+
+        // Method to select all cash accounts
         public IEnumerable<CashAccountModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -70,7 +78,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-
+        // Helper method to map data record to CashAccountModel
         private CashAccountModel GetModel(IDataRecord dr)
         {
             return new CashAccountModel()
@@ -93,6 +101,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to select cash accounts by branch ID
         public IEnumerable<CashAccountModel> SelectByBranch(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -108,6 +117,8 @@ namespace ArmsServices.DataServices
             }
 
         }
+
+        // Method to select all cash accounts by branch ID
         public IEnumerable<CashAccountModel> SelectByBranchALL(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -122,6 +133,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a cash account by its ID
         public CashAccountModel SelectByID(int ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -137,6 +149,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get the balance of a cash account
         public decimal? GetBalance(int? CashAccountID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

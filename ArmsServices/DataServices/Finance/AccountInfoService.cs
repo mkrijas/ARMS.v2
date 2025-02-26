@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to select account information by ID
         public AccountInfoViewModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -33,6 +34,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get entries associated with a specific account information IDc
         public IEnumerable<AccountInfoViewSubModel> Entries(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -55,6 +57,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data record to AccountInfoViewModel
         private AccountInfoViewModel GetModel(IDataRecord dr,int? MID)
         {
             return new AccountInfoViewModel()
@@ -66,6 +69,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to get TDS MID associated with a specific MID
         public int? GetTdsMID(int? MID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

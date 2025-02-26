@@ -15,6 +15,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to approve a receipt
         public int Approve(int? PID, string UserID, string remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -26,6 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Receipt.Approve]", parameters);
         }
 
+        // Method to delete a receipt
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -36,6 +39,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Receipt.Delete]", parameters);
         }
 
+        // Method to get bills associated with a receipt
         public IEnumerable<BillsReceiptModel> GetBills(int? ReceiptID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -61,6 +65,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select receipts by branch IDc
         public IEnumerable<ReceiptModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -75,6 +80,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved receipts
         public IEnumerable<ReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -93,6 +99,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved receipts
         public IEnumerable<ReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -109,8 +116,9 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
-        }       
+        }
 
+        // Method to select a receipt by its ID
         public ReceiptModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -126,6 +134,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select receipts by party ID
         public IEnumerable<ReceiptModel> SelectByParty(int? PartyID, int? PartyBranchID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -142,6 +151,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select receipts by party ID
         public IEnumerable<ReceiptModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -158,6 +168,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a receipt
         public ReceiptModel Update(ReceiptModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -198,6 +209,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Helper method to convert IDataRecord to ReceiptModel
         private ReceiptModel GetModel(IDataRecord dr)
         {
             return new ReceiptModel
@@ -241,6 +254,8 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+        // Method to reverse a receipt
         public int Reverse(int? PID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

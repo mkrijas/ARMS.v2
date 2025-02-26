@@ -16,6 +16,8 @@ namespace DAL.DataServices.Finance
         {
             Iservice = iservice;
         }
+
+        // Method to update cancellation reason codes by document type
         public CancellationReasonCodesByDocumentType Update(CancellationReasonCodesByDocumentType model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -31,6 +33,7 @@ namespace DAL.DataServices.Finance
             return model;
         }
 
+        // Method to delete a cancellation reason code
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -40,6 +43,8 @@ namespace DAL.DataServices.Finance
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Masters.CancelationReasonCodes.Delete]", parameters);
         }
+
+        // Method to select all cancellation reason codes
         public IEnumerable<CancellationReasonCodesByDocumentType> Select()
         {
 
@@ -64,6 +69,8 @@ namespace DAL.DataServices.Finance
                 };
             }
         }
+
+        // Method to select cancellation reason codes by document type ID
         public IEnumerable<CancellationReasonCode> SelectSubById(int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -82,6 +89,8 @@ namespace DAL.DataServices.Finance
                 };
             }
         }
+
+        // Method to update a reverse entry for cancellation reason codes
         public CancellationReasonCodesByDocumentType UpdateReverseEntry(CancellationReasonCodesByDocumentType model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -101,6 +110,8 @@ namespace DAL.DataServices.Finance
             }
             return model;
         }
+
+        // Method to check if a cancellation reason code has already been reversed
         public bool? IsAlreadyReversed(int? DocumentID, int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -116,6 +127,7 @@ namespace DAL.DataServices.Finance
             return Result;
         }
 
+        // Helper method to map data record to CancellationReasonCodesByDocumentType
         private CancellationReasonCodesByDocumentType GetModel(IDataRecord dr)
         {
             return new CancellationReasonCodesByDocumentType

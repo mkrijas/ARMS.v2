@@ -22,6 +22,7 @@ namespace DAL.DataServices.Finance
             Iservice = iservice;
         }
 
+        // Method to approve a reimbursement
         public int Approve(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -33,6 +34,7 @@ namespace DAL.DataServices.Finance
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Reimbursement.Approve]", parameters);
         }
 
+        // Method to delete a reimbursement
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -48,6 +50,7 @@ namespace DAL.DataServices.Finance
             throw new NotImplementedException();
         }
 
+        // Method to select reimbursements by branch ID
         public IEnumerable<InterBranchReimbursementModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -62,6 +65,7 @@ namespace DAL.DataServices.Finance
             }
         }
 
+        // Method to select approved reimbursements
         public IEnumerable<InterBranchReimbursementModel> SelectByApproved(int? BranchID, int? NumberOfRecords , bool InterBranch , string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -78,6 +82,7 @@ namespace DAL.DataServices.Finance
             }
         }
 
+        // Method to select a reimbursement by its ID
         public InterBranchReimbursementModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -93,6 +98,7 @@ namespace DAL.DataServices.Finance
             return model;
         }
 
+        // Method to select unapproved reimbursements
         public IEnumerable<InterBranchReimbursementModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBarnch ,string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -109,6 +115,7 @@ namespace DAL.DataServices.Finance
             }
         }
 
+        // Method to update a reimbursement
         public InterBranchReimbursementModel Update(InterBranchReimbursementModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -135,7 +142,7 @@ namespace DAL.DataServices.Finance
             return model;
         }
 
-
+        // Helper method to convert IDataRecord to InterBranchReimbursementModel
         private InterBranchReimbursementModel GetModel(IDataRecord dr)
         {
             InterBranchReimbursementModel model = new InterBranchReimbursementModel();
@@ -164,6 +171,7 @@ namespace DAL.DataServices.Finance
             };
         }
 
+        // Method to select particulars of a reimbursement
         public IEnumerable<ReimbursementSubModel> SelectParticulars (int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -177,6 +185,7 @@ namespace DAL.DataServices.Finance
             }
         }
 
+        // Helper method to convert IDataRecord to ReimbursementSubModel
         private ReimbursementSubModel GetSubModel(IDataRecord dr)
         {
             return new ReimbursementSubModel()

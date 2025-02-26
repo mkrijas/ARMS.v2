@@ -19,6 +19,7 @@ namespace DAL.DataServices.Finance.Transactions
             Iservice = iservice;
         }
 
+        // Method to approve a sundry payment asset entry
         public IEnumerable<SundryPaymentAssetModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -34,6 +35,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to unapprove a sundry payment asset entry
         public IEnumerable<SundryPaymentAssetModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -50,6 +52,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to update a sundry payment asset entry
         public SundryPaymentAssetModel Update(SundryPaymentAssetModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -83,6 +86,7 @@ namespace DAL.DataServices.Finance.Transactions
             return model;
         }
 
+        // Method to approve a sundry payment asset entry
         public int Approve(int? SundryPaymentAssetID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -94,6 +98,7 @@ namespace DAL.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPaymentAsset.Approve]", parameters);
         }
 
+        // Method to delete a sundry payment asset entry
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -104,6 +109,7 @@ namespace DAL.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPaymentAsset.Delete]", parameters);
         }
 
+        // Helper method to map data record to SundryPaymentAssetModel
         private SundryPaymentAssetModel GetModel(IDataRecord dr)
         {
             return new SundryPaymentAssetModel

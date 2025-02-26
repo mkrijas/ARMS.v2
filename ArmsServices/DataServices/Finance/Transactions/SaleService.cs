@@ -19,6 +19,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to approve a sale
         public int Approve(int? SID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -30,6 +31,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Approve]", parameters);
         }
 
+        // Method to delete a sale
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -41,6 +43,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Delete]", parameters);
         }
 
+        // Method to get particulars of a sale
         public IEnumerable<TaxPurchaseExpenseModel> GetParticulars(int? SID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -75,6 +78,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get items associated with a sale
         public IEnumerable<TaxPurchaseItemModel> GetItems(int? PID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -108,6 +112,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get assets associated with a sale
         public IEnumerable<AssetSaleModel> GetAssets(int? PID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -140,6 +145,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to reverse a sale
         public int Reverse(int? PID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -151,6 +157,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Sales.Reverse]", parameters);
         }
 
+        // Method to select all sales
         public IEnumerable<SaleModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -164,6 +171,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved sales
         public IEnumerable<SaleModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -181,6 +189,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved sales
         public IEnumerable<SaleModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm, string Type)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -198,6 +207,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a sale by its ID
         public SaleModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -213,6 +223,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select sales by party ID
         public IEnumerable<SaleModel> SelectByParty(int? PartyID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -227,6 +238,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select sales by date period
         public IEnumerable<SaleModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -242,6 +254,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a sale
         public SaleModel Update(SaleModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -271,6 +284,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to convert IDataRecord to SaleModel
         private SaleModel GetModel(IDataRecord dr)
         {
             return new SaleModel

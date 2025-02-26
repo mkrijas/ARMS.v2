@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a sundry payment entry
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -29,6 +30,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPayment.Delete]", parameters);
         }
 
+        // Method to remove a file associated with a sundry payment entry
         public int RemoveFile(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -40,6 +42,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPayment.Delete]", parameters);
         }
 
+        // Method to select all sundry payment entries
         public IEnumerable<SundryPaymentModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -52,6 +55,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved sundry payment entries
         public IEnumerable<SundryPaymentModel> SelectByApproved(int? BranchID, int? NumberOfRecords,bool IsInterBranch ,string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -68,6 +72,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved sundry payment entries   
         public IEnumerable<SundryPaymentModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -85,6 +90,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get entries associated with a specific sundry payment
         public IEnumerable<SundryPaymentEntryModel> GetEntries(int? SID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -113,6 +119,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a sundry payment entry by its ID
         public SundryPaymentModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -128,6 +135,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to approve a sundry payment entry
         public int Approve(int? SundryPaymentID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -139,6 +147,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPayment.Approve]", parameters);
         }
 
+        // Method to reverse a sundry payment entry
         public int Reverse(int? SundryPaymentID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -150,6 +159,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryPayment.Reverse]", parameters);
         }
 
+        // Method to update a sundry payment entry
         public SundryPaymentModel Update(SundryPaymentModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -186,6 +196,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to SundryPaymentModel
         private SundryPaymentModel GetModel(IDataRecord dr)
         {
             return new SundryPaymentModel

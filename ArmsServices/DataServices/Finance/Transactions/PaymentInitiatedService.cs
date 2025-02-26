@@ -15,6 +15,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to update an initiated payment entry
         public int? Update(PaymentInitiatedModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -36,6 +38,7 @@ namespace ArmsServices.DataServices
             return model.PaymentInitiatedID;
         }
 
+        // Method to retrieve pending payment entries for completion
         public IEnumerable<PaymentInitiatedModel> PendingForCompletion(int? BranchID, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -51,6 +54,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Method to select initiated payments by branch ID
         public IEnumerable<PaymentInitiatedModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -65,6 +70,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select initiated payments between specified dates
         public IEnumerable<PaymentInitiatedModel> SelectInitiatedBetween(int? BranchID, DateTime Begin, DateTime End)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -81,6 +87,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to convert IDataRecord to PaymentInitiatedModel
         PaymentInitiatedModel GetModel(IDataRecord dr)
         {
             return new PaymentInitiatedModel()
@@ -104,6 +111,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to reverse an initiated payment entry
         public int? Reverse(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -115,6 +123,7 @@ namespace ArmsServices.DataServices
 
         }
 
+        // Method to approve an initiated payment entry
         public int? Approve(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -127,6 +136,7 @@ namespace ArmsServices.DataServices
             
         }
 
+        // Method to get payment memo print details
         public IEnumerable<PaymentMemoPrintDetailModel> GetPaymentMemoPrintDetails(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -151,6 +161,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to delete a payment memo entry
         public int? Delete(int? PaymentMemoID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
