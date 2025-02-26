@@ -1,4 +1,4 @@
-﻿@page "/ROILoadingAndUnloading"
+﻿@page "/ROILoadingCharges"
 @using System.Threading;
 @using Core.BaseModels.Operations.ROI
 @using Core.IDataServices.Operations.ROI
@@ -6,29 +6,29 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inject NavigationManager NavigationManager;
-@inject IROILoadingAndUnloadingService IService
+@inject IROILoadingChargesService IService
 @inject IDialogService DialogService
 @inject MudBlazor.ISnackbar snackbar
 @inject IJSRuntime JSRuntime
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
-        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="1" Filter="new Func<ROILoadingAndUnloadingModel, bool>(search)">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="1" Filter="new Func<ROILoadingChargesModel, bool>(search)">
             <ToolBarContent>
-                <MudText Typo="Typo.h6">ROI Loading And Unloading</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(new ROILoadingAndUnloadingModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudText Typo="Typo.h6">ROI Loading Charges</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(new ROILoadingChargesModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 <MudSpacer></MudSpacer>
                 <MudTextField @bind-Value="SearchItem" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingAndUnloadingModel, object>(x=> x.Wheels)" InitialDirection="SortDirection.Ascending">Wheels</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingAndUnloadingModel, object>(x=> x.BodyType)" InitialDirection="SortDirection.Ascending">Body Type</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingAndUnloadingModel, object>(x=> x.Order.OrderName)" InitialDirection="SortDirection.Ascending">Order Name</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingAndUnloadingModel, object>(x=> x.LoadingMTFrom)" InitialDirection="SortDirection.Ascending">MT</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingAndUnloadingModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingAndUnloadingModel, object>(x=> x.FromDate)" InitialDirection="SortDirection.Ascending">From</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingAndUnloadingModel, object>(x=> x.ToDate)" InitialDirection="SortDirection.Ascending">To</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingAndUnloadingModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Action</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingChargesModel, object>(x=> x.Wheels)" InitialDirection="SortDirection.Ascending">Wheels</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingChargesModel, object>(x=> x.BodyType)" InitialDirection="SortDirection.Ascending">Body Type</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingChargesModel, object>(x=> x.Order.OrderName)" InitialDirection="SortDirection.Ascending">Order Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingChargesModel, object>(x=> x.LoadingMTFrom)" InitialDirection="SortDirection.Ascending">MT</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingChargesModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Amount</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingChargesModel, object>(x=> x.FromDate)" InitialDirection="SortDirection.Ascending">From</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingChargesModel, object>(x=> x.ToDate)" InitialDirection="SortDirection.Ascending">To</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROILoadingChargesModel, object>(x=> x.Amount)" InitialDirection="SortDirection.Ascending">Action</MudTableSortLabel></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Wheels">@context.Wheels</MudTd>
@@ -51,30 +51,32 @@
 
 @code {
 
-    private List<ROILoadingAndUnloadingModel> collection = new List<ROILoadingAndUnloadingModel>();
+    private List<ROILoadingChargesModel> collection = new List<ROILoadingChargesModel>();
     private string SearchItem = "";
     string UserID;
+    int? BranchID;
 
     protected override async Task OnInitializedAsync()
     {
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
         GetAll();
     }
 
     private void GetAll()
     {
-        collection = IService.Select().ToList();
+        collection = IService.Select(BranchID).ToList();
     }
 
-    private async Task Edit(ROILoadingAndUnloadingModel model)
+    private async Task Edit(ROILoadingChargesModel model)
     {
         try
         {
             var parameters = new DialogParameters();
             parameters.Add("model", model.Clone());
             DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var dialog = DialogService.Show<ROILoadingAndUnloadingDialog>("Add/Edit", parameters, maxWidth);
+            var dialog = DialogService.Show<ROILoadingChargesDialog>("Add/Edit", parameters, maxWidth);
             var result = await dialog.Result;
             if (!result.Cancelled)
             {
@@ -88,7 +90,7 @@
         GetAll();
     }
 
-    private bool search(ROILoadingAndUnloadingModel model)
+    private bool search(ROILoadingChargesModel model)
     {
         if ((model.Order.OrderName.Contains(SearchItem, StringComparison.OrdinalIgnoreCase)) ||
             (model.Wheels.ToString().Contains(SearchItem, StringComparison.OrdinalIgnoreCase)) ||

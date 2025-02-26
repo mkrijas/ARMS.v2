@@ -7,7 +7,7 @@ namespace ArmsServices.DataServices
     public interface IROIDriverIncentiveService
     {
         ROIDriverIncentiveModel Update(ROIDriverIncentiveModel model);
-        IEnumerable<ROIDriverIncentiveModel> Select();
+        IEnumerable<ROIDriverIncentiveModel> Select(int? BranchID);
         ROIDriverIncentiveModel SelectByID(int? ID);
     }
 }

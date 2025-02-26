@@ -12,7 +12,7 @@ namespace ArmsServices.DataServices
     public interface IROIDriverBattaService
     {
         ROIDriverBattaModel Update(ROIDriverBattaModel model);
-        IEnumerable<ROIDriverBattaModel> Select();
+        IEnumerable<ROIDriverBattaModel> Select(int? BranchID);
         ROIDriverBattaModel SelectByID(int? ID);
     }
 }

@@ -185,9 +185,9 @@ namespace Views
             services.AddScoped<IROIDriverBattaService, ROIDriverBattaService>();
             services.AddScoped<IROIDriverIncentiveService, ROIDriverIncentiveService>();
             services.AddScoped<IROITaggingService, ROITaggingService>();
-            services.AddScoped<IROILoadingAndUnloadingService, ROILoadingAndUnloadingService>();
+            services.AddScoped<IROILoadingChargesService, ROILoadingChargesService>();
             services.AddScoped<IROITollService, ROITollService>();
-            services.AddScoped<IROIUnloadingService, ROIUnloadingService>();
+            services.AddScoped<IROIUnloadingChargesService, ROIUnloadingChargesService>();
             services.AddScoped<IROIAdminExpenseService, ROIAdminExpenseService>();
             services.AddScoped<IROITyreAndMaintenanceExpenseService, ROITyreAndMaintenanceExpenseService>();
             services.AddScoped<IROITaxAndFCExpenseService, ROITaxAndFCExpenseService>();

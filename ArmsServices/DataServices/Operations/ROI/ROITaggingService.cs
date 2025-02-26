@@ -24,8 +24,7 @@ namespace ArmsServices.DataServices
                new SqlParameter("@Wheels", model.Wheels),
                new SqlParameter("@BodyType", model.BodyType),
                new SqlParameter("@OrderID", model.Order.OrderID),
-               new SqlParameter("@TaggingAmount", model.TaggingAmount),
-               new SqlParameter("@LoadingAmount", model.LoadingAmount),
+               new SqlParameter("@TaggingAmount", model.TaggingAmount),               
                new SqlParameter("@FromDate", model.FromDate),
                new SqlParameter("@ToDate", model.ToDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
@@ -38,11 +37,12 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public IEnumerable<ROITaggingModel> Select()
+        public IEnumerable<ROITaggingModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", 0),
+               new SqlParameter("BranchID",BranchID)
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Tagging.Select]", parameters))
@@ -77,8 +77,7 @@ namespace ArmsServices.DataServices
                     OrderID = dr.GetInt32("OrderID"),
                     OrderName = dr.GetString("OrderName")
                 },
-                TaggingAmount = dr.GetDecimal("TaggingAmount"),
-                LoadingAmount = dr.GetDecimal("LoadingAmount"),
+                TaggingAmount = dr.GetDecimal("TaggingAmount"),                
                 FromDate = dr.GetDateTime("FromDate"),
                 ToDate = dr.GetDateTime("ToDate"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel

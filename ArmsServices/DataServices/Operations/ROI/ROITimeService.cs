@@ -21,7 +21,7 @@ namespace DAL.DataServices.Operations.ROI
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-                new SqlParameter("@RowNo", RowNo),
+                new SqlParameter("@RowNo", RowNo)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.WheelSpeed.Select]", parameters))
             {
@@ -45,11 +45,12 @@ namespace DAL.DataServices.Operations.ROI
             return null;
         }
 
-        public IEnumerable<ROILoadAndUnloadModel> SelectLoadUnload(int? RowNo)
+        public IEnumerable<ROILoadAndUnloadModel> SelectLoadUnload(int? RowNo,int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@RowNo", RowNo),
+                new SqlParameter("BranchID",BranchID)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.LoadAndUnloadDuration.Select]", parameters))
             {

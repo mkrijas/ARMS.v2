@@ -7,7 +7,7 @@ namespace Core.IDataServices.Operations.ROI
     {
         IEnumerable<ROITonnageModel> SelectBSType();
         IEnumerable<ROITonnageModel> SelectWheels();
-        IEnumerable<ROITonnageModel> Select(int? RowNo);
+        IEnumerable<ROITonnageModel> Select(int? RowNo, int? BranchID);
         ROITonnageModel Update(ROITonnageModel model);
         int Delete(int? ID, string UserID);
     }

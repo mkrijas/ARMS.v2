@@ -4,16 +4,18 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels
 {
-    public class ROILoadingAndUnloadingModel : ICloneable
+    public class ROILoadingChargesModel : ICloneable
     {
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<ROILoadingAndUnloadingModel>(Json);
+            return JsonConvert.DeserializeObject<ROILoadingChargesModel>(Json);
         }
         public int? ID { get; set; }
         [Required]
         public byte? Wheels { get; set; }
+        [Required]
+        public string RateBasis { get; set; }
         [Required]
         public string BodyType { get; set; }
         public OrderModel Order { get; set; } = new();

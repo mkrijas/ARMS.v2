@@ -7,7 +7,7 @@ namespace Core.IDataServices.Operations.ROI
     {
         IEnumerable<ROIWheelSpeedModel> SelectWheelSpeed(int? RowNo);
         ROIWheelSpeedModel UpdateWheelSpeed(ROIWheelSpeedModel model);
-        IEnumerable<ROILoadAndUnloadModel> SelectLoadUnload(int? RowNo);
+        IEnumerable<ROILoadAndUnloadModel> SelectLoadUnload(int? RowNo, int? BranchID);
         ROILoadAndUnloadModel UpdateLoadUnload(ROILoadAndUnloadModel model);
     }
 }
