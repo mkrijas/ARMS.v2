@@ -16,6 +16,7 @@ namespace DAL.DataServices.Finance.LedgerViews
             Iservice = iservice;
         }
 
+        // Retrieves bank ledger records based on Bank ID and date range.
         public IEnumerable<LedgerViewsModel> SelectByBankIDAndDate(int? BankID, DateTime? FromDate, DateTime? ToDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

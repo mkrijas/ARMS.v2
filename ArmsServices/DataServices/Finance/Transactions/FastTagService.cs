@@ -19,6 +19,7 @@ namespace DAL.DataServices.Finance.Transactions
             Iservice = iservice;
         }
 
+        // Method to match trucks with Fast Tags
         public IEnumerable<FastTagModel> MatchTrucks(List<FastTagList> model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -32,6 +33,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select pending Fast Tag documents
         public IEnumerable<FastTagProcessModel> SelectPendingFTDoc()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +46,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to get incomplete upload view for Fast Tags
         public IEnumerable<FastTagTollModel> GetUploadViewInComplete(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -56,6 +59,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to get complete upload view for Fast Tags
         public IEnumerable<FastTagTollModel> GetUploadViewComplete(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -68,6 +72,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to get a specific upload view model by FastTagUploadID
         public FastTagTollModel GetUploadViewModel(int? FastTagUploadID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -82,6 +87,7 @@ namespace DAL.DataServices.Finance.Transactions
             return null;
         }
 
+        // Method to get a collection of upload view models by FastTagUploadID
         public IEnumerable<FastTagModel> GetUploadViewCollection(int? FastTagUploadID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -95,6 +101,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to get a collection of selected upload view models by FastTagUploadID
         public IEnumerable<FastTagModel> GetUploadViewSelectedCollection(int? FastTagUploadID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -108,6 +115,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to get the process view for Fast Tags by BranchID
         public IEnumerable<FastTagTollModel> GetProcessView(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -135,6 +143,7 @@ namespace DAL.DataServices.Finance.Transactions
             return null;
         }
 
+        // Method to get a specific process view model by FastTagProcessID
         public IEnumerable<FastTagModel> GetProcessViewCollection(int? FastTagProcessID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -148,6 +157,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select Fast Tags by Branch ID and FastTagProcessUploadID
         public IEnumerable<FastTagModel> SelectByBranch(int? FastTagProcessUploadID, int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -162,6 +172,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to update a new FastTagTollModel record
         public FastTagTollModel UpdateNew(FastTagTollModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -189,6 +200,7 @@ namespace DAL.DataServices.Finance.Transactions
             return model;
         }
 
+        // Method to update a FastTagProcessModel record
         public FastTagProcessModel UpdateProcess(FastTagProcessModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -212,6 +224,7 @@ namespace DAL.DataServices.Finance.Transactions
             return model;
         }
 
+        // Method to update the branch information for a FastTag
         public bool UpdateBranch(FastTagBranchEditModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -228,6 +241,7 @@ namespace DAL.DataServices.Finance.Transactions
             return true;
         }
 
+        // Method to update the trip number for a FastTag
         public bool UpdateTripNumber(FastTagBranchEditModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -247,6 +261,7 @@ namespace DAL.DataServices.Finance.Transactions
             return true;
         }
 
+        // Method to approve a FastTag process
         public int Approve(int? FastTagProcessID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -258,6 +273,7 @@ namespace DAL.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[Finance.Transactions.FastTag.Approve]", parameters);
         }
 
+        // Private method to convert an IDataRecord to a FastTagTollModel
         private FastTagTollModel GetMainModel(IDataRecord dr)
         {
             return new FastTagTollModel
@@ -288,6 +304,7 @@ namespace DAL.DataServices.Finance.Transactions
             };
         }
 
+        // Private method to convert an IDataRecord to a FastTagProcessModel
         private FastTagProcessModel GetProcessModel(IDataRecord dr)
         {
             return new FastTagProcessModel
@@ -310,6 +327,7 @@ namespace DAL.DataServices.Finance.Transactions
             };
         }
 
+        // Private method to convert an IDataRecord to a FastTagModel
         private FastTagModel GetModel(IDataRecord dr)
         {
             return new FastTagModel

@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Retrieves a Customer Posting Group by CustomerID
         public CustomerPostingGroupModel GetPostingGroup(int? CustomerID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -32,6 +33,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Deletes a Customer Posting Group based on ID and UserID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,7 +44,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Customer.Delete]", parameters);
         }
 
-
+        // Retrieves all Customer Posting Groups
         public IEnumerable<CustomerPostingGroupModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -56,6 +58,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a specific Customer Posting Group by ID
         public CustomerPostingGroupModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -71,6 +74,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Updates an existing Customer Posting Group
         public CustomerPostingGroupModel Update(CustomerPostingGroupModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -89,6 +93,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Maps an IDataRecord to a CustomerPostingGroupModel
         private CustomerPostingGroupModel GetModel(IDataRecord dr)
         {
             return new CustomerPostingGroupModel

@@ -17,6 +17,7 @@ namespace DAL.DataServices.Finance.LedgerViews
             Iservice = iservice;
         }
 
+        // Retrieves party ledger records based on Party ID, Branch ID, and date range.
         public IEnumerable<LedgerViewsModel> SelectByPartyIDAndDate(PartyModel Party, int? BranchID, DateTime? FromDate, DateTime? ToDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

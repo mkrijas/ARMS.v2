@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to select and retrieve all OperationPostingGroupModel records
         public IEnumerable<OperationPostingGroupModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -26,6 +27,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update an existing OperationPostingGroupModel record
         public OperationPostingGroupModel Update(OperationPostingGroupModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -43,6 +45,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Private method to convert an IDataRecord to an OperationPostingGroupModel
         private OperationPostingGroupModel GetModel(IDataRecord dr)
         {
             return new OperationPostingGroupModel

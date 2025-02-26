@@ -11,11 +11,14 @@ namespace ArmsServices.DataServices
     public class UnreconciledBankEntryService : IUnreconciledBankEntryService
     {
         IDbService Iservice;
+
+        // Constructor to initialize the database service
         public UnreconciledBankEntryService(IDbService iservice)
         {
             Iservice = iservice;
         }
 
+        // Deletes an unreconciled bank entry by ID and UserID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -27,6 +30,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.BankAccount.UnreconciledEntry.Delete]", parameters);
         }
 
+        // Reconciles a bank entry
         public ReconciledBankEntryModel Reconcile(ReconciledBankEntryModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -56,6 +60,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Retrieves reconciliation info for a given UnreconciledEntryID
         public ReconciledBankEntryModel GetRecociledInfo(int? UnreconciledEntryID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -81,6 +86,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Retrieves unreconciled bank entries based on BankID
         public IEnumerable<UnReconciledBankEntryModel> Select(int? BankID, bool ShowOnlyUnreconciled)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -95,6 +101,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves unreconciled bank entries based on BranchID
         public IEnumerable<UnReconciledBankEntryModel> SelectByBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -108,6 +115,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves all reconciled bank entries based on BranchID and BankID
         public IEnumerable<ReconciledBankEntryModel> SelectAllUnReconciledBank(int? BranchID, int? BankID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -122,6 +130,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Maps data from IDataRecord to UnReconciledBankEntryModel
         public IEnumerable<ReconciledBankEntryModel> SelectAllReconciledBank(int? BranchID, int? BankID, DateTime? StartDate, DateTime? EndDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -138,6 +147,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of bank summary records for both "Company" and "Bank" using the provided BranchID, ArdCode, StartDate, and EndDate filters.     
         public List<ReconciledBankSummaryModel> GetReconcilBankSummary(int? BranchID, string ArdCode, DateTime? StartDate, DateTime? EndDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -169,6 +179,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Retrieves a single unreconciled bank entry based on its ID.
         public UnReconciledBankEntryModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -182,6 +193,8 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
+
+        // Updates reconciled bank entry details using a list of ReconcileUpdateModel and returns the updated ReconciledBankEntryModel.
         public ReconciledBankEntryModel UpdateUnReconciledBankEntry(List<ReconcileUpdateModel> lst,string userID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -204,6 +217,7 @@ namespace ArmsServices.DataServices
             return reconciledBankModel;
         }
 
+        // Updates an unreconciled bank entry record with the provided details and returns the updated model.
         public UnReconciledBankEntryModel Update(UnReconciledBankEntryModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -228,6 +242,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Updates an unreconciled bank entry record with the provided details and returns the updated model.
         private UnReconciledBankEntryModel GetModel(IDataRecord dr)
         {
             return new UnReconciledBankEntryModel()
@@ -265,6 +281,8 @@ namespace ArmsServices.DataServices
             };
 
         }
+
+        // Maps a data record to a ReconciledBankEntryModel, including its associated user information
         private ReconciledBankEntryModel GetReconciledModel(IDataRecord dr)
         {
             return new ReconciledBankEntryModel()

@@ -19,6 +19,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a GST item by ID
         public int Delete(int ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -29,6 +30,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Taxes.Gst.HSN.Delete]", parameters);
         }
 
+        // Method to filter GST items by text and entry date
         public IEnumerable<GstItemModel> FilterByText(string FilterText, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +46,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select and retrieve all GST items by entry date
         public IEnumerable<GstItemModel> Select(DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +61,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select GST items by entry date
         public IEnumerable<GstItemModel> SelectByDate(DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -72,6 +76,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select GST items by ItemID
         public IEnumerable<GstItemModel> SelectByItem(int ItemID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -86,6 +91,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a GST item by ItemID and entry date
         public GstItemModel SelectByItem(int ItemID, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -102,6 +108,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select a GST item by its ID
         public GstItemModel SelectByID(int ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -117,7 +124,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
+        // Method to select GST items by tax rate and entry date
         public IEnumerable<GstItemModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -133,6 +140,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update an existing GstItemModel record
         public GstItemModel Update(GstItemModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -152,8 +160,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
-
+        // Private method to convert an IDataRecord to a GstItemModel
         private GstItemModel GetModel(IDataRecord dr)
         {
             return new GstItemModel(dr.GetString("ItemCode"), dr.GetDecimal("Taxrate"))
@@ -178,9 +185,7 @@ namespace ArmsServices.DataServices
             };
         }
 
-
-
-
+        // Method to retrieve GST In/Out models
         public IEnumerable<GstInOutModel> GetInOut()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.Gst.Master.Select]", null))

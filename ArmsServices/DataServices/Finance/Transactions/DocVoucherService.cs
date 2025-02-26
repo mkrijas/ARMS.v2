@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             Iservice = iservice;
         }
 
+        // Method to approve a Document Voucher
         public int Approve(int? DocVoucherID, string UserID, string Remark)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -27,6 +28,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxVoucher.Approve]", parameters);
         }
 
+        // Method to delete a Document Voucher by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -38,6 +40,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxVoucher.Delete]", parameters);
         }
 
+        // Method to get sub-document vouchers by Document Voucher ID
         public IEnumerable<DocumentVoucherSubModel> GetSub(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -78,8 +81,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
-
-
+        // Method to get not posted sub-documents by Document Type I
         public IEnumerable<DocumentVoucherSubModel> GetNotPostedSubDocuments(int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -112,6 +114,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to reverse a Document Voucher
         public int Reverse(int? PID, string UserID, String Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -123,6 +126,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.TaxVoucher.Reverse]", parameters);
         }
 
+        // Method to select Document Vouchers by Branch ID
         public IEnumerable<DocumentVoucherModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -137,6 +141,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select a Document Voucher by its ID
         public DocumentVoucherModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -152,6 +157,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return model;
         }
 
+        // Method to select Document Vouchers by Party ID and Party Branch ID
         public IEnumerable<DocumentVoucherModel> SelectByParty(int? PartyID, int? PartyBranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -167,6 +173,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select Document Vouchers by date period
         public IEnumerable<DocumentVoucherModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -182,6 +189,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to update DocumentVoucherModel record
         public DocumentVoucherModel Update(DocumentVoucherModel model)
         {
             //List<TaxVoucherSubSendModel> taxVoucherSubListFormated = new();
@@ -239,6 +247,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return model;
         }
 
+        // Private method to convert an IDataRecord to a DocumentVoucherModel
         private DocumentVoucherModel GetModel(IDataRecord dr)
         {
             return new DocumentVoucherModel

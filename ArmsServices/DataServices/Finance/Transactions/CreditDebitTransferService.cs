@@ -15,6 +15,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to approve a Credit/Debit transfer
         public int Approve(int? ID, string UserID, string remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -26,6 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.CreditTransfer.Approve]", parameters);
         }
 
+        // Method to delete a Credit/Debit transfer by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -36,6 +39,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.CreditTransfer.Delete]", parameters);
         }
 
+        // Method to select Credit/Debit transfers by Branch ID
         public IEnumerable<CreditDebitTransferModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -50,6 +54,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved Credit/Debit transfers
         public IEnumerable<CreditDebitTransferModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -68,6 +73,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved Credit/Debit transfers
         public IEnumerable<CreditDebitTransferModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -84,8 +90,9 @@ namespace ArmsServices.DataServices
             {
                 yield return GetModel(dr);
             }
-        }       
+        }
 
+        // Method to select a Credit/Debit transfer by its ID
         public CreditDebitTransferModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -100,8 +107,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
-  
 
+        // Method to select Credit/Debit transfers by date period
         public IEnumerable<CreditDebitTransferModel> SelectByPeriod(DateTime? begin, DateTime? end, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -118,6 +125,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update CreditDebitTransferModel record
         public CreditDebitTransferModel Update(CreditDebitTransferModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -152,6 +160,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Private method to convert an IDataRecord to a CreditDebitTransferModel
         private CreditDebitTransferModel GetModel(IDataRecord dr)
         {
             return new CreditDebitTransferModel
@@ -207,6 +217,8 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+        // Method to reverse a Credit/Debit transfer
         public int Reverse(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

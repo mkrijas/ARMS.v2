@@ -20,6 +20,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to update an operational transaction
         public OpTranModel Update(OpTranModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -52,6 +53,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to delete an operational transaction
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -63,6 +65,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Delete]", parameters);
         }
 
+        // Method to remove a file associated with an operational transaction
         public int RemoveFile(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -74,6 +77,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Delete]", parameters);
         }
 
+        // Method to select an operational transaction by its ID
         public OpTranModel SelectByID(long? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -89,6 +93,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select operational transactions by Trip ID
         public IEnumerable<OpTranModel> SelectByTrip(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -102,6 +107,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved operational transactions by various criteria
         public IEnumerable<OpTranModel> SelectByApprovedTrip(int? BranchID, long? TripID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -118,6 +124,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved operational transactions by various criteria
         public IEnumerable<OpTranModel> SelectByUnapprovedTrip(int? BranchID, long? TripID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -134,6 +141,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select operational transactions by Job Card ID
         public IEnumerable<OpTranModel> SelectByJobcard(int? JobcardID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -147,6 +155,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to retrieve expenses associated with a specific operational transaction
         public IEnumerable<OpTranSubModel> GetExpenses(long? TransactionID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -176,6 +185,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to approve an operational transaction
         public int Approve(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -187,6 +197,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Approve]", parameters);
         }
 
+        // Method to reverse an operational transaction
         public int Reverse(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -198,6 +209,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OpTran.Reverse]", parameters);
         }
 
+        // Private method to convert an IDataRecord to an OpTranModel
         private OpTranModel GetModel(IDataRecord dr)
         {
             return new OpTranModel

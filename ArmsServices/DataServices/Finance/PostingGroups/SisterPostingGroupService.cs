@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a posting group by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.SisterConcern.Delete]", parameters);
         }
 
+        // Method to get a posting group by SisterID
         public SisterPostingGroupModel GetPostingGroup(int? SisterID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,6 +44,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to select and retrieve all SisterPostingGroupModel records
         public IEnumerable<SisterPostingGroupModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -55,6 +58,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a posting group by its ID
         public SisterPostingGroupModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -69,6 +73,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to update an existing SisterPostingGroupModel record
         public SisterPostingGroupModel Update(SisterPostingGroupModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -87,6 +92,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Private method to convert an IDataRecord to a SisterPostingGroupModel
         private SisterPostingGroupModel GetModel(IDataRecord dr)
         {
             return new SisterPostingGroupModel

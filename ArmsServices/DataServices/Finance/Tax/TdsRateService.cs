@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using ArmsModels.BaseModels;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace ArmsServices.DataServices
@@ -18,6 +19,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a TDS rate by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +30,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.finance.taxes.TDS.Rates.Delete]", parameters);
         }
 
+        // Method to select TDS rates by ID
         public IEnumerable<TdsRateModel> SelectByIDT(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,6 +45,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select TDS rates based on various criteria
         public IEnumerable<TdsRateModel> Select(int? AssesseeType, int? TdsNPID,DateTime? EntryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +62,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select all assessee types
         public IEnumerable<AssesseeTypeModel> SelectAssesseeTypes()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.AssesseeTypes.Select]", null))
@@ -66,6 +71,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a TDS rate by its ID
         public TdsRateModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -81,6 +87,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select all TDS nature of payments
         public IEnumerable<NatureOfPaymentModel> SelectTdsNP()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Taxes.TDS.NatureOfPayment.Select]", null))
@@ -89,6 +96,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select TDS nature of payments by TDS NP ID
         public IEnumerable<NatureOfPaymentModel> SelectTdsNPByID(int? TdsNPID)
         {
 
@@ -102,6 +110,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update an existing TdsRateModel record
         public TdsRateModel Update(TdsRateModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -122,6 +131,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Private method to convert an IDataRecord to a TdsRateModel
         private TdsRateModel GetModel(IDataRecord dr)
         {
             return new TdsRateModel
@@ -141,6 +151,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to get the TDS rate based on PartyID and AccountID
         public decimal GetTdsRate(int? PartyID, int? AccountID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -158,6 +169,7 @@ namespace ArmsServices.DataServices
             return result??0;
         }
 
+        // Method to get the TDS rate based on PartyID and TDS NP ID
         public decimal GetTdsRate2(int? PartyID, int? TdsNpID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

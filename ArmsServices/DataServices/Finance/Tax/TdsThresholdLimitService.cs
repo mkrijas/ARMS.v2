@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a TDS threshold limit by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,8 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Taxes.TDS.ThresholdLimits.Delete]", parameters);
         }
 
-
-
+        // Method to select all TDS threshold limits
         public IEnumerable<TdsThresholdLimitModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,8 +42,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
-       
 
+        // Method to select a TDS threshold limit by its ID
         public TdsThresholdLimitModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -59,6 +59,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select TDS threshold limits by Nature of Payment ID
         public IEnumerable<TdsThresholdLimitModel> SelectByNP(int TdsNPID,DateTime? EntryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -74,7 +75,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-
+        // Method to update an existing TdsThresholdLimitModel record
         public TdsThresholdLimitModel Update(TdsThresholdLimitModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -94,6 +95,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Private method to convert an IDataRecord to a TdsThresholdLimitModel
         private TdsThresholdLimitModel GetModel(IDataRecord dr)
         {
             return new TdsThresholdLimitModel
