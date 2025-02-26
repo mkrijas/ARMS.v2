@@ -15,7 +15,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-        
+
+        // Method to approve a General Ledger Transfer
         public int Approve(int? ID, string UserID, string remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -27,6 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.GeneralLedgerTransfer.Approve]", parameters);
         }
 
+        // Method to delete a General Ledger Transfer by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -37,6 +39,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.GeneralLedgerTransfer.Delete]", parameters);
         }
 
+        // Method to select General Ledger Transfers based on Branch ID
         public IEnumerable<GeneralLedgerTransferModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -51,6 +54,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved General Ledger Transfers
         public IEnumerable<GeneralLedgerTransferModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -69,6 +73,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved General Ledger Transfers
         public IEnumerable<GeneralLedgerTransferModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -87,6 +92,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a General Ledger Transfer by its 
         public GeneralLedgerTransferModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -102,6 +108,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update GeneralLedgerTransferModel record
         public GeneralLedgerTransferModel Update(GeneralLedgerTransferModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -130,6 +137,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Private method to convert an IDataRecord to a GeneralLedgerTransferModel
         private GeneralLedgerTransferModel GetModel(IDataRecord dr)
         {
             return new GeneralLedgerTransferModel
@@ -168,6 +177,8 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+        // Method to reverse a General Ledger Transfer
         public int Reverse(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

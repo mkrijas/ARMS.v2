@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to approve a journal entry
         public int Approve(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -30,6 +31,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Journal.Approve]", parameters);
         }
 
+        // Method to delete a journal entry
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -40,7 +42,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Journal.Delete]", parameters);
         }
 
-
+        // Method to reverse a journal entry
         public int Reverse(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -53,6 +55,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Journal.Reverse]", parameters);
         }
 
+        // Method to select journal entries based on Branch ID
         public IEnumerable<JournalModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -67,6 +70,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved journal entries
         public IEnumerable<JournalModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -84,6 +88,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved journal entries
         public IEnumerable<JournalModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -101,6 +106,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a journal entry by its ID
         public JournalModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -116,7 +122,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
+        // Method to select journal entries by date period
         public IEnumerable<JournalModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -132,6 +138,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to retrieve a list of sub-items associated with a specific journal entry
         public IEnumerable<JournalSubModel> GetSubList(int? JournalID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -163,6 +170,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update JournalModel record
         public JournalModel Update(JournalModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -186,6 +194,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Private method to convert an IDataRecord to a JournalModel
         private JournalModel GetModel(IDataRecord dr)
         {
             return new JournalModel

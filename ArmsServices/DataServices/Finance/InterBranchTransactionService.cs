@@ -16,6 +16,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to delete an inter-branch transaction mapping by its ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +30,7 @@ namespace ArmsServices.DataServices
 
         }
 
+        // Method to get all inter-branch transaction types
         public IEnumerable<InterBranchTransactionTypeModel> GetTypes()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +47,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select inter-branch mappings with optional filtering
         public IEnumerable<InterBranchMappingModel> Select(int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +62,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a specific inter-branch mapping by branch and transaction type IDs
         public InterBranchMappingModel Select(int? BranchID, int? TransactionTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -73,6 +78,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to select an inter-branch mapping by its ID 
         public InterBranchMappingModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -87,6 +93,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to check if entries already exist for a given inter-branch mapping
         public InterBranchMappingModel IsEntriesAlreadyExistOrNot(InterBranchMappingModel model)
         {
             InterBranchMappingModel ExistModel = null;
@@ -103,6 +110,7 @@ namespace ArmsServices.DataServices
             return ExistModel;
         }
 
+        // Method to update an inter-branch mapping
         public InterBranchMappingModel Update(InterBranchMappingModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -120,6 +128,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Helper method to map data record to InterBranchMappingModel
         private InterBranchMappingModel GetModel(IDataRecord dr)
         {
             return new InterBranchMappingModel

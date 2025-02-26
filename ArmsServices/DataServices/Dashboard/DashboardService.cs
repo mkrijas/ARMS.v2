@@ -6,6 +6,7 @@ using System.Data;
 
 namespace ArmsServices.DataServices
 {
+    // Service class for managing dashboard data
     public class DashboardService : IDashboardService
     {
         IDbService Iservice;
@@ -14,6 +15,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Retrieves chart data for consignment load based on branch ID and date range
         public List<DashboardModel> SelectChartData(int? BranchID, DateTime? From, DateTime? To)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -26,6 +28,7 @@ namespace ArmsServices.DataServices
             return GetChartData(parameters);
         }
 
+        // Retrieves truck status donut chart data based on branch ID
         public List<DashboardModel> SelectTruckDonutData(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -36,6 +39,7 @@ namespace ArmsServices.DataServices
             return GetChartData(parameters);
         }
 
+        // Retrieves driver availability donut chart data based on branch ID
         public List<DashboardModel> SelectDriverDonutData(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -46,6 +50,7 @@ namespace ArmsServices.DataServices
             return GetChartData(parameters);
         }
 
+        // Retrieves line chart data for freight status based on branch ID and date
         public List<DashboardModel> SelectLineChart(int? BranchID, DateTime? To)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -57,6 +62,7 @@ namespace ArmsServices.DataServices
             return GetChartData(parameters);
         }
 
+        // Helper method to retrieve chart data based on provided parameters
         private List<DashboardModel> GetChartData(List<SqlParameter> parameters)
         {
             List<DashboardModel> list = new();
@@ -68,6 +74,7 @@ namespace ArmsServices.DataServices
             return list;
         }
 
+        // Helper method to map data from the database to a DashboardModel
         private DashboardModel GetDashboardModel(IDataRecord dr)
         {
             return new DashboardModel
@@ -80,6 +87,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Retrieves driver status based on events for a specific branch and selected value
         public IEnumerable<DriverModel> GetDriverStatusByEvent(int? BranchID, string SelectedValue)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

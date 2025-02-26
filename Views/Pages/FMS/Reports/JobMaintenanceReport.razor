@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inherits ReportComponentBase
+@inject IRepairWorkService Iservice
 @inject ISnackbar Snackbar
 
 <MudGrid Spacing="4">
@@ -15,13 +16,21 @@
                 <MudItem xs="3">
                     <TruckSelector Value="SelectedTruck" BranchID="BranchID" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" HomeOrOperation="Operation" />
                 </MudItem>
-                <MudItem xs="3">
+                 <MudItem xs="3">
+                    <MudSelect T="RepairJobGroup" Value="@JobGroup" ValueChanged="SetGroup" Label="Job Group" ToStringFunc="@((e) => e?.Title)" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (var group in Groups)
+                        {
+                            <MudSelectItem Value="group">@group?.Title</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="2">
                     <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="3">
+                <MudItem xs="2">
                     <MudDatePicker Label="To Date" @bind-Date="@(ToDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudItem>
-                <MudItem xs="3" Style="display: flex; align-items: center;">
+                <MudItem xs="2" Style="display: flex; align-items: center;">
                     <MudIconButton Style="margin-right: 8px;" Title="Select Branches" Icon="@Icons.Material.Filled.List" Variant="Variant.Filled" Color="Color.Success" OnClick="SelectBranches"></MudIconButton>
                     <MudButton Style="width: -webkit-fill-available;" Variant="Variant.Filled" Color="Color.Success" OnClick="RenderReportViewer">View Report</MudButton>
                 </MudItem>
@@ -44,6 +53,8 @@
     public DateTime? ToDate { get; set; } = DateTime.Now;
     public BranchModel CurrentBranch { get; set; } = new();
     private TripModel CurrentTrip { get; set; }
+    public RepairJobGroup JobGroup { get; set; }
+    private List<RepairJobGroup> Groups = new();
 
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
@@ -55,11 +66,17 @@
         var User = authprov.User;
         string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
         CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+        Groups = Iservice.SelectGroup().ToList();
     }
 
     private void OnTruckSelected(TruckModel model)
     {
         SelectedTruck = model;
+    }
+
+    void SetGroup(RepairJobGroup Group)
+    {
+        JobGroup = Group;
     }
 
     public async Task RenderReportViewer()
@@ -86,6 +103,7 @@
         ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
         ReportParameters.Add("BranchName", CurrentBranch.BranchName);
         ReportParameters.Add("TruckID", SelectedTruck?.TruckID.ToString() ?? "0");
+        ReportParameters.Add("RepairJobGroupID", JobGroup?.ID.ToString() ?? "0");
         ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
         ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
         await report.RenderReport();

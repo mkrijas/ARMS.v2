@@ -19,6 +19,7 @@ namespace DAL.DataServices.Finance.Transactions
             Iservice = iservice;
         }
 
+        // Method to delete an operational inventory release
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -31,6 +32,7 @@ namespace DAL.DataServices.Finance.Transactions
 
         }
 
+        // Method to select all operational inventory releases
         public IEnumerable<OpInventoryReleaseModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +46,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select approved operational inventory releases
         public IEnumerable<OpInventoryReleaseModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -60,6 +63,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select unapproved operational inventory releases
         public IEnumerable<OpInventoryReleaseModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -76,6 +80,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select an operational inventory release by its ID
         public OpInventoryReleaseModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -90,6 +95,8 @@ namespace DAL.DataServices.Finance.Transactions
             }
             return model;
         }
+
+        // Method to approve an operational inventory release
         public int Approve(int? OpInventoryReleaseID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -101,7 +108,7 @@ namespace DAL.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Inventory.OpInventoryRelease.Approve]", parameters);
         }
 
-
+        // Method to retrieve a list of sub-items associated with a specific operational inventory release
         public IEnumerable<OpInventoryReleaseSubModel> GetSub(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -127,6 +134,8 @@ namespace DAL.DataServices.Finance.Transactions
                 };
             }
         }
+
+        // Method to reverse an operational inventory release
         public int Reverse(int? OpInventoryReleaseID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -137,6 +146,8 @@ namespace DAL.DataServices.Finance.Transactions
             };
             return Iservice.ExecuteNonQuery("[usp.Inventory.OpInventoryRelease.Reverse]", parameters);
         }
+
+        // Method to update OpInventoryReleaseModel record
         public OpInventoryReleaseModel Update(OpInventoryReleaseModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -159,6 +170,8 @@ namespace DAL.DataServices.Finance.Transactions
             }
             return model;
         }
+
+        // Private method to convert an IDataRecord to an OpInventoryReleaseModel
         private OpInventoryReleaseModel GetModel(IDataRecord dr)
         {
             return new OpInventoryReleaseModel

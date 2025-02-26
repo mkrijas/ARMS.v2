@@ -20,6 +20,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to approve a Driver Salary Payable
         public int Approve(int? ID, string UserID, string Remark)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -31,6 +32,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.DriverSalaryPayable.Approve]", parameters);
         }
 
+        // Method to delete a Driver Salary Payable by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -41,6 +43,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.DriverSalaryPayable.Delete]", parameters);
         }
 
+        // Method to remove a file associated with a Driver Salary Payable
         public IEnumerable<DriverSalaryPayableListModel> GetDetails(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -69,6 +72,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get details of a Driver Salary Payable by ID
         public IEnumerable<DriverSalaryPayableListModel> GetLists(int? BranchID, DateTime? FromDate, DateTime? ToDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -92,6 +96,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get a list of Driver Salary Payables based on criteria
         public IEnumerable<DriverSalaryPayableModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -105,6 +110,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get a list of Driver Salary Payables based on criteria
         public IEnumerable<DriverSalaryPayableModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
 
@@ -122,6 +128,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved Driver Salary Payables
         public IEnumerable<DriverSalaryPayableModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
 
@@ -139,6 +146,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved Driver Salary Payables
         public DriverSalaryPayableModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -154,6 +162,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update DriverSalaryPayableModel record
         public DriverSalaryPayableModel Update(DriverSalaryPayableModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -178,6 +187,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Private method to convert an IDataRecord to a DriverSalaryPayableModel
         private DriverSalaryPayableModel GetModel(IDataRecord dr)
         {
             return new DriverSalaryPayableModel
@@ -228,6 +238,7 @@ namespace ArmsServices.DataServices
             throw new NotImplementedException();
         }
 
+        // Method to get pending salary for drivers based on various criteria
         public IEnumerable<DriverPendingSalaryModel> GetDriverPendingSalary(int? DriverID, int? BranchID, string UsageCode)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

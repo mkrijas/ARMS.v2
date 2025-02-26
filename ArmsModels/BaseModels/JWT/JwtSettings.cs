@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents the settings for configuring JWT authentication
     public class JwtSettings
     {
         public bool ValidateIssuerSigningKey { get; set; }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents an order in the system
     public class OrderModel : ICloneable
     {
         public object Clone()
@@ -19,7 +20,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? OrderID { get; set; }
+        public int? OrderID { get; set; } // Unique identifier for the order (nullable)
         [Required]
         [StringLength(maximumLength: 200)]
         public string OrderName { get; set; }
@@ -31,9 +32,9 @@ namespace ArmsModels.BaseModels
         public bool IsLimitedQuantity { get; set; }
         [RequiredIfTrue("IsLimitedQuantity")]
         public decimal? OrderQuantity { get; set; }
-        public ContentModel Content { get; set; } = new();
-        public PartyModel Party { get; set; }
-        public ConsigneeModel Consignor { get; set; }
+        public ContentModel Content { get; set; } = new(); // Content information associated with the order
+        public PartyModel Party { get; set; } // Party information associated with the order (optional)
+        public ConsigneeModel Consignor { get; set; } // Consignor information associated with the order (optional)
         public SharedModels.UserInfoModel UserInfo { get; set; }
         public string Declaration { get; set; }
     }

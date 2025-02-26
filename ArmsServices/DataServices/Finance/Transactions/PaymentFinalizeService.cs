@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to update a payment finalize entry 
         public int? Update(PaymentFinishModel model)
         {
             DataTable dt = new DataTable();
@@ -54,6 +55,7 @@ namespace ArmsServices.DataServices
             return model.PaymentFinalizeID;
         }
 
+        // Method to select payment finalize entries based on various parameters
         public IEnumerable<PaymentFinishModel> Select(int? BranchID, int? PfID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -70,6 +72,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select payment finalize entries by date period
         public IEnumerable<PaymentFinishModel> SelectByPeriod(int? BranchID, DateTime Begin, DateTime End)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -85,6 +88,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to approve a payment finalize entry
         public int Approve(int? PfID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -96,6 +100,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.PaymentMemo.Finish.Approve]", parameters);
         }
 
+        // Helper method to convert IDataRecord to PaymentFinishModel
         PaymentFinishModel GetModel(IDataRecord dr)
         {
             return new PaymentFinishModel()

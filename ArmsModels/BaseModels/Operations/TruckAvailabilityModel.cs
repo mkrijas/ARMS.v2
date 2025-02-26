@@ -6,19 +6,22 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.BaseModels.Operations
 {
+    // Represents the availability status of a truck
     public class TruckAvailabilityModel
     {
-        public int? TruckAvailabilityID { get; set; }
+        public int? TruckAvailabilityID { get; set; } // Unique identifier for the truck availability record (nullable)
         public int? TrucKID { get; set; }
         public int? BranchID { get; set; }
     }
+    
+    // Represents the history of request approvals for truck usage
     public class RequestApprovalHistoryModel : ICloneable
     {
-        public int? RequestApprovalHistoryID { get; set; }
+        public int? RequestApprovalHistoryID { get; set; } // Unique identifier for the request approval history record (nullable)
         public string DocNumber {  get; set; }
         public int? TruckID { get; set; }
         public int? DriverID { get; set; }
-        public TruckModel Truck { get; set; }
+        public TruckModel Truck { get; set; } // Truck information associated with the request
         public int? RequestedBranchID { get; set; }
         public BranchModel RequestedBranch { get; set; }
         public DateTime? RequestedDate { get; set; }
@@ -34,6 +37,7 @@ namespace Core.BaseModels.Operations
         public byte? RequestStatus { get; set; }
         public decimal? Fuel { get; set; }
         public decimal? Expenses { get; set; }
+        // Property to get the status text based on the request status
         public string StatusText
         {
             get

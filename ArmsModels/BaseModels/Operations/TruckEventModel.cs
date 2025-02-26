@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents an event associated with a truck's journey
     public class EventModel : ICloneable
     {
         public object Clone()
@@ -20,7 +21,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new();
         }
-        public long? TruckEventID { get; set; }
+        public long? TruckEventID { get; set; } // Unique identifier for the truck event (nullable)
         [Required]
         public byte? EventTypeID { get; set; }
         [Required]
@@ -48,9 +49,10 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Represents the type of event in the system
     public class EventTypeModel
     {
-        public byte? EventTypeID { get; set; }
+        public byte? EventTypeID { get; set; } // Unique identifier for the event type (nullable)
         public byte? DefaultNextEventTypeID { get; set; }
         public string EventTypeName { get; set; }
         public string DefaultNextEventTypeName { get; set; }
@@ -66,6 +68,7 @@ namespace ArmsModels.BaseModels
         public byte? LimitPostEvent { get; set; }
     }
 
+    // Validator for event readings
     public class EventReadingValidator : AbstractValidator<EventModel>
     {
         public EventReadingValidator(IEventService _eventservice)
@@ -78,6 +81,7 @@ namespace ArmsModels.BaseModels
                 .WithMessage("Odometer reading cannot be lesser than previous reading !");
         }
 
+        // Method to validate the event reading against the previous reading
         private bool ValidateEventReading(IEventService _eventservice, int? truckID, DateTime? eventTime, long? eventReading)
         {
             if (truckID != null && eventTime != null && eventReading != null)
@@ -92,6 +96,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Represents an update model for events
     public class EventUpdateModel
     {
         public EventModel Event { get; set; } = new();

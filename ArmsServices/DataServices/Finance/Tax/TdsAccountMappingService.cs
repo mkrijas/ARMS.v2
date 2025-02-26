@@ -18,7 +18,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-
+        
+        // Method to delete a TDS account mapping by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -29,8 +30,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Taxes.TDS.AccountMapping.Delete]", parameters);
         }
 
-      
-
+        // Method to select all TDS account mappings
         public IEnumerable<TdsAccountMappingModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +44,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select TDS account mappings by account ID
         public IEnumerable<TdsAccountMappingModel> SelectByAccount(int CoaID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +59,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a TDS account mapping by its ID
         public TdsAccountMappingModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -73,6 +75,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select TDS account mappings by TDS NP ID
         public IEnumerable<TdsAccountMappingModel> SelectByNP(int TdsNPID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -86,6 +89,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Method to check if a TDS account mapping exists by account ID
         public TdsAccountMappingModel CheckExist(int? CoaID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -100,6 +105,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to update an existing TdsAccountMappingModel record 
         public TdsAccountMappingModel Update(TdsAccountMappingModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -117,6 +124,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Private method to convert an IDataRecord to a TdsAccountMappingModel
         private TdsAccountMappingModel GetModel(IDataRecord dr)
         {
             return new TdsAccountMappingModel

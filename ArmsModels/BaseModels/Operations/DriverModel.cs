@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents a driver in the system
     public class DriverModel
     {
         public DriverModel()
@@ -16,10 +17,10 @@ namespace ArmsModels.BaseModels
             DriverAgent = new PartyModel();
             Contacts = new();
         }
-        public int? DriverID { get; set; }
+        public int? DriverID { get; set; } // Unique identifier for the driver (nullable)
         public string DriverCode { get; set; }
         public int? DriverAgentID { get; set; }
-        public PartyModel DriverAgent { get; set; }
+        public PartyModel DriverAgent { get; set; } // Driver agent information
         [Required]
         public string DriverName { get; set; }
         public DateTime? JoiningDate { get; set; }
@@ -44,14 +45,16 @@ namespace ArmsModels.BaseModels
         [EmailAddress]
         public string Email { get; set; }
         [ValidateComplexType]
-        public AddressModel Address { get; set; }
-        public BankAccountModel BankAccount { get; set; }
-        public DriverLicenceModel DriverLicence { get; set; } = new();
-        public SharedModels.UserInfoModel UserInfo { get; set; } = new();
+        public AddressModel Address { get; set; } // Address information for the driver
+        public BankAccountModel BankAccount { get; set; } // Bank account information for the driver (optional)
+        public DriverLicenceModel DriverLicence { get; set; } = new(); // Driver's license information
+        public SharedModels.UserInfoModel UserInfo { get; set; } = new(); // List of contacts associated with the driver
         public List<ContactModel> Contacts { get; set; }
         public bool HasValidLicense { get; set; }
         public int? TruckID { get; set; }
         public virtual DateTime? SinceLastEvent { get; set; }
+
+        // Property to get the driver's status based on UserInfo.RecordStatus
         public string Status
         {
             get
@@ -73,13 +76,14 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Represents a fault associated with a driver
     public class DriverFaultModel
     {
         public DriverFaultModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
-        }
-        public int? FaultID { get; set; }
+        } 
+        public int? FaultID { get; set; }  // Unique identifier for the fault (nullable)
         public DriverModel Driver { get; set; }
         public int? BranchID { get; set; }
         [Required]
@@ -93,13 +97,14 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Represents a leave request associated with a driver
     public class DriverLeaveModel
     {
         public DriverLeaveModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? LeaveID { get; set; }
+        public int? LeaveID { get; set; } // Unique identifier for the leave request (nullable)
         public DriverModel Driver { get; set; }
         public int? BranchID { get; set; }
         public DateTime? StartTime { get; set; } = DateTime.Now;
@@ -109,6 +114,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Represents a driver's license information
     public class DriverLicenceModel : ICloneable
     {
         public object Clone()
@@ -120,7 +126,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public int? LicenceID { get; set; }
+        public int? LicenceID { get; set; } // Unique identifier for the driver's license (nullable)
         public int? DriverID { get; set; }
         public int? BranchID { get; set; }
         [StringLength(16, MinimumLength = 15, ErrorMessage = "Licence number must be between 15 and 16 characters.")]
@@ -133,6 +139,7 @@ namespace ArmsModels.BaseModels
         public SharedModels.UserInfoModel UserInfo { get; set; }
     }
 
+    // Represents the initiation of a driver transfer
     public class DriverTransferInitiationModel : ICloneable
     {
         public object Clone()
@@ -140,7 +147,7 @@ namespace ArmsModels.BaseModels
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<DriverTransferInitiationModel>(Json);
         }
-        public int? DriverTransferID { get; set; }
+        public int? DriverTransferID { get; set; } // Unique identifier for the driver transfer initiation (nullable)   
         public DriverModel Driver { get; set; }
         public BranchModel InitiatedBranch { get; set; }
         public BranchModel DestinationBranch { get; set; }
@@ -150,13 +157,15 @@ namespace ArmsModels.BaseModels
         public int IsdriverReject { get; set; } = 0;
     }
 
+    // Represents the end of a driver transfer
     public class DriverTransferEndModel
     {
-        public int? DriverTransferEndID { get; set; }
+        public int? DriverTransferEndID { get; set; } // Unique identifier for the driver transfer end record (nullable)
         public int? BranchID { get; set; }
         public bool? TransferStatus { get; set; }
         public DateTime? TransferEndDate { get; set; } = DateTime.Now;
         public string Remarks { get; set; }
+        // Property to get the status text based on TransferStatus
         public string StatusText
         {
             get
@@ -171,6 +180,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Represents a resignation request for a driver
     public class DriverResignModel
     {
         public DriverModel Driver { get; set; }
@@ -178,6 +188,7 @@ namespace ArmsModels.BaseModels
         public string Remarks { get; set; }
     }
 
+    // Represents the work period of a driver
     public class DriverWorkPeriodModel
     {
         public DriverModel Driver { get; set; }

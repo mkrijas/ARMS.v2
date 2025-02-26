@@ -9,12 +9,13 @@ namespace ArmsModels.BaseModels
 {
     public class NotificationModel
     {
+        // Model representing a notification
         public NotificationModel()
         {
             UserInfo = new();
         }
 
-        public int? NotificationID { get; set; }
+        public int? NotificationID { get; set; } // Unique identifier for the notification
         public bool Status { get; set; }
         public DateTime? TriggeredOn { get; set; }
         public string Title { get; set; }

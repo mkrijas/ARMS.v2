@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Deletes a bank posting group based on ID and UserID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,7 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Bank.Delete]", parameters);
         }
 
-
+        // Retrieves all bank posting groups
         public IEnumerable<BankPostingGroupModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,6 +43,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a specific bank posting group by BankID
         public BankPostingGroupModel SelectByBank(int? BankID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -57,6 +59,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Retrieves a specific bank posting group by ID
         public BankPostingGroupModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -72,6 +75,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Updates a bank posting group and returns the updated model 
         public BankPostingGroupModel Update(BankPostingGroupModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -90,6 +94,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Converts an IDataRecord into a BankPostingGroupModel object
         private BankPostingGroupModel GetModel(IDataRecord dr)
         {
             return new BankPostingGroupModel

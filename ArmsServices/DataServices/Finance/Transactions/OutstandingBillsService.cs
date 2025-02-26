@@ -18,7 +18,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
-
+        
+        // Method to approve an outstanding bill
         public int Approve(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -31,6 +32,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Approve]", parameters);
         }
 
+        // Method to auto-settle an outstanding bill
         public int? AutoSettle(AutoSettleModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -49,6 +51,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Update]", parameters);
         }
 
+        // Method to delete an auto-settle entry
         public int DeleteAutoSettle(int? ID, string userID)
         {
             //throw new NotImplementedException();
@@ -61,6 +64,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.OutstandingBills.AutoSettle.Delete]", parameters);
         }
 
+        // Method to delete an auto-settle entry
         public IEnumerable<BillsPaidModel> GetAutoSettledBills(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -88,6 +92,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select outstanding bills by Branch ID
         public IEnumerable<OutstandingBillsModel> Select(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -101,6 +106,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved outstanding bills
         public IEnumerable<AutoSettleModel> SelectAutoSettledEntriesByApproved(int? BranchID, int numberOfRecords)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -139,6 +145,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved outstanding bills
         public IEnumerable<AutoSettleModel> SelectAutoSettledEntriesByUnapproved(int? BranchID, int numberOfRecords)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -177,6 +184,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select an outstanding bill by its ID
         public OutstandingBillsModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -192,6 +200,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select outstanding bills by Party ID
         public IEnumerable<OutstandingBillsModel> SelectByParty(int? PartyID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -228,6 +237,7 @@ namespace ArmsServices.DataServices
         //    //   throw new NotImplementedException();
         //}
 
+        // Method to select outstanding bills by date period
         public IEnumerable<OutstandingBillsModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -284,6 +294,7 @@ namespace ArmsServices.DataServices
 
         //}
 
+        // Private method to convert an IDataRecord to an OutstandingBillsModel
         private OutstandingBillsModel GetModel(IDataRecord dr)
         {
             return new OutstandingBillsModel

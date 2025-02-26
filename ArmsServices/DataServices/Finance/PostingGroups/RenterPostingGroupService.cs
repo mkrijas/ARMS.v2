@@ -17,6 +17,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to get a posting group by RenterID
         public RenterPostingGroupModel GetPostingGroup(int? RenterID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -31,6 +33,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to delete a posting group by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -41,7 +44,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Rent.Delete]", parameters);
         }
 
-
+        // Method to select and retrieve all RenterPostingGroupModel records
         public IEnumerable<RenterPostingGroupModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -55,6 +58,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a posting group by its ID
         public RenterPostingGroupModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -70,6 +74,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update an existing RenterPostingGroupModel record
         public RenterPostingGroupModel Update(RenterPostingGroupModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -88,6 +93,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Private method to convert an IDataRecord to a RenterPostingGroupModel
         private RenterPostingGroupModel GetModel(IDataRecord dr)
         {
             return new RenterPostingGroupModel

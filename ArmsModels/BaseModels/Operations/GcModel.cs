@@ -8,6 +8,7 @@ using System.Xml.Linq;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents a set of goods consignment (GC) records
     public class GcSetModel : ICloneable
     {
         public GcSetModel()
@@ -15,7 +16,7 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
             Gcs = new();
         }
-        public long? GcSetID { get; set; }
+        public long? GcSetID { get; set; } // Unique identifier for the GC set (nullable)
         public long? TripID { get; set; }
         public int? BranchID { get; set; }
         [Required]
@@ -62,6 +63,7 @@ namespace ArmsModels.BaseModels
         }
     }
 
+    // Represents a single goods consignment (GC) record
     public class GcModel : ICloneable
     {
         public GcModel()
@@ -69,8 +71,8 @@ namespace ArmsModels.BaseModels
             UserInfo = new SharedModels.UserInfoModel();
             EwayBill = new();
         }
-        public long? GcID { get; set; }
-        [Required]
+        public long? GcID { get; set; } // Unique identifier for the GC (nullable)
+        [Required] 
         public short? GcType { get; set; }
         [Required]
         public DateTime? BillDate { get; set; } = DateTime.Today;
@@ -100,14 +102,14 @@ namespace ArmsModels.BaseModels
         }
     }
 
-
+    // Represents an E-way bill associated with a goods consignment
     public class EwayBillModel : ICloneable
     {
         public EwayBillModel()
         {
             UserInfo = new SharedModels.UserInfoModel();
         }
-        public long? GcID { get; set; }
+        public long? GcID { get; set; } // Unique identifier for the GC associated with the E-way bill (nullable)
         [Required]
         [StringLength(12,ErrorMessage = "Must be 12 Digits",MinimumLength = 12)]
         public string EwayBillRef { get; set; }

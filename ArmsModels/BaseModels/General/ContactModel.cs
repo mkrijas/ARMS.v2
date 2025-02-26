@@ -7,6 +7,7 @@ namespace ArmsModels.BaseModels
 {
     public class ContactModel : ICloneable
     {
+        // Model representing a contact
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
@@ -16,7 +17,7 @@ namespace ArmsModels.BaseModels
         {
             UserInfo = new UserInfoModel();
         }
-        public int? ContactID { get; set; }
+        public int? ContactID { get; set; } // Unique identifier for the contact
         [Required]
         public string ContactName { get; set; }
         public string AdditionalInfo { get; set; }

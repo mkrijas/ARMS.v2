@@ -9,6 +9,7 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
+    // Service class for managing owned bank accounts
     public class BankAccountOwnService : IBankAccountOwnService
     {
         IDbService Iservice;
@@ -24,6 +25,8 @@ namespace ArmsServices.DataServices
             _contact = contact;
             _postingGroup = postingGroup;
         }
+
+        // Updates an owned bank account and returns the updated model
         public OwnBankModel Update(OwnBankModel model)
         {
             BankAccountModel bankAccount = _bank.Update(model.BankAccountInfo);
@@ -50,6 +53,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Deletes an owned bank account by its ID and returns the number of affected rows
         public int Delete(int? ID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -59,6 +64,8 @@ namespace ArmsServices.DataServices
             };            
             return Iservice.ExecuteNonQuery("[usp.Finance.BankAccount.Own.Delete]", parameters);
         }
+
+        // Retrieves a list of owned bank accounts
         public IEnumerable<OwnBankModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -71,6 +78,8 @@ namespace ArmsServices.DataServices
                     yield return GetModel(dr);
             }
         }
+
+        // Retrieves owned bank accounts for a specific branch
         public IEnumerable<OwnBankModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -85,7 +94,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-
+        // Helper method to map data from the database to an OwnBankModel
         private OwnBankModel GetModel(IDataRecord dr)
         {
             return new OwnBankModel()
@@ -109,6 +118,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Retrieves an owned bank account by its bank code
         public OwnBankModel SelectByCode(string BankCode)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -125,6 +135,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Retrieves an owned bank account by its ID
         public OwnBankModel SelectByID(int ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -138,16 +149,21 @@ namespace ArmsServices.DataServices
                 model = GetModel(dr);
             }
             return model;
-        }      
+        }
 
+        // Retrieves the COA ID for bank charges associated with a specific bank
         public int? GetBankChargeCoaID(int? BankID)
         {
             return _postingGroup.SelectByBank(BankID).BankCharges.CoaID;
         }
+
+        // Retrieves the COA ID for a bank account associated with a specific bank
         public int? GetBankAccountCoaID(int? BankID)
         {
             return _postingGroup.SelectByBank(BankID).BankAccount.CoaID;
         }
+
+        // Retrieves the COA ID for processing fees associated with a specific bank
         public int? GetProcessingFeeCoaID(int? BankID)
         {
             return _postingGroup.SelectByBank(BankID).ProcessingFee.CoaID;

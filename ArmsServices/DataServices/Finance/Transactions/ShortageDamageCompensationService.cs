@@ -8,6 +8,7 @@ using Core.BaseModels.Finance.Transactions;
 using ArmsModels.BaseModels.General;
 using ArmsServices.DataServices.General;
 using ArmsModels.BaseModels;
+using static System.Net.Mime.MediaTypeNames;
 
 
 namespace DAL.DataServices.Finance.Transactions
@@ -22,6 +23,7 @@ namespace DAL.DataServices.Finance.Transactions
             configTable = IconfigTable;
         }
 
+        // Method to delete a shortage/damage compensation entry
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -34,6 +36,7 @@ namespace DAL.DataServices.Finance.Transactions
 
         }
 
+        // Method to select all shortage/damage compensation entries
         public IEnumerable<ShortageDamageCompensationModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -47,6 +50,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select shortage/damage compensation entries by GcSetID
         public IEnumerable<ShortageDamageCompensationModel> SelectByGcSetID(long? GcSetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -60,6 +64,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select approved shortage/damage compensation entries
         public IEnumerable<ShortageDamageCompensationModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -76,6 +81,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select unapproved shortage/damage compensation entries
         public IEnumerable<ShortageDamageCompensationModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -92,6 +98,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select a shortage/damage compensation entry by its ID
         public ShortageDamageCompensationModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -106,6 +113,8 @@ namespace DAL.DataServices.Finance.Transactions
             }
             return model;
         }
+
+        // Method to approve a shortage/damage compensation entry
         public int Approve(int? DamageID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -117,6 +126,7 @@ namespace DAL.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.ShortageDamageCompensation.Approve]", parameters);
         }
 
+        // Method to reverse a shortage/damage compensation entry
         public int Reverse(int? DamageID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -127,6 +137,8 @@ namespace DAL.DataServices.Finance.Transactions
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.ShortageDamageCompensation.Reverse]", parameters);
         }
+
+        // Method to update a shortage/damage compensation entry
         public ShortageDamageCompensationModel Update(ShortageDamageCompensationModel model)
         {        
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -151,6 +163,8 @@ namespace DAL.DataServices.Finance.Transactions
             }
             return model;
         }
+
+        // Helper method to convert IDataRecord to ShortageDamageCompensationModel
         private ShortageDamageCompensationModel GetModel(IDataRecord dr)
         {
             return new ShortageDamageCompensationModel
@@ -181,6 +195,7 @@ namespace DAL.DataServices.Finance.Transactions
             };
         }
 
+        // Method to get damage receivables for a specific branch
         public IEnumerable<TripAdvanceModel> GetDamageReceivables(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

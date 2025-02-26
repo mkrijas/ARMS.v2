@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a posting group by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Vendor.Delete]", parameters);
         }
 
+        // Method to get a posting group by VendorID
         public VendorPostingGroupModel GetPostingGroup(int? VendorID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,6 +44,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to select and retrieve all VendorPostingGroupModel records
         public IEnumerable<VendorPostingGroupModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -55,6 +58,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a posting group by its ID
         public VendorPostingGroupModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -68,7 +72,8 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
-
+        
+        // Method to update an existing VendorPostingGroupModel record
         public VendorPostingGroupModel Update(VendorPostingGroupModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -87,6 +92,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Private method to convert an IDataRecord to a VendorPostingGroupModel
         private VendorPostingGroupModel GetModel(IDataRecord dr)
         {
             return new VendorPostingGroupModel

@@ -21,6 +21,7 @@ namespace DAL.DataServices.Finance.Transactions
             configTable= IconfigTable;
         }
 
+        // Method to delete a mileage shortage receipt
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -33,6 +34,7 @@ namespace DAL.DataServices.Finance.Transactions
 
         }
 
+        // Method to select all mileage shortage receipts
         public IEnumerable<MileageShortageReceiptModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -46,6 +48,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select mileage shortage receipts by Trip ID
         public IEnumerable<MileageShortageReceiptModel> SelectByTripID(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -59,6 +62,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select mileage shortage receipts by Transfer ID
         public IEnumerable<MileageShortageReceiptModel> SelectByTransferID(int? RequestApprovalHistoryID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -72,6 +76,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select approved mileage shortage receipts
         public IEnumerable<MileageShortageReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -88,6 +93,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select unapproved mileage shortage receipts
         public IEnumerable<MileageShortageReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -104,6 +110,7 @@ namespace DAL.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select a mileage shortage receipt by its ID
         public MileageShortageReceiptModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -118,6 +125,8 @@ namespace DAL.DataServices.Finance.Transactions
             }
             return model;
         }
+
+        // Method to approve a mileage shortage receipt
         public int Approve(int? MileageShortageReceiptID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -129,6 +138,7 @@ namespace DAL.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.MileageShortageReceipt.Approve]", parameters);
         }
 
+        // Method to reverse a mileage shortage receipt
         public int Reverse(int? MileageShortageReceiptID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -139,6 +149,8 @@ namespace DAL.DataServices.Finance.Transactions
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.MileageShortageReceipt.Reverse]", parameters);
         }
+
+        // Method to update MileageShortageReceiptModel record
         public MileageShortageReceiptModel Update(MileageShortageReceiptModel model)
         {
             ConfigModel MileageShortageAccount;
@@ -189,6 +201,8 @@ namespace DAL.DataServices.Finance.Transactions
             }
             return model;
         }
+
+        // Private method to convert an IDataRecord to a MileageShortageReceiptModel
         private MileageShortageReceiptModel GetModel(IDataRecord dr)
         {
             return new MileageShortageReceiptModel

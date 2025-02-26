@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a dimension by its IDc
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,7 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Dimension.Delete]", parameters);
         }
 
-
+        // Method to select all dimensions
         public IEnumerable<DimensionModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -41,6 +42,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Method to select dimensions by category ID
         public IEnumerable<DimensionModel> SelectByCategory(int? CategoryID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -55,7 +58,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-
+        // Method to select a dimension by its ID
         public DimensionModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -71,6 +74,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select all categories
         public IEnumerable<CategoryModel> SelectCategory()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Dimension.Category.Select]", null))
@@ -89,6 +93,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a dimension
         public DimensionModel Update(DimensionModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -105,6 +110,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a category
         public CategoryModel UpdateCategory(CategoryModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -130,6 +136,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to DimensionModel
         private DimensionModel GetModel(IDataRecord dr)
         {
             return new DimensionModel

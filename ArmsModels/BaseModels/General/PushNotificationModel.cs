@@ -2,13 +2,14 @@
 
 namespace ArmsModels.BaseModels.General
 {
+    // Model representing a push notification
     public class PushNotificationModel
     {
-        public int MSgId { get; set; } = 0;
+        public int MSgId { get; set; } = 0; // Unique identifier for the message, initialized to 0
         public int? MessageID { get; set; }
-        public BranchModel InitiateBranch { get; set; }
+        public BranchModel InitiateBranch { get; set; } // Branch from which the notification is initiated
         public int? InitiateBranchID { get; set; }
-        public BranchModel ReceivedBranch { get; set; }
+        public BranchModel ReceivedBranch { get; set; } // Branch that received the notification
         public int? ReceivedBranchID { get; set; }
         public string MessageTitle { get; set; }
         public string MessageBody { get; set; }
@@ -25,8 +26,9 @@ namespace ArmsModels.BaseModels.General
         public DateTime? TimeStamp { get; set; }
         public DateTime? MsgDate { get; set; } = DateTime.Now;
         private DateTime CurrentTime { get; set; } = DateTime.Now;
-        public string MsgDatest => this.MsgDate.Value.ToString("dd-MMM-yyyy");
+        public string MsgDatest => this.MsgDate.Value.ToString("dd-MMM-yyyy"); // Property to get the formatted date string of the message date
         public string MsgDateString { get; set; }
+        // Property to calculate the time span since the message date
         public string MessageTimeSpan
         {
             get
@@ -61,6 +63,8 @@ namespace ArmsModels.BaseModels.General
         }
         public string ShowOrHideBody { get; set; } = "none";
     }
+
+    // Model representing a group of push notifications
     public class PushNotificationGroupModel
     {
         public int? ID { get; set; }   

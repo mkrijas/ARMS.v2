@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to reverse a final invoice
         public int ReverseFinalInvoice(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.FinalInvoice.Reverse]", parameters);
         }
 
+        // Method to get pending tariff entries
         public IEnumerable<GcTariffModel> GetPending(int? OrderID, short? TariffTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,6 +44,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select pending proforma invoices
         public IEnumerable<ProformaInvoiceModel> SelectPendingProformaInvoiceList(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -57,6 +60,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select proforma invoices based on various criteria
         public IEnumerable<ProformaInvoiceModel> SelectProformaInvoiceList(int? BranchID, int? ID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -73,6 +77,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select pending consolidated draft bills
         public IEnumerable<ConsolidatedDraftBillModel> SelectPendingConsolidatedDraftBillList(int? ID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -87,6 +92,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get billed tariff entries based on consolidated draft bill ID
         public IEnumerable<GcTariffModel> GetBilled(int? ConsolidatedDraftBillID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -100,6 +106,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a final invoice by ID
         public BillingModel SelectFinalInvoice(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -114,6 +121,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to delete an approved proforma invoice
         public int DeleteApproved(ProformaInvoiceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -124,7 +132,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.DeleteApproved]", parameters);
         }
 
-
+        // Method to update a final invoice
         public int? UpdateFinalInvoice(BillingModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -159,6 +167,7 @@ namespace ArmsServices.DataServices
             return ID;
         }
 
+        // Private method to convert an IDataRecord to a BillingModel
         private BillingModel GetFinalInvoiceModel(IDataRecord dr)
         {
             return new BillingModel
@@ -205,6 +214,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Private method to convert an IDataRecord to a ProformaInvoiceModel
         private ProformaInvoiceModel GetProformaInvoiceModel(IDataRecord dr)
         {
             return new ProformaInvoiceModel
@@ -256,6 +266,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Private method to convert an IDataRecord to a ConsolidatedDraftBillModel
         private ConsolidatedDraftBillModel GetConsolidatedDraftBillModel(IDataRecord dr)
         {
             return new ConsolidatedDraftBillModel
@@ -300,6 +311,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to update a proforma invoice
         public int? UpdateProformaInvoice(ProformaInvoiceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -335,6 +347,7 @@ namespace ArmsServices.DataServices
             return ID;
         }
 
+        // Method to update a consolidated draft bill
         public int? UpdateConsolidatedDraftBill(ConsolidatedDraftBillModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -368,6 +381,7 @@ namespace ArmsServices.DataServices
             return ID;
         }
 
+        // Method to select a proforma invoice by ID
         public ProformaInvoiceModel SelectProformaInvoice(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -382,6 +396,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select a consolidated draft bill by ID
         public ConsolidatedDraftBillModel SelectConsolidatedDraftBill(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -396,6 +411,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to delete a proforma invoice
         public int DeleteProformaInvoice(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -407,6 +423,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Delete]", parameters);
         }
 
+        // Method to reverse a consolidated draft billc
         public int ReverseConsolidatedDraftBill(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -417,6 +434,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ConsolidatedDraftBill.Reverse]", parameters);
         }
 
+        // Method to get pending tariff entries based on various criteria
         public IEnumerable<GcTariffModel> GetPending(int? PartyID, int? OrderID, short? TariffTypeID, int? GcTypeID, int? TruckID, DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -436,6 +454,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to generate tariffs based on various criteria
         public IEnumerable<GcTariffModel> GenerateTariffs(int? OrderID, short? TariffTypeID, int? GcTypeID, DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -453,6 +472,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Private method to convert an IDataRecord to a GcTariffModel
         GcTariffModel GetTariffEntries(IDataRecord dr)
         {
             return new GcTariffModel()
@@ -476,6 +496,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to approve a proforma invoice
         public int? ApproveProformaInvoice(int? ProformaInvoiceID, string userID, string Remarks, string InvoiceNumber, string InvoiceRefNumber, DateTime? InvoiceDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -490,6 +511,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Approve]", parameters);
         }
 
+        // Method to reverse a proforma invoice
         public int? ReverseProformaInvoice(int? ProformaInvoiceID, string userID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -500,6 +522,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Billing.ProformaInvoice.Reverse]", parameters);
         }
 
+        // Method to get GST rate based on draft bill ID
         public GstModel GetGstRate(int? DraftBillID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

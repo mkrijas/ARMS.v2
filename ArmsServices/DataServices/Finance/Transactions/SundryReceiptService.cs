@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a sundry receipt entry
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryReceipt.Delete]", parameters);
         }
 
+        // Method to remove a file associated with a sundry receipt entry
         public int RemoveFile(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -38,7 +40,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryReceipt.Delete]", parameters);
         }
-        
+
+        // Method to select all sundry receipt entries
         public IEnumerable<SundryReceiptModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -51,6 +54,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved sundry receipt entries
         public IEnumerable<SundryReceiptModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -67,6 +71,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved sundry receipt entries
         public IEnumerable<SundryReceiptModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -83,6 +88,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get entries associated with a specific sundry receipt
         public IEnumerable<SundryReceiptEntryModel> GetEntries(int? SID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -111,6 +117,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a sundry receipt entry by its ID
         public SundryReceiptModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -126,6 +133,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to approve a sundry receipt entry
         public int Approve(int? SundryReceiptID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -137,6 +145,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryReceipt.Approve]", parameters);
         }
 
+        // Method to update a sundry receipt entry
         public SundryReceiptModel Update(SundryReceiptModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -168,6 +177,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to SundryReceiptModel
         private SundryReceiptModel GetModel(IDataRecord dr)
         {
             return new SundryReceiptModel

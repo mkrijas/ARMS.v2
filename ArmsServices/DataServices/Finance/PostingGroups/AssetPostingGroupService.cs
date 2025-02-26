@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Deletes an asset posting group based on ID and UserID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.PostingGroup.Asset.Delete]", parameters);
         }
 
+        // Retrieves a specific asset posting group by AssetID
         public AssetPostingGroupModel GetPostingGroup(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,6 +44,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Retrieves all asset posting groups
         public IEnumerable<AssetPostingGroupModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -54,6 +57,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a specific asset posting group by ID
         public AssetPostingGroupModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -68,6 +72,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Updates an asset posting group and returns the updated model
         public AssetPostingGroupModel Update(AssetPostingGroupModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -89,6 +94,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Converts an IDataRecord into an AssetPostingGroupModel object
         private AssetPostingGroupModel GetModel(IDataRecord dr)
         {
             return new AssetPostingGroupModel

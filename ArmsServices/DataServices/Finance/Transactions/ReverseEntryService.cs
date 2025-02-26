@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a reverse entry
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transaction.Reverse.Delete]", parameters);
         }
 
+        // Method to select all cancellation reason codes   
         public IEnumerable<CancellationReasonCodesByDocumentType> Select()
         {
 
@@ -41,6 +43,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved reverse entries
         public IEnumerable<CancellationReasonCodesByDocumentType> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -58,6 +61,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved reverse entries
         public IEnumerable<CancellationReasonCodesByDocumentType> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -75,6 +79,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a reverse entry by its ID
         public CancellationReasonCodesByDocumentType SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -90,6 +95,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to approve a reverse entry
         public int Approve(int? ReverseEntryID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -101,6 +107,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transaction.Reverse.Approve]", parameters);
         }
 
+        // Method to update a reverse entry
         public CancellationReasonCodesByDocumentType Update(CancellationReasonCodesByDocumentType model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -122,6 +129,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update TDS reverse entry
         public CancellationReasonCodesByDocumentType TDSReverseUpdate(CancellationReasonCodesByDocumentType model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -139,6 +147,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get reverse entry details by document type and document ID
         public CancellationReasonCodesByDocumentType GetReverseEntryDetailsByDocumentTypeAndDocumentID(int? DocumentID, int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -155,6 +164,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to check if a reverse entry already exists
         public bool? IsAlreadyReversed(int? DocumentID, int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -170,6 +180,7 @@ namespace ArmsServices.DataServices
             return Result;
         }
 
+        // Helper method to convert IDataRecord to CancellationReasonCodesByDocumentType
         private CancellationReasonCodesByDocumentType GetModel(IDataRecord dr)
         {
             return new CancellationReasonCodesByDocumentType

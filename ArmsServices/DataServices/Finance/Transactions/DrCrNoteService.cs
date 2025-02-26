@@ -24,6 +24,7 @@ namespace ArmsServices.DataServices
             Ibilling = billing;
         }
 
+        // Method to approve a Debit/Credit Note
         public int Approve(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -36,6 +37,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Approve]", parameters);
         }
 
+        // Method to delete a Debit/Credit Note by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -47,6 +49,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Delete]", parameters);
         }
 
+        // Method to remove a file associated with a Debit/Credit Note
         public int RemoveFile(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +61,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Delete]", parameters);
         }
 
+        // Method to get bill information based on various criteria
         public IEnumerable<BillInfoModel> GetBillInfo(int? BranchID,string DrCrType, int? PartyID, string DocumentNumberSearchKey)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -83,6 +87,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get bill information particulars based on the bill type
         public IEnumerable<TaxPurchaseExpenseModel> GetBillInfoParticulars(int? ID, string BillType)
         {
             switch (BillType)
@@ -96,6 +101,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get bill information items based on the bill type
         public IEnumerable<TaxPurchaseItemModel> GetBillInfoItems(int? ID, string BillType)
         {
             switch (BillType)
@@ -109,6 +115,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        
         public IEnumerable<TaxPurchaseExpenseModel> GetExpenses(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -171,6 +178,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to reverse a Debit/Credit Note
         public int Reverse(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -183,6 +191,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.DrCrNote.Reverse]", parameters);
         }
 
+        // Method to select all Debit/Credit Notes 
         public IEnumerable<DrCrNoteModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -196,6 +205,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved Debit/Credit Notes
         public IEnumerable<DrCrNoteModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -214,6 +224,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved Debit/Credit Notes
         public IEnumerable<DrCrNoteModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool IsInterBranch, string searchTerm)
         {
 
@@ -232,6 +243,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a Debit/Credit Note by its ID
         public DrCrNoteModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -247,6 +259,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select Debit/Credit Notes by Party ID and Party Branch ID
         public IEnumerable<DrCrNoteModel> SelectByParty(int? PartyID, int? PartyBranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -262,6 +275,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select Debit/Credit Notes by date period
         public IEnumerable<DrCrNoteModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -277,6 +291,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update DrCrNoteModel record
         public DrCrNoteModel Update(DrCrNoteModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -311,6 +326,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Private method to convert an IDataRecord to a DrCrNoteModel
         private DrCrNoteModel GetModel(IDataRecord dr)
         {
             return new DrCrNoteModel

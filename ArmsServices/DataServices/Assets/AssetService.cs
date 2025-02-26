@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
+    // Service class for managing assets
     public class AssetService : IAssetService
     {
         IDbService Iservice;
@@ -19,6 +20,7 @@ namespace ArmsServices.DataServices
             _asset = asset;
         }
 
+        // Retrieves a list of all assets
         public IEnumerable<AssetModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -31,6 +33,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Removes a photo associated with an asset and returns the number of affected rows
         public int RemovePhoto(AssetModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,6 +45,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.RemovePhoto]", parameters);
         }
 
+        // Helper method to map data from the database to an AssetModel
         private AssetModel GetModel(IDataRecord dr)
         {
             return new AssetModel
@@ -106,6 +110,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Deletes an asset by its ID and records the user who performed the deletion
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -116,6 +121,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Delete]", parameters);
         }
 
+        // Updates the status of an asset and returns the updated model
         public AssetModel UpdateAsset(AssetModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -161,6 +167,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Moves an asset to a new parent asset and returns the number of affected rows
         public AssetModel UpdateAssetStatus(AssetModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -174,6 +181,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Moves an asset to a new parent asset and returns the number of affected rows
         public int MoveAsset(int? AssetID, int? ParentAssetID, string Mode, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -186,6 +194,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Attach]", parameters);
         }
 
+        // Retrieves an asset by its ID
         public AssetModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -200,6 +209,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Retrieves a list of assets associated with a specific branch
         public IEnumerable<AssetModel> SelectByBranch(int BranchID, bool Scrap, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -216,6 +226,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of assets associated with a specific subclass
         public IEnumerable<AssetModel> SelectBySubClass(int BranchID, int? SubClassID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -230,6 +241,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of assets attached to a specific asset
         public IEnumerable<AssetModel> GetAttachedAssets(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -242,6 +254,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of linked assets on a truck
         public IEnumerable<AssetModel> SelectLinkedAssetsOnTruck()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -254,6 +267,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Updates the status of an asset and returns the status update ID
         public int? UpdateStatus(AssetStatusUpdateModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -272,6 +286,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Retrieves the current status of an asset
         public AssetStatusUpdateModel GetCurrentStatus(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -299,6 +314,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Retrieves the status history of an asset
         public IEnumerable<AssetStatusUpdateModel> GetStatusHistory(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -318,6 +334,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Marks an asset as scrapped and returns the number of affected rows
         public int? Scrap(int? AssetID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -328,6 +345,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Scrap]", parameters);
         }
 
+        // Clears the list of assets
         public void ClearAssets()
         {
             if (assets != null)
@@ -336,7 +354,9 @@ namespace ArmsServices.DataServices
             }
         }
 
-        private List<AssetModel> assets = new();
+        private List<AssetModel> assets = new(); // List to hold assets
+
+        // Retrieves a hierarchical view of assets
         public List<AssetViewModel> GetAssetView(int BranchID, int? ParentID = null, int? NumberOfRecords = 1000, string searchTerm = "")
         {
             if (assets.Count == 0)
@@ -355,36 +375,43 @@ namespace ArmsServices.DataServices
             return view;
         }
 
+        // Retrieves the capitalization COA ID for a given asset
         public int? GetCapitalizationCoaID(int? AssetID)
         {
             return _asset.GetPostingGroup(AssetID).Capitalization.CoaID;
         }
 
+        // Retrieves the CWIP COA ID for a given asset
         public int? GetCWIPCoaID(int? AssetID)
         {
             return _asset.GetPostingGroup(AssetID).CWIP.CoaID;
         }
 
+        // Retrieves the depreciation COA ID for a given asset
         public int? GetDepreciationCoaID(int? AssetID)
         {
             return _asset.GetPostingGroup(AssetID).Depreciation.CoaID;
         }
 
+        // Retrieves the accumulated depreciation COA ID for a given asset
         public int? GetAccumulatedDepreciationCoaID(int? AssetID)
         {
             return _asset.GetPostingGroup(AssetID).AccummulatedDepreciation.CoaID;
         }
 
+        // Retrieves the revaluation COA ID for a given asset
         public int? GetRevaluationCoaID(int? AssetID)
         {
             return _asset.GetPostingGroup(AssetID).Revaluation.CoaID;
         }
 
+        // Retrieves the revaluation reserve COA ID for a given asset
         public int? GetRevaluationReserveCoaID(int? AssetID)
         {
             return _asset.GetPostingGroup(AssetID).RevaluationReserve.CoaID;
         }
 
+        // Retrieves an asset by its truck ID
         public AssetModel SelectByTruckID(int? TruckID)
         {
             ITruckService truckService = new TruckService(Iservice, null);
@@ -392,6 +419,7 @@ namespace ArmsServices.DataServices
             return SelectByID(truck.AssetID);
         }
 
+        // Retrieves a list of assets based on various criteria
         public IEnumerable<AssetModel> GetAssetList(int BranchID, int? ParentID, int? NumberOfRecords, string searchTerm)
         {
             bool Scrap = false;
@@ -409,6 +437,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of non-invoiced assets based on various criteria
         public IEnumerable<AssetModel> GetAssetListNonInvoiced(int BranchID, int? ParentID, int? NumberOfRecords, string searchTerm)
         {
             bool Scrap = false;
@@ -426,6 +455,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a purchase order by its ID
         public AssetPOModel SelectPOByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -440,6 +470,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Retrieves a list of account rule definitions
         public IEnumerable<AccountRuleDefModel> GetAccountRuleDefinition()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Finance.Assets.AccountDef.Select]", null))
@@ -454,6 +485,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data from the database to an AssetPOModel
         private AssetPOModel GetModelPO(IDataRecord dr)
         {
             return new AssetPOModel

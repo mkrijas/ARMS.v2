@@ -19,6 +19,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a chart of account entry
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -30,6 +31,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Coa.Delete]", parameters);
         }
 
+        // Method to select chart of accounts by group
         public IEnumerable<ChartOfAccountModel> SelectByGroup(int? CoaID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +46,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select children of a chart of account
         public IEnumerable<ChartOfAccountModel> SelectChildren(int? CoaID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,8 +61,10 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // List to hold all chart of accounts
         public List<ChartOfAccountModel> CoaAllList { get; set; } = new();
 
+        // Method to select all children and their sub-children for a given chart of account
         public List<ChartOfAccountModel> SelectAllChildrenAndItsSub(int? CoaID, string searchString)
         {
             ClearCoaList();
@@ -78,11 +83,13 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to clear the chart of accounts list
         public void ClearCoaList()
         {
             CoaAllList.Clear();
         }
 
+        // Method to select all children and their sub-children for a given chart of account
         public List<ChartOfAccountModel> SelectAllChildrenAndItsSubChildren(int? CoaID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -107,6 +114,7 @@ namespace ArmsServices.DataServices
             return CoaAllList;
         }
 
+        // Method to select base chart of accounts
         public IEnumerable<ChartOfAccountModel> SelectBase()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -120,6 +128,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a chart of account by its ID
         public ChartOfAccountModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -136,6 +145,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a chart of account
         public ChartOfAccountModel Update(ChartOfAccountModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -162,6 +172,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to ChartOfAccountModel
         private ChartOfAccountModel GetModel(IDataRecord dr)
         {
             return new ChartOfAccountModel
@@ -187,6 +198,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to filter subledgers based on a filter text
         public IEnumerable<ChartOfAccountModel> FilterSubLedgers(string filterText)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -201,6 +213,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get all ledgers
         public IEnumerable<ChartOfAccountModel> AllLedgers()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -214,6 +227,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get all groups of accounts
         public IEnumerable<ChartOfAccountModel> AllGroups()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -227,6 +241,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get allocated branches for a specific chart of account
         public IEnumerable<CoaBranchAvailabilityModel> GetAllocatedBranches(int? CoaID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -247,6 +262,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to check if cost center is mandatory for a given chart of account ID
         public bool? IsCostCenterIsMadatoryForGivenCoaID(int? CoaID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -261,6 +277,8 @@ namespace ArmsServices.DataServices
             }
             return result;
         }
+
+        // Method to check if dimension is mandatory for a given chart of account ID
         public bool? IsDimensionIsMadatoryForGivenCoaID(int? CoaID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -276,6 +294,7 @@ namespace ArmsServices.DataServices
             return result;
         }
 
+        // Method to select all accounts for a given chart of account ID
         public void SelectAll(int? CoaID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -288,6 +307,7 @@ namespace ArmsServices.DataServices
             Iservice.ExecuteNonQuery("[usp.finance.COA.BranchAvailability.Update]", parameters);
         }
 
+        // Method to unselect all accounts for a given chart of account ID
         public void UnSelectAll(int? CoaID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -300,6 +320,7 @@ namespace ArmsServices.DataServices
             Iservice.ExecuteNonQuery("[usp.finance.COA.BranchAvailability.Update]", parameters);
         }
 
+        // Method to add a branch to a chart of account
         public void AddBranch(CoaBranchAvailabilityModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -314,6 +335,7 @@ namespace ArmsServices.DataServices
             Iservice.ExecuteNonQuery("[usp.finance.COA.BranchAvailability.Update]", parameters);
         }
 
+        // Method to remove a branch from a chart of account
         public void RemoveBranch(CoaBranchAvailabilityModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -327,6 +349,7 @@ namespace ArmsServices.DataServices
             Iservice.ExecuteNonQuery("[usp.finance.COA.BranchAvailability.Update]", parameters);
         }
 
+        // Method to get subledgers in a specific branch
         public IEnumerable<CoaBranchAvailabilityModel> GetSubledgersInBranch(int? BranchID, string filterText)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -348,6 +371,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get payment codes for a specific branch and payment mode
         public IEnumerable<PaymentCodeModel> GetPaymentCodes(int? BranchID, string PaymentMode)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -370,6 +394,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get the balance of a specific cash account
         public decimal? GetBalance( int? BranchID,int? CoaID, string ArdCode, string SubARdCode, DateTime _date)
         {
 
@@ -393,6 +418,7 @@ namespace ArmsServices.DataServices
 
         }
 
+        // Method to get sub-ard codes
         public IEnumerable<SubArdCodeModel> GetSubArdCodes()
         {
             List<SqlParameter> parameters = new List<SqlParameter>

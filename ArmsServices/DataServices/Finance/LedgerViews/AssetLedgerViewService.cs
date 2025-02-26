@@ -16,6 +16,7 @@ namespace DAL.DataServices.Finance.LedgerViews
             Iservice = iservice;
         }
 
+        // Retrieves asset ledger entries based on Asset ID and Date range.
         public IEnumerable<LedgerViewsModel> SelectByAssetIDAndDate(int? AssetID, DateTime? FromDate, DateTime? ToDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

@@ -17,6 +17,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to delete a Contra transaction by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -29,6 +31,7 @@ namespace ArmsServices.DataServices
 
         }
 
+        // Method to select Contra transactions by Branch ID
         public IEnumerable<ContraModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -43,6 +46,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved Contra transactions
         public IEnumerable<ContraModel> SelectByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +62,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Method to select unapproved Contra transactions
         public IEnumerable<ContraModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -73,6 +79,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Method to select inter-branch Contra transactions by Branch ID
         public IEnumerable<ContraModel> SelectInterBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -88,6 +96,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select approved inter-branch Contra transactions
         public IEnumerable<ContraModel> SelectInterBranchByApproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -105,6 +114,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved inter-branch Contra transactions
         public IEnumerable<ContraModel> SelectInterBranchByUnapproved(int? BranchID, int? NumberOfRecords, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -122,10 +132,13 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a Contra transaction by its ID
         public ContraModel SelectByID(int? ID)
         {
             throw new NotImplementedException();
         }
+
+        // Method to approve a Contra transaction
         public int Approve(int? ID, string UserID,string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -138,6 +151,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Contra.Approve]", parameters);
         }
 
+        // Method to reverse a Contra transaction
         public int Reverse(int? ID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -148,6 +162,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.Contra.Reverse]", parameters);
         }
+
+        // Method to update ContraModel record
         public ContraModel Update(ContraModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -187,6 +203,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Private method to convert an IDataRecord to a ContraModel
         private ContraModel GetModel(IDataRecord dr)
         {
             return new ContraModel

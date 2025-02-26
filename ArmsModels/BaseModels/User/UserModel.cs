@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
+    // Represents a user in the system
     public class UserModel
     {
         [Required]
-        public string UserID { get; set; }
+        public string UserID { get; set; } // Required property for the unique identifier of the user
         [Required]
         public string UserName { get; set; }
         public string Email { get; set; }

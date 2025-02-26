@@ -19,6 +19,7 @@ namespace DAL.DataServices.Finance.DayOpen
             Iservice = iservice;
         }
 
+        // Retrieves a list of DayOpenRequestModel records based on the given number of records and branch ID
         public IEnumerable<DayOpenRequestModel> Select(int? NoOfRecords, int? BranchId)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -33,6 +34,7 @@ namespace DAL.DataServices.Finance.DayOpen
             }
         }
 
+        // Updates an existing DayOpenRequestModel record in the database
         public DayOpenRequestModel Update(DayOpenRequestModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -51,6 +53,7 @@ namespace DAL.DataServices.Finance.DayOpen
             return model;
         }
 
+        // Approves a day open request by updating its status in the database.
         public DayOpenRequestModel Approve(DayOpenRequestModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -66,6 +69,7 @@ namespace DAL.DataServices.Finance.DayOpen
             return model;
         }
 
+        // Rejects or closes a day open request by modifying its status in the database.
         public DayOpenRequestModel RejectOrClose(DayOpenRequestModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -81,6 +85,7 @@ namespace DAL.DataServices.Finance.DayOpen
             return model;
         }
 
+        // Validates whether a day open request can be processed for a given date, document type, and branch.
         public bool? ValidateDayOpen(DateTime? DocDate, int? DocTypeID, int? BranchID)
         {
             bool? result = false;
@@ -99,6 +104,7 @@ namespace DAL.DataServices.Finance.DayOpen
             return result;
         }
 
+        // Maps database records to the DayOpenRequestModel class.
         private DayOpenRequestModel GetModel(IDataRecord dr)
         {
             return new DayOpenRequestModel

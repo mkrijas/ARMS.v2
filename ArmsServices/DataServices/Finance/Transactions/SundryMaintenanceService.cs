@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to approve a sundry maintenance entry
         public int Approve(int? ID, string UserID, string Remark)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -29,6 +30,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryMaintenance.Approve]", parameters);
         }
 
+        // Method to delete a sundry maintenance entry
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -40,6 +42,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryMaintenance.Delete]", parameters);
         }
 
+        // Method to remove a file associated with a sundry maintenance entry
         public int RemoveFile(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -51,6 +54,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryMaintenance.Delete]", parameters);
         }
 
+        // Method to get entries associated with a sundry maintenance entry
         public IEnumerable<SundryMaintenanceEntryModel> GetEntries(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -89,6 +93,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to reverse a sundry maintenance entry
         public int Reverse(int? ID, string UserID, String Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -100,6 +105,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.SundryMaintenance.Reverse]", parameters);
         }
 
+        // Method to select all sundry maintenance entries
         public IEnumerable<SundryMaintenanceModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -112,6 +118,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a sundry maintenance entry by its ID
         public SundryMaintenanceModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -127,6 +134,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select sundry maintenance entries by party ID
         public IEnumerable<SundryMaintenanceModel> SelectByParty(int? PartyID, int? PartyBranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -142,6 +150,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select sundry maintenance entries by date period
         public IEnumerable<SundryMaintenanceModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -156,6 +165,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a sundry maintenance entry
         public SundryMaintenanceModel Update(SundryMaintenanceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -181,6 +191,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to convert IDataRecord to SundryMaintenanceModel
         private SundryMaintenanceModel GetModel(IDataRecord dr)
         {
             return new SundryMaintenanceModel
@@ -216,6 +227,7 @@ namespace ArmsServices.DataServices
             throw new NotImplementedException();
         }
 
+        // Method to select approved sundry maintenance entries 
         public IEnumerable<SundryMaintenanceModel> SelectByApproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -232,6 +244,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unapproved sundry maintenance entries
         public IEnumerable<SundryMaintenanceModel> SelectByUnapproved(int? BranchID, int? NumberOfRecords, bool InterBranch, string searchTerm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

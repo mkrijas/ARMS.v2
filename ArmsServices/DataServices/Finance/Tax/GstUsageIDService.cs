@@ -17,8 +17,9 @@ namespace ArmsServices.DataServices
         public GstUsageIDService(IDbService iservice)
         {
             Iservice = iservice;
-        }      
+        }
 
+        // Method to delete a GST Usage ID by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -29,6 +30,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Finance.Taxes.Gst.UsageID.Delete]", parameters);
         }
 
+        // Method to filter GST usage codes by text and entry date
         public IEnumerable<GstUsageCodeModel> FilterByText(string FilterText, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +46,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get GST rates
         public IEnumerable<GstRateModel> GetGstRates()
         {           
 
@@ -58,6 +61,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select GST usage codes by entry date
         public IEnumerable<GstUsageCodeModel> Select(DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -72,6 +76,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select GST usage codes by account ID
         public IEnumerable<GstUsageCodeModel> SelectByAccount(int AccountID, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -86,6 +91,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select GST usage codes by area
         public IEnumerable<GstUsageCodeModel> SelectByArea(string Area, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -101,6 +107,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a GST usage code by its code
         public GstUsageCodeModel SelectByCode(string Code)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -114,8 +121,9 @@ namespace ArmsServices.DataServices
                 model = GetModel(dr);
             }
             return model;
-        }      
+        }
 
+        // Method to select GST usage codes by SAC (Service Accounting Code)
         public IEnumerable<GstUsageCodeModel> SelectBySAC(string SAC, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -131,6 +139,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select GST usage codes by tax rate
         public IEnumerable<GstUsageCodeModel> SelectByTaxRate(decimal TaxRate, DateTime? entryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -146,6 +155,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update an existing GstUsageCodeModel record
         public GstUsageCodeModel Update(GstUsageCodeModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -168,6 +178,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select GST usage codes by tax rate and account ID
         public IEnumerable<GstUsageCodeModel> SelectByTaxRateAccount(int? rateId, int? acId)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -183,7 +194,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-
+        // Private method to convert an IDataRecord to a GstUsageCodeModel
         private GstUsageCodeModel GetModel(IDataRecord dr)
         {
             return new GstUsageCodeModel
@@ -209,6 +220,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to get the GST rate based on usage code and entry date
         public decimal? GetGstRate(string UsageCode, DateTime? EntryDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

@@ -8,15 +8,18 @@ using System.Threading.Tasks;
 
 namespace ArmsServices.DataServices
 {
+    // Service class for managing asset classes and subclasses
     public class AssetClassService : IAssetClassService
     {
-        IDbService Iservice;
+        IDbService Iservice; // Database service for executing queries
 
+        // Constructor that initializes the database service
         public AssetClassService(IDbService iservice)
         {
             Iservice = iservice;
         }
 
+        // Deletes an asset class by its ID and records the user who performed the deletion
         public int DeleteClass(int? AssetClassID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -27,6 +30,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.AssetClass.Delete]", parameters);
         }
 
+        // Deletes an asset subclass by its ID and records the user who performed the deletion
         public int DeleteSubClass(int? AssetSubClassID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -37,6 +41,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.AssetSubClass.Delete]", parameters);
         }
 
+        // Retrieves a list of all asset classes
         public IEnumerable<AssetClassModel> SelectClasses()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -50,6 +55,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of subclasses associated with a specific asset class IDg
         public IEnumerable<AssetSubClassModel> SelectSubClasses(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -63,7 +69,8 @@ namespace ArmsServices.DataServices
                 yield return GetAssetSubClass(dr);
             }
         }
-            
+
+        // Retrieves a list of subclasses associated with a specific asset class ID
         public IEnumerable<AssetSubClassModel> SelectSubClassesByClass(int? ClassID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -79,6 +86,7 @@ namespace ArmsServices.DataServices
 
         }
 
+        // Updates an existing asset class and returns the updated model
         public AssetClassModel UpdateClass(AssetClassModel model)
         {    
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -96,6 +104,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Updates an existing asset subclass and returns the updated model
         public AssetSubClassModel UpdateSubClass(AssetSubClassModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -114,6 +123,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Helper method to map data from the database to an AssetClassModel
         private AssetClassModel GetAssetClass(IDataRecord dr)
         {
             return new AssetClassModel
@@ -130,6 +140,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data from the database to an AssetSubClassModel
         private AssetSubClassModel GetAssetSubClass(IDataRecord dr)
         {
             return new AssetSubClassModel

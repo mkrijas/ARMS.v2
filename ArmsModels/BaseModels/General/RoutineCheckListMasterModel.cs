@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArmsModels.BaseModels.General
 {
-
+    // Model representing a master checklist item for routine checks
     public class RoutineCheckListMasterModel : ICloneable
     {
         public object Clone()
@@ -14,7 +14,7 @@ namespace ArmsModels.BaseModels.General
             string Json = JsonConvert.SerializeObject(this);
             return JsonConvert.DeserializeObject<RoutineCheckListMasterModel>(Json);
         }
-        public int? ItemID { get; set; }
+        public int? ItemID { get; set; } // Unique identifier for the checklist item
         public int? BranchID { get; set; }
         [Required]
         public string ItemName { get; set; }
@@ -28,6 +28,8 @@ namespace ArmsModels.BaseModels.General
         public string DetailDescription { get; set; }
         public UserInfoModel UserInfo { get; set; }
     }
+
+    // Model representing a pair of integer and string values
     public class IntStringValuesModel 
     {
         public int? IntVal { get; set; }

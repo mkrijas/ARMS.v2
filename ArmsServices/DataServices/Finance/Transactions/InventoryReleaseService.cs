@@ -5,6 +5,7 @@ using ArmsModels.BaseModels;
 using System.Data.SqlClient;
 using System.Data;
 using System.Reflection.PortableExecutable;
+using System.IO;
 
 namespace ArmsServices.DataServices.Finance.Transactions
 {
@@ -17,6 +18,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             Iservice = iservice;
         }
 
+        // Method to approve an inventory release
         public int Approve(int? RID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +30,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.InventoryRelease.Approve]", parameters);
         }
 
+        // Method to delete an inventory release
         public int Delete(int? ID, bool IsUsedItem, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -40,6 +43,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return Iservice.ExecuteNonQuery("[usp.Finance.Transactions.InventoryRelease.Delete]", parameters);
         }
 
+        // Method to get request sub-items for inventory release
         public IEnumerable<InventoryReleaseSubViewModel> GetRequstSub(int? ID, int? StoreID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -72,6 +76,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to get used request sub-items for inventory release
         public IEnumerable<InventoryReleaseSubViewModel> GetRequstSubUsed(int? ID, int? StoreID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -102,6 +107,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to get read-only request sub-items for inventory release
         public IEnumerable<InventoryReleaseSubViewModel> GetRequstSubReadOnly(int? ID, int? StoreID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -132,6 +138,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select all inventory releases
         public IEnumerable<InventoryReleaseModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -145,6 +152,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select inventory releases by Store ID
         public IEnumerable<InventoryReleaseModel> SelectByStoreID(int? StoreID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -159,6 +167,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select approved inventory releases by Store and Branch ID
         public IEnumerable<InventoryReleaseModel> SelectByStoreAndBranchIDApproved(int? StoreID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -174,6 +183,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select unapproved inventory releases by Store and Branch ID
         public IEnumerable<InventoryReleaseModel> SelectByStoreAndBranchIDUnApproved(int? StoreID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -189,6 +199,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select an inventory release by its ID
         public InventoryReleaseModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -204,6 +215,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return model;
         }
 
+        // Method to select inventory releases by Party ID and Party Branch ID
         public IEnumerable<InventoryReleaseModel> SelectByParty(int? PartyID, int? PartyBranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -219,6 +231,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to select inventory releases by date period
         public IEnumerable<InventoryReleaseModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -234,6 +247,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             }
         }
 
+        // Method to update InventoryReleaseModel record
         public InventoryReleaseModel Update(InventoryReleaseModel model)
         {
             //List<InventoryItemEntryModel> ItemsListFormated = new();
@@ -273,6 +287,7 @@ namespace ArmsServices.DataServices.Finance.Transactions
             return model;
         }
 
+        // Private method to convert an IDataRecord to an InventoryReleaseModel
         private InventoryReleaseModel GetModel(IDataRecord dr)
         {
             return new InventoryReleaseModel

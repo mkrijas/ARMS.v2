@@ -6,6 +6,7 @@ using System.Data;
 
 namespace ArmsServices.DataServices
 {
+    // Service class for managing financial dashboard data
     public class FinanceDashboardService : IFinanceDashboardService
     {
         IDbService Iservice;
@@ -14,6 +15,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Retrieves the account balance for a specific COA ID, branch ID, and date
         public AccountBalanceModel GetAccountBalance(int? CoaID, int? BranchID, DateTime? Date)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -30,6 +32,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data from the database to an AccountBalanceModel
         private AccountBalanceModel GetAccountBalance(IDataRecord dr)
         {
             return new AccountBalanceModel
@@ -40,6 +43,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Retrieves a list of payable due balances for a specific branch
         public IEnumerable<DueBalanceModel> GetPayableDueBalance(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -63,6 +67,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of receivable due balances for a specific branch
         public IEnumerable<DueBalanceModel> GetReceivableDueBalance(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -86,6 +91,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of bank account balances for a specific branch
         public IEnumerable<BankAccountBalanceModel> GetBankAccountBalance(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -103,6 +109,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of cash account balances for a specific branch
         public IEnumerable<CashAccountBalanceModel> GetCashAccountBalance(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -119,6 +126,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of expenses for a specific branch
         public List<DashboardModel> SelectExpenses(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -128,6 +136,7 @@ namespace ArmsServices.DataServices
             return GetChartData(parameters);
         }
 
+        // Helper method to retrieve chart data based on provided parameters
         private List<DashboardModel> GetChartData(List<SqlParameter> parameters)
         {
             List<DashboardModel> list = new();
@@ -139,6 +148,7 @@ namespace ArmsServices.DataServices
             return list;
         }
 
+        // Helper method to map data from the database to a DashboardModel
         private DashboardModel GetDashboardModel(IDataRecord dr)
         {
             return new DashboardModel

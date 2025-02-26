@@ -8,6 +8,7 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
+    // Service class for managing asset documents
     public class AssetDocumentService : IAssetDocumentService
     {
         IDbService Iservice;
@@ -16,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Updates an existing asset document and returns the updated model
         public AssetDocumentModel Update(AssetDocumentModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +46,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Retrieves a list of pending asset documents for a specific branch
         public IEnumerable<AssetDocumentModel> SelectPendingByBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +61,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Validates the period of an asset document and returns a list of documents that do not comply
         public IEnumerable<AssetDocumentModel> ValidatePeriod(AssetDocumentModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -76,6 +80,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Saves the file path for a document and returns the number of affected rows
         public int SaveFilePath(string link, int? id)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -86,6 +91,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.FilePath]", parameters);
         }
 
+        // Retrieves an asset document by its ID
         public AssetDocumentModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -101,6 +107,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Deletes an asset document by its ID and records the user who performed the deletion
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -111,6 +118,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.Delete]", parameters);
         }
 
+        // Deletes a document type by its ID and records the user who performed the deletion
         public int DeleteType(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -121,6 +129,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.Type.Delete]", parameters);
         }
 
+        // Removes an asset document and returns the number of affected rows
         public int Remove(AssetDocumentModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -132,6 +141,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.RemoveType]", parameters);
         }
 
+        // Links a document type with a tax purchase and returns the number of affected rows
         public int LinkDocumentTypeAndTaxPurchase(int? DocumentID, int? TaxPurchaseID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -142,6 +152,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Asset.Document.TaxPurchase.Link.Update]", parameters);
         }
 
+        // Retrieves a list of asset documents created within a specific period
         public IEnumerable<AssetDocumentModel> SelectByPeriod(DateTime? startDate, DateTime? endDate)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -156,6 +167,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of asset documents associated with past records for a specific asset
         public IEnumerable<AssetDocumentModel> SelectWithPast(int? AssetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -169,6 +181,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of asset documents associated with a specific asset
         public IEnumerable<AssetDocumentModel> SelectByAsset(int? AssetID, bool AllDocs)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -183,6 +196,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Retrieves a list of asset documents associated with a specific accident date for an asset
         public IEnumerable<AssetDocumentModel> SelectByAccidentDate(int? AssetID, bool AllDocs)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -197,6 +211,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data from the database to an AssetDocumentModel
         private AssetDocumentModel GetModel(IDataRecord dr)
         {
             return new AssetDocumentModel
@@ -234,6 +249,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data from the database to an AssetDocumentModel
         public IEnumerable<AssetDocumentTypeModel> GetDocumentTypes()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.DocumentType.Select]", null))
@@ -261,6 +277,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Updates an existing document type and returns the updated model
         public AssetDocumentTypeModel UpdateDocumentType(AssetDocumentTypeModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -298,6 +315,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Checks if a cost center is mandatory for a given document type ID
         public bool? IsCostCenterIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -312,6 +330,7 @@ namespace ArmsServices.DataServices
             return result;
         }
 
+        // Checks if a dimension is mandatory for a given document type ID
         public bool? IsDimensionIsMadatoryForGivenDocumentTypeID(int? DocumentTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -326,6 +345,7 @@ namespace ArmsServices.DataServices
             return result;
         }
 
+        // Validates if the asset document is valid for a given date
         public bool IsValid(AssetDocumentModel model, DateTime? DateToCheck)
         {
             if (!(model.StartDate?.Date <= DateToCheck?.Date && model.EndDate?.Date >= DateToCheck?.Date))
@@ -335,6 +355,7 @@ namespace ArmsServices.DataServices
             return true;
         }
 
+        // Retrieves a list of new file names for asset documents
         public IEnumerable<AssetDocumentModel> GetNewFileName()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Asset.Document.Attachment.Select]", null))
