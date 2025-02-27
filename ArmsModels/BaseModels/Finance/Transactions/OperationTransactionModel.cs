@@ -58,6 +58,7 @@ namespace ArmsModels.BaseModels
         public string Unit { get; set; }
         public int? CostCenter { get; set; }
         public virtual string CostCenterVal { get; set; }
+        public virtual string DocNo { get; set; }
         public int? Dimension { get; set; }
         public bool IsReimbursed { get; set; }
         public virtual string DimensionVal { get; set; }
