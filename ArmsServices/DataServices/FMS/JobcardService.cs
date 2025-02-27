@@ -129,6 +129,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select job cards by branch and truck ID
         public IEnumerable<JobcardModel> SelectByBranchAndTruck(int? BranchID, int? TruckID, bool Active = false)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -145,6 +146,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data record to JobcardModel
         private JobcardModel GetModel(IDataRecord dr)
         {
             return new JobcardModel
@@ -168,6 +170,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to select job cards by job card ID
         public IEnumerable<JobcardModel> SelectByJobCardID(int? JobCardID, bool Active = false)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -183,6 +186,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get a job list by job card ID
         public IEnumerable<JobInProgressModel> GetJobListByJobCardID(int? JobCardID)
         {
             bool Scrap = false;
@@ -198,6 +202,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data record to JobInProgressModelc
         private JobInProgressModel GetModelJob(IDataRecord dr)
         {
             return new JobInProgressModel
@@ -210,6 +215,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to close a job card
         public int? CloseJobcard(int? JobcardID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

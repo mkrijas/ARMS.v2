@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a workshop entry by its ID
         public int Delete(int? JwID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -27,6 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.WorkshopEntry.Delete]", parameters);
         }
 
+        // Method to select workshop entries by their ID
         public IEnumerable<JobcardWorkshopModel> Select(int? JwID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -40,6 +42,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a workshop entry by its ID
         public JobcardWorkshopModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -54,6 +57,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select workshop entries by job card ID
         public IEnumerable<JobcardWorkshopModel> SelectByJobcard(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -67,6 +71,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a workshop entry
         public JobcardWorkshopModel Update(JobcardWorkshopModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -87,6 +92,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to JobcardWorkshopModel
         private JobcardWorkshopModel GetModel(IDataRecord dr)
         {
             return new JobcardWorkshopModel
