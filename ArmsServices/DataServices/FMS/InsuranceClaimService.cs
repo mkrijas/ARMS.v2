@@ -5,7 +5,9 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ArmsServices.DataServices
 {
@@ -18,6 +20,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete an insurance claim by its ID
         public int Delete(int? InsuranceClaimID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,8 +31,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Delete]", parameters);
         }
 
-
-
+        // Method to select insurance claims based on ID and branch ID
         public IEnumerable<InsuranceClaimModel> Select(int? InsuranceClaimID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +46,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select an insurance claim by its ID
         public InsuranceClaimModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +61,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update an insurance claim
         public InsuranceClaimModel Update(InsuranceClaimModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -83,6 +87,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to remove a photo from an insurance claimc
         public int RemovePhoto(InsuranceClaimModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -95,6 +100,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.InsuranceClaim.RemovePhoto]", parameters);
         }
 
+        // Method to select the event list for insurance claims
         public IEnumerable<InsuranceClaimEventMasterModel> GetEventList(int? limiter)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -106,6 +112,8 @@ namespace ArmsServices.DataServices
                 yield return GetEventMasterModel(dr);
             }
         }
+
+        // Method to update an event in the event master
         public InsuranceClaimEventMasterModel UpdateEventList(InsuranceClaimEventMasterModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -125,6 +133,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update the status of an insurance claim event
         public InsuranceClaimEventStatusModel UpdateClaimEvent(InsuranceClaimEventStatusModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -143,6 +152,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get the list of event statuses for a specific insurance claim
         public IEnumerable<InsuranceClaimEventStatusModel> GetEventStatusList(int? InsuranceClaimID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -155,6 +165,8 @@ namespace ArmsServices.DataServices
                 yield return GetEventStatusModel(dr);
             }
         }
+
+        // Helper method to map data record to InsuranceClaimModel
         private InsuranceClaimModel GetModel(IDataRecord dr)
         {
             return new InsuranceClaimModel
@@ -182,6 +194,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to InsuranceClaimEventMasterModel
         private InsuranceClaimEventMasterModel GetEventMasterModel(IDataRecord dr)
         {
             return new InsuranceClaimEventMasterModel
@@ -200,6 +213,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to InsuranceClaimEventStatusModel
         private InsuranceClaimEventStatusModel GetEventStatusModel(IDataRecord dr)
         {
             return new InsuranceClaimEventStatusModel
@@ -218,6 +232,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to select an insurance claim by its breakdown ID
         public InsuranceClaimModel SelectByBreakdownID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -232,6 +247,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to move an insurance claim event upward in order
         public int OrderMoveUpward(int? Order)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
