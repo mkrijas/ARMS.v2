@@ -19,7 +19,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
-
+        // Method to select settings by branch ID
         public IEnumerable<SettingsModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -33,6 +33,8 @@ namespace ArmsServices.DataServices
                 }
             }
         }
+
+        // Helper method to map data record to SettingsMode
         public SettingsModel GetModel(IDataRecord dr)
         {
             return new SettingsModel
@@ -47,7 +49,7 @@ namespace ArmsServices.DataServices
 
         //////////////////////////////////
 
-
+        // Method to update branch settings
         public SettingsModel Update(int? ID, List<int?> RecordStatusList, string UserID)
         {
             DataTable dataTable = new DataTable();
@@ -74,6 +76,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to check if a specific setting is enabled for a branch
         public bool IsEnabled(int? BranchID, int? OptionID)
         {
             var list = SelectByID(BranchID);

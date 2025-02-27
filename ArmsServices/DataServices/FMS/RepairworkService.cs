@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a repair job by its ID
         public int Delete(int? RepairJobID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -27,6 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.RepairJob.Delete]", parameters);
         }
 
+        // Method to select repair jobs based on various criteria
         public IEnumerable<RepairJobModel> SelectJob(int? RepairJobID, int? RepairJobGroupID, int? RepairJobSubGroupID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -43,6 +45,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select repair job groups and subgroups
         public IEnumerable<RepairJobModel> SelectJobGroupAndSub()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -56,6 +59,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a repair job by its ID
         public RepairJobModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -70,6 +74,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to select all repair job groups
         public IEnumerable<RepairJobGroup> SelectGroup()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.FMS.RepairJobGroup.Select]", null))
@@ -83,6 +88,7 @@ namespace ArmsServices.DataServices
 
         }
 
+        // Method to select repair job subgroups by group ID
         public IEnumerable<RepairJobGroup> SelectSubGroup(int? GroupID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -101,6 +107,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a repair job
         public RepairJobModel Update(RepairJobModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -120,6 +127,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to RepairJobModel
         private RepairJobModel GetModel(IDataRecord dr)
         {
             return new RepairJobModel

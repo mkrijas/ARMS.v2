@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to conclude a periodic maintenance entry
         public PeriodicMaintenanceConcludeModel Conclude(PeriodicMaintenanceConcludeModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -35,6 +36,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to delete a periodic maintenance entry by its ID
         public int Delete(int? PMIID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -45,6 +47,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.PeriodicMaintenanceInitiate.Delete]", parameters);
         }
 
+        // Method to select periodic maintenance entries by their ID
         public IEnumerable<PeriodicMaintenanceInitiateModel> Select(int? PMIID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +61,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select periodic maintenance entries by truck ID
         public IEnumerable<PeriodicMaintenanceInitiateModel> SelectByTruck(int? TruckID, int? RecordStatus)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -72,6 +76,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a periodic maintenance entry by its ID
         public PeriodicMaintenanceInitiateModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -86,6 +91,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a periodic maintenance entr
         public PeriodicMaintenanceInitiateModel Update(PeriodicMaintenanceInitiateModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -107,6 +113,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to PeriodicMaintenanceInitiateModel
         private PeriodicMaintenanceInitiateModel GetModel(IDataRecord dr)
         {
             return new PeriodicMaintenanceInitiateModel

@@ -17,6 +17,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to update a contact entry
         public ContactModel Update(ContactModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -36,6 +38,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to select a contact by its ID
         public ContactModel SelectByID(int? ContactID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -49,6 +53,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to select a contact by its ID
         public int Delete(int? ContactID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +64,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Entity.Contacts.Delete]", parameters);
         }
+
+        // Method to select contacts based on reference key and table
         public IEnumerable<ContactModel> Select(int? RefKey, string RefTable)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -71,6 +79,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Helper method to map data record to ContactModel
         private ContactModel GetModel(IDataRecord dr)
         {
             return new ContactModel()
