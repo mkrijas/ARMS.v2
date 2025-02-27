@@ -1,0 +1,98 @@
+﻿@page "/ROIAdBlue"
+@using System.Threading;
+@using Core.BaseModels.Operations.ROI
+@using Core.IDataServices.Operations.ROI
+@layout ROILayout
+@attribute [Authorize]
+@inject AuthenticationStateProvider auth
+@inject NavigationManager NavigationManager;
+@inject IROIAdBlueRatioService IService
+@inject IDialogService DialogService
+@inject MudBlazor.ISnackbar snackbar
+@inject IJSRuntime JSRuntime
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudTable Items="@collection" Dense="true" Hover="true" Striped="true" Elevation="1" Filter="new Func<ROIAdBlueStdModel, bool>(search)">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">ROI AdBlue Ratio</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> Edit(new ROIAdBlueStdModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
+                <MudSpacer></MudSpacer>
+                <MudTextField @bind-Value="SearchItem" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROIAdBlueStdModel, object>(x=> x.Wheels)" InitialDirection="SortDirection.Ascending">Wheels</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<ROIAdBlueStdModel, object>(x=> x.BSType)">BS Type</MudTableSortLabel></MudTh>
+              
+                <MudTh><MudTableSortLabel SortBy="new Func<ROIAdBlueStdModel, object>(x=> x.AdBlueRatio)">AdBlue Ratio</MudTableSortLabel></MudTh>
+                <MudTh>Action</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Wheels">@context.Wheels</MudTd>
+                <MudTd DataLabel="BSType">@context.BSType</MudTd>                
+                <MudTd DataLabel="AdBlue">@context.AdBlueRatio</MudTd>
+                <MudTd>
+                    <MudFab @onclick="@(() => Edit(context))" Title="Edit" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 20, 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    private List<ROIAdBlueStdModel> collection = new List<ROIAdBlueStdModel>();
+    private string SearchItem = "";
+    string UserID;
+    int? BranchID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authprov = await auth.GetAuthenticationStateAsync();
+        UserID = authprov.User.Identity.Name;
+        BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
+        GetAll();
+    }
+
+    private void GetAll()
+    {
+        collection = IService.Select(BranchID).ToList();
+    }
+
+    private async Task Edit(ROIAdBlueStdModel model)
+    {
+        try
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("model", model.Clone());
+            DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var dialog = DialogService.Show<ROIAdBlueDialog>("Add/Edit", parameters, maxWidth);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                snackbar.Add("Saved Successfully", Severity.Success);
+            }
+        }
+        catch (Exception a)
+        {
+            snackbar.Add(a.Message, Severity.Error);
+        }
+        GetAll();
+    }
+
+    private bool search(ROIAdBlueStdModel model)
+    {
+        if (
+            (model.Wheels.ToString().Contains(SearchItem, StringComparison.OrdinalIgnoreCase)) ||
+            (model.BSType.Contains(SearchItem, StringComparison.OrdinalIgnoreCase)) ||            
+            (model.AdBlueRatio.ToString().Contains(SearchItem, StringComparison.OrdinalIgnoreCase))
+        )
+        {
+            return true;
+        }
+        return false;
+    }
+}

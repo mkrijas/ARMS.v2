@@ -182,6 +182,7 @@ namespace Views
             services.AddScoped<IROITonnageService, ROITonnageService>();
             services.AddScoped<IROITimeService, ROITimeService>();
             services.AddScoped<IROIMileageService, ROIMileageService>();
+            services.AddScoped<IROIAdBlueRatioService, ROIAdBlueRatioService>();
             services.AddScoped<IROIDriverBattaService, ROIDriverBattaService>();
             services.AddScoped<IROIDriverIncentiveService, ROIDriverIncentiveService>();
             services.AddScoped<IROITaggingService, ROITaggingService>();

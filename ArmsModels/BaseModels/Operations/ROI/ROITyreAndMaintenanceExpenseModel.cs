@@ -16,6 +16,8 @@ namespace ArmsModels.BaseModels
         [Required]
         public TruckTypeModel TruckType { get; set; } = new();
         [Required]
+        public string BsType { get; set; }
+        [Required]
         public decimal? Maintenance { get; set; }
         [Required]
         public decimal? Tyre { get; set; }

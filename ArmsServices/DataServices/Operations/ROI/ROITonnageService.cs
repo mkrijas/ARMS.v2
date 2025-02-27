@@ -18,18 +18,7 @@ namespace DAL.DataServices.Operations.ROI
         {
             Iservice = iservice;
         }
-
-        public IEnumerable<ROITonnageModel> SelectBSType()
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>
-            {
-                new SqlParameter("@Operation", "BSTYPE"),
-            };
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Common.Select]", parameters))
-            {
-                yield return Model(dr);
-            }
-        }
+               
 
         public IEnumerable<ROITonnageModel> SelectWheels()
         {

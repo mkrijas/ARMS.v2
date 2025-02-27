@@ -23,12 +23,18 @@ namespace ArmsServices.DataServices
             IROITonnage = iROITonnage;
         }
 
-        public IEnumerable<ROITonnageModel> SelectBSType()
+        public IEnumerable<string> SelectBSType()
         {
-            List<ROITonnageModel> Model = new();
-            return Model = IROITonnage.SelectBSType().ToList();
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Operation", "BSTYPE"),
+            };
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Common.Select]", parameters))
+            {
+                yield return dr.GetString("BsType");
+            }
         }
-
+    
         public IEnumerable<ROITonnageModel> SelectWheels()
         {
             List<ROITonnageModel> Model = new();

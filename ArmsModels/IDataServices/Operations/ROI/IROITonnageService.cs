@@ -4,8 +4,7 @@ using System.Collections.Generic;
 namespace Core.IDataServices.Operations.ROI
 {
     public interface IROITonnageService
-    {
-        IEnumerable<ROITonnageModel> SelectBSType();
+    {       
         IEnumerable<ROITonnageModel> SelectWheels();
         IEnumerable<ROITonnageModel> Select(int? RowNo, int? BranchID);
         ROITonnageModel Update(ROITonnageModel model);
