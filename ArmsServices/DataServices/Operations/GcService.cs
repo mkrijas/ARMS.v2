@@ -67,6 +67,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@GcSetID", model.GcSetID),
                new SqlParameter("@UnloadedQuantity", model.TotalUnloadingQuantity),
+               new SqlParameter("@PONo", model.PONo),
                new SqlParameter("@Acknowledgement", model.Acknowledgement)
             };
             return Iservice.ExecuteNonQuery("[usp.GcSet.UpdateUnloadingQuantity]", parameters);
@@ -223,6 +224,7 @@ namespace ArmsServices.DataServices
                 LoadStartEventID = dr.GetInt64("LoadStartEventID"),
                 UnloadEndEventID = dr.GetInt64("UnloadEndEventID"),
                 UnloadStartEventID = dr.GetInt64("UnloadStartEventID"),
+                PONo =  dr.GetString("PONo"),
                 UserInfo = new ArmsModels.SharedModels.UserInfoModel
                 {
                     RecordStatus = dr.GetByte("RecordStatus"),

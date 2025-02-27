@@ -180,7 +180,8 @@ namespace ArmsServices.DataServices
                     CostCenterVal = dr.GetString("CostCenter"),
                     DimensionVal = dr.GetString("Dimension"),
                     CostCenter = dr.GetInt32("CostCenterID"),
-                    Dimension = dr.GetInt32("DimensionID")
+                    Dimension = dr.GetInt32("DimensionID"),
+                    DocNo = dr.GetString("DocumentNumber")
                 };
             }
         }

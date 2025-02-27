@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a breakdown by its ID
         public int Delete(int? BreakdownID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -27,6 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Delete]", parameters);
         }
 
+        // Method to select all breakdowns
         public IEnumerable<BreakdownModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -39,6 +41,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select pending breakdowns by branch ID
         public IEnumerable<BreakdownModel> SelectPending(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -52,6 +55,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a breakdown by its ID
         public BreakdownModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -67,6 +71,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a breakdown
         public BreakdownModel Update(BreakdownModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -87,6 +92,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to reject a breakdown
         public int RejectBreakdown(int? BreakdownID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -97,6 +103,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Reject]", parameters);
         }
 
+        // Method to select estimates for a specific breakdown  
         public IEnumerable<EstimateListModel> SelectEstimate(int? BreakdownID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -109,6 +116,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update an estimate
         public EstimateListModel UpdateEstimate(EstimateListModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -126,6 +134,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to delete an estimate
         public int DeleteEstimate(int? EstimateID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -137,6 +146,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Estimate.ApproveOrDelete]", parameters);
         }
 
+        // Method to approve an estimate
         public int ApproveEstimate(int? EstimateID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -148,6 +158,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Estimate.ApproveOrDelete]", parameters);
         }
 
+        // Method to add an image to an estimate
         public int AddImgEstimate(int? EstimateID, string ImgPath, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -160,6 +171,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Estimate.ApproveOrDelete]", parameters);
         }
 
+        // Method to remove an estimate
         public int RemoveEstimate(int? EstimateID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -171,6 +183,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Breakdown.Estimate.ApproveOrDelete]", parameters);
         }
 
+        // Helper method to map data record to BreakdownModel
         private BreakdownModel GetModel(IDataRecord dr)
         {
             return new BreakdownModel
@@ -194,6 +207,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to EstimateListModel
         private EstimateListModel GetEstModel(IDataRecord dr)
         {
             return new EstimateListModel

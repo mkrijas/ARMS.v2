@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a job in progress entry by its ID
         public int Delete(int? JipID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -27,6 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.JobInProgress.Delete]", parameters);
         }
 
+        // Method to select job in progress entries by their ID
         public IEnumerable<JobInProgressModel> Select(int? JipID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -40,6 +42,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a job in progress entry by its IDc
         public JobInProgressModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -54,6 +57,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select job in progress entries by job card ID
         public IEnumerable<JobInProgressModel> SelectByJobcard(int? JobcardID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -67,6 +71,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a job in progress entry
         public JobInProgressModel Update(JobInProgressModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -94,6 +99,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to JobInProgressModel
         private JobInProgressModel GetModel(IDataRecord dr)
         {
             return new JobInProgressModel

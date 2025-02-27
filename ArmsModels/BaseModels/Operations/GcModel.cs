@@ -46,6 +46,7 @@ namespace ArmsModels.BaseModels
         public virtual decimal? TotalFreight { get { return Gcs.Sum(x => x.Freight); } }
         public decimal? TotalBillQuantity { get; set; }
         public decimal? TotalUnloadingQuantity { get; set; }
+        public virtual string PONo { get; set; }
         public long? LoadStartEventID { get; set; }
         public long? LoadEndEventID { get; set; }
         public long? UnloadStartEventID { get; set; }
