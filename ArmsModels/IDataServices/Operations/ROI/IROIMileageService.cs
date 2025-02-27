@@ -12,7 +12,7 @@ namespace ArmsServices.DataServices
     public interface IROIMileageService
     {
         ROIMileageModel Update(ROIMileageModel model);
-        IEnumerable<ROIMileageModel> Select();
+        IEnumerable<ROIMileageModel> Select(int? BranchID);
         ROIMileageModel SelectByID(int? ID);
     }
 }

@@ -39,11 +39,12 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public IEnumerable<ROIDriverIncentiveModel> Select()
+        public IEnumerable<ROIDriverIncentiveModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", 0),
+                new SqlParameter("BranchID",BranchID),
+                new SqlParameter("@ID", 0),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.DriverIncentive.Select]", parameters))

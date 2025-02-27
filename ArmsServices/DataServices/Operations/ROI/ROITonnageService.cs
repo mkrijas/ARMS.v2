@@ -43,11 +43,12 @@ namespace DAL.DataServices.Operations.ROI
             }
         }
 
-        public IEnumerable<ROITonnageModel> Select(int? RowNo)
+        public IEnumerable<ROITonnageModel> Select(int? RowNo, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@RowNo", RowNo),
+                new SqlParameter("BranchID",BranchID)
             };
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Tonnage.Select]", parameters))
             {

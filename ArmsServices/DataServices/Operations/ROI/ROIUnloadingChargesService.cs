@@ -6,65 +6,68 @@ using ArmsModels.BaseModels;
 
 namespace ArmsServices.DataServices
 {
-    public class ROIUnloadingService : IROIUnloadingService
+    public class ROIUnloadingChargesService : IROIUnloadingChargesService
     {
         IDbService Iservice;
 
-        public ROIUnloadingService(IDbService iservice)
+        public ROIUnloadingChargesService(IDbService iservice)
         {
             Iservice = iservice;
         }
 
-        public ROIUnloadingModel Update(ROIUnloadingModel model)
+        public ROIUnloadingChargesModel Update(ROIUnloadingChargesModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@RouteID", model.Route.RouteID),
                new SqlParameter("@RateBasis", model.RateBasis),
+               new SqlParameter("@Wheels", model.Wheels),
+               new SqlParameter("@BodyType", model.BodyType),
                new SqlParameter("@Amount", model.Amount),
                new SqlParameter("@FromDate", model.FromDate),
                new SqlParameter("@ToDate", model.ToDate),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Unloading.Update]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.UnloadingCharges.Update]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
         }
 
-        public IEnumerable<ROIUnloadingModel> Select()
+        public IEnumerable<ROIUnloadingChargesModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", 0),
+               new SqlParameter("BranchID",BranchID)
             };
 
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Unloading.Select]", parameters))
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.UnloadingCharges.Select]", parameters))
             {
                 yield return GetModel(dr);
             }
         }
 
-        public ROIUnloadingModel SelectByID(int? ID)
+        public ROIUnloadingChargesModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", ID),
             };
-            ROIUnloadingModel model = new ROIUnloadingModel();
-            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.Unloading.Select]", parameters))
+            ROIUnloadingChargesModel model = new ROIUnloadingChargesModel();
+            foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.UnloadingCharges.Select]", parameters))
             {
                 model = GetModel(dr);
             }
             return model;
         }
 
-        private ROIUnloadingModel GetModel(IDataRecord dr)
+        private ROIUnloadingChargesModel GetModel(IDataRecord dr)
         {
-            return new ROIUnloadingModel
+            return new ROIUnloadingChargesModel
             {
                 ID = dr.GetInt32("ID"),
                 Route = new RouteModel
@@ -73,6 +76,8 @@ namespace ArmsServices.DataServices
                     RouteName = dr.GetString("RouteName")
                 },
                 RateBasis = dr.GetString("RateBasis"),
+                Wheels = dr.GetInt32("Wheels"),
+                BodyType = dr.GetString("BodyType"),
                 Amount = dr.GetDecimal("Amount"),
                 FromDate = dr.GetDateTime("FromDate"),
                 ToDate = dr.GetDateTime("ToDate"),
