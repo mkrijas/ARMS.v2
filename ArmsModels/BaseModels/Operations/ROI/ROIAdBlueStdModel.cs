@@ -10,7 +10,7 @@ namespace ArmsModels.BaseModels
         public object Clone()
         {
             string Json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<ROIMileageModel>(Json);
+            return JsonConvert.DeserializeObject<ROIAdBlueStdModel>(Json);
         }
         public int? ID { get; set; }
         [Required]

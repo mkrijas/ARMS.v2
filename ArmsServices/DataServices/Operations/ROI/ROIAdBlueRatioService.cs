@@ -47,7 +47,8 @@ namespace ArmsServices.DataServices
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                new SqlParameter("@ID", model.ID),
-               new SqlParameter("@Wheels", model.Wheels),              
+               new SqlParameter("@Wheels", model.Wheels),
+               new SqlParameter("@BsType", model.BSType),
                new SqlParameter("@AdBlueRatio", model.AdBlueRatio),
                new SqlParameter("@UserID", model.UserInfo.UserID),
             };
