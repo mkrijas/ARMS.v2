@@ -21,7 +21,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@Wheels", model.Wheels),
-               new SqlParameter("@BSType", model.BSType.BSType),
+               new SqlParameter("@BSType", model.BSType),
                new SqlParameter("@StateID", model.State.StateID),
                new SqlParameter("@OrderID", model.Order.OrderID),
                new SqlParameter("@LoadingMTFrom", model.LoadingMTFrom),
@@ -73,10 +73,7 @@ namespace ArmsServices.DataServices
             {
                 ID = dr.GetInt32("ID"),
                 Wheels = dr.GetByte("Wheels"),
-                BSType = new Core.BaseModels.Operations.ROI.ROITonnageModel
-                {
-                    BSType = dr.GetString("BSType"),
-                },
+                BSType = dr.GetString("BSType"),
                 Order = new OrderModel
                 {
                     OrderID = dr.GetInt32("OrderID"),

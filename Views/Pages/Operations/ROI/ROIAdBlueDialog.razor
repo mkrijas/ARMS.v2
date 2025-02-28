@@ -3,7 +3,9 @@
 @using Core.IDataServices.Operations.ROI
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
-@inject IROITaxAndFCExpenseService Iservice
+@inject IROIAdBlueRatioService Iservice
+@inject ITruckService ITruckService
+@inject IOrderService Iorder
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
@@ -11,35 +13,30 @@
 <MudDialog Style="overflow-y: hidden;">
     <TitleContent>
         <MudText Typo="Typo.h6">
-            Add/Edit Tax And FC Expense
+            Add/Edit AdBlue Ratio Stds
         </MudText>
     </TitleContent>
     <DialogContent>
-        <EditForm id="formexp" Model="@model" OnValidSubmit="OnValidSubmit">
+        <EditForm id="formAdBlue" Model="@model" OnValidSubmit="OnValidSubmit">
             <ObjectGraphDataAnnotationsValidator />
             <ValidationSummary />
             <MudGrid>
                 <MudItem xs="12" md="4">
-                    <TruckSelector @bind-Value="@model.Truck" Filter="All"></TruckSelector>
+                    <MudNumericField HideSpinButtons @bind-Value="model.Wheels" Label="Wheels" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="2" />
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <MudNumericField HideSpinButtons @bind-Value="model.TaxAndInsurance" Label="Tax And Insurance" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.TaxAndInsurance)"></MudNumericField>
-                </MudItem>
+                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="string" Label="BS-Type" ResetValueOnEmptyText="true" @bind-Value="model.BSType"
+                                     SearchFunc="SearchBSType" ></MudAutocomplete>
+                </MudItem>             
                 <MudItem xs="12" md="4">
-                    <MudNumericField HideSpinButtons @bind-Value="model.FC" Label="FC" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.FC)"></MudNumericField>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudDatePicker Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.FromDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudDatePicker Label="Period To" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.ToDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
+                    <MudTextField InputType="InputType.Number" InputMode="InputMode.numeric"  @bind-Value="model.AdBlueRatio" Label="AdBlue Ratio" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.AdBlueRatio)"></MudTextField>
                 </MudItem>
             </MudGrid>
         </EditForm>
     </DialogContent>
     <DialogActions>
         <div style="padding-right:12px; padding-bottom:12px;">
-            <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Success" form="formexp" ButtonType="ButtonType.Submit" Class="ml-auto">Sumbit</MudButton>
+            <MudButton Size="Size.Large" Variant="Variant.Filled" Color="Color.Success" form="formAdBlue" ButtonType="ButtonType.Submit" Class="ml-auto">Sumbit</MudButton>
         </div>
     </DialogActions>
 </MudDialog>
@@ -47,10 +44,11 @@
 @code {
 
     [Parameter]
-    public ROITaxAndFCExpenseModel model { get; set; }
+    public ROIAdBlueStdModel model { get; set; }
     [CascadingParameter]
     MudDialogInstance MudDialog { get; set; }
-    public List<ROITaxAndFCExpenseModel> Collection = new();
+
+    public List<string> BSTypeList = new();
     string UserID;
     int BranchID;
 
@@ -59,9 +57,16 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-
-        Collection = Iservice.Select(BranchID).ToList();
+        BSTypeList = ITruckService.SelectBSType().ToList();       
     }
+
+
+    public async Task<IEnumerable<string>> SearchBSType(string searchString)
+    {
+        return await Task.FromResult(BSTypeList.Where(x => x.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+
 
     private void OnValidSubmit(EditContext context)
     {

@@ -36,7 +36,7 @@ namespace ArmsServices.DataServices
             };
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Update]", parameters))
             {
-                model = await GetModel(dr);
+                model = GetModel(dr);
             }
             return model;
         }
@@ -50,7 +50,7 @@ namespace ArmsServices.DataServices
             RouteModel model = new RouteModel();
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Select]", parameters))
             {
-                model = await GetModel(dr);
+                model = GetModel(dr);
             }
             return model;
         }
@@ -72,7 +72,7 @@ namespace ArmsServices.DataServices
             };
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Select]", parameters))
             {
-                yield return await GetModel(dr);
+                yield return GetModel(dr);
             }
         }
 
@@ -85,7 +85,7 @@ namespace ArmsServices.DataServices
             };
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Select]", parameters))
             {
-                yield return await GetModel(dr);
+                yield return GetModel(dr);
             }
         }
 
@@ -98,10 +98,23 @@ namespace ArmsServices.DataServices
             };
             await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Select]", parameters))
             {
-                yield return await GetModel(dr);
+                yield return GetModel(dr);
             }
         }
-        private async Task<RouteModel> GetModel(IDataRecord dr)
+
+        public async IAsyncEnumerable<RouteModel> SelectByBranch(int? BranchID)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>
+            {
+               new SqlParameter("@ID", BranchID),
+               new SqlParameter("@Operation", "ByBranch"),
+            };
+            await foreach (IDataRecord dr in Iservice.GetDataReaderAsync("[usp.Gc.Route.Select]", parameters))
+            {
+                yield return GetModel(dr);
+            }
+        }
+        private RouteModel GetModel(IDataRecord dr)
         {
             return new RouteModel
             {
@@ -134,5 +147,7 @@ namespace ArmsServices.DataServices
                 },
             };
         }
+
+       
     }
 }

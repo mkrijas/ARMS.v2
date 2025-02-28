@@ -17,5 +17,6 @@ namespace ArmsServices.DataServices
         IAsyncEnumerable<RouteModel> Select(int? RouteID);
         IAsyncEnumerable<RouteModel> GetDisabled(int? RouteID);
         IAsyncEnumerable<RouteModel> SelectByOrder(int? OrderID);
+        IAsyncEnumerable<RouteModel> SelectByBranch(int? BranchID);
     }
 }

@@ -19,7 +19,7 @@ namespace ArmsModels.BaseModels
         [Required]
         public byte? Wheels { get; set; }
         [Required]
-        public ROITonnageModel BSType { get; set; } = new();
+        public string BSType { get; set; }
         public OrderModel Order { get; set; } = new();
         public StateModel State { get; set; } = new();
         [Required]

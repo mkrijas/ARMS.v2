@@ -1,14 +1,11 @@
-﻿using Core.BaseModels.Operations.ROI;
+﻿using ArmsModels.BaseModels;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ArmsModels.BaseModels
 {
-    public class ROIMileageModel : ICloneable
+    public class ROIAdBlueStdModel : ICloneable
     {
         public object Clone()
         {
@@ -19,16 +16,9 @@ namespace ArmsModels.BaseModels
         [Required]
         public byte? Wheels { get; set; }
         [Required]
-        public string BSType { get; set; }
+        public string BSType { get; set; }       
         [Required]
-        public string BodyType { get; set; }
-        public OrderModel Order { get; set; } = new();
-        [Required]
-        public decimal? LoadingMTFrom { get; set; }
-        [Required]
-        public decimal? LoadingMTTo { get; set; }
-        [Required]
-        public decimal? Mileage { get; set; }
+        public decimal? AdBlueRatio { get; set; }
         public SharedModels.UserInfoModel UserInfo { get; set; } = new();
     }
 }

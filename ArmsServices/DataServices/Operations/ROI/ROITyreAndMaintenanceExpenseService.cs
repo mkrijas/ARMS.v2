@@ -22,6 +22,7 @@ namespace ArmsServices.DataServices
             {
                new SqlParameter("@ID", model.ID),
                new SqlParameter("@TruckTypeID", model.TruckType.TruckTypeID),
+               new SqlParameter("@BsType", model.BsType),
                new SqlParameter("@Maintenance", model.Maintenance),
                new SqlParameter("@Tyre", model.Tyre),
                new SqlParameter("@FromDate", model.FromDate),
@@ -73,6 +74,7 @@ namespace ArmsServices.DataServices
                     TruckTypeID = dr.GetInt16("TruckTypeID"),
                     TruckType = dr.GetString("TruckType"),
                 },
+                BsType = dr.GetString("BsType"),
                 Maintenance = dr.GetDecimal("Maintenance"),
                 Tyre = dr.GetDecimal("Tyre"),
                 FromDate = dr.GetDateTime("FromDate"),

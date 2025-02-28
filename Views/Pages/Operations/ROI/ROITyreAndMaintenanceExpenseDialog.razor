@@ -5,6 +5,7 @@
 @inject AuthenticationStateProvider auth
 @inject IROITyreAndMaintenanceExpenseService Iservice
 @inject ITruckTypeService Itrucktype
+@inject ITruckService ITruckService
 @inject MudBlazor.ISnackbar snackbar
 @inject IDialogService DialogService
 @inject IRoleService<RoleModel> Irole
@@ -20,16 +21,21 @@
             <ObjectGraphDataAnnotationsValidator />
             <ValidationSummary />
             <MudGrid>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="6">
                     <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="TruckTypeModel" Label="Truck Type" ResetValueOnEmptyText="true" ValueChanged="TruckTypeChanged" Value="model.TruckType"
                                      SearchFunc="SearchTruckType" ToStringFunc="@(e=> e == null ? null : $"{e.TruckType}")"></MudAutocomplete>
                 </MudItem>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="6">
+                    <MudAutocomplete Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="string" Label="BS-Type" ResetValueOnEmptyText="true" @bind-Value ="model.BsType"
+                                     SearchFunc="SearchBSType" ></MudAutocomplete>
+                </MudItem>
+                <MudItem xs="12" md="6">
                     <MudNumericField HideSpinButtons @bind-Value="model.Maintenance" Label="Maintenance" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Maintenance)"></MudNumericField>
                 </MudItem>
-                <MudItem xs="12" md="4">
+                <MudItem xs="12" md="6">
                     <MudNumericField HideSpinButtons @bind-Value="model.Tyre" Label="Tyre" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Tyre)"></MudNumericField>
                 </MudItem>
+
                 <MudItem xs="12" md="6">
                     <MudDatePicker Label="Period From" Variant="Variant.Outlined" Margin="Margin.Dense" DisableToolbar="true" Editable="true" @bind-Date="model.FromDate" HelperText="Enter Date" DateFormat="dd/MM/yyyy" />
                 </MudItem>
@@ -52,7 +58,8 @@
     public ROITyreAndMaintenanceExpenseModel model { get; set; }
     [CascadingParameter]
     MudDialogInstance MudDialog { get; set; }
-    public List<ROITyreAndMaintenanceExpenseModel> Collection = new();
+    //public List<ROITyreAndMaintenanceExpenseModel> Collection = new();
+    List<string> BSTypeList = new();   
     public List<TruckTypeModel> TruckTypeList = new();
     string UserID;
     int BranchID;
@@ -62,8 +69,8 @@
         var authprov = await auth.GetAuthenticationStateAsync();
         UserID = authprov.User.Identity.Name;
         BranchID = int.Parse(authprov.User.Claims.First(x => x.Type == "BranchID").Value);
-
-        Collection = Iservice.Select().ToList();
+        BSTypeList = ITruckService.SelectBSType().ToList();
+        //Collection = Iservice.Select().ToList();
         TruckTypeList = Itrucktype.Select(0).ToList();
     }
 
@@ -77,7 +84,7 @@
         model.TruckType = obj;
     }
 
-    private async void OnValidSubmit(EditContext context)
+    private void OnValidSubmit(EditContext context)
     {
         model.UserInfo.UserID = UserID;
         try
@@ -90,6 +97,12 @@
             snackbar.Add(ex.Message, Severity.Warning);
         }
     }
+
+    public async Task<IEnumerable<string>> SearchBSType(string searchString)
+    {
+        return await Task.FromResult(BSTypeList.Where(x => x.Contains(searchString == null ? string.Empty : searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
 
     private void Cancel()
     {

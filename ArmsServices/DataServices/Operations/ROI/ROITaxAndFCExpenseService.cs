@@ -36,11 +36,11 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-        public IEnumerable<ROITaxAndFCExpenseModel> Select()
+        public IEnumerable<ROITaxAndFCExpenseModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
             {
-               new SqlParameter("@ID", 0),
+               new SqlParameter("@BranchID", BranchID),
             };
 
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.ROI.TaxAndFCExpense.Select]", parameters))
