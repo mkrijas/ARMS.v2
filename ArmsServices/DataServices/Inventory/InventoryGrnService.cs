@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to approve a GRN
         public int Approve(int GrnID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Approve]", parameters);
         }
 
+        // Method to delete a GRN
         public int Delete(int? ID, string UserID)
         {
 
@@ -39,6 +41,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.Delete]", parameters);
         }
 
+        // Method to cancel a GRN to invoice
         public int ToInvoiceCancel(int? ID)
         {
 
@@ -49,6 +52,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.GoodsReceiptNote.ToInvoice.Cancel]", parameters);
         }
 
+        // Method to get item entries for a specific GRN
         public IEnumerable<InventoryItemEntryModel> GetItemEntries(int GrnID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -74,6 +78,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select pending GRNs for a specific branch
         public IEnumerable<InventoryGrnModel> SelectPending(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -87,6 +92,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a GRN by its ID
         public InventoryGrnModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -103,6 +109,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to check the quantity of a purchase order (PO)
         public string CheckPOQty(int POID)
         {
             string result = "";
@@ -119,6 +126,7 @@ namespace ArmsServices.DataServices
             return result;
         }
 
+        // Method to update a GRN
         public InventoryGrnModel Update(InventoryGrnModel model)
         {
 
@@ -146,8 +154,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
-
+        // Helper method to map data record to InventoryGrnModel
         private InventoryGrnModel GetModel(IDataRecord dr)
         {
             return new InventoryGrnModel(
@@ -178,6 +185,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to select GRNs by store ID
         public IEnumerable<InventoryGrnModel> SelectByStore(int StoreID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -191,6 +199,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get pending GRNs for invoicing
         public IEnumerable<InventoryGrnModel> PendingToInvoice(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -204,6 +213,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to reverse a GRN
         public int Reverse(DateTime DocDate, int GrnID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

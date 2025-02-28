@@ -16,6 +16,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to delete an inventory item group by its ID
         public int Delete(int? ID, string UserID)
         {
 
@@ -27,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Item.ItemGroup.Delete]", parameters);
         }
 
+        // Method to search for inventory item groups by name
         public IEnumerable<InventoryItemGroupModel> SearchByName(string GroupName)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -40,6 +43,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Method to select an inventory item group by its ID
         public InventoryItemGroupModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -55,6 +60,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select inventory item groups by a specific group ID
         public IEnumerable<InventoryItemGroupModel> SelectByGroup(int? GroupID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -69,6 +75,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update an inventory item group
         public InventoryItemGroupModel Update(InventoryItemGroupModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -88,6 +95,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to InventoryItemGroupModel
         private InventoryItemGroupModel GetModel(IDataRecord dr)
         {
             return new InventoryItemGroupModel

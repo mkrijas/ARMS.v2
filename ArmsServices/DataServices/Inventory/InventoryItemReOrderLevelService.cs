@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to update the reorder level for inventory items
         public InventoryItemReOrderLevelModel Update(InventoryItemReOrderLevelModel model)
         {
             List<InventoryItemReOrderLevelTableItemsModel> ItemsListFormated = new();
@@ -44,6 +45,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select a reorder level by its ID
         public InventoryItemReOrderLevelModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -59,6 +61,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select reorder levels by inventory item ID and branch ID
         public IEnumerable<InventoryItemReOrderLevelModel> SelectByItem(int? InventoryItemID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -74,6 +77,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data record to InventoryItemReOrderLevelModel
         private InventoryItemReOrderLevelModel GetModel(IDataRecord dr)
         {
             return new InventoryItemReOrderLevelModel

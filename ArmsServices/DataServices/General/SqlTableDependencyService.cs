@@ -40,6 +40,8 @@ namespace ArmsServices.DataServices
             this.ConnectionString = configuration.GetConnectionString("ArmsDB");
             _hubContext = context;           
         }
+
+        // Method to subscribe to table dependency notifications
         public void SubscribeTableDependency()
         {
             if (!Active)
@@ -59,6 +61,8 @@ namespace ArmsServices.DataServices
                 }
             }
         }
+
+        // Event handler for when a change is detected in the monitored table
         private async void TabledependencyChange(object obj, RecordChangedEventArgs<PushNotificationModel> e)
         {            
             if (e.ChangeType != TableDependency.SqlClient.Base.Enums.ChangeType.None)
@@ -72,6 +76,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Event handler for handling errors in the table dependency    
         private void TabledependencyError(object obj, TableDependency.SqlClient.Base.EventArgs.ErrorEventArgs e)
         {
             try
@@ -87,6 +92,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to dispose of the notifier and stop monitoring
         public void Dispose()
         {
             _notifier.Stop();
