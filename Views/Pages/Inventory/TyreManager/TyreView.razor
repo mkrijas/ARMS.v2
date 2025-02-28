@@ -1,6 +1,11 @@
 ﻿@page "/TyreMasterView"
 @using ArmsModels.BaseModels.General
 @using ArmsServices.DataServices.Operations
+@using System.Threading;
+@using System.Globalization
+@using OfficeOpenXml
+@using System.IO
+@using OfficeOpenXml.Style
 @inject ITyreService ITyreservice
 @inject MudBlazor.ISnackbar snackbar
 @inject AuthenticationStateProvider auth
@@ -8,6 +13,7 @@
 @using System.Threading;
 @inject IRoleService<RoleModel> Irole
 @inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
@@ -18,8 +24,8 @@
                     <MudIconButton Disabled="@_busy" Icon="@Icons.Material.Filled.Add" Title="Add" @onclick="@(()=> OpenDialogEdit(new TyreModel()))" Color="Color.Dark" Size="Size.Small"></MudIconButton>
                 </MudTooltip>
                 <MudSpacer></MudSpacer>
-                <MudTextField @bind-Value="searchTerm" Placeholder="Search tyre..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0">
-                </MudTextField>
+                <MudTextField @bind-Value="searchTerm" Placeholder="Search tyre..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <MudButton OnClick="ExcelDownload" Style="margin: 14px; margin-left: 60px;" StartIcon="@Icons.Material.Outlined.Article" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Button">Export to Excel</MudButton>
             </ToolBarContent>
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<TyreModel, object>(x=> x.TyreSerialNumber)" InitialDirection="SortDirection.Ascending">Tyre Serial Number</MudTableSortLabel></MudTh>
@@ -273,5 +279,65 @@
         _busy = false;
     }
 
+    private async Task ExcelDownload()
+    {
+        var fileName = "TruckList.xlsx";
+        var sheetName = "Sheet1"; // Change the sheet name as needed
+        var fileBytes = GenerateExcelBytes(sheetName);
 
+        await JSRuntime.InvokeVoidAsync("triggerFileDownload", fileName, Convert.ToBase64String(fileBytes));
+    }
+
+    private byte[] GenerateExcelBytes(string sheetName)
+    {
+        using (var package = new ExcelPackage())
+        {
+            var worksheet = package.Workbook.Worksheets.Add(sheetName);
+
+            // Add column headers
+            worksheet.Cells[1, 1].Value = "Tyre Serial Number";
+            worksheet.Cells[1, 2].Value = "Make";
+            worksheet.Cells[1, 3].Value = "Tyre Type";
+            worksheet.Cells[1, 4].Value = "Tyre Size";
+            worksheet.Cells[1, 5].Value = "Status";
+            worksheet.Cells[1, 6].Value = "Expected Life";
+            worksheet.Cells[1, 7].Value = "Mounted Truck";
+            worksheet.Cells[1, 8].Value = "Tubless";
+            for (int i = 1; i <= 18; i++)
+            {
+                worksheet.Cells[1, i].Style.Font.Bold = true;
+            }
+
+            worksheet.Column(17).Style.Numberformat.Format = "0.00"; // Integer format
+            worksheet.Column(18).Style.Numberformat.Format = "0.00"; // Integer format
+
+            int row = 2;
+            foreach (var item in collection)
+            {
+                worksheet.Cells[row, 1].Value = item.TyreSerialNumber;
+                worksheet.Cells[row, 2].Value = item.Make;
+                worksheet.Cells[row, 3].Value = item.TyreType;
+                worksheet.Cells[row, 4].Value = item.TyreSize;
+                worksheet.Cells[row, 5].Value = item.Status;
+                worksheet.Cells[row, 6].Value = item.TotalExpectedLife;
+                worksheet.Cells[row, 7].Value = item.TyrePosition;
+                worksheet.Cells[row, 8].Value = item.Tubeless;
+
+                
+                row++;
+            }
+
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            worksheet.Cells[worksheet.Dimension.Address].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+
+            // Save the Excel package to a memory stream
+            using (var stream = new MemoryStream())
+            {
+                package.SaveAs(stream);
+                return stream.ToArray();
+            }
+        }
+    }
 }

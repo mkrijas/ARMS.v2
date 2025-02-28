@@ -22,6 +22,8 @@ namespace ArmsServices.DataServices
             _placeService = placeService;
             _contactService = contactService;
         }
+
+        // Method to update a branch entry  
         public BranchModel Update(BranchModel model)
         {
             model.Address = _addressService.Update(model.Address);
@@ -46,6 +48,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to select a branch by its IDc
         public BranchModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -60,6 +64,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to delete a branch by its ID 
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -69,6 +74,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Entity.Branch.Delete]", parameters);
         }
+
+        // Method to select all branches
         public IEnumerable<BranchModel> Select()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Entity.Branch.Select]", null))
@@ -77,6 +84,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data record to BranchModel
         private BranchModel GetModel(IDataRecord dr)
         {
             return new BranchModel
@@ -119,6 +127,8 @@ namespace ArmsServices.DataServices
                 GstCertificate = dr.GetString("GstCertificate"),
             };
         }
+
+        // Method to add a contact to a branch
         public int AddContact(int? BranchID, ContactModel contact)
         {
             contact = _contactService.Update(contact);
@@ -130,6 +140,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Entity.Branch.Contacts.Update]", parameters);
         }
+
+        // Method to get contacts associated with a branch
         public IEnumerable<ContactModel> GetContacts(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -143,12 +155,15 @@ namespace ArmsServices.DataServices
                 yield return _contactService.SelectByID(reader.GetInt32("ContactID"));
             }
         }
+
+        // Method to get the name of a branch by its ID
         public string GetBranchName(int? BranchID)
         {
             var result = SelectByID(BranchID);
             return result.BranchName;
         }
 
+        // Method to get user roles associated with a branch
         public IEnumerable<UserBranchRoleModel> GetUsersNRoles(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -166,11 +181,13 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get the GST number of a branch by its ID
         public string GetGstNo(int? BranchID)
         {           
             return SelectByID(BranchID).GstNo;           
         }
 
+        // Method to validate GST number based on PlaceID
         public BranchModel ValidateGstNo(int? PlaceID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -186,6 +203,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select sub-branches based on a branch ID
         public IEnumerable<int?> SelectSubBranches(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

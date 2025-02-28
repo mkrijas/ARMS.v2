@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices.FMS
             Iservice = iservice;
         }
 
+        // Method to delete a routine check list entry by its ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -25,7 +26,7 @@ namespace ArmsServices.DataServices.FMS
             return Iservice.ExecuteNonQuery("[usp.FMS.RoutineCheckList.Delete]", parameters);
         }
 
-
+        // Method to select routine check list items by branch ID
         public IEnumerable<RoutineCheckListModel> SelectItemByBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -39,8 +40,7 @@ namespace ArmsServices.DataServices.FMS
             }
         }
 
-
-
+        // Method to select expired items based on branch and truck ID
         public IEnumerable<RoutineCheckListMasterModel> ExpireItems(int? BranchID, int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -75,8 +75,7 @@ namespace ArmsServices.DataServices.FMS
         //    return null;
         //}
 
-
-
+        // Method to update a routine check list entry
         public RoutineCheckListModel Update(RoutineCheckListModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -98,7 +97,7 @@ namespace ArmsServices.DataServices.FMS
             return null;
         }
 
-
+        // Helper method to map data record to RoutineCheckListModel
         private RoutineCheckListModel GetModel(IDataRecord dr)
         {
             return new RoutineCheckListModel
@@ -118,7 +117,7 @@ namespace ArmsServices.DataServices.FMS
             };
         }
 
-
+        // Method to get the last routine check list details using ID
         public IEnumerable<RoutineCheckListModel> GetLastRoutineCheckListDetailsUsingID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -149,7 +148,7 @@ namespace ArmsServices.DataServices.FMS
             }
         }
 
-
+        // Execute the stored procedure and yield return each result as a model
         public IEnumerable<RoutineCheckListModel> GetLastRoutineCheckListDetailsUsingTruckId(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

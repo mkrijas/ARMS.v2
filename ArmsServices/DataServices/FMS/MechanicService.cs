@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a mechanic by its ID
         public int Delete(int? MechanicID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -27,6 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Workshop.Mechanic.Delete]", parameters);
         }
 
+        // Method to select all mechanics
         public IEnumerable<MechanicModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -39,6 +41,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a mechanic by its ID
         public MechanicModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -54,6 +57,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select mechanics by workshop ID
         public IEnumerable<MechanicModel> SelectByWorkshop(int? WorkshopID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -67,6 +71,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a mechanic
         public MechanicModel Update(MechanicModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -85,6 +90,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to MechanicModel
         private MechanicModel GetModel(IDataRecord dr)
         {
             return new MechanicModel

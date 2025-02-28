@@ -18,18 +18,21 @@ namespace ArmsServices.DataServices.General
             _tabledep.SubscribeTableDependency();
         }
 
+        // Method to generate a message title for notifications
         public string GetMessageTitle(string DocType, string DocNumber,string Varification)
         {
 
             return "The DocNo :- "+ DocNumber + " of "+ DocType + " requires " + Varification + ".";
         }
+
+        // Method to generate a message body for notifications
         public string GetMessageBody(string DocType, string DocNumber, string Varification, DateTime? DocDate)
         {
 
             return "The DocNo :- " + DocNumber + " of " + DocType + " requires " + Varification + ". which was requested on " + DocDate;
         }
 
-
+        // Method to update a push notification
         public PushNotificationModel UpdatePushNotification(PushNotificationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -55,7 +58,9 @@ namespace ArmsServices.DataServices.General
                 model = GetModel(dr);
             }
             return model;
-        }        
+        }
+
+        // Method to select notifications based on branch, document ID, and document type ID
         public IEnumerable<PushNotificationModel> SelectNotificationsBasedOnBranchDocumentIdDocumentTypeId(int? ID,int? DocumentID,int? DocumentTypeID)
         {
 
@@ -71,6 +76,8 @@ namespace ArmsServices.DataServices.General
                 yield return GetModel(dr);
             }
         }
+
+        // Method to acknowledge selected notification items
         public int AknowledgedSelectedItems(string MessageIDs, string UserID)
         {
 
@@ -83,6 +90,8 @@ namespace ArmsServices.DataServices.General
             return Iservice.ExecuteNonQuery("[usp.General.Notification.Aknowledge]", parameters);
 
         }
+
+        // Method to acknowledge the current notification item
         public int AknowledgedCurrentItem(int? MessageID, string UserID)
         {
 
@@ -95,6 +104,8 @@ namespace ArmsServices.DataServices.General
             return Iservice.ExecuteNonQuery("[usp.General.Notification.Aknowledge]", parameters);
 
         }
+
+        // Method to get all notification groups
         public IEnumerable<PushNotificationGroupModel> GetAllGroupList()
         {
 
@@ -110,6 +121,8 @@ namespace ArmsServices.DataServices.General
             }
 
         }
+
+        // Helper method to map data record to PushNotificationModel
         private PushNotificationModel GetModel(IDataRecord dr)
         {
             return new PushNotificationModel
@@ -140,6 +153,8 @@ namespace ArmsServices.DataServices.General
                 MsgDate = dr.GetDateTime("Timestamp")
             };
         }
+
+        // Method to select active notifications
         public IEnumerable<PushNotificationModel> SelectActiveNotifications()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -151,6 +166,8 @@ namespace ArmsServices.DataServices.General
                 yield return GetModel(dr);
             }
         }
+
+        // Method to select active notifications for a specific branch
         public IEnumerable<PushNotificationModel> SelectActiveNotifications(int? BranchID, string UserID = null)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -164,6 +181,8 @@ namespace ArmsServices.DataServices.General
                 yield return GetModel(dr);
             }
         }
+
+        // Method to create authorization notifications
         public int CreateAuthNotifications(int BranchID, int DocumentTypeID, int DocumentID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -175,6 +194,7 @@ namespace ArmsServices.DataServices.General
             return Iservice.ExecuteNonQuery("[usp.General.Notification.CreateAuthNotification]", parameters);            
         }
 
+        // Method to cancel authorization notifications
         public int CancelAuthNotifications(int DocumentTypeID, int DocumentID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -185,6 +205,7 @@ namespace ArmsServices.DataServices.General
             return Iservice.ExecuteNonQuery("[usp.General.Notification.CancelAuthNotification]", parameters);
         }
 
+        // Method to acknowledge an authorization notification
         public int AcknowledgeAuthNotification(int AuthlevelID,int DocumentTypeID, int DocumentID,string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

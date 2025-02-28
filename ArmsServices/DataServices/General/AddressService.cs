@@ -16,6 +16,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to update an address entry
         public AddressModel Update(AddressModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -50,6 +52,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to select an address by its ID
         public AddressModel SelectByID(int? AddressID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -78,6 +82,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to delete an address by its ID
         public int Delete(int? AddressID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -87,6 +93,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Entity.AddressesDelete]", parameters);
         }
+
+        // Method to select addresses based on their ID
         public IEnumerable<AddressModel> Select(int? AddressID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

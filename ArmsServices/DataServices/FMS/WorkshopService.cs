@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iaddress = iaddress;
         }
 
+        // Method to delete a workshop by its ID
         public int Delete(int? WorkshopID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Workshop.Delete]", parameters);
         }
 
+        // Method to select workshop entries by their ID
         public IEnumerable<WorkshopModel> Select(int? WorkshopID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -41,6 +43,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a workshop by its ID
         public WorkshopModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -55,6 +58,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a workshop entry
         public WorkshopModel Update(WorkshopModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -75,6 +79,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to WorkshopModel 
         private WorkshopModel GetModel(IDataRecord dr)
         {
             return new WorkshopModel

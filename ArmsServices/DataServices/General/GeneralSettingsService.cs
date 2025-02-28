@@ -17,6 +17,7 @@ namespace DAL.DataServices.General
             Iservice = iservice;
         }
 
+        // Method to select all general settings
         public IEnumerable<GeneralSettingsModel> Select()
         {
             //foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.GeneralSettings.Select]", null))
@@ -28,6 +29,8 @@ namespace DAL.DataServices.General
                 yield return GetModel(dr);
             }
         }
+
+        // Method to update a general setting
         public void Update(GeneralSettingsModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,6 +45,7 @@ namespace DAL.DataServices.General
             Iservice.ExecuteNonQuery("[usp.User.Entity.ConfigTable.Update]", parameters);
         }
 
+        // Helper method to map data record to GeneralSettingsModel
         private GeneralSettingsModel GetModel(IDataRecord dr)
         {
             return new GeneralSettingsModel
@@ -64,6 +68,7 @@ namespace DAL.DataServices.General
             };
         }
 
+        // Method to select value options for a specific setting
         public IEnumerable<ValueOptions> SelectValues(GeneralSettingsModel model)
         {
             //foreach (IDataRecord dr in Iservice.GetDataReader("[usp.User.GeneralSettings.Select]", null))
@@ -80,6 +85,7 @@ namespace DAL.DataServices.General
             }
         }
 
+        // Helper method to map data record to ValueOptions
         private ValueOptions GetModels(IDataRecord dr)
         {
             return new ValueOptions

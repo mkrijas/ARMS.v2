@@ -17,6 +17,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to remove a mechanic job entry by its ID
         public int Remove(int? MjID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -27,7 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.FMS.Jobcard.JobInProgress.Mechanic.Remove]", parameters);
         }
 
-
+        // Method to select mechanic job entries by their ID
         public IEnumerable<MechanicJobModel> Select(int? MjID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -41,6 +42,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a mechanic job entry by its ID
         public MechanicJobModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -55,6 +57,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select mechanic job entries by job ID
         public IEnumerable<MechanicJobModel> SelectByJob(int? JipID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -68,6 +71,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a mechanic job entry
         public MechanicJobModel Update(MechanicJobModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -88,6 +92,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to MechanicJobModel
         private MechanicJobModel GetModel(IDataRecord dr)
         {
             return new MechanicJobModel
