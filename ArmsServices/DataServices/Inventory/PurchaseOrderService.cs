@@ -16,6 +16,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to approve a purchase order
         public int Approve(int POID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
         }
 
+        // Method to reverse a purchase order    
         public int Reverse(int POID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -39,6 +41,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
         }
 
+        // Method to cancel a purchase order
         public int CancelOrder(int POID, string UserID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -51,6 +54,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Approve]", parameters);
         }
 
+        // Method to delete a purchase order by its ID
         public int Delete(int? ID, string UserID)
         {
 
@@ -62,6 +66,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.PurchaseOrder.Delete]", parameters);
         }
 
+        // Method to get item entries for a specific purchase order
         public IEnumerable<InventoryItemEntryModel> GetItemEntries(int POID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -83,6 +88,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get item entries for a specific purchase order (alternative method)
         public IEnumerable<InventoryItemEntryModel> GetItemEntriesPO(int POID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -104,6 +110,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select pending purchase orders for a specific branch
         public IEnumerable<PurchaseOrderModel> SelectPending(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -117,6 +124,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a purchase order by its ID
         public PurchaseOrderModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -133,6 +141,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a purchase order
         public PurchaseOrderModel Update(PurchaseOrderModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -157,6 +166,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to PurchaseOrderModel
         private PurchaseOrderModel GetModel(IDataRecord dr)
         {
             return new PurchaseOrderModel(
@@ -184,6 +194,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to select purchase orders by store ID
         public IEnumerable<PurchaseOrderModel> SelectByStore(int StoreID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -197,6 +208,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select pending purchase orders for GRN (Goods Receipt Note)
         public IEnumerable<PurchaseOrderModel> PendingForGrn(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

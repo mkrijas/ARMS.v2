@@ -15,6 +15,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to delete a store by its ID
         public int Delete(int? ID, string UserID)
         {
 
@@ -26,6 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Delete]", parameters);
         }
 
+        // Method to get batch details for a specific batch ID
         public LinkableBatchModel GetBatchDetails(long? BatchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -47,7 +50,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
-
+        // Method to get item availability in a specific store
         public InventoryItemModel GetItemAvailability(int StoreID, int ItemID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -67,6 +70,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to get used item availability in a specific store
         public InventoryItemModel GetUsedItemAvailability(int StoreID, int ItemID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -86,6 +90,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to process outflow of items from a store
         public int OutFlow(int? StoreID, List<InventoryItemEntryModel> Items, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -97,6 +102,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Outflow]", parameters);
         }
 
+        // Method to select all stores
         public IEnumerable<StoreModel> Select()
         {
 
@@ -110,6 +116,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select stores by branch ID
         public IEnumerable<StoreModel> SelectByBranch(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -123,6 +130,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a store by its ID
         public StoreModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -137,6 +145,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a store's detailsc
         public StoreModel Update(StoreModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -153,6 +162,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to StoreModel
         private StoreModel GetModel(IDataRecord dr)
         {
             return new StoreModel(dr.GetString("BranchName"))

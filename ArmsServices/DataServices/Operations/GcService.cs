@@ -20,6 +20,8 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
             Itariff = tariff;
         }
+
+        // Method to update a GC set
         public GcSetModel Update(GcSetModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -43,6 +45,8 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
+
+        // Method to delete a GC set by its ID
         public int DeleteSet(long? id, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -52,6 +56,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.GcSet.Delete]", parameters);
         }
+
+        // Method to delete a GC by its ID
         public int Delete(long? GcID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -61,6 +67,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Gc.Gcs.Delete]", parameters);
         }
+
+        // Method to update the unloading quantity of a GC set
         public int UpdateUnloadingQuantity(GcSetModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -72,6 +80,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.GcSet.UpdateUnloadingQuantity]", parameters);
         }
+
+        // Method to select all GC sets for a specific branch
         public List<GcSetModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -81,6 +91,8 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
+
+        // Method to select GC sets by trip ID
         public List<GcSetModel> SelectByTrip(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -90,6 +102,8 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
+
+        // Method to select GC sets that are ready to unload
         public List<GcSetModel> SelectToUnload(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -100,6 +114,7 @@ namespace ArmsServices.DataServices
             return GetList(parameters);
         }
 
+        // Method to select unloaded GC sets for mobile 
         public List<GcSetModel> SelectUnloadedMobile(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -110,6 +125,7 @@ namespace ArmsServices.DataServices
             return GetList(parameters);
         }
 
+        // Method to select pending GC sets for a trip
         public List<GcSetModel> SelectPending(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -120,6 +136,7 @@ namespace ArmsServices.DataServices
             return GetList(parameters);
         }
 
+        // Method to select GC sets that are ready to dispatch
         public List<GcSetModel> SelectToDispatch(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -129,6 +146,8 @@ namespace ArmsServices.DataServices
             };
             return GetList(parameters);
         }
+
+        // Method to select unassigned GC sets for a branch
         public List<GcSetModel> SelectUnAssigned(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -139,6 +158,7 @@ namespace ArmsServices.DataServices
             return GetList(parameters);
         }
 
+        // Method to select GC sets that have started unloading
         public List<GcSetModel> SelectedUnloadEvent(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -149,6 +169,7 @@ namespace ArmsServices.DataServices
             return GetList(parameters);
         }
 
+        // Method to select all GC types
         public IEnumerable<GcTypeModel> SelectGcTypes()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Gc.GcType.Select]", null))
@@ -160,6 +181,8 @@ namespace ArmsServices.DataServices
                 };
             }
         }
+
+        // Method to select a GC set by its ID
         public GcSetModel SelectByID(long? GcSetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -171,6 +194,7 @@ namespace ArmsServices.DataServices
             return list.FirstOrDefault();
         }
 
+        // Helper method to get a list of GC sets based on parameters
         private List<GcSetModel> GetList(List<SqlParameter> parameters)
         {
             List<GcSetModel> list = new();
@@ -200,6 +224,7 @@ namespace ArmsServices.DataServices
             return list;
         }
 
+        // Helper method to map data record to GcSetModel
         private GcSetModel GetModel(IDataRecord dr)
         {
             return new GcSetModel
@@ -234,6 +259,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to GcModel
         private GcModel GetGcModel(IDataRecord dr)
         {
             return new GcModel
@@ -271,6 +297,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to append a GC set to a trip
         public int AppendToTrip(long? TripID, long? GcSetID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -282,6 +309,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.GcSet.EventUpdate]", parameters);
         }
+
+        // Method to begin unloading a GC set
         public int BeginUnload(long? TripID, long? GcSetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -293,6 +322,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.GcSet.EventUpdate]", parameters);
         }
 
+        // Method to remove a GC set from a trip
         public int RemoveFromTrip(long? GcSetID, long? TripID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -305,6 +335,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.GcSet.EventUpdate]", parameters);
         }
 
+        // Method to update the E-way bill details
         public EwayBillModel UpdateEwayBill(EwayBillModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -334,6 +365,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to confirm the acknowledgement of a GC
         public int ConfirmAcknowledgement(long? GcID, bool IsAcknowledged)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -343,6 +375,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Gc.Gcs.Acknowledged]", parameters);
         }
+
+        // Method to get GCs associated with a specific GC set
         public IEnumerable<GcModel> GetGcs(long? GcSetID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

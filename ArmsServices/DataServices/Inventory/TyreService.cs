@@ -16,6 +16,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to delete a tyre by its ID
         public int Delete(int? ID, string UserID)
         {
 
@@ -27,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Delete]", parameters);
         }
 
+        // Method to get non-linked tyre batches for a specific branch and item
         public IEnumerable<LinkableBatchModel> GetNonLinkedTyreBatches(int BranchID, int ItemID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -48,6 +51,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to mount a tyre
         public int Mount(TyreMountedModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -66,6 +70,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Mount]", parameters);
         }
 
+        // Method to unmount a tyre
         public int Unmount(int? TyreID, DateTime? UnmountedOn, int? UnmountedKm,StoreModel Store, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -79,6 +84,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.UnMount]", parameters);
         }
 
+        // Overloaded method to unmount a tyre using mounted ID
         public int Unmount(string UserID, int? MountedID, DateTime? UnmountedOn, int? UnmountedKm)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -91,6 +97,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.UnMount]", parameters);
         }
 
+        // Method to begin the resole process for tyres
         public int ResoleBegin(TyreResoleModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -105,6 +112,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Update]", parameters);
         }
 
+        // Method to select a list of tyre resole requests by ID
         public IEnumerable<TyreResoleModel> SelectTyreResoleList(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -116,6 +124,8 @@ namespace ArmsServices.DataServices
                 yield return GetTyreResoleModel(dr);
             }
         }
+
+        // Method to select tyre resole requests by branch ID
         public IEnumerable<TyreResoleModel> SelectTyreResoleListByBranchId(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -129,6 +139,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select resole delivery view list by ID
         public IEnumerable<ResoleDeliveryModel> SelectResoleDeliveryViewList(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -140,6 +151,8 @@ namespace ArmsServices.DataServices
                 yield return GetResoleDeliveryModel(dr);
             }
         }
+
+        // Method to select resole delivery list by branch ID
         public IEnumerable<ResoleDeliveryModel> SelectResoleDeliveryListByBranch(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -153,6 +166,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select resole delivery tyres list by resole ID and delivery ID
         public IEnumerable<ResoleDeliveryTyreModel> SelectResoleDeliveryTyresList(int? ResoleID, int? DeliveryID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -166,6 +180,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update resole delivery details
         public int ResoleDeliveryUpdate(ResoleDeliveryModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -193,6 +208,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Delivery.Update]", parameters);
         }
 
+        // Method to undo a resole delivery
         public int UndoResoleDelivery(int? DeliveryId, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -203,6 +219,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.Resole.Delivery.Delete]", parameters);
         }
 
+        // Method to cancel a resole request
         public int ResoleCancel(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -214,6 +231,7 @@ namespace ArmsServices.DataServices
 
         }
 
+        // Method to select tyre IDs by resole ID
         public IEnumerable<int?> ResoleTyresByResoleId(int? ResoleId)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -228,6 +246,7 @@ namespace ArmsServices.DataServices
 
         }
 
+        // Method to select tyres by branch ID
         public IEnumerable<TyreModel> SelectByBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -241,6 +260,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a tyre by its ID
         public TyreModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -255,6 +275,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to select tyres by truck ID
         public IEnumerable<TyreModel> SelectByTruck(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -268,6 +289,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unmounted tyres by tyre ID
         public IEnumerable<TyreModel> SelectUnmontedTyresByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -281,6 +303,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select unmounted tyres by branch ID
         public IEnumerable<TyreModel> SelectUnmontedTyresByBranch(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -294,6 +317,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select mounted tyres by truck ID
         public IEnumerable<TyreMountedModel> SelectMountedTyresByID(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -307,6 +331,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select mounted tyres by tyre ID
         public IEnumerable<TyreMountedModel> SelectMountedTyresByTyreID(int? TyreID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -320,6 +345,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get a list of tyre positions
         public IEnumerable<TyrePositionModel> GetTyrePositionList(int? ID = null)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -332,6 +358,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get tyre positions using truck type ID
         public IEnumerable<TyrePositionModel> GetTyrePositionListUsingTruckTypeId(int? TruckTypeId = null)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -344,8 +371,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-
-
+        // Method to update a tyre's details
         public TyreModel Update(TyreModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -370,7 +396,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
+        // Method to select tyre type and position mapping by truck type ID
         public IEnumerable<TyreTypeAndPositionMappingModel> SelectMappingTyrePositionAndType(int? TrucktypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -383,6 +409,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update tyre position and type mapping
         public TyreTypeAndPositionMappingModel UpdateMappingTyrePositionAndType(TyreTypeAndPositionMappingModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -400,6 +427,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to TyreModel
         private TyreModel GetModel(IDataRecord dr)
         {
             return new TyreModel()
@@ -427,6 +455,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to TyreResoleModel
         private TyreResoleModel GetTyreResoleModel(IDataRecord dr)
         {
             return new TyreResoleModel()
@@ -446,6 +475,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to ResoleDeliveryModelc
         private ResoleDeliveryModel GetResoleDeliveryModel(IDataRecord dr)
         {
             return new ResoleDeliveryModel()
@@ -469,6 +499,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to ResoleDeliveryTyreModel
         private ResoleDeliveryTyreModel GetResoleDeliveryTyreModel(IDataRecord dr)
         {
             return new ResoleDeliveryTyreModel()
@@ -482,6 +513,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to TyreMountedModel
         private TyreMountedModel GetTyreMountModel(IDataRecord dr)
         {
             return new TyreMountedModel()
@@ -504,6 +536,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to TyrePositionModel
         private TyrePositionModel GetPositionModel(IDataRecord dr)
         {
             return new TyrePositionModel()
@@ -522,6 +555,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to TyreTypeAndPositionMappingModel
         private TyreTypeAndPositionMappingModel GetPositionAndTypeMappingModel(IDataRecord dr)
         {
             return new TyreTypeAndPositionMappingModel()
@@ -538,6 +572,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to update the km reading for a tyre
         public TyreKmReadingModel UpdateKmReading(TyreKmReadingModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -555,6 +590,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select km readings by tyre ID
         public IEnumerable<TyreKmReadingModel> SelectKmReadingByTyreID(int? TyreID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -567,6 +603,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to delete a km reading by its ID
         public int DeleteKmReading(int? ID, string UserID)
         {
 
@@ -578,6 +615,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Tyre.KmReadingAlerts.Delete]", parameters);
         }
 
+        // Helper method to map data record to TyreKmReadingModel
         private TyreKmReadingModel GetKmReadingModel(IDataRecord dr)
         {
             return new TyreKmReadingModel()
@@ -599,6 +637,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to swap tyres
         public TyreSwapModel Swap(TyreSwapModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices.Operations
             Iservice = iservice;
         }
 
+        // Method to delete a routine checklist item by its ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -24,7 +25,7 @@ namespace ArmsServices.DataServices.Operations
             return Iservice.ExecuteNonQuery("[usp.Operation.RoutineCheckListMaster.Delete]", parameters);
         }
 
-
+        // Method to select routine checklist items by branch ID
         public IEnumerable<RoutineCheckListMasterModel> SelectItemByBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -54,8 +55,7 @@ namespace ArmsServices.DataServices.Operations
         //    return null;
         //}
 
-
-
+        // Method to update a routine checklist item  
         public RoutineCheckListMasterModel Update(RoutineCheckListMasterModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -78,7 +78,7 @@ namespace ArmsServices.DataServices.Operations
             return null;
         }
 
-
+        // Helper method to map data record to RoutineCheckListMasterModel
         private RoutineCheckListMasterModel GetModel(IDataRecord dr)
         {
             return new RoutineCheckListMasterModel

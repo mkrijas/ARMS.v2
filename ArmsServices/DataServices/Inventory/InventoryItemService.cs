@@ -15,6 +15,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to delete an inventory item by its ID
         public int Delete(int? ID, string UserID)
         {
 
@@ -26,8 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Item.Delete]", parameters);
         }
 
-
-
+        // Method to search for inventory items by description
         public IEnumerable<InventoryItemModel> SearchByDescription(string itemDescription)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,8 +43,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-
-
+        // Method to search for inventory items by HSN code
         public IEnumerable<InventoryItemModel> SearchByHsn(string HsnCode)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +58,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to search for inventory items by item code
         public IEnumerable<InventoryItemModel> SearchByItemCode(string itemCode)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -72,6 +73,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select inventory items by group ID
         public IEnumerable<InventoryItemModel> SelectByGroup(int? GroupID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -86,6 +88,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select inventory items by item group ID
         public IEnumerable<InventoryItemModel> SelectByItemGroup(int? ItemGroupID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -100,6 +103,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select an inventory item by its ID
         public InventoryItemModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -115,7 +119,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
+        // Method to select a list of inventory items by their ID
         public IEnumerable<InventoryItemModel> SelectListByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -129,6 +133,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Method to update an inventory item
         public InventoryItemModel Update(InventoryItemModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -149,6 +155,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get job card time and KM for a specific item and truck
         public IEnumerable<JobCardTrackModel> GetJobcardTimeAndKM(int? ItemID, int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -163,6 +170,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data record to InventoryItemModel
         private InventoryItemModel GetModel(IDataRecord dr)
         {
             return new InventoryItemModel
@@ -196,6 +204,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to JobCardTrackModel
         private JobCardTrackModel GetModelJobCard(IDataRecord dr)
         {
             return new JobCardTrackModel

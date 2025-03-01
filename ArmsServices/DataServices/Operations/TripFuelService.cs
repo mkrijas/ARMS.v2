@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a trip fuel record by its ID
         public int Delete(long? TripFuelID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +29,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Operation.Trips.Fuel.Delete]", parameters);
         }
 
+        // Method to select a trip fuel record by its ID
         public TripFuelModel Select(int? TripFuelID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +46,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select trip fuel records by trip ID
         public IEnumerable<TripFuelModel> SelectByTrip(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +61,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select trip fuel records by asset transfer ID
         public IEnumerable<TripFuelModel> SelectByAssetTransfer(int? AssetTransferID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -71,6 +75,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(reader);
             }
         }
+
+        // Method to select a trip fuel record by tax purchase ID
         public TripFuelModel SelectByTaxPurchase(int? TaxPurchaseID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -87,6 +93,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a trip fuel record
         public TripFuelModel Update(TripFuelModel model)
         {
 
@@ -121,6 +128,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to TripFuelModel
         private TripFuelModel GetModel(IDataRecord reader)
         {
             return new TripFuelModel

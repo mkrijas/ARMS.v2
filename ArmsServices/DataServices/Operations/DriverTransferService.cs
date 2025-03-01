@@ -14,6 +14,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a driver transfer initiation by its ID
         public int DeleteInitiation(int? ID, int? BranchID, int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -26,7 +27,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Transfer.Delete]", parameters);
         }
 
-
+        // Method to select outgoing drivers for a specific branch
         public IEnumerable<DriverTransferInitiationModel> SelectOutgoingDrivers(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -41,9 +42,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-
-
-
+        // Method to update an outgoing driver transfer initiation
         public DriverTransferInitiationModel UpdateOutgoing(DriverTransferInitiationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -65,8 +64,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
-
-
+        // Method to select incoming drivers for a specific branch
         public IEnumerable<DriverTransferInitiationModel> SelectIncomingDrivers(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -81,9 +79,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-
-
-
+        // Method to update the status of a driver transfer
         public DriverTransferInitiationModel UpdateStatus(DriverTransferInitiationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -107,7 +103,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
-
+        // Helper method to map data record to DriverTransferInitiationModel
         private DriverTransferInitiationModel GetModel(IDataRecord dr)
         {
             return new DriverTransferInitiationModel()

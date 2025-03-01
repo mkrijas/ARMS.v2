@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices.Inventory
             Iservice = iservice;
         }
 
+        // Deletes an inventory request by ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -36,6 +37,7 @@ namespace ArmsServices.DataServices.Inventory
         //    return 
         //}
 
+        // Method to get sub-items for a specific inventory request
         public IEnumerable<InventoryItemEntryModel> GetSub(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -57,6 +59,7 @@ namespace ArmsServices.DataServices.Inventory
             }
         }
 
+        // Method to select all inventory requests
         public IEnumerable<InventoryRequestModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -70,6 +73,7 @@ namespace ArmsServices.DataServices.Inventory
             }
         }
 
+        // Method to select inventory requests by store ID
         public IEnumerable<InventoryRequestModel> SelectByStore(int? StoreID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -85,6 +89,7 @@ namespace ArmsServices.DataServices.Inventory
             }
         }
 
+        // Method to select inventory requests by truck ID
         public IEnumerable<InventoryRequestModel> SelectByTruckID(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -113,6 +118,7 @@ namespace ArmsServices.DataServices.Inventory
         //    }
         //}
 
+        // Method to select an inventory request by its ID
         public InventoryRequestModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -128,6 +134,7 @@ namespace ArmsServices.DataServices.Inventory
             return model;
         }
 
+        // Method to select inventory requests by party ID
         public IEnumerable<InventoryRequestModel> SelectByParty(int? PartyID, int? PartyBranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -143,6 +150,7 @@ namespace ArmsServices.DataServices.Inventory
             }
         }
 
+        // Method to select inventory requests by date period
         public IEnumerable<InventoryRequestModel> SelectByPeriod(DateTime? begin, DateTime? end)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -158,6 +166,7 @@ namespace ArmsServices.DataServices.Inventory
             }
         }
 
+        // Method to update an inventory request
         public InventoryRequestModel Update(InventoryRequestModel model)
         {
             List<InventoryItemEntryModel> ItemsListFormated = new();
@@ -190,6 +199,7 @@ namespace ArmsServices.DataServices.Inventory
             return model;
         }
 
+        // Method to close an inventory request
         public InventoryRequestModel ClosedInventory(InventoryRequestModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -206,6 +216,7 @@ namespace ArmsServices.DataServices.Inventory
             return model;
         }
 
+        // Method to select inventory requests released by job card ID
         public IEnumerable<InventoryRequestModel> SelectRequestReleaseByJobCardID(int? JobCardID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -220,6 +231,7 @@ namespace ArmsServices.DataServices.Inventory
             }
         }
 
+        // Helper method to map data record to InventoryRequestModel
         private InventoryRequestModel GetModel(IDataRecord dr)
         {
             return new InventoryRequestModel
@@ -255,6 +267,7 @@ namespace ArmsServices.DataServices.Inventory
             };
         }
 
+        // Helper method to map data record to InventoryRequestModel for released requests
         private InventoryRequestModel GetModelRequestRelease(IDataRecord dr)
         {
             return new InventoryRequestModel
@@ -298,6 +311,7 @@ namespace ArmsServices.DataServices.Inventory
             };
         }
 
+        // Method to select expenses by job card ID
         public IEnumerable<ExpenseModel> SelectExpenseByJobCardID(int? JobCardID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -311,6 +325,7 @@ namespace ArmsServices.DataServices.Inventory
             }
         }
 
+        // Helper method to map data record to ExpenseModel
         private ExpenseModel GetModelExpense(IDataRecord dr)
         {
             return new ExpenseModel

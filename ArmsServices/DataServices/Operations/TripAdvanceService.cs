@@ -20,6 +20,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a trip advance by its ID
         public int Delete(int? TripAdvanceID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -30,6 +31,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Operation.Trips.Advance.Delete]", parameters);
         }
 
+        // Method to select a trip advance by its ID
         public TripAdvanceModel Select(int? TripAdvanceID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -45,6 +47,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select a trip advance by its ID
         public IEnumerable<TripAdvanceModel> SelectByTrip(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +61,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get the total trip advance for a specific trip
         public TripAdvanceModel GetTotal(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -73,6 +77,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a trip advance
         public TripAdvanceModel Update(TripAdvanceModel model)
         {
 
@@ -98,6 +103,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to cancel a trip advance based on document type and ID
         public TripAdvanceModel Cancel(int? @DocumentTypeID, int? @DocumentID)
         {
 
@@ -114,6 +120,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get advance receivables for a specific branch
         public IEnumerable<TripAdvanceModel> GetAdvanceReceivables(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -142,6 +149,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data record to TripAdvanceModelc
         private TripAdvanceModel GetModel(IDataRecord reader)
         {
             return new TripAdvanceModel

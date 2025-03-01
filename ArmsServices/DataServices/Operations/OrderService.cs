@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to update an order
         public async Task<OrderModel> Update(OrderModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -39,6 +40,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select an order by its IDc
         public async Task<OrderModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -54,6 +56,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to delete an order by its ID
         public async Task<int> Delete(int? OrderID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -64,6 +67,7 @@ namespace ArmsServices.DataServices
             return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Order.Delete]", parameters);
         }
 
+        // Method to select orders based on a specific ID
         public async IAsyncEnumerable<OrderModel> Select(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -77,6 +81,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select orders by branch ID
         public async IAsyncEnumerable<OrderModel> SelectByBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -90,6 +95,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update the order for a specific branch
         public async Task<int> BranchOrderUpdate(int? BranchID, int? OrderID, string UserID, string operation)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -102,6 +108,7 @@ namespace ArmsServices.DataServices
             return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Order.Branch.Update]", parameters);
         }
 
+        // Helper method to map data record to OrderModel
         private OrderModel GetModel(IDataRecord dr)
         {
             return new OrderModel

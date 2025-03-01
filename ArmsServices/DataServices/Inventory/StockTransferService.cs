@@ -21,6 +21,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to approve a stock transfer
         public int Approve(int? ID, string UserID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -32,6 +33,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Transfer.Initiate.Approve]", parameters);
         }
 
+        // Method to select outgoing stock transfers for a specific branch
         public IEnumerable<StockTransferInitiationModel> SelectOutGoing(int? BranchId)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -45,6 +47,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select completed outgoing stock transfers for a specific branch
         public IEnumerable<StockTransferInitiationModel> SelectCompletedOutGoing(int? BranchId)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +61,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select completed incoming stock transfers for a specific branch
         public IEnumerable<StockTransferInitiationModel> SelectCompletedIncoming(int? BranchId)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -70,6 +74,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Method to select incoming stock transfers for a specific branchc
         public IEnumerable<StockTransferInitiationModel> SelectIncoming(int? BranchId)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -83,6 +89,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select items list for a specific stock transfer
         public IEnumerable<InventoryItemEntryModel> SelectItemsList(int? StockTransferID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -106,6 +113,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a stock transfer initiation by its ID
         public StockTransferInitiationModel SelectSandB(int? StockTransferID)
         {
             StockTransferInitiationModel model = null;
@@ -121,6 +129,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to initiate a stock transfer
         public StockTransferInitiationModel Initiate(StockTransferInitiationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -147,6 +156,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update delivery details of a stock transfer
         public StockTransferEndModel UpdateDelivery(StockTransferEndModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -170,6 +180,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to cancel a stock transfer
         public int TransferCancel(int? StockTransferID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -181,6 +192,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.Store.Transfer.Initiation.Cancel]", parameters);
         }
 
+        // Method to reject a stock transfer order
         public StockTransferInitiationModel RejectOrder(StockTransferInitiationModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -198,6 +210,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to StockTransferInitiationModel
         private StockTransferInitiationModel GetModel(IDataRecord dr)
         {
             return new StockTransferInitiationModel
@@ -236,6 +249,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Helper method to map data record to StockTransferEndModel
         private StockTransferEndModel GetEndModel(IDataRecord dr)
         {
             return new StockTransferEndModel

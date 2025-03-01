@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a driver fault by its ID
         public int Delete(int? DriverID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -25,7 +26,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Fault.Delete]", parameters);
         }
 
-
+        // Method to select driver faults by driver ID
         public IEnumerable<DriverFaultModel> Select(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -39,6 +40,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a driver fault by its ID
         public DriverFaultModel SelectByID(int? FaultID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -54,6 +56,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a driver fault's details
         public DriverFaultModel Update(DriverFaultModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -75,6 +78,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to DriverFaultMode
         private DriverFaultModel GetModel(IDataRecord dr)
         {
             return new DriverFaultModel

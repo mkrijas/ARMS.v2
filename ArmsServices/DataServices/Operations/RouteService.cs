@@ -16,6 +16,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to update a route
         public async Task<RouteModel> Update(RouteModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -40,6 +42,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to select a route by its ID
         public async Task<RouteModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -54,6 +58,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to delete a route by its ID
         public int Delete(int? RouteID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -63,6 +69,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Gc.Route.Delete]", parameters);
         }
+
+        // Method to select routes based on a specific ID
         public async IAsyncEnumerable<RouteModel> Select(int? RouteID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -76,6 +84,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get disabled routes
         public async IAsyncEnumerable<RouteModel> GetDisabled(int? RouteID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -89,6 +98,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select routes by order ID
         public async IAsyncEnumerable<RouteModel> SelectByOrder(int? OrderID = 0)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -102,6 +112,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select routes by branch ID
         public async IAsyncEnumerable<RouteModel> SelectByBranch(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -114,6 +125,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Helper method to map data record to RouteModel   
         private RouteModel GetModel(IDataRecord dr)
         {
             return new RouteModel

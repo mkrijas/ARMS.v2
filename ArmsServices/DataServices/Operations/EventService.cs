@@ -17,6 +17,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to update an event
         public EventModel Update(EventModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -43,6 +45,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to delete an event by its ID
         public int Delete(long? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -53,6 +57,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Truck.Truck.Delete]", parameters);
         }
 
+        // Helper method to map data record to EventModel
         private EventModel GetModel(IDataRecord dr)
         {
             return new EventModel
@@ -80,7 +85,7 @@ namespace ArmsServices.DataServices
             };
         }
 
-
+        // Method to select an event by its ID
         private EventTypeModel GetEventType(IDataRecord dr)
         {
             return new EventTypeModel()
@@ -100,6 +105,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to get the next possible event for a truck
         public EventModel SelectByID(long? EventID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -115,6 +121,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select events by trip ID
         EventTypeModel IEventService.GetNextPossibleEvent(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -130,6 +137,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get the current event for a truck
         IEnumerable<EventModel> IEventService.SelectByTrip(long? TripID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -144,6 +152,7 @@ namespace ArmsServices.DataServices
 
         }
 
+        // Method to get the previous event for a truck
         EventModel IEventService.GetCurrentEvent(int? TruckID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -159,6 +168,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get the next event for a truck 
         EventModel IEventService.GetPreviousEvent(long? EventID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -174,8 +184,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
-
+        // Method to get all event types
         EventModel IEventService.GetNextEvent(long? EventID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -190,6 +199,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to get a specific event type by its ID
         IEnumerable<EventTypeModel> IEventService.GetEventTypes()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Truck.Event.Type.Select]", null))
@@ -197,6 +208,8 @@ namespace ArmsServices.DataServices
                 yield return GetEventType(dr);
             }
         }
+
+        // Method to get the previous event based on truck ID and event time
         EventTypeModel IEventService.GetEventType(int? EventTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -213,7 +226,7 @@ namespace ArmsServices.DataServices
 
 
         ///////////////
-
+        // Method to get the previous event for a truck based on truck ID and event time
         EventModel IEventService.GetPreviousEvent(int truckID, DateTime eventTime)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

@@ -16,6 +16,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to update an expense mapping
         public ExpenseMapping Update(ExpenseMapping model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -33,6 +35,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to select all expense mappings
         public IEnumerable<ExpenseMapping> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -45,6 +49,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Method to select expense mappings by area
         public IEnumerable<ExpenseMapping> SelectByArea(string Area)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +64,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Method to delete an expense mapping by its ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -67,6 +75,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Operation.ExpenseMapping.Delete]", parameters);
         }
+
+        // Helper method to map data record to ExpenseMapping model
         private ExpenseMapping GetModel(IDataRecord dr)
         {
             return new ExpenseMapping()
@@ -87,6 +97,8 @@ namespace ArmsServices.DataServices
                 }
             };
         }
+
+        // Method to select an expense mapping by its ID
         public ExpenseMapping SelectByID(int ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

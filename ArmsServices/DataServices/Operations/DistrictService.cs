@@ -16,6 +16,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to update a district's details
         public DistrictModel Update(DistrictModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -47,6 +49,8 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
+
+        // Method to delete a district by its ID
         public int Delete(int? DistrictID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -56,6 +60,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Place.Districts.Delete]", parameters);
         }
+
+        // Method to select districts by their ID
         public IEnumerable<DistrictModel> Select(int? DistrictID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -85,6 +91,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get a list of states
         public IEnumerable<StateModel> GetStates()
         {
             foreach (IDataRecord dr in Iservice.GetDataReader("[usp.Place.States.Select]", null))

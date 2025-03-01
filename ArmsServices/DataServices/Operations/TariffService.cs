@@ -23,6 +23,7 @@ namespace ArmsServices.DataServices
         }
         public string[] TariffGroups { get { return new string[] { "FREIGHT", "INCENTIVE", "REIMBURSIBLE" }; } }
 
+        // Method to delete a tariff by its ID
         public int Delete(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -33,6 +34,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Operation.Tariff.Delete]", parameters);
         }
 
+        // Method to select all tariffs
         public IEnumerable<TariffModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -45,6 +47,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select tariffs by order IDc
         public IEnumerable<TariffModel> SelectByOrder(int? OrderID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -57,6 +60,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a tariff by its ID
         public TariffModel SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -71,6 +75,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select a tariff formula by its ID
         public TariffFormulaModel SelectFormulaByID(short? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -95,6 +100,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select all tariff formulas
         public IEnumerable<TariffFormulaModel> SelectFormulas()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -117,6 +123,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a tariff type by its ID
         public TariffTypeModel SelectTariffTypeByID(short? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -131,6 +138,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select all tariff types
         public IEnumerable<TariffTypeModel> SelectTariffTypes(string Area = "Operation")
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -144,6 +152,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to update a tariff
         public TariffModel Update(TariffModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -165,6 +174,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to TariffModel
         public TariffTypeModel UpdateTariffType(TariffTypeModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -186,6 +196,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Helper method to map data record to TariffTypeModel
         private TariffModel GetModel(IDataRecord dr)
         {
             return new TariffModel
@@ -226,6 +238,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to calculate the tariff amount based on the GC set and tariff model
         private TariffTypeModel GetTariffTypeModel(IDataRecord dr)
         {
             return new TariffTypeModel
@@ -263,6 +276,7 @@ namespace ArmsServices.DataServices
         //    }
         //}
 
+        // Method to get primary freight based on various parameters
         public decimal? GetPrimaryFreight(int? OrderID, int? RouteID, int? Wheels, decimal? Qty, decimal? Frt)
         {            
                 List<SqlParameter> parameters = new List<SqlParameter>
@@ -280,6 +294,7 @@ namespace ArmsServices.DataServices
                 return null;          
         }
 
+        // Method to calculate the tariff amount based on the GC set and tariff model
         public decimal? GetTariffAmount(GcSetModel GcSet, TariffModel Tariff)
         {
             RouteModel route = Task.Run(() => Iroute.SelectByID(GcSet.RouteID)).Result;
@@ -300,7 +315,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-
+        // Method to generate pending tariffs based on a reference ID
         public IEnumerable<TariffModel> GeneratePendingTariffs(long? RefID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

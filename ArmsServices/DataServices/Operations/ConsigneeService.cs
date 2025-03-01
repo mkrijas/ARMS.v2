@@ -18,6 +18,8 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
             Iaddress = addressService;
         }
+
+        // Method to delete a consignee by its ID
         public async Task<int> Delete(int? ConsigneeID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -28,6 +30,8 @@ namespace ArmsServices.DataServices
             return await Iservice.ExecuteNonQueryAsync("[usp.Gc.Consignee.Delete]", parameters);
 
         }
+
+        // Method to select consignee details by ID
         public async IAsyncEnumerable<ConsigneeModel> Select(int? ConsigneeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -41,6 +45,8 @@ namespace ArmsServices.DataServices
             }
 
         }
+
+        // Method to update a consignee's details
         public async Task<ConsigneeModel> Update(ConsigneeModel model)
         {
             model.Address.UserInfo = model.UserInfo;
@@ -64,6 +70,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select a consignee by its ID
         public async Task<ConsigneeModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -78,6 +85,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select consignee details by order ID
         public async IAsyncEnumerable<ConsigneeModel> SelectByOrder(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -92,6 +100,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data record to ConsigneeModel
         private async Task<ConsigneeModel> GetModel(IDataRecord dr)
         {
             return new ConsigneeModel
@@ -113,6 +122,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to get stockist freight receivables for a consignee
         public IEnumerable<StockistFreightReceivableModel> GetStockistFreightReceivables(int? ConsigneeID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

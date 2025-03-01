@@ -17,6 +17,7 @@ namespace DAL.DataServices.Operations
             Iservice = iservice;
         }
 
+        // Method to delete a truck availability request by its ID
         public int DeleteRequest(int? ID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -27,6 +28,7 @@ namespace DAL.DataServices.Operations
             return Iservice.ExecuteNonQuery("[usp.Operation.TruckAvailability.Request.Delete]", parameters);
         }
 
+        // Method to select outgoing truck availability requests by branch ID
         public IEnumerable<RequestApprovalHistoryModel> SelectOutgoingRequests(int? ID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,6 +44,7 @@ namespace DAL.DataServices.Operations
             }
         }
 
+        // Method to get transfer information by request approval history ID
         public RequestApprovalHistoryModel GetTransferInfo(long? RequestApprovalHistoryID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -68,6 +71,7 @@ namespace DAL.DataServices.Operations
             return null;
         }
 
+        // Method to get transfer information by request approval history ID
         public RequestApprovalHistoryModel GetTransferByID(long? RequestApprovalHistoryID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -91,6 +95,7 @@ namespace DAL.DataServices.Operations
             return null;
         }
 
+        // Method to update an outgoing truck availability request
         public RequestApprovalHistoryModel UpdateOutgoing(RequestApprovalHistoryModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -110,6 +115,7 @@ namespace DAL.DataServices.Operations
             return null;
         }
 
+        // Method to select incoming truck availability requests by branch ID
         public IEnumerable<RequestApprovalHistoryModel> SelectIncomingTrucks(int? ID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -125,6 +131,7 @@ namespace DAL.DataServices.Operations
             }
         }
 
+        // Method to update the status of a truck availability request
         public RequestApprovalHistoryModel UpdateStatus(RequestApprovalHistoryModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -144,6 +151,7 @@ namespace DAL.DataServices.Operations
             return null;
         }
 
+        // Method to get all truck IDs by branch ID
         public IEnumerable<int?> GetAllTruckIdsByBranchID(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -157,6 +165,7 @@ namespace DAL.DataServices.Operations
             }
         }
 
+        // Helper method to map data record to RequestApprovalHistoryModel
         private RequestApprovalHistoryModel GetModel(IDataRecord dr)
         {
             return new RequestApprovalHistoryModel

@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a driver leave by its ID
         public int Delete(int? LeaveID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -25,7 +26,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Leave.Delete]", parameters);
         }
 
-
+        // Method to select driver leaves by driver ID
         public IEnumerable<DriverLeaveModel> Select(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -39,6 +40,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a driver leave by its ID
         public DriverLeaveModel SelectByID(int? LeaveID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -54,6 +56,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a driver's leave details
         public DriverLeaveModel Update(DriverLeaveModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -75,6 +78,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to DriverLeaveModel
         private DriverLeaveModel GetModel(IDataRecord dr)
         {
             return new DriverLeaveModel

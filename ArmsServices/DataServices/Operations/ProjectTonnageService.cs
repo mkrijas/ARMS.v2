@@ -19,6 +19,7 @@ namespace DAL.DataServices.Operations
             Iservice = iservice;
         }
 
+        // Method to select project tonnage records by branch IDc
         public IEnumerable<ProjectTonnageModel> Select(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -31,6 +32,7 @@ namespace DAL.DataServices.Operations
             }
         }
 
+        // Method to select projected tonnage based on selected branches and date
         public IEnumerable<ProjectTonnageModel> SelectProjectedTonnage(string SelectedBranches, DateTime? Date)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -44,6 +46,7 @@ namespace DAL.DataServices.Operations
             }
         }
 
+        // Method to update a project tonnage recordc
         public ProjectTonnageModel Update(ProjectTonnageModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -62,6 +65,7 @@ namespace DAL.DataServices.Operations
             return model;
         }
 
+        // Helper method to map data record to ProjectTonnageModel
         private ProjectTonnageModel GetModel(IDataRecord dr)
         {
             return new ProjectTonnageModel

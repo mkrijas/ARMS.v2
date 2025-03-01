@@ -15,6 +15,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to delete a tyre position by its ID
         public int Delete(int? ID, string UserID)
         {
 
@@ -26,6 +28,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Inventory.TyrePosition.Delete]", parameters);
         }
 
+        // Method to update a tyre position
         public TyrePositionModel Update(TyrePositionModel model, int? TruckTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -42,6 +45,8 @@ namespace ArmsServices.DataServices
             }
             return null;
         }
+
+        // Method to select tyre positions by truck type
         public IEnumerable<TyrePositionModel> Select(int? TruckType)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -55,6 +60,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select all tyre positions
         public IEnumerable<TyrePositionModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -67,7 +73,7 @@ namespace ArmsServices.DataServices
             }
         }
 
-
+        // Helper method to map data record to TyrePositionModelc
         private TyrePositionModel GetModel(IDataRecord dr)
         {
             return new TyrePositionModel()

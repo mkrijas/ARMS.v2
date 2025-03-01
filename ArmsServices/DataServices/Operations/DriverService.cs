@@ -28,6 +28,7 @@ namespace ArmsServices.DataServices
             _bankAccountService = bankAccountService;
         }
 
+        // Method to update a driver's details
         public DriverModel Update(DriverModel model)
         {
             model.Address = _addressService.Update(model.Address);
@@ -63,6 +64,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to delete a driver by its ID
         public int Delete(int? DriverID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -73,6 +75,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Driver.Delete]", parameters);
         }
 
+        // Method to resign a driver
         public int Resign(int? DriverID, string Remarks)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -83,6 +86,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Driver.Resign]", parameters);
         }
 
+        // Method to select all drivers
         public IEnumerable<DriverModel> Select()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -96,6 +100,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select drivers who are eligible to rejoin
         public IEnumerable<DriverModel> SelectRejoin()
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -109,6 +114,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select drivers by branch ID
         public IEnumerable<DriverModel> SelectByBranch(int BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -122,6 +128,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a driver by its ID
         public DriverModel SelectByID(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -137,6 +144,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to select driver data for Excel export
         public IEnumerable<DriverModel> ExcelDataCollection(int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -150,6 +158,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Helper method to map data record to DriverModel
         private DriverModel GetModel(IDataRecord reader)
         {
             return new DriverModel
@@ -213,6 +222,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to update the driver's branch availability status
         public int UpdateBranch(int? DriverID, int? BranchID, bool availStatus, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -225,6 +235,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Branch.Availability]", parameters);
         }
 
+        // Method to get assigned branches for a driver
         IEnumerable<int> IDriverService.GetAssignedBranches(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -237,6 +248,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to find a driver based on various criteria
         public DriverModel FindDriver(DriverModel model = null, DriverLicenceModel licence = null)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -252,6 +264,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Overloaded method to find a driver based on driver ID
         public DriverModel FindDriver(string Operation, DriverModel Value)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -267,6 +280,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Overloaded method to find a driver based on Adhaar number or Licence number
         public DriverModel FindDriver(string Operation, string Value)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -283,11 +297,13 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to get the availability status of a driver
         public int AvailabilityStatus(int? DriverID)
         {
             throw new NotImplementedException();
         }
 
+        // Method to resign a driver with remarks
         public int Resign(int? DriverID, string Remarks, string userID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -300,6 +316,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.WorkPeriods.Resign]", parameters);
         }
 
+        // Method to get the last leave of a driverc
         public DriverLeaveModel GetLastLeave(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -333,6 +350,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to join a driver to a branch
         public int Join(int? DriverID, int? BranchID, DateTime? StartDate, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -345,6 +363,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.WorkPeriods.Join]", parameters);
         }
 
+        // Method to begin a driver's leave
         public int BeginLeave(DriverLeaveModel LeaveModel)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -359,6 +378,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Leave.Begin]", parameters);
         }
 
+        // Method to end a driver's leave
         public int EndLeave(int? DriverID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -369,6 +389,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Leave.End]", parameters);
         }
 
+        // Method to get the assigned truck for a driver    
         public int? GetAssignedTruck(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -386,6 +407,7 @@ namespace ArmsServices.DataServices
             return TruckID;
         }
 
+        // Method to get drivers by Adhaar number
         IEnumerable<DriverModel> IDriverService.GetDriverByAdhaarNo(string AdhaarNo)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -398,6 +420,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to get the work period of a driver
         public string GetWorkPeriod(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -415,6 +438,7 @@ namespace ArmsServices.DataServices
             return workPeriod;
         }
 
+        // Method to remove a driver from their assigned truck
         public string RemoveDriverFromTruck(int? driverId, string userId)
         {
             int? assignedTruckID = GetAssignedTruck(driverId);
@@ -446,6 +470,7 @@ namespace ArmsServices.DataServices
             return "NoAssignedTruck";
         }
 
+        // Method to rejoin a driver to a branch
         public int ReJoin(int? DriverID, string UserID, int? BranchID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>

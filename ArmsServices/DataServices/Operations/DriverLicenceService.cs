@@ -15,6 +15,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to delete a driver license by its ID
         public int Delete(int? LicenceID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -25,6 +26,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Licence.Delete]", parameters);
         }
 
+        // Method to get the active heavy license for a driver
         public DriverLicenceModel GetActiveHeavyLicense(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -39,6 +41,7 @@ namespace ArmsServices.DataServices
             return null;
         }
 
+        // Method to save the file path of a driver's license
         public int SaveFilePath(string link, int? id)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -49,6 +52,7 @@ namespace ArmsServices.DataServices
             return Iservice.ExecuteNonQuery("[usp.Driver.Licence.FilePath]", parameters);
         }
 
+        // Method to select driver licenses by driver ID
         public IEnumerable<DriverLicenceModel> Select(int? DriverID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -63,6 +67,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a driver license by its ID
         public DriverLicenceModel SelectByID(int? LicenceID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -79,6 +84,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Method to update a driver's license details
         public DriverLicenceModel Update(DriverLicenceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -101,6 +107,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
+        // Helper method to map data record to DriverLicenceModel
         private DriverLicenceModel GetModel(IDataRecord dr)
         {
             return new DriverLicenceModel

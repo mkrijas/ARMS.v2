@@ -18,6 +18,7 @@ namespace ArmsServices.DataServices
             Iservice = iservice;
         }
 
+        // Method to update a place
         public async Task<PlaceModel> Update(PlaceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -37,6 +38,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to delete a place by its ID
         public async Task<int> Delete(int? PlaceID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -46,6 +49,8 @@ namespace ArmsServices.DataServices
             };
             return await Iservice.ExecuteNonQueryAsync("[usp.Place.Places.Delete]", parameters);
         }
+
+        // Method to select places based on ID and a search string
         public IEnumerable<PlaceModel> Select(int? PlaceID, string PlaceLike)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -59,6 +64,8 @@ namespace ArmsServices.DataServices
                 yield return GetModel(dr);
             }
         }
+
+        // Method to select a place by its ID
         public async Task<PlaceModel> SelectByID(int? ID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -72,6 +79,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Helper method to map data record to PlaceModel
         private PlaceModel GetModel(IDataRecord dr)
         {
             return new PlaceModel
@@ -97,6 +106,7 @@ namespace ArmsServices.DataServices
             };
         }
 
+        // Method to check if a pin code exists
         public IEnumerable<PlaceModel> checkPinCode(string PinCode)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
