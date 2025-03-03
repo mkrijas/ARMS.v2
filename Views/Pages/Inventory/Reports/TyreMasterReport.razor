@@ -1,19 +1,21 @@
-﻿@page "/TruckWiseTyreReport"
+﻿@page "/TyreMasterReport"
 @attribute [Authorize]
 @inject AuthenticationStateProvider auth
 @inherits ReportComponentBase
 @inject ISnackbar Snackbar
+@inject ITyreService Iservice
 
 <MudGrid Spacing="4">
     <MudItem xs="12">
         <MudPaper Class="mb-5 p-4">
             <MudToolBar Style="padding-left: 0px; margin-top: -22px;">
-                <MudText Typo="Typo.h5" Style="font-weight:500;">Truck Wise Tyre Report</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight:500;">Tyre Master Report</MudText>
             </MudToolBar>
             <MudDivider />
             <MudGrid Style="padding-top: 22px;">
                 <MudItem xs="3">
-                    <TruckSelector Value="SelectedTruck" BranchID="BranchID" ValueChanged="OnTruckSelected" Filter="AvailableForBranch" HomeOrOperation="Operation" />
+                    <MudAutocomplete Label="Select Tyre" @bind-Value="SelectedTyre" SearchFunc="SearchTyres" T="TyreModel" Variant="Variant.Outlined" Margin="Margin.Dense" AdornmentColor="Color.Secondary"  ToStringFunc="@(e => e == null ? null : string.Format("{0}",e.TyreSerialNumber))">
+                    </MudAutocomplete>
                 </MudItem>
                 <MudItem xs="3">
                     <MudDatePicker Label="From Date" @bind-Date="@(FromDate)" Variant="Variant.Outlined" Margin="Margin.Dense" />
@@ -39,10 +41,11 @@
 
     ReportViewer report;
     public Dictionary<string, string> ReportParameters { get; set; } = new();
-    public TruckModel SelectedTruck { get; set; }
-    public DateTime? FromDate { get; set; } = DateTime.Now;
-    public DateTime? ToDate { get; set; } = DateTime.Now;
+    public TyreModel SelectedTyre { get; set; }
+    public DateTime? FromDate { get; set; } = null;
+    public DateTime? ToDate { get; set; } = null;
     public BranchModel CurrentBranch { get; set; } = new();
+    private List<TyreModel> TyreList = new List<TyreModel>();
 
     public bool ShowReport { get; set; } = false;
     public string ReportName { get; set; }
@@ -54,11 +57,20 @@
         var User = authprov.User;
         string BranchIDString = User.Claims.First(x => x.Type == "BranchID").Value;
         CurrentBranch.BranchName = User.Claims.First(x => x.Type == "BranchName").Value;
+        TyreList = Iservice.SelectByBranch(BranchID).ToList();
     }
 
-    private void OnTruckSelected(TruckModel model)
+    private async Task<IEnumerable<TyreModel>> SearchTyres(string searchString)
     {
-        SelectedTruck = model;
+        if (string.IsNullOrEmpty(searchString))
+            return TyreList;
+
+        return await Task.FromResult(TyreList.Where(x => x.TyreSerialNumber.Contains(searchString, StringComparison.InvariantCultureIgnoreCase)));
+    }
+
+    private void OnTyreSelected(TyreModel model)
+    {
+        SelectedTyre = model;
     }
 
     public async Task RenderReportViewer()
@@ -68,25 +80,29 @@
             snackbar.Add("Please select branch.", Severity.Error);
             return;
         }
-        if (FromDate == null)
+        if(SelectedTyre == null)
         {
-            Snackbar.Add("Please select From Date.", Severity.Error);
-            return;
-        }
-        if (ToDate == null)
-        {
-            Snackbar.Add("Please select To Date.", Severity.Error);
-            return;
+            if (FromDate == null)
+            {
+                Snackbar.Add("Please select From Date.", Severity.Error);
+                return;
+            }
+            if (ToDate == null)
+            {
+                Snackbar.Add("Please select To Date.", Severity.Error);
+                return;
+            }    
         }
 
+
         ShowReport = true;
-        ReportName = "TruckWiseTyreReport";
+        ReportName = "TyreMasterReport";
         ReportParameters.Clear();
         ReportParameters.Add("BranchIDS", String.Join(',', SelectedBranches));
         ReportParameters.Add("BranchName", CurrentBranch.BranchName);
-        ReportParameters.Add("TruckID", SelectedTruck?.TruckID.ToString() ?? "0");
-        ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd"));
-        ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd"));
+        ReportParameters.Add("TyreID", SelectedTyre?.TyreID.ToString() ?? "0");
+        ReportParameters.Add("FromDate", FromDate.Value.ToString("yyyy/MM/dd") ?? null);
+        ReportParameters.Add("ToDate", ToDate.Value.ToString("yyyy/MM/dd") ?? null);
         await report.RenderReport();
     }
 }
