@@ -171,13 +171,13 @@
     public List<AssetPOModel> ListPI { get; set; }
     ValidationMessageStore messageStore;
 
-
+    // Method to initialize the component
     protected override async Task OnInitializedAsync()
     {
         CancellationTokenSource ctc = new CancellationTokenSource();
-        HasPermissionTaxPurchaseServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token);
-        HasPermissionTaxPurchaseServiceApprove = await Irole.HasClaim(DocTypeID.ToString(), "Approve", ctc.Token);
-
+        HasPermissionTaxPurchaseServiceEdit = await Irole.HasClaim(DocTypeID.ToString(), "Edit", ctc.Token); // Check edit permission
+        HasPermissionTaxPurchaseServiceApprove = await Irole.HasClaim(DocTypeID.ToString(), "Approve", ctc.Token); // Check approve permission
+         
         var authprov = await auth.GetAuthenticationStateAsync();
         var user = authprov.User;
         UserID = user.Identity.Name;
@@ -197,9 +197,9 @@
 
         if (model.PID != null)
         {
-            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID);
-            model.Expenses = Iservice.GetExpenses(model.PID).ToList();
-            model.Items = Iservice.GetItems(model.PID).ToList();
+            model.PartyInfo = partyIservice.SelectByID(model.PartyInfo.PartyID); // Fetch party info
+            model.Expenses = Iservice.GetExpenses(model.PID).ToList(); // Fetch expenses
+            model.Items = Iservice.GetItems(model.PID).ToList(); // Fetch items
         }
         else
         {
@@ -225,12 +225,13 @@
         SetTotal();
     }
 
+    // Method to handle party changes
     void PartyChanged(PartyModel party)
     {
         model.PartyInfo = party;
         if (party != null)
         {
-            Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID);
+            Local = partyIservice.IsLocal(model.PartyInfo.PartyID, branchID); // Check if the party is local
             AddTax(model.Assets);
             SetTotal();
         }
@@ -238,6 +239,7 @@
 
     }
 
+    // Method to handle form submission
     private async Task OnValidSubmit(EditContext context)
     {
         if (_busy)
@@ -251,7 +253,7 @@
         {
             try
             {
-                TaxPurchaseModel check = Iservice.CheckInvoiceDuplication(model);
+                TaxPurchaseModel check = Iservice.CheckInvoiceDuplication(model); // Check for duplicate invoices
                 if (check == null || (check.PID != null && check.PID == model.PID && check.DocumentNumber == model.DocumentNumber))
                 {
                     model.UserInfo.UserID = UserID;
@@ -280,7 +282,7 @@
                     }
                     //model.TotalAmount = amt;
                     //SetTotal();
-                    var result = Iservice.Update(model);
+                    var result = Iservice.Update(model); // Update the model
                     snackbar.Add("Saved Successfully", Severity.Success);
                     dialogForm.Close(result);
                     model = new();
@@ -307,13 +309,14 @@
         _busy = false;
     }
 
+    // Method to approve an entry
     protected void ApproveEntry(DataApprovedStatus aprvd)
     {
         if (aprvd.IsApprove)
         {
             try
             {
-                Iservice.Approve(model.PID, UserID, aprvd.Remarks);
+                Iservice.Approve(model.PID, UserID, aprvd.Remarks); // Approve the entry
                 snackbar.Add("Approved Successfully", Severity.Success);
                 model.AuthLevelId = 99;
                 model.AuthStatus = "Approved";
@@ -326,17 +329,20 @@
         }
     }
 
+    // Method to add an expense
     async Task AddExpense(TaxPurchaseExpenseModel expenseModel)
     {
-        model.Expenses.Add(expenseModel);
+        model.Expenses.Add(expenseModel); // Add the expense to the model
         SetTotal();
     }
 
+    // Method to set the total amount
     void SetTotal()
     {
         model.TotalAmount = (model.Expenses.Where(x => x != null).Sum(x => x.Amount + x.IGST + x.CGST + x.SGST) ?? 0) + (model.Assets.Where(y => y != null).Sum(y => y.BookValue + y.GSTValue) ?? 0);
     }
 
+    // Method to add tax to assets
     private bool AddTax(List<AssetPOModel> asset)
     {
 
@@ -372,6 +378,7 @@
         return true;
     }
 
+    // Method to calculate tax for an asset
     private void CalcTax(decimal? tax, AssetPOModel item)
     {
         //AssetPOModel item = new AssetPOModel();
@@ -396,6 +403,7 @@
         SetTotal();
     }
 
+    // Method to calculate book value for an asset
     private void CalcBookValue(decimal? BookValue, AssetPOModel item)
     {
         //AssetPOModel item = new AssetPOModel();

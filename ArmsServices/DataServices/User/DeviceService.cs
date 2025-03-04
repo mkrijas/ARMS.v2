@@ -17,6 +17,7 @@ namespace DAL.DataServices.User
             Iservice = iservice;
         }
 
+        // Method to select devices based on the specified operation
         public IEnumerable<DeviceModel> Select(string operation)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -29,6 +30,7 @@ namespace DAL.DataServices.User
             }
         }
 
+        // Method to approve a device for a user
         public async Task<int> Approve(DeviceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -40,6 +42,7 @@ namespace DAL.DataServices.User
             return await Iservice.ExecuteNonQueryAsync("[usp.User.DeviceDetails.ApproveDeny]", parameters);
         }
 
+        // Method to deny a device for a user
         public async Task<int> Deny(DeviceModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -51,6 +54,7 @@ namespace DAL.DataServices.User
             return await Iservice.ExecuteNonQueryAsync("[usp.User.DeviceDetails.ApproveDeny]", parameters);
         }
 
+        // Private method to convert an IDataRecord to a DeviceModel
         private DeviceModel GetModel(IDataRecord reader)
         {
             return new DeviceModel

@@ -17,6 +17,8 @@ namespace ArmsServices.DataServices
         {
             Iservice = iservice;
         }
+
+        // Method to update a truck type
         public TruckTypeModel Update(TruckTypeModel model)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -36,6 +38,8 @@ namespace ArmsServices.DataServices
             }
             return model;
         }
+
+        // Method to delete a truck type
         public int Delete(int? TruckTypeID, string UserID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -45,6 +49,8 @@ namespace ArmsServices.DataServices
             };
             return Iservice.ExecuteNonQuery("[usp.Truck.Type.Delete]", parameters);
         }
+
+        // Method to select truck types by TruckTypeID
         public IEnumerable<TruckTypeModel> Select(short? TruckTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -58,6 +64,7 @@ namespace ArmsServices.DataServices
             }
         }
 
+        // Method to select a truck type by its ID
         public TruckTypeModel SelectByID(short? TruckTypeID)
         {
             List<SqlParameter> parameters = new List<SqlParameter>
@@ -72,7 +79,7 @@ namespace ArmsServices.DataServices
             return model;
         }
 
-
+        // Private method to convert an IDataRecord to a TruckTypeModel
         private TruckTypeModel GetModel(IDataRecord reader)
         {
             return new TruckTypeModel
